@@ -20,6 +20,7 @@ package com.hazelcast.nio;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.*;
 import java.util.Date;
@@ -29,6 +30,7 @@ import static com.hazelcast.nio.IOUtil.toObject;
 import static junit.framework.Assert.assertFalse;
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class SerializationTest {
     @Test
     public void testLongValueIncrement() {

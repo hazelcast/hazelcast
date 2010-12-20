@@ -18,7 +18,6 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.*;
-import com.hazelcast.impl.base.CpuUtilization;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
@@ -127,7 +126,7 @@ public final class ClusterService implements Runnable, Constants {
         }
     }
 
-    public void processPacket(Packet packet) {
+    private void processPacket(Packet packet) {
         if (!running) return;
         final MemberImpl memberFrom = node.clusterManager.getMember(packet.conn.getEndPoint());
         if (memberFrom != null) {
@@ -147,7 +146,7 @@ public final class ClusterService implements Runnable, Constants {
         packetProcessor.process(packet);
     }
 
-    public void processProcessable(Processable processable) {
+    private void processProcessable(Processable processable) {
         if (!running) return;
         processable.process();
     }
@@ -163,7 +162,7 @@ public final class ClusterService implements Runnable, Constants {
                 try {
                     long startWait = System.nanoTime();
                     synchronized (notEmptyLock) {
-                        notEmptyLock.wait(10);
+                        notEmptyLock.wait(2);
                     }
                     long now = System.nanoTime();
                     threadWatcher.addWait((now - startWait), now);

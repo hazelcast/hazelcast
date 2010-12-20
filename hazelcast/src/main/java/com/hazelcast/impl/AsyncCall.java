@@ -17,14 +17,13 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.util.SimpleBlockingQueue;
-
 import java.util.concurrent.*;
 
 public abstract class AsyncCall implements Future, Runnable {
     private static final Object NULL = new Object();
-    private final BlockingQueue responseQ = new SimpleBlockingQueue();
+    private final BlockingQueue responseQ = new LinkedBlockingQueue();
     private final CallContext callContext = ThreadContext.get().getCallContext();
+    private volatile Object result = null;
 
     protected abstract void call();
 
@@ -37,6 +36,7 @@ public abstract class AsyncCall implements Future, Runnable {
         if (obj == null) {
             obj = NULL;
         }
+        result = obj;
         responseQ.offer(obj);
     }
 
@@ -53,13 +53,20 @@ public abstract class AsyncCall implements Future, Runnable {
     }
 
     public Object get() throws InterruptedException, ExecutionException {
-        return processResult(responseQ.take());
+        Object r = result;
+        if (r == null) {
+            r = responseQ.take();
+        }
+        return processResult(r);
     }
 
     public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        Object result = responseQ.poll(timeout, unit);
-        if (result == null) throw new TimeoutException();
-        return processResult(result);
+        Object r = result;
+        if (r == null) {
+            r = responseQ.poll(timeout, unit);
+        }
+        if (r == null) throw new TimeoutException();
+        return processResult(r);
     }
 
     private Object processResult(Object result) throws ExecutionException {

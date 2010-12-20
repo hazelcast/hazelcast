@@ -24,19 +24,18 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MapOperationsCounter {
-    private AtomicLong puts = new AtomicLong();
-    private AtomicLong gets = new AtomicLong();
-    private AtomicLong removes = new AtomicLong();
-    private AtomicLong others = new AtomicLong();
-    private AtomicLong events = new AtomicLong();
+    private final static LocalMapOperationStats empty = new MapOperationStatsImpl();
+    private final AtomicLong puts = new AtomicLong();
+    private final AtomicLong gets = new AtomicLong();
+    private final AtomicLong removes = new AtomicLong();
+    private final AtomicLong others = new AtomicLong();
+    private final AtomicLong events = new AtomicLong();
+    private final List<MapOperationsCounter> listOfSubStats = new ArrayList<MapOperationsCounter>();
+    private final long interval;
+    private final Object lock = new Object();
+    private volatile LocalMapOperationStats published = null;
     private long startTime = now();
     private long endTime = Long.MAX_VALUE;
-    private transient LocalMapOperationStats published = null;
-    private List<MapOperationsCounter> listOfSubStats = new ArrayList<MapOperationsCounter>();
-    final private Object lock = new Object();
-    final private LocalMapOperationStats empty = new MapOperationStatsImpl();
-
-    final private long interval;
 
     public MapOperationsCounter() {
         this(5000);
@@ -147,5 +146,23 @@ public class MapOperationsCounter {
         stats.numberOfEvents = this.events.get();
         stats.periodEnd = now();
         return stats;
+    }
+
+    @Override
+    public String toString() {
+        return "MapOperationsCounter{" +
+                "empty=" + empty +
+                ", puts=" + puts +
+                ", gets=" + gets +
+                ", removes=" + removes +
+                ", others=" + others +
+                ", events=" + events +
+                ", startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", published=" + published +
+                ", listOfSubStats=" + listOfSubStats +
+                ", lock=" + lock +
+                ", interval=" + interval +
+                '}';
     }
 }

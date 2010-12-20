@@ -18,6 +18,7 @@
 package com.hazelcast.core;
 
 import org.junit.*;
+import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertNull;
  * <p/>
  * Unit test is quick'n'fast.
  */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastTest {
 
     @BeforeClass

@@ -120,7 +120,7 @@ public class ListenerManager extends BaseManager {
             this.includeValue = includeValue;
         }
 
-        TargetAwareOp createNewTargetAwareOp(Address target) {
+        SubCall createNewTargetAwareOp(Address target) {
             return new AddListenerAtTarget(target);
         }
 
@@ -132,23 +132,13 @@ public class ListenerManager extends BaseManager {
             return Boolean.TRUE;
         }
 
-        private final class AddListenerAtTarget extends TargetAwareOp {
+        private final class AddListenerAtTarget extends SubCall {
             public AddListenerAtTarget(Address target) {
-                request.reset();
-                this.target = target;
+                super(target);
                 ClusterOperation operation = (add) ? ADD_LISTENER : REMOVE_LISTENER;
                 setLocal(operation, name, null, null, -1, -1);
                 request.setBooleanRequest();
                 request.longValue = (includeValue) ? 1 : 0;
-            }
-
-            @Override
-            public void setTarget() {
-            }
-
-            @Override
-            public Object getResult() {
-                return waitAndGetResult();
             }
         }
     }
@@ -242,13 +232,13 @@ public class ListenerManager extends BaseManager {
             }
             if (listenerItem.name.equals(name)) {
                 if (key == null) {
-                    if (listenerItem.key == null && 
-                        (!includeValue || listenerItem.includeValue == includeValue)) {
+                    if (listenerItem.key == null &&
+                            (!includeValue || listenerItem.includeValue == includeValue)) {
                         remotelyRegister = false;
                     }
                 } else if (listenerItem.key != null) {
-                    if (listenerItem.key.equals(key) && 
-                        (!includeValue || listenerItem.includeValue == includeValue)) {
+                    if (listenerItem.key.equals(key) &&
+                            (!includeValue || listenerItem.includeValue == includeValue)) {
                         remotelyRegister = false;
                     }
                 }
@@ -285,7 +275,6 @@ public class ListenerManager extends BaseManager {
     }
 
     void callListeners(EventTask event) {
-        
         for (ListenerItem listenerItem : listeners) {
             if (listenerItem.listens(event)) {
                 callListener(listenerItem, event);
@@ -301,21 +290,20 @@ public class ListenerManager extends BaseManager {
                 Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
                 if (proxy instanceof MProxy) {
                     MProxy mProxy = (MProxy) proxy;
-                    mProxy.getMapOperationStats().incrementReceivedEvents();
+                    mProxy.getMapOperationCounter().incrementReceivedEvents();
                 }
             }
         }
-        
-        final EntryEvent event2 = listenerItem.includeValue ? 
-                event : 
-                (event.getValue() != null ? 
-                    new EntryEvent(event.getSource(),
-                        event.getMember(),
-                        event.getEventType().getType(),
-                        event.getKey(),
-                        null,
-                        null) : 
-                    event);
+        final EntryEvent event2 = listenerItem.includeValue ?
+                event :
+                (event.getValue() != null ?
+                        new EntryEvent(event.getSource(),
+                                event.getMember(),
+                                event.getEventType().getType(),
+                                event.getKey(),
+                                null,
+                                null) :
+                        event);
         switch (listenerItem.instanceType) {
             case MAP:
             case MULTIMAP:

@@ -27,7 +27,6 @@ import com.hazelcast.nio.*;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -680,6 +679,8 @@ public abstract class BaseManager {
         }
     }
 
+    private List<Packet> lsPacketCache = new ArrayList<Packet>(1000);
+
     public abstract class TargetAwareOp extends ResponseQueueCall {
 
         protected Address target = null;
@@ -693,7 +694,25 @@ public abstract class BaseManager {
             } else {
                 handleNoneRedoResponse(packet);
             }
-            releasePacket(packet);
+            doReleasePacket(packet);
+        }
+
+        protected void doReleasePacket(Packet packet) {
+            if (lsPacketCache.size() < 1000) {
+                lsPacketCache.add(packet);
+            } else {
+                releasePacket(packet);
+            }
+//            releasePacket(packet);
+        }
+
+        protected Packet doObtainPacket() {
+            if (lsPacketCache.size() > 0) {
+                Packet p = lsPacketCache.remove(0);
+                p.reset();
+                return p;
+            }
+            return obtainPacket();
         }
 
         @Override
@@ -728,18 +747,31 @@ public abstract class BaseManager {
             }
         }
 
+        protected void memberDoesNotExist() {
+            setResult(OBJECT_REDO);
+        }
+
         protected void invoke() {
-            addCall(TargetAwareOp.this);
-            final Packet packet = obtainPacket();
-            request.setPacket(packet);
-            packet.callId = getCallId();
-            request.callId = getCallId();
-            final boolean sent = send(packet, target);
-            if (!sent) {
-                logger.log(Level.FINEST, TargetAwareOp.this + " Packet cannot be sent to " + target);
-                releasePacket(packet);
-                packetNotSent();
+            if (getMember(target) == null) {
+                memberDoesNotExist();
+            } else {
+                addCall(TargetAwareOp.this);
+                final Packet packet = doObtainPacket();
+                request.setPacket(packet);
+                packet.callId = getCallId();
+                request.callId = getCallId();
+                final boolean sent = send(packet, target);
+                if (!sent) {
+                    logger.log(Level.FINEST, TargetAwareOp.this + " Packet cannot be sent to " + target);
+                    releasePacket(packet);
+                    packetNotSent();
+                }
             }
+        }
+
+        @Override
+        protected void handleNoneRedoResponse(Packet packet) {
+            super.handleNoneRedoResponse(packet);
         }
 
         protected void packetNotSent() {
@@ -780,7 +812,7 @@ public abstract class BaseManager {
     }
 
     abstract class MultiCall<T> {
-        abstract TargetAwareOp createNewTargetAwareOp(Address target);
+        abstract SubCall createNewTargetAwareOp(Address target);
 
         /**
          * As MultiCall receives the responses from the target members
@@ -812,7 +844,7 @@ public abstract class BaseManager {
                 node.checkNodeState();
                 onCall();
                 //local call first
-                TargetAwareOp localCall = createNewTargetAwareOp(getFirstAddressToMakeCall());
+                SubCall localCall = createNewTargetAwareOp(getFirstAddressToMakeCall());
                 localCall.doOp();
                 Object result = localCall.getResultAsObject();
                 if (result == OBJECT_REDO) {
@@ -822,16 +854,16 @@ public abstract class BaseManager {
                 }
                 if (onResponse(result)) {
                     Set<Member> members = node.getClusterImpl().getMembers();
-                    List<TargetAwareOp> lsCalls = new ArrayList<TargetAwareOp>();
+                    List<SubCall> lsCalls = new ArrayList<SubCall>();
                     for (Member member : members) {
-                        if (!member.getInetSocketAddress().equals(getFirstAddressToMakeCall().getInetSocketAddress())) { // now other members
-                            MemberImpl cMember = (MemberImpl) member;
-                            TargetAwareOp targetAwareOp = createNewTargetAwareOp(cMember.getAddress());
-                            targetAwareOp.doOp();
-                            lsCalls.add(targetAwareOp);
+                        MemberImpl cMember = (MemberImpl) member;
+                        if (!cMember.getAddress().equals(getFirstAddressToMakeCall())) { // now other members
+                            SubCall subCall = createNewTargetAwareOp(cMember.getAddress());
+                            subCall.doOp();
+                            lsCalls.add(subCall);
                         }
                     }
-                    for (TargetAwareOp call : lsCalls) {
+                    for (SubCall call : lsCalls) {
                         result = call.getResultAsObject();
                         if (result == OBJECT_REDO) {
                             onRedo();
@@ -847,17 +879,23 @@ public abstract class BaseManager {
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
             }
             return (T) returnResult();
         }
     }
 
-    abstract class MigrationAwareTargetedCall extends TargetAwareOp {
+    abstract class SubCall extends TargetAwareOp {
+
+        public SubCall(final Address target) {
+            this.target = target;
+            if (target == null) {
+                throw new IllegalArgumentException("SubCall target cannot be " + target);
+            }
+        }
 
         public void onDisconnect(final Address dead) {
-            redo();
+            removeCall(getCallId());
+            setResult(OBJECT_REDO);
         }
 
         @Override
@@ -865,13 +903,20 @@ public abstract class BaseManager {
         }
 
         @Override
+        protected void memberDoesNotExist() {
+            setResult(OBJECT_REDO);
+        }
+
+        @Override
         public Object getResult() {
+            // we don't want to REDO automatically
+            // MultiCall will control this
             return waitAndGetResult();
         }
 
         @Override
         public boolean isMigrationAware() {
-            return true;
+            return false;
         }
     }
 

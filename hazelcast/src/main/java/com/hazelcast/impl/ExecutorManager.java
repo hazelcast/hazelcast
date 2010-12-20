@@ -46,6 +46,7 @@ public class ExecutorManager extends BaseManager {
 
     private final ConcurrentMap<Thread, CallContext> mapThreadCallContexts = new ConcurrentHashMap<Thread, CallContext>(100);
 
+    private final ParallelExecutor asyncExecutorService;
     private final NamedExecutorService defaultExecutorService;
     private final NamedExecutorService clientExecutorService;
     private final NamedExecutorService migrationExecutorService;
@@ -96,6 +97,7 @@ public class ExecutorManager extends BaseManager {
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
         storeExecutorService = getOrCreateNamedExecutorService(STORE_EXECUTOR_SERVICE, gp.EXECUTOR_STORE_THREAD_COUNT);
         eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
+        asyncExecutorService = parallelExecutorService.newBlockingParallelExecutor(24, 1000);
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         registerPacketProcessor(CANCEL_EXECUTION, new ExecutionCancelOperationHandler());
         started = true;
@@ -291,6 +293,10 @@ public class ExecutorManager extends BaseManager {
         defaultExecutorService.execute(runnable);
     }
 
+    public void executeAsync(Runnable runnable) {
+        asyncExecutorService.execute(runnable);
+    }
+
     public void executeNow(Runnable runnable) {
         threadPoolExecutor.execute(runnable);
     }
@@ -397,7 +403,7 @@ public class ExecutorManager extends BaseManager {
                     }
                 };
                 lsCancellationCalls.add(asyncCall);
-                executeLocally(asyncCall);
+                executeAsync(asyncCall);
             }
             for (AsyncCall cancellationCall : lsCancellationCalls) {
                 try {
@@ -575,6 +581,11 @@ public class ExecutorManager extends BaseManager {
 
         @Override
         public void packetNotSent() {
+            setResult(OBJECT_MEMBER_LEFT);
+        }
+
+        @Override
+        protected void memberDoesNotExist() {
             setResult(OBJECT_MEMBER_LEFT);
         }
 

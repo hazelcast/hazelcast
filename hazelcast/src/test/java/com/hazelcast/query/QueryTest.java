@@ -29,6 +29,7 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.*;
 
@@ -37,6 +38,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class QueryTest extends TestUtil {
 
     @BeforeClass
@@ -73,21 +75,21 @@ public class QueryTest extends TestUtil {
         Arrays.sort(array);
         assertArrayEquals(names.toString(), expectedValues, array);
     }
-    
+
     @Test
     public void issue393Fail() {
         final IMap<String, Value> map = Hazelcast.getMap("default");
         map.addIndex("qwe", true);
         final Value v = new Value("name");
-        try{
+        try {
             map.put("0", v);
             fail();
-        } catch(Throwable e){
+        } catch (Throwable e) {
             e = e.getCause();
             assertEquals("There is no suitable accessor for 'qwe'", e.getMessage());
         }
     }
-    
+
     @Test
     public void issue393SqlEq() {
         final IMap<String, Value> map = Hazelcast.getMap("default");
@@ -108,7 +110,7 @@ public class QueryTest extends TestUtil {
         Arrays.sort(array);
         assertArrayEquals(names.toString(), expectedValues, array);
     }
-    
+
     @Test
     public void issue393SqlIn() {
         final IMap<String, Value> map = Hazelcast.getMap("default");
@@ -129,7 +131,7 @@ public class QueryTest extends TestUtil {
         Arrays.sort(array);
         assertArrayEquals(names.toString(), expectedValues, array);
     }
-    
+
     @Test
     public void issue393SqlInInteger() {
         final IMap<String, Value> map = Hazelcast.getMap("default");
@@ -150,7 +152,7 @@ public class QueryTest extends TestUtil {
         Arrays.sort(array);
         assertArrayEquals(names.toString(), expectedValues, array);
     }
-    
+
     @Test
     public void testInnerIndex() {
         final IMap<String, Value> map = Hazelcast.getMap("default");
@@ -171,7 +173,7 @@ public class QueryTest extends TestUtil {
         Arrays.sort(array);
         assertArrayEquals(typeNames.toString(), new String[]{"type6", "type8"}, array);
     }
-    
+
     @Test
     public void testInnerIndexSql() {
         final IMap<String, Value> map = Hazelcast.getMap("default");

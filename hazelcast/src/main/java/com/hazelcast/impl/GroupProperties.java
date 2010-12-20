@@ -21,6 +21,9 @@ import com.hazelcast.config.Config;
 
 public class GroupProperties {
 
+    public static final String PROP_IN_THREAD_PRIORITY = "hazelcast.in.thread.priority";
+    public static final String PROP_OUT_THREAD_PRIORITY = "hazelcast.out.thread.priority";
+    public static final String PROP_SERVICE_THREAD_PRIORITY = "hazelcast.service.thread.priority";
     public static final String PROP_MERGE_FIRST_RUN_DELAY_SECONDS = "hazelcast.merge.first.run.delay.seconds";
     public static final String PROP_MERGE_NEXT_RUN_DELAY_SECONDS = "hazelcast.merge.next.run.delay.seconds";
     public static final String PROP_REDO_WAIT_MILLIS = "hazelcast.redo.wait.millis";
@@ -51,6 +54,12 @@ public class GroupProperties {
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
 
     public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "6");
+
+    public final GroupProperty IN_THREAD_PRIORITY;
+
+    public final GroupProperty OUT_THREAD_PRIORITY;
+
+    public final GroupProperty SERVICE_THREAD_PRIORITY;
 
     public final GroupProperty MERGE_FIRST_RUN_DELAY_SECONDS;
 
@@ -89,12 +98,15 @@ public class GroupProperties {
     public final GroupProperty EXECUTOR_STORE_THREAD_COUNT;
 
     public final GroupProperty LOG_STATE;
-    
+
     public final GroupProperty ENABLE_JMX;
-    
+
     public final GroupProperty ENABLE_JMX_DETAILED;
 
     public GroupProperties(Config config) {
+        IN_THREAD_PRIORITY = new GroupProperty(config, PROP_IN_THREAD_PRIORITY, "7");
+        OUT_THREAD_PRIORITY = new GroupProperty(config, PROP_OUT_THREAD_PRIORITY, "7");
+        SERVICE_THREAD_PRIORITY = new GroupProperty(config, PROP_SERVICE_THREAD_PRIORITY, "8");
         MERGE_FIRST_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "300");
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
         REDO_WAIT_MILLIS = new GroupProperty(config, PROP_REDO_WAIT_MILLIS, "500");
@@ -167,6 +179,5 @@ public class GroupProperties {
         public String toString() {
             return "GroupProperty [name=" + this.name + ", value=" + this.value + "]";
         }
-        
     }
 }

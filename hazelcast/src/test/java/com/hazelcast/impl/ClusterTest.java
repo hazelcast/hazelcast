@@ -29,7 +29,11 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.*;
@@ -46,6 +50,7 @@ import static org.junit.Assert.*;
  * Run these tests with
  * -Xms512m -Xmx512m
  */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ClusterTest {
 
     @BeforeClass
@@ -223,7 +228,7 @@ public class ClusterTest {
         map.put("1", "value");
     }
 
-    @Test(timeout = 40000)
+    @Test(timeout = 100000)
     public void testSuperClientPartitionOwnership() throws Exception {
         Config configSuperClient = new Config();
         configSuperClient.setSuperClient(true);

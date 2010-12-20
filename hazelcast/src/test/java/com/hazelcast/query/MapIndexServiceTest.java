@@ -23,6 +23,7 @@ import com.hazelcast.impl.CMap;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.TestUtil;
 import org.junit.*;
+import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -31,6 +32,7 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 @Ignore
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MapIndexServiceTest extends TestUtil {
 
     @BeforeClass
@@ -87,7 +89,7 @@ public class MapIndexServiceTest extends TestUtil {
         }
     }
 
-    @Ignore 
+    @Ignore
     @Test
     public void testIndex() throws Exception {
         CMap cmap = mockCMap("default");

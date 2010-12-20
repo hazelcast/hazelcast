@@ -145,13 +145,12 @@ public final class Connection {
             e.printStackTrace();
         }
         logger.log(Level.FINE, "Connection lost " + this.socketChannel.socket().getRemoteSocketAddress());
-        connectionManager.remove(this);
+        connectionManager.destroyConnection(this);
         AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
         addOrRemoveConnection.setNode(connectionManager.node);
         connectionManager.node.clusterManager.enqueueAndReturn(addOrRemoveConnection);
     }
 
-    
     @Override
     public String toString() {
         final Socket socket = this.socketChannel.socket();

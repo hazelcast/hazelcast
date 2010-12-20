@@ -595,30 +595,43 @@ public class PartitionManager implements Runnable {
     }
 
     void handleBlocks(Blocks blockOwners) {
-        List<Block> lsBlocks = blockOwners.lsBlocks;
-        for (Block block : lsBlocks) {
+        for (Block block : blockOwners.lsBlocks) {
             Block blockReal = concurrentMapManager.getOrCreateBlock(block.getBlockId());
-            if (!sameBlocks(block, blockReal)) {
-                if (blockReal.getOwner() == null) {
-                    blockReal.setOwner(block.getOwner());
-                }
-                if (thisAddress.equals(block.getOwner()) && block.isMigrating()) {
-                    startMigration(new Block(block));
+            boolean same = sameBlocks(block, blockReal);
+            blockReal.setOwner(block.getOwner());
+            blockReal.setMigrationAddress(block.getMigrationAddress());
+            if (thisAddress.equals(blockReal.getOwner()) && blockReal.isMigrating()) {
+                startMigration(new Block(block));
+            } else if (!same && blockReal.getOwner() != null) {
+                boolean started = blockReal.isMigrating();
+                if (started) {
+                    fireMigrationEvent(started, new Block(block));
                 } else {
-                    blockReal.setOwner(block.getOwner());
-                    blockReal.setMigrationAddress(block.getMigrationAddress());
-                    if (block.isMigrating()) {
-                        fireMigrationEvent(true, new Block(block));
-                    }
-                }
-            } else {
-                if (thisAddress.equals(block.getOwner()) && block.isMigrating() && !blockReal.isMigrationStarted()) {
-                    startMigration(new Block(block));
+                    fireMigrationEvent(started, new Block(block.getBlockId(), null, block.getOwner()));
                 }
             }
-            if (!sameBlocks(block, blockReal)) {
-                logger.log(Level.SEVERE, blockReal + " Still blocks don't match " + block);
-            }
+//            if (!sameBlocks(block, blockReal)) {
+//                if (blockReal.getOwner() == null) {
+//                    blockReal.setOwner(block.getOwner());
+//                }
+//
+//                if (thisAddress.equals(block.getOwner()) && block.isMigrating()) {
+//                    startMigration(new Block(block));
+//                } else {
+//                    blockReal.setOwner(block.getOwner());
+//                    blockReal.setMigrationAddress(block.getMigrationAddress());
+//                    if (block.isMigrating()) {
+//                        fireMigrationEvent(true, new Block(block));
+//                    }
+//                }
+//            } else {
+//                if (thisAddress.equals(block.getOwner()) && block.isMigrating() && !blockReal.isMigrationStarted()) {
+//                    startMigration(new Block(block));
+//                }
+//            }
+//            if (!sameBlocks(block, blockReal)) {
+//                logger.log(Level.SEVERE, blockReal + " Still blocks don't match " + block);
+//            }
         }
     }
 
@@ -637,7 +650,9 @@ public class PartitionManager implements Runnable {
         } else if (!b1.getOwner().equals(b2.getOwner())) {
             return false;
         }
-        if (b1.isMigrating() && !b1.getMigrationAddress().equals(b2.getMigrationAddress())) {
+        if (b1.getMigrationAddress() == null) {
+            return b2.getMigrationAddress() == null;
+        } else if (!b1.getMigrationAddress().equals(b2.getMigrationAddress())) {
             return false;
         }
         return true;

@@ -1136,12 +1136,21 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    abstract class MMigrationAwareTargetedCall extends MigrationAwareTargetedCall {
+    abstract class MigrationAwareSubCall extends SubCall {
+
+        protected MigrationAwareSubCall(Address target) {
+            super(target);
+        }
 
         @Override
         public void process() {
             request.blockId = hashBlocks();
             super.process();
+        }
+
+        @Override
+        public boolean isMigrationAware() {
+            return true;
         }
     }
 
@@ -1166,7 +1175,7 @@ public class ConcurrentMapManager extends BaseManager {
             this.value = value;
         }
 
-        TargetAwareOp createNewTargetAwareOp(Address target) {
+        SubCall createNewTargetAwareOp(Address target) {
             return new MGetContainsValue(target);
         }
 
@@ -1186,10 +1195,9 @@ public class ConcurrentMapManager extends BaseManager {
             return contains;
         }
 
-        class MGetContainsValue extends MMigrationAwareTargetedCall {
+        class MGetContainsValue extends MigrationAwareSubCall {
             public MGetContainsValue(Address target) {
-                this.target = target;
-                request.reset();
+                super(target);
                 setLocal(CONCURRENT_MAP_CONTAINS_VALUE, name, null, value, 0, -1);
                 request.setBooleanRequest();
             }
@@ -1208,7 +1216,7 @@ public class ConcurrentMapManager extends BaseManager {
             this.timeout = timeout;
         }
 
-        TargetAwareOp createNewTargetAwareOp(Address target) {
+        SubCall createNewTargetAwareOp(Address target) {
             return new MTargetLockMap(target);
         }
 
@@ -1239,10 +1247,9 @@ public class ConcurrentMapManager extends BaseManager {
             return node.getMasterAddress();
         }
 
-        class MTargetLockMap extends MMigrationAwareTargetedCall {
+        class MTargetLockMap extends MigrationAwareSubCall {
             public MTargetLockMap(Address target) {
-                this.target = target;
-                request.reset();
+                super(target);
                 setLocal(operation, name, null, null, timeout, -1);
                 request.setBooleanRequest();
             }
@@ -1266,7 +1273,7 @@ public class ConcurrentMapManager extends BaseManager {
             this.name = name;
         }
 
-        TargetAwareOp createNewTargetAwareOp(Address target) {
+        SubCall createNewTargetAwareOp(Address target) {
             return new MGetSize(target);
         }
 
@@ -1283,10 +1290,9 @@ public class ConcurrentMapManager extends BaseManager {
             return size;
         }
 
-        class MGetSize extends MMigrationAwareTargetedCall {
+        class MGetSize extends MigrationAwareSubCall {
             public MGetSize(Address target) {
-                this.target = target;
-                request.reset();
+                super(target);
                 setLocal(CONCURRENT_MAP_SIZE, name);
                 request.setLongRequest();
             }
@@ -1363,7 +1369,7 @@ public class ConcurrentMapManager extends BaseManager {
             this.predicate = predicate;
         }
 
-        TargetAwareOp createNewTargetAwareOp(Address target) {
+        SubCall createNewTargetAwareOp(Address target) {
             return new MGetEntries(target, operation, name, predicate);
         }
 
@@ -1392,10 +1398,9 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MGetEntries extends MMigrationAwareTargetedCall {
+    class MGetEntries extends MigrationAwareSubCall {
         public MGetEntries(Address target, ClusterOperation operation, String name, Predicate predicate) {
-            this.target = target;
-            request.reset();
+            super(target);
             setLocal(operation, name, null, predicate, -1, -1);
         }
     }
@@ -1559,7 +1564,8 @@ public class ConcurrentMapManager extends BaseManager {
 
     abstract class MTargetAwareOperationHandler extends TargetAwareOperationHandler {
         boolean isRightRemoteTarget(Request request) {
-            return thisAddress.equals(getKeyOwner(request.key));
+            boolean callerKnownMember = (request.local || getMember(request.caller) != null);
+            return callerKnownMember && thisAddress.equals(getKeyOwner(request.key));
         }
     }
 
@@ -1756,6 +1762,13 @@ public class ConcurrentMapManager extends BaseManager {
     class ContainsOperationHandler extends MigrationAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
+            if (request.key != null) {
+                boolean callerKnownMember = (request.local || getMember(request.caller) != null);
+                if (!callerKnownMember) {
+                    request.response = OBJECT_REDO;
+                    return;
+                }
+            }
             request.response = cmap.contains(request);
         }
     }

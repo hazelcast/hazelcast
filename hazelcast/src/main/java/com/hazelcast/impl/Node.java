@@ -376,24 +376,24 @@ public class Node {
         final String prefix = "hz." + this.id + ".";
         Thread inThread = new Thread(threadGroup, inSelector, prefix + "InThread");
 //        inThread.setContextClassLoader(config.getClassLoader());
-        inThread.setPriority(7);
+        inThread.setPriority(groupProperties.IN_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + inThread.getName());
         inThread.start();
         Thread outThread = new Thread(threadGroup, outSelector, prefix + "OutThread");
 //        outThread.setContextClassLoader(config.getClassLoader());
-        outThread.setPriority(7);
+        outThread.setPriority(groupProperties.OUT_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + outThread.getName());
         outThread.start();
         serviceThread = new Thread(threadGroup, clusterService, prefix + "ServiceThread");
 //        serviceThread.setContextClassLoader(config.getClassLoader());
-//        serviceThread.setPriority(8);
+        serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
         serviceThread.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(threadGroup, multicastService, "hz.MulticastThread");
             multicastServiceThread.start();
 //            multicastServiceThread.setContextClassLoader(config.getClassLoader());
-            multicastServiceThread.setPriority(6);
+//            multicastServiceThread.setPriority(6);
         }
         setActive(true);
         if (!completelyShutdown) {

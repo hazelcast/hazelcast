@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.nio.Address;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class PartitionManagerTest {
 
     @Test

@@ -361,7 +361,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
         Connection conn = node.connectionManager.getConnection(deadAddress);
         if (conn != null) {
-            node.connectionManager.remove(conn);
+            node.connectionManager.destroyConnection(conn);
         }
         MemberImpl deadMember = getMember(deadAddress);
         if (deadMember != null) {
@@ -602,6 +602,17 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
 
         @Override
+        public void redo() {
+            removeCall(getCallId());
+            setResult(Boolean.FALSE);
+        }
+
+        @Override
+        protected void memberDoesNotExist() {
+            setResult(Boolean.FALSE);
+        }
+
+        @Override
         protected void packetNotSent() {
             setResult(Boolean.FALSE);
         }
@@ -751,13 +762,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
-    public RemotelyProcessable createInitialProcess() {
-        InitialProcess initialProcess = new InitialProcess();
-        List<AbstractRemotelyProcessable> lsProcessables = initialProcess.getProcessables();
-        node.listenerManager.collectInitialProcess(lsProcessables);
-        return initialProcess;
-    }
-
     public void connectionAdded(final Connection connection) {
         enqueueAndReturn(new Processable() {
             public void process() {
@@ -803,7 +807,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         return member;
     }
 
-    protected void removeMember(MemberImpl member) {
+    public void removeMember(MemberImpl member) {
         checkServiceThread();
         logger.log(Level.FINEST, "removing  " + member);
         mapMembers.remove(member.getAddress());
@@ -815,6 +819,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     public MemberImpl getMember(Address address) {
+        if (address == null) {
+            return null;
+        }
         return mapMembers.get(address);
     }
 

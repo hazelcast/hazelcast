@@ -22,6 +22,7 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -31,6 +32,7 @@ import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class TransactionTest {
 
     @BeforeClass

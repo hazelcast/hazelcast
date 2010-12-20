@@ -137,7 +137,15 @@ public class ConnectionManager {
         return connection;
     }
 
-    public void remove(Connection connection) {
+    public Connection detachAndGetConnection(Address address) {
+        return mapConnections.remove(address);
+    }
+
+    public void attachConnection(Address address, Connection conn) {
+        mapConnections.put(address, conn);
+    }
+
+    public void destroyConnection(Connection connection) {
         if (connection == null)
             return;
         setActiveConnections.remove(connection);
@@ -165,14 +173,14 @@ public class ConnectionManager {
         live = false;
         for (Connection conn : mapConnections.values()) {
             try {
-                remove(conn);
+                destroyConnection(conn);
             } catch (final Throwable ignore) {
                 ignore.printStackTrace();
             }
         }
         for (Connection conn : setActiveConnections) {
             try {
-                remove(conn);
+                destroyConnection(conn);
             } catch (final Throwable ignore) {
                 ignore.printStackTrace();
             }

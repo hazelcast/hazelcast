@@ -25,6 +25,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static junit.framework.Assert.*;
 
@@ -32,6 +33,7 @@ import static junit.framework.Assert.*;
  * HazelcastTest tests some specific cluster behavior.
  * Node is created for each test method.
  */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClusterTest {
 
     @Before
@@ -39,7 +41,7 @@ public class HazelcastClusterTest {
     public void init() throws Exception {
         Hazelcast.shutdownAll();
     }
-    
+
     @Test
     public void testUseBackupDataGet() throws Exception {
         final Config config = new Config();
@@ -60,28 +62,25 @@ public class HazelcastClusterTest {
         Config config = new XmlConfigBuilder().build();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        
         final int s1 = h1.getCluster().getMembers().size();
         final int s2 = h2.getCluster().getMembers().size();
         assertEquals(s1, s2);
         assertEquals(2, s2);
     }
-    
+
     @Test
     public void testJoinWithIncompatibleConfigs() throws Exception {
         Config config1 = new XmlConfigBuilder().build();
         Config config2 = new XmlConfigBuilder().build();
         config2.getMapConfig("default").setTimeToLiveSeconds(1);
-        
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
-        
         final int s1 = h1.getCluster().getMembers().size();
         final int s2 = h2.getCluster().getMembers().size();
         assertEquals(1, s1);
         assertEquals(1, s2);
     }
-    
+
     @Test
     public void testMapPutAndGetUseBackupData() throws Exception {
         Config config = new XmlConfigBuilder().build();

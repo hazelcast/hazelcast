@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertEquals;
  * @author Marco Ferrante, DISI - University of Genoa
  * @oztalip
  */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ExecutorServiceTest {
 
     public static int COUNT = 1000;

@@ -18,10 +18,9 @@
 package com.hazelcast.impl.executor;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ParallelExecutorService {
     private final ExecutorService executorService;
@@ -36,6 +35,12 @@ public class ParallelExecutorService {
             parallelExecutor.shutdown();
         }
         lsParallelExecutors.clear();
+    }
+
+    public ParallelExecutor newBlockingParallelExecutor(int concurrencyLevel, int capacity) {
+        ParallelExecutor p = new BlockingParallelExecutorImpl(concurrencyLevel, capacity);
+        lsParallelExecutors.add(p);
+        return p;
     }
 
     public ParallelExecutor newParallelExecutor(int concurrencyLevel) {
@@ -70,10 +75,33 @@ public class ParallelExecutorService {
         }
     }
 
+    class BlockingParallelExecutorImpl extends ParallelExecutorImpl {
+        private final BlockingQueue<Object> q;
+
+        BlockingParallelExecutorImpl(int concurrencyLevel, int capacity) {
+            super(concurrencyLevel);
+            q = new ArrayBlockingQueue<Object>(capacity);
+        }
+
+        @Override
+        protected void onOffer() {
+            try {
+                q.put(Boolean.TRUE);
+            } catch (InterruptedException e) {
+            }
+        }
+
+        @Override
+        protected void afterRun() {
+            q.poll();
+        }
+    }
+
     class ParallelExecutorImpl implements ParallelExecutor {
         final ExecutionSegment[] executionSegments;
         final AtomicInteger offerIndex = new AtomicInteger();
         final AtomicInteger activeCount = new AtomicInteger();
+        final AtomicLong waitingExecutions = new AtomicLong();
 
         ParallelExecutorImpl(int concurrencyLevel) {
             this.executionSegments = new ExecutionSegment[concurrencyLevel];
@@ -116,6 +144,19 @@ public class ParallelExecutorService {
             return activeCount.get();
         }
 
+        public long getQueueSize() {
+            return waitingExecutions.get();
+        }
+
+        protected void onOffer() {
+        }
+
+        protected void beforeRun() {
+        }
+
+        protected void afterRun() {
+        }
+
         class ExecutionSegment implements Runnable {
             final ConcurrentLinkedQueue<Runnable> q = new ConcurrentLinkedQueue<Runnable>();
             final AtomicInteger size = new AtomicInteger();
@@ -126,7 +167,9 @@ public class ParallelExecutorService {
             }
 
             public void offer(Runnable e) {
+                waitingExecutions.incrementAndGet();
                 q.offer(e);
+                onOffer();
                 if (size.incrementAndGet() == 1) {
                     executorService.execute(ExecutionSegment.this);
                 }
@@ -137,7 +180,10 @@ public class ParallelExecutorService {
                 Runnable r = q.poll();
                 while (r != null) {
                     try {
+                        beforeRun();
                         r.run();
+                        afterRun();
+                        waitingExecutions.decrementAndGet();
                     } catch (Throwable e) {
                         e.printStackTrace();
                     }

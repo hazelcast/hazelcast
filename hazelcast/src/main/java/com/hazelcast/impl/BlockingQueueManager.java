@@ -54,8 +54,8 @@ public class BlockingQueueManager extends BaseManager {
     BlockingQueueManager(Node node) {
         super(node);
         BLOCK_SIZE = node.groupProperties.BLOCKING_QUEUE_BLOCK_SIZE.getInteger();
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_POLL, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_POLL, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 try {
                     handlePoll(packet);
                 } catch (Throwable t) {
@@ -65,71 +65,84 @@ public class BlockingQueueManager extends BaseManager {
                 }
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_OFFER, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_OFFER, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleOffer(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_OFFER_FIRST, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_OFFER_FIRST, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleOfferFirst(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_BACKUP_ADD, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_BACKUP_ADD, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleBackup(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_BACKUP_REMOVE, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleBackup(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_SIZE, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_SIZE, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleSize(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_PEEK, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_PEEK, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handlePoll(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_READ, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_READ, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleRead(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_REMOVE, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_REMOVE, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleRemove(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_TXN_BACKUP_POLL, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_TXN_BACKUP_POLL, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleTxnBackupPoll(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_TXN_COMMIT, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_TXN_COMMIT, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleTxnCommit(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_ADD_BLOCK, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_ADD_BLOCK, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleAddBlock(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_REMOVE_BLOCK, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_REMOVE_BLOCK, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleRemoveBlock(packet);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_FULL_BLOCK, new PacketProcessor() {
-            public void process(Packet packet) {
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_FULL_BLOCK, new QueuePacketProcessor() {
+            public void processPacket(Packet packet) {
                 handleFullBlock(packet);
             }
         });
+    }
+
+    abstract class QueuePacketProcessor implements PacketProcessor {
+        public void process(Packet packet) {
+            boolean callerKnownMember = (getMember(packet.conn.getEndPoint()) != null);
+            if (!callerKnownMember) {
+                sendRedoResponse(packet);
+            } else {
+                processPacket(packet);
+            }
+        }
+
+        abstract void processPacket(Packet packet);
     }
 
     public void collectMemberStats(MemberStateImpl memberStats) {
@@ -217,6 +230,7 @@ public class BlockingQueueManager extends BaseManager {
         Address addressNewOwner = (member == null) ? thisAddress : member.getAddress();
         Collection<Q> queues = mapQueues.values();
         for (Q q : queues) {
+            q.ensureBlocks();
             List<Block> lsBlocks = q.lsBlocks;
             for (Block block : lsBlocks) {
                 if (block.address.equals(deadAddress)) {
@@ -601,7 +615,7 @@ public class BlockingQueueManager extends BaseManager {
             this.name = name;
         }
 
-        TargetAwareOp createNewTargetAwareOp(Address target) {
+        SubCall createNewTargetAwareOp(Address target) {
             return new MGetSize(target);
         }
 
@@ -618,10 +632,9 @@ public class BlockingQueueManager extends BaseManager {
             return size;
         }
 
-        class MGetSize extends MigrationAwareTargetedCall {
+        class MGetSize extends SubCall {
             public MGetSize(Address target) {
-                this.target = target;
-                request.reset();
+                super(target);
                 request.name = name;
                 request.operation = BLOCKING_QUEUE_SIZE;
                 request.setLongRequest();
@@ -1183,18 +1196,20 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     public final class Q {
+        final static int blocksLimit = 10;
+
         String name;
         final List<Block> lsBlocks;
         Block blCurrentPut = null;
         Block blCurrentTake = null;
-        int latestAddedBlock = -1;
 
+        int latestAddedBlock = -1;
         final List<ScheduledPollAction> lsScheduledPollActions = new ArrayList<ScheduledPollAction>(100);
         final List<ScheduledOfferAction> lsScheduledOfferActions = new ArrayList<ScheduledOfferAction>(100);
+
         final int maxSizePerJVM;
 
         Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(2);
-
         final long maxAge;
 
         public Q(String name) {
@@ -1205,22 +1220,28 @@ public class BlockingQueueManager extends BaseManager {
             logger.log(Level.FINEST, name + ".maxSizePerJVM=" + maxSizePerJVM);
             logger.log(Level.FINEST, name + ".maxAge=" + maxAge);
             this.name = name;
-            final int blocksLimit = 10;
             lsBlocks = new ArrayList<Block>(blocksLimit);
-            Address master = getMasterAddress();
-            if (master == null) {
-                throw new IllegalStateException("Master is " + master);
-            }
-            if (master.isThisAddress()) {
-                Block block = createBlock(master, 0);
-                addBlock(block);
-                sendAddBlockMessageToOthers(block, -1, null, true);
-                for (int i = 1; i < blocksLimit; i++) {
-                    int blockId = i;
-                    Address target = nextTarget();
-                    block = createBlock(target, blockId);
-                    addBlock(block);
-                    sendAddBlockMessageToOthers(block, -1, null, true);
+            ensureBlocks();
+        }
+
+        void ensureBlocks() {
+            if (node.isActive()) {
+                Address master = getMasterAddress();
+                if (master == null) {
+                    throw new IllegalStateException("Master is " + master);
+                }
+                if (isMaster()) {
+                    if (lsBlocks.size() == 0) {
+                        Block block = createBlock(master, 0);
+                        addBlock(block);
+                        sendAddBlockMessageToOthers(block, -1, null, true);
+                        for (int i = 1; i < blocksLimit; i++) {
+                            Address target = nextTarget();
+                            block = createBlock(target, i);
+                            addBlock(block);
+                            sendAddBlockMessageToOthers(block, -1, null, true);
+                        }
+                    }
                 }
             }
         }
