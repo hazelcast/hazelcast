@@ -443,6 +443,18 @@ public class RedoTestService extends TestUtil {
                     return "t.addMessageListener";
                 }
             });
+//            TODO
+//            addRunnable(es, lsFutureTasks, new Callable() {
+//                public Object call() throws Exception {
+//                    topic.publish(1);
+//                    return Boolean.TRUE;
+//                }
+//
+//                @Override
+//                public String toString() {
+//                    return "t.publish";
+//                }
+//            });
             return lsFutureTasks;
         }
     }

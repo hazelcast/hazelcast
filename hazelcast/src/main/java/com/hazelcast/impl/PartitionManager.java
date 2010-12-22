@@ -647,7 +647,6 @@ public class PartitionManager implements Runnable {
         final MemberImpl memberOwner = concurrentMapManager.getMember(block.getOwner());
         final MemberImpl memberMigration = concurrentMapManager.getMember(block.getMigrationAddress());
         final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, block.getBlockId(), memberOwner, memberMigration);
-        System.out.println(thisAddress + " .........> " + migrationEvent);
         partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
     }
 }
