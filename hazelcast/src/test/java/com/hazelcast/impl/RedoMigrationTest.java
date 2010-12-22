@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class RedoMigrationTest extends RedoTestBase {
+public class RedoMigrationTest extends RedoTestService {
 
     @BeforeClass
     public static void init() throws Exception {
@@ -61,7 +61,7 @@ public class RedoMigrationTest extends RedoTestBase {
         assertEquals(Constants.Objects.OBJECT_REDO, op.getResult());
     }
 
-    @Test
+    @Test(timeout = 100000)
     public void testShutdownSecondNodeWhileMigrating() throws Exception {
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -71,11 +71,11 @@ public class RedoMigrationTest extends RedoTestBase {
         }
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        migratePartition(28, h1, h2);
+        TestUtil.migratePartition(28, h1, h2);
         assertEquals(getPartitionById(h1.getPartitionService(), 28).getOwner(), h2.getCluster().getLocalMember());
         assertEquals(getPartitionById(h2.getPartitionService(), 28).getOwner(), h2.getCluster().getLocalMember());
         assertEquals(getPartitionById(h3.getPartitionService(), 28).getOwner(), h2.getCluster().getLocalMember());
-        initiateMigration(28, 20, h1, h2, h1);
+        TestUtil.initiateMigration(28, 20, h1, h2, h1);
         final ConcurrentMapManager chm2 = getConcurrentMapManager(h2);
         chm2.enqueueAndWait(new Processable() {
             public void process() {
@@ -85,12 +85,14 @@ public class RedoMigrationTest extends RedoTestBase {
         final CountDownLatch migrationLatch = new CountDownLatch(2);
         MigrationListener migrationListener = new MigrationListener() {
             public void migrationCompleted(MigrationEvent migrationEvent) {
+                System.out.println("event " + migrationEvent);
                 if (migrationEvent.getPartitionId() == 28 && migrationEvent.getNewOwner().equals(h1.getCluster().getLocalMember())) {
                     migrationLatch.countDown();
                 }
             }
 
             public void migrationStarted(MigrationEvent migrationEvent) {
+                System.out.println("ev " + migrationEvent);
             }
         };
         h3.getPartitionService().addMigrationListener(migrationListener);
@@ -111,7 +113,7 @@ public class RedoMigrationTest extends RedoTestBase {
         }
     }
 
-    @Test
+    @Test(timeout = 100000)
     public void testShutdownOldestMemberWhileMigrating() throws Exception {
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -136,7 +138,7 @@ public class RedoMigrationTest extends RedoTestBase {
         };
         h3.getPartitionService().addMigrationListener(migrationListener);
         h2.getPartitionService().addMigrationListener(migrationListener);
-        initiateMigration(28, 20, h1, h1, h2);
+        TestUtil.initiateMigration(28, 20, h1, h1, h2);
         final ConcurrentMapManager chm1 = getConcurrentMapManager(h1);
         chm1.enqueueAndWait(new Processable() {
             public void process() {
@@ -186,7 +188,7 @@ public class RedoMigrationTest extends RedoTestBase {
         BeforeAfterBehavior behavior = new BeforeAfterBehavior() {
             @Override
             void before() throws Exception {
-                migrateKey(1, h1, h2);
+                TestUtil.migrateKey(1, h1, h2);
                 node2.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
                         Block block = node2.concurrentMapManager.getOrCreateBlock(partitionId);
@@ -247,7 +249,7 @@ public class RedoMigrationTest extends RedoTestBase {
         BeforeAfterBehavior behavior = new BeforeAfterBehavior() {
             @Override
             void before() throws Exception {
-                migrateKey(1, h1, h2);
+                TestUtil.migrateKey(1, h1, h2);
                 node2.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
                         Block block = node2.concurrentMapManager.getOrCreateBlock(partitionId);
@@ -279,7 +281,7 @@ public class RedoMigrationTest extends RedoTestBase {
         new BeforeAfterTester(behavior, callBuilder).run();
     }
 
-    @Test
+    @Test(timeout = 100000)
     public void testShutdownMigrationTargetNodeWhileMigrating() throws Exception {
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -304,7 +306,7 @@ public class RedoMigrationTest extends RedoTestBase {
         };
         h1.getPartitionService().addMigrationListener(migrationListener);
         h2.getPartitionService().addMigrationListener(migrationListener);
-        initiateMigration(28, 20, h1, h1, h3);
+        TestUtil.initiateMigration(28, 20, h1, h1, h3);
         final ConcurrentMapManager chm1 = getConcurrentMapManager(h1);
         chm1.enqueueAndWait(new Processable() {
             public void process() {

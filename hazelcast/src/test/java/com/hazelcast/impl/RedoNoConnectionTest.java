@@ -29,7 +29,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class RedoNoConnectionTest extends RedoTestBase {
+public class RedoNoConnectionTest extends RedoTestService {
 
     @BeforeClass
     public static void init() throws Exception {
@@ -45,6 +45,7 @@ public class RedoNoConnectionTest extends RedoTestBase {
     @Test(timeout = 100000)
     public void testMultiCallToNotConnectedMember() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         BeforeAfterTester t = new BeforeAfterTester(
@@ -54,11 +55,24 @@ public class RedoNoConnectionTest extends RedoTestBase {
     }
 
     @Test(timeout = 100000)
-    public void testKeyBasedCallToNotConnectedMember() throws Exception {
+    public void testMultiCallToNotConnectedMember2() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        migrateKey(1, h1, h2);
+        BeforeAfterTester t = new BeforeAfterTester(
+                new NoConnectionBehavior(h2, h1),
+                new MultiCallBuilder(h2));
+        t.run();
+    }
+
+    @Test(timeout = 100000)
+    public void testKeyBasedCallToNotConnectedMember() throws Exception {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        TestUtil.migrateKey(1, h1, h2);
         BeforeAfterTester t = new BeforeAfterTester(
                 new NoConnectionBehavior(h1, h2),
                 new KeyCallBuilder(h1));
@@ -68,6 +82,7 @@ public class RedoNoConnectionTest extends RedoTestBase {
     @Test(timeout = 100000)
     public void testQueueCallToNotConnectedMember() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         BeforeAfterTester t = new BeforeAfterTester(
@@ -77,8 +92,46 @@ public class RedoNoConnectionTest extends RedoTestBase {
     }
 
     @Test(timeout = 100000)
+    public void testMultiCallToDisconnectingMember() throws Exception {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        BeforeAfterTester t = new BeforeAfterTester(
+                new DisconnectionBehavior(h1, h2),
+                new MultiCallBuilder(h1));
+        t.run();
+    }
+
+    @Test(timeout = 100000)
+    public void testMultiCallToDisconnectingMember2() throws Exception {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        BeforeAfterTester t = new BeforeAfterTester(
+                new DisconnectionBehavior(h2, h1),
+                new MultiCallBuilder(h2));
+        t.run();
+    }
+
+    @Test(timeout = 100000)
+    public void testKeyBasedCallToDisconnectingMember() throws Exception {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        TestUtil.migrateKey(1, h1, h2);
+        BeforeAfterTester t = new BeforeAfterTester(
+                new DisconnectionBehavior(h1, h2),
+                new KeyCallBuilder(h1));
+        t.run();
+    }
+
+    @Test(timeout = 100000)
     public void testQueueCallToDisconnectingMember() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         BeforeAfterTester t = new BeforeAfterTester(

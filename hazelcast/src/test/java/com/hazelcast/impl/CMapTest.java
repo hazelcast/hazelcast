@@ -113,7 +113,7 @@ public class CMapTest extends TestUtil {
         assertTrue(record2.isValid(now));
         assertEquals(1, record1.valueCount());
         assertEquals(1, record2.valueCount());
-        assertTrue(migrateKey(key, h1, h2));
+        assertTrue(TestUtil.migrateKey(key, h1, h2));
         assertEquals(1, cmap1.mapRecords.size());
         assertEquals(1, cmap2.mapRecords.size());
         assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
@@ -249,35 +249,5 @@ public class CMapTest extends TestUtil {
         Thread.sleep(1500);
         assertEquals(0, cmap.size());
         assertFalse(cmap.contains(newContainsRequest(dKey, null)));
-    }
-
-    public static Request newPutRequest(Data key, Data value) {
-        return newPutRequest(key, value, -1);
-    }
-
-    public static Request newPutRequest(Data key, Data value, long ttl) {
-        return newRequest(ClusterOperation.CONCURRENT_MAP_PUT, key, value, ttl);
-    }
-
-    public static Request newRequest(ClusterOperation operation, Data key, Data value, long ttl) {
-        Request request = new Request();
-        request.setLocal(operation, null, key, value, -1, -1, ttl, null);
-        return request;
-    }
-
-    public static Request newRemoveRequest(Data key) {
-        return newRequest(ClusterOperation.CONCURRENT_MAP_REMOVE, key, null, -1);
-    }
-
-    public static Request newEvictRequest(Data key) {
-        return newRequest(ClusterOperation.CONCURRENT_MAP_EVICT, key, null, -1);
-    }
-
-    public static Request newGetRequest(Data key) {
-        return newRequest(ClusterOperation.CONCURRENT_MAP_GET, key, null, -1);
-    }
-
-    public static Request newContainsRequest(Data key, Data value) {
-        return newRequest(ClusterOperation.CONCURRENT_MAP_CONTAINS, key, value, -1);
     }
 }

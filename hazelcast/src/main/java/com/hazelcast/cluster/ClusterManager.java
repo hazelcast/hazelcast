@@ -37,6 +37,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private final long MAX_NO_HEARTBEAT_MILLIS;
 
+    private final long HEARTBEAT_INTERVAL_MILLIS;
+
     private final Set<ScheduledAction> setScheduledActions = new LinkedHashSet<ScheduledAction>(1000);
 
     private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
@@ -47,14 +49,21 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
 
+    private long lastHeartbeat = 0;
+
     public ClusterManager(final Node node) {
         super(node);
         WAIT_MILLIS_BEFORE_JOIN = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         MAX_NO_HEARTBEAT_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
+        HEARTBEAT_INTERVAL_MILLIS = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger() * 1000L;
         node.clusterService.registerPeriodicRunnable(new SplitBrainHandler(node));
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
-                heartBeater();
+                long now = System.currentTimeMillis();
+                if (now - lastHeartbeat >= HEARTBEAT_INTERVAL_MILLIS) {
+                    heartBeater();
+                    lastHeartbeat = now;
+                }
             }
         });
         node.clusterService.registerPeriodicRunnable(new Runnable() {
@@ -250,7 +259,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 }
             }
         } else {
-            // send heartbeat to isMaster
+            // send heartbeat to master
             if (getMasterAddress() != null) {
                 MemberImpl masterMember = getMember(getMasterAddress());
                 boolean removed = false;

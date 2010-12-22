@@ -23,7 +23,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.TestUtil;
-import com.hazelcast.impl.TestUtil.Value;
 
 import org.junit.After;
 import org.junit.BeforeClass;

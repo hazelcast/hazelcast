@@ -17,11 +17,9 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
+import com.hazelcast.core.*;
 import org.junit.Ignore;
+import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -30,7 +28,8 @@ import java.util.concurrent.*;
 import static org.junit.Assert.fail;
 
 @Ignore
-public class RedoTestBase extends TestUtil {
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+public class RedoTestService extends TestUtil {
 
     @Ignore
     abstract class BeforeAfterBehavior {
@@ -98,18 +97,17 @@ public class RedoTestBase extends TestUtil {
                 fail(e.getMessage());
             }
             List<FutureTask> lsFutureTasks = callBuilder.getCalls(es, esSingle);
-            long wait = 2;
+            long wait = 3;
             for (FutureTask futureTask : lsFutureTasks) {
                 try {
-                    if (wait > 0) {
-                        wait--;
-                    }
                     Object result = futureTask.get(wait, TimeUnit.SECONDS);
                     fail("Expected: TimeoutException, got " + result + ", callTask: " + futureTask);
                 } catch (TimeoutException e) {
                 } catch (Exception e) {
                     fail();
+                    return;
                 }
+                wait = 0; // remaining calls waited enough already.
             }
             behavior.after();
             for (FutureTask futureTask : lsFutureTasks) {
@@ -160,12 +158,32 @@ public class RedoTestBase extends TestUtil {
             });
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
+                    return q.offer(1);
+                }
+
+                @Override
+                public String toString() {
+                    return "q.offer";
+                }
+            });
+            addRunnable(es, lsFutureTasks, new Callable() {
+                public Object call() throws Exception {
                     return q.poll();
                 }
 
                 @Override
                 public String toString() {
                     return "q.poll";
+                }
+            });
+            addRunnable(es, lsFutureTasks, new Callable() {
+                public Object call() throws Exception {
+                    return q.poll(20, TimeUnit.SECONDS);
+                }
+
+                @Override
+                public String toString() {
+                    return "q.poll with timeout";
                 }
             });
             addRunnable(es, lsFutureTasks, new Callable() {
@@ -220,30 +238,80 @@ public class RedoTestBase extends TestUtil {
                 public Object call() throws Exception {
                     return imap.get(1);
                 }
+
+                @Override
+                public String toString() {
+                    return "m.get";
+                }
             });
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
                     return imap.put(1, "value1");
+                }
+
+                @Override
+                public String toString() {
+                    return "m.put";
                 }
             });
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
                     return imap.evict(1);
                 }
+
+                @Override
+                public String toString() {
+                    return "m.evict";
+                }
             });
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
                     return imap.remove(1);
+                }
+
+                @Override
+                public String toString() {
+                    return "m.remove";
                 }
             });
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
                     return imap.getMapEntry(1);
                 }
+
+                @Override
+                public String toString() {
+                    return "m.getMapEntry";
+                }
             });
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
                     return imap.containsKey(1);
+                }
+
+                @Override
+                public String toString() {
+                    return "m.containsKey";
+                }
+            });
+            addRunnable(es, lsFutureTasks, new Callable() {
+                public Object call() throws Exception {
+                    return imap.getAsync(1).get();
+                }
+
+                @Override
+                public String toString() {
+                    return "m.getAsync";
+                }
+            });
+            addRunnable(es, lsFutureTasks, new Callable() {
+                public Object call() throws Exception {
+                    return imap.putIfAbsent(1, "valuePutIfAbsent");
+                }
+
+                @Override
+                public String toString() {
+                    return "m.putIfAbsent";
                 }
             });
             addRunnable(esSingle, lsFutureTasks, new Callable() {
@@ -251,11 +319,21 @@ public class RedoTestBase extends TestUtil {
                     imap.lock(1);
                     return Boolean.TRUE;
                 }
+
+                @Override
+                public String toString() {
+                    return "m.lock";
+                }
             });
             addRunnable(esSingle, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
                     imap.unlock(1);
                     return Boolean.TRUE;
+                }
+
+                @Override
+                public String toString() {
+                    return "m.unlock";
                 }
             });
             return lsFutureTasks;
@@ -268,11 +346,13 @@ public class RedoTestBase extends TestUtil {
         final HazelcastInstance callerInstance;
         final IMap imap;
         final IQueue q;
+        final ITopic topic;
 
         protected MultiCallBuilder(HazelcastInstance callerInstance) {
             this.callerInstance = callerInstance;
             this.imap = callerInstance.getMap("default");
             this.q = callerInstance.getQueue("default");
+            this.topic = callerInstance.getTopic("default");
         }
 
         @Override
@@ -282,26 +362,85 @@ public class RedoTestBase extends TestUtil {
                 public Object call() throws Exception {
                     return imap.size();
                 }
+
+                @Override
+                public String toString() {
+                    return "m.size";
+                }
             });
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
                     return q.size();
+                }
+
+                @Override
+                public String toString() {
+                    return "q.size";
                 }
             });
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
                     return imap.values();
                 }
+
+                @Override
+                public String toString() {
+                    return "m.values";
+                }
             });
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
                     return imap.containsValue(1);
+                }
+
+                @Override
+                public String toString() {
+                    return "m.containsValue";
                 }
             });
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
                     imap.addEntryListener(new EntryAdapter(), true);
                     return Boolean.TRUE;
+                }
+
+                @Override
+                public String toString() {
+                    return "m.addEntryListener";
+                }
+            });
+            addRunnable(es, lsFutureTasks, new Callable() {
+                public Object call() throws Exception {
+                    return imap.keySet();
+                }
+
+                @Override
+                public String toString() {
+                    return "m.keySet";
+                }
+            });
+            addRunnable(es, lsFutureTasks, new Callable() {
+                public Object call() throws Exception {
+                    return imap.entrySet();
+                }
+
+                @Override
+                public String toString() {
+                    return "m.entrySet";
+                }
+            });
+            addRunnable(es, lsFutureTasks, new Callable() {
+                public Object call() throws Exception {
+                    topic.addMessageListener(new MessageListener() {
+                        public void onMessage(Object message) {
+                        }
+                    });
+                    return Boolean.TRUE;
+                }
+
+                @Override
+                public String toString() {
+                    return "t.addMessageListener";
                 }
             });
             return lsFutureTasks;

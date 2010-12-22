@@ -602,7 +602,7 @@ public class PartitionManager implements Runnable {
             blockReal.setMigrationAddress(block.getMigrationAddress());
             if (thisAddress.equals(blockReal.getOwner()) && blockReal.isMigrating()) {
                 startMigration(new Block(block));
-            } else if (!same && blockReal.getOwner() != null) {
+            } else if (!same && block.getOwner() != null) {
                 boolean started = blockReal.isMigrating();
                 if (started) {
                     fireMigrationEvent(started, new Block(block));
@@ -610,28 +610,6 @@ public class PartitionManager implements Runnable {
                     fireMigrationEvent(started, new Block(block.getBlockId(), null, block.getOwner()));
                 }
             }
-//            if (!sameBlocks(block, blockReal)) {
-//                if (blockReal.getOwner() == null) {
-//                    blockReal.setOwner(block.getOwner());
-//                }
-//
-//                if (thisAddress.equals(block.getOwner()) && block.isMigrating()) {
-//                    startMigration(new Block(block));
-//                } else {
-//                    blockReal.setOwner(block.getOwner());
-//                    blockReal.setMigrationAddress(block.getMigrationAddress());
-//                    if (block.isMigrating()) {
-//                        fireMigrationEvent(true, new Block(block));
-//                    }
-//                }
-//            } else {
-//                if (thisAddress.equals(block.getOwner()) && block.isMigrating() && !blockReal.isMigrationStarted()) {
-//                    startMigration(new Block(block));
-//                }
-//            }
-//            if (!sameBlocks(block, blockReal)) {
-//                logger.log(Level.SEVERE, blockReal + " Still blocks don't match " + block);
-//            }
         }
     }
 
@@ -669,6 +647,7 @@ public class PartitionManager implements Runnable {
         final MemberImpl memberOwner = concurrentMapManager.getMember(block.getOwner());
         final MemberImpl memberMigration = concurrentMapManager.getMember(block.getMigrationAddress());
         final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, block.getBlockId(), memberOwner, memberMigration);
+        System.out.println(thisAddress + " .........> " + migrationEvent);
         partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
     }
 }

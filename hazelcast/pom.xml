@@ -67,6 +67,8 @@
                         <exclude>**/QueryTest.java</exclude>
                         <exclude>**/MapStoreTest.java</exclude>
                         <exclude>**/PerformanceTest.java</exclude>
+                        <exclude>**/Redo*</exclude>
+                        <exclude>**/CMapTest.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>

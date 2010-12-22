@@ -33,7 +33,7 @@ import java.util.List;
 import static junit.framework.Assert.assertEquals;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class RedoNoneMemberTest extends RedoTestBase {
+public class RedoNoneMemberTest extends RedoTestService {
 
     @BeforeClass
     public static void init() throws Exception {
@@ -50,7 +50,7 @@ public class RedoNoneMemberTest extends RedoTestBase {
     public void testMultiCallToNoneMember() throws Exception {
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        RedoTestBase.BeforeAfterTester t = new BeforeAfterTester(new NoneMemberBehavior(h1), new RedoTestBase.MultiCallBuilder(h1));
+        RedoTestService.BeforeAfterTester t = new BeforeAfterTester(new NoneMemberBehavior(h1), new MultiCallBuilder(h1));
         t.run();
     }
 
@@ -64,7 +64,7 @@ public class RedoNoneMemberTest extends RedoTestBase {
         BeforeAfterBehavior behavior = new BeforeAfterBehavior() {
             @Override
             void before() throws Exception {
-                migrateKey(1, h1, h2);
+                TestUtil.migrateKey(1, h1, h2);
                 node1.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
                         node1.clusterManager.removeMember((MemberImpl) h2.getCluster().getLocalMember());
@@ -97,7 +97,7 @@ public class RedoNoneMemberTest extends RedoTestBase {
         BeforeAfterBehavior behavior = new BeforeAfterBehavior() {
             @Override
             void before() throws Exception {
-                migrateKey(1, h1, h2);
+                TestUtil.migrateKey(1, h1, h2);
                 node2.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
                         node2.clusterManager.removeMember((MemberImpl) h1.getCluster().getLocalMember());

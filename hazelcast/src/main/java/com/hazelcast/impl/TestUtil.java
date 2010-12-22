@@ -41,66 +41,6 @@ import static org.mockito.Mockito.mock;
 @Ignore
 public class TestUtil {
 
-    public static Node getNode(HazelcastInstance h) {
-        FactoryImpl.HazelcastInstanceProxy hiProxy = (FactoryImpl.HazelcastInstanceProxy) h;
-        return hiProxy.getFactory().node;
-    }
-
-    public static ConcurrentMapManager getConcurrentMapManager(HazelcastInstance h) {
-        return getNode(h).concurrentMapManager;
-    }
-
-    public static CMap mockCMap(String name) {
-        FactoryImpl mockFactory = mock(FactoryImpl.class);
-        Node node = new Node(mockFactory, new Config());
-        node.serviceThread = Thread.currentThread();
-        return new CMap(node.concurrentMapManager, "c:" + name);
-    }
-
-    public static CMap getCMap(HazelcastInstance h, String name) {
-        ConcurrentMapManager concurrentMapManager = getConcurrentMapManager(h);
-        String fullName = Prefix.MAP + name;
-        return concurrentMapManager.getMap(fullName);
-    }
-
-    public static boolean migrateKey(Object key, HazelcastInstance oldest, HazelcastInstance to) throws Exception {
-        final MemberImpl currentOwnerMember = (MemberImpl) oldest.getPartitionService().getPartition(key).getOwner();
-        final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
-        if (currentOwnerMember.equals(toMember)) {
-            return false;
-        }
-        final ConcurrentMapManager concurrentMapManagerOldest = getConcurrentMapManager(oldest);
-        final Address addressCurrentOwner = currentOwnerMember.getAddress();
-        final Address addressNewOwner = toMember.getAddress();
-        final int blockId = oldest.getPartitionService().getPartition(key).getPartitionId();
-        final CountDownLatch migrationLatch = new CountDownLatch(2);
-        MigrationListener migrationListener = new MigrationListener() {
-            public void migrationCompleted(MigrationEvent migrationEvent) {
-                if (migrationEvent.getPartitionId() == blockId && migrationEvent.getNewOwner().equals(toMember)) {
-                    migrationLatch.countDown();
-                }
-            }
-
-            public void migrationStarted(MigrationEvent migrationEvent) {
-            }
-        };
-        oldest.getPartitionService().addMigrationListener(migrationListener);
-        to.getPartitionService().addMigrationListener(migrationListener);
-        concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
-            public void process() {
-                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
-                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
-                concurrentMapManagerOldest.partitionManager.initiateMigration();
-            }
-        });
-        if (!migrationLatch.await(20, TimeUnit.SECONDS)) {
-            fail("Migration should get completed in 20 seconds!!");
-        }
-        assertEquals(toMember, oldest.getPartitionService().getPartition(key).getOwner());
-        assertEquals(toMember, to.getPartitionService().getPartition(key).getOwner());
-        return true;
-    }
-
     public static boolean migratePartition(int partitionId, HazelcastInstance oldest, HazelcastInstance to) throws Exception {
         final MemberImpl currentOwnerMember = (MemberImpl) getPartitionById(oldest.getPartitionService(), partitionId).getOwner();
         final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
@@ -179,6 +119,66 @@ public class TestUtil {
         return true;
     }
 
+    public static boolean migrateKey(Object key, HazelcastInstance oldest, HazelcastInstance to) throws Exception {
+        final MemberImpl currentOwnerMember = (MemberImpl) oldest.getPartitionService().getPartition(key).getOwner();
+        final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
+        if (currentOwnerMember.equals(toMember)) {
+            return false;
+        }
+        final ConcurrentMapManager concurrentMapManagerOldest = getConcurrentMapManager(oldest);
+        final Address addressCurrentOwner = currentOwnerMember.getAddress();
+        final Address addressNewOwner = toMember.getAddress();
+        final int blockId = oldest.getPartitionService().getPartition(key).getPartitionId();
+        final CountDownLatch migrationLatch = new CountDownLatch(2);
+        MigrationListener migrationListener = new MigrationListener() {
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                if (migrationEvent.getPartitionId() == blockId && migrationEvent.getNewOwner().equals(toMember)) {
+                    migrationLatch.countDown();
+                }
+            }
+
+            public void migrationStarted(MigrationEvent migrationEvent) {
+            }
+        };
+        oldest.getPartitionService().addMigrationListener(migrationListener);
+        to.getPartitionService().addMigrationListener(migrationListener);
+        concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
+            public void process() {
+                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
+                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
+                concurrentMapManagerOldest.partitionManager.initiateMigration();
+            }
+        });
+        if (!migrationLatch.await(20, TimeUnit.SECONDS)) {
+            fail("Migration should get completed in 20 seconds!!");
+        }
+        assertEquals(toMember, oldest.getPartitionService().getPartition(key).getOwner());
+        assertEquals(toMember, to.getPartitionService().getPartition(key).getOwner());
+        return true;
+    }
+
+    public static Node getNode(HazelcastInstance h) {
+        FactoryImpl.HazelcastInstanceProxy hiProxy = (FactoryImpl.HazelcastInstanceProxy) h;
+        return hiProxy.getFactory().node;
+    }
+
+    public static ConcurrentMapManager getConcurrentMapManager(HazelcastInstance h) {
+        return getNode(h).concurrentMapManager;
+    }
+
+    public static CMap mockCMap(String name) {
+        FactoryImpl mockFactory = mock(FactoryImpl.class);
+        Node node = new Node(mockFactory, new Config());
+        node.serviceThread = Thread.currentThread();
+        return new CMap(node.concurrentMapManager, "c:" + name);
+    }
+
+    public static CMap getCMap(HazelcastInstance h, String name) {
+        ConcurrentMapManager concurrentMapManager = getConcurrentMapManager(h);
+        String fullName = Prefix.MAP + name;
+        return concurrentMapManager.getMap(fullName);
+    }
+
     public static Partition getPartitionById(PartitionService partitionService, int partitionId) {
         for (Partition partition : partitionService.getPartitions()) {
             if (partition.getPartitionId() == partitionId) {
@@ -209,6 +209,36 @@ public class TestUtil {
         return newRecord(recordId, null, null);
     }
 
+    public static Request newPutRequest(Data key, Data value) {
+        return newPutRequest(key, value, -1);
+    }
+
+    public static Request newPutRequest(Data key, Data value, long ttl) {
+        return newRequest(ClusterOperation.CONCURRENT_MAP_PUT, key, value, ttl);
+    }
+
+    public static Request newRequest(ClusterOperation operation, Data key, Data value, long ttl) {
+        Request request = new Request();
+        request.setLocal(operation, null, key, value, -1, -1, ttl, null);
+        return request;
+    }
+
+    public static Request newRemoveRequest(Data key) {
+        return newRequest(ClusterOperation.CONCURRENT_MAP_REMOVE, key, null, -1);
+    }
+
+    public static Request newEvictRequest(Data key) {
+        return newRequest(ClusterOperation.CONCURRENT_MAP_EVICT, key, null, -1);
+    }
+
+    public static Request newGetRequest(Data key) {
+        return newRequest(ClusterOperation.CONCURRENT_MAP_GET, key, null, -1);
+    }
+
+    public static Request newContainsRequest(Data key, Data value) {
+        return newRequest(ClusterOperation.CONCURRENT_MAP_CONTAINS, key, value, -1);
+    }
+
     @Ignore
     public static class ValueType implements Serializable {
         String typeName;
@@ -231,6 +261,9 @@ public class TestUtil {
 
         public AbstractValue(String name) {
             this.name = name;
+        }
+
+        protected AbstractValue() {
         }
     }
 

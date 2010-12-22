@@ -1378,8 +1378,8 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         boolean onResponse(Object response) {
-            //If Caller Thread is client, then the response is in form of Data
-            //We need to deserialize it here
+            // If Caller Thread is client, then the response is in
+            // the form of Data so We need to deserialize it here
             Pairs pairs = null;
             if (response instanceof Data) {
                 pairs = (Pairs) toObject((Data) response);

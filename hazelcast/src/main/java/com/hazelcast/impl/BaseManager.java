@@ -1419,7 +1419,7 @@ public abstract class BaseManager {
         }
     }
 
-    public final void handleResponse(final Packet packetResponse) {
+    public final void handleResponse(Packet packetResponse) {
         final Call call = mapCalls.get(packetResponse.callId);
         if (call != null) {
             call.handleResponse(packetResponse);
@@ -1429,27 +1429,25 @@ public abstract class BaseManager {
         }
     }
 
-    protected boolean send(final Packet packet, final Address address) {
+    protected boolean send(Packet packet, Address address) {
         if (address == null) return false;
         final Connection conn = node.connectionManager.getConnection(address);
         return conn != null && conn.live() && writePacket(conn, packet);
     }
 
-    protected final boolean send(final Packet packet, final Connection conn) {
+    protected final boolean send(Packet packet, Connection conn) {
         return conn != null && conn.live() && writePacket(conn, packet);
     }
 
-    protected final boolean sendOrReleasePacket(final Packet packet, final Connection conn) {
-        if (conn != null && conn.live()) {
-            if (writePacket(conn, packet)) {
-                return true;
-            }
+    protected final boolean sendOrReleasePacket(Packet packet, Connection conn) {
+        if (conn != null && conn.live() && writePacket(conn, packet)) {
+            return true;
         }
         releasePacket(packet);
         return false;
     }
 
-    private boolean writePacket(final Connection conn, final Packet packet) {
+    private boolean writePacket(Connection conn, Packet packet) {
         final MemberImpl memberImpl = getMember(conn.getEndPoint());
         if (memberImpl != null) {
             memberImpl.didWrite();
