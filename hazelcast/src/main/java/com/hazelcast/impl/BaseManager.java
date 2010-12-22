@@ -49,6 +49,8 @@ public abstract class BaseManager {
 
     protected final Map<Address, MemberImpl> mapMembers;
 
+    protected final List<Packet> lsServiceThreadPacketCache;
+
     protected final Map<Long, Call> mapCalls;
 
     protected final AtomicLong localIdGen;
@@ -70,6 +72,7 @@ public abstract class BaseManager {
         mapCalls = node.baseVariables.mapCalls;
         thisAddress = node.baseVariables.thisAddress;
         thisMember = node.baseVariables.thisMember;
+        lsServiceThreadPacketCache = node.baseVariables.lsServiceThreadPacketCache;
         this.localIdGen = node.baseVariables.localIdGen;
         this.logger = node.getLogger(this.getClass().getName());
         this.redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
@@ -679,8 +682,6 @@ public abstract class BaseManager {
         }
     }
 
-    private List<Packet> lsPacketCache = new ArrayList<Packet>(1000);
-
     public abstract class TargetAwareOp extends ResponseQueueCall {
 
         protected Address target = null;
@@ -698,17 +699,16 @@ public abstract class BaseManager {
         }
 
         protected void doReleasePacket(Packet packet) {
-            if (lsPacketCache.size() < 1000) {
-                lsPacketCache.add(packet);
+            if (lsServiceThreadPacketCache.size() < 1000) {
+                lsServiceThreadPacketCache.add(packet);
             } else {
                 releasePacket(packet);
             }
-//            releasePacket(packet);
         }
 
         protected Packet doObtainPacket() {
-            if (lsPacketCache.size() > 0) {
-                Packet p = lsPacketCache.remove(0);
+            if (lsServiceThreadPacketCache.size() > 0) {
+                Packet p = lsServiceThreadPacketCache.remove(0);
                 p.reset();
                 return p;
             }

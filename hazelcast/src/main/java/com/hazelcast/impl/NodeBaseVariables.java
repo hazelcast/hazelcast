@@ -19,11 +19,9 @@ package com.hazelcast.impl;
 
 import com.hazelcast.impl.base.Call;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Packet;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -33,6 +31,8 @@ public class NodeBaseVariables {
     final Map<Address, MemberImpl> mapMembers = Collections.synchronizedMap(new HashMap<Address, MemberImpl>(100));
 
     final Map<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>();
+
+    final List<Packet> lsServiceThreadPacketCache = new ArrayList<Packet>(1000);
 
     final AtomicLong localIdGen = new AtomicLong(0);
 
