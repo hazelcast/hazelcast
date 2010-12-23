@@ -987,15 +987,15 @@ public class CMap {
     LocalMapStatsImpl getLocalMapStats() {
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
         long now = System.currentTimeMillis();
-        int ownedEntryCount = 0;
-        int backupEntryCount = 0;
-        int markedAsRemovedEntryCount = 0;
-        int ownedEntryMemoryCost = 0;
-        int backupEntryMemoryCost = 0;
-        int markedAsRemovedMemoryCost = 0;
-        int hits = 0;
-        int lockedEntryCount = 0;
-        int lockWaitCount = 0;
+        long ownedEntryCount = 0;
+        long backupEntryCount = 0;
+        long markedAsRemovedEntryCount = 0;
+        long ownedEntryMemoryCost = 0;
+        long backupEntryMemoryCost = 0;
+        long markedAsRemovedMemoryCost = 0;
+        long hits = 0;
+        long lockedEntryCount = 0;
+        long lockWaitCount = 0;
         ClusterImpl clusterImpl = node.getClusterImpl();
         final Collection<Record> records = mapRecords.values();
         final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
