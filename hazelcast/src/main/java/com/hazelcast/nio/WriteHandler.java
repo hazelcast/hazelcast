@@ -32,7 +32,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
-    private final ByteBuffer socketBB = ByteBuffer.allocate(SEND_SOCKET_BUFFER_SIZE);
+    private final ByteBuffer socketBB;
 
     private boolean ready = false;
 
@@ -42,6 +42,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     WriteHandler(Connection connection) {
         super(connection);
+        socketBB = ByteBuffer.allocate(node.connectionManager.SOCKET_SEND_BUFFER_SIZE);
     }
 
     public void setProtocol(String protocol) {

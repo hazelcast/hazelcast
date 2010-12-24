@@ -20,7 +20,7 @@ package com.hazelcast.util;
 import org.junit.After;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.*;
 
 public class SimpleBoundedQueueTest {
 
@@ -66,6 +66,28 @@ public class SimpleBoundedQueueTest {
         queue.offer("hello");
         assertEquals("hello", queue.poll());
         assertEquals("hello", queue.poll());
+    }
+
+    @Test
+    public void testCapacity() {
+        queue.clear();
+        assertEquals(0, queue.size());
+        for (int i = 0; i < 10; i++) {
+            assertTrue(queue.offer(String.valueOf(i)));
+            assertEquals(i + 1, queue.size());
+        }
+        for (int i = 0; i < 5; i++) {
+            assertFalse(queue.offer(String.valueOf(i)));
+            assertEquals(10, queue.size());
+        }
+        for (int i = 0; i < 5; i++) {
+            assertEquals(String.valueOf(i), queue.poll());
+            assertEquals(10 - i - 1, queue.size());
+        }
+        for (int i = 0; i < 5; i++) {
+            assertTrue(queue.offer(String.valueOf(i)));
+        }
+        assertEquals(10, queue.size());
     }
 
     @Test

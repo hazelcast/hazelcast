@@ -30,10 +30,6 @@ import static com.hazelcast.impl.Constants.IO.KILO_BYTE;
 
 abstract class AbstractSelectionHandler implements SelectionHandler {
 
-    public static final int RECEIVE_SOCKET_BUFFER_SIZE = 32 * KILO_BYTE;
-
-    public static final int SEND_SOCKET_BUFFER_SIZE = 32 * KILO_BYTE;
-
     protected final ILogger logger;
 
     protected final SocketChannel socketChannel;

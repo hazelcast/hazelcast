@@ -28,6 +28,8 @@ public class GroupProperties {
     public static final String PROP_MERGE_NEXT_RUN_DELAY_SECONDS = "hazelcast.merge.next.run.delay.seconds";
     public static final String PROP_REDO_WAIT_MILLIS = "hazelcast.redo.wait.millis";
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
+    public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
+    public static final String PROP_SOCKET_SEND_BUFFER_SIZE = "hazelcast.socket.send.buffer.size";
     public static final String PROP_SERIALIZER_GZIP_ENABLED = "hazelcast.serializer.gzip.enabled";
     public static final String PROP_SERIALIZER_SHARED = "hazelcast.serializer.shared";
     public static final String PROP_PACKET_VERSION = "hazelcast.packet.version";
@@ -69,6 +71,10 @@ public class GroupProperties {
     public final GroupProperty REDO_WAIT_MILLIS;
 
     public final GroupProperty SOCKET_BIND_ANY;
+
+    public final GroupProperty SOCKET_RECEIVE_BUFFER_SIZE; // number of kilobytes
+
+    public final GroupProperty SOCKET_SEND_BUFFER_SIZE;    // number of kilobytes
 
     public final GroupProperty SHUTDOWNHOOK_ENABLED;
 
@@ -114,6 +120,8 @@ public class GroupProperties {
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
         REDO_WAIT_MILLIS = new GroupProperty(config, PROP_REDO_WAIT_MILLIS, "500");
         SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
+        SOCKET_RECEIVE_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_RECEIVE_BUFFER_SIZE, "32");
+        SOCKET_SEND_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_SEND_BUFFER_SIZE, "32");
         SHUTDOWNHOOK_ENABLED = new GroupProperty(config, PROP_SHUTDOWNHOOK_ENABLED, "true");
         WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, PROP_WAIT_SECONDS_BEFORE_JOIN, "5");
         HEARTBEAT_INTERVAL_SECONDS = new GroupProperty(config, PROP_HEARTBEAT_INTERVAL_SECONDS, "1");

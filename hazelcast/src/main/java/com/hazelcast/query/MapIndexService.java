@@ -28,19 +28,23 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapIndexService {
-    private final ConcurrentMap<Long, Record> records = new ConcurrentHashMap<Long, Record>(10000);
+    private final ConcurrentMap<Long, Record> records = new ConcurrentHashMap<Long, Record>(10000, 0.75f, 1);
     private final Index indexValue;
-    private final Map<Expression, Index> mapIndexes = new ConcurrentHashMap<Expression, Index>(2);
+    private final Map<Expression, Index> mapIndexes = new ConcurrentHashMap<Expression, Index>(4, 0.74f, 1);
+    private final Object indexTypesLock = new Object();
     private volatile boolean hasIndexedAttributes = false;
     private volatile byte[] indexTypes = null;
-    private final Object indexTypesLock = new Object();
+    private volatile int size = 0;
 
     public MapIndexService(boolean valueIndexed) {
         indexValue = (valueIndexed) ? new Index(null, false, -1) : null;
     }
 
     public void remove(Record record) {
-        records.remove(record.getId());
+        Record existingRecord = records.remove(record.getId());
+        if (existingRecord != null) {
+            size--;
+        }
     }
 
     public void index(Record record) {
@@ -49,20 +53,22 @@ public class MapIndexService {
             final Record anotherRecord = records.putIfAbsent(recordId, record);
             if (anotherRecord != null) {
                 record = anotherRecord;
+            } else {
+                size++;
             }
         } else {
             remove(record);
         }
-        Long newValueIndex = -1L;
-        if (record.isActive() && record.getValue() != null) {
-            newValueIndex = (long) record.getValue().hashCode();
-        }
         if (indexValue != null) {
+            Long newValueIndex = -1L;
+            if (record.isActive() && record.getValue() != null) {
+                newValueIndex = (long) record.getValue().hashCode();
+            }
             indexValue.index(newValueIndex, record);
         }
         Long[] indexValues = record.getIndexes();
-        byte[] indexTypes = record.getIndexTypes();
         if (indexValues != null && hasIndexedAttributes) {
+            byte[] indexTypes = record.getIndexTypes();
             if (indexTypes == null || indexValues.length != indexTypes.length) {
                 throw new IllegalArgumentException("index and types don't match " + Arrays.toString(indexTypes));
             }
@@ -269,9 +275,10 @@ public class MapIndexService {
     public void clear() {
         mapIndexes.clear();
         records.clear();
+        size = 0;
     }
 
     public int size() {
-        return records.size(); //indexValue.getRecordValues().size();
+        return size;
     }
 }

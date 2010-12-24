@@ -64,6 +64,7 @@ public class Request {
     public Object attachment = null;
     public Object response = null;
     public ResponseType responseType = ResponseType.OBJECT;
+    public Record record = null;
 
     public boolean hasEnoughTimeToSchedule() {
         return (timeout == -1) || (timeout > 100);
@@ -103,6 +104,7 @@ public class Request {
         this.indexes = null;
         this.indexTypes = null;
         this.responseType = ResponseType.OBJECT;
+        this.record = null;
     }
 
     public void setIndexes(Long[] newIndexes, byte[] indexTypes) {
@@ -251,6 +253,7 @@ public class Request {
             this.version = DEFAULT_VERSION;
             this.indexes = null;
             this.indexTypes = null;
+            this.record = null;
         }
     }
 

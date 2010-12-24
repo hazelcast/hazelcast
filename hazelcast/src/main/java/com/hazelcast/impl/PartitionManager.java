@@ -50,9 +50,9 @@ public class PartitionManager implements Runnable {
     final long timeToInitiateMigration;
 
     long nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
-    boolean dirty = false;
     long migrationStartTime = 0;
     int MIGRATION_COMPLETE_WAIT_SECONDS = 0;
+    int blocksHash = Integer.MIN_VALUE;
 
     public PartitionManager(ConcurrentMapManager concurrentMapManager) {
         this.logger = concurrentMapManager.getNode().getLogger(PartitionManager.class.getName());
@@ -193,7 +193,7 @@ public class PartitionManager implements Runnable {
         for (int i = 0; i < PARTITION_COUNT; i++) {
             Block block = blocks[i];
             if (block == null) {
-                block = concurrentMapManager.getOrCreateBlock(i);
+                block = getOrCreateBlock(i);
             }
             if (block.getOwner() == null && !concurrentMapManager.isSuperClient()) {
                 block.setOwner(thisAddress);
@@ -228,9 +228,9 @@ public class PartitionManager implements Runnable {
     }
 
     public boolean isMigrating(Request req) {
-        if (req.key == null && req.blockId != -1 && concurrentMapManager.hashBlocks() != req.blockId) {
+        if (req.key == null && req.blockId != -1 && hashBlocks() != req.blockId) {
             logger.log(Level.FINEST, thisAddress + " blockHashes aren't the same:"
-                    + concurrentMapManager.hashBlocks() + ", request.blockId:"
+                    + hashBlocks() + ", request.blockId:"
                     + req.blockId + " caller: " + req.caller);
             return true;
         }
@@ -247,7 +247,7 @@ public class PartitionManager implements Runnable {
         for (int i = 0; i < PARTITION_COUNT; i++) {
             Block block = blocks[i];
             if (block == null) {
-                block = concurrentMapManager.getOrCreateBlock(i);
+                block = getOrCreateBlock(i);
             }
             if (block.isMigrating()) {
                 hasMigrating = true;
@@ -265,6 +265,7 @@ public class PartitionManager implements Runnable {
     }
 
     public void syncForAdd() {
+        invalidateBlocksHash();
         if (concurrentMapManager.isMaster()) {
             if (concurrentMapManager.isSuperClient()) {
                 MemberImpl nonSuperMember = null;
@@ -277,7 +278,7 @@ public class PartitionManager implements Runnable {
                     for (int i = 0; i < PARTITION_COUNT; i++) {
                         Block block = blocks[i];
                         if (block == null) {
-                            block = concurrentMapManager.getOrCreateBlock(i);
+                            block = getOrCreateBlock(i);
                         }
                         if (block.getOwner() == null) {
                             block.setOwner(nonSuperMember.getAddress());
@@ -289,7 +290,7 @@ public class PartitionManager implements Runnable {
             for (int i = 0; i < PARTITION_COUNT; i++) {
                 Block block = blocks[i];
                 if (block == null) {
-                    block = concurrentMapManager.getOrCreateBlock(i);
+                    block = getOrCreateBlock(i);
                 }
             }
             if (node.groupProperties.INITIAL_WAIT_SECONDS.getInteger() == 0) {
@@ -336,7 +337,7 @@ public class PartitionManager implements Runnable {
         for (int i = 0; i < PARTITION_COUNT; i++) {
             Block block = blocks[i];
             if (block == null) {
-                block = concurrentMapManager.getOrCreateBlock(i);
+                block = getOrCreateBlock(i);
             }
             if (block.getOwner() == null && !concurrentMapManager.isSuperClient()) {
                 block.setOwner(thisAddress);
@@ -373,6 +374,7 @@ public class PartitionManager implements Runnable {
     }
 
     public void syncForDead(MemberImpl deadMember) {
+        invalidateBlocksHash();
         partitionServiceImpl.clearRealPartitions();
         Address deadAddress = deadMember.getAddress();
         if (deadAddress == null || deadAddress.equals(thisAddress)) {
@@ -583,7 +585,6 @@ public class PartitionManager implements Runnable {
     }
 
     void completeMigration(int blockId) {
-        dirty = true;
         Block blockReal = blocks[blockId];
         if (blockReal != null && blockReal.isMigrating()) {
             fireMigrationEvent(false, new Block(blockReal));
@@ -596,7 +597,7 @@ public class PartitionManager implements Runnable {
 
     void handleBlocks(Blocks blockOwners) {
         for (Block block : blockOwners.lsBlocks) {
-            Block blockReal = concurrentMapManager.getOrCreateBlock(block.getBlockId());
+            Block blockReal = getOrCreateBlock(block.getBlockId());
             boolean same = sameBlocks(block, blockReal);
             blockReal.setOwner(block.getOwner());
             blockReal.setMigrationAddress(block.getMigrationAddress());
@@ -610,7 +611,40 @@ public class PartitionManager implements Runnable {
                     fireMigrationEvent(started, new Block(block.getBlockId(), null, block.getOwner()));
                 }
             }
+            if (!same) {
+                invalidateBlocksHash();
+            }
         }
+    }
+
+    Block getOrCreateBlock(int blockId) {
+        concurrentMapManager.checkServiceThread();
+        Block block = blocks[blockId];
+        if (block == null) {
+            block = new Block(blockId, null);
+            blocks[blockId] = block;
+            invalidateBlocksHash();
+            if (concurrentMapManager.isMaster() && !concurrentMapManager.isSuperClient()) {
+                block.setOwner(thisAddress);
+            }
+        }
+        return block;
+    }
+
+    final void invalidateBlocksHash() {
+        blocksHash = Integer.MIN_VALUE;
+    }
+
+    final int hashBlocks() {
+        if (blocksHash == Integer.MIN_VALUE) {
+            int hash = 1;
+            for (int i = 0; i < PARTITION_COUNT; i++) {
+                Block block = blocks[i];
+                hash = (hash * 31) + ((block == null) ? 0 : block.customHash());
+            }
+            blocksHash = hash;
+        }
+        return blocksHash;
     }
 
     void startMigration(Block block) {

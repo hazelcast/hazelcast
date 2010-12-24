@@ -23,15 +23,13 @@ import java.util.concurrent.TimeUnit;
 
 public class CpuUtilization {
 
-    public final static long TEN_SECOND_NANOS = TimeUnit.SECONDS.toNanos(10);
-
     public volatile ThreadStats serviceThread = null;
     public volatile ThreadStats inThread = null;
     public volatile ThreadStats outThread = null;
 
     @Override
     public String toString() {
-        return "CpuUtilization{" +
+        return "CpuUtilization {" +
                 "\n\tserviceThread =" + serviceThread +
                 "\n\tinThread      =" + inThread +
                 "\n\toutThread     =" + outThread +

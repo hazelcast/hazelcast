@@ -161,8 +161,8 @@ public abstract class SelectorBase implements Runnable {
         socket.setKeepAlive(true);
         //socket.setTcpNoDelay(true);
         socket.setSoLinger(true, 1);
-        socket.setReceiveBufferSize(AbstractSelectionHandler.RECEIVE_SOCKET_BUFFER_SIZE);
-        socket.setSendBufferSize(AbstractSelectionHandler.SEND_SOCKET_BUFFER_SIZE);
+        socket.setReceiveBufferSize(node.connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
+        socket.setSendBufferSize(node.connectionManager.SOCKET_SEND_BUFFER_SIZE);
         socketChannel.configureBlocking(false);
         return node.connectionManager.createConnection(socketChannel, acceptor);
     }

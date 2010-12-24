@@ -82,9 +82,9 @@ public class CMap {
 
     final Address thisAddress;
 
-    final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000);
+    final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
 
-    final ConcurrentMap<Long, RecordEntry> mapRecordEntries = new ConcurrentHashMap<Long, RecordEntry>(1000);
+    final ConcurrentMap<Long, RecordEntry> mapRecordEntries = new ConcurrentHashMap<Long, RecordEntry>(1000, 0.75f, 1);
 
     final String name;
 
@@ -248,13 +248,13 @@ public class CMap {
         return !name.startsWith("c:__hz_");
     }
 
-    public boolean isNotLocked(Request request) {
+    final boolean isNotLocked(Request request) {
         return (lockEntireMap == null
                 || !lockEntireMap.isLocked()
                 || lockEntireMap.isLockedBy(request.lockAddress, request.lockThreadId));
     }
 
-    public boolean exceedingMapMaxSize(Request request) {
+    final boolean exceedingMapMaxSize(Request request) {
         int perJVMMaxSize = maxSize / concurrentMapManager.getMembers().size();
         if (perJVMMaxSize <= mapIndexService.size()) {
             boolean addOp = (request.operation == ClusterOperation.CONCURRENT_MAP_PUT)
@@ -684,7 +684,7 @@ public class CMap {
         record.incrementCopyCount();
         if (!backup) {
             updateIndexes(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record, req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_ADDED, null, record, req.caller);
         }
         return true;
     }
@@ -927,10 +927,10 @@ public class CMap {
             ttlPerRecord = true;
         }
         if (oldValue == null) {
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record, req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_ADDED, null, record, req.caller);
         } else {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_UPDATED, oldValue, record, req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_UPDATED, oldValue, record, req.caller);
         }
         if (req.txnId != -1) {
             unlock(record);
@@ -1306,7 +1306,7 @@ public class CMap {
             removed = true;
         }
         if (removed) {
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record, req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_REMOVED, null, record, req.caller);
             record.incrementVersion();
         }
         req.version = record.getVersion();
@@ -1320,7 +1320,7 @@ public class CMap {
         long now = System.currentTimeMillis();
         if (record != null && record.isActive() && record.valueCount() > 0) {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_EVICTED, record.getKey(), null, record.getValue(), record.getListeners(), req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_EVICTED, null, record, req.caller);
             record.incrementVersion();
             markAsRemoved(record);
             record.setDirty(false);

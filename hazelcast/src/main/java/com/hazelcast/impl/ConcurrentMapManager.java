@@ -65,9 +65,9 @@ public class ConcurrentMapManager extends BaseManager {
         CLEANUP_DELAY_MILLIS = node.groupProperties.CLEANUP_DELAY_SECONDS.getLong() * 1000L;
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         blocks = new Block[PARTITION_COUNT];
-        maps = new ConcurrentHashMap<String, CMap>(10);
-        mapLocallyOwnedMaps = new ConcurrentHashMap<String, LocallyOwnedMap>(10);
-        mapCaches = new ConcurrentHashMap<String, MapNearCache>(10);
+        maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
+        mapLocallyOwnedMaps = new ConcurrentHashMap<String, LocallyOwnedMap>(10, 0.75f, 1);
+        mapCaches = new ConcurrentHashMap<String, MapNearCache>(10, 0.75f, 1);
         orderedExecutionTasks = new OrderedExecutionTask[PARTITION_COUNT];
         partitionManager = new PartitionManager(this);
         for (int i = 0; i < PARTITION_COUNT; i++) {
@@ -187,15 +187,6 @@ public class ConcurrentMapManager extends BaseManager {
         partitionManager.syncForAdd();
     }
 
-    public int hashBlocks() {
-        int hash = 1;
-        for (int i = 0; i < PARTITION_COUNT; i++) {
-            Block block = blocks[i];
-            hash = (hash * 31) + ((block == null) ? 0 : block.customHash());
-        }
-        return hash;
-    }
-
     void logState() {
         long now = System.currentTimeMillis();
         if (LOG_STATE && ((now - lastLogStateTime) > 15000)) {
@@ -272,7 +263,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public boolean isOwned(Record record) {
-        Block block = getOrCreateBlock(record.getBlockId());
+        Block block = partitionManager.getOrCreateBlock(record.getBlockId());
         return thisAddress.equals(block.getOwner());
     }
 
@@ -1144,7 +1135,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void process() {
-            request.blockId = hashBlocks();
+            request.blockId = partitionManager.hashBlocks();
             super.process();
         }
 
@@ -1154,15 +1145,14 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Record record, Address callerAddress) {
-        fireMapEvent(mapListeners, name, eventType, null, record, callerAddress);
-    }
-
-    void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Data oldValue, final Record record, Address callerAddress) {
+    final void fireMapEvent(Map<Address, Boolean> mapListeners, int eventType,
+                            Data oldValue, Record record, Address callerAddress) {
+        if (record.getListeners() == null && (mapListeners == null || mapListeners.size() == 0)) {
+            return;
+        }
         checkServiceThread();
-        fireMapEvent(mapListeners, name, eventType, record.getKey(), oldValue, record.getValue(), record.getListeners(), callerAddress);
+        fireMapEvent(mapListeners, record.getName(), eventType, record.getKey(),
+                oldValue, record.getValue(), record.getListeners(), callerAddress);
     }
 
     public class MContainsValue extends MultiCall<Boolean> {
@@ -1411,7 +1401,7 @@ public class ConcurrentMapManager extends BaseManager {
         Block block = blocks[blockId];
         if (block == null) {
             if (isMaster() && !isSuperClient()) {
-                block = getOrCreateBlock(blockId);
+                block = partitionManager.getOrCreateBlock(blockId);
                 block.setOwner(thisAddress);
             } else
                 return null;
@@ -1437,7 +1427,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     Block getOrCreateBlock(Data key) {
-        return getOrCreateBlock(getBlockId(key));
+        return partitionManager.getOrCreateBlock(getBlockId(key));
     }
 
     void evictAsync(final String name, final Data key) {
@@ -1452,19 +1442,6 @@ public class ConcurrentMapManager extends BaseManager {
         });
     }
 
-    Block getOrCreateBlock(int blockId) {
-        checkServiceThread();
-        Block block = blocks[blockId];
-        if (block == null) {
-            block = new Block(blockId, null);
-            blocks[blockId] = block;
-            if (isMaster() && !isSuperClient()) {
-                block.setOwner(thisAddress);
-            }
-        }
-        return block;
-    }
-
     CMap getMap(String name) {
         return maps.get(name);
     }
@@ -1474,10 +1451,7 @@ public class ConcurrentMapManager extends BaseManager {
         CMap map = maps.get(name);
         if (map == null) {
             map = new CMap(this, name);
-            CMap anotherMap = maps.putIfAbsent(name, map);
-            if (anotherMap != null) {
-                map = anotherMap;
-            }
+            maps.put(name, map);
         }
         return map;
     }
@@ -1640,8 +1614,8 @@ public class ConcurrentMapManager extends BaseManager {
 
     class EvictOperationHandler extends StoreAwareOperationHandler {
         public void handle(Request request) {
-            if (mapIsNotLocked(request)) {
-                CMap cmap = getOrCreateMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request)) {
                 Record record = cmap.getRecord(request.key);
                 if (record != null && record.isActive() && cmap.loader != null &&
                         cmap.writeDelayMillis > 0 && record.isValid() && record.isDirty()) {
@@ -1705,8 +1679,8 @@ public class ConcurrentMapManager extends BaseManager {
 
     class GetOperationHandler extends StoreAwareOperationHandler {
         public void handle(Request request) {
-            if (mapIsNotLocked(request)) {
-                CMap cmap = getOrCreateMap(request.name);
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request)) {
                 Record record = cmap.getRecord(request.key);
                 if (cmap.loader != null
                         && (record == null
@@ -1959,7 +1933,8 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public void handle(Request request) {
-            if (mapIsNotLocked(request) && !exceedingMapMaxSize(request)) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request) && !cmap.exceedingMapMaxSize(request)) {
                 if (shouldSchedule(request)) {
                     if (request.hasEnoughTimeToSchedule()) {
                         schedule(request);
@@ -2021,20 +1996,11 @@ public class ConcurrentMapManager extends BaseManager {
         abstract Runnable createRunnable(Request request);
     }
 
-    public boolean mapIsNotLocked(Request request) {
-        CMap cmap = getOrCreateMap(request.name);
-        return cmap.isNotLocked(request);
-    }
-
-    public boolean exceedingMapMaxSize(Request request) {
-        CMap cmap = getOrCreateMap(request.name);
-        return cmap.exceedingMapMaxSize(request);
-    }
-
     class SizeOperationHandler extends ExecutedOperationHandler {
         @Override
         public void handle(Request request) {
-            if (mapIsNotLocked(request) && !isMigrating(request)) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request) && !isMigrating(request)) {
                 super.handle(request);
             } else {
                 request.response = OBJECT_REDO;
@@ -2051,7 +2017,7 @@ public class ConcurrentMapManager extends BaseManager {
                     enqueueAndReturn(new Processable() {
                         public void process() {
                             int callerPartitionHash = request.blockId;
-                            int myPartitionHashNow = hashBlocks();
+                            int myPartitionHashNow = partitionManager.hashBlocks();
                             if (callerPartitionHash != myPartitionHashNow) {
                                 request.response = OBJECT_REDO;
                             }
@@ -2072,7 +2038,8 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void handle(Request request) {
-            if (mapIsNotLocked(request) && !isMigrating(request)) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request) && !isMigrating(request)) {
                 super.handle(request);
             } else {
                 request.response = OBJECT_REDO;
@@ -2113,7 +2080,7 @@ public class ConcurrentMapManager extends BaseManager {
                     enqueueAndReturn(new Processable() {
                         public void process() {
                             int callerPartitionHash = request.blockId;
-                            if (partitionManager.containsMigratingBlock() || callerPartitionHash != hashBlocks()) {
+                            if (partitionManager.containsMigratingBlock() || callerPartitionHash != partitionManager.hashBlocks()) {
                                 request.response = OBJECT_REDO;
                             }
                             boolean sent = returnResponse(request);

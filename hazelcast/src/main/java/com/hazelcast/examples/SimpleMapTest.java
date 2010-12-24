@@ -19,21 +19,24 @@ package com.hazelcast.examples;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalMapOperationStats;
+import com.hazelcast.partition.Partition;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class SimpleMapTest {
 
+    public static final int STATS_SECONDS = 10;
     public static int THREAD_COUNT = 40;
     public static int ENTRY_COUNT = 10 * 1000;
     public static int VALUE_SIZE = 1000;
-    public static final int STATS_SECONDS = 10;
     public static int GET_PERCENTAGE = 40;
     public static int PUT_PERCENTAGE = 40;
 
     public static void main(String[] args) {
+        boolean load = false;
         if (args != null && args.length > 0) {
             for (String arg : args) {
                 arg = arg.trim();
@@ -47,6 +50,8 @@ public class SimpleMapTest {
                     GET_PERCENTAGE = Integer.parseInt(arg.substring(1));
                 } else if (arg.startsWith("p")) {
                     PUT_PERCENTAGE = Integer.parseInt(arg.substring(1));
+                } else if (arg.startsWith("load")) {
+                    load = true;
                 }
             }
         } else {
@@ -62,10 +67,24 @@ public class SimpleMapTest {
         System.out.println("    Put Percentage: " + PUT_PERCENTAGE);
         System.out.println(" Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
         ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
+        final IMap<String, byte[]> map = Hazelcast.getMap("default");
+        if (load) {
+            final Member thisMember = Hazelcast.getCluster().getLocalMember();
+            for (int i = 0; i < ENTRY_COUNT; i++) {
+                final String key = String.valueOf(i);
+                Partition partition = Hazelcast.getPartitionService().getPartition(key);
+                if (thisMember.equals(partition.getOwner())) {
+                    es.execute(new Runnable() {
+                        public void run() {
+                            map.put(key, new byte[VALUE_SIZE]);
+                        }
+                    });
+                }
+            }
+        }
         for (int i = 0; i < THREAD_COUNT; i++) {
-            es.submit(new Runnable() {
+            es.execute(new Runnable() {
                 public void run() {
-                    IMap<String, byte[]> map = Hazelcast.getMap("default");
                     while (true) {
                         int key = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 100));
@@ -80,9 +99,8 @@ public class SimpleMapTest {
                 }
             });
         }
-        Executors.newSingleThreadExecutor().submit(new Runnable() {
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
             public void run() {
-                IMap<String, byte[]> map = Hazelcast.getMap("default");
                 while (true) {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);

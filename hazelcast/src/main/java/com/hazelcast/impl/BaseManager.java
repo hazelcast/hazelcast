@@ -49,7 +49,7 @@ public abstract class BaseManager {
 
     protected final Map<Address, MemberImpl> mapMembers;
 
-    protected final List<Packet> lsServiceThreadPacketCache;
+    protected final Queue<Packet> qServiceThreadPacketCache;
 
     protected final Map<Long, Call> mapCalls;
 
@@ -72,7 +72,7 @@ public abstract class BaseManager {
         mapCalls = node.baseVariables.mapCalls;
         thisAddress = node.baseVariables.thisAddress;
         thisMember = node.baseVariables.thisMember;
-        lsServiceThreadPacketCache = node.baseVariables.lsServiceThreadPacketCache;
+        qServiceThreadPacketCache = node.baseVariables.qServiceThreadPacketCache;
         this.localIdGen = node.baseVariables.localIdGen;
         this.logger = node.getLogger(this.getClass().getName());
         this.redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
@@ -699,20 +699,22 @@ public abstract class BaseManager {
         }
 
         protected void doReleasePacket(Packet packet) {
-            if (lsServiceThreadPacketCache.size() < 1000) {
-                lsServiceThreadPacketCache.add(packet);
+            if (qServiceThreadPacketCache.offer(packet)) {
+                packet.released = true;
             } else {
                 releasePacket(packet);
             }
         }
 
         protected Packet doObtainPacket() {
-            if (lsServiceThreadPacketCache.size() > 0) {
-                Packet p = lsServiceThreadPacketCache.remove(0);
+            Packet p = qServiceThreadPacketCache.poll();
+            if (p != null) {
                 p.reset();
-                return p;
+                p.released = false;
+            } else {
+                p = obtainPacket();
             }
-            return obtainPacket();
+            return p;
         }
 
         @Override
@@ -812,6 +814,28 @@ public abstract class BaseManager {
     }
 
     abstract class MultiCall<T> {
+        int redoCount = 0;
+
+        private void logRedo(SubCall subCall) {
+            if (++redoCount % 10 == 0) {
+                logger.log(Level.WARNING, buildRedoLog(subCall));
+            } else if (redoCount >= 1000) {
+                throw new RuntimeException(buildRedoLog(subCall));
+            }
+        }
+
+        private String buildRedoLog(SubCall subCall) {
+            StringBuilder s = new StringBuilder();
+            s.append("=========== REDO LOG =========== ");
+            s.append(MultiCall.this.getClass().getName());
+            s.append(" Redoing ");
+            s.append(subCall.request);
+            s.append("\n");
+            s.append(node.getClusterImpl());
+            s.append("\n============================== ");
+            return s.toString();
+        }
+
         abstract SubCall createNewTargetAwareOp(Address target);
 
         /**
@@ -848,6 +872,7 @@ public abstract class BaseManager {
                 localCall.doOp();
                 Object result = localCall.getResultAsObject();
                 if (result == OBJECT_REDO) {
+                    logRedo(localCall);
                     onRedo();
                     Thread.sleep(redoWaitMillis);
                     return call();
@@ -866,6 +891,7 @@ public abstract class BaseManager {
                     for (SubCall call : lsCalls) {
                         result = call.getResultAsObject();
                         if (result == OBJECT_REDO) {
+                            logRedo(call);
                             onRedo();
                             Thread.sleep(redoWaitMillis);
                             return call();
@@ -1274,7 +1300,7 @@ public abstract class BaseManager {
         }
     }
 
-    public void checkServiceThread() {
+    public final void checkServiceThread() {
         if (Thread.currentThread() != node.serviceThread) {
             String msg = "Only ServiceThread can access this method. " + Thread.currentThread();
             logger.log(Level.SEVERE, msg);

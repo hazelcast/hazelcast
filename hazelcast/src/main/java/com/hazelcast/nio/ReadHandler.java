@@ -25,7 +25,7 @@ import java.util.logging.Level;
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
-    final ByteBuffer inBuffer = ByteBuffer.allocate(RECEIVE_SOCKET_BUFFER_SIZE);
+    final ByteBuffer inBuffer;
 
     final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
@@ -33,6 +33,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     public ReadHandler(Connection connection) {
         super(connection);
+        inBuffer = ByteBuffer.allocate(node.connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
     }
 
     public final void handle() {

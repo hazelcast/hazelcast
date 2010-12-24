@@ -50,7 +50,7 @@ public class ThreadWatcher {
         long now = System.nanoTime();
         totalTime += (now - start);
         long totalRun = totalTime - totalWait;
-        int utilizationPercentage = (totalTime <= 0 || runCount <= 0) ? 0 : (int) ((totalRun * 100L) / totalTime);
+        int utilizationPercentage = (totalTime <= 0 || runCount <= 1) ? 0 : (int) ((totalRun * 100L) / totalTime);
         ThreadStats threadStats = new ThreadStats(utilizationPercentage, runCount, waitCount);
         start = now;
         totalTime = 0;

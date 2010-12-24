@@ -85,14 +85,12 @@ public class RedoMigrationTest extends RedoTestService {
         final CountDownLatch migrationLatch = new CountDownLatch(2);
         MigrationListener migrationListener = new MigrationListener() {
             public void migrationCompleted(MigrationEvent migrationEvent) {
-                System.out.println("event " + migrationEvent);
                 if (migrationEvent.getPartitionId() == 28 && migrationEvent.getNewOwner().equals(h1.getCluster().getLocalMember())) {
                     migrationLatch.countDown();
                 }
             }
 
             public void migrationStarted(MigrationEvent migrationEvent) {
-                System.out.println("ev " + migrationEvent);
             }
         };
         h3.getPartitionService().addMigrationListener(migrationListener);
@@ -191,7 +189,7 @@ public class RedoMigrationTest extends RedoTestService {
                 TestUtil.migrateKey(1, h1, h2);
                 node2.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
-                        Block block = node2.concurrentMapManager.getOrCreateBlock(partitionId);
+                        Block block = node2.concurrentMapManager.partitionManager.getOrCreateBlock(partitionId);
                         block.setMigrationAddress(address1);
                         assertEquals(address2, block.getOwner());
                     }
@@ -211,7 +209,7 @@ public class RedoMigrationTest extends RedoTestService {
                 }
                 node2.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
-                        Block block = node2.concurrentMapManager.getOrCreateBlock(partitionId);
+                        Block block = node2.concurrentMapManager.partitionManager.getOrCreateBlock(partitionId);
                         assertEquals(address2, block.getOwner());
                     }
                 }, 5);
@@ -252,7 +250,7 @@ public class RedoMigrationTest extends RedoTestService {
                 TestUtil.migrateKey(1, h1, h2);
                 node2.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
-                        Block block = node2.concurrentMapManager.getOrCreateBlock(partitionId);
+                        Block block = node2.concurrentMapManager.partitionManager.getOrCreateBlock(partitionId);
                         block.setMigrationAddress(address1);
                         assertEquals(address2, block.getOwner());
                     }
@@ -272,7 +270,7 @@ public class RedoMigrationTest extends RedoTestService {
                 }
                 node2.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
-                        Block block = node2.concurrentMapManager.getOrCreateBlock(partitionId);
+                        Block block = node2.concurrentMapManager.partitionManager.getOrCreateBlock(partitionId);
                         assertEquals(address2, block.getOwner());
                     }
                 }, 5);

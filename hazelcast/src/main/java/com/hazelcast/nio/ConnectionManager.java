@@ -30,9 +30,15 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import static com.hazelcast.impl.Constants.IO.KILO_BYTE;
+
 public class ConnectionManager {
 
     protected final ILogger logger;
+
+    final int SOCKET_RECEIVE_BUFFER_SIZE;
+
+    final int SOCKET_SEND_BUFFER_SIZE;
 
     private final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
 
@@ -54,7 +60,9 @@ public class ConnectionManager {
 
     public ConnectionManager(Node node) {
         this.node = node;
-        logger = node.getLogger(ConnectionManager.class.getName());
+        this.logger = node.getLogger(ConnectionManager.class.getName());
+        this.SOCKET_RECEIVE_BUFFER_SIZE = this.node.getGroupProperties().SOCKET_RECEIVE_BUFFER_SIZE.getInteger() * KILO_BYTE;
+        this.SOCKET_SEND_BUFFER_SIZE = this.node.getGroupProperties().SOCKET_SEND_BUFFER_SIZE.getInteger() * KILO_BYTE;
     }
 
     public void addConnectionListener(ConnectionListener listener) {
