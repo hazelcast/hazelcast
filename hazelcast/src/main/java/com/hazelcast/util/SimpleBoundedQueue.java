@@ -50,6 +50,17 @@ public final class SimpleBoundedQueue<E> extends AbstractQueue<E> {
         return true;
     }
 
+    public E pop() {
+        if (size == 0)
+            return null;
+        int last = add - 1;
+        E value = objects[last];
+        objects[last] = null;
+        size--;
+        add--;
+        return value;
+    }
+
     @Override
     public int size() {
         return size;
