@@ -817,10 +817,9 @@ public abstract class BaseManager {
         int redoCount = 0;
 
         private void logRedo(SubCall subCall) {
-            if (++redoCount % 10 == 0) {
+            redoCount++;
+            if (redoCount >= 20 && redoCount % 20 == 0) {
                 logger.log(Level.WARNING, buildRedoLog(subCall));
-            } else if (redoCount >= 1000) {
-                throw new RuntimeException(buildRedoLog(subCall));
             }
         }
 
@@ -1446,7 +1445,7 @@ public abstract class BaseManager {
     }
 
     public final void handleResponse(Packet packetResponse) {
-        final Call call = mapCalls.get(packetResponse.callId);
+        final Call call = getCall(packetResponse.callId);
         if (call != null) {
             call.handleResponse(packetResponse);
         } else {

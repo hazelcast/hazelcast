@@ -1564,8 +1564,7 @@ public class ClusterTest {
                 if (i % 10 == 0) {
                     set.remove(i);
                 }
-            }
-            finally {
+            } finally {
                 map.unlock("T1");
             }
             return i;
@@ -2299,8 +2298,7 @@ public class ClusterTest {
                                 value = 0;
                             map.put(KEY, value + 1);
 //                            System.out.println("Put: " + (value + 1));
-                        }
-                        finally {
+                        } finally {
 //                            System.out.println("Unlocking");
                             map.unlockMap();
 //                            System.out.println("Unlocked");

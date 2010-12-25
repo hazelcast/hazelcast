@@ -260,7 +260,7 @@ public class CMap {
             boolean addOp = (request.operation == ClusterOperation.CONCURRENT_MAP_PUT)
                     || (request.operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT);
             if (addOp) {
-                Record record = getRecord(request.key);
+                Record record = getRecord(request);
                 if (record == null) {
                     if (cleanupState == CleanupState.NONE) {
                         cleanupState = CleanupState.SHOULD_CLEAN;
@@ -379,7 +379,7 @@ public class CMap {
         if (req.key == null || req.key.size() == 0) {
             throw new RuntimeException("Backup key size cannot be 0: " + req.key);
         }
-        if (instanceType == Instance.InstanceType.MAP || instanceType == Instance.InstanceType.SET) {
+        if (isMap() || isSet()) {
             return backupOneValue(req);
         } else {
             return backupMultiValue(req);
@@ -394,7 +394,7 @@ public class CMap {
      * @return
      */
     private boolean backupOneValue(Request req) {
-        Record record = getRecord(req.key);
+        Record record = getRecord(req);
         if (record != null && record.isActive() && req.version < record.getVersion()) {
             return false;
         }
@@ -414,7 +414,7 @@ public class CMap {
      * @return
      */
     private boolean backupMultiValue(Request req) {
-        Record record = getRecord(req.key);
+        Record record = getRecord(req);
         if (record != null) {
             record.setActive();
             if (req.version > record.getVersion() + 1) {
@@ -455,7 +455,7 @@ public class CMap {
                 ttlPerRecord = true;
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
-            Record record = getRecord(req.key);
+            Record record = getRecord(req);
             if (record != null) {
                 if (record.isActive()) {
                     if (record.getCopyCount() > 0) {
@@ -475,7 +475,7 @@ public class CMap {
         } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
             add(req, true);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE_MULTI) {
-            Record record = getRecord(req.key);
+            Record record = getRecord(req);
             if (record != null) {
                 if (req.value == null) {
                     markAsRemoved(record);
@@ -584,7 +584,7 @@ public class CMap {
         Data key = req.key;
         Data value = req.value;
         if (key != null) {
-            Record record = getRecord(req.key);
+            Record record = getRecord(req);
             if (record == null) {
                 return false;
             } else {
@@ -635,7 +635,7 @@ public class CMap {
     }
 
     public CMapEntry getMapEntry(Request req) {
-        Record record = getRecord(req.key);
+        Record record = getRecord(req);
         if (record == null || !record.isActive() || !record.isValid()) {
             return null;
         }
@@ -644,7 +644,7 @@ public class CMap {
     }
 
     public Data get(Request req) {
-        Record record = getRecord(req.key);
+        Record record = getRecord(req);
         if (record == null)
             return null;
         if (!record.isActive()) return null;
@@ -671,7 +671,7 @@ public class CMap {
     }
 
     public boolean add(Request req, boolean backup) {
-        Record record = getRecord(req.key);
+        Record record = getRecord(req);
         if (record == null) {
             record = toRecord(req);
         } else {
@@ -785,7 +785,7 @@ public class CMap {
     }
 
     public boolean removeMulti(Request req) {
-        Record record = getRecord(req.key);
+        Record record = getRecord(req);
         if (record == null) return false;
         boolean removed = false;
         if (req.value == null) {
@@ -821,7 +821,7 @@ public class CMap {
     }
 
     public boolean putMulti(Request req) {
-        Record record = getRecord(req.key);
+        Record record = getRecord(req);
         boolean added = true;
         if (record == null) {
             record = toRecord(req);
@@ -850,7 +850,7 @@ public class CMap {
     }
 
     public void doAtomic(Request req) {
-        Record record = getRecord(req.key);
+        Record record = getRecord(req);
         if (record == null) {
             record = createNewRecord(req.key, toData(0L));
             mapRecords.put(req.key, record);
@@ -880,7 +880,7 @@ public class CMap {
         if (req.value == null) {
             req.value = new Data();
         }
-        Record record = getRecord(req.key);
+        Record record = getRecord(req);
         if (record != null && !record.isValid(now)) {
             record.setValue(null);
             record.setMultiValues(null);
@@ -1260,8 +1260,15 @@ public class CMap {
         }
     }
 
+    Record getRecord(Request req) {
+        if (req.record == null) {
+            req.record = mapRecords.get(req.key);
+        }
+        return req.record;
+    }
+
     Record toRecord(Request req) {
-        Record record = mapRecords.get(req.key);
+        Record record = getRecord(req);
         if (record == null) {
             if (isMultiMap()) {
                 record = createNewRecord(req.key, null);
@@ -1289,7 +1296,7 @@ public class CMap {
     }
 
     public boolean removeItem(Request req) {
-        Record record = mapRecords.get(req.key);
+        Record record = getRecord(req);
         if (record == null) {
             return false;
         }
@@ -1316,7 +1323,7 @@ public class CMap {
     }
 
     boolean evict(Request req) {
-        Record record = getRecord(req.key);
+        Record record = getRecord(req);
         long now = System.currentTimeMillis();
         if (record != null && record.isActive() && record.valueCount() > 0) {
             fireInvalidation(record);
@@ -1334,7 +1341,7 @@ public class CMap {
     }
 
     public void remove(Request req) {
-        Record record = mapRecords.get(req.key);
+        Record record = getRecord(req);
         if (record == null) {
             req.clearForResponse();
             return;

@@ -232,6 +232,7 @@ public class PartitionManager implements Runnable {
             logger.log(Level.FINEST, thisAddress + " blockHashes aren't the same:"
                     + hashBlocks() + ", request.blockId:"
                     + req.blockId + " caller: " + req.caller);
+            invalidateBlocksHash();
             return true;
         }
         if (req.key != null) {
@@ -585,6 +586,7 @@ public class PartitionManager implements Runnable {
     }
 
     void completeMigration(int blockId) {
+        invalidateBlocksHash();
         Block blockReal = blocks[blockId];
         if (blockReal != null && blockReal.isMigrating()) {
             fireMigrationEvent(false, new Block(blockReal));

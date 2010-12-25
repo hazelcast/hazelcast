@@ -137,6 +137,7 @@ public class Request {
         this.caller = caller;
         this.longValue = longValue;
         this.version = version;
+        this.record = null;
     }
 
     public void setLocal(final ClusterOperation operation, final String name, final Data key,

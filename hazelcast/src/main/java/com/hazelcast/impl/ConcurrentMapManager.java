@@ -38,6 +38,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
+import static com.hazelcast.impl.Constants.Objects.OBJECT_DONE;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -1616,7 +1617,7 @@ public class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
-                Record record = cmap.getRecord(request.key);
+                Record record = cmap.getRecord(request);
                 if (record != null && record.isActive() && cmap.loader != null &&
                         cmap.writeDelayMillis > 0 && record.isValid() && record.isDirty()) {
                     // if the map has write-behind and the record is dirty then
@@ -1645,7 +1646,7 @@ public class ConcurrentMapManager extends BaseManager {
                 doOperation(request);
             } else {
                 CMap cmap = getOrCreateMap(request.name);
-                Record record = cmap.getRecord(request.key);
+                Record record = cmap.getRecord(request);
                 cmap.markAsDirty(record);
                 request.response = Boolean.FALSE;
             }
@@ -1681,7 +1682,7 @@ public class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
-                Record record = cmap.getRecord(request.key);
+                Record record = cmap.getRecord(request);
                 if (cmap.loader != null
                         && (record == null
                         || !record.isActive()
@@ -1899,7 +1900,7 @@ public class ConcurrentMapManager extends BaseManager {
                 boolean success = false;
                 Object winner = null;
                 if (cmap.mergePolicy != null) {
-                    Record existing = cmap.getRecord(request.key);
+                    Record existing = cmap.getRecord(request);
                     RecordEntry existingEntry = (existing == null) ? null : cmap.getRecordEntry(existing);
                     DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
                     Object key = newEntry.getKey();
@@ -2148,13 +2149,13 @@ public class ConcurrentMapManager extends BaseManager {
         CMap cmap = maps.get(req.name);
         if (cmap == null)
             return null;
-        return cmap.getRecord(req.key);
+        return cmap.getRecord(req);
     }
 
     Record ensureRecord(Request req) {
         checkServiceThread();
         CMap cmap = getOrCreateMap(req.name);
-        Record record = cmap.getRecord(req.key);
+        Record record = cmap.getRecord(req);
         if (record == null) {
             record = cmap.createNewRecord(req.key, req.value);
             cmap.mapRecords.put(req.key, record);
