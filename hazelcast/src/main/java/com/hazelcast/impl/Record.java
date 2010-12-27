@@ -65,11 +65,13 @@ public final class Record implements MapEntry {
 
     public Record copy() {
         Record recordCopy = new Record(cmap, blockId, key, value, getRemainingTTL(), getRemainingIdle(), id);
-        recordCopy.setIndexes(getOptionalInfo().indexes, getOptionalInfo().indexTypes);
+        if (optionalInfo != null) {
+            recordCopy.setIndexes(getOptionalInfo().indexes, getOptionalInfo().indexTypes);
+            recordCopy.setMultiValues(getOptionalInfo().lsMultiValues);
+        }
         if (lock != null) {
             recordCopy.setLock(new DistributedLock(lock));
         }
-        recordCopy.setMultiValues(getOptionalInfo().lsMultiValues);
         recordCopy.setCopyCount(copyCount);
         recordCopy.setVersion(getVersion());
         return recordCopy;
@@ -453,6 +455,7 @@ public final class Record implements MapEntry {
     }
 
     public int getBackupOpCount() {
+        if (optionalInfo == null) return 0;
         return (getOptionalInfo().backupOps == null) ? 0 : getOptionalInfo().backupOps.size();
     }
 
@@ -461,7 +464,9 @@ public final class Record implements MapEntry {
     }
 
     public void setBackupOps(SortedSet<VersionedBackupOp> backupOps) {
-        this.getOptionalInfo().backupOps = backupOps;
+        if (backupOps != null) {
+            this.getOptionalInfo().backupOps = backupOps;
+        }
     }
 
     public boolean isDirty() {
@@ -502,7 +507,9 @@ public final class Record implements MapEntry {
     }
 
     public void setScheduledActions(List<ScheduledAction> lsScheduledActions) {
-        this.getOptionalInfo().lsScheduledActions = lsScheduledActions;
+        if (lsScheduledActions != null) {
+            this.getOptionalInfo().lsScheduledActions = lsScheduledActions;
+        }
     }
 
     public Map<Address, Boolean> getListeners() {
@@ -511,7 +518,9 @@ public final class Record implements MapEntry {
     }
 
     public void setMapListeners(Map<Address, Boolean> mapListeners) {
-        this.getOptionalInfo().mapListeners = mapListeners;
+        if (mapListeners != null) {
+            this.getOptionalInfo().mapListeners = mapListeners;
+        }
     }
 
     public void setCopyCount(int copyCount) {

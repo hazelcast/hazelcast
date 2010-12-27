@@ -38,7 +38,6 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_DONE;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -276,10 +275,6 @@ public class ConcurrentMapManager extends BaseManager {
         return blocks;
     }
 
-    public PartitionManager getPartitionManager() {
-        return partitionManager;
-    }
-
     public Map<String, CMap> getCMaps() {
         return maps;
     }
@@ -441,7 +436,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void setTarget() {
-            target = getKeyOwner(request.key);
+            target = getKeyOwner(request);
             if (target == null) {
                 Block block = blocks[(request.blockId)];
                 if (block != null) {
@@ -1015,6 +1010,22 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    abstract class MTargetAwareOp extends TargetAwareOp {
+
+        @Override
+        public void doOp() {
+            target = null;
+            super.doOp();
+        }
+
+        @Override
+        public void setTarget() {
+            if (target == null) {
+                target = getKeyOwner(request);
+            }
+        }
+    }
+
     class MBackup extends MTargetAwareOp {
         protected Address owner = null;
         protected int distance = 0;
@@ -1066,7 +1077,7 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         public void process() {
             prepareForBackup();
-            if (!thisAddress.equals(getKeyOwner(request.key))) {
+            if (!thisAddress.equals(getKeyOwner(request))) {
                 setResult(Boolean.FALSE);
             } else {
                 setResult(Boolean.TRUE);
@@ -1396,9 +1407,12 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public Address getKeyOwner(Data key) {
+    public Address getKeyOwner(Request req) {
+        return getKeyOwner(req.key);
+    }
+
+    private Address getKeyOwner(int blockId) {
         checkServiceThread();
-        int blockId = getBlockId(key);
         Block block = blocks[blockId];
         if (block == null) {
             if (isMaster() && !isSuperClient()) {
@@ -1413,9 +1427,21 @@ public class ConcurrentMapManager extends BaseManager {
         return block.getOwner();
     }
 
+    public Address getKeyOwner(Data key) {
+        int blockId = getBlockId(key);
+        return getKeyOwner(blockId);
+    }
+
     @Override
     public boolean isMigrating(Request req) {
         return partitionManager.isMigrating(req);
+    }
+
+    public int getBlockId(Request req) {
+        if (req.blockId == -1) {
+            req.blockId = getBlockId(req.key);
+        }
+        return req.blockId;
     }
 
     public int getBlockId(Data key) {
@@ -1427,8 +1453,8 @@ public class ConcurrentMapManager extends BaseManager {
         return newRecordId++;
     }
 
-    Block getOrCreateBlock(Data key) {
-        return partitionManager.getOrCreateBlock(getBlockId(key));
+    Block getOrCreateBlock(Request req) {
+        return partitionManager.getOrCreateBlock(getBlockId(req));
     }
 
     void evictAsync(final String name, final Data key) {
@@ -1540,7 +1566,7 @@ public class ConcurrentMapManager extends BaseManager {
     abstract class MTargetAwareOperationHandler extends TargetAwareOperationHandler {
         boolean isRightRemoteTarget(Request request) {
             boolean callerKnownMember = (request.local || getMember(request.caller) != null);
-            return callerKnownMember && thisAddress.equals(getKeyOwner(request.key));
+            return callerKnownMember && thisAddress.equals(getKeyOwner(request));
         }
     }
 
@@ -1864,7 +1890,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     void executeAsync(Request request) {
-        OrderedExecutionTask orderedExecutionTask = orderedExecutionTasks[getBlockId(request.key)];
+        OrderedExecutionTask orderedExecutionTask = orderedExecutionTasks[getBlockId(request)];
         int size = orderedExecutionTask.offer(request);
         if (size == 1) {
             node.executorManager.executeStoreTask(orderedExecutionTask);
@@ -2070,14 +2096,9 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                     QueryContext queryContext = new QueryContext(cmap.getName(), predicate);
                     queryContext.setMapIndexes(cmap.getMapIndexService().getIndexes());
-//                    long a = System.currentTimeMillis();
                     Set<MapEntry> results = cmap.getMapIndexService().doQuery(queryContext);
                     boolean evaluateValues = (predicate != null && !queryContext.isStrong());
-//                    long b = System.currentTimeMillis();
-//                    System.out.println(results.size() + " " + evaluateValues);
                     createResultPairs(request, results, evaluateValues, predicate);
-//                    long c = System.currentTimeMillis();
-//                    System.out.println((b-a) + " query-run " + (c-b));
                     enqueueAndReturn(new Processable() {
                         public void process() {
                             int callerPartitionHash = request.blockId;
@@ -2141,7 +2162,6 @@ public class ConcurrentMapManager extends BaseManager {
                 request.value = null;
             }
             request.response = (pairs.size() > 0) ? ((request.local) ? pairs : toData(pairs)) : null;
-//            System.out.println(pairs.size() + "  --> " + request.response);
         }
     }
 

@@ -477,7 +477,7 @@ public abstract class BaseManager {
                                     Connection targetConnection = null;
                                     MemberImpl targetMember = null;
                                     Object key = toObject(reqCopy.key);
-                                    Block block = (reqCopy.key == null) ? null : node.concurrentMapManager.getOrCreateBlock(reqCopy.key);
+                                    Block block = (reqCopy.key == null) ? null : node.concurrentMapManager.getOrCreateBlock(reqCopy);
                                     if (targetCopy != null) {
                                         targetMember = getMember(targetCopy);
                                         targetConnection = node.connectionManager.getConnection(targetCopy);
@@ -524,11 +524,7 @@ public abstract class BaseManager {
                     }
                     beforeRedo();
                     doOp();
-                    //*/
                     continue;
-                    /*/
-                    return getResult();
-                    //*/
                 }
                 return result;
             }
@@ -598,22 +594,6 @@ public abstract class BaseManager {
 
         protected void setResult(final Object obj) {
             responses.offer(obj == null ? OBJECT_NULL : obj);
-        }
-    }
-
-    abstract class MTargetAwareOp extends TargetAwareOp {
-
-        @Override
-        public void doOp() {
-            target = null;
-            super.doOp();
-        }
-
-        @Override
-        public void setTarget() {
-            if (target == null) {
-                target = getKeyOwner(request.key);
-            }
         }
     }
 
@@ -984,10 +964,6 @@ public abstract class BaseManager {
 
     public boolean enqueueAndWait(final Processable processable, final int seconds) {
         return node.clusterService.enqueueAndWait(processable, seconds);
-    }
-
-    public Address getKeyOwner(Data key) {
-        return node.concurrentMapManager.getKeyOwner(key);
     }
 
     public Packet obtainPacket(String name, Object key, Object value,

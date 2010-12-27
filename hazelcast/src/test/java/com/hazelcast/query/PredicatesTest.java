@@ -30,7 +30,8 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("(age >= " + 20 + ") AND (age <= " + 34 + ")").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("(age >= " + 34 + ") AND (age <= " + 35 + ")").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("age IN (" + 34 + ", " + 35 + ")").apply(createEntry("1", value)));
-//        assertTrue(new SqlPredicate(" (name LIKE 'abc-%') AND (age <= " + 40 + ")").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate(" (name LIKE 'abc-%') AND (age <= " + 40 + ")").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("age = -33").apply(createEntry("1", new QueryTest.Employee("abc-123-xvz", -33, true, 10D))));
         assertFalse(new SqlPredicate("age = 33").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("age = 34").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("age > 5").apply(createEntry("1", value)));
@@ -116,6 +117,7 @@ public class PredicatesTest {
         assertEquals("(active=false OR name LIKE 'J%')", sql("active =false or name like 'J%'"));
         assertEquals("(active=false OR name LIKE 'Java World')", sql("active =false or name like 'Java World'"));
         assertEquals("(active=false OR name LIKE 'Java W% Again')", sql("active =false or name like 'Java W% Again'"));
+        assertEquals("i<=-1", sql("i<= -1"));
         assertEquals("age IN (-1)", sql("age in (-1)"));
         assertEquals("age IN (10,15)", sql("age in (10, 15)"));
         assertEquals("NOT(age IN (10,15))", sql("age not in ( 10 , 15 )"));

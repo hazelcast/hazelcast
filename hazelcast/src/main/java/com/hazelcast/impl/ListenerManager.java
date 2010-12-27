@@ -95,7 +95,7 @@ public class ListenerManager extends BaseManager {
 
     class AddRemoveListenerOperationHandler extends TargetAwareOperationHandler {
         boolean isRightRemoteTarget(Request request) {
-            return (null == request.key) || thisAddress.equals(getKeyOwner(request.key));
+            return (null == request.key) || thisAddress.equals(node.concurrentMapManager.getKeyOwner(request));
         }
 
         void doOperation(Request request) {

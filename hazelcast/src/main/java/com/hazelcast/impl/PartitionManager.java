@@ -236,7 +236,7 @@ public class PartitionManager implements Runnable {
             return true;
         }
         if (req.key != null) {
-            Block block = concurrentMapManager.getOrCreateBlock(req.key);
+            Block block = concurrentMapManager.getOrCreateBlock(req);
             return block.isMigrating();
         } else {
             return containsMigratingBlock();

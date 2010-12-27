@@ -1261,7 +1261,7 @@ public class CMap {
     }
 
     Record getRecord(Request req) {
-        if (req.record == null) {
+        if (req.record == null || !req.record.isActive()) {
             req.record = mapRecords.get(req.key);
         }
         return req.record;
@@ -1323,9 +1323,10 @@ public class CMap {
     }
 
     boolean evict(Request req) {
-        Record record = getRecord(req);
+        Record record = getRecord(req.key);
         long now = System.currentTimeMillis();
         if (record != null && record.isActive() && record.valueCount() > 0) {
+            concurrentMapManager.checkServiceThread();
             fireInvalidation(record);
             concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_EVICTED, null, record, req.caller);
             record.incrementVersion();

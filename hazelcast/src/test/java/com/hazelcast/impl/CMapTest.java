@@ -56,6 +56,8 @@ public class CMapTest extends TestUtil {
         Config config = new Config();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
         IMap imap1 = h1.getMap("default");
         IMap imap2 = h2.getMap("default");
         assertEquals(0, imap1.size());
@@ -105,8 +107,8 @@ public class CMapTest extends TestUtil {
         now = System.currentTimeMillis();
         millisLeft1 = record1.getExpirationTime() - now;
         millisLeft2 = record2.getExpirationTime() - now;
-        assertTrue(millisLeft1 <= 10000 && millisLeft1 > 0);
-        assertTrue(millisLeft2 <= 10000 && millisLeft2 > 0);
+        assertTrue(millisLeft1 <= 11000 && millisLeft1 > 0);
+        assertTrue(millisLeft2 <= 11000 && millisLeft2 > 0);
         assertTrue(record1.isActive());
         assertTrue(record2.isActive());
         assertTrue(record1.isValid(now));
@@ -129,7 +131,7 @@ public class CMapTest extends TestUtil {
         assertTrue(record2.isValid(now));
         assertEquals(1, record1.valueCount());
         assertEquals(1, record2.valueCount());
-        Thread.sleep(10000);
+        Thread.sleep(11000);
         now = System.currentTimeMillis();
         assertFalse(record1.isValid(now));
         assertFalse(record2.isValid(now));
@@ -192,13 +194,13 @@ public class CMapTest extends TestUtil {
         assertEquals(1, cmap.locallyOwnedMap.mapCache.size());
         assertTrue(record.getRemainingTTL() > 1000);
         Thread.sleep(1000);
-        assertTrue(record.getRemainingTTL() < 2001);
+        assertTrue(record.getRemainingTTL() < 2100);
         cmap.put(newPutRequest(dKey, dValue));
         assertTrue(record.getRemainingTTL() > 2001);
         assertTrue(record.isActive());
         assertTrue(record.isValid());
         Thread.sleep(1000);
-        assertTrue(record.getRemainingTTL() < 2001);
+        assertTrue(record.getRemainingTTL() < 2100);
         cmap.put(newPutRequest(dKey, dValue));
         assertTrue(record.getRemainingTTL() > 2001);
         assertTrue(record.isActive());
