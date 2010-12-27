@@ -40,7 +40,7 @@ public class MapStatistics extends InstanceStatistics {
 
     public void setListOfLocalStats(Collection<LocalMapStatistics> listOfLocalStats) {
         this.listOfLocalStats = listOfLocalStats;
-        int tops = 0;
+        long tops = 0;
         for (MapStatistics.LocalMapStatistics l : listOfLocalStats) {
             tops += l.totalOperationsInSec();
             size += l.ownedEntryCount;

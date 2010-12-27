@@ -21,8 +21,8 @@ import java.util.Collection;
 import java.util.Date;
 
 public abstract class InstanceStatistics implements ChangeEvent {
-    protected int size;
-    protected int totalOPS;
+    protected long size;
+    protected long totalOPS;
     protected String name;
     private int clusterId;
     private Date date;
@@ -35,15 +35,15 @@ public abstract class InstanceStatistics implements ChangeEvent {
         this.date = new Date();
     }
 
-    public int getSize() {
+    public long getSize() {
         return size;
     }
 
-    public void setSize(int size) {
+    public void setSize(long size) {
         this.size = size;
     }
 
-    public int getTotalOPS() {
+    public long getTotalOPS() {
         return totalOPS;
     }
 

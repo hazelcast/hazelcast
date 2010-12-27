@@ -47,14 +47,14 @@ public class QueueStatistics extends InstanceStatistics {
     public void setList(Collection<LocalQueueStatistics> list) {
         this.list = list;
         for (LocalQueueStatistics queueStatistics : list) {
-            totalOPS = totalOPS + (int) (queueStatistics.numberOfOffersInSec + queueStatistics.numberOfPollsInSec);
+            totalOPS = totalOPS + (long) (queueStatistics.numberOfOffersInSec + queueStatistics.numberOfPollsInSec);
             size = size + queueStatistics.ownedItemCount;
         }
     }
 
     public static class LocalQueueStatistics implements Serializable, LocalInstanceStatistics {
-        public int ownedItemCount;
-        public int backupItemCount;
+        public long ownedItemCount;
+        public long backupItemCount;
         public long minAge;
         public long maxAge;
         public long aveAge;
