@@ -193,18 +193,66 @@ public final class ReplicatedMapFactory {
             Set<K> result = new HashSet<K>();
             Set<Map.Entry<K, V>> entries = super.entrySet();
             for (Map.Entry<K, V> entry : entries) {
-                if (predicate.apply((MapEntry) entry)) {
+                if (apply(predicate, entry)) {
                     result.add(entry.getKey());
                 }
             }
             return result;
         }
 
+        private boolean apply(Predicate predicate, final Map.Entry entry) {
+            return predicate.apply(new MapEntry() {
+                public long getCost() {
+                    return 0;
+                }
+
+                public long getCreationTime() {
+                    return 0;
+                }
+
+                public long getExpirationTime() {
+                    return 0;
+                }
+
+                public int getHits() {
+                    return 0;
+                }
+
+                public long getLastAccessTime() {
+                    return 0;
+                }
+
+                public long getLastUpdateTime() {
+                    return 0;
+                }
+
+                public long getVersion() {
+                    return 0;
+                }
+
+                public boolean isValid() {
+                    return true;
+                }
+
+                public Object getKey() {
+                    return entry.getKey();
+                }
+
+                public Object getValue() {
+                    return entry.getValue();
+                }
+
+                public Object setValue(Object value) {
+                    return entry.setValue(value);
+                }
+            });
+        }
+
         public Set<Entry<K, V>> entrySet(Predicate predicate) {
             Set<Map.Entry<K, V>> result = new HashSet<Map.Entry<K, V>>();
             Set<Map.Entry<K, V>> entries = super.entrySet();
             for (Map.Entry<K, V> entry : entries) {
-                if (predicate.apply((MapEntry) entry)) {
+                if (apply(predicate, entry)) {
                     result.add(entry);
                 }
             }
@@ -215,7 +263,7 @@ public final class ReplicatedMapFactory {
             Set<V> result = new HashSet<V>();
             Set<Map.Entry<K, V>> entries = super.entrySet();
             for (Map.Entry<K, V> entry : entries) {
-                if (predicate.apply((MapEntry) entry)) {
+                if (apply(predicate, entry)) {
                     result.add(entry.getValue());
                 }
             }

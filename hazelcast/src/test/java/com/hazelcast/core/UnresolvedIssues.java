@@ -22,8 +22,6 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ReplicatedMapFactory;
 import com.hazelcast.impl.TestUtil;
-import com.hazelcast.partition.MigrationEvent;
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -34,8 +32,6 @@ import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -129,7 +125,6 @@ public class UnresolvedIssues extends TestUtil {
         }
     }
 
-    @Ignore
     @Test
     public void issue387() {
         // fail with java.lang.ClassCastException: 
