@@ -40,7 +40,7 @@ public class TcpIpConfig implements DataSerializable {
     private final List<Address> addresses = new ArrayList<Address>();
 
     public TcpIpConfig addMember(final String member) {
-        this.members.addAll(AddressUtil.handleMember(member));
+        this.members.add(member);
         return this;
     }
 
@@ -101,10 +101,10 @@ public class TcpIpConfig implements DataSerializable {
      */
     public TcpIpConfig setMembers(final List<String> members) {
         this.members.clear();
-        this.members.addAll(AddressUtil.handleMembers(members));
+        this.members.addAll(members);
         return this;
     }
-    
+
     /**
      * @return the requiredMember
      */
@@ -122,11 +122,11 @@ public class TcpIpConfig implements DataSerializable {
 
     @Override
     public String toString() {
-        return "TcpIpConfig [enabled=" + enabled 
-            + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds 
-            + ", members=" + members 
-            + ", requiredMember=" + requiredMember 
-            + ", addresses=" + addresses + "]";
+        return "TcpIpConfig [enabled=" + enabled
+                + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds
+                + ", members=" + members
+                + ", requiredMember=" + requiredMember
+                + ", addresses=" + addresses + "]";
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -138,15 +138,13 @@ public class TcpIpConfig implements DataSerializable {
         if (hasRequiredMember) {
             out.writeUTF(requiredMember);
         }
-        
-        if (hasMembers){
+        if (hasMembers) {
             out.writeInt(members.size());
             for (final String member : members) {
                 out.writeUTF(member);
             }
         }
-        
-        if (hasAddresses){
+        if (hasAddresses) {
             out.writeInt(addresses.size());
             for (final Address address : addresses) {
                 address.writeData(out);
@@ -160,30 +158,25 @@ public class TcpIpConfig implements DataSerializable {
         boolean hasRequiredMember = b[1];
         boolean hasMembers = b[2];
         boolean hasAddresses = b[3];
-        
         connectionTimeoutSeconds = in.readInt();
         if (hasRequiredMember) {
             requiredMember = in.readUTF();
         }
-        
-        if (hasMembers){
+        if (hasMembers) {
             int size = in.readInt();
             members = new ArrayList<String>(size);
-            for(int i = 0; i < size; i++){
+            for (int i = 0; i < size; i++) {
                 members.add(in.readUTF());
             }
         }
-        
-        if (hasAddresses){
+        if (hasAddresses) {
             int size = in.readInt();
             addresses.clear();
-            for(int i = 0; i < size; i++){
+            for (int i = 0; i < size; i++) {
                 Address address = new Address();
                 address.readData(in);
                 addresses.add(address);
             }
         }
     }
-    
-    
 }

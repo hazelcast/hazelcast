@@ -29,6 +29,7 @@ import com.hazelcast.impl.base.CpuUtilization;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
+import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.NoneStrictObjectPool;
 
 import java.io.InputStream;
@@ -589,7 +590,10 @@ public class Node {
 
     Collection<Address> getPossibleMembers() {
         Join join = config.getNetworkConfig().getJoin();
-        final List<String> lsJoinMembers = join.getTcpIpConfig().getMembers();
+        final Set<String> lsJoinMembers = new HashSet<String>();
+        for (String member : join.getTcpIpConfig().getMembers()) {
+            lsJoinMembers.addAll(AddressUtil.handleMember(member));
+        }
         final Set<Address> setPossibleAddresses = new HashSet<Address>();
         for (final String lsJoinMember : lsJoinMembers) {
             String host = lsJoinMember;

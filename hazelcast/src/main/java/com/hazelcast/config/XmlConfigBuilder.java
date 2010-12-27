@@ -21,7 +21,6 @@ import com.hazelcast.impl.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -114,11 +113,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     public Config build() {
         return build(new Config());
     }
-    
+
     public Config build(Config config) {
         return build(config, null);
     }
-    
+
     public Config build(Element element) {
         return build(new Config(), element);
     }
@@ -136,7 +135,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     private void parse(final Config config, Element element) throws Exception {
         this.config = config;
-        if (element == null){
+        if (element == null) {
             final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = null;
             try {
@@ -175,11 +174,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     private boolean checkTrue(final String value) {
-        return "true".equalsIgnoreCase(value) || 
-               "yes".equalsIgnoreCase(value) ||
-               "on".equalsIgnoreCase(value);
+        return "true".equalsIgnoreCase(value) ||
+                "yes".equalsIgnoreCase(value) ||
+                "on".equalsIgnoreCase(value);
     }
-    
+
     private void handleConfig(final Element docElement) throws Exception {
         for (org.w3c.dom.Node node : new IterableNodeList(docElement.getChildNodes())) {
             final String nodeName = cleanNodeName(node.getNodeName());
@@ -262,8 +261,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(n.getNodeName());
             final String propertyName;
-            if ("property".equals(name)){
-                 propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
+            if ("property".equals(name)) {
+                propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
             } else {
                 // old way - probably should be deprecated
                 propertyName = name;
@@ -466,6 +465,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleViaReflection(n, mapConfig, new NearCacheConfig());
             } else if ("merge-policy".equals(nodeName)) {
                 mapConfig.setMergePolicy(value);
+            } else if ("cache-locally-owned-entries".equals(nodeName)) {
+                mapConfig.setLocallyOwnedEntriesCached(checkTrue(value));
             }
         }
         this.config.addMapConfig(mapConfig);
