@@ -558,14 +558,14 @@ public final class Predicates {
             }
             return and;
         }
-        
+
         public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
             boolean strong = and;
-            if (!mapIndexes.isEmpty()){
+            if (!mapIndexes.isEmpty()) {
                 lsIndexPredicates.add(this);
-                if (strong){
-                    final List<IndexAwarePredicate> indexPredicates = 
-                        new ArrayList<IndexAwarePredicate>(predicates.length);
+                if (strong) {
+                    final List<IndexAwarePredicate> indexPredicates =
+                            new ArrayList<IndexAwarePredicate>(predicates.length);
                     for (Predicate predicate : predicates) {
                         if (predicate instanceof IndexAwarePredicate) {
                             IndexAwarePredicate p = (IndexAwarePredicate) predicate;
@@ -575,7 +575,7 @@ public final class Predicates {
                         } else {
                             strong = false;
                         }
-                        if (!strong){
+                        if (!strong) {
                             break;
                         }
                     }
@@ -604,22 +604,27 @@ public final class Predicates {
                     IndexAwarePredicate p = (IndexAwarePredicate) predicate;
                     final Set<MapEntry> filter = p.filter(queryContext);
                     if (and && (filter == null || filter.isEmpty())) return null;
-                    if (results == null){
-                        results = and ? filter : new HashSet<MapEntry>(filter);
+                    if (results == null) {  // first predicate
+                        if (and) {
+                            results = filter;
+                        } else if (filter == null) {
+                            results = new HashSet<MapEntry>();
+                        } else {
+                            results = new HashSet<MapEntry>(filter);
+                        }
                     } else {
-                        if (and){
+                        if (and) {
                             boolean direct = results.size() < filter.size();
                             final Set<MapEntry> s1 = direct ? results : filter;
                             final Set<MapEntry> s2 = direct ? filter : results;
                             results = new HashSet<MapEntry>();
-                            for(final Iterator<MapEntry> it = s1.iterator();it.hasNext();){
-                                final MapEntry next = it.next();
-                                if (s2.contains(next)){
+                            for (MapEntry next : s1) {
+                                if (s2.contains(next)) {
                                     results.add(next);
                                 }
                             }
                             if (results.isEmpty()) return null;
-                        } else {
+                        } else if (filter != null) { // 'OR' case so add all none-null results
                             results.addAll(filter);
                         }
                     }
@@ -826,7 +831,7 @@ public final class Predicates {
                         }
                         if (localGetter == null) {
                             Class c = clazz;
-                            while(!Object.class.equals(c)) {
+                            while (!Object.class.equals(c)) {
                                 try {
                                     final Field field = c.getDeclaredField(name);
                                     field.setAccessible(true);
@@ -854,11 +859,11 @@ public final class Predicates {
 
         abstract class Getter {
             protected final Getter parent;
-            
+
             public Getter(final Getter parent) {
                 this.parent = parent;
             }
-            
+
             abstract Object getValue(Object obj) throws Exception;
 
             abstract Class getReturnType();
@@ -885,7 +890,6 @@ public final class Predicates {
             public String toString() {
                 return "MethodGetter [parent=" + parent + ", method=" + method.getName() + "]";
             }
-            
         }
 
         class FieldGetter extends Getter {

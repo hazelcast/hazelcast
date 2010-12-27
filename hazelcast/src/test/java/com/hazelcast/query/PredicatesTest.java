@@ -37,6 +37,7 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("age > 5").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("salary > 5").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("salary > 5 and salary < 11").apply(createEntry("1", value)));
+        assertFalse(new SqlPredicate("salary > 15 or salary < 10").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("salary between 9.99 and 10.01").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("salary between 5 and 15").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("name='abc-123-xvz'").apply(createEntry("1", value)));
