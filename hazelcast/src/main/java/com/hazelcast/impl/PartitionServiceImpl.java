@@ -69,6 +69,7 @@ public class PartitionServiceImpl implements PartitionService {
             public void process() {
                 Block block = concurrentMapManager.partitionManager.getOrCreateBlock(partitionId);
                 MemberImpl memberOwner = null;
+                MemberImpl memberMigration = null;
                 if (block.getOwner() != null) {
                     if (concurrentMapManager.thisAddress.equals(block.getOwner())) {
                         memberOwner = concurrentMapManager.thisMember;
@@ -76,7 +77,14 @@ public class PartitionServiceImpl implements PartitionService {
                         memberOwner = concurrentMapManager.getMember(block.getOwner());
                     }
                 }
-                responseQ.offer(new PartitionReal(partitionId, memberOwner, null));
+                if (block.getMigrationAddress() != null) {
+                    if (concurrentMapManager.thisAddress.equals(block.getMigrationAddress())) {
+                        memberMigration = concurrentMapManager.thisMember;
+                    } else {
+                        memberMigration = concurrentMapManager.getMember(block.getMigrationAddress());
+                    }
+                }
+                responseQ.offer(new PartitionReal(partitionId, memberOwner, memberMigration));
             }
         });
         partition = new PartitionProxy(partitionId);

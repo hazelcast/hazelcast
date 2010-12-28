@@ -26,6 +26,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
 
@@ -51,7 +52,6 @@ public class ConcurrentMapManager extends BaseManager {
     long lastLogStateTime = System.currentTimeMillis();
     final Block[] blocks;
     final ConcurrentMap<String, CMap> maps;
-    final ConcurrentMap<String, LocallyOwnedMap> mapLocallyOwnedMaps;
     final ConcurrentMap<String, MapNearCache> mapCaches;
     final OrderedExecutionTask[] orderedExecutionTasks;
     final PartitionManager partitionManager;
@@ -66,7 +66,6 @@ public class ConcurrentMapManager extends BaseManager {
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         blocks = new Block[PARTITION_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
-        mapLocallyOwnedMaps = new ConcurrentHashMap<String, LocallyOwnedMap>(10, 0.75f, 1);
         mapCaches = new ConcurrentHashMap<String, MapNearCache>(10, 0.75f, 1);
         orderedExecutionTasks = new OrderedExecutionTask[PARTITION_COUNT];
         partitionManager = new PartitionManager(this);
@@ -174,7 +173,6 @@ public class ConcurrentMapManager extends BaseManager {
 
     public void reset() {
         maps.clear();
-        mapLocallyOwnedMaps.clear();
         mapCaches.clear();
         partitionManager.reset();
     }
@@ -349,12 +347,19 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
             final CMap cMap = maps.get(name);
-            if (cMap != null && cMap.useBackupData) {
-                final Record record = cMap.mapRecords.get(dataKey);
-                if (record != null &&
-                        cMap.isBackup(record) &&
-                        record.isActive() && record.isValid() && record.getValue() != null) {
-                    return true;
+            if (cMap != null) {
+                long now = System.currentTimeMillis();
+                for (Record record : cMap.mapRecords.values()) {
+                    if (record.isActive() && record.isValid(now) && record.getValue() != null) {
+                        if (cMap.useBackupData) {
+                            return true;
+                        } else {
+                            Partition partition = partitionManager.partitionServiceImpl.getPartition(record.getBlockId());
+                            if (partition != null && partition.getOwner() != null && partition.getOwner().localMember()) {
+                                return true;
+                            }
+                        }
+                    }
                 }
             }
             return booleanCall(CONCURRENT_MAP_CONTAINS, name, dataKey, null, 0, -1);
@@ -491,29 +496,47 @@ public class ConcurrentMapManager extends BaseManager {
                     return txn.get(name, key);
                 }
             }
-            nearCache = mapCaches.get(name);
-            if (nearCache != null) {
-                Object value = nearCache.get(key);
-                if (value != null) {
-                    return value;
-                }
-            }
-            LocallyOwnedMap locallyOwnedMap = mapLocallyOwnedMaps.get(name);
-            if (locallyOwnedMap != null) {
-                Object value = locallyOwnedMap.get(key);
-                if (value != OBJECT_REDO) {
-                    return value;
-                }
-            }
             final CMap cMap = maps.get(name);
-            if (cMap != null && cMap.useBackupData) {
+            if (cMap != null) {
+                nearCache = cMap.mapNearCache;
+                if (nearCache != null) {
+                    Object value = nearCache.get(key);
+                    if (value != null) {
+                        return value;
+                    }
+                }
                 final Data dataKey = toData(key);
-                final Record record = cMap.mapRecords.get(dataKey);
-                if (record != null && cMap.isBackup(record) &&
-                        record.isActive() && record.isValid()) {
-                    final Data valueData = record.getValue();
-                    if (valueData != null) {
-                        return ThreadContext.get().isClient() ? valueData : toObject(valueData);
+                Record ownedRecord = cMap.getOwnedRecord(dataKey);
+                if (ownedRecord != null && ownedRecord.isActive() && ownedRecord.isValid()) {
+                    long version = ownedRecord.getVersion();
+                    Object result = null;
+                    if (tc.isClient()) {
+                        Data valueData = ownedRecord.getValue();
+                        if (valueData != null && valueData.size() > 0) {
+                            result = valueData;
+                        }
+                    } else {
+                        RecordEntry recordEntry = cMap.getRecordEntry(ownedRecord);
+                        if (recordEntry != null) {
+                            Object value = recordEntry.getValue();
+                            if (value != null) {
+                                result = value;
+                            }
+                        }
+                    }
+                    if (result != null && ownedRecord.getVersion() == version) {
+                        ownedRecord.setLastAccessed();
+                        return result;
+                    }
+                }
+                if (cMap.useBackupData) {
+                    final Record record = cMap.mapRecords.get(dataKey);
+                    if (record != null && cMap.isBackup(record) &&
+                            record.isActive() && record.isValid()) {
+                        final Data valueData = record.getValue();
+                        if (valueData != null) {
+                            return ThreadContext.get().isClient() ? valueData : toObject(valueData);
+                        }
                     }
                 }
             }
@@ -669,7 +692,6 @@ public class ConcurrentMapManager extends BaseManager {
         if (cmap != null) {
             cmap.reset();
         }
-        mapLocallyOwnedMaps.remove(name);
         mapCaches.remove(name);
     }
 
@@ -1301,32 +1323,30 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public class MEmpty extends MSize {
+    public class MEmpty {
 
-        public boolean isEmpty() {
+        public boolean isEmpty(String name) {
             MapNearCache nearCache = mapCaches.get(name);
             if (nearCache != null && !nearCache.isEmpty()) {
                 return false;
             }
-            LocallyOwnedMap locallyOwnedMap = mapLocallyOwnedMaps.get(name);
-            if (locallyOwnedMap != null && !locallyOwnedMap.isEmpty()) {
-                return false;
-            }
             final CMap cMap = maps.get(name);
-            if (cMap != null && cMap.useBackupData) {
-                for (final Record record : cMap.mapRecords.values()) {
-                    if (record != null &&
-                            cMap.isBackup(record) &&
-                            record.isActive() && record.isValid() && record.getValue() != null) {
-                        return false;
+            if (cMap != null) {
+                long now = System.currentTimeMillis();
+                for (Record record : cMap.mapRecords.values()) {
+                    if (record.isActive() && record.isValid(now) && record.getValue() != null) {
+                        if (cMap.useBackupData) {
+                            return false;
+                        } else {
+                            Partition partition = partitionManager.partitionServiceImpl.getPartition(record.getBlockId());
+                            if (partition != null && partition.getOwner() != null && partition.getOwner().localMember()) {
+                                return false;
+                            }
+                        }
                     }
                 }
             }
-            return super.getSize() == 0;
-        }
-
-        public MEmpty(String name) {
-            super(name);
+            return new MSize(name).getSize() == 0;
         }
     }
 

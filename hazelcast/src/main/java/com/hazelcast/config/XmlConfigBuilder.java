@@ -465,8 +465,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleViaReflection(n, mapConfig, new NearCacheConfig());
             } else if ("merge-policy".equals(nodeName)) {
                 mapConfig.setMergePolicy(value);
-            } else if ("cache-locally-owned-entries".equals(nodeName)) {
-                mapConfig.setLocallyOwnedEntriesCached(checkTrue(value));
+            } else if ("cache-owned-objects".equals(nodeName)) {
+                mapConfig.setCachingOwnedObjects(checkTrue(value));
+            } else if ("read-backup-data".equals(nodeName)) {
+                mapConfig.setReadBackupData(checkTrue(value));
             }
         }
         this.config.addMapConfig(mapConfig);

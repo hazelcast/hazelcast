@@ -47,7 +47,7 @@ public class HazelcastClusterTest {
         final Config config = new Config();
         final MapConfig mapConfig = new MapConfig();
         mapConfig.setName("q");
-        mapConfig.setUseBackupData(true);
+        mapConfig.setReadBackupData(true);
         config.setMapConfigs(Collections.singletonMap(mapConfig.getName(), mapConfig));
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -88,10 +88,10 @@ public class HazelcastClusterTest {
         String mapName2 = "testMapPutAndGetUseBackupData2";
         MapConfig mapConfig1 = new MapConfig();
         mapConfig1.setName(mapName1);
-        mapConfig1.setUseBackupData(true);
+        mapConfig1.setReadBackupData(true);
         MapConfig mapConfig2 = new MapConfig();
         mapConfig2.setName(mapName2);
-        mapConfig2.setUseBackupData(false);
+        mapConfig2.setReadBackupData(false);
         config.addMapConfig(mapConfig1);
         config.addMapConfig(mapConfig2);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -115,7 +115,7 @@ public class HazelcastClusterTest {
         String mapName1 = "testLockKeyWithUseBackupData";
         MapConfig mapConfig1 = new MapConfig();
         mapConfig1.setName(mapName1);
-        mapConfig1.setUseBackupData(true);
+        mapConfig1.setReadBackupData(true);
         config.addMapConfig(mapConfig1);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         IMap<String, String> map = h1.getMap(mapName1);

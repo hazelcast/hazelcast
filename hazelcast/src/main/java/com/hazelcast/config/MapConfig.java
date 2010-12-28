@@ -41,7 +41,7 @@ public class MapConfig implements DataSerializable {
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static String DEFAULT_EVICTION_POLICY = "NONE";
     public final static String DEFAULT_MERGE_POLICY = LatestUpdateMergePolicy.NAME;
-    public final static boolean DEFAULT_LOCALLY_OWNED_ENTRIES_CACHED = true;
+    public final static boolean DEFAULT_OWNED_ENTRIES_CACHED = true;
 
     private String name = null;
 
@@ -65,9 +65,9 @@ public class MapConfig implements DataSerializable {
 
     private NearCacheConfig nearCacheConfig = null;
 
-    private boolean useBackupData = false;
+    private boolean readBackupData = false;
 
-    private boolean locallyOwnedEntriesCached = DEFAULT_LOCALLY_OWNED_ENTRIES_CACHED;
+    private boolean cachingOwnedObjects = DEFAULT_OWNED_ENTRIES_CACHED;
 
     private String mergePolicy = DEFAULT_MERGE_POLICY;
 
@@ -122,18 +122,18 @@ public class MapConfig implements DataSerializable {
      *
      * @return true if cached, false otherwise
      */
-    public boolean isLocallyOwnedEntriesCached() {
-        return locallyOwnedEntriesCached;
+    public boolean isCachingOwnedObjects() {
+        return cachingOwnedObjects;
     }
 
     /**
      * Sets if locally owned entries cached.
      *
-     * @param locallyOwnedEntriesCached
+     * @param cachingOwnedObjects
      * @return this MapConfig
      */
-    public MapConfig setLocallyOwnedEntriesCached(boolean locallyOwnedEntriesCached) {
-        this.locallyOwnedEntriesCached = locallyOwnedEntriesCached;
+    public MapConfig setCachingOwnedObjects(boolean cachingOwnedObjects) {
+        this.cachingOwnedObjects = cachingOwnedObjects;
         return this;
     }
 
@@ -314,11 +314,11 @@ public class MapConfig implements DataSerializable {
     }
 
     public boolean isUseBackupData() {
-        return useBackupData;
+        return readBackupData;
     }
 
-    public MapConfig setUseBackupData(boolean useBackupData) {
-        this.useBackupData = useBackupData;
+    public MapConfig setReadBackupData(boolean readBackupData) {
+        this.readBackupData = readBackupData;
         return this;
     }
 
@@ -334,7 +334,7 @@ public class MapConfig implements DataSerializable {
                 (this.maxSize == other.maxSize ||
                         (Math.min(maxSize, other.maxSize) == 0 && Math.max(maxSize, other.maxSize) == Integer.MAX_VALUE)) &&
                 this.timeToLiveSeconds == other.timeToLiveSeconds &&
-                this.useBackupData == other.useBackupData &&
+                this.readBackupData == other.readBackupData &&
                 this.valueIndexed == other.valueIndexed;
     }
 
@@ -365,7 +365,7 @@ public class MapConfig implements DataSerializable {
                 + ((this.nearCacheConfig == null) ? 0 : this.nearCacheConfig
                 .hashCode());
         result = prime * result + this.timeToLiveSeconds;
-        result = prime * result + (this.useBackupData ? 1231 : 1237);
+        result = prime * result + (this.readBackupData ? 1231 : 1237);
         result = prime * result + (this.valueIndexed ? 1231 : 1237);
         return result;
     }
@@ -385,7 +385,7 @@ public class MapConfig implements DataSerializable {
                         this.maxIdleSeconds == other.maxIdleSeconds &&
                         this.maxSize == other.maxSize &&
                         this.timeToLiveSeconds == other.timeToLiveSeconds &&
-                        this.useBackupData == other.useBackupData &&
+                        this.readBackupData == other.readBackupData &&
                         this.valueIndexed == other.valueIndexed &&
                         (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null) &&
                         (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy) : other.evictionPolicy == null) &&
@@ -407,7 +407,7 @@ public class MapConfig implements DataSerializable {
                 ", evictionPolicy='" + evictionPolicy + '\'' +
                 ", mapStoreConfig=" + mapStoreConfig +
                 ", nearCacheConfig=" + nearCacheConfig +
-                ", useBackupData=" + useBackupData +
+                ", readBackupData=" + readBackupData +
                 '}';
     }
 
@@ -421,7 +421,7 @@ public class MapConfig implements DataSerializable {
         maxSize = in.readInt();
         boolean[] b = ByteUtil.fromByte(in.readByte());
         valueIndexed = b[0];
-        useBackupData = b[1];
+        readBackupData = b[1];
         evictionPolicy = in.readUTF();
         mergePolicy = in.readUTF();
         // TODO: MapStoreConfig mapStoreConfig
@@ -436,7 +436,7 @@ public class MapConfig implements DataSerializable {
         out.writeInt(maxIdleSeconds);
         out.writeInt(evictionDelaySeconds);
         out.writeInt(maxSize);
-        out.writeByte(ByteUtil.toByte(valueIndexed, useBackupData));
+        out.writeByte(ByteUtil.toByte(valueIndexed, readBackupData));
         out.writeUTF(evictionPolicy);
         out.writeUTF(mergePolicy);
         // TODO: MapStoreConfig mapStoreConfig

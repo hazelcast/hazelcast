@@ -523,9 +523,6 @@ public class PartitionManager implements Runnable {
         List<Record> lsRecordsToMigrate = new ArrayList<Record>(1000);
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
         for (final CMap cmap : cmaps) {
-            if (cmap.locallyOwnedMap != null) {
-                cmap.locallyOwnedMap.reset();
-            }
             for (Record rec : cmap.mapRecords.values()) {
                 if (rec.isActive() && concurrentMapManager.isOwned(rec)) {
                     if (rec.getKey() == null || rec.getKey().size() == 0) {
@@ -635,6 +632,7 @@ public class PartitionManager implements Runnable {
 
     final void invalidateBlocksHash() {
         blocksHash = Integer.MIN_VALUE;
+        partitionServiceImpl.reset();
     }
 
     final int hashBlocks() {

@@ -253,6 +253,7 @@ public class RedoMigrationTest extends RedoTestService {
                         Block block = node2.concurrentMapManager.partitionManager.getOrCreateBlock(partitionId);
                         block.setMigrationAddress(address1);
                         assertEquals(address2, block.getOwner());
+                        node2.concurrentMapManager.partitionManager.invalidateBlocksHash();
                     }
                 }, 5);
             }

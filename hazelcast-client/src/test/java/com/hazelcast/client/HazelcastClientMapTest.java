@@ -214,11 +214,14 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertEquals(0, clientMap.size());
         String result = clientMap.put("1", "CBDEF");
         assertNull(result);
-        Object oldValue = clientMap.get("1");
-        assertEquals("CBDEF", oldValue);
+        assertEquals("CBDEF", clientMap.get("1"));
+        assertEquals("CBDEF", clientMap.get("1"));
+        assertEquals("CBDEF", clientMap.get("1"));
         assertEquals(1, clientMap.size());
         result = clientMap.put("1", "B");
         assertEquals("CBDEF", result);
+        assertEquals("B", clientMap.get("1"));
+        assertEquals("B", clientMap.get("1"));
     }
 
     @Test

@@ -187,11 +187,8 @@ public class CMapTest extends TestUtil {
         assertTrue(record.isActive());
         assertTrue(record.isValid());
         assertEquals(1, cmap.size());
-        assertNotNull(cmap.locallyOwnedMap);
         assertNotNull(cmap.get(newGetRequest(dKey)));
         assertEquals(dValue, cmap.get(newGetRequest(dKey)));
-        assertEquals(value, cmap.locallyOwnedMap.get(key));
-        assertEquals(1, cmap.locallyOwnedMap.mapCache.size());
         assertTrue(record.getRemainingTTL() > 1000);
         Thread.sleep(1000);
         assertTrue(record.getRemainingTTL() < 2100);
@@ -206,9 +203,6 @@ public class CMapTest extends TestUtil {
         assertTrue(record.isActive());
         assertTrue(record.isValid());
         Thread.sleep(5000);
-        cmap.locallyOwnedMap.evict(System.currentTimeMillis());
-        assertEquals(0, cmap.locallyOwnedMap.mapCache.size());
-        assertEquals(OBJECT_REDO, cmap.locallyOwnedMap.get(key));
         assertEquals(0, cmap.size());
         assertTrue(cmap.evict(newEvictRequest(dKey)));
         assertTrue(cmap.shouldPurgeRecord(record, System.currentTimeMillis() + 10000));

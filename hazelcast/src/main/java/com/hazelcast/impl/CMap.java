@@ -120,8 +120,6 @@ public class CMap {
 
     final MapIndexService mapIndexService;
 
-    final LocallyOwnedMap locallyOwnedMap;
-
     final MapNearCache mapNearCache;
 
     final long creationTime;
@@ -189,16 +187,6 @@ public class CMap {
                 logger.log(Level.SEVERE, e.getMessage(), e);
             }
             writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
-        }
-        if (!node.isSuperClient() && evictionPolicy == EvictionPolicy.NONE && instanceType == Instance.InstanceType.MAP) {
-            LocallyOwnedMap locallyOwnedMap = new LocallyOwnedMap();
-            LocallyOwnedMap anotherLocallyOwnedMap = concurrentMapManager.mapLocallyOwnedMaps.putIfAbsent(name, locallyOwnedMap);
-            if (anotherLocallyOwnedMap != null) {
-                locallyOwnedMap = anotherLocallyOwnedMap;
-            }
-            this.locallyOwnedMap = locallyOwnedMap;
-        } else {
-            locallyOwnedMap = null;
         }
         writeDelayMillis = (writeDelaySeconds == -1) ? -1L : writeDelaySeconds * 1000L;
         if (writeDelaySeconds > 0) {
@@ -532,6 +520,16 @@ public class CMap {
         return (owner != null && owner.localMember());
     }
 
+    Record getOwnedRecord(Data key) {
+        PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
+        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(concurrentMapManager.getBlockId(key));
+        Member ownerNow = partition.getOwner();
+        if (ownerNow != null && !partition.isMigrating() && ownerNow.localMember()) {
+            return getRecord(key);
+        }
+        return null;
+    }
+
     boolean isBackup(Record record) {
         PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
         PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
@@ -663,9 +661,6 @@ public class CMap {
                 Values values = new Values(record.getMultiValues());
                 returnValue = toData(values);
             }
-        }
-        if (req.local && locallyOwnedMap != null && returnValue != null) {
-            locallyOwnedMap.offerToCache(record);
         }
         return returnValue;
     }
@@ -1117,9 +1112,6 @@ public class CMap {
 
     void startCleanup(boolean forced) {
         final long now = System.currentTimeMillis();
-        if (locallyOwnedMap != null) {
-            locallyOwnedMap.evict(now);
-        }
         if (mapNearCache != null) {
             mapNearCache.evict(now, false);
         }
@@ -1393,9 +1385,6 @@ public class CMap {
                 }
             }
         }
-        if (locallyOwnedMap != null) {
-            locallyOwnedMap.reset();
-        }
         if (mapNearCache != null) {
             mapNearCache.reset();
         }
@@ -1491,9 +1480,6 @@ public class CMap {
         sbState.append(name);
         sbState.append("] r:");
         sbState.append(mapRecords.size());
-        if (locallyOwnedMap != null) {
-            locallyOwnedMap.appendState(sbState);
-        }
         if (mapNearCache != null) {
             mapNearCache.appendState(sbState);
         }
