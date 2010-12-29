@@ -28,8 +28,8 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 
-import static com.hazelcast.client.Serializer.toByte;
-import static com.hazelcast.client.Serializer.toObject;
+import static com.hazelcast.client.IOUtil.toByte;
+import static com.hazelcast.client.IOUtil.toObject;
 
 public class DefaultClientBinder implements ClientBinder {
     private HazelcastClient client;

@@ -19,15 +19,16 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Transaction;
 
-public final class ThreadContext {
-    private static final ThreadLocal<ThreadContext> threadLocal = new ThreadLocal<ThreadContext>();
+public final class ClientThreadContext {
+    private static final ThreadLocal<ClientThreadContext> threadLocal = new ThreadLocal<ClientThreadContext>();
     private static final Object lock = new Object();
     TransactionClientProxy transactionProxy;
+    ClientSerializer serializer = new ClientSerializer();
 
-    public static ThreadContext get() {
-        ThreadContext threadContext = threadLocal.get();
+    public static ClientThreadContext get() {
+        ClientThreadContext threadContext = threadLocal.get();
         if (threadContext == null) {
-            threadContext = new ThreadContext();
+            threadContext = new ClientThreadContext();
             threadLocal.set(threadContext);
         }
         return threadContext;
@@ -46,5 +47,13 @@ public final class ThreadContext {
 
     public void removeTransaction() {
         transactionProxy = null;
+    }
+
+    public byte[] toByte(Object object) {
+        return serializer.toByteArray(object);
+    }
+
+    public Object toObject(byte[] bytes) {
+        return serializer.toObject(bytes);
     }
 }

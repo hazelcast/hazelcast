@@ -19,19 +19,11 @@ package com.hazelcast.nio;
 
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-
-import java.util.logging.Level;
 
 public final class Serializer extends AbstractSerializer {
 
-    private static final ILogger logger = Logger.getLogger(Serializer.class.getName());
-
-    private static int OUTPUT_STREAM_BUFFER_SIZE = 100 << 10;
-
-    private static final TypeSerializer[] serializers =
-            sort(new TypeSerializer[]{
+    private static final AbstractSerializer.TypeSerializer[] serializers =
+            sort(new AbstractSerializer.TypeSerializer[]{
                     new DataSerializer(),
                     new ByteArraySerializer(),
                     new LongSerializer(),
@@ -44,14 +36,8 @@ public final class Serializer extends AbstractSerializer {
                     new ObjectSerializer()
             });
 
-    final FastByteArrayOutputStream bbos;
-
-    final FastByteArrayInputStream bbis;
-
     public Serializer() {
         super(serializers);
-        this.bbos = new FastByteArrayOutputStream(OUTPUT_STREAM_BUFFER_SIZE);
-        this.bbis = new FastByteArrayInputStream(new byte[10]);
     }
 
     public static Object newInstance(final Class klass) throws Exception {
@@ -64,24 +50,6 @@ public final class Serializer extends AbstractSerializer {
 
     public static Class<?> classForName(final ClassLoader classLoader, final String className) throws ClassNotFoundException {
         return AbstractSerializer.classForName(classLoader, className);
-    }
-
-    public byte[] toByteArray(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-        try {
-            this.bbos.reset();
-            toByte(this.bbos, obj);
-            final byte[] result = this.bbos.toByteArray();
-            if (this.bbos.size() > OUTPUT_STREAM_BUFFER_SIZE) {
-                this.bbos.set(new byte[OUTPUT_STREAM_BUFFER_SIZE]);
-            }
-            return result;
-        } catch (final Throwable e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
     }
 
     public Data writeObject(final Object obj) {
@@ -100,11 +68,15 @@ public final class Serializer extends AbstractSerializer {
         if ((data == null) || (data.buffer == null) || (data.buffer.length == 0)) {
             return null;
         }
-        this.bbis.set(data.buffer, data.buffer.length);
-        final Object obj = toObject(this.bbis);
+        byte[] byteArray = data.buffer;
+        final Object obj = toObject(byteArray);
         if (obj instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) obj).setHazelcastInstance(ThreadContext.get().getCurrentFactory());
         }
         return obj;
+    }
+
+    public byte[] toByteArray(Object obj) {
+        return super.toByteArray(obj);
     }
 }

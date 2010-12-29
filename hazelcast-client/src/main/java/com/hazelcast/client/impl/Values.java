@@ -27,7 +27,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.hazelcast.client.Serializer.toObject;
+import static com.hazelcast.client.IOUtil.toObject;
 
 public class Values<V> implements Collection, DataSerializable {
     List<V> lsValues = null;
@@ -125,11 +125,15 @@ public class Values<V> implements Collection, DataSerializable {
     public void readData(DataInput in) throws IOException {
         int size = in.readInt();
         lsValues = new ArrayList<V>(size);
+        List<byte[]> lsValuesInByte = new ArrayList<byte[]>(size);
         for (int i = 0; i < size; i++) {
             int length = in.readInt();
             byte[] data = new byte[length];
             in.readFully(data);
-            lsValues.add((V) toObject(data));
+            lsValuesInByte.add(data);
+        }
+        for (int i = 0; i < size; i++) {
+            lsValues.add((V) toObject(lsValuesInByte.get(i)));
         }
     }
 

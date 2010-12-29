@@ -17,9 +17,8 @@
 
 package com.hazelcast.client;
 
-import org.junit.Test;
-
 import com.hazelcast.client.impl.ListenerManager;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -29,8 +28,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.Serializer.toByte;
-import static com.hazelcast.client.Serializer.toObject;
+import static com.hazelcast.client.IOUtil.toByte;
+import static com.hazelcast.client.IOUtil.toObject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -49,7 +48,7 @@ public class MapClientProxyTest {
         Connection connection = mock(Connection.class);
         when(connectionManager.getConnection()).thenReturn(connection);
         when(client.getConnectionManager()).thenReturn(connectionManager);
-        ListenerManager listenerManager = mock(ListenerManager.class); 
+        ListenerManager listenerManager = mock(ListenerManager.class);
         when(client.getListenerManager()).thenReturn(listenerManager);
         final List<Call> calls = Collections.emptyList();
         when(listenerManager.getListenerCalls()).thenReturn(calls);

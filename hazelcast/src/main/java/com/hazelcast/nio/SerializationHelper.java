@@ -93,7 +93,7 @@ public class SerializationHelper {
             int len = in.readInt();
             byte[] buf = new byte[len];
             in.readFully(buf);
-            ObjectInputStream oin = Serializer.newObjectInputStream(new ByteArrayInputStream(buf));
+            ObjectInputStream oin = AbstractSerializer.newObjectInputStream(new ByteArrayInputStream(buf));
             try {
                 return oin.readObject();
             } catch (ClassNotFoundException e) {

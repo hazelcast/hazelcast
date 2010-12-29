@@ -31,8 +31,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
-import static com.hazelcast.client.Serializer.toByte;
-import static com.hazelcast.client.Serializer.toObject;
+import static com.hazelcast.client.IOUtil.toByte;
+import static com.hazelcast.client.IOUtil.toObject;
 
 public class ProxyHelper {
     private final static AtomicLong callIdGen = new AtomicLong(0);

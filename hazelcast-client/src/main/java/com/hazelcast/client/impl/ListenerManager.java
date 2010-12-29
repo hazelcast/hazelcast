@@ -31,7 +31,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.Serializer.toObject;
+import static com.hazelcast.client.IOUtil.toObject;
 import static com.hazelcast.impl.BaseManager.getInstanceType;
 
 public class ListenerManager extends ClientRunnable {
@@ -85,8 +85,7 @@ public class ListenerManager extends ClientRunnable {
             }
         } catch (InterruptedException ine) {
             throw ine;
-        }
-        catch (Exception ignored) {
+        } catch (Exception ignored) {
         }
     }
 

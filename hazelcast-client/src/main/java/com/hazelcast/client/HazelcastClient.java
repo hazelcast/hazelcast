@@ -307,7 +307,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public com.hazelcast.core.Transaction getTransaction() {
-        ThreadContext trc = ThreadContext.get();
+        ClientThreadContext trc = ClientThreadContext.get();
         TransactionClientProxy proxy = (TransactionClientProxy) trc.getTransaction(this);
         return proxy;
     }

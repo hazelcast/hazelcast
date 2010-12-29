@@ -57,9 +57,12 @@ public abstract class AbstractSerializer {
 
     private static final boolean shared = GroupProperties.SERIALIZER_SHARED.getBoolean();
     private static final boolean gzipEnabled = GroupProperties.SERIALIZER_GZIP_ENABLED.getBoolean();
+    protected static int OUTPUT_STREAM_BUFFER_SIZE = 100 << 10;
 
     private final TypeSerializer[] serializer;
     private final TypeSerializer[] typeSerializer;
+    final FastByteArrayOutputStream bbos;
+    protected final FastByteArrayInputStream bbis;
 
     protected static TypeSerializer[] sort(final TypeSerializer[] serializers) {
         Arrays.sort(serializers, new Comparator<TypeSerializer>() {
@@ -78,6 +81,8 @@ public abstract class AbstractSerializer {
         for (int i = 0; i < serializer.length; i++) {
             this.typeSerializer[serializer[i].getTypeId()] = serializer[i];
         }
+        this.bbis = new FastByteArrayInputStream(new byte[10]);
+        this.bbos = new FastByteArrayOutputStream(OUTPUT_STREAM_BUFFER_SIZE);
     }
 
     public static Object newInstance(final Class klass) throws Exception {
@@ -145,6 +150,32 @@ public abstract class AbstractSerializer {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public byte[] toByteArray(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        try {
+            this.bbos.reset();
+            toByte(this.bbos, obj);
+            final byte[] result = this.bbos.toByteArray();
+            if (this.bbos.size() > OUTPUT_STREAM_BUFFER_SIZE) {
+                this.bbos.set(new byte[OUTPUT_STREAM_BUFFER_SIZE]);
+            }
+            return result;
+        } catch (final Throwable e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Object toObject(byte[] byteArray) {
+        if (byteArray == null || byteArray.length == 0) {
+            return null;
+        }
+        this.bbis.set(byteArray, byteArray.length);
+        return toObject(this.bbis);
     }
 
     public static class LongSerializer implements TypeSerializer<Long> {

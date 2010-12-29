@@ -97,14 +97,6 @@ public class Call {
     @Override
     public String toString() {
         return "Call " + "[" + id + "] operation=" +
-                (request != null ? request.getOperation()
-                        /*
-                        + " " + request.getName() + " "
-                        + (hasResponse() ? "+ " : "- ")
-                        + Serializer.toObject(request.getKey())
-                        + "=" + Serializer.toObject(request.getValue())
-                        */
-                        :
-                        null);
+                (request != null ? request.getOperation() : null);
     }
 }

@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.client.Serializer.toObject;
+import static com.hazelcast.client.IOUtil.toObject;
 
 public class MessageListenerManager {
     final private ConcurrentHashMap<String, List<MessageListener>> messageListeners = new ConcurrentHashMap<String, List<MessageListener>>();

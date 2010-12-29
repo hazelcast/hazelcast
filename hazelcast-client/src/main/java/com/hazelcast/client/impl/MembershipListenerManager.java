@@ -26,7 +26,7 @@ import com.hazelcast.core.MembershipListener;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.client.Serializer.toObject;
+import static com.hazelcast.client.IOUtil.toObject;
 
 public class MembershipListenerManager {
     final private List<MembershipListener> memberShipListeners = new CopyOnWriteArrayList<MembershipListener>();

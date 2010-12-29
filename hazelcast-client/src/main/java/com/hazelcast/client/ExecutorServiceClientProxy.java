@@ -30,7 +30,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static com.hazelcast.client.Serializer.toObject;
+import static com.hazelcast.client.IOUtil.toObject;
 
 public class ExecutorServiceClientProxy implements ExecutorService {
 
@@ -194,17 +194,14 @@ public class ExecutorServiceClientProxy implements ExecutorService {
                 if (!f.isDone()) {
                     try {
                         f.get();
-                    }
-                    catch (CancellationException ignore) {
-                    }
-                    catch (ExecutionException ignore) {
+                    } catch (CancellationException ignore) {
+                    } catch (ExecutionException ignore) {
                     }
                 }
             }
             done = true;
             return futures;
-        }
-        finally {
+        } finally {
             if (!done)
                 for (Future f : futures)
                     f.cancel(true);

@@ -31,8 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.client.Serializer.toByte;
-import static com.hazelcast.client.Serializer.toObject;
+import static com.hazelcast.client.IOUtil.toByte;
+import static com.hazelcast.client.IOUtil.toObject;
 
 public class EntryListenerManager {
 

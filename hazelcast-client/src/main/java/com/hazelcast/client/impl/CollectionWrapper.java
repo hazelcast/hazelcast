@@ -24,9 +24,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.client.Serializer.toObject;
+import static com.hazelcast.client.IOUtil.toObject;
 
 public class CollectionWrapper<K> implements DataSerializable {
     /**
@@ -44,12 +45,16 @@ public class CollectionWrapper<K> implements DataSerializable {
     public void readData(DataInput in) throws IOException {
         int size = in.readInt();
         keys = new ArrayList<K>(size);
+        List<byte[]> datas = new ArrayList<byte[]>(size);
         for (int i = 0; i < size; i++) {
             int length = in.readInt();
             byte[] data = new byte[length];
             in.readFully(data);
-            K obj = (K) toObject(data);
-            keys.add(obj);
+            datas.add(data);
+        }
+        for (int i = 0; i < size; i++) {
+            K k = (K) toObject(datas.get(i));
+            keys.add(k);
         }
     }
 

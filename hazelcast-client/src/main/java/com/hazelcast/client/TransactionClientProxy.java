@@ -33,7 +33,7 @@ public class TransactionClientProxy implements Transaction {
 
     public void commit() throws IllegalStateException {
         proxyHelper.doOp(ClusterOperation.TRANSACTION_COMMIT, null, null);
-        ThreadContext threadContext = ThreadContext.get();
+        ClientThreadContext threadContext = ClientThreadContext.get();
         threadContext.removeTransaction();
     }
 
@@ -43,7 +43,7 @@ public class TransactionClientProxy implements Transaction {
 
     public void rollback() throws IllegalStateException {
         proxyHelper.doOp(ClusterOperation.TRANSACTION_ROLLBACK, null, null);
-        ThreadContext threadContext = ThreadContext.get();
+        ClientThreadContext threadContext = ClientThreadContext.get();
         threadContext.removeTransaction();
     }
 }

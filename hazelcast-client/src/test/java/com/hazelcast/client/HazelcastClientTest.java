@@ -615,8 +615,8 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
     @Test
     public void newSerializer() {
         final String str = "Fuad";
-        byte[] b = Serializer.toByte(str);
-        assertEquals(str, Serializer.toObject(b));
+        byte[] b = IOUtil.toByte(str);
+        assertEquals(str, IOUtil.toObject(b));
     }
 
     @Test
@@ -624,11 +624,11 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         final ExternalizableImpl o = new ExternalizableImpl();
         o.s = "Gallaxy";
         o.v = 42;
-        byte[] b = Serializer.toByte(o);
+        byte[] b = IOUtil.toByte(o);
         assertFalse(b.length == 0);
         assertFalse(o.readExternal);
         assertTrue(o.writeExternal);
-        final ExternalizableImpl object = (ExternalizableImpl) Serializer.toObject(b);
+        final ExternalizableImpl object = (ExternalizableImpl) IOUtil.toObject(b);
         assertNotNull(object);
         assertNotSame(o, object);
         assertEquals(o, object);

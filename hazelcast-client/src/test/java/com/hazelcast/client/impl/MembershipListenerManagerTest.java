@@ -30,7 +30,7 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.Serializer.toByte;
+import static com.hazelcast.client.IOUtil.toByte;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;

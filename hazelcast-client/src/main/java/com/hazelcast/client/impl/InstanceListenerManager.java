@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.client.Serializer.toObject;
+import static com.hazelcast.client.IOUtil.toObject;
 
 public class InstanceListenerManager {
     final private List<InstanceListener> instanceListeners = new CopyOnWriteArrayList<InstanceListener>();
