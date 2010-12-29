@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class Hazelcast {
     private static final AtomicReference<HazelcastInstance> defaultInstance = new AtomicReference<HazelcastInstance>();
-//    private static volatile HazelcastInstance defaultInstance = null;
+    //    private static volatile HazelcastInstance defaultInstance = null;
     private final static Object initLock = new Object();
 
     private Hazelcast() {
@@ -50,11 +50,11 @@ public final class Hazelcast {
      */
     public static HazelcastInstance init(Config config) {
         if (defaultInstance.get() != null) {
-            throw new IllegalStateException("Default Hazelcast instance is already initilized.");
+            throw new IllegalStateException("Default Hazelcast instance is already initialized.");
         }
         synchronized (initLock) {
             if (defaultInstance.get() != null) {
-                throw new IllegalStateException("Default Hazelcast instance is already initilized.");
+                throw new IllegalStateException("Default Hazelcast instance is already initialized.");
             }
             HazelcastInstance defaultInstanceObject = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
             defaultInstance.set(defaultInstanceObject);

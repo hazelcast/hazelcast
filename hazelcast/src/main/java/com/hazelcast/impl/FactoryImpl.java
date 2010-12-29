@@ -57,6 +57,12 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 public class FactoryImpl implements HazelcastInstance {
 
+    final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
+
+    private final static Object factoryLock = new Object();
+
+    private static int nextFactoryId = 0;
+
     private final ConcurrentMap<String, HazelcastInstanceAwareInstance> proxiesByName = new ConcurrentHashMap<String, HazelcastInstanceAwareInstance>(1000);
 
     private final ConcurrentMap<ProxyKey, HazelcastInstanceAwareInstance> proxies = new ConcurrentHashMap<ProxyKey, HazelcastInstanceAwareInstance>(1000);
@@ -83,17 +89,11 @@ public class FactoryImpl implements HazelcastInstance {
 
     public final Node node;
 
-    final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
-
-    private final static Object factoryLock = new Object();
-
-    private static int nextFactoryId = 0;
-
     volatile boolean restarted = false;
 
     private final ManagementService managementService;
 
-    private MemberStatePublisher memberStatePublisher;
+    private final MemberStatePublisher memberStatePublisher;
 
     private final ILogger logger;
 

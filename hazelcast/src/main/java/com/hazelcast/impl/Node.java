@@ -323,6 +323,13 @@ public class Node {
         masterAddress = master;
     }
 
+    public void cleanupServiceThread() {
+        clusterManager.checkServiceThread();
+        baseVariables.qServiceThreadPacketCache.clear();
+        concurrentMapManager.reset();
+        clusterManager.stop();
+    }
+
     public void shutdown() {
         logger.log(Level.FINE, "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (isActive()) {
@@ -351,13 +358,12 @@ public class Node {
             logger.log(Level.FINEST, "Shutting down the connection manager");
             connectionManager.shutdown();
             logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
-            concurrentMapManager.reset();
             logger.log(Level.FINEST, "Shutting down the executorManager");
             executorManager.stop();
             textCommandService.stop();
             masterAddress = null;
+            packetPool.clear();
             logger.log(Level.FINEST, "Shutting down the cluster manager");
-            clusterManager.stop();
             int numThreads = threadGroup.activeCount();
             Thread[] threads = new Thread[numThreads * 2];
             numThreads = threadGroup.enumerate(threads, false);
@@ -367,7 +373,6 @@ public class Node {
                 thread.interrupt();
             }
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
-            packetPool.clear();
         }
     }
 

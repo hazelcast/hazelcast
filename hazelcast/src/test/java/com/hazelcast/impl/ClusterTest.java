@@ -1257,97 +1257,206 @@ public class ClusterTest {
     }
 
     @Test
+    public void testShutdownAllMemoryLeak() throws Exception {
+        Runtime.getRuntime().gc();
+        long usedMemoryInit = getUsedMemoryAsMB();
+        Config config = new Config();
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance[] instances = new HazelcastInstance[4];
+        instances[0] = h1;
+        instances[1] = h2;
+        instances[2] = h3;
+        instances[3] = h4;
+        IMap map1 = h1.getMap("default");
+        final int size = 10000;
+        for (int i = 0; i < size; i++) {
+            map1.put(i, new byte[10000]);
+        }
+        final ExecutorService es = Executors.newFixedThreadPool(4);
+        final CountDownLatch latch = new CountDownLatch(4);
+        for (int a = 0; a < 4; a++) {
+            final int t = a;
+            es.execute(new Runnable() {
+                public void run() {
+                    for (int i = 0; i < size; i++) {
+                        instances[t].getMap("default").get(i);
+                    }
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await();
+        es.shutdown();
+        assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
+        Hazelcast.shutdownAll();
+        for (int i = 0; i < 100; i++) {
+            sleep(1000);
+            Runtime.getRuntime().gc();
+            long usedMemoryEnd = getUsedMemoryAsMB();
+            if ((usedMemoryEnd - usedMemoryInit) < 10) {
+                return;
+            }
+        }
+    }
+
+    @Test
     public void testTTLAndMemoryLeak() throws Exception {
         Runtime.getRuntime().gc();
-        long initialUsedMemory = getUsedMemoryAsMB();
-        Config config = new XmlConfigBuilder().build();
+        long usedMemoryInit = getUsedMemoryAsMB();
+        Config config = new Config();
         MapConfig mapConfig = config.getMapConfig("default");
-        mapConfig.setTimeToLiveSeconds(20);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
+        mapConfig.setTimeToLiveSeconds(15);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance[] instances = new HazelcastInstance[4];
+        instances[0] = h1;
+        instances[1] = h2;
+        instances[2] = h3;
+        instances[3] = h4;
         IMap map1 = h1.getMap("default");
-        final int size = 20000;
+        final int size = 10000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000]);
         }
         long usedMemoryStart = getUsedMemoryAsMB();
-        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
-        for (int i = 0; i < size; i++) {
-            h1.getMap("default").get(i);
-            h2.getMap("default").get(i);
-            h3.getMap("default").get(i);
-            h4.getMap("default").get(i);
+        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 200);
+        final ExecutorService es = Executors.newFixedThreadPool(4);
+        final CountDownLatch latch = new CountDownLatch(4);
+        for (int a = 0; a < 4; a++) {
+            final int t = a;
+            es.execute(new Runnable() {
+                public void run() {
+                    for (int i = 0; i < size; i++) {
+                        instances[t].getMap("default").get(i);
+                    }
+                    latch.countDown();
+                }
+            });
         }
-        sleep(50000);
-        Runtime.getRuntime().gc();
-        sleep(5000);
+        latch.await();
+        es.shutdown();
+        assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
+        for (int i = 0; i < 100; i++) {
+            sleep(1000);
+            Runtime.getRuntime().gc();
+            long usedMemoryEnd = getUsedMemoryAsMB();
+            if ((usedMemoryEnd - usedMemoryInit) < 25) {
+                return;
+            }
+        }
         Runtime.getRuntime().gc();
         long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
+        assertTrue(usedMemoryInit + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - usedMemoryInit) < 25);
     }
 
     @Test
     public void testTTLAndMemoryLeak2() throws Exception {
         Runtime.getRuntime().gc();
-        long initialUsedMemory = getUsedMemoryAsMB();
+        sleep(2000);
+        Runtime.getRuntime().gc();
+        long usedMemoryInit = getUsedMemoryAsMB();
+        assertTrue("UsedMemoryInit: " + usedMemoryInit, usedMemoryInit < 20);
         Config config = new Config();
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance[] instances = new HazelcastInstance[4];
+        instances[0] = h1;
+        instances[1] = h2;
+        instances[2] = h3;
+        instances[3] = h4;
         IMap map1 = h1.getMap("default");
-        final int size = 20000;
+        final int size = 10000;
         for (int i = 0; i < size; i++) {
-            map1.put(i, new byte[10000], 20, TimeUnit.SECONDS);
+            map1.put(i, new byte[10000], 15, TimeUnit.SECONDS);
         }
         long usedMemoryStart = getUsedMemoryAsMB();
-        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
-        for (int i = 0; i < size; i++) {
-            h1.getMap("default").get(i);
-            h2.getMap("default").get(i);
-            h3.getMap("default").get(i);
-            h4.getMap("default").get(i);
+        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 200);
+        final ExecutorService es = Executors.newFixedThreadPool(4);
+        final CountDownLatch latch = new CountDownLatch(4);
+        for (int a = 0; a < 4; a++) {
+            final int t = a;
+            es.execute(new Runnable() {
+                public void run() {
+                    for (int i = 0; i < size; i++) {
+                        instances[t].getMap("default").get(i);
+                    }
+                    latch.countDown();
+                }
+            });
         }
-        sleep(50000);
-        Runtime.getRuntime().gc();
-        sleep(5000);
+        latch.await();
+        es.shutdown();
+        assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
+        for (int i = 0; i < 50; i++) {
+            sleep(1000);
+            Runtime.getRuntime().gc();
+            long usedMemoryEnd = getUsedMemoryAsMB();
+            if ((usedMemoryEnd - usedMemoryInit) < 25) {
+                return;
+            }
+        }
         Runtime.getRuntime().gc();
         long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
+        assertTrue(usedMemoryInit + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - usedMemoryInit) < 20);
     }
 
     @Test
     public void testMaxIdleAndMemoryLeak() throws Exception {
         Runtime.getRuntime().gc();
-        long initialUsedMemory = getUsedMemoryAsMB();
+        long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig("default");
-        mapConfig.setMaxIdleSeconds(20);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
+        mapConfig.setMaxIdleSeconds(15);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance[] instances = new HazelcastInstance[4];
+        instances[0] = h1;
+        instances[1] = h2;
+        instances[2] = h3;
+        instances[3] = h4;
         IMap map1 = h1.getMap("default");
-        final int size = 20000;
+        final int size = 10000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000]);
         }
         long usedMemoryStart = getUsedMemoryAsMB();
-        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 300);
-        for (int i = 0; i < size; i++) {
-            h1.getMap("default").get(i);
-            h2.getMap("default").get(i);
-            h3.getMap("default").get(i);
-            h4.getMap("default").get(i);
+        assertTrue("UsedMemoryStart: " + usedMemoryStart, usedMemoryStart > 200);
+        final ExecutorService es = Executors.newFixedThreadPool(4);
+        final CountDownLatch latch = new CountDownLatch(4);
+        for (int a = 0; a < 4; a++) {
+            final int t = a;
+            es.execute(new Runnable() {
+                public void run() {
+                    for (int i = 0; i < size; i++) {
+                        instances[t].getMap("default").get(i);
+                    }
+                    latch.countDown();
+                }
+            });
         }
-        sleep(50000);
-        Runtime.getRuntime().gc();
-        sleep(5000);
+        latch.await();
+        es.shutdown();
+        assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
+        for (int i = 0; i < 50; i++) {
+            sleep(1000);
+            Runtime.getRuntime().gc();
+            long usedMemoryEnd = getUsedMemoryAsMB();
+            if ((usedMemoryEnd - usedMemoryInit) < 25) {
+                return;
+            }
+        }
         Runtime.getRuntime().gc();
         long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(initialUsedMemory + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - initialUsedMemory) < 50);
+        assertTrue(usedMemoryInit + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - usedMemoryInit) < 25);
     }
 
     long getUsedMemoryAsMB() {

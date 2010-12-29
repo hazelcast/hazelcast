@@ -227,6 +227,7 @@ public final class ClusterService implements Runnable, Constants {
             final CountDownLatch stopLatch = new CountDownLatch(1);
             processableQueue.offer(new Processable() {
                 public void process() {
+                    node.cleanupServiceThread();
                     running = false;
                     stopLatch.countDown();
                 }

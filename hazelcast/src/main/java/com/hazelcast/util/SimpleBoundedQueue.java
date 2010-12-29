@@ -90,6 +90,16 @@ public final class SimpleBoundedQueue<E> extends AbstractQueue<E> {
     }
 
     @Override
+    public void clear() {
+        for (int i = 0; i < maxSize; i++) {
+            objects[0] = null;
+        }
+        add = 0;
+        remove = 0;
+        size = 0;
+    }
+
+    @Override
     public Iterator<E> iterator() {
         throw new UnsupportedOperationException();
     }
