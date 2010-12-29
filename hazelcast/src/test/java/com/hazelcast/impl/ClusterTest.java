@@ -85,9 +85,9 @@ public class ClusterTest {
 
     @Test
     public void testPartitions() throws Exception {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(271, getLocalPartitions(h1).size());
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(271, getLocalPartitions(h1).size() + getLocalPartitions(h2).size());
     }
 
@@ -183,7 +183,6 @@ public class ClusterTest {
         }
         int first = counts.take();
         int second = counts.take();
-        System.out.println(first + " ** " + second);
         assertTrue(first == 0 || first == 271);
         assertTrue(second == 0 || second == 271);
         assertEquals(271, Math.abs(second - first));
@@ -1969,7 +1968,7 @@ public class ClusterTest {
     @Test
     public void testConcurrentLockPrimitive() throws Exception {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(new Config());
-        int threads = 3;
+        int threads = 5;
         final IMap<Object, Object> testMap = instance.getMap("testConcurrentLockPrimitive");
         assertNull(testMap.putIfAbsent(1L, 0L));
         assertEquals(0L, testMap.get(1L));
@@ -1987,7 +1986,7 @@ public class ClusterTest {
                         try {
                             Long value = (Long) testMap.get(1L);
                             assertNotNull(value);
-                            testMap.put(1L, value.longValue() + 1);
+                            testMap.put(1L, value + 1);
                         } finally {
                             testMap.unlock(1L);
                             countDownLatch.countDown();
@@ -1998,7 +1997,7 @@ public class ClusterTest {
         }
         countDownLatch.await();
         pool.shutdown();
-        pool.awaitTermination(1, TimeUnit.SECONDS);
+        assertTrue(pool.awaitTermination(5, TimeUnit.SECONDS));
         Long value = (Long) testMap.get(1L);
         assertEquals(Long.valueOf(total), value);
     }

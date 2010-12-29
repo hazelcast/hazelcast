@@ -42,16 +42,19 @@ public class PartitionServiceImpl implements PartitionService {
     private final List<MigrationListener> lsMigrationListeners = new CopyOnWriteArrayList<MigrationListener>();
     private final ConcurrentMapManager concurrentMapManager;
     private final AtomicLong partitionVersion = new AtomicLong();
+    private final Set<Partition> partitions;
 
     public PartitionServiceImpl(ConcurrentMapManager concurrentMapManager) {
         this.concurrentMapManager = concurrentMapManager;
+        this.partitions = new TreeSet<Partition>();
+        for (int i = 0; i < concurrentMapManager.PARTITION_COUNT; i++) {
+            PartitionProxy partitionProxy = new PartitionProxy(i);
+            partitions.add(partitionProxy);
+            mapPartitions.put(i, partitionProxy);
+        }
     }
 
     public Set<Partition> getPartitions() {
-        Set<Partition> partitions = new TreeSet<Partition>(mapPartitions.values());
-        for (int i = 0; i < concurrentMapManager.PARTITION_COUNT; i++) {
-            partitions.add(getPartition(i));
-        }
         return partitions;
     }
 
@@ -61,43 +64,44 @@ public class PartitionServiceImpl implements PartitionService {
         return getPartition(partitionId);
     }
 
-    public PartitionProxy getPartition(final int partitionId) {
-        PartitionProxy partition = mapPartitions.get(partitionId);
-        if (partition != null && partition.getOwner() != null) return partition;
-        final BlockingQueue<PartitionReal> responseQ = ResponseQueueFactory.newResponseQueue();
-        concurrentMapManager.enqueueAndReturn(new Processable() {
-            public void process() {
-                Block block = concurrentMapManager.partitionManager.getOrCreateBlock(partitionId);
-                MemberImpl memberOwner = null;
-                MemberImpl memberMigration = null;
-                if (block.getOwner() != null) {
-                    if (concurrentMapManager.thisAddress.equals(block.getOwner())) {
-                        memberOwner = concurrentMapManager.thisMember;
-                    } else {
-                        memberOwner = concurrentMapManager.getMember(block.getOwner());
+    public PartitionProxy getPartition(int partitionId) {
+        return mapPartitions.get(partitionId);
+    }
+
+    public PartitionReal getPartitionReal(final int partitionId) {
+        PartitionReal partitionReal = mapRealPartitions.get(partitionId);
+        if (partitionReal == null) {
+            final BlockingQueue<PartitionReal> responseQ = ResponseQueueFactory.newResponseQueue();
+            concurrentMapManager.enqueueAndReturn(new Processable() {
+                public void process() {
+                    Block block = concurrentMapManager.partitionManager.getOrCreateBlock(partitionId);
+                    MemberImpl memberOwner = null;
+                    MemberImpl memberMigration = null;
+                    if (block.getOwner() != null) {
+                        if (concurrentMapManager.thisAddress.equals(block.getOwner())) {
+                            memberOwner = concurrentMapManager.thisMember;
+                        } else {
+                            memberOwner = concurrentMapManager.getMember(block.getOwner());
+                        }
                     }
-                }
-                if (block.getMigrationAddress() != null) {
-                    if (concurrentMapManager.thisAddress.equals(block.getMigrationAddress())) {
-                        memberMigration = concurrentMapManager.thisMember;
-                    } else {
-                        memberMigration = concurrentMapManager.getMember(block.getMigrationAddress());
+                    if (block.getMigrationAddress() != null) {
+                        if (concurrentMapManager.thisAddress.equals(block.getMigrationAddress())) {
+                            memberMigration = concurrentMapManager.thisMember;
+                        } else {
+                            memberMigration = concurrentMapManager.getMember(block.getMigrationAddress());
+                        }
                     }
+                    responseQ.offer(new PartitionReal(partitionId, memberOwner, memberMigration));
                 }
-                responseQ.offer(new PartitionReal(partitionId, memberOwner, memberMigration));
+            });
+            try {
+                partitionReal = responseQ.take();
+                mapRealPartitions.put(partitionId, partitionReal);
+                return partitionReal;
+            } catch (InterruptedException ignored) {
             }
-        });
-        partition = new PartitionProxy(partitionId);
-        try {
-            PartitionReal partitionReal = responseQ.take();
-            mapRealPartitions.put(partitionId, partitionReal);
-            PartitionProxy oldPartitionProxy = mapPartitions.putIfAbsent(partitionId, partition);
-            if (oldPartitionProxy != null) {
-                return oldPartitionProxy;
-            }
-        } catch (InterruptedException ignored) {
         }
-        return partition;
+        return partitionReal;
     }
 
     void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
@@ -128,12 +132,7 @@ public class PartitionServiceImpl implements PartitionService {
         lsMigrationListeners.remove(migrationListener);
     }
 
-    void clearRealPartitions() {
-        mapRealPartitions.clear();
-    }
-
     public void reset() {
-        mapPartitions.clear();
         mapRealPartitions.clear();
     }
 
@@ -149,7 +148,7 @@ public class PartitionServiceImpl implements PartitionService {
         }
 
         public Member getOwner() {
-            PartitionReal partitionReal = mapRealPartitions.get(partitionId);
+            PartitionReal partitionReal = getPartitionReal(partitionId);
             if (partitionReal == null) {
                 return null;
             } else {
@@ -158,12 +157,12 @@ public class PartitionServiceImpl implements PartitionService {
         }
 
         public boolean isMigrating() {
-            PartitionReal partitionReal = mapRealPartitions.get(partitionId);
+            PartitionReal partitionReal = getPartitionReal(partitionId);
             return partitionReal != null && partitionReal.isMigrating();
         }
 
         public Member getEventualOwner() {
-            PartitionReal partitionReal = mapRealPartitions.get(partitionId);
+            PartitionReal partitionReal = getPartitionReal(partitionId);
             if (partitionReal == null) {
                 return null;
             } else {
@@ -172,7 +171,7 @@ public class PartitionServiceImpl implements PartitionService {
         }
 
         public Member getMigrationMember() {
-            PartitionReal partitionReal = mapRealPartitions.get(partitionId);
+            PartitionReal partitionReal = getPartitionReal(partitionId);
             if (partitionReal == null) {
                 return null;
             } else {

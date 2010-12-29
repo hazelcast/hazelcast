@@ -50,7 +50,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     }
 
     public DataRecordEntry(Record record) {
-        this (record, record.getValue());
+        this(record, record.getValueData());
     }
 
     public DataRecordEntry(Record record, Data value) {
@@ -63,7 +63,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         hits = record.getHits();
         valid = record.isValid();
         name = record.getName();
-        keyData = record.getKey();
+        keyData = record.getKeyData();
         valueData = value;
         indexes = record.getIndexes();
         indexTypes = record.getIndexTypes();

@@ -632,13 +632,11 @@ public class QueryTest extends TestUtil {
     public void testWithDashInTheNameAndSqlPredicate() {
         IMap<String, Employee> map = Hazelcast.getMap("employee");
         Employee toto = new Employee("toto", 23, true, 165765.0);
-        System.out.println("put " + toto);
         map.put("1", toto);
         Employee toto2 = new Employee("toto-super+hero", 23, true, 165765.0);
         map.put("2", toto2);
         //Works well
         Set<Map.Entry<String, Employee>> entries = map.entrySet(new SqlPredicate("name='toto-super+hero'"));
-        System.out.println("Set entries = " + entries);
         assertTrue(entries.size() > 0);
         for (Map.Entry<String, Employee> entry : entries) {
             Employee e = entry.getValue();

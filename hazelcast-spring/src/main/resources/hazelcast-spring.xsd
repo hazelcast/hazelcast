@@ -5,54 +5,54 @@
            targetNamespace="http://www.hazelcast.com/schema/config"
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
-           
+
     <xs:import namespace="http://www.springframework.org/schema/beans"/>
 
-	<xs:element name="config">
-		<xs:complexType>
-			<xs:complexContent>
-				<xs:extension base="beans:identifiedType">
-					<xs:sequence>
-						<xs:element ref="group" minOccurs="0" maxOccurs="1" />
-						<xs:element ref="properties" minOccurs="0" maxOccurs="1" />
-						<xs:element ref="network" minOccurs="0" maxOccurs="1" />
-						<xs:element ref="executor-service" minOccurs="0" maxOccurs="unbounded" />
-						<xs:element ref="queue" minOccurs="0" maxOccurs="unbounded" />
-						<xs:element ref="map" minOccurs="0" maxOccurs="unbounded" />
-						<xs:element ref="merge-policies" minOccurs="0" maxOccurs="unbounded" />
-					</xs:sequence>
-				</xs:extension>
-			</xs:complexContent>
-		</xs:complexType>
-	</xs:element>
+    <xs:element name="config">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="beans:identifiedType">
+                    <xs:sequence>
+                        <xs:element ref="group" minOccurs="0" maxOccurs="1"/>
+                        <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
+                        <xs:element ref="network" minOccurs="0" maxOccurs="1"/>
+                        <xs:element ref="executor-service" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element ref="queue" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element ref="map" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element ref="merge-policies" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
 
-	<xs:element name="hazelcast">
-		<xs:complexType>
-			<xs:complexContent>
-				<xs:extension base="beans:identifiedType">
-					<xs:sequence>
-						<xs:element ref="config" minOccurs="0" maxOccurs="1" />
-					</xs:sequence>
-				</xs:extension>
-			</xs:complexContent>
-		</xs:complexType>
-	</xs:element>
+    <xs:element name="hazelcast">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="beans:identifiedType">
+                    <xs:sequence>
+                        <xs:element ref="config" minOccurs="0" maxOccurs="1"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
 
-	<xs:element name="client">
-		<xs:complexType>
-			<xs:complexContent>
-				<xs:extension base="beans:identifiedType">
-					<xs:sequence>
-						<xs:element ref="client-properties" />
-						<xs:element ref="members" minOccurs="1" maxOccurs="unbounded" />
-					</xs:sequence>
-					<xs:attribute name="group-name" type="xs:string" use="required" />
-					<xs:attribute name="group-password" type="xs:string" use="required" />
-				</xs:extension>
-			</xs:complexContent>
-		</xs:complexType>
-	</xs:element>
-	
+    <xs:element name="client">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="beans:identifiedType">
+                    <xs:sequence>
+                        <xs:element ref="client-properties"/>
+                        <xs:element ref="members" minOccurs="1" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                    <xs:attribute name="group-name" type="xs:string" use="required"/>
+                    <xs:attribute name="group-password" type="xs:string" use="required"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
     <xs:element name="map">
         <xs:complexType>
             <xs:sequence>
@@ -69,7 +69,8 @@
             <xs:attribute name="eviction-policy" use="optional" type="xs:string"/>
             <xs:attribute name="merge-policy" use="optional" type="xs:string"/>
             <xs:attribute name="value-indexed" use="optional" type="xs:string"/>
-            <xs:attribute name="use-backup-data" use="optional" type="xs:string"/>
+            <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
+            <xs:attribute name="cache-value" use="optional" type="xs:string"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="queue">

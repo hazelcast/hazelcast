@@ -46,33 +46,31 @@ import com.hazelcast.core.Member;
 import com.hazelcast.impl.GroupProperties;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "fullcacheconfig-applicationContext-hazelcast.xml" })
+@ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
 public class TestFullApplicationContext {
 
-	private Config config;
-	
-	@Autowired
+    private Config config;
+
+    @Autowired
     private HazelcastInstance instance;
-	
-	@BeforeClass
-	@AfterClass
-	public static void start(){
-	    Hazelcast.shutdownAll();
-	}
-	
-	@Before
-	public void before(){
-	    config = instance.getConfig();
-	}
-	
-	@Test
-	public void testMapConfig() {
-		assertNotNull(config);
-		
-		assertEquals(2, config.getMapConfigs().size());
-		
-		MapConfig testMapConfig = config.getMapConfig("testMap");
-		assertNotNull(testMapConfig);
+
+    @BeforeClass
+    @AfterClass
+    public static void start() {
+        Hazelcast.shutdownAll();
+    }
+
+    @Before
+    public void before() {
+        config = instance.getConfig();
+    }
+
+    @Test
+    public void testMapConfig() {
+        assertNotNull(config);
+        assertEquals(2, config.getMapConfigs().size());
+        MapConfig testMapConfig = config.getMapConfig("testMap");
+        assertNotNull(testMapConfig);
         assertEquals("testMap", testMapConfig.getName());
         assertEquals(2, testMapConfig.getBackupCount());
         assertEquals("NONE", testMapConfig.getEvictionPolicy());
@@ -80,9 +78,8 @@ public class TestFullApplicationContext {
         assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
         assertEquals("hz.ADD_NEW_ENTRY", testMapConfig.getMergePolicy());
-        assertTrue(testMapConfig.isUseBackupData());
-        
-		MapConfig simpleMapConfig = config.getMapConfig("simpleMap");
+        assertTrue(testMapConfig.isReadBackupData());
+        MapConfig simpleMapConfig = config.getMapConfig("simpleMap");
         assertNotNull(simpleMapConfig);
         assertEquals("simpleMap", simpleMapConfig.getName());
         assertEquals(3, simpleMapConfig.getBackupCount());
@@ -91,84 +88,81 @@ public class TestFullApplicationContext {
         assertEquals(50, simpleMapConfig.getEvictionPercentage());
         assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
         assertEquals("hz.LATEST_UPDATE", simpleMapConfig.getMergePolicy());
-	}
-	
-	@Test
-	public void testQueueConfig() {
-		QueueConfig testQConfig = config.getQueueConfig("testQ");
-		assertNotNull(testQConfig);
-		assertEquals("testQ", testQConfig.getName());
-		assertEquals(1000, testQConfig.getMaxSizePerJVM());
-		assertEquals(0, testQConfig.getTimeToLiveSeconds());
-		
-		QueueConfig qConfig = config.getQueueConfig("q");
+    }
+
+    @Test
+    public void testQueueConfig() {
+        QueueConfig testQConfig = config.getQueueConfig("testQ");
+        assertNotNull(testQConfig);
+        assertEquals("testQ", testQConfig.getName());
+        assertEquals(1000, testQConfig.getMaxSizePerJVM());
+        assertEquals(0, testQConfig.getTimeToLiveSeconds());
+        QueueConfig qConfig = config.getQueueConfig("q");
         assertNotNull(qConfig);
         assertEquals("q", qConfig.getName());
         assertEquals(2500, qConfig.getMaxSizePerJVM());
         assertEquals(1, qConfig.getTimeToLiveSeconds());
-	}
-	
-	@Test
-	public void testGroupConfig() {
-		GroupConfig groupConfig = config.getGroupConfig();
-		assertNotNull(groupConfig);
-		assertEquals("spring-group", groupConfig.getName());
-		assertEquals("spring-group-pass", groupConfig.getPassword());
-	}
+    }
 
-	@Test
-	public void testExecutorConfig(){
-		ExecutorConfig testExecConfig = config.getExecutorConfig("testExec");
-		assertNotNull(testExecConfig);
-		assertEquals("testExec", testExecConfig.getName());
-		assertEquals(2, testExecConfig.getCorePoolSize());
-		assertEquals(32, testExecConfig.getMaxPoolSize());
-		assertEquals(30, testExecConfig.getKeepAliveSeconds());
-		
-		ExecutorConfig testExec2Config = config.getExecutorConfig("testExec2");
+    @Test
+    public void testGroupConfig() {
+        GroupConfig groupConfig = config.getGroupConfig();
+        assertNotNull(groupConfig);
+        assertEquals("spring-group", groupConfig.getName());
+        assertEquals("spring-group-pass", groupConfig.getPassword());
+    }
+
+    @Test
+    public void testExecutorConfig() {
+        ExecutorConfig testExecConfig = config.getExecutorConfig("testExec");
+        assertNotNull(testExecConfig);
+        assertEquals("testExec", testExecConfig.getName());
+        assertEquals(2, testExecConfig.getCorePoolSize());
+        assertEquals(32, testExecConfig.getMaxPoolSize());
+        assertEquals(30, testExecConfig.getKeepAliveSeconds());
+        ExecutorConfig testExec2Config = config.getExecutorConfig("testExec2");
         assertNotNull(testExec2Config);
         assertEquals("testExec2", testExec2Config.getName());
         assertEquals(5, testExec2Config.getCorePoolSize());
         assertEquals(10, testExec2Config.getMaxPoolSize());
         assertEquals(20, testExec2Config.getKeepAliveSeconds());
-	}
-	
-	@Test
-	public void testNetworkConfig() {
-		NetworkConfig networkConfig = config.getNetworkConfig();
-		assertNotNull(networkConfig);
-		assertEquals(5800, config.getPort());
-		assertFalse(config.isPortAutoIncrement());
-		assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
-		assertFalse(networkConfig.getInterfaces().isEnabled());
-		assertEquals(1, networkConfig.getInterfaces().getInterfaces().size());
-		assertEquals("10.10.1.*", networkConfig.getInterfaces().getInterfaces().iterator().next());
-		TcpIpConfig tcp = networkConfig.getJoin().getTcpIpConfig();
-		assertNotNull(tcp);
-		assertTrue(tcp.isEnabled());
-		assertTrue(networkConfig.getSymmetricEncryptionConfig().isEnabled());
-		final List<String> members = tcp.getMembers();
-		assertEquals(members.toString(), 2, members.size());
-		assertEquals("127.0.0.1:5800", members.get(0));
-		assertEquals("127.0.0.1:5801", members.get(1));
-	}
+    }
 
-	@Test
+    @Test
+    public void testNetworkConfig() {
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        assertNotNull(networkConfig);
+        assertEquals(5800, config.getPort());
+        assertFalse(config.isPortAutoIncrement());
+        assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
+        assertFalse(networkConfig.getInterfaces().isEnabled());
+        assertEquals(1, networkConfig.getInterfaces().getInterfaces().size());
+        assertEquals("10.10.1.*", networkConfig.getInterfaces().getInterfaces().iterator().next());
+        TcpIpConfig tcp = networkConfig.getJoin().getTcpIpConfig();
+        assertNotNull(tcp);
+        assertTrue(tcp.isEnabled());
+        assertTrue(networkConfig.getSymmetricEncryptionConfig().isEnabled());
+        final List<String> members = tcp.getMembers();
+        assertEquals(members.toString(), 2, members.size());
+        assertEquals("127.0.0.1:5800", members.get(0));
+        assertEquals("127.0.0.1:5801", members.get(1));
+    }
+
+    @Test
     public void testProperties() {
         final Properties properties = config.getProperties();
         assertNotNull(properties);
         assertEquals("5", properties.get(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS));
         assertEquals("5", properties.get(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS));
     }
-	
-	@Test
-	public void testInstance(){
-	    assertNotNull(instance);
-	    final Set<Member> members = instance.getCluster().getMembers();
-	    assertEquals(1, members.size());
-	    final Member member = members.iterator().next();
-	    final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
-	    assertEquals(5800, inetSocketAddress.getPort());
-	}
 
+    @Test
+    public void testInstance() {
+        assertNotNull(instance);
+        final Set<Member> members = instance.getCluster().getMembers();
+        assertEquals(1, members.size());
+        final Member member = members.iterator().next();
+        final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
+        assertEquals(5800, inetSocketAddress.getPort());
+    }
 }

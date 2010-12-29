@@ -255,7 +255,7 @@ public class ConcurrentMapManager extends BaseManager {
         } else {
             boolean migrated = mmigrate.migrate(rec);
             if (!migrated) {
-                logger.log(Level.FINEST, "Migration failed " + rec.getKey());
+                logger.log(Level.FINEST, "Migration failed " + rec.getKeyData());
             }
         }
     }
@@ -348,16 +348,14 @@ public class ConcurrentMapManager extends BaseManager {
             }
             final CMap cMap = maps.get(name);
             if (cMap != null) {
-                long now = System.currentTimeMillis();
-                for (Record record : cMap.mapRecords.values()) {
-                    if (record.isActive() && record.isValid(now) && record.getValue() != null) {
-                        if (cMap.useBackupData) {
+                Record record = cMap.getOwnedRecord(dataKey);
+                if (record != null && record.isActive() && record.isValid() && record.getValueData() != null) {
+                    if (cMap.readBackupData) {
+                        return true;
+                    } else {
+                        PartitionServiceImpl.PartitionProxy partition = partitionManager.partitionServiceImpl.getPartition(record.getBlockId());
+                        if (partition != null && !partition.isMigrating() && partition.getOwner() != null && partition.getOwner().localMember()) {
                             return true;
-                        } else {
-                            Partition partition = partitionManager.partitionServiceImpl.getPartition(record.getBlockId());
-                            if (partition != null && partition.getOwner() != null && partition.getOwner().localMember()) {
-                                return true;
-                            }
                         }
                     }
                 }
@@ -511,17 +509,14 @@ public class ConcurrentMapManager extends BaseManager {
                     long version = ownedRecord.getVersion();
                     Object result = null;
                     if (tc.isClient()) {
-                        Data valueData = ownedRecord.getValue();
+                        Data valueData = ownedRecord.getValueData();
                         if (valueData != null && valueData.size() > 0) {
                             result = valueData;
                         }
                     } else {
-                        RecordEntry recordEntry = cMap.getRecordEntry(ownedRecord);
-                        if (recordEntry != null) {
-                            Object value = recordEntry.getValue();
-                            if (value != null) {
-                                result = value;
-                            }
+                        Object value = ownedRecord.getValue();
+                        if (value != null) {
+                            result = value;
                         }
                     }
                     if (result != null && ownedRecord.getVersion() == version) {
@@ -529,11 +524,11 @@ public class ConcurrentMapManager extends BaseManager {
                         return result;
                     }
                 }
-                if (cMap.useBackupData) {
+                if (cMap.readBackupData) {
                     final Record record = cMap.mapRecords.get(dataKey);
                     if (record != null && cMap.isBackup(record) &&
                             record.isActive() && record.isValid()) {
-                        final Data valueData = record.getValue();
+                        final Data valueData = record.getValueData();
                         if (valueData != null) {
                             return ThreadContext.get().isClient() ? valueData : toObject(valueData);
                         }
@@ -863,7 +858,7 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             } else {
-                mergeOne(record, record.getValue());
+                mergeOne(record, record.getValueData());
             }
         }
 
@@ -1185,8 +1180,8 @@ public class ConcurrentMapManager extends BaseManager {
             return;
         }
         checkServiceThread();
-        fireMapEvent(mapListeners, record.getName(), eventType, record.getKey(),
-                oldValue, record.getValue(), record.getListeners(), callerAddress);
+        fireMapEvent(mapListeners, record.getName(), eventType, record.getKeyData(),
+                oldValue, record.getValueData(), record.getListeners(), callerAddress);
     }
 
     public class MContainsValue extends MultiCall<Boolean> {
@@ -1334,8 +1329,8 @@ public class ConcurrentMapManager extends BaseManager {
             if (cMap != null) {
                 long now = System.currentTimeMillis();
                 for (Record record : cMap.mapRecords.values()) {
-                    if (record.isActive() && record.isValid(now) && record.getValue() != null) {
-                        if (cMap.useBackupData) {
+                    if (record.isActive() && record.isValid(now) && record.getValueData() != null) {
+                        if (cMap.readBackupData) {
                             return false;
                         } else {
                             Partition partition = partitionManager.partitionServiceImpl.getPartition(record.getBlockId());
@@ -1670,7 +1665,7 @@ public class ConcurrentMapManager extends BaseManager {
                     // we have to make sure that the entry is actually persisted
                     // before we can evict it.
                     record.setDirty(false);
-                    request.value = record.getValue();
+                    request.value = record.getValueData();
                     executeAsync(request);
                 } else {
                     doOperation(request);
@@ -1733,7 +1728,7 @@ public class ConcurrentMapManager extends BaseManager {
                         && (record == null
                         || !record.isActive()
                         || !record.isValid()
-                        || record.getValue() == null)) {
+                        || record.getValueData() == null)) {
                     executeAsync(request);
                 } else {
                     doOperation(request);
@@ -1759,14 +1754,14 @@ public class ConcurrentMapManager extends BaseManager {
             } else {
                 if (request.value != null) {
                     Record record = ensureRecord(request);
-                    if (record.getValue() == null) {
+                    if (record.getValueData() == null) {
                         record.setValue(request.value);
                     }
                     CMap cmap = getOrCreateMap(request.name);
                     record.setIndexes(request.indexes, request.indexTypes);
                     cmap.markAsActive(record);
                     cmap.updateIndexes(record);
-                    request.response = record.getValue();
+                    request.response = record.getValueData();
                 }
             }
             returnResponse(request);
@@ -1947,11 +1942,10 @@ public class ConcurrentMapManager extends BaseManager {
                 Object winner = null;
                 if (cmap.mergePolicy != null) {
                     Record existing = cmap.getRecord(request);
-                    RecordEntry existingEntry = (existing == null) ? null : cmap.getRecordEntry(existing);
                     DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
                     Object key = newEntry.getKey();
                     if (key != null && newEntry.hasValue()) {
-                        winner = cmap.mergePolicy.merge(cmap.getName(), newEntry, existingEntry);
+                        winner = cmap.mergePolicy.merge(cmap.getName(), newEntry, existing);
                         if (winner != null) {
                             success = true;
                             if (cmap.writeDelayMillis == 0 && cmap.store != null) {
@@ -2146,16 +2140,16 @@ public class ConcurrentMapManager extends BaseManager {
                 for (MapEntry mapEntry : colRecords) {
                     Record record = (Record) mapEntry;
                     if (record.isActive() && record.isValid(now)) {
-                        if (record.getKey() == null || record.getKey().size() == 0) {
-                            throw new RuntimeException("Key cannot be null or zero-size: " + record.getKey());
+                        if (record.getKeyData() == null || record.getKeyData().size() == 0) {
+                            throw new RuntimeException("Key cannot be null or zero-size: " + record.getKeyData());
                         }
-                        boolean match = (!evaluateEntries) || predicate.apply(record.getRecordEntry());
+                        boolean match = (!evaluateEntries) || predicate.apply(record);
                         if (match) {
                             boolean onlyKeys = (request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL ||
                                     request.operation == CONCURRENT_MAP_ITERATE_KEYS);
-                            Data key = record.getKey();
-                            if (record.getValue() != null) {
-                                Data value = (onlyKeys) ? null : record.getValue();
+                            Data key = record.getKeyData();
+                            if (record.getValueData() != null) {
+                                Data value = (onlyKeys) ? null : record.getValueData();
                                 pairs.addKeyValue(new KeyValue(key, value));
                             } else if (record.getCopyCount() > 0) {
                                 for (int i = 0; i < record.getCopyCount(); i++) {

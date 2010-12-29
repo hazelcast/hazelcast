@@ -41,7 +41,7 @@ public class MapConfig implements DataSerializable {
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static String DEFAULT_EVICTION_POLICY = "NONE";
     public final static String DEFAULT_MERGE_POLICY = LatestUpdateMergePolicy.NAME;
-    public final static boolean DEFAULT_OWNED_ENTRIES_CACHED = true;
+    public final static boolean DEFAULT_CACHE_VALUE = true;
 
     private String name = null;
 
@@ -67,7 +67,7 @@ public class MapConfig implements DataSerializable {
 
     private boolean readBackupData = false;
 
-    private boolean cachingOwnedObjects = DEFAULT_OWNED_ENTRIES_CACHED;
+    private boolean cacheValue = DEFAULT_CACHE_VALUE;
 
     private String mergePolicy = DEFAULT_MERGE_POLICY;
 
@@ -118,22 +118,22 @@ public class MapConfig implements DataSerializable {
     }
 
     /**
-     * Returns if the locally owned entries are cached.
+     * Returns if the entry values are cached
      *
      * @return true if cached, false otherwise
      */
-    public boolean isCachingOwnedObjects() {
-        return cachingOwnedObjects;
+    public boolean isCacheValue() {
+        return cacheValue;
     }
 
     /**
-     * Sets if locally owned entries cached.
+     * Sets if entry values should be cached
      *
-     * @param cachingOwnedObjects
+     * @param cacheValue
      * @return this MapConfig
      */
-    public MapConfig setCachingOwnedObjects(boolean cachingOwnedObjects) {
-        this.cachingOwnedObjects = cachingOwnedObjects;
+    public MapConfig setCacheValue(boolean cacheValue) {
+        this.cacheValue = cacheValue;
         return this;
     }
 
@@ -313,7 +313,7 @@ public class MapConfig implements DataSerializable {
         return this;
     }
 
-    public boolean isUseBackupData() {
+    public boolean isReadBackupData() {
         return readBackupData;
     }
 

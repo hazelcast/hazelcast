@@ -19,7 +19,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.ByteUtil;
 
 import java.io.DataInput;
@@ -27,6 +26,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 public class TcpIpConfig implements DataSerializable {
     private int connectionTimeoutSeconds = 5;
@@ -100,8 +100,13 @@ public class TcpIpConfig implements DataSerializable {
      * @param members the members to set
      */
     public TcpIpConfig setMembers(final List<String> members) {
-        this.members.clear();
-        this.members.addAll(members);
+        for (String member : members) {
+            StringTokenizer tokenizer = new StringTokenizer(member, ",");
+            while (tokenizer.hasMoreTokens()) {
+                String s = tokenizer.nextToken();
+                this.members.add(s.trim());
+            }
+        }
         return this;
     }
 

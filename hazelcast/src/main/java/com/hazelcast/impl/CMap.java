@@ -84,8 +84,6 @@ public class CMap {
 
     final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
 
-    final ConcurrentMap<Long, RecordEntry> mapRecordEntries = new ConcurrentHashMap<Long, RecordEntry>(1000, 0.75f, 1);
-
     final String name;
 
     final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
@@ -124,7 +122,9 @@ public class CMap {
 
     final long creationTime;
 
-    final boolean useBackupData;
+    final boolean readBackupData;
+
+    final boolean cacheValue;
 
     volatile boolean ttlPerRecord = false;
 
@@ -155,7 +155,8 @@ public class CMap {
         evictionDelayMillis = mapConfig.getEvictionDelaySeconds() * 1000L;
         maxIdle = mapConfig.getMaxIdleSeconds() * 1000L;
         evictionPolicy = EvictionPolicy.valueOf(mapConfig.getEvictionPolicy());
-        useBackupData = mapConfig.isUseBackupData();
+        readBackupData = mapConfig.isReadBackupData();
+        cacheValue = mapConfig.isCacheValue();
         if (evictionPolicy == EvictionPolicy.NONE) {
             maxSize = Integer.MAX_VALUE;
             evictionComparator = null;
@@ -258,29 +259,6 @@ public class CMap {
             }
         }
         return false;
-    }
-
-    public RecordEntry getRecordEntry(Record record) {
-        RecordEntry recordEntry = mapRecordEntries.get(record.getId());
-        if (recordEntry == null) {
-            recordEntry = new RecordEntry(record);
-            RecordEntry found = mapRecordEntries.putIfAbsent(record.getId(), recordEntry);
-            if (found != null) {
-                recordEntry = found;
-            }
-        }
-        return recordEntry;
-    }
-
-    public void removeRecordEntry(Record record) {
-        mapRecordEntries.remove(record.getId());
-    }
-
-    public void invalidateRecordEntryValue(Record record) {
-        RecordEntry recordEntry = mapRecordEntries.get(record.getId());
-        if (recordEntry != null) {
-            recordEntry.invalidateValue();
-        }
     }
 
     public void lockMap(Request request) {
@@ -506,18 +484,11 @@ public class CMap {
                         distance = d;
                     }
                     if (distance > getBackupCount()) {
-                        mapRecords.remove(record.getKey());
+                        mapRecords.remove(record.getKeyData());
                     }
                 }
             }
         }
-    }
-
-    boolean isOwned(Record record) {
-        PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
-        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
-        Member owner = partition.getOwner();
-        return (owner != null && owner.localMember());
     }
 
     Record getOwnedRecord(Data key) {
@@ -652,7 +623,7 @@ public class CMap {
             }
         }
         record.setLastAccessed();
-        Data data = record.getValue();
+        Data data = record.getValueData();
         Data returnValue = null;
         if (data != null) {
             returnValue = data;
@@ -690,7 +661,7 @@ public class CMap {
         Record rec = concurrentMapManager.ensureRecord(request);
         if (request.operation == CONCURRENT_MAP_LOCK_AND_GET_VALUE) {
             if (reqValue == null) {
-                request.value = rec.getValue();
+                request.value = rec.getValueData();
                 if (rec.getMultiValues() != null) {
                     Values values = new Values(rec.getMultiValues());
                     request.value = toData(values);
@@ -706,7 +677,6 @@ public class CMap {
         }
         rec.lock(request.lockThreadId, request.lockAddress);
         rec.incrementVersion();
-        mapRecordEntries.remove(rec.getId());
         request.version = rec.getVersion();
         request.lockCount = rec.getLockCount();
         markAsActive(rec);
@@ -805,8 +775,8 @@ public class CMap {
         }
         if (removed) {
             record.incrementVersion();
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), null, req.value, record.getListeners(), req.caller);
-            logger.log(Level.FINEST, record.getValue() + " RemoveMulti " + record.getMultiValues());
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKeyData(), null, req.value, record.getListeners(), req.caller);
+            logger.log(Level.FINEST, record.getValueData() + " RemoveMulti " + record.getMultiValues());
         }
         req.version = record.getVersion();
         if (record.valueCount() == 0) {
@@ -833,12 +803,12 @@ public class CMap {
             updateIndexes(record);
             record.addValue(value);
             record.incrementVersion();
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKey(), null, value, record.getListeners(), req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKeyData(), null, value, record.getListeners(), req.caller);
         }
         if (req.txnId != -1) {
             unlock(record);
         }
-        logger.log(Level.FINEST, record.getValue() + " PutMulti " + record.getMultiValues());
+        logger.log(Level.FINEST, record.getValueData() + " PutMulti " + record.getMultiValues());
         req.clearForResponse();
         req.version = record.getVersion();
         return added;
@@ -851,16 +821,16 @@ public class CMap {
             mapRecords.put(req.key, record);
         }
         if (req.operation == ATOMIC_NUMBER_GET_AND_SET) {
-            req.response = record.getValue();
+            req.response = record.getValueData();
             record.setValue(toData(req.longValue));
         } else if (req.operation == ATOMIC_NUMBER_ADD_AND_GET) {
-            record.setValue(IOUtil.addDelta(record.getValue(), req.longValue));
-            req.response = record.getValue();
+            record.setValue(IOUtil.addDelta(record.getValueData(), req.longValue));
+            req.response = record.getValueData();
         } else if (req.operation == ATOMIC_NUMBER_GET_AND_ADD) {
-            req.response = record.getValue();
-            record.setValue(IOUtil.addDelta(record.getValue(), req.longValue));
+            req.response = record.getValueData();
+            record.setValue(IOUtil.addDelta(record.getValueData(), req.longValue));
         } else if (req.operation == ATOMIC_NUMBER_COMPARE_AND_SET) {
-            if (record.getValue().equals(req.value)) {
+            if (record.getValueData().equals(req.value)) {
                 record.setValue(toData(req.longValue));
                 req.response = Boolean.TRUE;
             } else {
@@ -881,13 +851,13 @@ public class CMap {
             record.setMultiValues(null);
         }
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
-            if (record != null && record.isActive() && record.isValid(now) && record.getValue() != null) {
+            if (record != null && record.isActive() && record.isValid(now) && record.getValueData() != null) {
                 req.clearForResponse();
-                req.response = record.getValue();
+                req.response = record.getValueData();
                 return;
             }
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_NOT_NULL) {
-            if (record == null || !record.isActive() || !record.isValid(now) || record.getValue() == null) {
+            if (record == null || !record.isActive() || !record.isValid(now) || record.getValueData() == null) {
                 return;
             }
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
@@ -901,7 +871,7 @@ public class CMap {
             }
             Data expectedOldValue = multiData.getData(0);
             req.value = multiData.getData(1);
-            if (!record.getValue().equals(expectedOldValue)) {
+            if (!record.getValueData().equals(expectedOldValue)) {
                 req.response = Boolean.FALSE;
                 return;
             }
@@ -912,7 +882,7 @@ public class CMap {
             mapRecords.put(req.key, record);
         } else {
             markAsActive(record);
-            oldValue = (record.isValid(now)) ? record.getValue() : null;
+            oldValue = (record.isValid(now)) ? record.getValueData() : null;
             record.setValue(req.value);
             record.incrementVersion();
             record.setLastUpdated();
@@ -952,10 +922,9 @@ public class CMap {
                         Map<Object, Object> updates = new HashMap<Object, Object>();
                         for (Record dirtyRecord : dirtyRecords) {
                             if (!dirtyRecord.isActive()) {
-                                keysToDelete.add(dirtyRecord.getRecordEntry().getKey());
+                                keysToDelete.add(dirtyRecord.getKey());
                             } else {
-                                Map.Entry entry = dirtyRecord.getRecordEntry();
-                                updates.put(entry.getKey(), entry.getValue());
+                                updates.put(dirtyRecord.getKey(), dirtyRecord.getValue());
                             }
                         }
                         if (keysToDelete.size() == 1) {
@@ -1227,7 +1196,7 @@ public class CMap {
         if (lsRecordsToEvict != null && lsRecordsToEvict.size() > 0) {
             logger.log(Level.FINEST, lsRecordsToEvict.size() + " evicting");
             for (final Record recordToEvict : lsRecordsToEvict) {
-                concurrentMapManager.evictAsync(recordToEvict.getName(), recordToEvict.getKey());
+                concurrentMapManager.evictAsync(recordToEvict.getName(), recordToEvict.getKeyData());
             }
         }
     }
@@ -1239,7 +1208,7 @@ public class CMap {
                     if (member.getAddress() != null) {
                         Packet packet = concurrentMapManager.obtainPacket();
                         packet.name = getName();
-                        packet.setKey(record.getKey());
+                        packet.setKey(record.getKeyData());
                         packet.operation = ClusterOperation.CONCURRENT_MAP_INVALIDATE;
                         boolean sent = concurrentMapManager.send(packet, member.getAddress());
                         if (!sent) {
@@ -1248,7 +1217,7 @@ public class CMap {
                     }
                 }
             }
-            mapNearCache.invalidate(record.getKey());
+            mapNearCache.invalidate(record.getKeyData());
         }
     }
 
@@ -1299,7 +1268,7 @@ public class CMap {
         if (record.getCopyCount() > 0) {
             record.decrementCopyCount();
             removed = true;
-        } else if (record.getValue() != null) {
+        } else if (record.getValueData() != null) {
             removed = true;
         } else if (record.getMultiValues() != null) {
             removed = true;
@@ -1351,20 +1320,20 @@ public class CMap {
             }
         }
         if (req.value != null) {
-            if (record.getValue() != null) {
-                if (!record.getValue().equals(req.value)) {
+            if (record.getValueData() != null) {
+                if (!record.getValueData().equals(req.value)) {
                     return;
                 }
             }
         }
-        Data oldValue = record.getValue();
+        Data oldValue = record.getValueData();
         if (oldValue == null && record.getMultiValues() != null && record.getMultiValues().size() > 0) {
             Values values = new Values(record.getMultiValues());
             oldValue = toData(values);
         }
         if (oldValue != null) {
             fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKey(), null, oldValue, record.getListeners(), req.caller);
+            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKeyData(), null, oldValue, record.getListeners(), req.caller);
             record.incrementVersion();
         }
         markAsRemoved(record);
@@ -1388,7 +1357,6 @@ public class CMap {
         if (mapNearCache != null) {
             mapNearCache.reset();
         }
-        mapRecordEntries.clear();
         mapRecords.clear();
         mapIndexService.clear();
         if (store != null && store instanceof MapStoreWrapper) {
@@ -1425,7 +1393,6 @@ public class CMap {
     void markAsRemoved(Record record) {
         if (record.isActive()) {
             record.markRemoved();
-            mapRecordEntries.remove(record.getId());
         }
         record.setValue(null);
         record.setMultiValues(null);
@@ -1434,8 +1401,7 @@ public class CMap {
     }
 
     void removeAndPurgeRecord(Record record) {
-        mapRecordEntries.remove(record.getId());
-        mapRecords.remove(record.getKey());
+        mapRecords.remove(record.getKeyData());
         mapIndexService.remove(record);
     }
 

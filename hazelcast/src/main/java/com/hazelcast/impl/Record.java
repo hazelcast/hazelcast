@@ -25,6 +25,8 @@ import com.hazelcast.nio.Data;
 
 import java.util.*;
 
+import static com.hazelcast.nio.IOUtil.toObject;
+
 public final class Record implements MapEntry {
 
     private final CMap cmap;
@@ -32,6 +34,7 @@ public final class Record implements MapEntry {
     private final short blockId;
     private final Data key;
 
+    private volatile Object valueObject = null;
     private volatile Data value;
     private volatile boolean active = true;
     private volatile int hits = 0;
@@ -46,7 +49,7 @@ public final class Record implements MapEntry {
     private volatile boolean dirty = false;
     private volatile int copyCount = 0;
 
-    private DistributedLock lock = null;
+    private volatile DistributedLock lock = null;
 
     private OptionalInfo optionalInfo = null;
 
@@ -75,10 +78,6 @@ public final class Record implements MapEntry {
         recordCopy.setCopyCount(copyCount);
         recordCopy.setVersion(getVersion());
         return recordCopy;
-    }
-
-    public RecordEntry getRecordEntry() {
-        return cmap.getRecordEntry(this);
     }
 
     public CMap getCMap() {
@@ -126,20 +125,42 @@ public final class Record implements MapEntry {
         }
     }
 
-    public Data getKey() {
+    public Object getKey() {
+        return toObject(key);
+    }
+
+    public Object getValue() {
+        if (valueObject != null) {
+            return valueObject;
+        }
+        synchronized (Record.this) {
+            if (valueObject != null) {
+                return valueObject;
+            }
+            Object v = toObject(value);
+            if (cmap.cacheValue) {
+                valueObject = v;
+            }
+            return v;
+        }
+    }
+
+    public Data getKeyData() {
         return key;
     }
 
-    public Data getValue() {
+    public Data getValueData() {
         return value;
     }
 
     public Object setValue(Object value) {
-        return getRecordEntry().setValue(value);
+        Object oldValue = getValue();
+        valueObject = value;
+        return oldValue;
     }
 
     public void setValue(Data value) {
-        cmap.invalidateRecordEntryValue(this);
+        invalidateValueCache();
         this.value = value;
     }
 
@@ -162,7 +183,7 @@ public final class Record implements MapEntry {
 
     public int valueCount() {
         int count = 0;
-        if (getValue() != null) {
+        if (getValueData() != null) {
             count = 1;
         } else if (getMultiValues() != null) {
             count = getMultiValues().size();
@@ -174,10 +195,13 @@ public final class Record implements MapEntry {
 
     public long getCost() {
         long cost = 0;
-        if (getValue() != null) {
-            cost = getValue().size();
+        if (getValueData() != null) {
+            cost = getValueData().size();
             if (copyCount > 0) {
                 cost *= copyCount;
+            }
+            if (valueObject != null) {
+                cost += getValueData().size();
             }
         } else if (getMultiValues() != null && getMultiValues().size() > 0) {
             for (Data data : getMultiValues()) {
@@ -186,12 +210,12 @@ public final class Record implements MapEntry {
                 }
             }
         }
-        return cost + getKey().size() + 250;
+        return cost + getKeyData().size() + 403;
     }
 
     public boolean containsValue(Data value) {
-        if (this.getValue() != null) {
-            return this.getValue().equals(value);
+        if (this.getValueData() != null) {
+            return this.getValueData().equals(value);
         } else if (getMultiValues() != null) {
             int count = getMultiValues().size();
             if (count > 0) {
@@ -209,6 +233,7 @@ public final class Record implements MapEntry {
     }
 
     public boolean unlock(int threadId, Address address) {
+        invalidateValueCache();
         return lock == null || lock.unlock(address, threadId);
     }
 
@@ -217,11 +242,16 @@ public final class Record implements MapEntry {
     }
 
     public boolean lock(int threadId, Address address) {
+        invalidateValueCache();
         if (lock == null) {
             lock = new DistributedLock(address, threadId);
             return true;
         }
         return lock.lock(address, threadId);
+    }
+
+    private void invalidateValueCache() {
+        valueObject = null;
     }
 
     public void addScheduledAction(ScheduledAction scheduledAction) {
@@ -368,7 +398,7 @@ public final class Record implements MapEntry {
     }
 
     public String toString() {
-        return "Record key=" + getKey() + ", active=" + isActive()
+        return "Record key=" + getKeyData() + ", active=" + isActive()
                 + ", version=" + getVersion() + ", removable=" + isRemovable();
     }
 
@@ -422,9 +452,7 @@ public final class Record implements MapEntry {
 
     public void setActive(boolean active) {
         this.active = active;
-        if (!active) {
-            cmap.removeRecordEntry(this);
-        }
+        invalidateValueCache();
     }
 
     public String getName() {

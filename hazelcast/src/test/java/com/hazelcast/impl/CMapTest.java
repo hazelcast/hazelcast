@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 import static junit.framework.Assert.assertEquals;
@@ -86,8 +85,8 @@ public class CMapTest extends TestUtil {
         assertTrue(record2.isActive());
         assertEquals(1, record1.valueCount());
         assertEquals(1, record2.valueCount());
-        assertEquals(dValue, record1.getValue());
-        assertEquals(dValue, record2.getValue());
+        assertEquals(dValue, record1.getValueData());
+        assertEquals(dValue, record2.getValueData());
         Thread.sleep(6000);
         now = System.currentTimeMillis();
         assertFalse(record1.isValid(now));

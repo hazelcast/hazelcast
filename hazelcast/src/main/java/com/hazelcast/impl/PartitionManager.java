@@ -376,7 +376,7 @@ public class PartitionManager implements Runnable {
 
     public void syncForDead(MemberImpl deadMember) {
         invalidateBlocksHash();
-        partitionServiceImpl.clearRealPartitions();
+        partitionServiceImpl.reset();
         Address deadAddress = deadMember.getAddress();
         if (deadAddress == null || deadAddress.equals(thisAddress)) {
             return;
@@ -480,8 +480,8 @@ public class PartitionManager implements Runnable {
             if (shouldBackup) {
                 for (Record rec : cmap.mapRecords.values()) {
                     if (rec.isActive()) {
-                        if (rec.getKey() == null || rec.getKey().size() == 0) {
-                            throw new RuntimeException("Record.key is null or empty " + rec.getKey());
+                        if (rec.getKeyData() == null || rec.getKeyData().size() == 0) {
+                            throw new RuntimeException("Record.key is null or empty " + rec.getKeyData());
                         }
                         lsOwnedRecords.add(rec);
                     }
@@ -525,8 +525,8 @@ public class PartitionManager implements Runnable {
         for (final CMap cmap : cmaps) {
             for (Record rec : cmap.mapRecords.values()) {
                 if (rec.isActive() && concurrentMapManager.isOwned(rec)) {
-                    if (rec.getKey() == null || rec.getKey().size() == 0) {
-                        throw new RuntimeException("Record.key is null or empty " + rec.getKey());
+                    if (rec.getKeyData() == null || rec.getKeyData().size() == 0) {
+                        throw new RuntimeException("Record.key is null or empty " + rec.getKeyData());
                     }
                     if (rec.getBlockId() == blockInfo.getBlockId()) {
                         cmap.onMigrate(rec);

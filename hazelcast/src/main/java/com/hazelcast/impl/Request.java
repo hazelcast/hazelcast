@@ -206,8 +206,8 @@ public class Request {
         longValue = record.getCopyCount();
         ttl = record.getRemainingTTL();
         timeout = record.getRemainingIdle();
-        key = record.getKey();
-        value = record.getValue();
+        key = record.getKeyData();
+        value = record.getValueData();
         if (record.getIndexes() != null) {
             setIndexes(record.getIndexes(), record.getIndexTypes());
         }

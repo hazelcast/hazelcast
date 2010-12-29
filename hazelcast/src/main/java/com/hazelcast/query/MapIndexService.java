@@ -61,8 +61,8 @@ public class MapIndexService {
         }
         if (indexValue != null) {
             Long newValueIndex = -1L;
-            if (record.isActive() && record.getValue() != null) {
-                newValueIndex = (long) record.getValue().hashCode();
+            if (record.isActive() && record.getValueData() != null) {
+                newValueIndex = (long) record.getValueData().hashCode();
             }
             indexValue.index(newValueIndex, record);
         }
@@ -175,7 +175,7 @@ public class MapIndexService {
                             Iterator<MapEntry> it = resultSet.iterator();
                             while (it.hasNext()) {
                                 Record record = (Record) it.next();
-                                if (!p.apply(record.getRecordEntry())) {
+                                if (!p.apply(record)) {
                                     it.remove();
                                 }
                             }
