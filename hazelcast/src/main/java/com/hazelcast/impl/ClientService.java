@@ -910,7 +910,6 @@ public class ClientService implements ConnectionListener {
                 ItemListener itemListener = new ItemListener() {
                     public void itemAdded(Object item) {
                         Packet p = new Packet();
-                        System.out.println("Item is: " + item);
                         p.set(packetName, ClusterOperation.EVENT, item, true);
                         clientEndpoint.sendPacket(p);
                     }

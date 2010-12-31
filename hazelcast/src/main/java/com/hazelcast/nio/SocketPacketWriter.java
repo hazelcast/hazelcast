@@ -44,13 +44,9 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
         boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(node);
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
-                if (true) {
-                    logger.log(Level.INFO, "Incorrect encryption configuration.");
-                    logger.log(Level.INFO, "You can enable either SymmetricEncryption or AsymmetricEncryption.");
-                    throw new RuntimeException();
-                }
-                packetWriter = new ComplexCipherPacketWriter();
-                logger.log(Level.INFO, "Writer started with ComplexEncryption");
+                logger.log(Level.INFO, "Incorrect encryption configuration.");
+                logger.log(Level.INFO, "You can enable either SymmetricEncryption or AsymmetricEncryption.");
+                throw new RuntimeException();
             } else if (symmetricEncryptionEnabled) {
                 packetWriter = new SymmetricCipherPacketWriter();
                 logger.log(Level.INFO, "Writer started with SymmetricEncryption");
@@ -74,43 +70,6 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
     class DefaultPacketWriter implements PacketWriter {
         public boolean writePacket(Packet packet, ByteBuffer socketBB) {
             return packet.writeToSocketBuffer(socketBB);
-        }
-    }
-
-    class ComplexCipherPacketWriter implements PacketWriter {
-        boolean joinPartDone = false;
-        AsymmetricCipherPacketWriter apw = new AsymmetricCipherPacketWriter();
-        SymmetricCipherPacketWriter spw = new SymmetricCipherPacketWriter();
-        int joinPartTotalWrites = 0;
-        final int maxJoinWrite;
-
-        ComplexCipherPacketWriter() {
-            maxJoinWrite = 2280;
-        }
-
-        public boolean writePacket(Packet packet, ByteBuffer socketBB) throws Exception {
-            boolean result = false;
-            if (!joinPartDone) {
-                int left = maxJoinWrite - joinPartTotalWrites;
-                if (socketBB.remaining() > left) {
-                    socketBB.limit(socketBB.position() + left);
-                }
-                int currentPosition = socketBB.position();
-                result = apw.writePacket(packet, socketBB);
-                joinPartTotalWrites += (socketBB.position() - currentPosition);
-                socketBB.limit(socketBB.capacity());
-                if (joinPartTotalWrites == maxJoinWrite) {
-//                    apw.cipherBuffer.flip();
-//                    socketBB.put (apw.cipherBuffer);
-//                    System.out.println("LEFT " + apw.cipherBuffer.position());
-                    joinPartDone = true;
-                    apw = null;
-                    writePacket(packet, socketBB);
-                }
-            } else {
-                result = spw.writePacket(packet, socketBB);
-            }
-            return result;
         }
     }
 

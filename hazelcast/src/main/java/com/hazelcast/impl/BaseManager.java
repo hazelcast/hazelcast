@@ -679,7 +679,11 @@ public abstract class BaseManager {
         }
 
         protected void doReleasePacket(Packet packet) {
+            checkServiceThread();
             if (qServiceThreadPacketCache.offer(packet)) {
+                if (packet.released) {
+                    throw new RuntimeException("Packet is already released! " + TargetAwareOp.this);
+                }
                 packet.released = true;
             } else {
                 releasePacket(packet);
@@ -687,6 +691,7 @@ public abstract class BaseManager {
         }
 
         protected Packet doObtainPacket() {
+            checkServiceThread();
             Packet p = qServiceThreadPacketCache.poll();
             if (p != null) {
                 p.reset();
@@ -749,11 +754,6 @@ public abstract class BaseManager {
                     packetNotSent();
                 }
             }
-        }
-
-        @Override
-        protected void handleNoneRedoResponse(Packet packet) {
-            super.handleNoneRedoResponse(packet);
         }
 
         protected void packetNotSent() {

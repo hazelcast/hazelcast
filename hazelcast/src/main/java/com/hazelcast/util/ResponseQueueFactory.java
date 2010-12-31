@@ -48,8 +48,8 @@ public class ResponseQueueFactory {
         }
 
         public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
+            if (timeout < 0) throw new IllegalArgumentException();
             if (timeout == 0) return response;
-            if (timeout < 0) new IllegalArgumentException();
             long remaining = unit.toMillis(timeout);
             while (response == null && remaining > 0) {
                 synchronized (lock) {

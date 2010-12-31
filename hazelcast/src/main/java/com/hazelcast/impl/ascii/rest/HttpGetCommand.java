@@ -31,7 +31,6 @@ public class HttpGetCommand extends HttpCommand {
     public boolean doRead(ByteBuffer cb) {
         while (cb.hasRemaining()) {
             char c = (char) cb.get();
-//            System.out.println("READing " + c);
             if (c == '\n') {
                 if (nextLine) {
                     return true;

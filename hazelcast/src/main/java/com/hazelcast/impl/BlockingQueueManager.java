@@ -379,7 +379,6 @@ public class BlockingQueueManager extends BaseManager {
                 q.doBackup(false, null, blockId, (int) packet.longValue);
             }
         } catch (Exception e) {
-            System.out.println("backup index : " + packet.longValue);
             e.printStackTrace();
         } finally {
             releasePacket(packet);

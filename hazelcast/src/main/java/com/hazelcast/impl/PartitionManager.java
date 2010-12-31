@@ -476,7 +476,6 @@ public class PartitionManager implements Runnable {
                     shouldBackup = node.clusterManager.isNextChanged(cmap.backupCount) || node.clusterManager.isPreviousChanged(cmap.backupCount);
                 }
             }
-//            System.out.println(cmap.name + " " + thisAddress + " backupcount " + cmap.backupCount + " changed : " + node.clusterManager.isNextChanged(cmap.backupCount));
             if (shouldBackup) {
                 for (Record rec : cmap.mapRecords.values()) {
                     if (rec.isActive()) {

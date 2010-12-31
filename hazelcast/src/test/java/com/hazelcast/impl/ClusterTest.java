@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.Thread.sleep;
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
 
 /**
@@ -767,7 +768,7 @@ public class ClusterTest {
         allMapListenerTest(map2, "5", map1);
     }
 
-    @Test(timeout = 1200000)
+    @Test(timeout = 120000)
     public void testListeners2() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
@@ -823,7 +824,7 @@ public class ClusterTest {
         assertTrue(latchEvicted.await(waitSeconds, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testListeners() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         assertEquals(1, h1.getCluster().getMembers().size());
@@ -1295,11 +1296,11 @@ public class ClusterTest {
         for (int i = 0; i < 100; i++) {
             sleep(1000);
             Runtime.getRuntime().gc();
-            long usedMemoryEnd = getUsedMemoryAsMB();
-            if ((usedMemoryEnd - usedMemoryInit) < 10) {
+            if ((getUsedMemoryAsMB() - usedMemoryInit) < 10) {
                 return;
             }
         }
+        fail(String.format("UsedMemory now: %d init: %d ", getUsedMemoryAsMB(), usedMemoryInit));
     }
 
     @Test
@@ -1344,14 +1345,11 @@ public class ClusterTest {
         for (int i = 0; i < 100; i++) {
             sleep(1000);
             Runtime.getRuntime().gc();
-            long usedMemoryEnd = getUsedMemoryAsMB();
-            if ((usedMemoryEnd - usedMemoryInit) < 25) {
+            if ((getUsedMemoryAsMB() - usedMemoryInit) < 25) {
                 return;
             }
         }
-        Runtime.getRuntime().gc();
-        long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(usedMemoryInit + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - usedMemoryInit) < 25);
+        fail(String.format("UsedMemory now: %d init: %d ", getUsedMemoryAsMB(), usedMemoryInit));
     }
 
     @Test
@@ -1397,14 +1395,11 @@ public class ClusterTest {
         for (int i = 0; i < 100; i++) {
             sleep(1000);
             Runtime.getRuntime().gc();
-            long usedMemoryEnd = getUsedMemoryAsMB();
-            if ((usedMemoryEnd - usedMemoryInit) < 25) {
+            if ((getUsedMemoryAsMB() - usedMemoryInit) < 25) {
                 return;
             }
         }
-        Runtime.getRuntime().gc();
-        long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(usedMemoryInit + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - usedMemoryInit) < 20);
+        fail(String.format("UsedMemory now: %d init: %d ", getUsedMemoryAsMB(), usedMemoryInit));
     }
 
     @Test
@@ -1449,14 +1444,11 @@ public class ClusterTest {
         for (int i = 0; i < 100; i++) {
             sleep(1000);
             Runtime.getRuntime().gc();
-            long usedMemoryEnd = getUsedMemoryAsMB();
-            if ((usedMemoryEnd - usedMemoryInit) < 25) {
+            if ((getUsedMemoryAsMB() - usedMemoryInit) < 25) {
                 return;
             }
         }
-        Runtime.getRuntime().gc();
-        long usedMemoryEnd = getUsedMemoryAsMB();
-        assertTrue(usedMemoryInit + ", UsedMemory now: " + usedMemoryEnd, (usedMemoryEnd - usedMemoryInit) < 25);
+        fail(String.format("UsedMemory now: %d init: %d ", getUsedMemoryAsMB(), usedMemoryInit));
     }
 
     long getUsedMemoryAsMB() {
