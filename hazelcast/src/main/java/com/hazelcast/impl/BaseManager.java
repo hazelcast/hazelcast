@@ -680,14 +680,8 @@ public abstract class BaseManager {
 
         protected void doReleasePacket(Packet packet) {
             checkServiceThread();
-            if (qServiceThreadPacketCache.offer(packet)) {
-                if (packet.released) {
-                    throw new RuntimeException("Packet is already released! " + TargetAwareOp.this);
-                }
-                packet.released = true;
-            } else {
-                releasePacket(packet);
-            }
+            packet.released = true;
+            qServiceThreadPacketCache.offer(packet);
         }
 
         protected Packet doObtainPacket() {
@@ -695,10 +689,10 @@ public abstract class BaseManager {
             Packet p = qServiceThreadPacketCache.poll();
             if (p != null) {
                 p.reset();
-                p.released = false;
             } else {
-                p = obtainPacket();
+                p = new Packet();
             }
+            p.released = false;
             return p;
         }
 

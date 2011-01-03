@@ -508,7 +508,7 @@ public class Node {
                 Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size());
     }
 
-    private Address findMaster() {
+    private Address findMasterWithMulticast() {
         try {
             final String ip = System.getProperty("join.ip");
             if (ip == null) {
@@ -664,10 +664,15 @@ public class Node {
     }
 
     void join() {
-        if (!config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-            joinWithTCP();
-        } else {
-            joinWithMulticast();
+        try {
+            if (!config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
+                joinWithTCP();
+            } else {
+                joinWithMulticast();
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, e.getMessage());
+            factory.lifecycleService.restart();
         }
     }
 
@@ -685,57 +690,59 @@ public class Node {
         unlock();
     }
 
+    private void failedJoiningToMaster(boolean multicast, int tryCount) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n");
+        sb.append("===========================");
+        sb.append("\n");
+        sb.append("Couldn't connect to discovered master! tryCount: ").append(tryCount);
+        sb.append("\n");
+        sb.append("thisAddress: ").append(address);
+        sb.append("\n");
+        sb.append("masterAddress: ").append(masterAddress);
+        sb.append("\n");
+        sb.append("multicast: ").append(multicast);
+        sb.append("\n");
+        sb.append("connection: ").append(connectionManager.getConnection(masterAddress));
+        sb.append("===========================");
+        sb.append("\n");
+        throw new IllegalStateException(sb.toString());
+    }
+
     private void joinWithMulticast() {
         int tryCount = 0;
         while (!joined) {
-            try {
-                logger.log(Level.FINEST, "joining... " + masterAddress);
-                masterAddress = null;
-                masterAddress = findMaster();
-                if (masterAddress == null) {
-                    if (masterAddress == null || masterAddress.equals(address)) {
-                        TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
-                        if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {
-                            masterAddress = null;
-                            logger.log(Level.FINEST, "Multicast couldn't find cluster. Trying TCP/IP");
-                            joinWithTCP();
-                        } else {
-                            setAsMaster();
-                        }
-                        return;
-                    }
-                }
-                if (tryCount++ > 20) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("\n");
-                    sb.append("===========================");
-                    sb.append("\n");
-                    sb.append("Couldn't connect to discovered master! tryCount: ").append(tryCount);
-                    sb.append("\n");
-                    sb.append("thisAddress: ").append(address);
-                    sb.append("\n");
-                    sb.append("masterAddress: ").append(masterAddress);
-                    sb.append("\n");
-                    sb.append("connection: ").append(connectionManager.getConnection(masterAddress));
-                    sb.append("===========================");
-                    sb.append("\n");
-                    logger.log(Level.WARNING, sb.toString());
-                    tryCount = 0;
-                }
-                if (!masterAddress.equals(address)) {
-                    connectAndSendJoinRequest(masterAddress);
-                } else {
+            logger.log(Level.FINEST, "joining... " + masterAddress);
+            masterAddress = null;
+            masterAddress = findMasterWithMulticast();
+            if (masterAddress == null || address.equals(masterAddress)) {
+                TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+                if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {
                     masterAddress = null;
-                    tryCount = 0;
+                    logger.log(Level.FINEST, "Multicast couldn't find cluster. Trying TCP/IP");
+                    joinWithTCP();
+                } else {
+                    setAsMaster();
                 }
+                return;
+            }
+            if (tryCount++ > 22) {
+                failedJoiningToMaster(true, tryCount);
+            }
+            if (!masterAddress.equals(address)) {
+                connectAndSendJoinRequest(masterAddress);
+            } else {
+                masterAddress = null;
+                tryCount = 0;
+            }
+            try {
                 Thread.sleep(500L);
-            } catch (final Exception e) {
-                logger.log(Level.FINEST, "multicast join", e);
+            } catch (InterruptedException ignored) {
             }
         }
     }
 
-    private void connectAndSendJoinRequest(Address masterAddress) throws Exception {
+    private void connectAndSendJoinRequest(Address masterAddress) {
         if (masterAddress == null || masterAddress.equals(address)) {
             throw new IllegalArgumentException();
         }
@@ -801,9 +808,13 @@ public class Node {
                         connectAndSendJoinRequest(colPossibleAddresses);
                         Thread.sleep(1000L);
                     }
+                    int requestCount = 0;
                     while (masterAddress != null && !joined) {
                         Thread.sleep(1000L);
                         clusterManager.sendJoinRequest(masterAddress);
+                        if (requestCount++ > 22) {
+                            failedJoiningToMaster(false, requestCount);
+                        }
                     }
                     if (masterAddress == null) { // no-one knows the master
                         boolean masterCandidate = true;
@@ -821,9 +832,7 @@ public class Node {
             }
             colPossibleAddresses.clear();
             failedConnections.clear();
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.log(Level.SEVERE, e.getMessage(), e);
+        } catch (InterruptedException ignored) {
         }
     }
 

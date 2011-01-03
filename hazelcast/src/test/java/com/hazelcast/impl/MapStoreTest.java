@@ -299,7 +299,29 @@ public class MapStoreTest extends TestUtil {
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.DELETE_ALL, testMapStore.waitForEvent(20));
         assertEquals(0, testMapStore.getStore().size());
         assertEquals(0, map.size());
-        assertEquals(null, testMapStore.waitForEvent(10));        
+        assertEquals(null, testMapStore.waitForEvent(10));
+    }
+
+    @Test
+    public void testOneMemberWriteBehindWithMaxIdle() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        Config config = newConfig(testMapStore, 1);
+        config.getMapConfig("default").setMaxIdleSeconds(4);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        for (int i = 0; i < 10; i++) {
+            map.put(i, "value" + i);
+        }
+        CMap cmap = getCMap(h1, "default");
+        cmap.startCleanup(true);
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE_ALL, testMapStore.waitForEvent(10));
+        Thread.sleep(5000);
+        cmap.startCleanup(true);
+        assertEquals(null, testMapStore.waitForEvent(1));
+        assertEquals(10, testMapStore.getStore().size());
+        assertEquals(0, map.size());
+        cmap.startCleanup(true);
+        assertEquals(null, testMapStore.waitForEvent(10));
     }
 
     private Config newConfig(Object storeImpl, int writeDelaySeconds) {

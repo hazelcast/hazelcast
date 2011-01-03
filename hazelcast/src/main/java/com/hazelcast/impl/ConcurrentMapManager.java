@@ -1816,7 +1816,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (record.getLockCount() == 0 &&
                             record.valueCount() == 0 &&
                             !record.hasScheduledAction()) {
-                        cmap.markAsRemoved(record);
+                        cmap.markAsEvicted(record);
                     }
                     cmap.fireScheduledActions(record);
                 }

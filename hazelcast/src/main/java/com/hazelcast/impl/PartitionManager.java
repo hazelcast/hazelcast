@@ -531,7 +531,7 @@ public class PartitionManager implements Runnable {
                         cmap.onMigrate(rec);
                         Record recordCopy = rec.copy();
                         lsRecordsToMigrate.add(recordCopy);
-                        cmap.markAsRemoved(rec);
+                        cmap.markAsEvicted(rec);
                     }
                 }
             }

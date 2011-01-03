@@ -427,7 +427,7 @@ public class CMap {
                     if (record.getCopyCount() > 0) {
                         record.decrementCopyCount();
                     }
-                    markAsRemoved(record);
+                    markAsEvicted(record);
                 }
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
@@ -436,7 +436,7 @@ public class CMap {
                 rec.setVersion(req.version);
             }
             if (rec.getLockCount() == 0 && rec.valueCount() == 0) {
-                markAsRemoved(rec);
+                markAsEvicted(rec);
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
             add(req, true);
@@ -444,7 +444,7 @@ public class CMap {
             Record record = getRecord(req);
             if (record != null) {
                 if (req.value == null) {
-                    markAsRemoved(record);
+                    markAsEvicted(record);
                 } else {
                     if (record.containsValue(req.value)) {
                         if (record.getMultiValues() != null) {
@@ -458,7 +458,7 @@ public class CMap {
                         }
                     }
                     if (record.valueCount() == 0) {
-                        markAsRemoved(record);
+                        markAsEvicted(record);
                     }
                 }
             }
@@ -1291,8 +1291,7 @@ public class CMap {
             fireInvalidation(record);
             concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_EVICTED, null, record, req.caller);
             record.incrementVersion();
-            markAsRemoved(record);
-            record.setDirty(false);
+            markAsEvicted(record);
             req.clearForResponse();
             req.version = record.getVersion();
             req.longValue = record.getCopyCount();
@@ -1398,6 +1397,23 @@ public class CMap {
         record.setMultiValues(null);
         updateIndexes(record);
         markAsDirty(record);
+    }
+
+    /**
+     * same as markAsRemoved but it doesn't
+     * mark the entry as 'dirty' because
+     * inactive and dirty records are deleted
+     * from mapStore
+     *
+     * @param record
+     */
+    void markAsEvicted(Record record) {
+        if (record.isActive()) {
+            record.markRemoved();
+        }
+        record.setValue(null);
+        record.setMultiValues(null);
+        updateIndexes(record);
     }
 
     void removeAndPurgeRecord(Record record) {
