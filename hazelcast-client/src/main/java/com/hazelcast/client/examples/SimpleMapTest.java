@@ -18,9 +18,7 @@
 package com.hazelcast.client.examples;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
-import com.hazelcast.monitor.LocalMapOperationStats;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,10 +30,9 @@ public class SimpleMapTest {
     public static int ENTRY_COUNT = 10 * 1000;
     public static int VALUE_SIZE = 1000;
     public static final int STATS_SECONDS = 10;
-    public static int GET_PERCENTAGE = 40;
-    public static int PUT_PERCENTAGE = 40;
+    public static int GET_PERCENTAGE = 99;
+    public static int PUT_PERCENTAGE = 1;
     final static Stats stats = new Stats();
-
 
     public static void main(String[] args) {
         if (args != null && args.length > 0) {
@@ -64,9 +61,9 @@ public class SimpleMapTest {
         System.out.println("        Value Size: " + VALUE_SIZE);
         System.out.println("    Get Percentage: " + GET_PERCENTAGE);
         System.out.println("    Put Percentage: " + PUT_PERCENTAGE);
-        System.out.println(" Remove Percentage: " + (100-(PUT_PERCENTAGE+GET_PERCENTAGE)));
+        System.out.println(" Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
         ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
-        final HazelcastClient hazelcast = HazelcastClient.newHazelcastClient("dev", "dev-pass", "127.0.0.1");
+        final HazelcastClient hazelcast = HazelcastClient.newHazelcastClient("dev", "dev-pass", "localhost");
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.submit(new Runnable() {
                 public void run() {

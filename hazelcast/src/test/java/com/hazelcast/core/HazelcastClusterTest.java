@@ -17,8 +17,6 @@
 
 package com.hazelcast.core;
 
-import java.util.Collections;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -26,6 +24,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.Collections;
 
 import static junit.framework.Assert.*;
 
@@ -61,6 +61,7 @@ public class HazelcastClusterTest {
     public void testJoinWithCompatibleConfigs() throws Exception {
         Config config = new XmlConfigBuilder().build();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        Thread.sleep(1000);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         final int s1 = h1.getCluster().getMembers().size();
         final int s2 = h2.getCluster().getMembers().size();

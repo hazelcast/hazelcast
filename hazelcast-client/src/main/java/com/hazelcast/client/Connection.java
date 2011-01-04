@@ -41,7 +41,7 @@ public class Connection {
     private final DataInputStream dis;
     final AtomicBoolean headersWritten = new AtomicBoolean(false);
     final AtomicBoolean headerRead = new AtomicBoolean(false);
-    
+
     /**
      * Creates the Socket to the given host and port
      *
@@ -60,18 +60,22 @@ public class Connection {
         try {
             final InetSocketAddress isa = new InetSocketAddress(address.getAddress(), address.getPort());
             final Socket socket = new Socket();
-            try{
+            try {
                 socket.setKeepAlive(true);
                 //socket.setTcpNoDelay(true);
                 socket.setSoLinger(true, 5);
+//                socket.setSendBufferSize(BUFFER_SIZE);
+//                socket.setReceiveBufferSize(BUFFER_SIZE);
                 socket.connect(isa);
-            } catch(IOException e){
+            } catch (IOException e) {
                 socket.close();
                 throw e;
             }
             this.socket = socket;
             this.dos = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream(), BUFFER_SIZE));
+//            this.dos = new DataOutputStream(socket.getOutputStream());
             this.dis = new DataInputStream(new BufferedInputStream(this.socket.getInputStream(), BUFFER_SIZE));
+//            this.dis = new DataInputStream(socket.getInputStream());
         } catch (Exception e) {
             throw new ClusterClientException(e);
         }
@@ -88,8 +92,8 @@ public class Connection {
     public int getVersion() {
         return id;
     }
-    
-    public void close() throws IOException{
+
+    public void close() throws IOException {
         socket.close();
         dos.close();
         dis.close();
@@ -98,7 +102,7 @@ public class Connection {
     @Override
     public String toString() {
         return "Connection [" + id + "]" + " [" + address + " -> " +
-            socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
+                socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
     }
 
     public DataOutputStream getOutputStream() {

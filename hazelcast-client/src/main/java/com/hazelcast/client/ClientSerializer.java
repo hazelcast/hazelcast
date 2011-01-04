@@ -18,43 +18,33 @@
 package com.hazelcast.client;
 
 import com.hazelcast.nio.AbstractSerializer;
+import com.hazelcast.nio.DefaultSerializer;
+
+import static com.hazelcast.nio.Serializer.DataSerializer;
 
 public class ClientSerializer extends AbstractSerializer {
 
-    private static final TypeSerializer[] serializers =
-            sort(new TypeSerializer[]{
-                    new DataSerializer() {
-                        @Override
-                        protected Class classForName(final String className) throws ClassNotFoundException {
-                            String name = className;
-                            if (name.equals("com.hazelcast.impl.Keys")) {
-                                name = "com.hazelcast.client.impl.CollectionWrapper";
-                            } else if (className.equals("com.hazelcast.impl.CMap$Values")) {
-                                name = "com.hazelcast.client.impl.Values";
-                            }
-                            return super.classForName(name);
-                        }
-
-                        @Override
-                        protected String toClassName(final Class clazz) throws ClassNotFoundException {
-                            final String className = super.toClassName(clazz);
-                            if (!className.startsWith("com.hazelcast.client")) {
-                                return className;
-                            }
-                            return "com.hazelcast" + className.substring("com.hazelcast.client".length());
-                        }
-                    },
-                    new ByteArraySerializer(),
-                    new LongSerializer(),
-                    new IntegerSerializer(),
-                    new StringSerializer(),
-                    new ClassSerializer(),
-                    new DateSerializer(),
-                    new BigIntegerSerializer(),
-                    new Externalizer(),
-                    new ObjectSerializer()});
-
     public ClientSerializer() {
-        super(serializers);
+        super(new DataSerializer() {
+            @Override
+            protected Class classForName(final String className) throws ClassNotFoundException {
+                String name = className;
+                if (name.equals("com.hazelcast.impl.Keys")) {
+                    name = "com.hazelcast.client.impl.CollectionWrapper";
+                } else if (className.equals("com.hazelcast.impl.CMap$Values")) {
+                    name = "com.hazelcast.client.impl.Values";
+                }
+                return super.classForName(name);
+            }
+
+            @Override
+            protected String toClassName(final Class clazz) throws ClassNotFoundException {
+                final String className = super.toClassName(clazz);
+                if (!className.startsWith("com.hazelcast.client")) {
+                    return className;
+                }
+                return "com.hazelcast" + className.substring("com.hazelcast.client".length());
+            }
+        }, new DefaultSerializer());
     }
 }

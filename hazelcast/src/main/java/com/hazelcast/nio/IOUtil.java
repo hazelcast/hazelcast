@@ -71,15 +71,8 @@ public final class IOUtil {
     }
 
     public static Data addDelta(Data longData, long delta) {
-        byte[] b = longData.buffer;
-        ByteBuffer current = ByteBuffer.wrap(b);
-        byte type = current.get();
-        long value = current.getLong();
-        value += delta;
-        ByteBuffer newLong = ByteBuffer.allocate(b.length);
-        newLong.put(type);
-        newLong.putLong(value);
-        return new Data(newLong.array());
+        long longValue = (Long) toObject(longData);
+        return toData(longValue + delta);
     }
 
     public static Object toObject(Data data) {

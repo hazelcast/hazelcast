@@ -229,6 +229,12 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testr() {
+        AtomicNumber an = Hazelcast.getAtomicNumber("testAtomicNumber");
+        an.get();
+    }
+
+    @Test
     public void testMapIsEmpty() {
         IMap<String, String> map = Hazelcast.getMap("testMapIsEmpty");
         assertTrue(map.isEmpty());
