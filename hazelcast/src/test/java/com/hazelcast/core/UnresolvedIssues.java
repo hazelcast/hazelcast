@@ -18,6 +18,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ReplicatedMapFactory;
@@ -179,5 +180,34 @@ public class UnresolvedIssues extends TestUtil {
         assertEquals(100, q.size());
         assertFalse(result);
         h.getLifecycleService().shutdown();
+    }
+
+    @Test
+    @Ignore
+    public void configSetsForDefaultAllwaysissue466() {
+        Config config = new XmlConfigBuilder().build();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(0);
+        mapStoreConfig.setClassName("com.hazelcast.examples.DummyStore");
+        config.getMapConfig("test").setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig("default").setMapStoreConfig(null);
+        assertNotNull(config.getMapConfig("test").getMapStoreConfig());
+    }
+
+    @Test
+    @Ignore
+    public void multimapShouldntBeAffectedByDefaultMapConfig() {
+        Config config = new XmlConfigBuilder().build();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(0);
+        mapStoreConfig.setClassName("com.hazelcast.examples.DummyStore");
+        config.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+        Hazelcast.init(config);
+        MultiMap<Object, Object> mmap = Hazelcast.getMultiMap("testmultimap");
+        mmap.put("foo", "1");
+        mmap.put("foo", "2");
+        mmap.get("foo").size();
     }
 }
