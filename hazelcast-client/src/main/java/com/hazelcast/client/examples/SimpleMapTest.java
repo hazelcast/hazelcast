@@ -30,8 +30,8 @@ public class SimpleMapTest {
     public static int ENTRY_COUNT = 10 * 1000;
     public static int VALUE_SIZE = 1000;
     public static final int STATS_SECONDS = 10;
-    public static int GET_PERCENTAGE = 99;
-    public static int PUT_PERCENTAGE = 1;
+    public static int GET_PERCENTAGE = 40;
+    public static int PUT_PERCENTAGE = 40;
     final static Stats stats = new Stats();
 
     public static void main(String[] args) {

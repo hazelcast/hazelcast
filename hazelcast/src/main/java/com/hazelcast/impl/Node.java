@@ -169,16 +169,33 @@ public class Node {
         packetPool = new NoneStrictObjectPool<Packet>(2000) {
             @Override
             public void onRelease(Packet packet) {
-                if (packet.released) {
-                    throw new RuntimeException("Packet is already released!");
-                }
                 packet.released = true;
+            }
+
+            @Override
+            public boolean release(Packet packet) {
+                if (packet.released) {
+                    logger.log(Level.WARNING, "Packet is already released.");
+                    return false;
+                } else {
+                    return super.release(packet);
+                }
             }
 
             @Override
             public void onObtain(Packet packet) {
                 packet.reset();
                 packet.released = false;
+            }
+
+            @Override
+            public Packet obtain() {
+                Packet p = super.obtain();
+                if (p.released) {
+                    logger.log(Level.WARNING, "Obtained un-released packet.");
+                    p = createNew();
+                }
+                return p;
             }
 
             public Packet createNew() {
