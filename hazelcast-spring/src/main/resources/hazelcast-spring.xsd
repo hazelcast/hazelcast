@@ -1,301 +1,278 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns="http://www.hazelcast.com/schema/config"
-           xmlns:beans="http://www.springframework.org/schema/beans"
-           targetNamespace="http://www.hazelcast.com/schema/config"
-           elementFormDefault="qualified"
-           attributeFormDefault="unqualified">
+		   xmlns="http://www.hazelcast.com/schema/config"
+		   xmlns:beans="http://www.springframework.org/schema/beans"
+		   targetNamespace="http://www.hazelcast.com/schema/config"
+		   elementFormDefault="qualified"
+		   attributeFormDefault="unqualified">
 
-    <xs:import namespace="http://www.springframework.org/schema/beans"/>
+	<xs:import namespace="http://www.springframework.org/schema/beans"/>
 
-    <xs:element name="config">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="beans:identifiedType">
-                    <xs:sequence>
-                        <xs:element ref="group" minOccurs="0" maxOccurs="1"/>
-                        <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
-                        <xs:element ref="network" minOccurs="0" maxOccurs="1"/>
-                        <xs:element ref="executor-service" minOccurs="0" maxOccurs="unbounded"/>
-                        <xs:element ref="queue" minOccurs="0" maxOccurs="unbounded"/>
-                        <xs:element ref="map" minOccurs="0" maxOccurs="unbounded"/>
-                        <xs:element ref="merge-policies" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+	<xs:element name="config">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="beans:identifiedType">
+					<xs:sequence>
+						<xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
+						<xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+						<xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
+						<xs:element name="executor-service" minOccurs="0" maxOccurs="unbounded">
+							<xs:complexType>
+					            <xs:sequence/>
+					            <xs:attribute name="name" use="required" type="xs:string"/>
+					            <xs:attribute name="core-pool-size" use="optional" type="xs:string"/>
+					            <xs:attribute name="max-pool-size" use="optional" type="xs:string"/>
+					            <xs:attribute name="keep-alive-seconds" use="optional" type="xs:string"/>
+					        </xs:complexType>
+						</xs:element>
+						<xs:element name="queue" minOccurs="0" maxOccurs="unbounded">
+					        <xs:complexType>
+					            <xs:sequence/>
+					            <xs:attribute name="name" use="required" type="xs:string"/>
+					            <xs:attribute name="max-size-per-jvm" use="required" type="xs:string"/>
+					            <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
+					        </xs:complexType>
+					    </xs:element>
+						<xs:element name="map" minOccurs="0" maxOccurs="unbounded">
+							<xs:complexType>
+								<xs:sequence>
+									<!--TODO:  mapStoreConfig -->
+									<!--TODO:  nearCacheConfig -->
+								</xs:sequence>
+								<xs:attribute name="name" use="required" type="xs:string"/>
+								<xs:attribute name="backup-count" use="optional" type="xs:string"/>
+								<xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
+								<xs:attribute name="max-size" use="optional" type="xs:string"/>
+								<xs:attribute name="max-idle-seconds" use="optional" type="xs:string"/>
+								<xs:attribute name="eviction-delay-seconds" use="optional" type="xs:string"/>
+								<xs:attribute name="eviction-percentage" use="optional" type="xs:string"/>
+								<xs:attribute name="eviction-policy" use="optional" type="xs:string"/>
+								<xs:attribute name="merge-policy" use="optional" type="xs:string"/>
+								<xs:attribute name="value-indexed" use="optional" type="xs:string"/>
+								<xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
+								<xs:attribute name="cache-value" use="optional" type="xs:string"/>
+							</xs:complexType>
+						</xs:element>
+						<xs:element name="merge-policies" type="merge-policies" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
 
-    <xs:element name="hazelcast">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="beans:identifiedType">
-                    <xs:sequence>
-                        <xs:element ref="config" minOccurs="0" maxOccurs="1"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+	<xs:element name="hazelcast">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="beans:identifiedType">
+					<xs:sequence>
+						<xs:element ref="config" minOccurs="0" maxOccurs="1"/>
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
 
-    <xs:element name="client">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="beans:identifiedType">
-                    <xs:sequence>
-                        <xs:element ref="client-properties"/>
-                        <xs:element ref="members" minOccurs="1" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                    <xs:attribute name="group-name" type="xs:string" use="required"/>
-                    <xs:attribute name="group-password" type="xs:string" use="required"/>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
-
-    <xs:element name="map">
-        <xs:complexType>
-            <xs:sequence>
-                <!--TODO:  mapStoreConfig -->
-                <!--TODO:  nearCacheConfig -->
-            </xs:sequence>
-            <xs:attribute name="name" use="required" type="xs:string"/>
-            <xs:attribute name="backup-count" use="optional" type="xs:string"/>
-            <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
-            <xs:attribute name="max-size" use="optional" type="xs:string"/>
-            <xs:attribute name="max-idle-seconds" use="optional" type="xs:string"/>
-            <xs:attribute name="eviction-delay-seconds" use="optional" type="xs:string"/>
-            <xs:attribute name="eviction-percentage" use="optional" type="xs:string"/>
-            <xs:attribute name="eviction-policy" use="optional" type="xs:string"/>
-            <xs:attribute name="merge-policy" use="optional" type="xs:string"/>
-            <xs:attribute name="value-indexed" use="optional" type="xs:string"/>
-            <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
-            <xs:attribute name="cache-value" use="optional" type="xs:string"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="queue">
-        <xs:complexType>
-            <xs:sequence/>
-            <xs:attribute name="name" use="required" type="xs:string"/>
-            <xs:attribute name="max-size-per-jvm" use="required" type="xs:string"/>
-            <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="network">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element ref="join" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="interfaces" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="symmetric-encryption" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="asymmetric-encryption" minOccurs="0" maxOccurs="1"/>
-            </xs:sequence>
-            <xs:attribute name="port" type="xs:string" use="required"/>
-            <xs:attribute name="port-auto-increment" type="xs:string" use="optional" default="true"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="tcp-ip">
-        <xs:complexType>
-            <xs:choice>
-                <xs:element ref="members"/>
-                <xs:sequence>
-                    <xs:element ref="member" minOccurs="0" maxOccurs="unbounded"/>
-                </xs:sequence>
-                <xs:sequence>
-                    <xs:element ref="interface" minOccurs="0" maxOccurs="unbounded"/>
-                </xs:sequence>
-            </xs:choice>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="multicast">
-        <xs:complexType>
-            <xs:sequence/>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
-            <xs:attribute name="multicast-group" type="xs:string" use="optional" default="224.2.2.3"/>
-            <xs:attribute name="multicast-port" type="xs:string" use="optional" default="54327"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="merge-policies">
-        <xs:annotation>
-            <xs:documentation>
-                Can be used to custom map merge policy implementations.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element ref="map-merge-policy"/>
-            </xs:sequence>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="map-merge-policy">
-        <xs:annotation>
-            <xs:documentation>
-                Custom defined merge policy.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element ref="class-name" minOccurs="1" maxOccurs="1"/>
-            </xs:sequence>
-            <xs:attribute name="name" type="xs:string" use="required"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="class-name">
-        <xs:annotation>
-            <xs:documentation>
-                Fully qualified merge policy class name
-            </xs:documentation>
-        </xs:annotation>
-        <xs:simpleType>
-            <xs:restriction base="xs:string"/>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="join">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element ref="multicast" minOccurs="0"/>
-                <xs:element ref="tcp-ip" minOccurs="0"/>
-            </xs:sequence>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="interfaces">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element ref="interface"/>
-            </xs:sequence>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="interface" default="127.0.0.1">
-        <xs:simpleType>
-            <xs:restriction base="xs:string"/>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="member" default="127.0.0.1">
-        <xs:simpleType>
-            <xs:restriction base="xs:string"/>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="members" default="127.0.0.1">
-        <xs:simpleType>
-            <xs:restriction base="xs:string"/>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="group">
-        <xs:complexType>
-            <xs:sequence/>
-            <xs:attribute name="name" type="xs:string" use="required"/>
-            <xs:attribute name="password" type="xs:string" use="required"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:simpleType name="clientPropertyName">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="hazelcast.client.group.name"/>
-            <xs:enumeration value="hazelcast.client.group.password"/>
-            <xs:enumeration value="hazelcast.client.init.connection.attempts.limit"/>
-            <xs:enumeration value="hazelcast.client.reconnection.attempts.limit"/>
-            <xs:enumeration value="hazelcast.client.reconnection.timeout"/>
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:element name="client-property">
-        <xs:complexType>
-            <xs:simpleContent>
-                <xs:extension base="xs:string">
-                    <xs:attribute name="name" use="required" type="clientPropertyName"/>
-                </xs:extension>
-            </xs:simpleContent>
-        </xs:complexType>
-    </xs:element>
-    <xs:simpleType name="propertyName">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="hazelcast.merge.first.run.delay.seconds"/>
-            <xs:enumeration value="hazelcast.merge.next.run.delay.seconds"/>
-            <xs:enumeration value="hazelcast.redo.wait.millis"/>
-            <xs:enumeration value="hazelcast.socket.bind.any"/>
-            <xs:enumeration value="hazelcast.serializer.gzip.enabled"/>
-            <xs:enumeration value="hazelcast.serializer.shared"/>
-            <xs:enumeration value="hazelcast.packet.version"/>
-            <xs:enumeration value="hazelcast.shutdownhook.enabled"/>
-            <xs:enumeration value="hazelcast.wait.seconds.before.join"/>
-            <xs:enumeration value="hazelcast.max.no.heartbeat.seconds"/>
-            <xs:enumeration value="hazelcast.initial.wait.seconds"/>
-            <xs:enumeration value="hazelcast.restart.on.max.idle"/>
-            <xs:enumeration value="hazelcast.map.partition.count"/>
-            <xs:enumeration value="hazelcast.queue.block.size"/>
-            <xs:enumeration value="hazelcast.map.remove.delay.seconds"/>
-            <xs:enumeration value="hazelcast.map.cleanup.delay.seconds"/>
-            <xs:enumeration value="hazelcast.executor.query.thread.count"/>
-            <xs:enumeration value="hazelcast.executor.event.thread.count"/>
-            <xs:enumeration value="hazelcast.executor.migration.thread.count"/>
-            <xs:enumeration value="hazelcast.executor.client.thread.count"/>
-            <xs:enumeration value="hazelcast.executor.store.thread.count"/>
-            <xs:enumeration value="hazelcast.log.state"/>
-            <xs:enumeration value="hazelcast.jmx"/>
-            <xs:enumeration value="hazelcast.jmx.detailed"/>
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:element name="property">
-        <xs:complexType>
-            <xs:simpleContent>
-                <xs:extension base="xs:string">
-                    <xs:attribute name="name" use="required" type="propertyName"/>
-                </xs:extension>
-            </xs:simpleContent>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="client-properties">
-        <xs:complexType>
-            <xs:sequence minOccurs="0" maxOccurs="unbounded">
-                <xs:element ref="client-property"/>
-            </xs:sequence>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="properties">
-        <xs:complexType>
-            <xs:sequence minOccurs="0" maxOccurs="unbounded">
-                <xs:element ref="property"/>
-            </xs:sequence>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="executor-service">
-        <xs:complexType>
-            <xs:sequence/>
-            <xs:attribute name="name" use="required" type="xs:string"/>
-            <xs:attribute name="core-pool-size" use="optional" type="xs:string"/>
-            <xs:attribute name="max-pool-size" use="optional" type="xs:string"/>
-            <xs:attribute name="keep-alive-seconds" use="optional" type="xs:string"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="symmetric-encryption">
-        <xs:annotation>
-            <xs:documentation>
-                encryption algorithm such as
-                DES/ECB/PKCS5Padding,
-                PBEWithMD5AndDES,
-                AES/CBC/PKCS5Padding,
-                Blowfish,
-                DESede
-            </xs:documentation>
-        </xs:annotation>
-        <xs:complexType>
-            <xs:sequence/>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
-            <xs:attribute name="algorithm" use="optional" type="xs:string"/>
-            <xs:attribute name="salt" use="optional" type="xs:string"/>
-            <xs:attribute name="password" use="optional" type="xs:string"/>
-            <xs:attribute name="iteration-count" use="optional" type="xs:string"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="asymmetric-encryption">
-        <xs:complexType>
-            <xs:sequence/>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
-            <xs:attribute name="algorithm" use="optional" type="xs:string"/>
-            <xs:attribute name="key-password" use="optional" type="xs:string"/>
-            <xs:attribute name="key-alias" use="optional" type="xs:string"/>
-            <xs:attribute name="store-type" use="optional" type="xs:string"/>
-            <xs:attribute name="store-password" use="optional" type="xs:string"/>
-            <xs:attribute name="store-path" use="optional" type="xs:string"/>
-        </xs:complexType>
-    </xs:element>
+	<xs:element name="client">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="beans:identifiedType">
+					<xs:sequence>
+						<xs:element name="client-properties" type="client-properties"/>
+						<xs:element name="members" type="members" default="127.0.0.1" minOccurs="1" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute name="group-name" type="xs:string" use="required"/>
+					<xs:attribute name="group-password" type="xs:string" use="required"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="map" type="hazelcast-instance"/>
+	<xs:element name="multiMap" type="hazelcast-instance"/>
+	<xs:element name="queue" type="hazelcast-instance"/>
+	<xs:element name="topic" type="hazelcast-instance"/>
+	<xs:element name="set" type="hazelcast-instance"/>
+	<xs:element name="list" type="hazelcast-instance"/>
+	<xs:element name="executorService" type="hazelcast-instance"/>
+	<xs:element name="idGenerator" type="hazelcast-instance"/>
+	<xs:element name="atomicNumber" type="hazelcast-instance"/>
+	
+	<!-- internal elements -->
+    <xs:complexType name="hazelcast-instance">
+        <xs:complexContent>
+            <xs:extension base="beans:identifiedType">
+                <xs:sequence/>
+                <xs:attribute name="instance-ref" type="xs:string" use="required"/>
+                <xs:attribute name="name" type="xs:string" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+	
+	<xs:complexType name="network">
+		<xs:sequence>
+			<xs:element name="join" type="join" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="interfaces" type="interfaces" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="asymmetric-encryption" type="asymmetric-encryption" minOccurs="0" maxOccurs="1"/>
+		</xs:sequence>
+		<xs:attribute name="port" type="xs:string" use="required"/>
+		<xs:attribute name="port-auto-increment" type="xs:string" use="optional" default="true"/>
+	</xs:complexType>
+	
+	<xs:complexType name="tcp-ip">
+		<xs:choice>
+			<xs:element name="members" type="members" default="127.0.0.1"/>
+			<xs:sequence>
+				<xs:element name="member" type="member" default="127.0.0.1" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:sequence>
+				<xs:element name="interface" type="interface" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:choice>
+		<xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+	</xs:complexType>
+		
+	<xs:complexType name="multicast">
+		<xs:sequence/>
+		<xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="multicast-group" type="xs:string" use="optional" default="224.2.2.3"/>
+		<xs:attribute name="multicast-port" type="xs:string" use="optional" default="54327"/>
+	</xs:complexType>
+		
+	<xs:complexType name="merge-policies">
+		<xs:sequence>
+			<xs:element name="map-merge-policy" type="map-merge-policy"/>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="map-merge-policy">
+		<xs:sequence>
+			<xs:element name="class-name" type="class-name" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string" use="required"/>
+	</xs:complexType>
+	
+	<xs:simpleType name="class-name">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	
+	<xs:complexType name="join">
+		<xs:sequence>
+			<xs:element name="multicast" type="multicast" minOccurs="0"/>
+			<xs:element name="tcp-ip" type="tcp-ip" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="interfaces">
+		<xs:sequence>
+			<xs:element name="interface" type="interface" default="127.0.0.1"/>
+		</xs:sequence>
+		<xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+	</xs:complexType>
+	
+	<xs:simpleType name="interface" >
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	
+	<xs:simpleType name="member">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	
+	<xs:simpleType name="members">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	
+	<xs:complexType name="group">
+		<xs:sequence/>
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="password" type="xs:string" use="required"/>
+	</xs:complexType>
+	
+	<xs:simpleType name="clientPropertyName">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="hazelcast.client.group.name"/>
+			<xs:enumeration value="hazelcast.client.group.password"/>
+			<xs:enumeration value="hazelcast.client.init.connection.attempts.limit"/>
+			<xs:enumeration value="hazelcast.client.reconnection.attempts.limit"/>
+			<xs:enumeration value="hazelcast.client.reconnection.timeout"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="client-property">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="name" use="required" type="clientPropertyName"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	
+	<xs:simpleType name="propertyName">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="hazelcast.merge.first.run.delay.seconds"/>
+			<xs:enumeration value="hazelcast.merge.next.run.delay.seconds"/>
+			<xs:enumeration value="hazelcast.redo.wait.millis"/>
+			<xs:enumeration value="hazelcast.socket.bind.any"/>
+			<xs:enumeration value="hazelcast.serializer.gzip.enabled"/>
+			<xs:enumeration value="hazelcast.serializer.shared"/>
+			<xs:enumeration value="hazelcast.packet.version"/>
+			<xs:enumeration value="hazelcast.shutdownhook.enabled"/>
+			<xs:enumeration value="hazelcast.wait.seconds.before.join"/>
+			<xs:enumeration value="hazelcast.max.no.heartbeat.seconds"/>
+			<xs:enumeration value="hazelcast.initial.wait.seconds"/>
+			<xs:enumeration value="hazelcast.restart.on.max.idle"/>
+			<xs:enumeration value="hazelcast.map.partition.count"/>
+			<xs:enumeration value="hazelcast.queue.block.size"/>
+			<xs:enumeration value="hazelcast.map.remove.delay.seconds"/>
+			<xs:enumeration value="hazelcast.map.cleanup.delay.seconds"/>
+			<xs:enumeration value="hazelcast.executor.query.thread.count"/>
+			<xs:enumeration value="hazelcast.executor.event.thread.count"/>
+			<xs:enumeration value="hazelcast.executor.migration.thread.count"/>
+			<xs:enumeration value="hazelcast.executor.client.thread.count"/>
+			<xs:enumeration value="hazelcast.executor.store.thread.count"/>
+			<xs:enumeration value="hazelcast.log.state"/>
+			<xs:enumeration value="hazelcast.jmx"/>
+			<xs:enumeration value="hazelcast.jmx.detailed"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="property">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="name" use="required" type="propertyName"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	
+	<xs:complexType name="client-properties">
+		<xs:sequence minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="client-property" type="client-property"/>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="properties">
+		<xs:sequence minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="property" type="property"/>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="symmetric-encryption">
+		<xs:sequence/>
+		<xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="algorithm" use="optional" type="xs:string"/>
+		<xs:attribute name="salt" use="optional" type="xs:string"/>
+		<xs:attribute name="password" use="optional" type="xs:string"/>
+		<xs:attribute name="iteration-count" use="optional" type="xs:string"/>
+	</xs:complexType>
+	
+	<xs:complexType name="asymmetric-encryption">
+		<xs:sequence/>
+		<xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="algorithm" use="optional" type="xs:string"/>
+		<xs:attribute name="key-password" use="optional" type="xs:string"/>
+		<xs:attribute name="key-alias" use="optional" type="xs:string"/>
+		<xs:attribute name="store-type" use="optional" type="xs:string"/>
+		<xs:attribute name="store-password" use="optional" type="xs:string"/>
+		<xs:attribute name="store-path" use="optional" type="xs:string"/>
+	</xs:complexType>
+	
 </xs:schema>

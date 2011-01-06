@@ -25,6 +25,13 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("config", new HazelcastConfigBeanDefinitionParser());
         registerBeanDefinitionParser("hazelcast", new HazelcastBeanDefinitionParser());
         registerBeanDefinitionParser("client", new HazelcastClientBeanDefinitionParser());
+        
+        final String[] types = {"map", "multiMap",
+            "queue", "topic", "set", "list",
+            "executorService", "idGenerator", "atomicNumber"};
+        for (final String type : types){
+            registerBeanDefinitionParser(type, new HazelcastInstanceBeanDefinitionParser(type));
+        }
     }  
 
 }

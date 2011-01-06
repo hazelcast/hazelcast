@@ -83,4 +83,15 @@
         </hz:config>
     </hz:hazelcast>
 
+    <hz:map id="map1" instance-ref="instance" name="map1"/>
+    <hz:map id="map2" instance-ref="instance" name="map2"/>
+    <hz:multiMap id="multiMap" instance-ref="instance" name="multiMap"/>
+    <hz:queue id="queue" instance-ref="instance" name="queue"/>
+    <hz:topic id="topic" instance-ref="instance" name="topic"/>
+    <hz:set id="set" instance-ref="instance" name="set"/>
+    <hz:list id="list" instance-ref="instance" name="list"/>
+    <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
+    <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
+    <hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
+    
 </beans>

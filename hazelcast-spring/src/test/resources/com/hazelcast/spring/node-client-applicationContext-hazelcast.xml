@@ -17,7 +17,6 @@
 			</list>
 		</property>
 	</bean>
-	
 
     <hz:hazelcast id="instance">
         <hz:config>
@@ -52,5 +51,16 @@
         </hz:client-properties>
         <hz:members>${cluster.members}</hz:members>
     </hz:client>
+    
+    <hz:map id="map1" instance-ref="client" name="map1"/>
+    <hz:map id="map2" instance-ref="client" name="map2"/>
+    <hz:multiMap id="multiMap" instance-ref="client" name="multiMap"/>
+    <hz:queue id="queue" instance-ref="client" name="queue"/>
+    <hz:topic id="topic" instance-ref="client" name="topic"/>
+    <hz:set id="set" instance-ref="client" name="set"/>
+    <hz:list id="list" instance-ref="client" name="list"/>
+    <hz:executorService id="executorService" instance-ref="client" name="executorService"/>
+    <hz:idGenerator id="idGenerator" instance-ref="client" name="idGenerator"/>
+    <hz:atomicNumber id="atomicNumber" instance-ref="client" name="atomicNumber"/>
     
 </beans>

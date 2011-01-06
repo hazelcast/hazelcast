@@ -23,13 +23,15 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+
+import javax.annotation.Resource;
 
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -40,9 +42,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.GroupProperties;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -51,8 +51,38 @@ public class TestFullApplicationContext {
 
     private Config config;
 
-    @Autowired
+    @Resource(name="instance")
     private HazelcastInstance instance;
+    
+    @Resource(name="map1")
+    private IMap<Object, Object> map1;
+    
+    @Resource(name="map2")
+    private IMap<Object, Object> map2;
+    
+    @Resource(name="multiMap")
+    private MultiMap multiMap;
+    
+    @Resource(name="queue")
+    private IQueue queue;
+    
+    @Resource(name="topic")
+    private ITopic topic;
+    
+    @Resource(name="set")
+    private ISet set;
+
+    @Resource(name="list")
+    private IList list;
+
+    @Resource(name="executorService")
+    private ExecutorService executorService;
+
+    @Resource(name="idGenerator")
+    private IdGenerator idGenerator;
+
+    @Resource(name="atomicNumber")
+    private AtomicNumber atomicNumber;
 
     @BeforeClass
     @AfterClass
@@ -164,5 +194,32 @@ public class TestFullApplicationContext {
         final Member member = members.iterator().next();
         final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
         assertEquals(5800, inetSocketAddress.getPort());
+    }
+    
+    @Test
+    public void testHazelcastInstances() {
+        assertNotNull(map1);
+        assertNotNull(map2);
+        
+        assertNotNull(multiMap);
+        assertNotNull(queue);
+        assertNotNull(topic);
+        assertNotNull(set);
+        assertNotNull(list);
+        assertNotNull(executorService);
+        assertNotNull(idGenerator);
+        assertNotNull(atomicNumber);
+        
+        assertEquals("map1", map1.getName());
+        assertEquals("map2", map2.getName());
+        
+        assertEquals("multiMap", multiMap.getName());
+        assertEquals("queue", queue.getName());
+        assertEquals("topic", topic.getName());
+        assertEquals("set", set.getName());
+        assertEquals("list", list.getName());
+        assertEquals("idGenerator", idGenerator.getName());
+        assertEquals("atomicNumber", atomicNumber.getName());
+        
     }
 }
