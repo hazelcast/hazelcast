@@ -263,7 +263,7 @@ class TransactionImpl implements Transaction {
                             if (lsEntries == null) {
                                 lsEntries = new ArrayList<Map.Entry>(2);
                             }
-                            lsEntries.add(BaseManager.createSimpleEntry(factory, name, transactionRecord.key, transactionRecord.value));
+                            lsEntries.add(BaseManager.createSimpleMapEntry(factory, name, transactionRecord.key, transactionRecord.value));
                         }
                     }
                 }

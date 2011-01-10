@@ -17,6 +17,9 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.util.ResponseQueueFactory;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -24,6 +27,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -701,6 +705,32 @@ public class TransactionTest {
             instance.destroy();
         }
         mapsUsed.clear();
+    }
+
+    static class Thing implements Serializable {
+        String property;
+
+        Thing(String property) {
+            this.property = property;
+        }
+
+        String getProperty() {
+            return property;
+        }
+    }
+
+    @Test
+    public void testMapPutPredicate() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapPutPredicate");
+        txnMap.begin();
+        txnMap.put("1", new Thing("thing1"));
+        txnMap.put("2", new Thing("thing2"));
+        txnMap.put("3", new Thing("thing3"));
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate predicate = e.get("property").equal("thing2");
+        assertEquals(1, txnMap.values(predicate).size());
+        txnMap.commit();
+        assertEquals(3, txnMap.size());
     }
 
     List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();

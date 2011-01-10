@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.*;
@@ -90,8 +91,8 @@ public abstract class BaseManager {
         return node;
     }
 
-    public static Map.Entry createSimpleEntry(final FactoryImpl factory, final String name, final Object key, final Object value) {
-        return new Map.Entry() {
+    public static MapEntry createSimpleMapEntry(final FactoryImpl factory, final String name, final Object key, final Object value) {
+        return new MapEntry() {
             public Object getKey() {
                 return key;
             }
@@ -102,6 +103,38 @@ public abstract class BaseManager {
 
             public Object setValue(Object newValue) {
                 return ((MProxy) factory.getOrCreateProxyByName(name)).put(key, newValue);
+            }
+
+            public long getCost() {
+                return 0;
+            }
+
+            public long getCreationTime() {
+                return 0;
+            }
+
+            public long getExpirationTime() {
+                return 0;
+            }
+
+            public int getHits() {
+                return 0;
+            }
+
+            public long getLastAccessTime() {
+                return 0;
+            }
+
+            public long getLastUpdateTime() {
+                return 0;
+            }
+
+            public long getVersion() {
+                return 0;
+            }
+
+            public boolean isValid() {
+                return false;
             }
 
             @Override

@@ -1355,13 +1355,18 @@ public class ConcurrentMapManager extends BaseManager {
 
     public class MIterateLocal extends MGetEntries {
 
+        private final String name;
+        private final Predicate predicate;
+
         public MIterateLocal(String name, Predicate predicate) {
             super(thisAddress, CONCURRENT_MAP_ITERATE_KEYS, name, predicate);
+            this.name = name;
+            this.predicate = predicate;
             doOp();
         }
 
         public Set iterate() {
-            Entries entries = new Entries(request.name, request.operation);
+            Entries entries = new Entries(name, CONCURRENT_MAP_ITERATE_KEYS, predicate);
             Pairs pairs = (Pairs) getResultAsObject();
             entries.addEntries(pairs);
             return entries;
@@ -1391,7 +1396,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         void onCall() {
-            entries = new Entries(name, operation);
+            entries = new Entries(name, operation, predicate);
         }
 
         boolean onResponse(Object response) {
@@ -2247,10 +2252,12 @@ public class ConcurrentMapManager extends BaseManager {
         final List<Map.Entry> lsKeyValues = new ArrayList<Map.Entry>();
         final ClusterOperation operation;
         final boolean checkValue;
+        final Predicate predicate;
 
-        public Entries(String name, ClusterOperation operation) {
+        public Entries(String name, ClusterOperation operation, Predicate predicate) {
             this.name = name;
             this.operation = operation;
+            this.predicate = predicate;
             TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
             this.checkValue = (InstanceType.MAP == getInstanceType(name)) &&
                     (operation == CONCURRENT_MAP_ITERATE_VALUES
@@ -2258,7 +2265,15 @@ public class ConcurrentMapManager extends BaseManager {
             if (txn != null) {
                 List<Map.Entry> entriesUnderTxn = txn.newEntries(name);
                 if (entriesUnderTxn != null) {
-                    lsKeyValues.addAll(entriesUnderTxn);
+                    if (predicate != null) {
+                        for (Map.Entry entry : entriesUnderTxn) {
+                            if (predicate.apply((MapEntry) entry)) {
+                                lsKeyValues.add(entry);
+                            }
+                        }
+                    } else {
+                        lsKeyValues.addAll(entriesUnderTxn);
+                    }
                 }
             }
         }
@@ -2285,7 +2300,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (txn.has(name, key)) {
                         Object value = txn.get(name, key);
                         if (value != null) {
-                            lsKeyValues.add(createSimpleEntry(node.factory, name, key, value));
+                            lsKeyValues.add(createSimpleMapEntry(node.factory, name, key, value));
                         }
                     } else {
                         entry.setName(node.factory, name);
