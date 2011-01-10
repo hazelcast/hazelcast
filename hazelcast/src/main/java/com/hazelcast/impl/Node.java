@@ -288,6 +288,10 @@ public class Node {
         return factory.getName();
     }
 
+    public String getThreadPoolNamePrefix(String poolName) {
+        return "hz." + id + ".threads." + getName() + "." + poolName + ".thread-";
+    }
+
     public void handleInterruptedException(Thread thread, Exception e) {
         logger.log(Level.FINEST, thread.getName() + " is interrupted ", e);
     }
@@ -360,8 +364,6 @@ public class Node {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             } catch (Throwable ignored) {
             }
-            logger.log(Level.FINEST, "Shutting down the clientService");
-            clientService.reset();
             logger.log(Level.FINEST, "Shutting down the NIO socket selector for input");
             inSelector.shutdown();
             logger.log(Level.FINEST, "Shutting down the NIO socket selector for output");

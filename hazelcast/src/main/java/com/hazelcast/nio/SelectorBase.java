@@ -74,12 +74,16 @@ public abstract class SelectorBase implements Runnable {
             addTask(new Runnable() {
                 public void run() {
                     live = false;
+                    threadLocalShutdown();
                     l.countDown();
                 }
             });
-            l.await(3, TimeUnit.SECONDS);
+            l.await(5, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
+    }
+
+    protected void threadLocalShutdown() {
     }
 
     public void addTask(final Runnable runnable) {

@@ -112,12 +112,7 @@ public class ParallelExecutorService {
 
         public void execute(Runnable runnable) {
             int hash = offerIndex.incrementAndGet();
-            int index = (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % executionSegments.length;
-            ExecutionSegment segment = executionSegments[index];
-            segment.offer(runnable);
-            if (index >= 1000000) {
-                offerIndex.set(0);
-            }
+            execute(runnable, hash);
         }
 
         public void execute(Runnable runnable, int hash) {

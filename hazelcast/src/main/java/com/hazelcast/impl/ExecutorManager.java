@@ -73,7 +73,7 @@ public class ExecutorManager extends BaseManager {
                 60L,
                 TimeUnit.SECONDS,
                 new SynchronousQueue(),
-                new ExecutorThreadFactory(node.threadGroup, getThreadNamePrefix("cached"), classLoader),
+                new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"), classLoader),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 ThreadContext threadContext = ThreadContext.get();
@@ -117,10 +117,6 @@ public class ExecutorManager extends BaseManager {
             }
         }
         return namedExecutorService;
-    }
-
-    public String getThreadNamePrefix(String executorServiceName) {
-        return "hz." + node.id + ".executor." + node.getName() + "." + executorServiceName + ".thread-";
     }
 
     private NamedExecutorService newNamedExecutorService(String name, ExecutorConfig executorConfig) {

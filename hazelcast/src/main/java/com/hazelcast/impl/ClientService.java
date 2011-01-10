@@ -116,11 +116,12 @@ public class ClientService implements ConnectionListener {
     // always called by InThread
     public void handle(Packet packet) {
         if (workers == null) {
+            String threadNamePrefix = node.getThreadPoolNamePrefix("client.service");
             workers = new Worker[THREAD_COUNT];
             for (int i = 0; i < THREAD_COUNT; i++) {
                 Worker worker = new Worker();
                 workers[i] = worker;
-                new Thread(worker).start();
+                new Thread(node.threadGroup, worker, threadNamePrefix + i).start();
             }
         }
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
@@ -131,6 +132,17 @@ public class ClientService implements ConnectionListener {
         } else {
             int hash = hash(callContext.getThreadId(), THREAD_COUNT);
             workers[hash].addWork(clientRequestHandler);
+        }
+    }
+
+    // shutdown has to be called from inThread
+    // because workers are created by inThread
+    public void shutdown() {
+        mapClientEndpoints.clear();
+        if (workers != null) {
+            for (Worker worker : workers) {
+                worker.stop();
+            }
         }
     }
 
@@ -176,10 +188,6 @@ public class ClientService implements ConnectionListener {
             mapClientEndpoints.put(conn, clientEndpoint);
         }
         return clientEndpoint;
-    }
-
-    public void reset() {
-        mapClientEndpoints.clear();
     }
 
     public void connectionAdded(Connection connection) {

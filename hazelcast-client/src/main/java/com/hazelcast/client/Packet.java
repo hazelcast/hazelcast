@@ -37,35 +37,34 @@ public class Packet {
 
     private ClusterOperation operation;
 
-    private int blockId = 0;
-
     private int threadId;
-
-    private int lockCount = 0;
 
     private long ttl = -1;
 
     private long timeout = -1;
 
-    private long txnId = -1;
-
     private long longValue;
-
-    private long version = -1;
 
     private byte responseType = Constants.ResponseTypes.RESPONSE_NONE;
 
     private long callId = -1;
 
-    private byte indexCount = 0;
-
-    private long[] indexes = new long[10];
-
-    private byte[] indexTypes = new byte[10];
-
     private static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
 
     public Packet() {
+    }
+
+    public void reset() {
+        name = null;
+        operation = null;
+        key = null;
+        value = null;
+        threadId = -1;
+        ttl = -1;
+        timeout = -1;
+        longValue = 0;
+        responseType = Constants.ResponseTypes.RESPONSE_NONE;
+        callId = -1;
     }
 
     public void writeTo(PacketWriter packetWriter, DataOutputStream outputStream) throws IOException {
@@ -101,26 +100,17 @@ public class Packet {
         readHeaderBuffer.limit(headerSize);
         dis.readFully(readHeaderBuffer.array(), 0, headerSize);
         this.operation = ClusterOperation.create(readHeaderBuffer.get());
-        this.blockId = readHeaderBuffer.getInt();
+        int blockId = readHeaderBuffer.getInt();
         this.threadId = readHeaderBuffer.getInt();
         byte booleans = readHeaderBuffer.get();
-        if (ByteUtil.isTrue(booleans, 0)) {
-            lockCount = readHeaderBuffer.getInt();
-        }
         if (ByteUtil.isTrue(booleans, 1)) {
             timeout = readHeaderBuffer.getLong();
         }
         if (ByteUtil.isTrue(booleans, 2)) {
             ttl = readHeaderBuffer.getLong();
         }
-        if (ByteUtil.isTrue(booleans, 3)) {
-            txnId = readHeaderBuffer.getLong();
-        }
         if (ByteUtil.isTrue(booleans, 4)) {
             longValue = readHeaderBuffer.getLong();
-        }
-        if (ByteUtil.isTrue(booleans, 5)) {
-            version = readHeaderBuffer.getLong();
         }
         if (!ByteUtil.isTrue(booleans, 7)) {
             throw new ClusterClientException("LockAddress cannot be sent to the client!" + operation);
@@ -133,11 +123,7 @@ public class Packet {
             readHeaderBuffer.get(b);
             this.name = new String(b);
         }
-        indexCount = readHeaderBuffer.get();
-        for (int i = 0; i < indexCount; i++) {
-            indexes[i] = readHeaderBuffer.getLong();
-            indexTypes[i] = readHeaderBuffer.get();
-        }
+        int indexCount = readHeaderBuffer.get();
         key = new byte[keySize];
         dis.readFully(key);
         value = new byte[valueSize];
@@ -148,48 +134,33 @@ public class Packet {
         final ByteBuffer writeHeaderBuffer = packetWriter.writeHeaderBuffer;
         final Map<String, byte[]> nameCache = packetWriter.nameCache;
         writeHeaderBuffer.put(operation.getValue());
-        writeHeaderBuffer.putInt(blockId);
+        writeHeaderBuffer.putInt(-1); //blockId
         writeHeaderBuffer.putInt(threadId);
         byte booleans = 0;
-        if (lockCount != 0) {
-            booleans = ByteUtil.setTrue(booleans, 0);
-        }
+        // first bit is lockCount
         if (timeout != -1) {
             booleans = ByteUtil.setTrue(booleans, 1);
         }
         if (ttl != -1) {
             booleans = ByteUtil.setTrue(booleans, 2);
         }
-        if (txnId != -1) {
-            booleans = ByteUtil.setTrue(booleans, 3);
-        }
+        // txn always -1
         if (longValue != Long.MIN_VALUE) {
             booleans = ByteUtil.setTrue(booleans, 4);
         }
-        if (version != -1) {
-            booleans = ByteUtil.setTrue(booleans, 5);
-        }
+        //version always -1
         booleans = ByteUtil.setTrue(booleans, 6); // client = true
         booleans = ByteUtil.setTrue(booleans, 7); // lockAddressNull = true
         //logger.log(Level.INFO, "getHeader booleans:" + ByteUtil.toBinaryString(booleans));
         writeHeaderBuffer.put(booleans);
-        if (lockCount != 0) {
-            writeHeaderBuffer.putInt(lockCount);
-        }
         if (timeout != -1) {
             writeHeaderBuffer.putLong(timeout);
         }
         if (ttl != -1) {
             writeHeaderBuffer.putLong(ttl);
         }
-        if (txnId != -1) {
-            writeHeaderBuffer.putLong(txnId);
-        }
         if (longValue != Long.MIN_VALUE) {
             writeHeaderBuffer.putLong(longValue);
-        }
-        if (version != -1) {
-            writeHeaderBuffer.putLong(version);
         }
         writeHeaderBuffer.putLong(callId);
         writeHeaderBuffer.put(responseType);
@@ -210,11 +181,7 @@ public class Packet {
         if (nameLen > 0) {
             writeHeaderBuffer.put(nameInBytes);
         }
-        writeHeaderBuffer.put(indexCount);
-        for (int i = 0; i < indexCount; i++) {
-            writeHeaderBuffer.putLong(indexes[i]);
-            writeHeaderBuffer.put(indexTypes[i]);
-        }
+        writeHeaderBuffer.put((byte) 0);
     }
 
     public void set(String name, ClusterOperation operation,
@@ -265,28 +232,12 @@ public class Packet {
         this.operation = operation;
     }
 
-    public int getBlockId() {
-        return blockId;
-    }
-
-    public void setBlockId(int blockId) {
-        this.blockId = blockId;
-    }
-
     public int getThreadId() {
         return threadId;
     }
 
     public void setThreadId(int threadId) {
         this.threadId = threadId;
-    }
-
-    public int getLockCount() {
-        return lockCount;
-    }
-
-    public void setLockCount(int lockCount) {
-        this.lockCount = lockCount;
     }
 
     public long getTimeout() {
@@ -297,14 +248,6 @@ public class Packet {
         this.timeout = timeout;
     }
 
-    public long getTxnId() {
-        return txnId;
-    }
-
-    public void setTxnId(long txnId) {
-        this.txnId = txnId;
-    }
-
     public long getLongValue() {
         return longValue;
     }
@@ -313,44 +256,12 @@ public class Packet {
         this.longValue = longValue;
     }
 
-    public long getVersion() {
-        return version;
-    }
-
-    public void setVersion(long version) {
-        this.version = version;
-    }
-
     public byte getResponseType() {
         return responseType;
     }
 
     public void setResponseType(byte responseType) {
         this.responseType = responseType;
-    }
-
-    public byte getIndexCount() {
-        return indexCount;
-    }
-
-    public void setIndexCount(byte indexCount) {
-        this.indexCount = indexCount;
-    }
-
-    public long[] getIndexes() {
-        return indexes;
-    }
-
-    public void setIndexes(long[] indexes) {
-        this.indexes = indexes;
-    }
-
-    public byte[] getIndexTypes() {
-        return indexTypes;
-    }
-
-    public void setIndexTypes(byte[] indexTypes) {
-        this.indexTypes = indexTypes;
     }
 
     @Override

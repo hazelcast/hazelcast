@@ -53,12 +53,12 @@ public final class InSelector extends SelectorBase {
     }
 
     @Override
-    public void shutdown() {
+    public void threadLocalShutdown() {
         try {
-            super.shutdown();
             if (serverSocketChannel != null) {
                 serverSocketChannel.close();
             }
+            node.clientService.shutdown();
         } catch (IOException ignored) {
         }
     }

@@ -55,7 +55,6 @@ public class ProxyHelper {
     final AtomicLong written = new AtomicLong();
     final AtomicLong received = new AtomicLong();
     final AtomicLong replied = new AtomicLong();
-    final Object lock = new Object();
 
     protected Packet callAndGetResult(Packet request) {
         long theCount = count.incrementAndGet();
