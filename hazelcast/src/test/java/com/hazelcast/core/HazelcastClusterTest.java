@@ -83,6 +83,20 @@ public class HazelcastClusterTest {
     }
     
     @Test
+    public void testJoinWithIncompatibleConfigsWithDisabledCheck() throws Exception {
+        Config config1 = new XmlConfigBuilder().build();
+        Config config2 = new XmlConfigBuilder().build();
+        config1.setCheckCompatibility(false);
+        config2.setCheckCompatibility(false).getMapConfig("default").setTimeToLiveSeconds(1);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+        final int s1 = h1.getCluster().getMembers().size();
+        final int s2 = h2.getCluster().getMembers().size();
+        assertEquals(2, s1);
+        assertEquals(2, s2);
+    }
+    
+    @Test
     public void testJoinWithPostConfiguration() throws Exception {
         // issue 473
         Config hzConfig = new Config().

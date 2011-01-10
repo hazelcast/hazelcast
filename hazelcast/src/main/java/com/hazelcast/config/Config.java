@@ -44,6 +44,8 @@ public class Config implements DataSerializable {
 
     private int port = DEFAULT_PORT;
 
+    private boolean checkCompatibility = true;
+    
     private boolean reuseAddress = false;
 
     private boolean portAutoIncrement = true;
@@ -274,6 +276,15 @@ public class Config implements DataSerializable {
         this.reuseAddress = reuseAddress;
         return this;
     }
+    
+    public boolean isCheckCompatibility() {
+        return this.checkCompatibility;
+    }
+
+    public Config setCheckCompatibility(boolean checkCompatibility) {
+        this.checkCompatibility = checkCompatibility;
+        return this;
+    }
 
     /**
      * @return the executorConfig
@@ -470,9 +481,11 @@ public class Config implements DataSerializable {
             throw new RuntimeException(format("Incompatible group config this:\n{0}\nanother:\n{1}",
                 this.groupConfig, config.getGroupConfig()));
         }
-        checkMapConfigCompatible(config);
-        checkQueueConfigCompatible(config);
-        checkTopicConfigCompatible(config);
+        if (checkCompatibility){
+            checkMapConfigCompatible(config);
+            checkQueueConfigCompatible(config);
+            checkTopicConfigCompatible(config);
+        }
     }
 
     private void checkMapConfigCompatible(final Config config) {
@@ -522,9 +535,10 @@ public class Config implements DataSerializable {
         groupConfig.readData(in);
         port = in.readInt();
         boolean[] b1 = ByteUtil.fromByte(in.readByte());
-        reuseAddress = b1[0];
-        portAutoIncrement = b1[1];
-        superClient = b1[2];
+        checkCompatibility = b1[0];
+        reuseAddress = b1[1];
+        portAutoIncrement = b1[2];
+        superClient = b1[3];
         
         boolean[] b2 = ByteUtil.fromByte(in.readByte());
         
@@ -601,7 +615,8 @@ public class Config implements DataSerializable {
         boolean hasMapMergePolicyConfigs = mapMergePolicyConfigs != null && !mapMergePolicyConfigs.isEmpty();
         boolean hasProperties = properties != null && !properties.isEmpty();
         
-        out.writeByte(ByteUtil.toByte(reuseAddress, 
+        out.writeByte(ByteUtil.toByte(checkCompatibility,
+            reuseAddress, 
             portAutoIncrement,
             superClient));
         
@@ -672,6 +687,7 @@ public class Config implements DataSerializable {
             + ", port=" + this.port 
             + ", superClient=" + this.superClient
             + ", reuseAddress=" + this.reuseAddress
+            + ", checkCompatibility=" + this.checkCompatibility
             + ", portAutoIncrement=" + this.portAutoIncrement
             + ", properties=" + this.properties 
             + ", networkConfig=" + this.networkConfig 
