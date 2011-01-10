@@ -212,9 +212,9 @@ public class Node {
         inSelector = new InSelector(this, serverSocketChannel);
         outSelector = new OutSelector(this);
         connectionManager = new ConnectionManager(this);
-        clientService = new ClientService(this);
         clusterManager = new ClusterManager(this);
         executorManager = new ExecutorManager(this);
+        clientService = new ClientService(this);
         concurrentMapManager = new ConcurrentMapManager(this);
         blockingQueueManager = new BlockingQueueManager(this);
         listenerManager = new ListenerManager(this);

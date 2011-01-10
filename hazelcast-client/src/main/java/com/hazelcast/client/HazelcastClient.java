@@ -54,7 +54,7 @@ public class HazelcastClient implements HazelcastInstance {
 
     private final static AtomicInteger counter = new AtomicInteger();
 
-    final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>();
+    final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>(100);
 
     final private ListenerManager listenerManager;
     final private OutRunnable out;

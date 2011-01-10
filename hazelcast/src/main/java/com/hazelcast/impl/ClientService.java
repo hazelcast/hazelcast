@@ -47,6 +47,7 @@ public class ClientService implements ConnectionListener {
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
     private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[300];
     private final ILogger logger;
+    private final int THREAD_COUNT;
 
     public ClientService(Node node) {
         this.node = node;
@@ -106,18 +107,61 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[ATOMIC_NUMBER_GET_AND_ADD.getValue()] = new AtomicOperationHandler();
         clientOperationHandlers[ATOMIC_NUMBER_COMPARE_AND_SET.getValue()] = new AtomicOperationHandler();
         clientOperationHandlers[ATOMIC_NUMBER_ADD_AND_GET.getValue()] = new AtomicOperationHandler();
+        this.THREAD_COUNT = node.getGroupProperties().EXECUTOR_CLIENT_THREAD_COUNT.getInteger();
         node.connectionManager.addConnectionListener(this);
     }
-    // always called by InThread
 
+    Worker[] workers = null;
+
+    // always called by InThread
     public void handle(Packet packet) {
+        if (workers == null) {
+            workers = new Worker[THREAD_COUNT];
+            for (int i = 0; i < THREAD_COUNT; i++) {
+                Worker worker = new Worker();
+                workers[i] = worker;
+                new Thread(worker).start();
+            }
+        }
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
-        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandlers);
-        if (packet.operation.equals(ClusterOperation.CONCURRENT_MAP_UNLOCK)) {
+        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandlers[packet.operation.getValue()]);
+        if (packet.operation == CONCURRENT_MAP_UNLOCK) {
             node.executorManager.executeNow(clientRequestHandler);
         } else {
-            node.executorManager.getClientExecutorService().executeOrderedRunnable(callContext.getThreadId(), clientRequestHandler);
+            int hash = hash(callContext.getThreadId(), THREAD_COUNT);
+            workers[hash].addWork(clientRequestHandler);
+        }
+    }
+
+    private int hash(int id, int maxCount) {
+        return (id == Integer.MIN_VALUE) ? 0 : Math.abs(id) % maxCount;
+    }
+
+    class Worker implements Runnable {
+        private final BlockingQueue<Runnable> q = new LinkedBlockingQueue<Runnable>();
+        private volatile boolean active = true;
+
+        public void run() {
+            while (active) {
+                try {
+                    q.take().run();
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+        }
+
+        public void stop() {
+            active = false;
+            q.offer(new Runnable() {
+                public void run() {
+                }
+            });
+        }
+
+        public void addWork(Runnable runnable) {
+            q.offer(runnable);
         }
     }
 
@@ -580,14 +624,17 @@ public class ClientService implements ConnectionListener {
 
         public void processCall(Node node, Packet packet) {
             InstanceType instanceType = getInstanceType(packet.name);
-            if (instanceType.equals(InstanceType.MAP)) {
+            Data key = packet.getKeyData();
+            if (instanceType == InstanceType.MAP) {
                 IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
-                packet.setValue((Data) map.get(packet.getKeyData()));
-            } else if (instanceType.equals(InstanceType.MULTIMAP)) {
+                packet.setKey(null);
+                packet.setValue((Data) map.get(key));
+            } else if (instanceType == InstanceType.MULTIMAP) {
                 FactoryImpl.MultiMapProxy multiMap = (FactoryImpl.MultiMapProxy) node.factory.getOrCreateProxyByName(packet.name);
                 FactoryImpl.MultiMapProxy.MultiMapBase base = multiMap.getBase();
                 MProxy mapProxy = base.mapProxy;
-                packet.setValue((Data) mapProxy.get(packet.getKeyData()));
+                packet.setKey(null);
+                packet.setValue((Data) mapProxy.get(key));
             }
         }
     }

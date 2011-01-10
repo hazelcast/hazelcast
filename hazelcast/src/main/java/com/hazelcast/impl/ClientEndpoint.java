@@ -34,7 +34,7 @@ import static com.hazelcast.nio.IOUtil.toData;
 
 public class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener, ConnectionListener {
     final Connection conn;
-    final private Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>();
+    final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
     final Map<ITopic, MessageListener<Object>> messageListeners = new HashMap<ITopic, MessageListener<Object>>();
     final Map<Integer, Map<IMap, List<Data>>> locks = new ConcurrentHashMap<Integer, Map<IMap, List<Data>>>();
     final List<IMap> listeningMaps = new ArrayList<IMap>();

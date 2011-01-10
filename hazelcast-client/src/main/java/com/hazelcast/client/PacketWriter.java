@@ -19,22 +19,25 @@ package com.hazelcast.client;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PacketWriter extends PacketHandler {
 
-    public void write(Packet request) throws IOException {
-        write(getConnection(), request);
-    }
+    final ByteBuffer writeHeaderBuffer = ByteBuffer.allocate(1 << 10); // 1k
+
+    final Map<String, byte[]> nameCache = new HashMap<String, byte[]>(100);
 
     public void write(Connection connection, Packet request) throws IOException {
         if (connection != null) {
             final DataOutputStream dos = connection.getOutputStream();
-            if (connection.headersWritten.compareAndSet(false, true)) {
+            if (!connection.headersWritten) {
                 dos.write(HEADER);
                 dos.flush();
+                connection.headersWritten = true;
             }
-            
-            request.writeTo(dos);
+            request.writeTo(this, dos);
         }
     }
 

@@ -707,7 +707,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
         membersUpdate.setNode(node);
         membersUpdate.call();
-        node.executorManager.executeMigrationTask(new JoinRunnable(membersUpdate));
+        node.executorManager.executeNow(new JoinRunnable(membersUpdate));
     }
 
     void updateMembers(Collection<MemberInfo> lsMemberInfos) {

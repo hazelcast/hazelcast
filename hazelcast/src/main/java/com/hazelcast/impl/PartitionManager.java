@@ -63,8 +63,8 @@ public class PartitionManager implements Runnable {
         this.thisAddress = concurrentMapManager.getThisAddress();
         this.partitionServiceImpl = new PartitionServiceImpl(concurrentMapManager);
         this.timeToInitiateMigration = System.currentTimeMillis() + node.getGroupProperties().INITIAL_WAIT_SECONDS.getInteger() * 1000 + MIGRATION_INTERVAL_MILLIS;
-        this.parallelExecutorMigration = node.getExecutorManager().newParallelExecutor(20);
-        this.parallelExecutorBackups = node.getExecutorManager().newParallelExecutor(12);
+        this.parallelExecutorMigration = node.getExecutorManager().newParallelExecutor(node.getGroupProperties().EXECUTOR_MIGRATION_THREAD_COUNT.getInteger());
+        this.parallelExecutorBackups = node.getExecutorManager().newParallelExecutor(20);
     }
 
     public void reset() {

@@ -63,7 +63,7 @@ public class SimpleMapTest {
         System.out.println("    Put Percentage: " + PUT_PERCENTAGE);
         System.out.println(" Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
         ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
-        final HazelcastClient hazelcast = HazelcastClient.newHazelcastClient("dev", "dev-pass", "localhost");
+        final HazelcastClient hazelcast = HazelcastClient.newHazelcastClient("dev", "dev-pass", "localhost:5701");
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.submit(new Runnable() {
                 public void run() {

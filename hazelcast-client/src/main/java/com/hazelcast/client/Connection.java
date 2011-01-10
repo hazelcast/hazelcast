@@ -39,8 +39,8 @@ public class Connection {
     private final int id;
     private final DataOutputStream dos;
     private final DataInputStream dis;
-    final AtomicBoolean headersWritten = new AtomicBoolean(false);
-    final AtomicBoolean headerRead = new AtomicBoolean(false);
+    boolean headersWritten = false;
+    boolean headerRead = false;
 
     /**
      * Creates the Socket to the given host and port
@@ -62,7 +62,7 @@ public class Connection {
             final Socket socket = new Socket();
             try {
                 socket.setKeepAlive(true);
-                //socket.setTcpNoDelay(true);
+//                socket.setTcpNoDelay(true);
                 socket.setSoLinger(true, 5);
 //                socket.setSendBufferSize(BUFFER_SIZE);
 //                socket.setReceiveBufferSize(BUFFER_SIZE);

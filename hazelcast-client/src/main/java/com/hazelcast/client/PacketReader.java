@@ -19,21 +19,25 @@ package com.hazelcast.client;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class PacketReader extends PacketHandler {
 
+    final ByteBuffer readHeaderBuffer = ByteBuffer.allocate(1 << 10); // 1k
+
     public Packet readPacket(Connection connection) throws IOException {
         final DataInputStream dis = connection.getInputStream();
-        if (connection.headerRead.compareAndSet(false, true)) {
+        if (!connection.headerRead) {
             final byte[] b = new byte[3];
             dis.readFully(b);
-            if (!Arrays.equals(HEADER, b)){
+            if (!Arrays.equals(HEADER, b)) {
                 throw new IllegalStateException("Illegal header " + Arrays.toString(b));
             }
+            connection.headerRead = true;
         }
         Packet response = new Packet();
-        response.readFrom(dis);
+        response.readFrom(this, dis);
         return response;
     }
 }

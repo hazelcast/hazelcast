@@ -17,8 +17,12 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.util.SimpleBoundedQueue;
+
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -37,37 +41,118 @@ public class OutRunnable extends IORunnable {
 
     private final Collection<Call> reconnectionCalls = new LinkedBlockingQueue<Call>();
 
+    private final SimpleBoundedQueue<Call> q = new SimpleBoundedQueue<Call>(1000);
+
     public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
         super(client, calls);
         this.writer = writer;
         this.reconnection = new AtomicBoolean(false);
     }
 
+    long count, poll, put, beforeWrite, afterWrite, closing = 0;
+    long period = 30000;
+
     protected void customRun() throws InterruptedException {
         if (reconnection.get()) {
             Thread.sleep(50L);
             return;
         }
-        Call call = queue.poll(100, TimeUnit.MILLISECONDS);
+        boolean written = false;
+        if (queue.size() > 0 || q.size() > 0) {
+            queue.drainTo(q);
+            Call call = q.poll();
+            while (call != null) {
+                writeCall(call);
+                written = true;
+                call = q.poll();
+            }
+        } else if (reconnectionCalls.size() > 0) {
+            checkOnReconnect(null);
+            return;
+        }
+        try {
+            if (written) {
+                writer.flush(connection);
+            }
+        } catch (IOException e) {
+            clusterIsDown(connection);
+        }
+        Call call = queue.poll(12, TimeUnit.MILLISECONDS);
+        if (call != null) {
+            writeCall(call);
+            try {
+                writer.flush(connection);
+            } catch (IOException e) {
+                queue.offer(call);
+                clusterIsDown(connection);
+            }
+        }
+    }
+
+    private void writeCall(Call call) {
+        try {
+            Connection oldConnection = connection;
+            connection = client.getConnectionManager().getConnection();
+            if (restoredConnection(oldConnection, connection)) {
+                resubscribe(call, oldConnection);
+            } else if (connection != null) {
+                if (call != RECONNECT_CALL) {
+                    callMap.put(call.getId(), call);
+                    writer.write(connection, call.getRequest());
+                    call.written = System.nanoTime();
+                }
+            } else {
+                queue.offer(call);
+                clusterIsDown(oldConnection);
+                return;
+            }
+            if (reconnectionCalls.size() > 0) {
+                checkOnReconnect(call);
+            }
+        } catch (Exception e) {
+            queue.offer(call);
+            clusterIsDown(connection);
+        }
+    }
+
+    protected void customRun2() throws InterruptedException {
+        if (reconnection.get()) {
+            Thread.sleep(50L);
+            return;
+        }
+        long now = System.nanoTime();
+        Call call = queue.poll(10, TimeUnit.MILLISECONDS);
         try {
             if (call == null) {
+                writer.flush(connection);
                 if (reconnectionCalls.size() > 0) {
                     checkOnReconnect(call);
                 }
                 return;
             }
+            count++;
+            long a0 = System.nanoTime();
+            poll += (a0 - now);
             if (call != RECONNECT_CALL) {
                 callMap.put(call.getId(), call);
             }
+            long a1 = System.nanoTime();
+            put += (a1 - a0);
             Connection oldConnection = connection;
             connection = client.getConnectionManager().getConnection();
             boolean wrote = false;
+            long a3 = 0;
             if (restoredConnection(oldConnection, connection)) {
                 resubscribe(call, oldConnection);
             } else if (connection != null) {
                 if (call != RECONNECT_CALL) {
                     logger.log(Level.FINEST, "Sending: " + call);
+                    long a2 = System.nanoTime();
+                    beforeWrite += (a2 - a1);
                     writer.write(connection, call.getRequest());
+                    a3 = System.nanoTime();
+                    afterWrite += (a3 - a2);
+                    call.written = a3;
                     wrote = true;
                 }
             } else {
@@ -76,10 +161,19 @@ public class OutRunnable extends IORunnable {
                 return;
             }
             if (connection != null && wrote) {
-                writer.flush(connection);
+//                writer.flush(connection);
             }
             if (reconnectionCalls.size() > 0) {
                 checkOnReconnect(call);
+            }
+            closing += (System.nanoTime() - a3);
+            if (count % period == 0) {
+                System.out.println("poll " + (poll / count / 1000));
+                System.out.println("put " + (put / count / 1000));
+                System.out.println("before " + (beforeWrite / count / 1000));
+                System.out.println("after " + (afterWrite / count / 1000));
+                System.out.println("closing " + (closing / count / 1000));
+                count = poll = put = beforeWrite = afterWrite = closing = 0;
             }
         } catch (Throwable io) {
             logger.log(Level.WARNING,
@@ -180,8 +274,8 @@ public class OutRunnable extends IORunnable {
                 throw new NoMemberAvailableException("Client is shutdown.");
             }
             logger.log(Level.FINEST, "From " + Thread.currentThread() + ": Enqueue: " + call);
-            queue.put(call);
-        } catch (InterruptedException e) {
+            queue.offer(call);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

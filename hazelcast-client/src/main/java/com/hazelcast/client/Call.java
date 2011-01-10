@@ -18,6 +18,8 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.util.ResponseQueueFactory;
+import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -31,7 +33,15 @@ public class Call {
 
     private volatile Object response;
 
-    private final BlockingQueue<Object> responseQueue = new LinkedBlockingQueue<Object>();
+    private final BlockingQueue<Object> responseQueue = ResponseQueueFactory.newResponseQueue();
+
+    volatile long sent = 0;
+
+    volatile long written = 0;
+
+    volatile long received = 0;
+
+    volatile long replied = 0;
 
     public Call(Long id, Packet request) {
         this.id = id;

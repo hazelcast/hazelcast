@@ -48,16 +48,12 @@ public class ExecutorManager extends BaseManager {
 
     private final ParallelExecutor asyncExecutorService;
     private final NamedExecutorService defaultExecutorService;
-    private final NamedExecutorService clientExecutorService;
-    private final NamedExecutorService migrationExecutorService;
     private final NamedExecutorService queryExecutorService;
     private final NamedExecutorService storeExecutorService;
     private final NamedExecutorService eventExecutorService;
     private volatile boolean started = false;
 
     private static final String DEFAULT_EXECUTOR_SERVICE = "x:default";
-    private static final String CLIENT_EXECUTOR_SERVICE = "x:hz.client";
-    private static final String MIGRATION_EXECUTOR_SERVICE = "x:hz.migration";
     private static final String QUERY_EXECUTOR_SERVICE = "x:hz.query";
     private static final String STORE_EXECUTOR_SERVICE = "x:hz.store";
     private static final String EVENT_EXECUTOR_SERVICE = "x:hz.events";
@@ -92,8 +88,6 @@ public class ExecutorManager extends BaseManager {
         };
         parallelExecutorService = new ParallelExecutorService(threadPoolExecutor);
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
-        clientExecutorService = getOrCreateNamedExecutorService(CLIENT_EXECUTOR_SERVICE, gp.EXECUTOR_CLIENT_THREAD_COUNT);
-        migrationExecutorService = getOrCreateNamedExecutorService(MIGRATION_EXECUTOR_SERVICE, gp.EXECUTOR_MIGRATION_THREAD_COUNT);
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
         storeExecutorService = getOrCreateNamedExecutorService(STORE_EXECUTOR_SERVICE, gp.EXECUTOR_STORE_THREAD_COUNT);
         eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
@@ -281,10 +275,6 @@ public class ExecutorManager extends BaseManager {
         return defaultExecutorService;
     }
 
-    public NamedExecutorService getClientExecutorService() {
-        return clientExecutorService;
-    }
-
     public NamedExecutorService getEventExecutorService() {
         return eventExecutorService;
     }
@@ -299,10 +289,6 @@ public class ExecutorManager extends BaseManager {
 
     public void executeNow(Runnable runnable) {
         threadPoolExecutor.execute(runnable);
-    }
-
-    public void executeMigrationTask(Runnable runnable) {
-        migrationExecutorService.execute(runnable);
     }
 
     public void executeQueryTask(Runnable runnable) {

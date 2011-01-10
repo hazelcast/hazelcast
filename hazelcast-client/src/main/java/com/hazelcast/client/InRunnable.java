@@ -36,7 +36,7 @@ public class InRunnable extends IORunnable implements Runnable {
 
     protected void customRun() throws InterruptedException {
         if (outRunnable.reconnection.get()) {
-            Thread.sleep(50L);
+            Thread.sleep(10L);
             return;
         }
         Packet packet;
@@ -44,22 +44,23 @@ public class InRunnable extends IORunnable implements Runnable {
             Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
             if (oldConnection == null || restoredConnection(oldConnection, connection)) {
-            	if (outRunnable.sendReconnectCall(connection)){
-            	    logger.log(Level.FINEST, "restoredConnection");
-                	if (oldConnection != null) {
+                if (outRunnable.sendReconnectCall(connection)) {
+                    logger.log(Level.FINEST, "restoredConnection");
+                    if (oldConnection != null) {
                         redoUnfinishedCalls(oldConnection);
                     }
-            	}
-            	return;
+                }
+                return;
             }
             if (connection == null) {
                 outRunnable.clusterIsDown(oldConnection);
-                Thread.sleep(50);
+                Thread.sleep(10);
             } else {
                 packet = reader.readPacket(connection);
                 //logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
                 Call call = callMap.remove(packet.getCallId());
                 if (call != null) {
+                    call.received = System.nanoTime();
                     call.setResponse(packet);
                 } else {
                     if (packet.getOperation().equals(ClusterOperation.EVENT)) {
@@ -75,11 +76,11 @@ public class InRunnable extends IORunnable implements Runnable {
             outRunnable.clusterIsDown(connection);
         }
     }
-    
+
     private void redoUnfinishedCalls(Connection oldConnection) {
         onDisconnect(oldConnection);
     }
-    
+
     public void shutdown() {
         synchronized (monitor) {
             if (running) {

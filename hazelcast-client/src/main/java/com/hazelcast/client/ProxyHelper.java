@@ -50,17 +50,42 @@ public class ProxyHelper {
         return name;
     }
 
+    final AtomicLong count = new AtomicLong();
+    final AtomicLong sent = new AtomicLong();
+    final AtomicLong written = new AtomicLong();
+    final AtomicLong received = new AtomicLong();
+    final AtomicLong replied = new AtomicLong();
+    final Object lock = new Object();
+
     protected Packet callAndGetResult(Packet request) {
+        long theCount = count.incrementAndGet();
+        long now = System.nanoTime();
         Call c = createCall(request);
-        return doCall(c);
+        Packet response = doCall(c);
+        sent.addAndGet(c.sent - now);
+        written.addAndGet(c.written - c.sent);
+        received.addAndGet(c.received - c.written);
+        replied.addAndGet(c.replied - c.received);
+//        if (theCount == 30000) {
+//            count.addAndGet(-30000);
+//            System.out.println("sent " + (sent.getAndSet(0) / theCount / 1000));
+//            System.out.println("written " + (written.getAndSet(0) / theCount / 1000));
+//            System.out.println("received " + (received.getAndSet(0) / theCount / 1000));
+//            System.out.println("replied " + (replied.getAndSet(0) / theCount / 1000));
+//        }
+        return response;
     }
 
     protected Packet doCall(Call c) {
         sendCall(c);
+        c.sent = System.nanoTime();
         final int timeout = 5;
         for (int i = 0; ; i++) {
             final Object response = c.getResponse(timeout, TimeUnit.SECONDS);
-            if (response != null) return (Packet) response;
+            if (response != null) {
+                c.replied = System.nanoTime();
+                return (Packet) response;
+            }
             if (i > 0) {
                 logger.log(Level.INFO, "There is no response for " + c
                         + " in " + (timeout * i) + " seconds.");
@@ -68,7 +93,7 @@ public class ProxyHelper {
         }
     }
 
-    public void sendCall(Call c) {
+    public void sendCall(final Call c) {
         if (c == null) {
             throw new NullPointerException();
         }

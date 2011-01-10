@@ -25,10 +25,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 public class Packet {
-    
-    private byte[] headerInBytes;
 
     private byte[] key;
 
@@ -65,29 +64,31 @@ public class Packet {
     private byte[] indexTypes = new byte[10];
 
     private static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
-    
-    private final ByteBuffer readHeaderBuffer = ByteBuffer.allocate(1 << 10); // 1k
-    
-    private final ByteBuffer writeHeaderBuffer = ByteBuffer.allocate(1 << 10); // 1k
 
     public Packet() {
     }
 
-    public void writeTo(DataOutputStream outputStream) throws IOException {
-        ByteBuffer header = getHeader();
-        int headerSize = header.position();
-        outputStream.writeInt(headerSize);
-        outputStream.writeInt((key == null) ? 0 : key.length);
-        outputStream.writeInt((value == null) ? 0 : value.length);
-        outputStream.writeByte(PACKET_VERSION);
-        outputStream.write(header.array(), 0, headerSize);
+    public void writeTo(PacketWriter packetWriter, DataOutputStream outputStream) throws IOException {
+        final ByteBuffer writeHeaderBuffer = packetWriter.writeHeaderBuffer;
+        writeHeaderBuffer.clear();
+        writeHeaderBuffer.position(13);
+        writeHeader(packetWriter);
+        int size = writeHeaderBuffer.position();
+        int headerSize = size - 13;
+        writeHeaderBuffer.position(0);
+        writeHeaderBuffer.putInt(headerSize);
+        writeHeaderBuffer.putInt((key == null) ? 0 : key.length);
+        writeHeaderBuffer.putInt((value == null) ? 0 : value.length);
+        writeHeaderBuffer.put(PACKET_VERSION);
+        outputStream.write(writeHeaderBuffer.array(), 0, size);
         if (key != null)
             outputStream.write(key);
         if (value != null)
             outputStream.write(value);
     }
 
-    public void readFrom(DataInputStream dis) throws IOException {
+    public void readFrom(PacketReader packetReader, DataInputStream dis) throws IOException {
+        final ByteBuffer readHeaderBuffer = packetReader.readHeaderBuffer;
         final int headerSize = dis.readInt();
         int keySize = dis.readInt();
         int valueSize = dis.readInt();
@@ -143,8 +144,9 @@ public class Packet {
         dis.readFully(value);
     }
 
-    private ByteBuffer getHeader() throws IOException {
-        writeHeaderBuffer.clear();
+    private void writeHeader(PacketWriter packetWriter) throws IOException {
+        final ByteBuffer writeHeaderBuffer = packetWriter.writeHeaderBuffer;
+        final Map<String, byte[]> nameCache = packetWriter.nameCache;
         writeHeaderBuffer.put(operation.getValue());
         writeHeaderBuffer.putInt(blockId);
         writeHeaderBuffer.putInt(threadId);
@@ -194,7 +196,14 @@ public class Packet {
         int nameLen = 0;
         byte[] nameInBytes = null;
         if (name != null) {
-            nameInBytes = name.getBytes();
+            nameInBytes = nameCache.get(name);
+            if (nameInBytes == null) {
+                nameInBytes = name.getBytes();
+                if (nameCache.size() > 10000) {
+                    nameCache.clear();
+                }
+                nameCache.put(name, nameInBytes);
+            }
             nameLen = nameInBytes.length;
         }
         writeHeaderBuffer.putInt(nameLen);
@@ -206,7 +215,6 @@ public class Packet {
             writeHeaderBuffer.putLong(indexes[i]);
             writeHeaderBuffer.put(indexTypes[i]);
         }
-        return writeHeaderBuffer;
     }
 
     public void set(String name, ClusterOperation operation,
@@ -233,8 +241,8 @@ public class Packet {
         this.value = value;
     }
 
-    public void setCallId(long callid) {
-        this.callId = callid;
+    public void setCallId(long callId) {
+        this.callId = callId;
     }
 
     public long getCallId() {

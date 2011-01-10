@@ -24,20 +24,18 @@ public class ClientRequestHandler extends FallThroughRunnable {
     private final Packet packet;
     private final CallContext callContext;
     private final Node node;
+    private final ClientService.ClientOperationHandler clientOperationHandler;
 
-    private final ClientOperationHandler[] clientOperationHandlers;
-
-    public ClientRequestHandler(Node node, Packet packet, CallContext callContext, ClientOperationHandler[] clientOperationHandlers) {
+    public ClientRequestHandler(Node node, Packet packet, CallContext callContext, ClientOperationHandler clientOperationHandler) {
         this.packet = packet;
         this.callContext = callContext;
         this.node = node;
-        this.clientOperationHandlers = clientOperationHandlers;
+        this.clientOperationHandler = clientOperationHandler;
     }
 
     @Override
     public void doRun() {
         ThreadContext.get().setCallContext(callContext);
-        ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
         if (clientOperationHandler != null) {
             try {
                 clientOperationHandler.handle(node, packet);
