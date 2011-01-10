@@ -58,7 +58,6 @@ public final class InSelector extends SelectorBase {
             if (serverSocketChannel != null) {
                 serverSocketChannel.close();
             }
-            node.clientService.shutdown();
         } catch (IOException ignored) {
         }
     }

@@ -364,6 +364,8 @@ public class Node {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             } catch (Throwable ignored) {
             }
+            logger.log(Level.FINEST, "Shutting down the clientService");
+            clientService.shutdown();
             logger.log(Level.FINEST, "Shutting down the NIO socket selector for input");
             inSelector.shutdown();
             logger.log(Level.FINEST, "Shutting down the NIO socket selector for output");
