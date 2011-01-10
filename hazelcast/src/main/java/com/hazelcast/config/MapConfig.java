@@ -44,7 +44,7 @@ public class MapConfig implements DataSerializable {
     public final static boolean DEFAULT_CACHE_VALUE = true;
 
     private String name = null;
-
+    
     private int backupCount = DEFAULT_BACKUP_COUNT;
 
     private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
@@ -76,6 +76,23 @@ public class MapConfig implements DataSerializable {
     }
 
     public MapConfig() {
+    }
+
+    public MapConfig(MapConfig config) {
+        this.name = config.name;
+        this.backupCount = config.backupCount;
+        this.evictionPercentage = config.evictionPercentage;
+        this.timeToLiveSeconds = config.timeToLiveSeconds;
+        this.maxIdleSeconds = config.maxIdleSeconds;
+        this.evictionDelaySeconds = config.evictionDelaySeconds;
+        this.maxSize = config.maxSize;
+        this.evictionPolicy = config.evictionPolicy;
+        this.valueIndexed = config.valueIndexed;
+        this.mapStoreConfig = config.mapStoreConfig;
+        this.nearCacheConfig = config.nearCacheConfig;
+        this.readBackupData = config.readBackupData;
+        this.cacheValue = config.cacheValue;
+        this.mergePolicy = config.mergePolicy;
     }
 
     /**

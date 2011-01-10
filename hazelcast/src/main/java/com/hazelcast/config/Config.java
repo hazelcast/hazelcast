@@ -122,12 +122,17 @@ public class Config implements DataSerializable {
         QueueConfig config;
         if ((config = lookupByPattern(mapQueueConfigs, name)) != null) return config;
         
-        config = mapQueueConfigs.get("default");
-        if (config == null) {
-            config = new QueueConfig();
-            config.setName("default");
-            mapQueueConfigs.put("default", config);
+        QueueConfig defConfig = mapQueueConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new QueueConfig();
+            defConfig.setName("default");
+            addQueueConfig(defConfig);
         }
+        
+        config = new QueueConfig(defConfig);
+        config.setName(name);
+        addQueueConfig(config);
+        
         return config;
     }
 
@@ -135,12 +140,17 @@ public class Config implements DataSerializable {
         MapConfig config;
         if ((config = lookupByPattern(mapConfigs, name)) != null) return config;
         
-        config = mapConfigs.get("default");
-        if (config == null) {
-            config = new MapConfig();
-            config.setName("default");
-            mapConfigs.put("default", config);
+        MapConfig defConfig = mapConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new MapConfig();
+            defConfig.setName("default");
+            addMapConfig(defConfig);
         }
+        
+        config = new MapConfig(defConfig);
+        config.setName(name);
+        addMapConfig(config);
+        
         return config;
     }
 
@@ -150,17 +160,22 @@ public class Config implements DataSerializable {
             return config;
         }
         
-        config = mapTopicConfigs.get("default");
-        if (config == null) {
-            config = new TopicConfig();
-            config.setName("default");
-            mapTopicConfigs.put("default", config);
+        TopicConfig defConfig = mapTopicConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new TopicConfig();
+            defConfig.setName("default");
+            addTopicConfig(defConfig);
         }
+        
+        config = new TopicConfig(defConfig);
+        config.setName(name);
+        addTopicConfig(defConfig);
+        
         return config;
     }
 
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
-        T t = name.indexOf('*') < 0 ? map.get(name) : null;
+        T t = map.get(name);
         if (t == null){
             final Set<String> tNames = map.keySet();
             for (final String pattern : tNames) {
@@ -464,9 +479,10 @@ public class Config implements DataSerializable {
         Set<String> mapConfigNames = new HashSet<String>(mapConfigs.keySet());
         mapConfigNames.addAll(config.mapConfigs.keySet());
         for (final String name : mapConfigNames) {
-            final MapConfig thisMapConfig = getMapConfig(name);
-            final MapConfig thatMapConfig = config.getMapConfig(name);
-            if (!thisMapConfig.isCompatible(thatMapConfig)) {
+            final MapConfig thisMapConfig = lookupByPattern(mapConfigs, name);
+            final MapConfig thatMapConfig = lookupByPattern(config.mapConfigs, name);
+            if (thisMapConfig != null && thatMapConfig != null && 
+                !thisMapConfig.isCompatible(thatMapConfig)) {
                 throw new RuntimeException(format("Incompatible map config this:\n{0}\nanother:\n{1}",
                     thisMapConfig, thatMapConfig));
             }
@@ -477,9 +493,10 @@ public class Config implements DataSerializable {
         Set<String> queueConfigNames = new HashSet<String>(mapQueueConfigs.keySet());
         queueConfigNames.addAll(config.mapQueueConfigs.keySet());
         for (final String name : queueConfigNames) {
-            final QueueConfig thisQueueConfig = getQueueConfig(name);
-            final QueueConfig thatQueueConfig = config.getQueueConfig(name);
-            if (!thisQueueConfig.isCompatible(thatQueueConfig)) {
+            final QueueConfig thisQueueConfig = lookupByPattern(mapQueueConfigs, name);
+            final QueueConfig thatQueueConfig = lookupByPattern(config.mapQueueConfigs, name);
+            if (thisQueueConfig != null && thatQueueConfig != null &&
+                !thisQueueConfig.isCompatible(thatQueueConfig)) {
                 throw new RuntimeException(format("Incompatible queue config this:\n{0}\nanother:\n{1}",
                     thisQueueConfig, thatQueueConfig));
             }
@@ -490,9 +507,10 @@ public class Config implements DataSerializable {
         Set<String> topicConfigNames = new HashSet<String>(mapTopicConfigs.keySet());
         topicConfigNames.addAll(config.mapTopicConfigs.keySet());
         for (final String name : topicConfigNames) {
-            final TopicConfig thisTopicConfig = getTopicConfig(name);
-            final TopicConfig thatTopicConfig = config.getTopicConfig(name);
-            if (!thisTopicConfig.equals(thatTopicConfig)) {
+            final TopicConfig thisTopicConfig = lookupByPattern(mapTopicConfigs, name);
+            final TopicConfig thatTopicConfig = lookupByPattern(config.mapTopicConfigs, name);
+            if (thisTopicConfig != null && thatTopicConfig != null &&
+                !thisTopicConfig.equals(thatTopicConfig)) {
                 throw new RuntimeException(format("Incompatible topic config this:\n{0}\nanother:\n{1}",
                     thisTopicConfig, thatTopicConfig));
             }

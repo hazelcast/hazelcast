@@ -34,6 +34,15 @@ public final class QueueConfig implements DataSerializable {
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
+    public QueueConfig() {
+    }
+    
+    public QueueConfig(QueueConfig config) {
+        this.name = config.name;
+        this.maxSizePerJVM = config.maxSizePerJVM;
+        this.timeToLiveSeconds = config.timeToLiveSeconds;
+    }
+
     /**
      * @return the name
      */

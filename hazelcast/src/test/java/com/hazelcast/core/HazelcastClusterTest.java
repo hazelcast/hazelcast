@@ -17,17 +17,17 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static junit.framework.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * HazelcastTest tests some specific cluster behavior.
@@ -80,6 +80,37 @@ public class HazelcastClusterTest {
         final int s2 = h2.getCluster().getMembers().size();
         assertEquals(1, s1);
         assertEquals(1, s2);
+    }
+    
+    @Test
+    public void testJoinWithPostConfiguration() throws Exception {
+        // issue 473
+        Config hzConfig = new Config().
+            setGroupConfig(new GroupConfig("foo-group")).
+            setPort(5701).setPortAutoIncrement(false);
+        hzConfig.getNetworkConfig().setJoin(
+            new Join().
+                setMulticastConfig(new MulticastConfig().setEnabled(false)).
+                setTcpIpConfig(new TcpIpConfig().setMembers(Arrays.asList("127.0.0.1:5702"))));
+    
+        Config hzConfig2 = new Config().
+            setGroupConfig(new GroupConfig("foo-group")).
+            setPort(5702).setPortAutoIncrement(false);
+    
+        hzConfig2.getNetworkConfig().setJoin(
+                new Join().
+                    setMulticastConfig(new MulticastConfig().setEnabled(false)).
+                    setTcpIpConfig(new TcpIpConfig().setMembers(Arrays.asList("127.0.0.1:5701"))));
+        
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(hzConfig);
+     // Create the configuration for a dynamic map.
+        instance1.getConfig().addMapConfig(new MapConfig("foo").setTimeToLiveSeconds(10));
+        final IMap<Object, Object> map1 = instance1.getMap("foo");
+        map1.put("issue373", "ok");
+        
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(hzConfig2);
+        assertEquals(2, instance2.getCluster().getMembers().size());
+        assertEquals("ok", instance2.getMap("foo").get("issue373"));
     }
 
     @Test

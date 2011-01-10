@@ -31,6 +31,15 @@ public final class TopicConfig  implements DataSerializable{
 
     private boolean globalOrderingEnabled = DEFAULT_GLOBAL_ORDERING_ENABLED;
 
+    public TopicConfig() {
+    }
+    
+    
+    public TopicConfig(TopicConfig config) {
+        this.name = config.name;
+        this.globalOrderingEnabled = config.globalOrderingEnabled;
+    }
+
     /**
      * @return the name
      */
