@@ -183,20 +183,6 @@ public class UnresolvedIssues extends TestUtil {
     }
 
     @Test
-    @Ignore
-    public void configSetsForDefaultAllwaysissue466() {
-        Config config = new XmlConfigBuilder().build();
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setWriteDelaySeconds(0);
-        mapStoreConfig.setClassName("com.hazelcast.examples.DummyStore");
-        config.getMapConfig("test").setMapStoreConfig(mapStoreConfig);
-        config.getMapConfig("default").setMapStoreConfig(null);
-        assertNotNull(config.getMapConfig("test").getMapStoreConfig());
-    }
-
-    @Test
-    @Ignore
     public void multimapShouldntBeAffectedByDefaultMapConfig() {
         Config config = new XmlConfigBuilder().build();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();

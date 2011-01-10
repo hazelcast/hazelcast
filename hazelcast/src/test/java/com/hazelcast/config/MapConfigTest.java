@@ -19,8 +19,7 @@ package com.hazelcast.config;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 public class MapConfigTest {
 
@@ -227,5 +226,17 @@ public class MapConfigTest {
     public void testSetNearCacheConfig() {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         assertEquals(nearCacheConfig, new MapConfig().setNearCacheConfig(nearCacheConfig).getNearCacheConfig());
+    }
+
+    @Test
+    public void configSetsForDefaultAllwaysissue466() {
+        Config config = new XmlConfigBuilder().build();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(0);
+        mapStoreConfig.setClassName("com.hazelcast.examples.DummyStore");
+        config.getMapConfig("test").setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig("default").setMapStoreConfig(null);
+        assertNotNull(config.getMapConfig("test").getMapStoreConfig());
     }
 }
