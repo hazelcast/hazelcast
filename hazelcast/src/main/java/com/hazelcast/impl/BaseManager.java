@@ -18,7 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.RemotelyProcessable;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Prefix;
@@ -1283,20 +1282,43 @@ public abstract class BaseManager {
                 + key);
     }
 
-    void enqueueEvent(int eventType, String name, Data eventKey, Data eventValue, Address from) {
+    void enqueueEvent(int eventType, String name, Data key, Data value, Address from) {
         try {
             Member member = getMember(from);
             if (member == null) {
                 member = new MemberImpl(from, thisAddress.equals(from));
             }
-            final EventTask eventTask = new EventTask(member, eventType, name, eventKey, eventValue);
+            Data newValue = value;
+            Data oldValue = null;
+            if (value != null && getInstanceType(name).isMap()) {
+                Keys keys = (Keys) toObject(value);
+                Collection<Data> values = keys.getKeys();
+                if (values != null) {
+                    Iterator<Data> it = values.iterator();
+                    if (it.hasNext()) {
+                        newValue = it.next();
+                    }
+                    if (it.hasNext()) {
+                        oldValue = it.next();
+                    }
+                }
+            }
+            final DataAwareEntryEvent dataAwareEntryEvent = new DataAwareEntryEvent(member, eventType, name, key, newValue, oldValue);
             int hash;
-            if (eventKey != null) {
-                hash = eventKey.hashCode();
+            if (key != null) {
+                hash = key.hashCode();
             } else {
                 hash = hashTwo(from.hashCode(), name.hashCode());
             }
-            node.executorManager.getEventExecutorService().executeOrderedRunnable(hash, eventTask);
+            node.executorManager.getEventExecutorService().executeOrderedRunnable(hash, new Runnable() {
+                public void run() {
+                    try {
+                        node.listenerManager.callListeners(dataAwareEntryEvent);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1312,76 +1334,6 @@ public abstract class BaseManager {
 
     static int hashTwo(int hash1, int hash2) {
         return hash1 * 29 + hash2;
-    }
-
-    class EventTask extends EntryEvent implements Runnable {
-        protected final Data dataKey;
-
-        protected final Data dataValue;
-
-        public EventTask(Member from, int eventType, String name, Data dataKey, Data dataValue) {
-            super(name, from, eventType, null, null);
-            this.dataKey = dataKey;
-            this.dataValue = dataValue;
-        }
-
-        public Data getDataKey() {
-            return dataKey;
-        }
-
-        public Data getDataValue() {
-            return dataValue;
-        }
-
-        public void run() {
-            try {
-                node.listenerManager.callListeners(EventTask.this);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        public Object getKey() {
-            if (key == null && dataKey != null) {
-                key = toObject(dataKey);
-            }
-            return key;
-        }
-
-        private void fillValues() {
-            oldValue = null;
-            Object v = toObject(dataValue);
-            if (v instanceof Keys) {
-                final Keys keys = (Keys) v;
-                final Iterator<Data> it = keys.getKeys().iterator();
-                value = it.hasNext() ? toObject(it.next()) : null;
-                oldValue = it.hasNext() ? toObject(it.next()) : null;
-            } else {
-                value = v;
-            }
-        }
-
-        public Object getOldValue() {
-            if (oldValue == null) {
-                if (dataValue != null) {
-                    fillValues();
-                } else if (collection) {
-                    value = null;
-                }
-            }
-            return oldValue;
-        }
-
-        public Object getValue() {
-            if (value == null) {
-                if (dataValue != null) {
-                    fillValues();
-                } else if (collection) {
-                    value = key;
-                }
-            }
-            return value;
-        }
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
@@ -1423,7 +1375,15 @@ public abstract class BaseManager {
             if (mapTargetListeners == null || mapTargetListeners.size() == 0) {
                 return;
             }
-            Data packetValue = oldValue != null ? toData(new Keys(Arrays.asList(value, oldValue))) : value;
+            Data packetValue = value;
+            if (value != null && getInstanceType(name).isMap()) {
+                Keys keys = new Keys();
+                keys.addKey(value);
+                if (oldValue != null) {
+                    keys.addKey(oldValue);
+                }
+                packetValue = toData(keys);
+            }
             sendEvents(eventType, name, key, packetValue, mapTargetListeners, callerAddress);
         } catch (final Exception e) {
             e.printStackTrace();

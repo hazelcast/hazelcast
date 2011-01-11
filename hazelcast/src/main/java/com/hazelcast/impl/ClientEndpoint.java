@@ -163,8 +163,8 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
 
     Packet createEntryEventPacket(EntryEvent event) {
         Packet packet = new Packet();
-        BaseManager.EventTask eventTask = (BaseManager.EventTask) event;
-        packet.set(event.getName(), ClusterOperation.EVENT, eventTask.getDataKey(), eventTask.getDataValue());
+        DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+        packet.set(event.getName(), ClusterOperation.EVENT, dataAwareEntryEvent.getKeyData(), dataAwareEntryEvent.getNewValueData());
         packet.longValue = event.getEventType().getType();
         return packet;
     }
@@ -182,7 +182,6 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     }
 
     public void connectionAdded(Connection connection) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void connectionRemoved(Connection connection) {

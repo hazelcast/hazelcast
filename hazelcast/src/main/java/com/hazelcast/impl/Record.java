@@ -353,7 +353,8 @@ public final class Record implements MapEntry {
         if (ttl <= 0 || ttl == Long.MAX_VALUE) {
             expirationTime = Long.MAX_VALUE;
         } else {
-            expirationTime = getCreationTime() + ttl;
+            long age = (System.currentTimeMillis() - getCreationTime());
+            expirationTime = getCreationTime() + age + ttl;
         }
     }
 

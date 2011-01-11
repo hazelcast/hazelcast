@@ -26,7 +26,8 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static junit.framework.Assert.*;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -81,7 +82,7 @@ public class HazelcastClusterTest {
         assertEquals(1, s1);
         assertEquals(1, s2);
     }
-    
+
     @Test
     public void testJoinWithIncompatibleConfigsWithDisabledCheck() throws Exception {
         Config config1 = new XmlConfigBuilder().build();
@@ -95,33 +96,29 @@ public class HazelcastClusterTest {
         assertEquals(2, s1);
         assertEquals(2, s2);
     }
-    
+
     @Test
     public void testJoinWithPostConfiguration() throws Exception {
         // issue 473
         Config hzConfig = new Config().
-            setGroupConfig(new GroupConfig("foo-group")).
-            setPort(5701).setPortAutoIncrement(false);
+                setGroupConfig(new GroupConfig("foo-group")).
+                setPort(5707).setPortAutoIncrement(false);
         hzConfig.getNetworkConfig().setJoin(
-            new Join().
-                setMulticastConfig(new MulticastConfig().setEnabled(false)).
-                setTcpIpConfig(new TcpIpConfig().setMembers(Arrays.asList("127.0.0.1:5702"))));
-    
+                new Join().
+                        setMulticastConfig(new MulticastConfig().setEnabled(false)).
+                        setTcpIpConfig(new TcpIpConfig().setMembers(Arrays.asList("127.0.0.1:5708"))));
         Config hzConfig2 = new Config().
-            setGroupConfig(new GroupConfig("foo-group")).
-            setPort(5702).setPortAutoIncrement(false);
-    
+                setGroupConfig(new GroupConfig("foo-group")).
+                setPort(5708).setPortAutoIncrement(false);
         hzConfig2.getNetworkConfig().setJoin(
                 new Join().
-                    setMulticastConfig(new MulticastConfig().setEnabled(false)).
-                    setTcpIpConfig(new TcpIpConfig().setMembers(Arrays.asList("127.0.0.1:5701"))));
-        
+                        setMulticastConfig(new MulticastConfig().setEnabled(false)).
+                        setTcpIpConfig(new TcpIpConfig().setMembers(Arrays.asList("127.0.0.1:5707"))));
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(hzConfig);
-     // Create the configuration for a dynamic map.
+        // Create the configuration for a dynamic map.
         instance1.getConfig().addMapConfig(new MapConfig("foo").setTimeToLiveSeconds(10));
         final IMap<Object, Object> map1 = instance1.getMap("foo");
         map1.put("issue373", "ok");
-        
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(hzConfig2);
         assertEquals(2, instance2.getCluster().getMembers().size());
         assertEquals("ok", instance2.getMap("foo").get("issue373"));

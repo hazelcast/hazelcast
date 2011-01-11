@@ -147,6 +147,8 @@ public class TransactionTest {
         txnMap.rollback();
         assertEquals(1, txnMap.size());
         assertEquals(1, imap.size());
+        assertNull(imap.getMapEntry(2));
+        assertNull(imap.get(2));
     }
 
     @Test

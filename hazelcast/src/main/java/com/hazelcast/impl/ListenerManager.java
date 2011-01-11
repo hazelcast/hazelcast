@@ -274,10 +274,10 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    void callListeners(EventTask event) {
+    void callListeners(DataAwareEntryEvent dataAwareEntryEvent) {
         for (ListenerItem listenerItem : listeners) {
-            if (listenerItem.listens(event)) {
-                callListener(listenerItem, event);
+            if (listenerItem.listens(dataAwareEntryEvent)) {
+                callListener(listenerItem, dataAwareEntryEvent);
             }
         }
     }
@@ -373,9 +373,9 @@ public class ListenerManager extends BaseManager {
             this.instanceType = instanceType;
         }
 
-        public boolean listens(EventTask event) {
-            String name = event.getName();
-            return this.name.equals(name) && (this.key == null || event.getKey().equals(this.key));
+        public boolean listens(DataAwareEntryEvent dataAwareEntryEvent) {
+            String name = dataAwareEntryEvent.getName();
+            return this.name.equals(name) && (this.key == null || dataAwareEntryEvent.getKey().equals(this.key));
         }
 
         public void writeData(DataOutput out) throws IOException {

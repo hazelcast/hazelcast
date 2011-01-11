@@ -684,6 +684,33 @@ public class ClusterTest {
         assertEquals(1, maps.size());
     }
 
+    /**
+     * 3 node cluster: normal member(h1), super client (hSuper) and another normal member (h2)
+     * if h1 does, hSuper becomes the oldest members
+     * If hSuper fails to update the partition ownerships,
+     * h2.getMap("default").get(key) gets into infinite Re-Do.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testSuperClientBeingOldestMember() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        Config superConfig = new Config();
+        superConfig.setSuperClient(true);
+        HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(superConfig);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        final IMap map = h2.getMap("default");
+        h1.getLifecycleService().shutdown();
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                assertTrue(map.get("1") == null);
+                latch.countDown();
+            }
+        }).start();
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
     @Test(timeout = 60000)
     public void testTcpIp() throws Exception {
         Config c = new Config();

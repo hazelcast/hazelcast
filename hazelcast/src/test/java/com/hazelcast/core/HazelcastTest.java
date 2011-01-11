@@ -498,13 +498,34 @@ public class HazelcastTest {
         assertEquals(false, map.containsKey("key"));
     }
 
+    /**
+     * Test for the issue 477.
+     * Updates should also update the TTL
+     *
+     * @throws Exception
+     */
     @Test
-    public void testMapPutWitTTL() throws Exception {
-        IMap<String, String> map = Hazelcast.getMap("testMapPutWitTTL");
-        map.put("key", "value", 100, TimeUnit.MILLISECONDS);
-        assertEquals(true, map.containsKey("key"));
+    public void testMapPutWithTTL() throws Exception {
+        IMap map = Hazelcast.getMap("testMapPutWithTTL");
+        map.put(1, "value0", 100, TimeUnit.MILLISECONDS);
+        assertEquals(true, map.containsKey(1));
         Thread.sleep(500);
-        assertEquals(false, map.containsKey("key"));
+        assertEquals(false, map.containsKey(1));
+        map.put(1, "value1", 10, TimeUnit.SECONDS);
+        assertEquals(true, map.containsKey(1));
+        long ttl = map.getMapEntry(1).getExpirationTime() - System.currentTimeMillis();
+        assertTrue("TTL is now " + ttl, ttl > 6000 && ttl < 11000);
+        Thread.sleep(5000);
+        assertEquals(true, map.containsKey(1));
+        map.put(1, "value2", 10, TimeUnit.SECONDS);
+        ttl = map.getMapEntry(1).getExpirationTime() - System.currentTimeMillis();
+        assertTrue("TTL is now " + ttl, ttl > 6000 && ttl < 11000);
+        Thread.sleep(5000);
+        assertEquals(true, map.containsKey(1));
+        map.put(1, "value3", 10, TimeUnit.SECONDS);
+        ttl = map.getMapEntry(1).getExpirationTime() - System.currentTimeMillis();
+        assertTrue("TTL is now " + ttl, ttl > 6000 && ttl < 11000);
+        assertEquals(true, map.containsKey(1));
     }
 
     @Test
