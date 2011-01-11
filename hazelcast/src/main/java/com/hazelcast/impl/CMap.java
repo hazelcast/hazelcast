@@ -142,9 +142,13 @@ public class CMap {
         this.node = concurrentMapManager.node;
         this.thisAddress = concurrentMapManager.thisAddress;
         this.name = name;
+        instanceType = ConcurrentMapManager.getInstanceType(name);
         MapConfig mapConfig = null;
         String mapConfigName = name.substring(2);
-        if (mapConfigName.startsWith("__hz_") || mapConfigName.startsWith(AS_LIST) || mapConfigName.startsWith(AS_SET)) {
+        if (isMultiMap()
+                || mapConfigName.startsWith("__hz_")
+                || mapConfigName.startsWith(AS_LIST)
+                || mapConfigName.startsWith(AS_SET)) {
             mapConfig = new MapConfig();
         } else {
             mapConfig = node.getConfig().getMapConfig(mapConfigName);
@@ -169,7 +173,6 @@ public class CMap {
             }
         }
         evictionRate = mapConfig.getEvictionPercentage() / 100f;
-        instanceType = ConcurrentMapManager.getInstanceType(name);
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         MapStoreWrapper mapStoreWrapper = null;
         int writeDelaySeconds = -1;
