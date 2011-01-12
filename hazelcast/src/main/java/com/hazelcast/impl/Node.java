@@ -686,10 +686,13 @@ public class Node {
 
     void join() {
         try {
-            if (!config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-                joinWithTCP();
-            } else {
+            if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
                 joinWithMulticast();
+            } else {
+                if (!config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled()) {
+                    logger.log(Level.WARNING, "Neither multicast nor tcp/ip join is enabled! Trying tcp/ip join...");
+                }
+                joinWithTCP();
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage());

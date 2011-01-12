@@ -686,7 +686,7 @@ public class ClusterTest {
 
     /**
      * 3 node cluster: normal member(h1), super client (hSuper) and another normal member (h2)
-     * if h1 does, hSuper becomes the oldest members
+     * if h1 goes down, hSuper becomes the oldest member
      * If hSuper fails to update the partition ownerships,
      * h2.getMap("default").get(key) gets into infinite Re-Do.
      *

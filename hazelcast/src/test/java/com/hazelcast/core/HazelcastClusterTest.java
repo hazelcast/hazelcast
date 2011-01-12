@@ -106,14 +106,14 @@ public class HazelcastClusterTest {
         hzConfig.getNetworkConfig().setJoin(
                 new Join().
                         setMulticastConfig(new MulticastConfig().setEnabled(false)).
-                        setTcpIpConfig(new TcpIpConfig().setMembers(Arrays.asList("127.0.0.1:5708"))));
+                        setTcpIpConfig(new TcpIpConfig().setEnabled(true).setMembers(Arrays.asList("127.0.0.1:5708"))));
         Config hzConfig2 = new Config().
                 setGroupConfig(new GroupConfig("foo-group")).
                 setPort(5708).setPortAutoIncrement(false);
         hzConfig2.getNetworkConfig().setJoin(
                 new Join().
                         setMulticastConfig(new MulticastConfig().setEnabled(false)).
-                        setTcpIpConfig(new TcpIpConfig().setMembers(Arrays.asList("127.0.0.1:5707"))));
+                        setTcpIpConfig(new TcpIpConfig().setEnabled(true).setMembers(Arrays.asList("127.0.0.1:5707"))));
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(hzConfig);
         // Create the configuration for a dynamic map.
         instance1.getConfig().addMapConfig(new MapConfig("foo").setTimeToLiveSeconds(10));
