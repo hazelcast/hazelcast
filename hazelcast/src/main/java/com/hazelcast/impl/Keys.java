@@ -62,6 +62,7 @@ public class Keys implements DataSerializable {
     }
 
     public void addKey(Data obj) {
+        if (obj == null) return;
         this.keys.add(obj);
     }
 }
