@@ -17,6 +17,8 @@
 
 package com.hazelcast.jmx;
 
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 
@@ -88,6 +90,13 @@ public class TopicMBean extends AbstractMBean<ITopic<?>> {
     @JMXDescription("Registration name of the queue")
     public String getName() {
         return getManagedObject().getName();
+    }
+
+    @JMXAttribute("Config")
+    @JMXDescription("Topic configuration")
+    public String getConfig(){
+        final TopicConfig config = managementService.instance.getConfig().getTopicConfig(getName());
+        return config.toString();
     }
 
     @JMXAttribute("MessagesDispatched")

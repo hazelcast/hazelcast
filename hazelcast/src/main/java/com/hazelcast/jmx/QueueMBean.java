@@ -17,6 +17,8 @@
 
 package com.hazelcast.jmx;
 
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
 
@@ -108,6 +110,13 @@ public class QueueMBean extends AbstractMBean<IQueue<?>> {
     @JMXDescription("Registration name of the queue")
     public String getName() {
         return getManagedObject().getName();
+    }
+    
+    @JMXAttribute("Config")
+    @JMXDescription("Queue configuration")
+    public String getConfig(){
+        final QueueConfig config = managementService.instance.getConfig().getQueueConfig(getName());
+        return config.toString();
     }
 
     @JMXAttribute("Size")

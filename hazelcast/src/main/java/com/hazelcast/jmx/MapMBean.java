@@ -17,6 +17,7 @@
 
 package com.hazelcast.jmx;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
@@ -102,6 +103,13 @@ public class MapMBean extends AbstractMBean<IMap> {
     @JMXDescription("Clear map")
     public void clear() {
         getManagedObject().clear();
+    }
+    
+    @JMXAttribute("Config")
+    @JMXDescription("Map configuration")
+    public String getConfig(){
+        final MapConfig config = managementService.instance.getConfig().getMapConfig(getName());
+        return config.toString();
     }
 
     protected void addEntry(Object key) {
