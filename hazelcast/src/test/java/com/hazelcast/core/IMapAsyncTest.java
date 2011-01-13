@@ -22,6 +22,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -67,14 +68,21 @@ public class IMapAsyncTest {
 
     @Test
     public void testRemoveAsyncWithImmediateTimeout() throws Exception {
-        IMap<String, String> map = Hazelcast.getMap("map:test:removeAsync:timeout");
+        final IMap<String, String> map = Hazelcast.getMap("map:test:removeAsync:timeout");
         // populate map
         map.put(key, value1);
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                map.lock(key);
+                latch.countDown();
+            }
+        }).start();
+        latch.await();
         Future<String> f1 = map.removeAsync(key);
         try {
-            TestCase.assertEquals(value1, f1.get(0L, TimeUnit.MILLISECONDS));
-        }
-        catch (TimeoutException e) {
+            TestCase.assertEquals(value1, f1.get(0L, TimeUnit.SECONDS));
+        } catch (TimeoutException e) {
             // expected
             return;
         }
