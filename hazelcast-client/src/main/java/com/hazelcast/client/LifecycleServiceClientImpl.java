@@ -17,8 +17,6 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
-
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
@@ -26,9 +24,12 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
 public class LifecycleServiceClientImpl implements LifecycleService {
     final static ILogger logger = Logger.getLogger(LifecycleServiceClientImpl.class.getName());
@@ -53,7 +54,7 @@ public class LifecycleServiceClientImpl implements LifecycleService {
     public void fireLifecycleEvent(LifecycleState lifecycleState) {
         fireLifecycleEvent(new LifecycleEvent(lifecycleState));
     }
-    
+
     public void fireLifecycleEvent(final LifecycleEvent event) {
         logger.log(Level.INFO, "HazelcastClient is " + event.getState());
         for (LifecycleListener lifecycleListener : lsLifecycleListeners) {
@@ -61,49 +62,65 @@ public class LifecycleServiceClientImpl implements LifecycleService {
         }
     }
 
-    public boolean pause() {
-        synchronized (lifecycleLock) {
-            if (!paused.get()) {
-                fireLifecycleEvent(PAUSING);
-            } else {
-                return false;
-            }
-            paused.set(true);
-            fireLifecycleEvent(PAUSED);
-            return true;
-        }
-    }
-
     public boolean resume() {
-        synchronized (lifecycleLock) {
-            if (paused.get()) {
-                fireLifecycleEvent(RESUMING);
-            } else {
-                return false;
+        Callable<Boolean> callable = new Callable<Boolean>() {
+            public Boolean call() {
+                synchronized (lifecycleLock) {
+                    if (paused.get()) {
+                        fireLifecycleEvent(RESUMING);
+                    } else {
+                        return false;
+                    }
+                    paused.set(false);
+                    fireLifecycleEvent(RESUMED);
+                    return true;
+                }
             }
-            paused.set(false);
-            fireLifecycleEvent(RESUMED);
-            return true;
-        }
+        };
+        return hazelcastClient.callAsyncAndWait(callable);
     }
 
-    public boolean isRunning() {
-        return running.get();
+    public boolean pause() {
+        Callable<Boolean> callable = new Callable<Boolean>() {
+            public Boolean call() {
+                synchronized (lifecycleLock) {
+                    if (paused.get()) {
+                        fireLifecycleEvent(PAUSING);
+                    } else {
+                        return false;
+                    }
+                    paused.set(false);
+                    fireLifecycleEvent(PAUSED);
+                    return true;
+                }
+            }
+        };
+        return hazelcastClient.callAsyncAndWait(callable);
     }
 
     public void shutdown() {
-        synchronized (lifecycleLock) {
-            long begin = System.currentTimeMillis();
-            fireLifecycleEvent(SHUTTING_DOWN);
-            hazelcastClient.doShutdown();
-            running.set(false);
-            long time = System.currentTimeMillis() - begin;
-            logger.log(Level.FINE, "HazelcastClient shutdown completed in " + time + " ms.");
-            fireLifecycleEvent(SHUTDOWN);
-        }
+        Callable<Boolean> callable = new Callable<Boolean>() {
+            public Boolean call() {
+                synchronized (lifecycleLock) {
+                    long begin = System.currentTimeMillis();
+                    fireLifecycleEvent(SHUTTING_DOWN);
+                    hazelcastClient.doShutdown();
+                    running.set(false);
+                    long time = System.currentTimeMillis() - begin;
+                    logger.log(Level.FINE, "HazelcastClient shutdown completed in " + time + " ms.");
+                    fireLifecycleEvent(SHUTDOWN);
+                    return true;
+                }
+            }
+        };
+        hazelcastClient.callAsyncAndWait(callable);
     }
 
     public void restart() {
         throw new UnsupportedOperationException();
+    }
+
+    public boolean isRunning() {
+        return running.get();
     }
 }

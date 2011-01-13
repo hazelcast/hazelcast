@@ -55,11 +55,7 @@ public abstract class IORunnable extends ClientRunnable {
     public void interruptWaitingCallsAndShutdown(boolean shutdown) {
         interruptWaitingCalls();
         if (shutdown) {
-            client.executor.execute(new Runnable() {
-                public void run() {
-                    client.shutdown();
-                }
-            });
+            client.shutdown();
         }
     }
 

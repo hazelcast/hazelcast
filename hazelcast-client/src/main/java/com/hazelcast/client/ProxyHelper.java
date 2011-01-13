@@ -26,8 +26,10 @@ import com.hazelcast.query.Predicate;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.EventListener;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
@@ -143,18 +145,10 @@ public class ProxyHelper {
     }
 
     <V> Future<V> doAsync(final ClusterOperation operation, final Object key, final Object value) {
-        final int threadId = getCurrentThreadId();
-        AsyncClientCall<V> call = new AsyncClientCall<V>() {
-            @Override
-            protected void call() {
-                Packet request = prepareRequest(operation, key, value);
-                request.setThreadId(threadId);
-                Packet response = callAndGetResult(request);
-                setResult(getValue(response));
-            }
-        };
-        client.getDefaultParallelExecutor().execute(call);
-        return call;
+        Packet request = prepareRequest(operation, key, value);
+        Call remoteCall = createCall(request);
+        sendCall(remoteCall);
+        return new AsyncClientCall<V>(remoteCall);
     }
 
     protected Object doOp(ClusterOperation operation, Object key, Object value) {

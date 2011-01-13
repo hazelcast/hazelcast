@@ -20,9 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -57,35 +55,39 @@ public class OutRunnable extends IORunnable {
             Thread.sleep(50L);
             return;
         }
-        boolean written = false;
-        if (queue.size() > 0 || q.size() > 0) {
-            queue.drainTo(q);
-            Call call = q.poll();
-            while (call != null) {
-                writeCall(call);
-                written = true;
-                call = q.poll();
-            }
-        } else if (reconnectionCalls.size() > 0) {
-            checkOnReconnect(null);
-            return;
-        }
         try {
-            if (written) {
-                writer.flush(connection);
+            boolean written = false;
+            if (queue.size() > 0 || q.size() > 0) {
+                queue.drainTo(q);
+                Call call = q.poll();
+                while (call != null) {
+                    writeCall(call);
+                    written = true;
+                    call = q.poll();
+                }
+            } else if (reconnectionCalls.size() > 0) {
+                checkOnReconnect(null);
+                return;
             }
-        } catch (IOException e) {
-            clusterIsDown(connection);
-        }
-        Call call = queue.poll(12, TimeUnit.MILLISECONDS);
-        if (call != null) {
-            writeCall(call);
             try {
-                writer.flush(connection);
+                if (written) {
+                    writer.flush(connection);
+                }
             } catch (IOException e) {
-                queue.offer(call);
                 clusterIsDown(connection);
             }
+            Call call = queue.poll(12, TimeUnit.MILLISECONDS);
+            if (call != null) {
+                writeCall(call);
+                try {
+                    writer.flush(connection);
+                } catch (IOException e) {
+                    queue.offer(call);
+                    clusterIsDown(connection);
+                }
+            }
+        } catch (Throwable e) {
+            logger.log(Level.FINE, "OutRunnable [" + connection + "] got an exception:" + e.toString(), e);
         }
     }
 
@@ -232,7 +234,7 @@ public class OutRunnable extends IORunnable {
         }
         client.getConnectionManager().destroyConnection(oldConnection);
         if (reconnection.compareAndSet(false, true)) {
-            client.executor.execute(new Runnable() {
+            client.runAsyncAndWait(new Runnable() {
                 public void run() {
                     try {
                         final Connection lookForAliveConnection = client.getConnectionManager().lookForAliveConnection();

@@ -139,12 +139,12 @@ public class ConnectionManager implements MembershipListener {
 
     void closeConnection(final Connection connection) {
         try {
-            if (connection != null){
+            if (connection != null) {
                 connection.close();
             }
-        } catch (Throwable e){
-            logger.log(Level.INFO, "got an exception on closeConnection " 
-                + connection + ":" + e.getMessage(), e);
+        } catch (Throwable e) {
+            logger.log(Level.INFO, "got an exception on closeConnection "
+                    + connection + ":" + e.getMessage(), e);
         }
     }
 
@@ -187,7 +187,7 @@ public class ConnectionManager implements MembershipListener {
     }
 
     private void notify(final Runnable target) {
-        client.getExecutor().execute(target);
+        client.runAsyncAndWait(target);
     }
 
     void bindConnection(Connection connection) throws IOException {
@@ -238,8 +238,7 @@ public class ConnectionManager implements MembershipListener {
 
     protected Connection getNextConnection() {
         InetSocketAddress address = clusterMembers.get(0);
-        Connection connection = new Connection(address, connectionIdGenerator.incrementAndGet());
-        return connection;
+        return new Connection(address, connectionIdGenerator.incrementAndGet());
     }
 
     public synchronized void memberAdded(MembershipEvent membershipEvent) {

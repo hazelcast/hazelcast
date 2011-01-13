@@ -36,7 +36,7 @@ import static com.hazelcast.impl.BaseManager.getInstanceType;
 
 public class ListenerManager extends ClientRunnable {
     final private HazelcastClient client;
-    final BlockingQueue<Packet> queue = new LinkedBlockingQueue<Packet>();
+    final BlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
 
     final private InstanceListenerManager instanceListenerManager;
     final private MembershipListenerManager membershipListenerManager;
@@ -55,9 +55,9 @@ public class ListenerManager extends ClientRunnable {
         queueItemListenerManager = new QueueItemListenerManager(this.client);
     }
 
-    public void enqueue(Packet packet) {
+    public void enqueue(Object object) {
         try {
-            queue.put(packet);
+            queue.put(object);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -65,27 +65,32 @@ public class ListenerManager extends ClientRunnable {
 
     protected void customRun() throws InterruptedException {
         try {
-            Packet packet = queue.poll(100, TimeUnit.MILLISECONDS);
-            if (packet == null) {
+            Object obj = queue.poll(100, TimeUnit.MILLISECONDS);
+            if (obj == null) {
                 return;
             }
-            if (packet.getName() == null) {
-                Object eventType = toObject(packet.getValue());
-                if (eventType instanceof InstanceEventType) {
-                    instanceListenerManager.notifyListeners(packet);
+            if (obj instanceof Packet) {
+                Packet packet = (Packet) obj;
+                if (packet.getName() == null) {
+                    Object eventType = toObject(packet.getValue());
+                    if (eventType instanceof InstanceEventType) {
+                        instanceListenerManager.notifyListeners(packet);
+                    } else {
+                        membershipListenerManager.notifyListeners(packet);
+                    }
+                } else if (getInstanceType(packet.getName()).equals(Instance.InstanceType.TOPIC)) {
+                    messageListenerManager.notifyMessageListeners(packet);
+                } else if (getInstanceType(packet.getName()).equals(Instance.InstanceType.QUEUE)) {
+                    queueItemListenerManager.notifyListeners(packet);
                 } else {
-                    membershipListenerManager.notifyListeners(packet);
+                    entryListenerManager.notifyListeners(packet);
                 }
-            } else if (getInstanceType(packet.getName()).equals(Instance.InstanceType.TOPIC)) {
-                messageListenerManager.notifyMessageListeners(packet);
-            } else if (getInstanceType(packet.getName()).equals(Instance.InstanceType.QUEUE)) {
-                queueItemListenerManager.notifyListeners(packet);
-            } else {
-                entryListenerManager.notifyListeners(packet);
+            } else if (obj instanceof Runnable) {
+                ((Runnable) obj).run();
             }
         } catch (InterruptedException ine) {
             throw ine;
-        } catch (Exception ignored) {
+        } catch (Throwable ignored) {
         }
     }
 

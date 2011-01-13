@@ -17,25 +17,25 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.util.SimpleBlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import java.util.concurrent.*;
-
-public abstract class AsyncClientCall<V> implements Future<V>, Runnable {
-    BlockingQueue<Object> responseQ = new SimpleBlockingQueue<Object>();
+public class AsyncClientCall<V> implements Future<V> {
+    private Object result = null;
     private static final Object NULL = new Object();
+    private final Call remoteCall;
 
-    protected abstract void call();
-
-    public void run() {
-        call();
+    public AsyncClientCall(Call remoteCall) {
+        this.remoteCall = remoteCall;
     }
 
     public void setResult(Object obj) {
         if (obj == null) {
             obj = NULL;
         }
-        responseQ.offer(obj);
+        result = obj;
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -51,22 +51,28 @@ public abstract class AsyncClientCall<V> implements Future<V>, Runnable {
     }
 
     public V get() throws InterruptedException, ExecutionException {
-        return (V) processResult(responseQ.take());
+        if (result != null) {
+            return getResult();
+        }
+        setResult(remoteCall.getResponse());
+        return getResult();
     }
 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        Object result = responseQ.poll(timeout, unit);
-        if (result == null) throw new TimeoutException();
-        return (V) processResult(result);
+        if (result != null) {
+            return getResult();
+        }
+        setResult(remoteCall.getResponse(timeout, unit));
+        return getResult();
     }
 
-    private Object processResult(Object result) throws ExecutionException {
+    private V getResult() throws ExecutionException {
         if (result == NULL) {
             return null;
         } else if (result instanceof Throwable) {
             throw new ExecutionException((Throwable) result);
         } else {
-            return result;
+            return (V) result;
         }
     }
 }

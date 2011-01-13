@@ -17,6 +17,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
@@ -39,17 +40,17 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class ConnectionManagerTest {
-    private LifecycleServiceClientImpl createLifecycleServiceClientImpl(HazelcastClient hazelcastClient, final List<LifecycleState> lifecycleEvents){
+    private LifecycleServiceClientImpl createLifecycleServiceClientImpl(HazelcastClient hazelcastClient, final List<LifecycleState> lifecycleEvents) {
         final LifecycleServiceClientImpl lifecycleService = new LifecycleServiceClientImpl(hazelcastClient);
         lifecycleService.addLifecycleListener(new LifecycleListener() {
-            
+
             public void stateChanged(LifecycleEvent event) {
                 lifecycleEvents.add(event.getState());
             }
         });
         return lifecycleService;
     }
-    
+
     @Test
     public void testGetConnection() throws Exception {
         HazelcastClient client = mock(HazelcastClient.class);
@@ -96,8 +97,6 @@ public class ConnectionManagerTest {
     @Test
     public void testDestroyConnection() throws Exception {
         HazelcastClient client = mock(HazelcastClient.class);
-        ExecutorService es  = Executors.newCachedThreadPool();
-        when(client.getExecutor()).thenReturn(es);
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final Connection connection = mock(Connection.class);
         final CountDownLatch latch = new CountDownLatch(2);
@@ -118,8 +117,7 @@ public class ConnectionManagerTest {
         assertArrayEquals(new Object[]{LifecycleState.CLIENT_CONNECTION_OPENING,
                 LifecycleState.CLIENT_CONNECTION_LOST,
                 LifecycleState.CLIENT_CONNECTION_OPENING},
-            lifecycleEvents.toArray());
-        es.shutdownNow();
+                lifecycleEvents.toArray());
     }
 
     @Test
