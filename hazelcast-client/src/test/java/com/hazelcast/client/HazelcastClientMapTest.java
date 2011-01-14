@@ -140,7 +140,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     @Test
     public void lockMapKey() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-        final IMap map = hClient.getMap("lockMapKey");
+        final IMap<String, String> map = hClient.getMap("lockMapKey");
         final CountDownLatch latch = new CountDownLatch(1);
         map.put("a", "b");
         Thread.sleep(10);
@@ -160,20 +160,24 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     @Test
     public void lockMap() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-        final IMap map = hClient.getMap("lockMap");
+        final IMap<String, String> map = hClient.getMap("lockMap");
+        final CountDownLatch unlockLatch = new CountDownLatch(1);
         final CountDownLatch latch = new CountDownLatch(1);
         map.put("a", "b");
-        Thread.sleep(10);
-        map.lockMap(10, TimeUnit.MILLISECONDS);
+        map.lockMap(1, TimeUnit.SECONDS);
+        assertTrue(map.tryPut("a", "c", 10, TimeUnit.MILLISECONDS));
         new Thread(new Runnable() {
             public void run() {
-                map.lockMap(10, TimeUnit.MILLISECONDS);
+                assertFalse(map.lockMap(10, TimeUnit.MILLISECONDS));
+                unlockLatch.countDown();
+                assertTrue(map.lockMap(Long.MAX_VALUE, TimeUnit.SECONDS));
                 latch.countDown();
             }
         }).start();
-        Thread.sleep(10);
-        assertEquals(1, latch.getCount());
+        assertTrue(unlockLatch.await(10, TimeUnit.SECONDS));
+        Thread.sleep(2000);
         map.unlockMap();
+        assertEquals("c", map.getMapEntry("a").getValue());
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 

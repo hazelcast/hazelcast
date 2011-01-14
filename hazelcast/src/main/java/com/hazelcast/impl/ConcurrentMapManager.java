@@ -1626,7 +1626,6 @@ public class ConcurrentMapManager extends BaseManager {
             if (request.operation == CONCURRENT_MAP_TRY_PUT) {
                 request.response = Boolean.TRUE;
             }
-            //logger.log(Level.FINEST, " [" + request.name + "] put " + toObject(request.key));
         }
     }
 
