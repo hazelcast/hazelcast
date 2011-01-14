@@ -29,10 +29,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -1286,7 +1283,7 @@ public class ClusterTest {
 
     @Test
     public void testShutdownAllMemoryLeak() throws Exception {
-        Runtime.getRuntime().gc();
+        waitForGC(20, 20);
         long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -1319,20 +1316,12 @@ public class ClusterTest {
         latch.await();
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
-        Hazelcast.shutdownAll();
-        for (int i = 0; i < 100; i++) {
-            sleep(1000);
-            Runtime.getRuntime().gc();
-            if ((getUsedMemoryAsMB() - usedMemoryInit) < 10) {
-                return;
-            }
-        }
-        fail(String.format("UsedMemory now: %d init: %d ", getUsedMemoryAsMB(), usedMemoryInit));
+        waitForGC(25 + usedMemoryInit, 100);
     }
 
     @Test
     public void testTTLAndMemoryLeak() throws Exception {
-        Runtime.getRuntime().gc();
+        waitForGC(20, 20);
         long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig("default");
@@ -1369,23 +1358,28 @@ public class ClusterTest {
         latch.await();
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
-        for (int i = 0; i < 100; i++) {
+        waitForGC(25 + usedMemoryInit, 100);
+    }
+
+    @Ignore
+    private void waitForGC(long limit, int maxSeconds) throws InterruptedException {
+        if (getUsedMemoryAsMB() < limit) {
+            return;
+        }
+        for (int i = 0; i < maxSeconds; i++) {
             sleep(1000);
             Runtime.getRuntime().gc();
-            if ((getUsedMemoryAsMB() - usedMemoryInit) < 25) {
+            if (getUsedMemoryAsMB() < limit) {
                 return;
             }
         }
-        fail(String.format("UsedMemory now: %d init: %d ", getUsedMemoryAsMB(), usedMemoryInit));
+        fail(String.format("UsedMemory now: {0} but expected max: {1}", getUsedMemoryAsMB(), limit));
     }
 
     @Test
     public void testTTLAndMemoryLeak2() throws Exception {
-        Runtime.getRuntime().gc();
-        sleep(2000);
-        Runtime.getRuntime().gc();
+        waitForGC(20, 20);
         long usedMemoryInit = getUsedMemoryAsMB();
-        assertTrue("UsedMemoryInit: " + usedMemoryInit, usedMemoryInit < 20);
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -1419,19 +1413,12 @@ public class ClusterTest {
         latch.await();
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
-        for (int i = 0; i < 100; i++) {
-            sleep(1000);
-            Runtime.getRuntime().gc();
-            if ((getUsedMemoryAsMB() - usedMemoryInit) < 25) {
-                return;
-            }
-        }
-        fail(String.format("UsedMemory now: %d init: %d ", getUsedMemoryAsMB(), usedMemoryInit));
+        waitForGC(25 + usedMemoryInit, 100);
     }
 
     @Test
     public void testMaxIdleAndMemoryLeak() throws Exception {
-        Runtime.getRuntime().gc();
+        waitForGC(20, 20);
         long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig("default");
@@ -1468,14 +1455,7 @@ public class ClusterTest {
         latch.await();
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
-        for (int i = 0; i < 100; i++) {
-            sleep(1000);
-            Runtime.getRuntime().gc();
-            if ((getUsedMemoryAsMB() - usedMemoryInit) < 25) {
-                return;
-            }
-        }
-        fail(String.format("UsedMemory now: %d init: %d ", getUsedMemoryAsMB(), usedMemoryInit));
+        waitForGC(25 + usedMemoryInit, 100);
     }
 
     long getUsedMemoryAsMB() {

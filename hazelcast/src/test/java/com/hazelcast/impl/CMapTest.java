@@ -91,7 +91,7 @@ public class CMapTest extends TestUtil {
         now = System.currentTimeMillis();
         assertFalse(record1.isValid(now));
         assertFalse(record2.isValid(now));
-        Thread.sleep(20000);
+        Thread.sleep(23000);
         assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
         assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
         assertEquals(0, cmap1.mapRecords.size());
