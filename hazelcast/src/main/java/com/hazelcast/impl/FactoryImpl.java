@@ -2455,14 +2455,18 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean lockMap(long time, TimeUnit timeunit) {
-                long timeoutMillis = timeunit.toMillis(time);
-                MLockMap mLockMap = concurrentMapManager.new MLockMap(name, true, timeoutMillis);
-                return mLockMap.call();
+                if (factory.locksMapProxy.tryLock("map_lock_" + name, time, timeunit)) {
+                    MLockMap mLockMap = concurrentMapManager.new MLockMap(name, true);
+                    mLockMap.call();
+                    return true;
+                }
+                return false;
             }
 
             public void unlockMap() {
-                MLockMap mLockMap = concurrentMapManager.new MLockMap(name, false, 0);
+                MLockMap mLockMap = concurrentMapManager.new MLockMap(name, false);
                 mLockMap.call();
+                factory.locksMapProxy.unlock("map_lock_" + name);
             }
 
             public void lock(Object key) {
@@ -2486,7 +2490,7 @@ public class FactoryImpl implements HazelcastInstance {
                 mapOperationCounter.incrementOtherOperations();
                 long timeoutMillis = timeunit.toMillis(time);
                 MLock mlock = concurrentMapManager.new MLock();
-                return mlock.lock(name, key, timeoutMillis);
+                return mlock.lock(name, key, (timeoutMillis < 0 || timeoutMillis == Long.MAX_VALUE) ? -1 : timeoutMillis);
             }
 
             public void unlock(Object key) {

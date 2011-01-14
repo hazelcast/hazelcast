@@ -1225,14 +1225,12 @@ public class ConcurrentMapManager extends BaseManager {
 
     public class MLockMap extends MultiCall<Boolean> {
         private final String name;
-        private volatile long timeout;
         private final ClusterOperation operation;
         private volatile boolean result;
 
-        public MLockMap(String name, boolean lock, long timeout) {
+        public MLockMap(String name, boolean lock) {
             this.name = name;
             this.operation = (lock) ? CONCURRENT_MAP_LOCK_MAP : CONCURRENT_MAP_UNLOCK_MAP;
-            this.timeout = timeout;
         }
 
         SubCall createNewTargetAwareOp(Address target) {
@@ -1251,12 +1249,6 @@ public class ConcurrentMapManager extends BaseManager {
             this.result = true;
         }
 
-        @Override
-        void onRedo() {
-            long remaining = this.timeout - redoWaitMillis;
-            this.timeout = (remaining > 0) ? remaining : 0l;
-        }
-
         Boolean returnResult() {
             return result;
         }
@@ -1266,10 +1258,10 @@ public class ConcurrentMapManager extends BaseManager {
             return node.getMasterAddress();
         }
 
-        class MTargetLockMap extends MigrationAwareSubCall {
+        class MTargetLockMap extends SubCall {
             public MTargetLockMap(Address target) {
                 super(target);
-                setLocal(operation, name, null, null, timeout, -1);
+                setLocal(operation, name, null, null, 0, -1);
                 request.setBooleanRequest();
             }
         }

@@ -79,10 +79,14 @@ public abstract class ScheduledAction {
     public void onMigrate() {
     }
 
-    public void setTimeout(long timeout) {
-        if (timeout > -1) {
-            this.timeout = timeout;
-            timeToExpire = System.currentTimeMillis() + timeout;
+    public void setTimeout(long newTimeout) {
+        if (newTimeout > -1) {
+            this.timeout = newTimeout;
+            timeToExpire = System.currentTimeMillis() + newTimeout;
+            if (timeToExpire < 0) {
+                this.timeout = -1;
+                this.timeToExpire = Long.MAX_VALUE;
+            }
         } else {
             this.timeout = -1;
         }

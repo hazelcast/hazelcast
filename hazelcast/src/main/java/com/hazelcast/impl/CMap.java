@@ -269,18 +269,9 @@ public class CMap {
             if (lockEntireMap == null) {
                 lockEntireMap = new DistributedLock();
             }
-            boolean locked = lockEntireMap.lock(request.lockAddress, request.lockThreadId);
-            boolean isTimeOut = request.timeout == 0;
+            lockEntireMap.lock(request.lockAddress, request.lockThreadId);
             request.clearForResponse();
-            if (!locked) {
-                if (isTimeOut) {
-                    request.response = Boolean.FALSE;
-                } else {
-                    request.response = OBJECT_REDO;
-                }
-            } else {
-                request.response = Boolean.TRUE;
-            }
+            request.response = Boolean.TRUE;
         } else if (request.operation == CONCURRENT_MAP_UNLOCK_MAP) {
             if (lockEntireMap != null) {
                 request.response = lockEntireMap.unlock(request.lockAddress, request.lockThreadId);

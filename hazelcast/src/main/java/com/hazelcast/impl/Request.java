@@ -127,7 +127,7 @@ public class Request {
         this.key = key;
         this.value = value;
         this.blockId = blockId;
-        this.timeout = timeout;
+        this.timeout = (timeout < 0) ? -1 : timeout;
         this.ttl = ttl;
         this.txnId = txnId;
         this.callId = callId;
