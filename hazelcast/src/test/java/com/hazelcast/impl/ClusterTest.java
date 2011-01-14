@@ -1316,7 +1316,8 @@ public class ClusterTest {
         latch.await();
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
-        waitForGC(25 + usedMemoryInit, 100);
+        Hazelcast.shutdownAll();
+        waitForGC(10 + usedMemoryInit, 100);
     }
 
     @Test
@@ -1373,7 +1374,7 @@ public class ClusterTest {
                 return;
             }
         }
-        fail(String.format("UsedMemory now: {0} but expected max: {1}", getUsedMemoryAsMB(), limit));
+        fail(String.format("UsedMemory now: %s but expected max: %s", getUsedMemoryAsMB(), limit));
     }
 
     @Test
