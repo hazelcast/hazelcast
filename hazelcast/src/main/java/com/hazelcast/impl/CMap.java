@@ -47,7 +47,6 @@ import java.util.logging.Level;
 import static com.hazelcast.core.Prefix.AS_LIST;
 import static com.hazelcast.core.Prefix.AS_SET;
 import static com.hazelcast.impl.ClusterOperation.*;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -753,14 +752,7 @@ public class CMap {
         } else {
             if (record.containsValue(req.value)) {
                 if (record.getMultiValues() != null) {
-                    Iterator<Data> itValues = record.getMultiValues().iterator();
-                    while (itValues.hasNext()) {
-                        Data value = itValues.next();
-                        if (req.value.equals(value)) {
-                            itValues.remove();
-                            removed = true;
-                        }
-                    }
+                    removed = record.getMultiValues().remove(req.value);
                 }
             }
         }
@@ -1227,7 +1219,9 @@ public class CMap {
         if (record == null) {
             if (isMultiMap()) {
                 record = createNewRecord(req.key, null);
-                record.addValue(req.value);
+                if (req.value != null) {
+                    record.addValue(req.value);
+                }
             } else {
                 record = createNewRecord(req.key, req.value);
             }
@@ -1468,9 +1462,16 @@ public class CMap {
         public Values() {
         }
 
-        public Values(Collection<Data> lsValues) {
+        public Values(Collection<Data> values) {
             super();
-            this.lsValues = lsValues;
+            if (values != null) {
+                this.lsValues = new ArrayList<Data>(values.size());
+                for (Data data : values) {
+                    if (data != null) {
+                        lsValues.add(data);
+                    }
+                }
+            }
         }
 
         public boolean add(Object o) {

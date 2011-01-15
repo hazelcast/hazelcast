@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -226,10 +227,17 @@ public final class Record implements MapEntry {
     }
 
     public void addValue(Data value) {
-        if (getMultiValues() == null) {
-            setMultiValues(new HashSet<Data>(2));
+        if (value != null) {
+            if (getMultiValues() == null) {
+                setMultiValues(new CopyOnWriteArraySet<Data>() {
+                    @Override
+                    public boolean add(Data e) {
+                        return e != null && super.add(e);
+                    }
+                });
+            }
+            getMultiValues().add(value);
         }
-        getMultiValues().add(value);
     }
 
     public boolean unlock(int threadId, Address address) {

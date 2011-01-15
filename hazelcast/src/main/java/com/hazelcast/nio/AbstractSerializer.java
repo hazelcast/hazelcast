@@ -31,10 +31,10 @@ public abstract class AbstractSerializer {
 
     private static final ILogger logger = Logger.getLogger(AbstractSerializer.class.getName());
 
-    protected static int OUTPUT_STREAM_BUFFER_SIZE = 100 << 10;
-    final FastByteArrayOutputStream bbos;
-    protected final FastByteArrayInputStream bbis;
+    private static final int OUTPUT_STREAM_BUFFER_SIZE = 100 << 10;
 
+    private final FastByteArrayOutputStream bbos;
+    private final FastByteArrayInputStream bbis;
     private final Serializer.DataSerializer ds;
     private final CustomSerializerAdapter cs;
 
@@ -74,7 +74,7 @@ public abstract class AbstractSerializer {
         return Class.forName(className);
     }
 
-    public static final ObjectInputStream newObjectInputStream(final InputStream in) throws IOException {
+    public static ObjectInputStream newObjectInputStream(final InputStream in) throws IOException {
         return new ObjectInputStream(in) {
             @Override
             protected Class<?> resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
@@ -83,7 +83,7 @@ public abstract class AbstractSerializer {
         };
     }
 
-    protected final void toByte(final FastByteArrayOutputStream bos, final Object object) {
+    protected void toByte(final FastByteArrayOutputStream bos, final Object object) {
         if (object == null) {
             return;
         }
@@ -92,18 +92,18 @@ public abstract class AbstractSerializer {
             bos.writeByte(ts.getTypeId());
             ts.write(bos, object);
             bos.flush();
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    protected final Object toObject(final FastByteArrayInputStream bis) {
+    protected Object toObject(final FastByteArrayInputStream bis) {
         try {
             final byte typeId = bis.readByte();
             TypeSerializer ts = (typeId == ds.getTypeId()) ? ds : cs;
             return ts.read(bis);
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new RuntimeException(e);
         }
@@ -121,7 +121,7 @@ public abstract class AbstractSerializer {
                 this.bbos.set(new byte[OUTPUT_STREAM_BUFFER_SIZE]);
             }
             return result;
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new RuntimeException(e);
         }
