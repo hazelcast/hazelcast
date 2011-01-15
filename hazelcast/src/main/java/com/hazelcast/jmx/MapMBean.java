@@ -21,11 +21,15 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.SqlPredicate;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
+
 import java.lang.management.ManagementFactory;
-import java.util.Set;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 
 /**
@@ -103,6 +107,38 @@ public class MapMBean extends AbstractMBean<IMap> {
     @JMXDescription("Clear map")
     public void clear() {
         getManagedObject().clear();
+    }
+    
+    @JMXOperation("values")
+    @JMXDescription("Values")
+    public String values(final String query) {
+        final Predicate predicate = query != null && query.trim().length() > 0 ?
+            new SqlPredicate(query) : null;
+        final Collection values = predicate != null ?
+            getManagedObject().values(predicate) :
+            getManagedObject().values();
+        final List list = new ArrayList(values);
+        return list.toString();
+    }
+    
+    @JMXOperation("entrySet")
+    @JMXDescription("EntrySet")
+    public String entrySet(final String query) {
+        final Predicate predicate = query != null && query.trim().length() > 0 ?
+            new SqlPredicate(query) : null;
+        final Collection<Map.Entry> values = predicate != null ?
+            getManagedObject().entrySet(predicate) :
+            getManagedObject().entrySet();
+        final StringBuilder sb = new StringBuilder().append("{");
+        for(final Iterator<Map.Entry> it = values.iterator();it.hasNext();){
+            final Map.Entry next = it.next();
+            // workaround due to bug with hasNext
+            if (sb.length() > 1) {
+                sb.append(", ");
+            }
+            sb.append("key:").append(next.getKey()).append(", value:").append(next.getValue());
+        }
+        return sb.append("}").toString();
     }
     
     @JMXAttribute("Config")
