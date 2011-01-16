@@ -47,7 +47,7 @@ public class MulticastService implements Runnable {
         this.node = node;
         Config config = node.getConfig();
         this.multicastSocket = multicastSocket;
-        int bufferSize = 1024;
+        int bufferSize = 1024 * 1024;
         this.datagramPacketReceive = new DatagramPacket(new byte[bufferSize], bufferSize);
         this.datagramPacketSend = new DatagramPacket(new byte[bufferSize], bufferSize, InetAddress
                 .getByName(config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastGroup()),
