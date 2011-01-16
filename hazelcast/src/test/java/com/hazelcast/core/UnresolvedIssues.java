@@ -26,8 +26,6 @@ import com.hazelcast.impl.TestUtil;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.SqlPredicate;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -35,7 +33,6 @@ import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Iterator;
 
 import static org.junit.Assert.*;
 
@@ -49,35 +46,6 @@ public class UnresolvedIssues extends TestUtil {
     public void init() throws Exception {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         Hazelcast.shutdownAll();
-    }
-    
-    @Ignore
-    @Test
-    public void illegalIteratorContract(){
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(null);
-        final IMap<String, ValueType> map = hz.getMap("illegalIteratorContract");
-        map.put("1", new ValueType("one"));
-        map.put("2", new ValueType("two"));
-        map.put("3", new ValueType("three"));
-        
-        final Predicate predicate = new SqlPredicate("typeName in ('one','two')");
-        testIteror(map.keySet().iterator(), 3);
-        testIteror(map.keySet(predicate).iterator(), 2);
-        testIteror(map.entrySet().iterator(), 3);
-        testIteror(map.entrySet(predicate).iterator(), 2);
-        testIteror(map.values().iterator(), 3);
-        testIteror(map.values(predicate).iterator(), 2);
-    }
-    
-    private void testIteror(final Iterator it, int size){
-        for(int i = 0; i < size + 1; i++){
-            assertTrue(it.hasNext());
-        }
-        for(int i = 0; i < size; i++){
-            assertTrue(it.hasNext());
-            assertNotNull(it.next());
-        }
-        assertFalse(it.hasNext());
     }
 
     @Ignore

@@ -1283,7 +1283,7 @@ public class ClusterTest {
 
     @Test
     public void testShutdownAllMemoryLeak() throws Exception {
-        waitForGC(20, 20);
+        waitForGC(20, 100);
         long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -1322,7 +1322,7 @@ public class ClusterTest {
 
     @Test
     public void testTTLAndMemoryLeak() throws Exception {
-        waitForGC(20, 20);
+        waitForGC(20, 100);
         long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig("default");
@@ -1379,7 +1379,7 @@ public class ClusterTest {
 
     @Test
     public void testTTLAndMemoryLeak2() throws Exception {
-        waitForGC(20, 20);
+        waitForGC(20, 100);
         long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -1419,7 +1419,7 @@ public class ClusterTest {
 
     @Test
     public void testMaxIdleAndMemoryLeak() throws Exception {
-        waitForGC(20, 20);
+        waitForGC(20, 100);
         long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig("default");

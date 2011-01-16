@@ -2312,6 +2312,8 @@ public class ConcurrentMapManager extends BaseManager {
             final Iterator<Map.Entry> it;
             Map.Entry entry = null;
             boolean calledHasNext = false;
+            boolean calledNext = false;
+            boolean hasNext = false;
 
             public EntryIterator(Iterator<Map.Entry> it) {
                 super();
@@ -2319,7 +2321,16 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public boolean hasNext() {
+                if (calledHasNext && !calledNext) {
+                    return hasNext;
+                }
+                calledNext = false;
                 calledHasNext = true;
+                hasNext = setHasNext();
+                return hasNext;
+            }
+
+            public boolean setHasNext() {
                 if (!it.hasNext()) {
                     return false;
                 }
@@ -2335,6 +2346,7 @@ public class ConcurrentMapManager extends BaseManager {
                     hasNext();
                 }
                 calledHasNext = false;
+                calledNext = true;
                 if (operation == CONCURRENT_MAP_ITERATE_KEYS
                         || operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
                     return entry.getKey();

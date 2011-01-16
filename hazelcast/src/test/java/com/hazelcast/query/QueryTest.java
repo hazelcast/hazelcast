@@ -23,19 +23,14 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.TestUtil;
-
 import org.junit.After;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.*;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class QueryTest extends TestUtil {
@@ -150,6 +145,33 @@ public class QueryTest extends TestUtil {
         final String[] array = names.toArray(new String[0]);
         Arrays.sort(array);
         assertArrayEquals(names.toString(), expectedValues, array);
+    }
+
+    @Test
+    public void testIteratorContract() {
+        final IMap<String, ValueType> map = Hazelcast.getMap("testIteratorContract");
+        map.put("1", new ValueType("one"));
+        map.put("2", new ValueType("two"));
+        map.put("3", new ValueType("three"));
+        final Predicate predicate = new SqlPredicate("typeName in ('one','two')");
+        testIterator(map.keySet().iterator(), 3);
+        testIterator(map.keySet(predicate).iterator(), 2);
+        testIterator(map.entrySet().iterator(), 3);
+        testIterator(map.entrySet(predicate).iterator(), 2);
+        testIterator(map.values().iterator(), 3);
+        testIterator(map.values(predicate).iterator(), 2);
+    }
+
+    private void testIterator(final Iterator it, int size) {
+        for (int i = 0; i < size + 1; i++) {
+            assertTrue("i is " + i, it.hasNext());
+        }
+        for (int i = 0; i < size; i++) {
+            assertTrue(it.hasNext());
+            assertNotNull(it.next());
+        }
+        assertFalse(it.hasNext());
+        assertFalse(it.hasNext());
     }
 
     @Test
