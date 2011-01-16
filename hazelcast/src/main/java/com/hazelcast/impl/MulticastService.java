@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.Config;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.UnboundedBlockingQueue;
 
 import java.io.IOException;
@@ -30,9 +31,11 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
 
 public class MulticastService implements Runnable {
 
+    private final ILogger logger;
     private final BlockingQueue<Runnable> queue = new UnboundedBlockingQueue<Runnable>();
     private final MulticastSocket multicastSocket;
     private final DatagramPacket datagramPacketSend;
@@ -45,6 +48,7 @@ public class MulticastService implements Runnable {
 
     public MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
         this.node = node;
+        logger = node.getLogger(MulticastService.class.getName());
         Config config = node.getConfig();
         this.multicastSocket = multicastSocket;
         int bufferSize = 1024 * 1024;
@@ -92,7 +96,7 @@ public class MulticastService implements Runnable {
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
     }
@@ -109,7 +113,7 @@ public class MulticastService implements Runnable {
                 joinInfo.readFromPacket(datagramPacketReceive);
                 return joinInfo;
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
             return null;
         }
@@ -121,7 +125,7 @@ public class MulticastService implements Runnable {
                 joinInfo.writeToPacket(datagramPacketSend);
                 multicastSocket.send(datagramPacketSend);
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
     }
