@@ -184,6 +184,14 @@ public class TestFullApplicationContext {
         assertNotNull(properties);
         assertEquals("5", properties.get(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS));
         assertEquals("5", properties.get(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS));
+        
+        final Config config2 = instance.getConfig();
+        
+        final Properties properties2 = config2.getProperties();
+        assertNotNull(properties2);
+        assertEquals("5", properties2.get(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS));
+        assertEquals("5", properties2.get(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS));
+        
     }
 
     @Test

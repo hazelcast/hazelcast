@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-		   xmlns="http://www.hazelcast.com/schema/config"
-		   xmlns:beans="http://www.springframework.org/schema/beans"
-		   targetNamespace="http://www.hazelcast.com/schema/config"
-		   elementFormDefault="qualified"
-		   attributeFormDefault="unqualified">
+		xmlns="http://www.hazelcast.com/schema/config"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		targetNamespace="http://www.hazelcast.com/schema/config"
+		elementFormDefault="qualified"
+		attributeFormDefault="unqualified">
 
 	<xs:import namespace="http://www.springframework.org/schema/beans"/>
 
@@ -18,21 +18,21 @@
 						<xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
 						<xs:element name="executor-service" minOccurs="0" maxOccurs="unbounded">
 							<xs:complexType>
-					            <xs:sequence/>
-					            <xs:attribute name="name" use="required" type="xs:string"/>
-					            <xs:attribute name="core-pool-size" use="optional" type="xs:string"/>
-					            <xs:attribute name="max-pool-size" use="optional" type="xs:string"/>
-					            <xs:attribute name="keep-alive-seconds" use="optional" type="xs:string"/>
-					        </xs:complexType>
+								<xs:sequence/>
+								<xs:attribute name="name" use="required" type="xs:string"/>
+								<xs:attribute name="core-pool-size" use="optional" type="xs:string"/>
+								<xs:attribute name="max-pool-size" use="optional" type="xs:string"/>
+								<xs:attribute name="keep-alive-seconds" use="optional" type="xs:string"/>
+							</xs:complexType>
 						</xs:element>
 						<xs:element name="queue" minOccurs="0" maxOccurs="unbounded">
-					        <xs:complexType>
-					            <xs:sequence/>
-					            <xs:attribute name="name" use="required" type="xs:string"/>
-					            <xs:attribute name="max-size-per-jvm" use="required" type="xs:string"/>
-					            <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
-					        </xs:complexType>
-					    </xs:element>
+							<xs:complexType>
+								<xs:sequence/>
+								<xs:attribute name="name" use="required" type="xs:string"/>
+								<xs:attribute name="max-size-per-jvm" use="required" type="xs:string"/>
+								<xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
+							</xs:complexType>
+						</xs:element>
 						<xs:element name="map" minOccurs="0" maxOccurs="unbounded">
 							<xs:complexType>
 								<xs:sequence>
@@ -98,15 +98,15 @@
 	<xs:element name="atomicNumber" type="hazelcast-instance"/>
 	
 	<!-- internal elements -->
-    <xs:complexType name="hazelcast-instance">
-        <xs:complexContent>
-            <xs:extension base="beans:identifiedType">
-                <xs:sequence/>
-                <xs:attribute name="instance-ref" type="xs:string" use="required"/>
-                <xs:attribute name="name" type="xs:string" use="required"/>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
+	<xs:complexType name="hazelcast-instance">
+		<xs:complexContent>
+			<xs:extension base="beans:identifiedType">
+				<xs:sequence/>
+				<xs:attribute name="instance-ref" type="xs:string" use="required"/>
+				<xs:attribute name="name" type="xs:string" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
 	
 	<xs:complexType name="network">
 		<xs:sequence>
@@ -129,12 +129,12 @@
 				<xs:element name="interface" type="interface" minOccurs="0" maxOccurs="unbounded"/>
 			</xs:sequence>
 		</xs:choice>
-		<xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="enabled" type="xs:string" use="optional" default="false"/>
 	</xs:complexType>
 		
 	<xs:complexType name="multicast">
 		<xs:sequence/>
-		<xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="enabled" type="xs:string" use="optional" default="true"/>
 		<xs:attribute name="multicast-group" type="xs:string" use="optional" default="224.2.2.3"/>
 		<xs:attribute name="multicast-port" type="xs:string" use="optional" default="54327"/>
 	</xs:complexType>
@@ -167,7 +167,7 @@
 		<xs:sequence>
 			<xs:element name="interface" type="interface" default="127.0.0.1"/>
 		</xs:sequence>
-		<xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="enabled" type="xs:string" use="optional" default="false"/>
 	</xs:complexType>
 	
 	<xs:simpleType name="interface" >
@@ -257,7 +257,7 @@
 	
 	<xs:complexType name="symmetric-encryption">
 		<xs:sequence/>
-		<xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="enabled" type="xs:string" use="optional" default="false"/>
 		<xs:attribute name="algorithm" use="optional" type="xs:string"/>
 		<xs:attribute name="salt" use="optional" type="xs:string"/>
 		<xs:attribute name="password" use="optional" type="xs:string"/>
@@ -266,7 +266,7 @@
 	
 	<xs:complexType name="asymmetric-encryption">
 		<xs:sequence/>
-		<xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="enabled" type="xs:string" use="optional" default="false"/>
 		<xs:attribute name="algorithm" use="optional" type="xs:string"/>
 		<xs:attribute name="key-password" use="optional" type="xs:string"/>
 		<xs:attribute name="key-alias" use="optional" type="xs:string"/>
