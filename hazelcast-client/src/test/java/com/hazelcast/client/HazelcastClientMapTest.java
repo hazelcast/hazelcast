@@ -229,13 +229,13 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     @Test
-    public void putWithTtl() throws InterruptedException {
+    public void putWithTTL() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-        IMap<String, String> map = hClient.getMap("putWithTtl");
+        IMap<String, String> map = hClient.getMap("putWithTTL");
         assertEquals(0, map.size());
         map.put("1", "CBDEF", 100, TimeUnit.MILLISECONDS);
         assertEquals(1, map.size());
-        Thread.sleep(101);
+        Thread.sleep(200);
         assertEquals(0, map.size());
     }
 
@@ -255,10 +255,10 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         int counter = 1000;
         Map<String, Employee> clientMap = hClient.getMap("putAndGetEmployeeObjects");
         for (int i = 0; i < counter; i++) {
-            Employee empleuyee = new Employee("name" + i, i, true, 5000 + i);
-            empleuyee.setMiddleName("middle" + i);
-            empleuyee.setFamilyName("familiy" + i);
-            clientMap.put("" + i, empleuyee);
+            Employee employee = new Employee("name" + i, i, true, 5000 + i);
+            employee.setMiddleName("middle" + i);
+            employee.setFamilyName("familiy" + i);
+            clientMap.put("" + i, employee);
         }
         for (int i = 0; i < counter; i++) {
             Employee e = clientMap.get("" + i);

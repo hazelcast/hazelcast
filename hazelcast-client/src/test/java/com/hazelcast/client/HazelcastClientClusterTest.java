@@ -86,7 +86,7 @@ public class HazelcastClientClusterTest {
         client.shutdown();
     }
 
-    @Test(expected = IllegalStateException.class, timeout = 5000L)
+    @Test(expected = IllegalStateException.class, timeout = 50000L)
     public void testNoClusterOnStart() throws Exception {
         final ClientProperties clientProperties =
                 ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
@@ -95,7 +95,7 @@ public class HazelcastClientClusterTest {
         HazelcastClient.newHazelcastClient(clientProperties, "localhost:5701");
     }
 
-    @Test(expected = NoMemberAvailableException.class, timeout = 15000L)
+    @Test(expected = NoMemberAvailableException.class, timeout = 50000L)
     public void testNoClusterAfterStart() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final ClientProperties clientProperties =
