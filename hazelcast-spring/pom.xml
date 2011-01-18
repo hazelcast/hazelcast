@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>1.9.2-SNAPSHOT</version>
+        <version>1.9.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -43,11 +43,11 @@
             <artifactId>spring-test</artifactId>
             <version>${org.springframework.version}</version>
         </dependency>
-		<dependency>
-			<groupId>javax.annotation</groupId>
-			<artifactId>jsr250-api</artifactId>
-			<version>1.0</version>
-		</dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>jsr250-api</artifactId>
+            <version>1.0</version>
+        </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
