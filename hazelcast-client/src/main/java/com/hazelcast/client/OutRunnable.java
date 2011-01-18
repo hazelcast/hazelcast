@@ -31,15 +31,16 @@ import java.util.logging.Level;
 
 public class OutRunnable extends IORunnable {
     final PacketWriter writer;
-    final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
 
-    private Connection connection = null;
+    final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
 
     final AtomicBoolean reconnection;
 
     private final Collection<Call> reconnectionCalls = new LinkedBlockingQueue<Call>();
 
     private final SimpleBoundedQueue<Call> q = new SimpleBoundedQueue<Call>(1000);
+
+    private Connection connection = null;
 
     public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
         super(client, calls);
@@ -81,6 +82,9 @@ public class OutRunnable extends IORunnable {
                 } catch (IOException e) {
                     clusterIsDown(connection);
                 }
+            }
+            if (reconnectionCalls.size() > 0) {
+                checkOnReconnect(call);
             }
         } catch (Throwable e) {
             logger.log(Level.FINE, "OutRunnable [" + connection + "] got an exception:" + e.toString(), e);
@@ -269,7 +273,7 @@ public class OutRunnable extends IORunnable {
 
     public void enQueue(Call call) {
         try {
-            if (running == false) {
+            if (!running) {
                 throw new NoMemberAvailableException("Client is shutdown.");
             }
             logger.log(Level.FINEST, "From " + Thread.currentThread() + ": Enqueue: " + call);
