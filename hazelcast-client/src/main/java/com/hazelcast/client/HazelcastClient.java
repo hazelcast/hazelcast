@@ -362,9 +362,9 @@ public class HazelcastClient implements HazelcastInstance {
 
     void doShutdown() {
         logger.log(Level.INFO, "HazelcastClient[ " + this.id + "] is shutting down.");
+        connectionManager.shutdown();
         out.shutdown();
         in.shutdown();
-        connectionManager.shutdown();
         listenerManager.shutdown();
     }
 

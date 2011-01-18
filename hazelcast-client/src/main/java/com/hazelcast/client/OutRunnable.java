@@ -65,9 +65,6 @@ public class OutRunnable extends IORunnable {
                     written = true;
                     call = q.poll();
                 }
-            } else if (reconnectionCalls.size() > 0) {
-                checkOnReconnect(null);
-                return;
             }
             try {
                 if (written) {
@@ -82,7 +79,6 @@ public class OutRunnable extends IORunnable {
                 try {
                     writer.flush(connection);
                 } catch (IOException e) {
-                    queue.offer(call);
                     clusterIsDown(connection);
                 }
             }
@@ -96,7 +92,8 @@ public class OutRunnable extends IORunnable {
             Connection oldConnection = connection;
             connection = client.getConnectionManager().getConnection();
             if (restoredConnection(oldConnection, connection)) {
-                resubscribe(call, oldConnection);
+                queue.offer(call);
+                resubscribe(oldConnection);
             } else if (connection != null) {
                 if (call != RECONNECT_CALL) {
                     callMap.put(call.getId(), call);
@@ -117,7 +114,7 @@ public class OutRunnable extends IORunnable {
         }
     }
 
-    protected void customRun2() throws InterruptedException {
+    protected void customRun3() throws InterruptedException {
         if (reconnection.get()) {
             Thread.sleep(50L);
             return;
@@ -145,7 +142,7 @@ public class OutRunnable extends IORunnable {
             boolean wrote = false;
             long a3 = 0;
             if (restoredConnection(oldConnection, connection)) {
-                resubscribe(call, oldConnection);
+                resubscribe(oldConnection);
             } else if (connection != null) {
                 if (call != RECONNECT_CALL) {
                     logger.log(Level.FINEST, "Sending: " + call);
@@ -163,7 +160,7 @@ public class OutRunnable extends IORunnable {
                 return;
             }
             if (connection != null && wrote) {
-//                writer.flush(connection);
+                writer.flush(connection);
             }
             if (reconnectionCalls.size() > 0) {
                 checkOnReconnect(call);
@@ -259,7 +256,7 @@ public class OutRunnable extends IORunnable {
         }
     }
 
-    private void resubscribe(Call call, Connection oldConnection) {
+    private void resubscribe(Connection oldConnection) {
         onDisconnect(oldConnection);
         final BlockingQueue<Call> temp = new LinkedBlockingQueue<Call>();
         queue.drainTo(temp);
