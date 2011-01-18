@@ -31,8 +31,7 @@ import java.util.List;
  */
 public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
-    public RandomBlockJUnit4ClassRunner(Class<?> klass)
-            throws InitializationError {
+    public RandomBlockJUnit4ClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
     }
 
@@ -50,10 +49,10 @@ public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
     @Override
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
         long start = System.currentTimeMillis();
-        System.out.println("Started Running Test: " + method.getName());
+        String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
+        System.out.println("Started Running Test: " + testName);
         super.runChild(method, notifier);
-        System.out.println(String.format("Finished Running Test: %s in %d seconds.",
-                method.getName(),
-                ((System.currentTimeMillis() - start) / 1000)));
+        long took = (System.currentTimeMillis() - start) / 1000;
+        System.out.println(String.format("Finished Running Test: %s in %d seconds.", testName, took));
     }
 }

@@ -96,7 +96,13 @@ public class SplitBrainHandler implements Runnable {
             }
         }
         if (tcpEnabled) {
-            final Collection<Address> colPossibleAddresses = node.getPossibleMembers();
+            final Collection<Address> colPossibleAddresses;
+            try {
+                colPossibleAddresses = Node.getPossibleMembers(node.getConfig(), node.getThisAddress());
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+                return;
+            }
             colPossibleAddresses.remove(node.getThisAddress());
             for (Member member : node.getClusterImpl().getMembers()) {
                 colPossibleAddresses.remove(((MemberImpl) member).getAddress());

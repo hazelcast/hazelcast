@@ -1838,6 +1838,31 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    void scheduleRequest(final SchedulableOperationHandler handler, final Request request) {
+        final Record record = ensureRecord(request);
+        request.scheduled = true;
+        ScheduledAction scheduledAction = new ScheduledAction(request) {
+            @Override
+            public boolean consume() {
+                handler.handle(request);
+                return true;
+            }
+
+            @Override
+            public void onExpire() {
+                handler.onNoTimeToSchedule(request);
+            }
+
+            @Override
+            public void onMigrate() {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
+        };
+        record.addScheduledAction(scheduledAction);
+        node.clusterManager.registerScheduledAction(scheduledAction);
+    }
+
     abstract class SchedulableOperationHandler extends MTargetAwareOperationHandler {
 
         protected boolean shouldSchedule(Request request) {
@@ -1850,28 +1875,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         protected void schedule(Request request) {
-            final Record record = ensureRecord(request);
-            request.scheduled = true;
-            ScheduledAction scheduledAction = new ScheduledAction(request) {
-                @Override
-                public boolean consume() {
-                    handle(request);
-                    return true;
-                }
-
-                @Override
-                public void onExpire() {
-                    onNoTimeToSchedule(request);
-                }
-
-                @Override
-                public void onMigrate() {
-                    request.response = OBJECT_REDO;
-                    returnResponse(request);
-                }
-            };
-            record.addScheduledAction(scheduledAction);
-            node.clusterManager.registerScheduledAction(scheduledAction);
+            scheduleRequest(SchedulableOperationHandler.this, request);
         }
 
         public void handle(Request request) {

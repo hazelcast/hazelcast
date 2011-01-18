@@ -20,7 +20,9 @@ package com.hazelcast.client;
 import com.hazelcast.core.HazelcastInstance;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.runner.RunWith;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClientTestBase {
 
     final static SingleHazelcastClient single = new SingleHazelcastClient();
