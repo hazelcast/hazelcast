@@ -168,36 +168,54 @@ public class Node {
         localMember = new MemberImpl(address, true, localNodeType);
         packetPool = new NoneStrictObjectPool<Packet>(2000) {
             @Override
-            public void onRelease(Packet packet) {
-                packet.released = true;
+            public Packet obtain() {
+                return createNew();
             }
 
             @Override
             public boolean release(Packet packet) {
-                if (packet.released) {
-                    logger.log(Level.WARNING, "Packet is already released.");
-                    return false;
-                } else {
-                    return super.release(packet);
-                }
+                return true;
             }
 
             @Override
             public void onObtain(Packet packet) {
-                packet.reset();
-                packet.released = false;
             }
 
             @Override
-            public Packet obtain() {
-                Packet p = super.obtain();
-                if (p.released) {
-                    logger.log(Level.WARNING, "Obtained un-released packet.");
-                    p = createNew();
-                }
-                return p;
+            public void onRelease(Packet packet) {
             }
 
+            //            @Override
+//            public void onRelease(Packet packet) {
+//                packet.released = true;
+//            }
+//
+//            @Override
+//            public boolean release(Packet packet) {
+//                if (packet.released) {
+//                    logger.log(Level.WARNING, "Packet is already released.");
+//                    return false;
+//                } else {
+//                    return super.release(packet);
+//                }
+//            }
+//
+//            @Override
+//            public void onObtain(Packet packet) {
+//                packet.reset();
+//                packet.released = false;
+//            }
+//
+//            @Override
+//            public Packet obtain() {
+//                Packet p = super.obtain();
+//                if (p.released) {
+//                    logger.log(Level.WARNING, "Obtained un-released packet.");
+//                    p = createNew();
+//                }
+//                return p;
+//            }
+//
             public Packet createNew() {
                 return new Packet();
             }

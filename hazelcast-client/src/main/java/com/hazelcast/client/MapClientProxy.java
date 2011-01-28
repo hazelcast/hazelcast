@@ -27,10 +27,12 @@ import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.util.DistributedTimeoutException;
 
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.client.ProxyHelper.check;
 
@@ -267,6 +269,15 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public V remove(Object arg0) {
         check(arg0);
         return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE, arg0, null);
+    }
+
+    public Object tryRemove(K key, long timeout, TimeUnit timeunit) throws TimeoutException {
+        check(key);
+        Object result = proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_TRY_REMOVE, key, null, timeout, timeunit);
+        if (result instanceof DistributedTimeoutException) {
+            throw new TimeoutException();
+        }
+        return result;
     }
 
     private Object doLock(ClusterOperation operation, Object key, long timeout, TimeUnit timeUnit) {

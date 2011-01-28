@@ -18,10 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.Prefix;
-import com.hazelcast.core.Transaction;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledOfferAction;
 import com.hazelcast.impl.BlockingQueueManager.Q.ScheduledPollAction;
 import com.hazelcast.impl.base.PacketProcessor;
@@ -38,14 +35,17 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.BLOCKING_QUEUE_SIZE;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
+import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class BlockingQueueManager extends BaseManager {
+    private final static long BILLION = 1000 * 1000 * 1000;
     private final int BLOCK_SIZE;
     private final Map<String, Q> mapQueues = new ConcurrentHashMap<String, Q>(10);
     private final Map<Long, List<Data>> mapTxnPolledElements = new HashMap<Long, List<Data>>(10);
@@ -68,6 +68,47 @@ public class BlockingQueueManager extends BaseManager {
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_OFFER, new QueuePacketProcessor() {
             public void processPacket(Packet packet) {
                 handleOffer(packet);
+            }
+        });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_TAKE_KEY, new ResponsiveOperationHandler() {
+            public void handle(Request request) {
+                handleTakeKey(request);
+            }
+
+            public void process(Packet packet) {
+                super.processSimple(packet);
+            }
+        });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_PEEK_KEY, new ResponsiveOperationHandler() {
+            public void handle(Request request) {
+                handlePeekKey(request);
+            }
+
+            public void process(Packet packet) {
+                super.processSimple(packet);
+            }
+        });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_ADD_KEY, new ResponsiveOperationHandler() {
+            public void handle(Request request) {
+                handleAddKey(request);
+            }
+
+            public void process(Packet packet) {
+                super.processSimple(packet);
+            }
+        });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_GENERATE_KEY, new ResponsiveOperationHandler() {
+            public void handle(Request request) {
+                handleGenerateKey(request);
+            }
+
+            public void process(Packet packet) {
+                super.processSimple(packet);
+            }
+        });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_OFFER_KEY, new PacketProcessor() {
+            public void process(Packet packet) {
+                handleOfferKey(packet);
             }
         });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_QUEUE_OFFER_FIRST, new QueuePacketProcessor() {
@@ -1054,6 +1095,463 @@ public class BlockingQueueManager extends BaseManager {
         System.out.println("timeout: " + request.timeout);
         System.out.println("target: " + address);
         System.out.println("=========== DONE =======");
+    }
+
+    boolean addKeyAsync = false;
+
+    private void sendKeyToMaster(final String queueName, final Data key) {
+        enqueueAndReturn(new Processable() {
+            public void process() {
+                if (isMaster()) {
+                    doAddKey(queueName, key);
+                } else {
+                    Packet packet = obtainPacket();
+                    packet.name = queueName;
+                    packet.setKey(key);
+                    packet.operation = ClusterOperation.BLOCKING_OFFER_KEY;
+                    boolean sent = send(packet, getMasterAddress());
+                }
+            }
+        });
+    }
+
+    public boolean offer(final String name, Object obj, long timeout) throws InterruptedException {
+        Long key = generateKey(name, timeout);
+        if (key != -1) {
+            IMap imap = getStorageMap(name);
+            final Data dataKey = toData(key);
+            imap.put(dataKey, obj);
+            if (addKeyAsync) {
+                sendKeyToMaster(name, dataKey);
+            } else {
+                addKey(name, dataKey);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean offerTxn(String name, Object obj, long timeout) throws InterruptedException {
+        Long key = generateKey(name, timeout);
+        if (key != -1) {
+            IMap imap = getStorageMap(name);
+            final Data dataKey = toData(key);
+            imap.put(dataKey, obj);
+            if (addKeyAsync) {
+                sendKeyToMaster(name, dataKey);
+            } else {
+                addKey(name, dataKey);
+            }
+            return true;
+        }
+        return false;
+        /**
+         * on commit
+         * if (addKeyAsync) {
+         *      sendKeyToMaster(name, dataKey);
+         * } else {
+         *      addKey(name, dataKey);
+         * }
+         *
+         * on rollback
+         *
+         */
+    }
+
+    public Object poll(String name, long timeout) throws InterruptedException {
+        if (timeout == -1) {
+            timeout = Long.MAX_VALUE;
+        }
+        Object removedItem = null;
+        long start = System.currentTimeMillis();
+        while (removedItem == null && timeout >= 0) {
+            Data key = takeKey(name, timeout);
+            if (key == null) {
+                return null;
+            }
+            IMap imap = getStorageMap(name);
+            try {
+                removedItem = imap.tryRemove(key, 0, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+            }
+            long now = System.currentTimeMillis();
+            timeout -= (now - start);
+            start = now;
+        }
+        return removedItem;
+    }
+
+    public Object peek(String name) {
+        Data key = peekKey(name);
+        if (key == null) {
+            return null;
+        }
+        IMap imap = getStorageMap(name);
+        return imap.get(key);
+    }
+
+    private Data takeKey(String name, long timeout) {
+        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, timeout);
+        op.initOp();
+        return (Data) op.getResultAsIs();
+    }
+
+    private Data peekKey(String name) {
+        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_PEEK_KEY, name, 0);
+        op.initOp();
+        return (Data) op.getResultAsIs();
+    }
+
+    public IMap getStorageMap(String queueName) {
+        return node.factory.getMap(queueName);
+    }
+
+    public boolean addKey(String name, Data key) {
+        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_ADD_KEY, name, 0);
+        op.request.key = key;
+        op.request.setBooleanRequest();
+        op.initOp();
+        return op.getResultAsBoolean();
+    }
+
+    public long generateKey(String name, long timeout) {
+        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GENERATE_KEY, name, timeout);
+        op.request.setLongRequest();
+        op.initOp();
+        return (Long) op.getResultAsObject();
+    }
+
+    long getKey(String queueName) {
+        return node.factory.getIdGenerator(queueName).newId();
+    }
+
+    class MasterOp extends TargetAwareOp {
+        private final ClusterOperation op;
+        private final String name;
+        private final long timeout;
+
+        MasterOp(ClusterOperation op, String name, long timeout) {
+            this.op = op;
+            this.name = name;
+            this.timeout = timeout;
+        }
+
+        @Override
+        public void setTarget() {
+            target = getMasterAddress();
+        }
+
+        void initOp() {
+            request.operation = op;
+            request.name = name;
+            request.timeout = timeout;
+            doOp();
+        }
+    }
+
+    class Lease {
+        final long timeout;
+        final Address address;
+
+        Lease(Address address) {
+            this.address = address;
+            timeout = System.currentTimeMillis() + 10000;
+        }
+    }
+
+    final Map<String, BQ> mapBQ = new HashMap<String, BQ>();
+
+    BQ getOrCreateBQ(String name) {
+        BQ bq = mapBQ.get(name);
+        if (bq == null) {
+            bq = new BQ(name);
+            mapBQ.put(name, bq);
+        }
+        return bq;
+    }
+
+    final void handleTakeKey(Request req) {
+        if (isMaster() && ready()) {
+            BQ bq = getOrCreateBQ(req.name);
+            bq.doTakeKey(req);
+        } else {
+            returnRedoResponse(req);
+        }
+    }
+
+    final void handlePeekKey(Request req) {
+        if (isMaster() && ready()) {
+            BQ bq = getOrCreateBQ(req.name);
+            bq.doPeekKey(req);
+        } else {
+            returnRedoResponse(req);
+        }
+    }
+
+    final void handleOfferKey(Request req) {
+        if (isMaster() && ready()) {
+            BQ bq = getOrCreateBQ(req.name);
+            bq.offerKey(req);
+        } else {
+            returnRedoResponse(req);
+        }
+    }
+
+    final void handleOfferKey(Packet packet) {
+        if (isMaster()) {
+            doAddKey(packet.name, packet.getKeyData());
+        }
+        releasePacket(packet);
+    }
+
+    final void doAddKey(String name, Data key) {
+        BQ bq = getOrCreateBQ(name);
+        bq.doAddKey(key);
+    }
+
+    final void handleAddKey(Request req) {
+        if (isMaster() && ready()) {
+            BQ bq = getOrCreateBQ(req.name);
+            bq.doAddKey(req.key);
+            req.key = null;
+            req.response = Boolean.TRUE;
+            returnResponse(req);
+        } else {
+            returnRedoResponse(req);
+        }
+    }
+
+    final void handleGenerateKey(Request req) {
+        if (isMaster() && ready()) {
+            BQ bq = getOrCreateBQ(req.name);
+            bq.doGenerateKey(req);
+        } else {
+            returnRedoResponse(req);
+        }
+    }
+
+    enum MasterState {
+        NOT_INITIALIZED,
+        INITIALIZING,
+        READY
+    }
+
+    MasterState state = MasterState.NOT_INITIALIZED;
+
+    boolean ready() {
+        if (state != MasterState.READY) {
+            if (isVeryFirstMember()) {
+                state = MasterState.READY;
+                return true;
+            }
+            if (state == MasterState.NOT_INITIALIZED) {
+                state = MasterState.INITIALIZING;
+                initialize();
+            }
+            return false;
+        }
+        return true;
+    }
+
+    void initialize() {
+        checkServiceThread();
+        executeLocally(new FallThroughRunnable() {
+            public void doRun() {
+                Set<String> instanceNames = node.factory.getLongInstanceNames();
+                final Map<String, Set<Long>> queueKeys = new HashMap<String, Set<Long>>();
+                for (String instanceName : instanceNames) {
+                    if (instanceName.startsWith("q:")) {
+                        Set<Long> keys = getStorageMap(instanceName).keySet();
+                        if (keys.size() > 0) {
+                            queueKeys.put(instanceName, new TreeSet<Long>(keys));
+                        }
+                    }
+                }
+                enqueueAndReturn(new Processable() {
+                    public void process() {
+                        Set<String> queueNames = queueKeys.keySet();
+                        for (String queueName : queueNames) {
+                            BQ q = getOrCreateBQ(queueName);
+                            Set<Long> keys = queueKeys.get(queueName);
+                            if (keys != null) {
+                                for (Long key : keys) {
+                                    Data keyData = toData(key);
+                                    q.keys.add(keyData);
+                                    q.queue.add(new QData(keyData));
+                                    q.nextKey = Math.max(q.nextKey, key);
+                                }
+                                q.nextKey += BILLION;
+                            }
+                        }
+                        state = MasterState.READY;
+                    }
+                });
+            }
+        });
+    }
+
+    class BQ {
+        final List<ScheduledAction> offerWaitList = new ArrayList<ScheduledAction>(1000);
+        final List<ScheduledAction> pollWaitList = new ArrayList<ScheduledAction>(1000);
+        final List<Lease> leases = new ArrayList<Lease>(1000);
+        final Set<Data> keys = new HashSet<Data>(1000);
+        final Queue<QData> queue = new LinkedList<QData>();
+        final int max = 200;
+        final String name;
+        long nextKey = 0;
+
+        BQ(String name) {
+            this.name = name;
+        }
+
+        void doGenerateKey(Request req) {
+            if (size() >= max) {
+                if (req.hasEnoughTimeToSchedule()) {
+                    addOfferAction(new OfferAction(req));
+                } else {
+                    req.response = -1L;
+                    returnResponse(req);
+                }
+            } else {
+                generateKeyAndLease(req);
+                returnResponse(req);
+            }
+        }
+
+        void generateKeyAndLease(Request req) {
+            leases.add(new Lease(req.caller));
+            req.response = nextKey++;
+        }
+
+        void offerKey(Request req) {
+            if (size() > max) {
+                req.response = OBJECT_REDO;
+            } else {
+                leases.add(new Lease(req.caller));
+                req.response = Boolean.TRUE;
+            }
+            returnResponse(req);
+        }
+
+        void doAddKey(Data key) {
+            if (keys.add(key)) {
+                if (leases.size() > 0) {
+                    leases.remove(0);
+                }
+                queue.offer(new QData(key));
+                takeOne();
+            }
+        }
+
+        void takeOne() {
+            while (pollWaitList.size() > 0) {
+                ScheduledAction scheduledActionPoll = pollWaitList.remove(0);
+                if (!scheduledActionPoll.expired() && scheduledActionPoll.isValid()) {
+                    scheduledActionPoll.consume();
+                    return;
+                }
+            }
+        }
+
+        void offerOne() {
+            while (offerWaitList.size() > 0) {
+                ScheduledAction scheduledActionOffer = offerWaitList.remove(0);
+                if (!scheduledActionOffer.expired() && scheduledActionOffer.isValid()) {
+                    scheduledActionOffer.consume();
+                    return;
+                }
+            }
+        }
+
+        void doTakeKey(Request req) {
+            QData qdata = queue.poll();
+            if (qdata != null) {
+                keys.remove(qdata.data);
+                req.response = qdata.data;
+                returnResponse(req);
+                offerOne();
+            } else {
+                if (req.hasEnoughTimeToSchedule()) {
+                    addPollAction(new PollAction(req));
+                } else {
+                    req.response = null;
+                    returnResponse(req);
+                }
+            }
+        }
+
+        void doPeekKey(Request req) {
+            QData qdata = queue.peek();
+            req.response = (qdata == null) ? null : qdata.data;
+            returnResponse(req);
+        }
+
+        void addPollAction(PollAction pollAction) {
+            pollWaitList.add(pollAction);
+            node.clusterManager.registerScheduledAction(pollAction);
+        }
+
+        void addOfferAction(OfferAction offerAction) {
+            offerWaitList.add(offerAction);
+            node.clusterManager.registerScheduledAction(offerAction);
+        }
+
+        public int size() {
+            return queue.size() + leases.size();
+        }
+
+        public class OfferAction extends ScheduledAction {
+
+            public OfferAction(Request request) {
+                super(request);
+            }
+
+            @Override
+            public boolean consume() {
+                generateKeyAndLease(request);
+                returnResponse(request);
+                setValid(false);
+                return true;
+            }
+
+            @Override
+            public void onExpire() {
+                request.response = -1L;
+                returnResponse(request);
+                setValid(false);
+            }
+        }
+
+        public class PollAction extends ScheduledAction {
+
+            public PollAction(Request request) {
+                super(request);
+            }
+
+            @Override
+            public boolean consume() {
+                doTakeKey(request);
+                setValid(false);
+                return true;
+            }
+
+            @Override
+            public void onExpire() {
+                request.response = null;
+                returnResponse(request);
+                setValid(false);
+            }
+        }
+    }
+
+    boolean sendKey(Request req, Data key) {
+        if (req == null) return false;
+        if (req.hasEnoughTimeToSchedule()) {
+            req.response = key;
+            returnResponse(req);
+            return true;
+        }
+        return false;
     }
 
     void doOffer(Request req) {

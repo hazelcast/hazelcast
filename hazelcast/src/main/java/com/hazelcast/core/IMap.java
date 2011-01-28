@@ -21,13 +21,13 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Concurrent, distributed, observable and queryable map.
@@ -36,9 +36,6 @@ import java.util.concurrent.TimeUnit;
  * @param <V> value
  */
 public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
-
-    Object MAP_LOCK = new Serializable() {
-    };
 
     /**
      * Returns the name of this map
@@ -110,13 +107,31 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     Future<V> removeAsync(K key);
 
     /**
+     * Tries to remove the entry with the given key from this map
+     * within specified timeout value. If the key is already locked by another
+     * thread and/or member, then this operation will wait timeout
+     * amount for acquiring the lock.
+     *
+     * @param key      key of the entry
+     * @param timeout  maximum time to wait for acquiring the lock
+     *                 for the key
+     * @param timeunit time unit for the timeout
+     * @return removed value of the entry
+     * @throws java.util.concurrent.TimeoutException
+     *          if lock cannot be acquired for the given key within timeout
+     */
+    Object tryRemove(K key, long timeout, TimeUnit timeunit) throws TimeoutException;
+
+    /**
      * Tries to put the given key, value into this map within specified
-     * timeout value.
+     * timeout value. If this method returns false, it means that
+     * the caller thread couldn't acquire the lock for the key within
+     * timeout duration, thus put operation is not successful.
      *
      * @param key      key of the entry
      * @param value    value of the entry
      * @param timeout  maximum time to wait
-     * @param timeunit time unit for the ttl
+     * @param timeunit time unit for the timeout
      * @return <tt>true</tt> if the put is successful, <tt>false</tt>
      *         otherwise.
      */

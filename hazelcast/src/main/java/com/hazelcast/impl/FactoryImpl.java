@@ -22,7 +22,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
-import com.hazelcast.impl.BlockingQueueManager.Poll;
 import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
@@ -384,6 +383,30 @@ public class FactoryImpl implements HazelcastInstance {
         }
         memberStats.setMember(node.getClusterImpl().getLocalMember());
         return memberStats;
+    }
+
+    /**
+     * Returns milliseconds by taking care of
+     * the overflow issues.
+     * TimeUnit.SECONDS.toMillis(Long.MAX_VALUE) would be negative
+     * for example. -1 means infinite.
+     *
+     * @param time
+     * @param unit
+     * @return
+     */
+    public static long toMillis(long time, TimeUnit unit) {
+        if (time == 0) {
+            return 0;
+        } else if (time < 0) {
+            return -1;
+        } else {
+            long millis = unit.toMillis(time);
+            if (millis < 1) {
+                millis = -1;
+            }
+            return millis;
+        }
     }
 
     @Override
@@ -1390,15 +1413,9 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean offer(Object obj) {
                 check(obj);
-                Offer offer = blockingQueueManager.new Offer();
                 try {
-                    boolean result = offer.offer(name, obj, 0);
-                    if (!result) {
-                        operationsCounter.incrementRejectedOffers();
-                    }
-                    operationsCounter.incrementOffers();
-                    return result;
-                } catch (InterruptedException e) {
+                    return offer(obj, 0, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException ignored) {
                     return false;
                 }
             }
@@ -1408,8 +1425,9 @@ public class FactoryImpl implements HazelcastInstance {
                 if (timeout < 0) {
                     timeout = 0;
                 }
-                Offer offer = blockingQueueManager.new Offer();
-                boolean result = offer.offer(name, obj, unit.toMillis(timeout));
+//                Offer offer = blockingQueueManager.new Offer();
+//                boolean result = offer.offer(name, obj, unit.toMillis(timeout));
+                boolean result = blockingQueueManager.offer(name, obj, unit.toMillis(timeout));
                 if (!result) {
                     operationsCounter.incrementRejectedOffers();
                 }
@@ -1426,14 +1444,16 @@ public class FactoryImpl implements HazelcastInstance {
 
             public Object peek() {
                 operationsCounter.incrementOtherOperations();
-                Poll poll = blockingQueueManager.new Poll();
-                return poll.peek(name);
+//                Poll poll = blockingQueueManager.new Poll();
+//                return poll.peek(name);
+                return blockingQueueManager.peek(name);
             }
 
             public Object poll() {
-                Poll poll = blockingQueueManager.new Poll();
                 try {
-                    Object result = poll.poll(name, 0);
+//                    Poll poll = blockingQueueManager.new Poll();
+//                    Object result = poll.poll(name, 0);
+                    Object result = blockingQueueManager.poll(name, 0);
                     if (result == null) {
                         operationsCounter.incrementEmptyPolls();
                     }
@@ -1448,8 +1468,9 @@ public class FactoryImpl implements HazelcastInstance {
                 if (timeout < 0) {
                     timeout = 0;
                 }
-                Poll poll = blockingQueueManager.new Poll();
-                Object result = poll.poll(name, unit.toMillis(timeout));
+//                Poll poll = blockingQueueManager.new Poll();
+//                Object result = poll.poll(name, unit.toMillis(timeout));
+                Object result = blockingQueueManager.poll(name, unit.toMillis(timeout));
                 if (result == null) {
                     operationsCounter.incrementEmptyPolls();
                 }
@@ -1458,8 +1479,9 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public Object take() throws InterruptedException {
-                Poll poll = blockingQueueManager.new Poll();
-                Object result = poll.poll(name, -1);
+//                Poll poll = blockingQueueManager.new Poll();
+//                Object result = poll.poll(name, -1);
+                Object result = blockingQueueManager.poll(name, -1);
                 if (result == null) {
                     operationsCounter.incrementEmptyPolls();
                 }
@@ -1892,9 +1914,7 @@ public class FactoryImpl implements HazelcastInstance {
                 try {
                     return method.invoke(mproxyReal, args);
                 } catch (Throwable e) {
-                    if (factory.restarted) {
-                        return invoke(proxy, method, args);
-                    } else if (e instanceof RuntimeException) {
+                    if (e instanceof RuntimeException) {
                         throw (RuntimeException) e;
                     } else {
                         throw new RuntimeException(e);
@@ -2023,6 +2043,23 @@ public class FactoryImpl implements HazelcastInstance {
                 } else if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 } else {
+                    throw new RuntimeException(e);
+                }
+            } finally {
+                afterCall();
+            }
+        }
+
+        public Object tryRemove(Object key, long time, TimeUnit timeunit) throws TimeoutException {
+            beforeCall();
+            try {
+                return mproxyReal.tryRemove(key, time, timeunit);
+            } catch (Throwable e) {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                } else if (e instanceof TimeoutException) {
+                    throw (TimeoutException) e;
+                } else{
                     throw new RuntimeException(e);
                 }
             } finally {
@@ -2343,7 +2380,7 @@ public class FactoryImpl implements HazelcastInstance {
                 if (ttl == 0) {
                     ttl = -1;
                 } else {
-                    ttl = timeunit.toMillis(ttl);
+                    ttl = toMillis(ttl, timeunit);
                 }
                 return put(key, value, -1, ttl);
             }
@@ -2363,7 +2400,7 @@ public class FactoryImpl implements HazelcastInstance {
                 if (timeout == 0) {
                     timeout = -1;
                 } else {
-                    timeout = timeunit.toMillis(timeout);
+                    timeout = toMillis(timeout, timeunit);
                 }
                 check(key);
                 check(value);
@@ -2382,6 +2419,8 @@ public class FactoryImpl implements HazelcastInstance {
                 }
                 if (ttl == 0) {
                     ttl = -1;
+                } else {
+                    ttl = toMillis(ttl, timeunit);
                 }
                 return putIfAbsent(key, value, -1, timeunit.toMillis(ttl));
             }
@@ -2406,6 +2445,13 @@ public class FactoryImpl implements HazelcastInstance {
                 mapOperationCounter.incrementRemoves();
                 MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
                 return mremove.remove(name, key, -1);
+            }
+
+            public Object tryRemove(Object key, long timeout, TimeUnit timeunit) throws TimeoutException {
+                check(key);
+                mapOperationCounter.incrementRemoves();
+                MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
+                return mremove.tryRemove(name, key, toMillis(timeout, timeunit));
             }
 
             public int size() {

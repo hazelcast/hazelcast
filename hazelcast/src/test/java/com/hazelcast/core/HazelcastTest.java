@@ -35,7 +35,7 @@ import static org.junit.Assert.assertNull;
  * HazelcastTest tests general behavior for one node.
  * Node is created in the beginning of the tests and the same for all test methods.
  * <p/>
- * Unit test is quick'n'fast.
+ * Unit test is whiteboard'n'fast.
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastTest {

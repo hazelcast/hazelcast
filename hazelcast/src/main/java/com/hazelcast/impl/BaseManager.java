@@ -267,6 +267,11 @@ public abstract class BaseManager {
         }
     }
 
+    public boolean returnRedoResponse(Request request) {
+        request.response = OBJECT_REDO;
+        return returnResponse(request, null);
+    }
+
     public boolean returnResponse(Request request) {
         return returnResponse(request, null);
     }
@@ -386,6 +391,17 @@ public abstract class BaseManager {
                         }
                     }
                 }
+            }
+            afterGettingResult(request);
+            return result;
+        }
+
+        public Object getResultAsIs() {
+            Object result = getResult();
+            if (result == OBJECT_NULL || result == null) {
+                result = null;
+            } else {
+                return result;
             }
             afterGettingResult(request);
             return result;
@@ -711,21 +727,23 @@ public abstract class BaseManager {
         }
 
         protected void doReleasePacket(Packet packet) {
-            checkServiceThread();
-            packet.released = true;
-            qServiceThreadPacketCache.offer(packet);
+
+//            checkServiceThread();
+//            packet.released = true;
+//            qServiceThreadPacketCache.offer(packet);
         }
 
         protected Packet doObtainPacket() {
-            checkServiceThread();
-            Packet p = qServiceThreadPacketCache.poll();
-            if (p != null) {
-                p.reset();
-            } else {
-                p = new Packet();
-            }
-            p.released = false;
-            return p;
+//            checkServiceThread();
+//            Packet p = qServiceThreadPacketCache.poll();
+//            if (p != null) {
+//                p.reset();
+//            } else {
+//                p = new Packet();
+//            }
+//            p.released = false;
+//            return p;
+            return new Packet();
         }
 
         @Override
@@ -1209,6 +1227,10 @@ public abstract class BaseManager {
                 return member;
         }
         return null;
+    }
+
+    protected boolean isVeryFirstMember() {
+        return isMaster() && node.clusterManager.getMembersBeforeSync().size() == 0;
     }
 
     protected boolean isMaster() {

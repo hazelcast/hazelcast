@@ -396,6 +396,11 @@ public class PartitionManager implements Runnable {
             for (Object recordObject : records) {
                 if (recordObject != null) {
                     Record record = (Record) recordObject;
+                    if (record.isLocked() && cmap.isMapForQueue()) {
+                        if (deadAddress.equals(record.getLock().getLockAddress())) {
+                            cmap.sendKeyToMaster(record.getKeyData());
+                        }
+                    }
                     cmap.onDisconnect(record, deadAddress);
                     if (record.isActive() && blocksOwnedAfterDead.contains(record.getBlockId())) {
                         cmap.markAsDirty(record);

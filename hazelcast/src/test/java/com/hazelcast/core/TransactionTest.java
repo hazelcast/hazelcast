@@ -404,6 +404,41 @@ public class TransactionTest {
     }
 
     @Test
+    public void testMapTryRemove() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapTryRemove");
+        IMap txnMap2 = Hazelcast.getMap("testMapTryRemove");
+        txnMap.put("1", "value1");
+        txnMap.lock("1");
+        assertEquals("value1", txnMap.get("1"));
+        assertEquals("value1", txnMap2.get("1"));
+        long start = System.currentTimeMillis();
+        try {
+            assertNull(txnMap2.tryRemove("1", 0, TimeUnit.SECONDS));
+            fail("Shouldn't be able to remove");
+        } catch (TimeoutException e) {
+            assertTrue(System.currentTimeMillis() - start < 1000);
+        }
+        start = System.currentTimeMillis();
+        try {
+            assertNull(txnMap2.tryRemove("1", 3, TimeUnit.SECONDS));
+            fail("Shouldn't be able to remove");
+        } catch (TimeoutException e) {
+            long took = (System.currentTimeMillis() - start);
+            assertTrue(took >= 3000 && took < 5000);
+        }
+        txnMap.unlock("1");
+        try {
+            assertEquals("value1", txnMap2.tryRemove("1", 0, TimeUnit.SECONDS));
+        } catch (TimeoutException e) {
+            fail();
+        }
+        assertNull(txnMap.get("1"));
+        assertNull(txnMap2.get("1"));
+        assertEquals(0, txnMap.size());
+        assertEquals(0, txnMap2.size());
+    }
+
+    @Test
     public void testMapRemoveWithTwoTxn3() {
         TransactionalMap txnMap = newTransactionalMapProxy("testMapRemoveWithTwoTxn3");
         TransactionalMap txnMap2 = newTransactionalMapProxy("testMapRemoveWithTwoTxn3");

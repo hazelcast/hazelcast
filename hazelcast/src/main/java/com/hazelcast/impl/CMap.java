@@ -125,6 +125,8 @@ public class CMap {
 
     final boolean cacheValue;
 
+    final boolean mapForQueue;
+
     volatile boolean ttlPerRecord = false;
 
     volatile long lastEvictionTime = 0;
@@ -141,6 +143,7 @@ public class CMap {
         this.node = concurrentMapManager.node;
         this.thisAddress = concurrentMapManager.thisAddress;
         this.name = name;
+        mapForQueue = name.startsWith("c:q:");
         instanceType = ConcurrentMapManager.getInstanceType(name);
         MapConfig mapConfig = null;
         String mapConfigName = name.substring(2);
@@ -896,6 +899,26 @@ public class CMap {
             req.response = Boolean.TRUE;
         } else {
             req.response = oldValue;
+        }
+        if (mapForQueue) {
+//            sendKeyToMaster(record.getKeyData());
+        }
+    }
+
+    boolean isMapForQueue () {
+        return mapForQueue;
+    }
+
+    void sendKeyToMaster(Data key) {
+        String queueName = name.substring(2);
+        if (concurrentMapManager.isMaster()) {
+            node.blockingQueueManager.doAddKey(queueName, key);
+        } else {
+            Packet packet = concurrentMapManager.obtainPacket();
+            packet.name = queueName;
+            packet.setKey(key);
+            packet.operation = ClusterOperation.BLOCKING_OFFER_KEY;
+            boolean sent = concurrentMapManager.send(packet, concurrentMapManager.getMasterAddress());
         }
     }
 

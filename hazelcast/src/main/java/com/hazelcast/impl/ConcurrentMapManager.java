@@ -29,11 +29,13 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
+import com.hazelcast.util.DistributedTimeoutException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -630,17 +632,25 @@ public class ConcurrentMapManager extends BaseManager {
             return txnalRemove(CONCURRENT_MAP_REMOVE_IF_SAME, name, key, value, timeout);
         }
 
-        private Object txnalRemove(ClusterOperation operation, String name, Object key, Object value,
-                                   long timeout) {
+        public Object tryRemove(String name, Object key, long timeout) throws TimeoutException {
+            Object result = txnalRemove(CONCURRENT_MAP_REMOVE, name, key, null, timeout);
+            if (result != null && result instanceof DistributedTimeoutException) {
+                throw new TimeoutException();
+            }
+            return result;
+        }
+
+        private Object txnalRemove(ClusterOperation operation, String name,
+                                   Object key, Object value, long timeout) {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (!txn.has(name, key)) {
                     MLock mlock = new MLock();
-                    boolean locked = mlock
-                            .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
-                    if (!locked)
+                    boolean locked = mlock.lockAndGetValue(name, key, timeout);
+                    if (!locked) {
                         throwCME(key);
+                    }
                     Object oldObject = null;
                     Data oldValue = mlock.oldValue;
                     if (oldValue != null) {
@@ -648,6 +658,9 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                     int removedValueCount = 0;
                     if (oldObject != null) {
+                        if (oldObject instanceof DistributedTimeoutException) {
+                            return oldObject;
+                        }
                         if (oldObject instanceof CMap.Values) {
                             CMap.Values values = (CMap.Values) oldObject;
                             removedValueCount = values.size();
@@ -666,7 +679,9 @@ public class ConcurrentMapManager extends BaseManager {
                     if (oldValue instanceof AddressAwareException) {
                         rethrowException(operation, (AddressAwareException) oldValue);
                     }
-                    backup(CONCURRENT_MAP_BACKUP_REMOVE);
+                    if (!(oldValue instanceof DistributedTimeoutException)) {
+                        backup(CONCURRENT_MAP_BACKUP_REMOVE);
+                    }
                 }
                 return oldValue;
             }
@@ -1863,6 +1878,9 @@ public class ConcurrentMapManager extends BaseManager {
         node.clusterManager.registerScheduledAction(scheduledAction);
     }
 
+    final DistributedTimeoutException distributedTimeoutException = new DistributedTimeoutException();
+    final Data dataTimeoutException = toData(distributedTimeoutException);
+
     abstract class SchedulableOperationHandler extends MTargetAwareOperationHandler {
 
         protected boolean shouldSchedule(Request request) {
@@ -1870,7 +1888,15 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         protected void onNoTimeToSchedule(Request request) {
-            request.response = null;
+            if (request.operation == CONCURRENT_MAP_REMOVE) {
+                if (request.local) {
+                    request.response = distributedTimeoutException;
+                } else {
+                    request.response = dataTimeoutException;
+                }
+            } else {
+                request.response = null;
+            }
             returnResponse(request);
         }
 

@@ -28,6 +28,7 @@ import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.util.DistributedTimeoutException;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -60,6 +61,7 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[CONCURRENT_MAP_TRY_PUT.getValue()] = new MapTryPutHandler();
         clientOperationHandlers[CONCURRENT_MAP_GET.getValue()] = new MapGetHandler();
         clientOperationHandlers[CONCURRENT_MAP_REMOVE.getValue()] = new MapRemoveHandler();
+        clientOperationHandlers[CONCURRENT_MAP_TRY_REMOVE.getValue()] = new MapTryRemoveHandler();
         clientOperationHandlers[CONCURRENT_MAP_REMOVE_IF_SAME.getValue()] = new MapRemoveIfSameHandler();
         clientOperationHandlers[CONCURRENT_MAP_REMOVE_MULTI.getValue()] = new MapRemoveMultiHandler();
         clientOperationHandlers[CONCURRENT_MAP_EVICT.getValue()] = new MapEvictHandler();
@@ -603,6 +605,17 @@ public class ClientService implements ConnectionListener {
                 v = toObject(value);
             }
             return toData(map.tryPut(key, v, ttl, TimeUnit.MILLISECONDS));
+        }
+    }
+
+    private class MapTryRemoveHandler extends ClientMapOperationHandlerWithTTL {
+        @Override
+        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
+            try {
+                return toData(map.tryRemove(key, ttl, TimeUnit.MILLISECONDS));
+            } catch (TimeoutException e) {
+                return toData(new DistributedTimeoutException());
+            }
         }
     }
 

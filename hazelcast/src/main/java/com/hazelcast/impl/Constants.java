@@ -24,7 +24,12 @@ public interface Constants {
     interface Objects {
         public static final Object OBJECT_DONE = new Object();
 
-        public static final Object OBJECT_NULL = new Object();
+        public static final Object OBJECT_NULL = new Object() {
+            @Override
+            public String toString() {
+                return "NULL_OBJECT";
+            }
+        };
 
         public static final Object OBJECT_NO_RESPONSE = new Object();
 
@@ -32,7 +37,12 @@ public interface Constants {
 
         public static final Object OBJECT_MEMBER_LEFT = new Object();
 
-        public static final Object OBJECT_REDO = new Object();
+        public static final Object OBJECT_REDO = new Object() {
+            @Override
+            public String toString() {
+                return "OBJECT_REDO";
+            }
+        };
     }
 
     interface IO {

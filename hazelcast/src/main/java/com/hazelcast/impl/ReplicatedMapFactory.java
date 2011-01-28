@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public final class ReplicatedMapFactory {
 
@@ -98,6 +99,10 @@ public final class ReplicatedMapFactory {
         @Override
         public V remove(Object key) {
             return distributedMap.remove(key);
+        }
+
+        public Object tryRemove(K key, long timeout, TimeUnit timeunit) throws TimeoutException {
+            return distributedMap.tryRemove(key, timeout, timeunit);
         }
 
         @Override

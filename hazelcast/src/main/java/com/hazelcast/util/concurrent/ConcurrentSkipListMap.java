@@ -1074,7 +1074,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * performance, not correctness.  To minimize mistakes as well as
      * to reduce hysteresis, the level is reduced by one only if the
      * topmost three levels look empty. Also, if the removed level
-     * looks non-empty after CAS, we try to change it back quick
+     * looks non-empty after CAS, we try to change it back whiteboard
      * before anyone notices our mistake! (This trick works pretty
      * well because this method will practically never make mistakes
      * unless current thread stalls immediately before first CAS, in

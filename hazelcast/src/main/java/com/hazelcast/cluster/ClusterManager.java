@@ -761,7 +761,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             Iterator<ScheduledAction> it = setScheduledActions.iterator();
             while (it.hasNext()) {
                 ScheduledAction sa = it.next();
-                if (sa.expired()) {
+                if (sa.expired() && sa.isValid()) {
                     sa.onExpire();
                     it.remove();
                 } else if (!sa.isValid()) {
