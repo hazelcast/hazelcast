@@ -522,6 +522,7 @@ public class TransactionTest {
         txnq.commit();
         assertEquals(1, txnq.size());
         assertEquals(1, txnq2.size());
+        assertEquals("item", txnq2.poll());
     }
 
     @Test
@@ -677,6 +678,9 @@ public class TransactionTest {
         txnq.commit();
         assertEquals(1, txnq.size());
         assertEquals(1, txnq2.size());
+        assertEquals("item2", txnq2.poll());
+        assertEquals(0, txnq.size());
+        assertEquals(0, txnq2.size());
     }
 
     @Test

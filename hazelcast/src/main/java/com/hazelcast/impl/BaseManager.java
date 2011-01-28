@@ -236,6 +236,10 @@ public abstract class BaseManager {
 
     abstract class ResponsiveOperationHandler implements PacketProcessor, RequestHandler {
 
+        public void process(Packet packet) {
+            processSimple(packet);
+        }
+
         public void processSimple(Packet packet) {
             Request request = Request.copy(packet);
             handle(request);

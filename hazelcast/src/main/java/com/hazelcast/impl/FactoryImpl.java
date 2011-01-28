@@ -1514,8 +1514,9 @@ public class FactoryImpl implements HazelcastInstance {
             @Override
             public int size() {
                 operationsCounter.incrementOtherOperations();
-                BlockingQueueManager.QSize qsize = blockingQueueManager.new QSize(name);
-                return qsize.getSize();
+//                BlockingQueueManager.QSize qsize = blockingQueueManager.new QSize(name);
+//                return qsize.getSize();
+                return blockingQueueManager.size(name);
             }
 
             public void addItemListener(ItemListener listener, boolean includeValue) {

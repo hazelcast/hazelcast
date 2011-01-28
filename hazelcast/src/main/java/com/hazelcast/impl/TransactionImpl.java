@@ -374,9 +374,7 @@ class TransactionImpl implements Transaction {
 
         public void rollbackQueue() {
             if (removed) {
-                offerAgain(true);
-                // if offer fails, no worries.
-                // there is a backup at the next member
+                factory.node.blockingQueueManager.rollbackPoll(name, key, value);
             }
         }
 
@@ -386,19 +384,7 @@ class TransactionImpl implements Transaction {
         }
 
         private void offerAgain(boolean first) {
-            Offer offer = null;
-            if (first) {
-                offer = factory.node.blockingQueueManager.new OfferFirst();
-            } else {
-                offer = factory.node.blockingQueueManager.new Offer();
-            }
-            try {
-                boolean offered = offer.offer(name, value, timeout, false);
-                if (!offered) {
-                    throw new RuntimeException("Failed to offer in " + timeout + " ms.");
-                }
-            } catch (InterruptedException ignored) {
-            }
+            factory.node.blockingQueueManager.offerCommit(name, key, value);
         }
 
         @Override

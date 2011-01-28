@@ -36,6 +36,7 @@ public enum ClusterOperation {
     BLOCKING_ADD_KEY(),
     BLOCKING_OFFER_KEY(),
     BLOCKING_GENERATE_KEY(),
+    BLOCKING_SIZE(),
     BLOCKING_TAKE_KEY(),
     BLOCKING_PEEK_KEY(),
     BLOCKING_QUEUE_POLL(),

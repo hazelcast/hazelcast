@@ -70,40 +70,30 @@ public class BlockingQueueManager extends BaseManager {
                 handleOffer(packet);
             }
         });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_SIZE, new InitializationAwareOperationHandler() {
+            @Override
+            void doOperation(BQ queue, Request request) {
+                queue.size(request);
+            }
+        });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_TAKE_KEY, new ResponsiveOperationHandler() {
             public void handle(Request request) {
                 handleTakeKey(request);
-            }
-
-            public void process(Packet packet) {
-                super.processSimple(packet);
             }
         });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_PEEK_KEY, new ResponsiveOperationHandler() {
             public void handle(Request request) {
                 handlePeekKey(request);
             }
-
-            public void process(Packet packet) {
-                super.processSimple(packet);
-            }
         });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_ADD_KEY, new ResponsiveOperationHandler() {
             public void handle(Request request) {
                 handleAddKey(request);
             }
-
-            public void process(Packet packet) {
-                super.processSimple(packet);
-            }
         });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_GENERATE_KEY, new ResponsiveOperationHandler() {
             public void handle(Request request) {
                 handleGenerateKey(request);
-            }
-
-            public void process(Packet packet) {
-                super.processSimple(packet);
             }
         });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_OFFER_KEY, new PacketProcessor() {
@@ -171,6 +161,19 @@ public class BlockingQueueManager extends BaseManager {
                 handleFullBlock(packet);
             }
         });
+    }
+
+    abstract class InitializationAwareOperationHandler extends ResponsiveOperationHandler {
+        abstract void doOperation(BQ queue, Request request);
+
+        public void handle(Request request) {
+            if (isMaster() && ready()) {
+                BQ bq = getOrCreateBQ(request.name);
+                doOperation(bq, request);
+            } else {
+                returnRedoResponse(request);
+            }
+        }
     }
 
     abstract class QueuePacketProcessor implements PacketProcessor {
@@ -1099,63 +1102,65 @@ public class BlockingQueueManager extends BaseManager {
 
     boolean addKeyAsync = false;
 
-    private void sendKeyToMaster(final String queueName, final Data key) {
+    private void sendKeyToMaster(final String queueName, final Data key, final boolean last) {
         enqueueAndReturn(new Processable() {
             public void process() {
                 if (isMaster()) {
-                    doAddKey(queueName, key);
+                    doAddKey(queueName, key, last);
                 } else {
                     Packet packet = obtainPacket();
                     packet.name = queueName;
                     packet.setKey(key);
                     packet.operation = ClusterOperation.BLOCKING_OFFER_KEY;
+                    packet.longValue = (last) ? 0 : 1;
                     boolean sent = send(packet, getMasterAddress());
                 }
             }
         });
     }
 
-    public boolean offer(final String name, Object obj, long timeout) throws InterruptedException {
+    public int size(String name) {
+        ThreadContext threadContext = ThreadContext.get();
+        TransactionImpl txn = threadContext.getCallContext().getTransaction();
+        int size = queueSize(name);
+        if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+            size += txn.size(name);
+        }
+        return size;
+    }
+
+    public boolean offer(String name, Object obj, long timeout) throws InterruptedException {
         Long key = generateKey(name, timeout);
+        ThreadContext threadContext = ThreadContext.get();
+        TransactionImpl txn = threadContext.getCallContext().getTransaction();
         if (key != -1) {
-            IMap imap = getStorageMap(name);
-            final Data dataKey = toData(key);
-            imap.put(dataKey, obj);
-            if (addKeyAsync) {
-                sendKeyToMaster(name, dataKey);
+            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                txn.attachPutOp(name, key, obj, timeout, true);
             } else {
-                addKey(name, dataKey);
+                storeQueueItem(name, key, obj, true);
             }
             return true;
         }
         return false;
     }
 
-    public boolean offerTxn(String name, Object obj, long timeout) throws InterruptedException {
-        Long key = generateKey(name, timeout);
-        if (key != -1) {
-            IMap imap = getStorageMap(name);
-            final Data dataKey = toData(key);
-            imap.put(dataKey, obj);
-            if (addKeyAsync) {
-                sendKeyToMaster(name, dataKey);
-            } else {
-                addKey(name, dataKey);
-            }
-            return true;
+    public void offerCommit(String name, Object key, Object obj) {
+        storeQueueItem(name, key, obj, true);
+    }
+
+    public void rollbackPoll(String name, Object key, Object obj) {
+        storeQueueItem(name, key, obj, false);
+    }
+
+    private void storeQueueItem(String name, Object key, Object obj, boolean last) {
+        IMap imap = getStorageMap(name);
+        final Data dataKey = toData(key);
+        imap.put(dataKey, obj);
+        if (addKeyAsync) {
+            sendKeyToMaster(name, dataKey, last);
+        } else {
+            addKey(name, dataKey, last);
         }
-        return false;
-        /**
-         * on commit
-         * if (addKeyAsync) {
-         *      sendKeyToMaster(name, dataKey);
-         * } else {
-         *      addKey(name, dataKey);
-         * }
-         *
-         * on rollback
-         *
-         */
     }
 
     public Object poll(String name, long timeout) throws InterruptedException {
@@ -1172,6 +1177,13 @@ public class BlockingQueueManager extends BaseManager {
             IMap imap = getStorageMap(name);
             try {
                 removedItem = imap.tryRemove(key, 0, TimeUnit.MILLISECONDS);
+                if (removedItem != null) {
+                    ThreadContext threadContext = ThreadContext.get();
+                    TransactionImpl txn = threadContext.getCallContext().getTransaction();
+                    if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                        txn.attachRemoveOp(name, key, removedItem, true);
+                    }
+                }
             } catch (TimeoutException e) {
             }
             long now = System.currentTimeMillis();
@@ -1206,10 +1218,11 @@ public class BlockingQueueManager extends BaseManager {
         return node.factory.getMap(queueName);
     }
 
-    public boolean addKey(String name, Data key) {
+    public boolean addKey(String name, Data key, boolean last) {
         MasterOp op = new MasterOp(ClusterOperation.BLOCKING_ADD_KEY, name, 0);
         op.request.key = key;
         op.request.setBooleanRequest();
+        op.request.longValue = (last) ? 0 : 1;
         op.initOp();
         return op.getResultAsBoolean();
     }
@@ -1219,6 +1232,13 @@ public class BlockingQueueManager extends BaseManager {
         op.request.setLongRequest();
         op.initOp();
         return (Long) op.getResultAsObject();
+    }
+
+    public int queueSize(String name) {
+        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_SIZE, name, 0);
+        op.request.setLongRequest();
+        op.initOp();
+        return ((Long) op.getResultAsObject()).intValue();
     }
 
     long getKey(String queueName) {
@@ -1299,20 +1319,20 @@ public class BlockingQueueManager extends BaseManager {
 
     final void handleOfferKey(Packet packet) {
         if (isMaster()) {
-            doAddKey(packet.name, packet.getKeyData());
+            doAddKey(packet.name, packet.getKeyData(), (packet.longValue == 0) ? true : false);
         }
         releasePacket(packet);
     }
 
-    final void doAddKey(String name, Data key) {
+    final void doAddKey(String name, Data key, boolean last) {
         BQ bq = getOrCreateBQ(name);
-        bq.doAddKey(key);
+        bq.doAddKey(key, last);
     }
 
     final void handleAddKey(Request req) {
         if (isMaster() && ready()) {
             BQ bq = getOrCreateBQ(req.name);
-            bq.doAddKey(req.key);
+            bq.doAddKey(req.key, (req.longValue == 0) ? true : false);
             req.key = null;
             req.response = Boolean.TRUE;
             returnResponse(req);
@@ -1395,7 +1415,7 @@ public class BlockingQueueManager extends BaseManager {
         final List<ScheduledAction> pollWaitList = new ArrayList<ScheduledAction>(1000);
         final List<Lease> leases = new ArrayList<Lease>(1000);
         final Set<Data> keys = new HashSet<Data>(1000);
-        final Queue<QData> queue = new LinkedList<QData>();
+        final LinkedList<QData> queue = new LinkedList<QData>();
         final int max = 200;
         final String name;
         long nextKey = 0;
@@ -1418,6 +1438,11 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
+        void size(Request req) {
+            req.response = Long.valueOf(queue.size());
+            returnResponse(req);
+        }
+
         void generateKeyAndLease(Request req) {
             leases.add(new Lease(req.caller));
             req.response = nextKey++;
@@ -1433,12 +1458,16 @@ public class BlockingQueueManager extends BaseManager {
             returnResponse(req);
         }
 
-        void doAddKey(Data key) {
+        void doAddKey(Data key, boolean last) {
             if (keys.add(key)) {
                 if (leases.size() > 0) {
                     leases.remove(0);
                 }
-                queue.offer(new QData(key));
+                if (last) {
+                    queue.offer(new QData(key));
+                } else {
+                    queue.offerFirst(new QData(key));
+                }
                 takeOne();
             }
         }

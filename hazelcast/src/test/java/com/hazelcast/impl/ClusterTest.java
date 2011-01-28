@@ -119,51 +119,6 @@ public class ClusterTest {
         assertEquals(0, a3.get());
     }
 
-    /**
-     * Test case for issue 289.
-     * <p/>
-     * 1. Create instanceA then instanceB, and then a queue on each (same queue name)
-     * 2. put a message on queue from instanceB
-     * 3. take message off on instanceA
-     * 4. shutdown instanceA, then check if queue is still empty on instanceB
-     *
-     * @throws Exception
-     */
-    @Test
-    public void testQueueAfterShutdown() throws Exception {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        IQueue q1 = h1.getQueue("default");
-        IQueue q2 = h2.getQueue("default");
-        q2.offer("item");
-        assertEquals(1, q1.size());
-        assertEquals(1, q2.size());
-        assertEquals("item", q1.take());
-        assertEquals(0, q1.size());
-        assertEquals(0, q2.size());
-        h1.shutdown();
-        assertEquals(0, q2.size());
-    }
-
-    /**
-     * @throws Exception
-     */
-    @Test
-    public void testQueueAfterShutdown2() throws Exception {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        IQueue q1 = h1.getQueue("default");
-        IQueue q2 = h2.getQueue("default");
-        q1.offer("item");
-        assertEquals(1, q1.size());
-        assertEquals(1, q2.size());
-        assertEquals("item", q2.take());
-        assertEquals(0, q1.size());
-        assertEquals(0, q2.size());
-        h2.shutdown();
-        assertEquals(0, q1.size());
-    }
-
     @Test
     public void testFirstNodeNoWait() throws Exception {
         final Config config = new Config();
@@ -2212,73 +2167,6 @@ public class ClusterTest {
         hz1.getLifecycleService().shutdown();
         Assert.assertTrue(hz2.getQueue("q").isEmpty());
         assertArrayEquals(new Object[]{"0", "1", "2", "3", "4"}, results.toArray());
-    }
-
-    @Test
-    public void queueEntriesShouldBeConsistentAfterShutdown() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        Queue<String> q1 = h1.getQueue("q");
-        Queue<String> q2 = h2.getQueue("q");
-        for (int i = 0; i < 5; i++) {
-            q1.offer("item" + i);
-        }
-        assertEquals(5, q1.size());
-        assertEquals(5, q2.size());
-        assertEquals("item0", q2.poll());
-        assertEquals("item1", q2.poll());
-        assertEquals("item2", q2.poll());
-        Thread.sleep(10000);
-        assertEquals(2, q1.size());
-        assertEquals(2, q2.size());
-        h1.shutdown();
-        Thread.sleep(5000);
-        assertEquals(2, q2.size());
-    }
-
-    @Test
-    public void queueEntriesShouldBeConsistentAfterShutdown2() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        Queue<String> q1 = h1.getQueue("q");
-        Queue<String> q2 = h2.getQueue("q");
-        for (int i = 0; i < 5; i++) {
-            q1.offer("item" + i);
-        }
-        assertEquals(5, q1.size());
-        assertEquals(5, q2.size());
-        assertEquals("item0", q1.poll());
-        assertEquals("item1", q1.poll());
-        assertEquals("item2", q1.poll());
-        Thread.sleep(10000);
-        assertEquals(2, q1.size());
-        assertEquals(2, q2.size());
-        h1.shutdown();
-        Thread.sleep(5000);
-        assertEquals(2, q2.size());
-    }
-
-    /**
-     * Test case for issue 323
-     */
-    @Test
-    public void testSuperClientWithQueues() {
-        Config configSuperClient = new Config();
-        configSuperClient.setSuperClient(true);
-        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(new Config());
-        final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(configSuperClient);
-        final Queue qSuper = hSuper.getQueue("default");
-        final Queue qNormal = hNormal.getQueue("default");
-        for (int i = 0; i < 12000; i++) {
-            String item = "item" + i;
-            qSuper.offer(item);
-            assertEquals(item, qNormal.poll());
-        }
-        for (int i = 0; i < 5000; i++) {
-            String item = "item" + i;
-            qNormal.offer(item);
-            assertEquals(item, qSuper.poll());
-        }
     }
 
     @Test(timeout = 100000)
