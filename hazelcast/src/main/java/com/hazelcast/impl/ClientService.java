@@ -196,10 +196,14 @@ public class ClientService implements ConnectionListener {
     public void connectionAdded(Connection connection) {
     }
 
-    public void connectionRemoved(Connection connection) {
-        ClientEndpoint clientEndpoint = mapClientEndpoints.remove(connection);
+    public void connectionRemoved(final Connection connection) {
+        final ClientEndpoint clientEndpoint = mapClientEndpoints.remove(connection);
         if (clientEndpoint != null) {
-            clientEndpoint.connectionRemoved(connection);
+            node.executorManager.executeNow(new FallThroughRunnable() {
+                public void doRun() {
+                    clientEndpoint.connectionRemoved(connection);
+                }
+            });
         }
     }
 

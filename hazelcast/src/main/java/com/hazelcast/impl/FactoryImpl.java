@@ -22,7 +22,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.BlockingQueueManager.Offer;
-import com.hazelcast.impl.BlockingQueueManager.QIterator;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
@@ -1506,9 +1505,10 @@ public class FactoryImpl implements HazelcastInstance {
             @Override
             public Iterator iterator() {
                 operationsCounter.incrementOtherOperations();
-                QIterator iterator = blockingQueueManager.new QIterator();
-                iterator.set(name);
-                return iterator;
+//                QIterator iterator = blockingQueueManager.new QIterator();
+//                iterator.set(name);
+//                return iterator;
+                return blockingQueueManager.iterate(name);
             }
 
             @Override
@@ -2060,7 +2060,7 @@ public class FactoryImpl implements HazelcastInstance {
                     throw (RuntimeException) e;
                 } else if (e instanceof TimeoutException) {
                     throw (TimeoutException) e;
-                } else{
+                } else {
                     throw new RuntimeException(e);
                 }
             } finally {

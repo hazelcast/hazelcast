@@ -752,8 +752,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (!txn.has(name, key, value)) {
                     MLock mlock = new MLock();
-                    boolean locked = mlock
-                            .lockAndGetValue(name, key, value, DEFAULT_TXN_TIMEOUT);
+                    boolean locked = mlock.lockAndGetValue(name, key, value, DEFAULT_TXN_TIMEOUT);
                     if (!locked)
                         throwCME(key);
                     boolean added = (mlock.oldValue == null);

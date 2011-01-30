@@ -20,9 +20,9 @@ package com.hazelcast.impl;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
-import com.hazelcast.impl.BlockingQueueManager.Offer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -270,6 +270,25 @@ class TransactionImpl implements Transaction {
             }
         }
         return lsEntries;
+    }
+
+    public Map newKeys(String name) {
+        Map newEntries = null;
+        for (TransactionRecord transactionRecord : transactionRecords) {
+            if (transactionRecord.name.equals(name)) {
+                if (!transactionRecord.removed) {
+                    if (transactionRecord.value != null) {
+                        if (transactionRecord.newRecord) {
+                            if (newEntries == null) {
+                                newEntries = new HashMap();
+                            }
+                            newEntries.put(transactionRecord.key, transactionRecord.value);
+                        }
+                    }
+                }
+            }
+        }
+        return newEntries;
     }
 
     @Override

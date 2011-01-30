@@ -70,6 +70,12 @@ public class BlockingQueueManager extends BaseManager {
                 handleOffer(packet);
             }
         });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_ITERATE, new InitializationAwareOperationHandler() {
+            @Override
+            void doOperation(BQ queue, Request request) {
+                queue.iterate(request);
+            }
+        });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_SIZE, new InitializationAwareOperationHandler() {
             @Override
             void doOperation(BQ queue, Request request) {
@@ -1218,6 +1224,81 @@ public class BlockingQueueManager extends BaseManager {
         return node.factory.getMap(queueName);
     }
 
+    public Iterator iterate(String name) {
+        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_ITERATE, name, 0);
+        op.initOp();
+        Keys keys = (Keys) op.getResultAsObject();
+        final Collection<Data> dataKeys = keys.getKeys();
+        final Collection allKeys = new ArrayList(dataKeys);
+        TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
+        Map txnOfferItems = null;
+        if (txn != null) {
+            txnOfferItems = txn.newKeys(name);
+            if (txnOfferItems != null) {
+                allKeys.addAll(txnOfferItems.keySet());
+            }
+        }
+        final Map txnMap = txnOfferItems;
+        final Iterator it = allKeys.iterator();
+        final IMap imap = getStorageMap(name);
+        return new Iterator() {
+            Object key = null;
+            Object next = null;
+            boolean hasNext = false;
+            boolean set = false;
+
+            public boolean hasNext() {
+                if (!set) {
+                    set();
+                }
+                boolean result = hasNext;
+                hasNext = false;
+                set = false;
+                return result;
+            }
+
+            public Object next() {
+                if (!set) {
+                    set();
+                }
+                Object result = next;
+                set = false;
+                next = null;
+                return result;
+            }
+
+            public void remove() {
+                if (key != null) {
+                    try {
+                        imap.tryRemove(key, 0, TimeUnit.MILLISECONDS);
+                    } catch (TimeoutException ignored) {
+                    }
+                }
+            }
+
+            void set() {
+                try {
+                    while (next == null) {
+                        hasNext = it.hasNext();
+                        if (hasNext) {
+                            key = it.next();
+                            if (txnMap != null) {
+                                next = txnMap.get(key);
+                            }
+                            if (next == null) {
+                                next = imap.get(key);
+                            }
+                        } else {
+                            return;
+                        }
+                    }
+                } finally {
+                    set = true;
+                }
+            }
+        };
+    }
+
     public boolean addKey(String name, Data key, boolean last) {
         MasterOp op = new MasterOp(ClusterOperation.BLOCKING_ADD_KEY, name, 0);
         op.request.key = key;
@@ -1416,7 +1497,7 @@ public class BlockingQueueManager extends BaseManager {
         final List<Lease> leases = new ArrayList<Lease>(1000);
         final Set<Data> keys = new HashSet<Data>(1000);
         final LinkedList<QData> queue = new LinkedList<QData>();
-        final int max = 200;
+        final int max = 20000;
         final String name;
         long nextKey = 0;
 
@@ -1527,6 +1608,15 @@ public class BlockingQueueManager extends BaseManager {
 
         public int size() {
             return queue.size() + leases.size();
+        }
+
+        public void iterate(Request request) {
+            Keys keys = new Keys();
+            for (QData qData : queue) {
+                keys.addKey(qData.data);
+            }
+            request.response = keys;
+            returnResponse(request);
         }
 
         public class OfferAction extends ScheduledAction {

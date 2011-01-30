@@ -22,20 +22,40 @@ import com.hazelcast.nio.Data;
 public interface Constants {
 
     interface Objects {
-        public static final Object OBJECT_DONE = new Object();
+        public static final Object OBJECT_DONE = new Object() {
+            @Override
+            public String toString() {
+                return "OBJECT_DONE";
+            }
+        };
 
         public static final Object OBJECT_NULL = new Object() {
             @Override
             public String toString() {
-                return "NULL_OBJECT";
+                return "OBJECT_NULL";
             }
         };
 
-        public static final Object OBJECT_NO_RESPONSE = new Object();
+        public static final Object OBJECT_NO_RESPONSE = new Object() {
+            @Override
+            public String toString() {
+                return "OBJECT_NO_RESPONSE";
+            }
+        };
 
-        public static final Object OBJECT_CANCELLED = new Object();
+        public static final Object OBJECT_CANCELLED = new Object() {
+            @Override
+            public String toString() {
+                return "OBJECT_CANCELLED";
+            }
+        };
 
-        public static final Object OBJECT_MEMBER_LEFT = new Object();
+        public static final Object OBJECT_MEMBER_LEFT = new Object() {
+            @Override
+            public String toString() {
+                return "OBJECT_MEMBER_LEFT";
+            }
+        };
 
         public static final Object OBJECT_REDO = new Object() {
             @Override
