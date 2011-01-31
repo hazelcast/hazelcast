@@ -149,6 +149,14 @@ public class ClientService implements ConnectionListener {
         }
     }
 
+    public void restart() {
+        for(ListenerManager.ListenerItem listener: node.listenerManager.listeners ){
+            if(listener instanceof ClientListener){
+                node.listenerManager.removeListener(listener.name, listener, listener.key);
+            }
+        }
+    }
+
     private int hash(int id, int maxCount) {
         return (id == Integer.MIN_VALUE) ? 0 : Math.abs(id) % maxCount;
     }
@@ -187,7 +195,7 @@ public class ClientService implements ConnectionListener {
     public ClientEndpoint getClientEndpoint(Connection conn) {
         ClientEndpoint clientEndpoint = mapClientEndpoints.get(conn);
         if (clientEndpoint == null) {
-            clientEndpoint = new ClientEndpoint(conn);
+            clientEndpoint = new ClientEndpoint(node, conn);
             mapClientEndpoints.put(conn, clientEndpoint);
         }
         return clientEndpoint;
@@ -980,35 +988,60 @@ public class ClientService implements ConnectionListener {
             } else if (getInstanceType(packet.name).equals(InstanceType.QUEUE)) {
                 IQueue<Object> queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
                 final String packetName = packet.name;
-                ItemListener itemListener = new ItemListener() {
-                    public void itemAdded(Object item) {
-                        Packet p = new Packet();
-                        p.set(packetName, ClusterOperation.EVENT, item, true);
-                        clientEndpoint.sendPacket(p);
-                    }
-
-                    public void itemRemoved(Object item) {
-                        Packet p = new Packet();
-                        p.set(packetName, ClusterOperation.EVENT, item, false);
-                        clientEndpoint.sendPacket(p);
-                    }
-                };
+                ItemListener itemListener = new ClientItemListener(clientEndpoint, packetName);
                 queue.addItemListener(itemListener, includeValue);
                 clientEndpoint.queueItemListeners.put(queue, itemListener);
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
                 ITopic<Object> topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
                 final String packetName = packet.name;
-                MessageListener<Object> messageListener = new MessageListener<Object>() {
-                    public void onMessage(Object msg) {
-                        Packet p = new Packet();
-                        p.set(packetName, ClusterOperation.EVENT, msg, null);
-                        clientEndpoint.sendPacket(p);
-                    }
-                };
+                MessageListener<Object> messageListener = new ClientMessageListener<Object>(clientEndpoint, packetName);
                 topic.addMessageListener(messageListener);
                 clientEndpoint.messageListeners.put(topic, messageListener);
             }
             packet.clearForResponse();
+        }
+    }
+
+    public interface ClientListener {
+
+    }
+
+    public class ClientItemListener implements ItemListener, ClientListener {
+        final ClientEndpoint clientEndpoint;
+        final String name;
+
+        ClientItemListener(ClientEndpoint clientEndpoint, String name) {
+            this.clientEndpoint = clientEndpoint;
+            this.name = name;
+        }
+
+        public void itemAdded(Object item) {
+            Packet p = new Packet();
+            p.set(name, ClusterOperation.EVENT, item, true);
+            clientEndpoint.sendPacket(p);
+        }
+
+        public void itemRemoved(Object item) {
+            Packet p = new Packet();
+            p.set(name, ClusterOperation.EVENT, item, false);
+            clientEndpoint.sendPacket(p);
+        }
+    }
+
+    public class ClientMessageListener<T> implements MessageListener<T>, ClientListener {
+        final ClientEndpoint clientEndpoint;
+        final String name;
+
+        ClientMessageListener(ClientEndpoint clientEndpoint, String name) {
+            this.clientEndpoint = clientEndpoint;
+            this.name = name;
+        }
+
+
+        public void onMessage(T msg) {
+            Packet p = new Packet();
+            p.set(name, ClusterOperation.EVENT, msg, null);
+            clientEndpoint.sendPacket(p);
         }
     }
 

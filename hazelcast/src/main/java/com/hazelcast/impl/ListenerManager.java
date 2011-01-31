@@ -36,7 +36,7 @@ import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class ListenerManager extends BaseManager {
-    private final List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
+    final List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
 
     ListenerManager(Node node) {
         super(node);

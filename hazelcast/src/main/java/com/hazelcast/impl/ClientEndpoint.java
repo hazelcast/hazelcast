@@ -32,16 +32,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
-public class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener, ConnectionListener {
-    final Connection conn;
-    final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
+public class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener, ConnectionListener, ClientService.ClientListener {
+    private final Connection conn;
+    private final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
     final Map<ITopic, MessageListener<Object>> messageListeners = new HashMap<ITopic, MessageListener<Object>>();
-    final Map<Integer, Map<IMap, List<Data>>> locks = new ConcurrentHashMap<Integer, Map<IMap, List<Data>>>();
-    final List<IMap> listeningMaps = new ArrayList<IMap>();
-    final List<Map.Entry<IMap, Object>> listeningKeysOfMaps = new ArrayList<Map.Entry<IMap, Object>>();
+    private final Map<Integer, Map<IMap, List<Data>>> locks = new ConcurrentHashMap<Integer, Map<IMap, List<Data>>>();
+    private final List<IMap> listeningMaps = new ArrayList<IMap>();
+    private final List<Map.Entry<IMap, Object>> listeningKeysOfMaps = new ArrayList<Map.Entry<IMap, Object>>();
     public Map<IQueue, ItemListener<Object>> queueItemListeners = new HashMap<IQueue, ItemListener<Object>>();
+    private final Node node;
 
-    ClientEndpoint(Connection conn) {
+    ClientEndpoint(Node node, Connection conn) {
+        this.node = node;
         this.conn = conn;
     }
 
@@ -192,7 +194,8 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     }
 
     public void connectionRemoved(Connection connection) {
-        if (connection.equals(this.conn)) {
+        LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) node.factory.getLifecycleService();
+        if (connection.equals(this.conn) && !lifecycleService.paused.get()) {
             for (Integer threadId : locks.keySet()) {
                 ThreadContext.get().setCallContext(getCallContext(threadId));
                 Map<IMap, List<Data>> mapOfLocks = locks.get(threadId);

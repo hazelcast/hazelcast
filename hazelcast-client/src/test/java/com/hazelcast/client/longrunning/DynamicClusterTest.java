@@ -42,12 +42,14 @@ import java.net.Inet4Address;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.client.HazelcastClientMapTest.getAllThreads;
 import static com.hazelcast.client.TestUtility.destroyClients;
 import static com.hazelcast.client.TestUtility.newHazelcastClient;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
 public class DynamicClusterTest {
@@ -1010,6 +1012,100 @@ public class DynamicClusterTest {
             Thread.sleep(10);
 //        latch.countDown();
             return x;
+        }
+    }
+
+        @Test
+    public void splitBrain() throws Exception {
+        boolean multicast = true;
+        Config c1 = new Config();
+        c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(multicast);
+        c1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(!multicast);
+        c1.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
+        c1.getNetworkConfig().getInterfaces().clear();
+        c1.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
+        c1.getNetworkConfig().getInterfaces().setEnabled(true);
+        Config c2 = new Config();
+        c2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(multicast);
+        c2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(!multicast);
+        c2.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
+        c2.getNetworkConfig().getInterfaces().clear();
+        c2.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
+        c2.getNetworkConfig().getInterfaces().setEnabled(true);
+        c1.getGroupConfig().setName("differentGroup");
+        c2.getGroupConfig().setName("sameGroup");
+        c1.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
+        c1.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        c2.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
+        c2.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
+
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
+        HazelcastClient client2 = HazelcastClient.newHazelcastClient(c2.getGroupConfig().getName(), c2.getGroupConfig().getPassword(), "127.0.0.1:5702");
+        client2.getTopic("def").addMessageListener(new MessageListener<Object>() {
+            public void onMessage(Object message) {
+            }
+        });
+        LifecycleCountingListener l = new LifecycleCountingListener();
+        h2.getLifecycleService().addLifecycleListener(l);
+        for (int i = 0; i < 500; i++) {
+            h2.getMap("default").put(i, "value" + i);
+            h2.getMultiMap("default").put(i, "value" + i);
+            h2.getMultiMap("default").put(i, "value0" + i);
+        }
+        assertEquals(500, h2.getMap("default").size());
+        assertEquals(1000, h2.getMultiMap("default").size());
+        assertEquals(1, h1.getCluster().getMembers().size());
+        assertEquals(1, h2.getCluster().getMembers().size());
+        Thread.sleep(2000);
+        c1.getGroupConfig().setName("sameGroup");
+        assertTrue(l.waitFor(LifecycleEvent.LifecycleState.RESTARTED, 40));
+        assertEquals(1, l.getCount(LifecycleEvent.LifecycleState.RESTARTING));
+        assertEquals(1, l.getCount(LifecycleEvent.LifecycleState.RESTARTED));
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
+        assertEquals(500, h1.getMap("default").size());
+        assertEquals(500, h2.getMap("default").size());
+        assertEquals(1000, h2.getMultiMap("default").size());
+        assertEquals(1000, h1.getMultiMap("default").size());
+        Thread.sleep(10000);
+    }
+
+    class LifecycleCountingListener implements LifecycleListener {
+        Map<LifecycleEvent.LifecycleState, AtomicInteger> counter = new ConcurrentHashMap<LifecycleEvent.LifecycleState, AtomicInteger>();
+        BlockingQueue<LifecycleEvent.LifecycleState> eventQueue = new LinkedBlockingQueue<LifecycleEvent.LifecycleState>();
+
+        LifecycleCountingListener() {
+            for (LifecycleEvent.LifecycleState state : LifecycleEvent.LifecycleState.values()) {
+                counter.put(state, new AtomicInteger(0));
+            }
+        }
+
+        public void stateChanged(LifecycleEvent event) {
+            counter.get(event.getState()).incrementAndGet();
+            eventQueue.offer(event.getState());
+        }
+
+        int getCount(LifecycleEvent.LifecycleState state) {
+            return counter.get(state).get();
+        }
+
+        boolean waitFor(LifecycleEvent.LifecycleState state, int seconds) {
+            long remainingMillis = TimeUnit.SECONDS.toMillis(seconds);
+            while (remainingMillis >= 0) {
+                LifecycleEvent.LifecycleState received = null;
+                try {
+                    long now = System.currentTimeMillis();
+                    received = eventQueue.poll(remainingMillis, TimeUnit.MILLISECONDS);
+                    remainingMillis -= (System.currentTimeMillis() - now);
+                } catch (InterruptedException e) {
+                    return false;
+                }
+                if (received != null && received == state) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
