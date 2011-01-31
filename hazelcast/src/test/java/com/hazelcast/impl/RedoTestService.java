@@ -370,16 +370,6 @@ public class RedoTestService extends TestUtil {
             });
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
-                    return q.size();
-                }
-
-                @Override
-                public String toString() {
-                    return "q.size";
-                }
-            });
-            addRunnable(es, lsFutureTasks, new Callable() {
-                public Object call() throws Exception {
                     return imap.values();
                 }
 

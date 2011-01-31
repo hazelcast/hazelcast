@@ -1569,16 +1569,25 @@ public class BlockingQueueManager extends BaseManager {
         final List<Lease> leases = new ArrayList<Lease>(1000);
         final Set<Data> keys = new HashSet<Data>(1000);
         final LinkedList<QData> queue = new LinkedList<QData>();
-        final int max = 20000;
+        final int maxSizePerJVM;
+        final long ttl;
         final String name;
         long nextKey = 0;
 
         BQ(String name) {
             this.name = name;
+            QueueConfig qConfig = node.getConfig().getQueueConfig(name.substring(Prefix.QUEUE.length()));
+            this.maxSizePerJVM = (qConfig.getMaxSizePerJVM() == 0) ? Integer.MAX_VALUE : qConfig.getMaxSizePerJVM();
+            this.ttl = (qConfig.getTimeToLiveSeconds() == 0) ? Integer.MAX_VALUE :
+                    TimeUnit.SECONDS.toMillis(qConfig.getTimeToLiveSeconds());
+        }
+
+        int maxSize() {
+            return (maxSizePerJVM == Integer.MAX_VALUE) ? Integer.MAX_VALUE : maxSizePerJVM * lsMembers.size();
         }
 
         void doGenerateKey(Request req) {
-            if (size() >= max) {
+            if (size() >= maxSize()) {
                 if (req.hasEnoughTimeToSchedule()) {
                     addOfferAction(new OfferAction(req));
                 } else {
@@ -1602,7 +1611,7 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         void offerKey(Request req) {
-            if (size() > max) {
+            if (size() > maxSize()) {
                 req.response = OBJECT_REDO;
             } else {
                 leases.add(new Lease(req.caller));
@@ -1663,8 +1672,30 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
-        void doTakeKey(Request req) {
+        QData pollValidItem() {
             QData qdata = queue.poll();
+            if (qdata == null) {
+                return null;
+            }
+            long now = System.currentTimeMillis();
+            if (isValid(qdata, now)) {
+                return qdata;
+            }
+            while (qdata != null) {
+                qdata = queue.poll();
+                if (isValid(qdata, now)) {
+                    return qdata;
+                }
+            }
+            return qdata;
+        }
+
+        boolean isValid(QData qdata, long now) {
+            return qdata != null && (now - qdata.createDate) < ttl;
+        }
+
+        void doTakeKey(Request req) {
+            QData qdata = pollValidItem();
             if (qdata != null) {
                 keys.remove(qdata.data);
                 req.response = qdata.data;

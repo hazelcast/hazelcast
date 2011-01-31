@@ -241,8 +241,10 @@ public class ClusterQueueTest {
 
     @Test
     public void testOfferLong() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        Config config = new Config();
+        config.getQueueConfig("default").setMaxSizePerJVM(100);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         final IQueue q1 = h1.getQueue("default");
         final IQueue q2 = h2.getQueue("default");
         for (int i = 0; i < 100; i++) {
