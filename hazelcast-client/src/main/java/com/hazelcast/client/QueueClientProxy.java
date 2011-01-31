@@ -23,11 +23,13 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.nio.Data;
 
 import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.IOUtil.toObject;
 import static com.hazelcast.client.ProxyHelper.check;
 
 public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
@@ -167,7 +169,12 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     @Override
     public java.util.Iterator<E> iterator() {
-        E[] entries = (E[]) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_ENTRIES, null, null);
+        Object[] dItems = (Object[]) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_ENTRIES, null, null);
+        E[] entries = (E[]) new Object[dItems.length];
+        int i = 0;
+        for (Object entry : dItems) {
+            entries[i++] = (E) toObject(((Data) entry).buffer);
+        }
         return new QueueItemIterator(entries, this);
     }
 

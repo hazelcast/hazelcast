@@ -150,8 +150,8 @@ public class ClientService implements ConnectionListener {
     }
 
     public void restart() {
-        for(ListenerManager.ListenerItem listener: node.listenerManager.listeners ){
-            if(listener instanceof ClientListener){
+        for (ListenerManager.ListenerItem listener : node.listenerManager.listeners) {
+            if (listener instanceof ClientListener) {
                 node.listenerManager.removeListener(listener.name, listener, listener.key);
             }
         }
@@ -253,7 +253,7 @@ public class ClientService implements ConnectionListener {
     private class QueueRemoveHandler extends ClientQueueOperationHandler {
         public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
             if (value != null) {
-                return toData(queue.remove(toObject(value)));
+                return toData(queue.remove(value));
             } else {
                 return (Data) queue.remove();
             }
@@ -288,6 +288,9 @@ public class ClientService implements ConnectionListener {
     private class QueueEntriesHandler extends ClientQueueOperationHandler {
         public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
             Object[] array = queue.toArray();
+            for (Object o : array) {
+                System.out.println(o);
+            }
             return toData(array);
         }
     }
@@ -1036,7 +1039,6 @@ public class ClientService implements ConnectionListener {
             this.clientEndpoint = clientEndpoint;
             this.name = name;
         }
-
 
         public void onMessage(T msg) {
             Packet p = new Packet();
