@@ -77,7 +77,6 @@ public class BlockingQueueManager extends BaseManager {
             }
         });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_SIZE, new InitializationAwareOperationHandler() {
-            @Override
             void doOperation(BQ queue, Request request) {
                 queue.size(request);
             }
@@ -95,6 +94,11 @@ public class BlockingQueueManager extends BaseManager {
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_ADD_KEY, new ResponsiveOperationHandler() {
             public void handle(Request request) {
                 handleAddKey(request);
+            }
+        });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_REMOVE_KEY, new InitializationAwareOperationHandler() {
+            void doOperation(BQ queue, Request request) {
+                queue.removeKey(request);
             }
         });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_GENERATE_KEY, new ResponsiveOperationHandler() {
@@ -1208,10 +1212,17 @@ public class BlockingQueueManager extends BaseManager {
         return imap.get(key);
     }
 
-    private Data takeKey(String name, long timeout) {
-        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, timeout);
-        op.initOp();
-        return (Data) op.getResultAsIs();
+    private Data takeKey(String name, long timeout) throws InterruptedException {
+        try {
+            MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, timeout);
+            op.initOp();
+            return (Data) op.getResultAsIs();
+        } catch (Exception e) {
+            if (e instanceof RuntimeInterruptedException) {
+                throw new InterruptedException();
+            }
+        }
+        return null;
     }
 
     private Data peekKey(String name) {
@@ -1224,7 +1235,7 @@ public class BlockingQueueManager extends BaseManager {
         return node.factory.getMap(queueName);
     }
 
-    public Iterator iterate(String name) {
+    public Iterator iterate(final String name) {
         MasterOp op = new MasterOp(ClusterOperation.BLOCKING_ITERATE, name, 0);
         op.initOp();
         Keys keys = (Keys) op.getResultAsObject();
@@ -1270,7 +1281,9 @@ public class BlockingQueueManager extends BaseManager {
             public void remove() {
                 if (key != null) {
                     try {
-                        imap.tryRemove(key, 0, TimeUnit.MILLISECONDS);
+                        Data dataKey = toData(key);
+                        imap.tryRemove(dataKey, 0, TimeUnit.MILLISECONDS);
+                        removeKey(name, dataKey);
                     } catch (TimeoutException ignored) {
                     }
                 }
@@ -1308,11 +1321,26 @@ public class BlockingQueueManager extends BaseManager {
         return op.getResultAsBoolean();
     }
 
-    public long generateKey(String name, long timeout) {
-        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GENERATE_KEY, name, timeout);
-        op.request.setLongRequest();
+    public boolean removeKey(String name, Data key) {
+        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_REMOVE_KEY, name, 0);
+        op.request.key = key;
+        op.request.setBooleanRequest();
         op.initOp();
-        return (Long) op.getResultAsObject();
+        return op.getResultAsBoolean();
+    }
+
+    public long generateKey(String name, long timeout) throws InterruptedException {
+        try {
+            MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GENERATE_KEY, name, timeout);
+            op.request.setLongRequest();
+            op.initOp();
+            return (Long) op.getResultAsObject();
+        } catch (Exception e) {
+            if (e instanceof RuntimeInterruptedException) {
+                throw new InterruptedException();
+            }
+        }
+        return -1;
     }
 
     public int queueSize(String name) {
@@ -1491,6 +1519,50 @@ public class BlockingQueueManager extends BaseManager {
         });
     }
 
+    public void addItemListener(final String name, final ItemListener listener, final boolean includeValue) {
+        IMap map = getStorageMap(name);
+        map.addEntryListener(new QueueItemListener(listener, includeValue), includeValue);
+    }
+
+    class QueueItemListener implements EntryListener {
+        final ItemListener itemListener;
+        final boolean includeValue;
+
+        QueueItemListener(ItemListener itemListener, boolean includeValue) {
+            this.includeValue = includeValue;
+            this.itemListener = itemListener;
+        }
+
+        public void entryAdded(EntryEvent entryEvent) {
+            Object item = (includeValue) ? entryEvent.getValue() : null;
+            itemListener.itemAdded(item);
+        }
+
+        public void entryRemoved(EntryEvent entryEvent) {
+            Object item = (includeValue) ? entryEvent.getValue() : null;
+            itemListener.itemRemoved(item);
+        }
+
+        public void entryUpdated(EntryEvent entryEvent) {
+        }
+
+        public void entryEvicted(EntryEvent entryEvent) {
+        }
+    }
+
+    public void removeItemListener(final String name, final ItemListener listener) {
+        List<ListenerManager.ListenerItem> lsListenerItems = node.listenerManager.getListeners();
+        for (ListenerManager.ListenerItem listenerItem : lsListenerItems) {
+            if (listenerItem.listener instanceof QueueItemListener) {
+                QueueItemListener queueListener = (QueueItemListener) listenerItem.listener;
+                if (queueListener.itemListener == listener) {
+                    node.listenerManager.getListeners().remove(listenerItem);
+                    return;
+                }
+            }
+        }
+    }
+
     class BQ {
         final List<ScheduledAction> offerWaitList = new ArrayList<ScheduledAction>(1000);
         final List<ScheduledAction> pollWaitList = new ArrayList<ScheduledAction>(1000);
@@ -1551,6 +1623,24 @@ public class BlockingQueueManager extends BaseManager {
                 }
                 takeOne();
             }
+        }
+
+        public void removeKey(Request request) {
+            if (keys.remove(request.key)) {
+                Iterator<QData> it = queue.iterator();
+                while (it.hasNext()) {
+                    QData qData = it.next();
+                    if (qData.data.equals(request.key)) {
+                        it.remove();
+                        request.response = Boolean.TRUE;
+                        break;
+                    }
+                }
+            }
+            if (request.response == null) {
+                request.response = Boolean.FALSE;
+            }
+            returnResponse(request);
         }
 
         void takeOne() {

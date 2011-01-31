@@ -251,6 +251,10 @@ public class ListenerManager extends BaseManager {
         listeners.add(listenerItem);
     }
 
+    public List<ListenerItem> getListeners() {
+        return listeners;
+    }
+
     public synchronized void removeListener(String name, Object listener, Object key) {
         for (ListenerItem listenerItem : listeners) {
             if (listener == listenerItem.listener && listenerItem.name.equals(name)) {

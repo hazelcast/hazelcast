@@ -1520,12 +1520,13 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void addItemListener(ItemListener listener, boolean includeValue) {
-                listenerManager.addListener(name, listener, null, includeValue,
-                        getInstanceType());
+//                listenerManager.addListener(name, listener, null, includeValue,
+//                        getInstanceType());
+                blockingQueueManager.addItemListener(name, listener, includeValue);
             }
 
             public void removeItemListener(ItemListener listener) {
-                listenerManager.removeListener(name, listener, null);
+                blockingQueueManager.removeItemListener(name, listener);
             }
 
             public String getName() {
