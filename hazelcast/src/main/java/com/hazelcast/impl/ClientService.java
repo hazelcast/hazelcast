@@ -288,9 +288,6 @@ public class ClientService implements ConnectionListener {
     private class QueueEntriesHandler extends ClientQueueOperationHandler {
         public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
             Object[] array = queue.toArray();
-            for (Object o : array) {
-                System.out.println(o);
-            }
             return toData(array);
         }
     }
