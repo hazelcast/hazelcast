@@ -17,10 +17,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.examples.TestApp;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
@@ -2378,5 +2375,62 @@ public class ClusterTest {
         assertTrue(lockMap2);
         hzi1.getLifecycleService().shutdown();
         hzi2.getLifecycleService().shutdown();
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void unresolvableHostName() {
+        Config config = new Config();
+        config.getGroupConfig().setName("abc");
+        config.getGroupConfig().setPassword("def");
+        Join join = config.getNetworkConfig().getJoin();
+        join.getMulticastConfig().setEnabled(false);
+        join.getTcpIpConfig().setEnabled(true);
+        join.getTcpIpConfig().setMembers(Arrays.asList(new String[]{"localhost", "nonexistinghost"}));
+        Hazelcast.init(config);
+        Hazelcast.getCluster().getMembers();
+    }
+
+    @Test
+    public void mPutAllAndTransaction() {
+        IMap<Integer, Integer> map = Hazelcast.getMap("def");
+        Hazelcast.getTransaction().begin();
+        Map<Integer, Integer> localMap = new HashMap<Integer, Integer>();
+        for (int i = 0; i < 10; i++) {
+            localMap.put(i, i);
+        }
+        map.putAll(localMap);
+        Hazelcast.getTransaction().rollback();
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void multimapShouldntBeAffectedByDefaultMapConfig() {
+        Config config = new XmlConfigBuilder().build();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(0);
+        mapStoreConfig.setClassName("com.hazelcast.examples.DummyStore");
+        config.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+        Hazelcast.init(config);
+        MultiMap<Object, Object> mmap = Hazelcast.getMultiMap("testmultimap");
+        mmap.put("foo", "1");
+        mmap.put("foo", "2");
+        mmap.get("foo").size();
+    }
+
+    @Test
+    public void issue427QOfferIncorrectWithinTransaction() {
+        Config config = new Config();
+        config.getQueueConfig("default").setMaxSizePerJVM(100);
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        h.getTransaction().begin();
+        IQueue q = h.getQueue("default");
+        for (int i = 0; i < 100; i++) {
+            q.offer(i);
+        }
+        boolean result = q.offer(101);
+        assertEquals(100, q.size());
+        assertFalse(result);
+        h.getLifecycleService().shutdown();
     }
 }

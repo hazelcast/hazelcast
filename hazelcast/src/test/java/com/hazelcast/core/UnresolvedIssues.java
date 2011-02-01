@@ -18,6 +18,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.Join;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.impl.GroupProperties;
@@ -32,7 +33,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -163,37 +168,5 @@ public class UnresolvedIssues extends TestUtil {
         public void setValue(String value) {
             this.value = value;
         }
-    }
-
-    @Test
-    @Ignore
-    public void issue427QOfferIncorrectWithinTransaction() {
-        Config config = new Config();
-        config.getQueueConfig("default").setMaxSizePerJVM(100);
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-        h.getTransaction().begin();
-        IQueue q = h.getQueue("default");
-        for (int i = 0; i < 100; i++) {
-            q.offer(i);
-        }
-        boolean result = q.offer(101);
-        assertEquals(100, q.size());
-        assertFalse(result);
-        h.getLifecycleService().shutdown();
-    }
-
-    @Test
-    public void multimapShouldntBeAffectedByDefaultMapConfig() {
-        Config config = new XmlConfigBuilder().build();
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setWriteDelaySeconds(0);
-        mapStoreConfig.setClassName("com.hazelcast.examples.DummyStore");
-        config.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
-        Hazelcast.init(config);
-        MultiMap<Object, Object> mmap = Hazelcast.getMultiMap("testmultimap");
-        mmap.put("foo", "1");
-        mmap.put("foo", "2");
-        mmap.get("foo").size();
     }
 }

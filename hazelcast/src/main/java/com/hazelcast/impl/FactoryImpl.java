@@ -2643,30 +2643,37 @@ public class FactoryImpl implements HazelcastInstance {
 
             public void putAll(Map map) {
                 Set<Entry> entries = map.entrySet();
-                final ExecutorService es = Executors.newFixedThreadPool(10);
-                final CountDownLatch latch = new CountDownLatch(entries.size());
-                final List<Throwable> throwables = new CopyOnWriteArrayList<Throwable>();
-                for (final Entry entry : entries) {
-                    es.execute(new Runnable() {
-                        public void run() {
-                            try {
-                                put(entry.getKey(), entry.getValue());
-                            } catch (Throwable e) {
-                                throwables.add(e);
-                            } finally {
-                                latch.countDown();
+                TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
+                if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                    for (final Entry entry : entries) {
+                        put(entry.getKey(), entry.getValue());
+                    }
+                } else {
+                    final ExecutorService es = Executors.newFixedThreadPool(10);
+                    final CountDownLatch latch = new CountDownLatch(entries.size());
+                    final List<Throwable> throwables = new CopyOnWriteArrayList<Throwable>();
+                    for (final Entry entry : entries) {
+                        es.execute(new Runnable() {
+                            public void run() {
+                                try {
+                                    put(entry.getKey(), entry.getValue());
+                                } catch (Throwable e) {
+                                    throwables.add(e);
+                                } finally {
+                                    latch.countDown();
+                                }
                             }
-                        }
-                    });
-                }
-                try {
-                    latch.await();
-                    es.shutdown();
-                } catch (InterruptedException ignored) {
-                }
-                if (!throwables.isEmpty()) {
-                    final Throwable throwable = throwables.get(0);
-                    throw new RuntimeException(throwable.getMessage(), throwable);
+                        });
+                    }
+                    try {
+                        latch.await();
+                        es.shutdown();
+                    } catch (InterruptedException ignored) {
+                    }
+                    if (!throwables.isEmpty()) {
+                        final Throwable throwable = throwables.get(0);
+                        throw new RuntimeException(throwable.getMessage(), throwable);
+                    }
                 }
             }
 
