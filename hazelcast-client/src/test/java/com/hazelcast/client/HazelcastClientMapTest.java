@@ -17,14 +17,12 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.*;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.SqlPredicate;
 import org.junit.AfterClass;
 import org.junit.Test;
 
@@ -840,6 +838,24 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             assertEquals(c.getAge(), 23);
             assertTrue(c.isActive());
         }
+    }
+
+    @Test
+    public void testSqlPredicate(){
+        HazelcastInstance h = getHazelcastInstance();
+        HazelcastClient hClient = getHazelcastClient();
+        IMap<Integer, Employee> map = hClient.getMap("testSqlPredicate");
+        for(int i=0;i<100;i++){
+          h.getMap("testSqlPredicate").put(i, new Employee("" + i, i,i%2==0, i));
+        }
+
+        Set<Entry<Integer, Employee>> set = map.entrySet(new SqlPredicate("active AND age < 30"));
+        for(Entry<Integer, Employee> entry: set){
+            System.out.println(entry.getValue());
+            assertTrue(entry.getValue().age < 30);
+            assertTrue(entry.getValue().active);
+        }
+
     }
 
     public static class Employee implements Serializable {

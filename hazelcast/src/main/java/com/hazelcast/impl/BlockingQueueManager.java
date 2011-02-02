@@ -1628,7 +1628,7 @@ public class BlockingQueueManager extends BaseManager {
                 if (last) {
                     queue.offer(new QData(key));
                 } else {
-                    queue.offerFirst(new QData(key));
+                    queue.addFirst(new QData(key));
                 }
                 takeOne();
             }
