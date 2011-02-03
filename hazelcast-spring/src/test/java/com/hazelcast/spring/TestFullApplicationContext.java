@@ -27,6 +27,8 @@ import java.util.concurrent.ExecutorService;
 
 import javax.annotation.Resource;
 
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.NearCacheConfig;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -109,6 +111,23 @@ public class TestFullApplicationContext {
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
         assertEquals("hz.ADD_NEW_ENTRY", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
+
+        // Test that the testMapConfig has a mapStoreConfig and it is correct
+        MapStoreConfig testMapStoreConfig = testMapConfig.getMapStoreConfig();
+        assertNotNull(testMapStoreConfig);
+        assertEquals("com.hazelcast.spring.DummyStore", testMapStoreConfig.getClassName());
+        assertTrue(testMapStoreConfig.isEnabled());
+        assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
+
+        // Test that the testMapConfig has a nearCacheConfig and it is correct
+        NearCacheConfig testNearCacheConfig = testMapConfig.getNearCacheConfig();
+        assertNotNull(testNearCacheConfig);
+        assertEquals(0, testNearCacheConfig.getTimeToLiveSeconds());
+        assertEquals(60, testNearCacheConfig.getMaxIdleSeconds());
+        assertEquals("LRU", testNearCacheConfig.getEvictionPolicy());
+        assertEquals(5000, testNearCacheConfig.getMaxSize());
+        assertTrue(testNearCacheConfig.isInvalidateOnChange());
+
         MapConfig simpleMapConfig = config.getMapConfig("simpleMap");
         assertNotNull(simpleMapConfig);
         assertEquals("simpleMap", simpleMapConfig.getName());
@@ -118,6 +137,12 @@ public class TestFullApplicationContext {
         assertEquals(50, simpleMapConfig.getEvictionPercentage());
         assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
         assertEquals("hz.LATEST_UPDATE", simpleMapConfig.getMergePolicy());
+
+        // Test that the simpleMapConfig does NOT have a mapStoreConfig
+        assertNull(simpleMapConfig.getMapStoreConfig());
+
+        // Test that the simpleMapConfig does NOT have a nearCacheConfig
+        assertNull(simpleMapConfig.getNearCacheConfig());
     }
 
     @Test
