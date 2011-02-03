@@ -79,17 +79,21 @@ public class ListenerManager extends BaseManager {
 
     public void syncForAdd() {
         for (ListenerItem listenerItem : listeners) {
-            registerListenerWithNoResponse(listenerItem.name, listenerItem.key, listenerItem.includeValue);
+            if (!listenerItem.localListener) {
+                registerListenerWithNoResponse(listenerItem.name, listenerItem.key, listenerItem.includeValue);
+            }
         }
     }
 
     public void syncForAdd(Address newAddress) {
         for (ListenerItem listenerItem : listeners) {
-            Data dataKey = null;
-            if (listenerItem.key != null) {
-                dataKey = ThreadContext.get().toData(listenerItem.key);
+            if (!listenerItem.localListener) {
+                Data dataKey = null;
+                if (listenerItem.key != null) {
+                    dataKey = ThreadContext.get().toData(listenerItem.key);
+                }
+                sendAddListener(newAddress, listenerItem.name, dataKey, listenerItem.includeValue);
             }
-            sendAddListener(newAddress, listenerItem.name, dataKey, listenerItem.includeValue);
         }
     }
 
