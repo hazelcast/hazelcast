@@ -19,6 +19,9 @@ package com.hazelcast.spring;
 
 import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 
+import com.hazelcast.spring.hibernate.CacheProviderBeanDefinitionParser;
+import com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser;
+
 public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
 
     public void init() {
@@ -26,9 +29,13 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("hazelcast", new HazelcastBeanDefinitionParser());
         registerBeanDefinitionParser("client", new HazelcastClientBeanDefinitionParser());
         
+        registerBeanDefinitionParser("hibernate-cache-rovider", new CacheProviderBeanDefinitionParser());
+        registerBeanDefinitionParser("hibernate-region-factory", new RegionFactoryBeanDefinitionParser());
+        
         final String[] types = {"map", "multiMap",
             "queue", "topic", "set", "list",
             "executorService", "idGenerator", "atomicNumber"};
+        
         for (final String type : types){
             registerBeanDefinitionParser(type, new HazelcastInstanceBeanDefinitionParser(type));
         }

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:hz="http://www.hazelcast.com/schema/config"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+		http://www.hazelcast.com/schema/config
+		http://www.hazelcast.com/schema/config/hazelcast-spring.xsd">
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+        <property name="locations">
+            <list>
+                <value>classpath:/hazelcast-default.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <hz:hazelcast id="instance">
+        <hz:config>
+            <hz:group
+                    name="${cluster.group.name}"
+                    password="${cluster.group.password}"/>
+            <hz:network port="${cluster.port}" port-auto-increment="false">
+                <hz:join>
+                    <hz:multicast enabled="false"
+                                  multicast-group="224.2.2.3"
+                                  multicast-port="54327"/>
+                    <hz:tcp-ip enabled="true">
+                        <hz:members>${cluster.members}</hz:members>
+                    </hz:tcp-ip>
+                </hz:join>
+                <hz:interfaces enabled="false">
+                    <hz:interface>10.10.1.*</hz:interface>
+                </hz:interfaces>
+                
+            </hz:network>
+            <hz:executor-service name="testExec"
+                                 core-pool-size="2"
+                                 max-pool-size="32"
+                                 keep-alive-seconds="30"/>
+        </hz:config>
+    </hz:hazelcast>
+
+	<hz:hibernate-cache-rovider id="cacheProvider" instance-ref="instance" />
+	<hz:hibernate-region-factory id="regionFactory" instance-ref="instance" />
+	    
+</beans>
