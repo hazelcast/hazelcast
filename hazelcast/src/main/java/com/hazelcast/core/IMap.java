@@ -240,6 +240,25 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     void unlockMap();
 
     /**
+     * Adds a local entry listener for this map. Added listener will be only
+     * listening for the events (add/remove/update/evict) of the locally owned entries.
+     * <p/>
+     * Note that entries in distributed map are partitioned across
+     * the cluster members; each member owns and manages the some portion of the
+     * entries. Owned entries are called local entries. This
+     * listener will be listening for the events of local entries. Let's say
+     * your cluster has member1 and member2. On member2 you added a local listener and from
+     * member1, you call <code>map.put(key2, value2)</code>.
+     * If the key2 is owned by member2 then the local listener will be
+     * notified for the add/update event. Also note that entries can migrate to
+     * other nodes for load balancing and/or membership change.
+     *
+     * @param listener entry listener
+     * @see #localKeySet()
+     */
+    void addLocalEntryListener(EntryListener<K, V> listener);
+
+    /**
      * Adds an entry listener for this map. Listener will get notified
      * for all map add/remove/update/evict events.
      *

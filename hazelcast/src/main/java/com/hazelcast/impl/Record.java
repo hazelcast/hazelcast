@@ -196,13 +196,16 @@ public final class Record implements MapEntry {
 
     public long getCost() {
         long cost = 0;
-        if (getValueData() != null) {
-            cost = getValueData().size();
+        // avoid race condition with local references
+        final Data dataValue = getValueData();
+        final Data dataKey = getKeyData();
+        if (dataValue != null) {
+            cost = dataValue.size();
             if (copyCount > 0) {
                 cost *= copyCount;
             }
             if (valueObject != null) {
-                cost += getValueData().size();
+                cost += dataValue.size();
             }
         } else if (getMultiValues() != null && getMultiValues().size() > 0) {
             for (Data data : getMultiValues()) {
@@ -211,7 +214,7 @@ public final class Record implements MapEntry {
                 }
             }
         }
-        return cost + getKeyData().size() + 403;
+        return cost + dataKey.size() + 403;
     }
 
     public boolean containsValue(Data value) {

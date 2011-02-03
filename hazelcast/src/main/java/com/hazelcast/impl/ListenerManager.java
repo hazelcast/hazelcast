@@ -223,6 +223,16 @@ public class ListenerManager extends BaseManager {
         }
     }
 
+    public void addLocalListener(final String name, Object listener, Instance.InstanceType instanceType) {
+        ListenerItem listenerItem = new ListenerItem(name, null, listener, true, instanceType, true);
+        listeners.add(listenerItem);
+        node.concurrentMapManager.enqueueAndWait(new Processable() {
+            public void process() {
+                node.concurrentMapManager.getOrCreateMap(name).addListener(null, node.getThisAddress(), true);
+            }
+        }, 10);
+    }
+
     public void addListener(String name, Object listener, Object key, boolean includeValue,
                             Instance.InstanceType instanceType) {
         boolean remotelyRegister = true;
@@ -363,18 +373,25 @@ public class ListenerManager extends BaseManager {
         public Object listener;
         public boolean includeValue;
         public Instance.InstanceType instanceType;
+        public boolean localListener = false;
 
         public ListenerItem() {
         }
 
         public ListenerItem(String name, Object key, Object listener, boolean includeValue,
                             Instance.InstanceType instanceType) {
+            this(name, key, listener, includeValue, instanceType, false);
+        }
+
+        public ListenerItem(String name, Object key, Object listener, boolean includeValue,
+                            Instance.InstanceType instanceType, boolean localListener) {
             super();
             this.key = key;
             this.listener = listener;
             this.name = name;
             this.includeValue = includeValue;
             this.instanceType = instanceType;
+            this.localListener = localListener;
         }
 
         public boolean listens(DataAwareEntryEvent dataAwareEntryEvent) {

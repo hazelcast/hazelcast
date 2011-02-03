@@ -1717,6 +1717,11 @@ public class FactoryImpl implements HazelcastInstance {
             return base.valueCount(key);
         }
 
+        public void addLocalEntryListener(EntryListener entryListener) {
+            ensure();
+            base.addLocalEntryListener(entryListener);
+        }
+
         public void addEntryListener(EntryListener entryListener, boolean includeValue) {
             ensure();
             base.addEntryListener(entryListener, includeValue);
@@ -1844,6 +1849,10 @@ public class FactoryImpl implements HazelcastInstance {
 
             public Object getId() {
                 return name;
+            }
+
+            public void addLocalEntryListener(EntryListener entryListener) {
+                mapProxy.addLocalEntryListener(entryListener);
             }
 
             public void addEntryListener(EntryListener entryListener, boolean includeValue) {
@@ -2248,6 +2257,10 @@ public class FactoryImpl implements HazelcastInstance {
             dynamicProxy.removeGenericListener(listener, key);
         }
 
+        public void addLocalEntryListener(EntryListener entryListener) {
+            dynamicProxy.addLocalEntryListener(entryListener);
+        }
+
         public void addEntryListener(EntryListener listener, boolean includeValue) {
             dynamicProxy.addEntryListener(listener, includeValue);
         }
@@ -2566,6 +2579,12 @@ public class FactoryImpl implements HazelcastInstance {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
                 listenerManager.removeListener(name, listener, key);
+            }
+
+            public void addLocalEntryListener(EntryListener listener) {
+                if (listener == null)
+                    throw new IllegalArgumentException("Listener cannot be null");
+                listenerManager.addListener(name, listener, null, true, getInstanceType());
             }
 
             public void addEntryListener(EntryListener listener, boolean includeValue) {

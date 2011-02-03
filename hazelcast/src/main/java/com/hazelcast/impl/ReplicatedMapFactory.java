@@ -170,6 +170,10 @@ public final class ReplicatedMapFactory {
             return distributedMap.getLocalMapStats();
         }
 
+        public void addLocalEntryListener(EntryListener<K, V> entryListener) {
+            distributedMap.addLocalEntryListener(entryListener);
+        }
+
         public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
             distributedMap.addEntryListener(listener, includeValue);
         }
