@@ -52,6 +52,10 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
     public HazelcastCacheRegionFactory(final Properties properties) {
         this();
     }
+    
+    public HazelcastCacheRegionFactory(final HazelcastInstance instance) {
+    	this.instance = instance;
+    }
 
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
                                                   final CacheDataDescription metadata) throws CacheException {
@@ -86,11 +90,18 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
 
     public void start(final Settings settings, final Properties properties) throws CacheException {
         LOG.log(Level.INFO, "Starting up HazelcastCacheRegionFactory...");
-        instance = HazelcastInstanceFactory.createInstance(properties);
+        
+        if(instance == null) {
+        	 instance = HazelcastInstanceFactory.createInstance(properties);
+        }
     }
 
     public void stop() {
         LOG.log(Level.INFO, "Shutting down HazelcastCacheRegionFactory...");
         instance.shutdown();
+    }
+    
+    public HazelcastInstance getHazelcastInstance() {
+    	return instance;
     }
 }

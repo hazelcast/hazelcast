@@ -51,6 +51,10 @@ public final class HazelcastCacheProvider implements CacheProvider {
 
     public HazelcastCacheProvider() {
     }
+    
+    public HazelcastCacheProvider(final HazelcastInstance instance) {
+    	this.instance = instance;
+    }
 
     /**
      * We ignore the <code>Properties</code> passed in here in favor of the <code>hazelcast.xml</code> file.
@@ -72,7 +76,14 @@ public final class HazelcastCacheProvider implements CacheProvider {
 
     public void start(final Properties props) throws CacheException {
         LOG.log(Level.INFO, "Starting up HazelcastCacheProvider...");
-        instance = HazelcastInstanceFactory.createInstance(props);
+        
+        if(instance == null) {
+        	instance = HazelcastInstanceFactory.createInstance(props);
+        }
+    }
+    
+    public HazelcastInstance getHazelcastInstance() {
+    	return instance;
     }
 
     /**
