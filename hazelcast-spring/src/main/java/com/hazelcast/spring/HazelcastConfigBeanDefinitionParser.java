@@ -324,19 +324,28 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             final String name = getValue(attName);
             mapConfigBuilder.addPropertyValue("name", name);
 
-            fillValues(node, mapConfigBuilder, "mapStoreConfig", "nearCacheConfig");
-            
+            fillValues(node, mapConfigBuilder, "mapStore", "nearCache");
             for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 final String nname = cleanNodeName(n.getNodeName());
-                if ("mapStoreConfig".equals(nname)){
+                if ("map-store".equals(nname)){
                     handleMapStoreConfig(n, mapConfigBuilder);
-                } else if ("nearCacheConfig".equals(nname)){
-                    createAndFillBeanBuilder(node, NearCacheConfig.class, "nearCacheConfig", mapConfigBuilder);
+                } else if ("near-cache".equals(nname)){
+                    handleNearCacheConfig(n, mapConfigBuilder);
                 }
                 
             }
             mapConfigManagedMap.put(name, beanDefinition);
             mapConfigBuilder = null;
+        }
+
+        public void handleNearCacheConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {
+            BeanDefinitionBuilder nearCacheConfigBuilder = createBeanBuilder(NearCacheConfig.class, "nearCacheConfig");
+            final AbstractBeanDefinition beanDefinition = nearCacheConfigBuilder.getBeanDefinition();
+
+            fillValues(node, nearCacheConfigBuilder);
+
+            mapConfigBuilder.addPropertyValue("nearCacheConfig", beanDefinition);
+            nearCacheConfigBuilder = null;
         }
         
         public void handleMapStoreConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {
