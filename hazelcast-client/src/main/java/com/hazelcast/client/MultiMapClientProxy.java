@@ -45,6 +45,10 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     public String getName() {
         return name.substring(Prefix.MULTIMAP.length());
     }
+    
+    public void addLocalEntryListener(EntryListener<K, V> listener) {
+        throw new UnsupportedOperationException("client doesn't support local entry listener");
+    }
 
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         addEntryListener(listener, null, includeValue);
