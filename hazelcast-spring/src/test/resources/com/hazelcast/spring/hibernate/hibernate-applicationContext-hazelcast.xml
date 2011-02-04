@@ -44,7 +44,7 @@
         </hz:config>
     </hz:hazelcast>
 
-	<hz:hibernate-cache-rovider id="cacheProvider" instance-ref="instance" />
+	<hz:hibernate-cache-provider id="cacheProvider" instance-ref="instance" />
 	<hz:hibernate-region-factory id="regionFactory" instance-ref="instance" />
 	    
 </beans>

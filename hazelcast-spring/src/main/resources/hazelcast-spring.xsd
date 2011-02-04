@@ -114,7 +114,7 @@
     <xs:element name="idGenerator" type="hazelcast-instance"/>
     <xs:element name="atomicNumber" type="hazelcast-instance"/>
     
-    <xs:element name="hibernate-cache-rovider" type="hibernate-cache" />
+    <xs:element name="hibernate-cache-provider" type="hibernate-cache" />
     <xs:element name="hibernate-region-factory" type="hibernate-cache" />
 
     <!-- internal elements -->
