@@ -131,8 +131,9 @@ public final class Record implements MapEntry {
     }
 
     public Object getValue() {
-        if (valueObject != null) {
-            return valueObject;
+        final Object currentValue = valueObject;
+        if (currentValue != null) {
+            return currentValue;
         }
         synchronized (Record.this) {
             if (valueObject != null) {

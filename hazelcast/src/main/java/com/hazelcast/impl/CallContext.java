@@ -18,9 +18,9 @@
 package com.hazelcast.impl;
 
 public class CallContext {
-    private TransactionImpl txn = null;
     final int threadId;
     final boolean client;
+    private volatile TransactionImpl txn = null;
 
     public CallContext(int threadId, boolean client) {
         this.threadId = threadId;
@@ -36,7 +36,7 @@ public class CallContext {
     }
 
     public void finalizeTransaction() {
-        setTransaction(null);
+        this.txn = null;
     }
 
     public long getTxnId() {
@@ -49,5 +49,9 @@ public class CallContext {
 
     public boolean isClient() {
         return client;
+    }
+
+    public void reset() {
+        this.txn = null;
     }
 }

@@ -46,7 +46,7 @@ public class HazelcastTest {
         Hazelcast.shutdownAll();
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testIssue445() {
         for (int i = 0; i < 12000; i++) {
             IMap map = Hazelcast.getMap("testIssue445" + i);

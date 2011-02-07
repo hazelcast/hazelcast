@@ -77,6 +77,13 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 handleResponse(packet);
             }
         });
+        registerPacketProcessor(ClusterOperation.GET_CALLER_THREAD_STATE, new ResponsiveOperationHandler() {
+
+            public void handle(Request request) {
+                request.response = node.getCallHistory().getOrCreateCallerThreadState(request.caller, request.lockThreadId);
+                returnResponse(request);
+            }
+        });
         registerPacketProcessor(ClusterOperation.HEARTBEAT, new PacketProcessor() {
             public void process(Packet packet) {
                 releasePacket(packet);

@@ -116,6 +116,8 @@ public class Node {
 
     private final CpuUtilization cpuUtilization = new CpuUtilization();
 
+    private final CallHistory callHistory = new CallHistory();
+
     final int id;
 
     public Node(FactoryImpl factory, Config config) {
@@ -280,6 +282,10 @@ public class Node {
             return false;
         }
         return true;
+    }
+
+    public CallHistory getCallHistory() {
+        return callHistory;
     }
 
     public void failedConnection(Address address) {

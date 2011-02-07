@@ -37,9 +37,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.Thread.sleep;
+import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Run these tests with
@@ -324,7 +328,7 @@ public class ClusterTest {
                 latch.countDown();
             }
         });
-        latch.await();
+        assertTrue(latch.await(60, TimeUnit.SECONDS));
         System.out.println(map1.getLocalMapStats());
         System.out.println(map2.getLocalMapStats());
         assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
@@ -2401,6 +2405,19 @@ public class ClusterTest {
         map.putAll(localMap);
         Hazelcast.getTransaction().rollback();
         assertEquals(0, map.size());
+    }
+
+    @Test
+    public void testShutdownAllAfterIncompleteTransaction() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        IMap map1 = h1.getMap("default");
+        Transaction txn = h1.getTransaction();
+        txn.begin();
+        map1.put("1", "value1");
+        Hazelcast.shutdownAll();
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        IMap map2 = h2.getMap("default");
+        assertNull(map2.get("1"));
     }
 
     @Test

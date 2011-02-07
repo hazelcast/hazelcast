@@ -511,12 +511,12 @@ public class ConcurrentMapManager extends BaseManager {
                     long version = ownedRecord.getVersion();
                     Object result = null;
                     if (tc.isClient()) {
-                        Data valueData = ownedRecord.getValueData();
+                        final Data valueData = ownedRecord.getValueData();
                         if (valueData != null && valueData.size() > 0) {
                             result = valueData;
                         }
                     } else {
-                        Object value = ownedRecord.getValue();
+                        final Object value = ownedRecord.getValue();
                         if (value != null) {
                             result = value;
                         }
@@ -531,8 +531,8 @@ public class ConcurrentMapManager extends BaseManager {
                     if (record != null && cMap.isBackup(record) &&
                             record.isActive() && record.isValid()) {
                         final Data valueData = record.getValueData();
-                        if (valueData != null) {
-                            return ThreadContext.get().isClient() ? valueData : toObject(valueData);
+                        if (valueData != null && valueData.size() > 0) {
+                            return tc.isClient() ? valueData : toObject(valueData);
                         }
                     }
                 }
@@ -1999,25 +1999,34 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public void handle(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            if (cmap.isNotLocked(request) && !cmap.exceedingMapMaxSize(request)) {
-                if (shouldSchedule(request)) {
-                    if (request.hasEnoughTimeToSchedule()) {
-                        schedule(request);
-                    } else {
-                        onNoTimeToSchedule(request);
+            CallHistory.CallerThreadState cts = node.getCallHistory().getOrCreateCallerThreadState(request.caller, request.lockThreadId);
+            try {
+                cts.set(request.name, request.callId, request.operation);
+                CMap cmap = getOrCreateMap(request.name);
+                if (cmap.isNotLocked(request) && !cmap.exceedingMapMaxSize(request)) {
+                    if (shouldSchedule(request)) {
+                        if (request.hasEnoughTimeToSchedule()) {
+                            schedule(request);
+                        } else {
+                            onNoTimeToSchedule(request);
+                        }
+                        return;
                     }
-                    return;
+                    if (shouldExecuteAsync(request)) {
+                        executeAsync(request);
+                        return;
+                    }
+                    doOperation(request);
+                    returnResponse(request);
+                } else {
+                    request.response = OBJECT_REDO;
+                    returnResponse(request);
                 }
-                if (shouldExecuteAsync(request)) {
-                    executeAsync(request);
-                    return;
+            } finally {
+                if (request.scheduled) {
+                    cts.setScheduled();
                 }
-                doOperation(request);
-                returnResponse(request);
-            } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
+                cts.response = request.response;
             }
         }
 

@@ -262,6 +262,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
             factories.clear();
             shutdownManagementService();
+            ThreadContext.shutdownAll();
         }
     }
 
@@ -2452,7 +2453,13 @@ public class FactoryImpl implements HazelcastInstance {
                 check(key);
                 mapOperationCounter.incrementGets();
                 MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
-                return mget.get(name, key, -1);
+                Object result = mget.get(name, key, -1);
+                if (result == null && name.contains("testConcurrentLockPrimitive")) {
+                    boolean isClient = ThreadContext.get().isClient();
+                    Object txn = ThreadContext.get().getTransaction();
+                    throw new RuntimeException(result + " testConcurrentLockPrimitive returns null " + isClient + "  " + txn);
+                }
+                return result;
             }
 
             public Object remove(Object key) {

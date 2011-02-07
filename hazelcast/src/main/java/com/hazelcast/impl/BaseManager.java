@@ -234,7 +234,7 @@ public abstract class BaseManager {
         }
     }
 
-    abstract class ResponsiveOperationHandler implements PacketProcessor, RequestHandler {
+    public abstract class ResponsiveOperationHandler implements PacketProcessor, RequestHandler {
 
         public void process(Packet packet) {
             processSimple(packet);
@@ -462,6 +462,48 @@ public abstract class BaseManager {
         }
     }
 
+    Object getCallState(Request request, Address target) {
+        if (request.caller == null) {
+            return "UNKNOWN_CALLER";
+        } else {
+            TargetAwareOp targetAwareOp = new GetState((target == null) ? thisAddress : target);
+            targetAwareOp.request.name = request.name;
+            targetAwareOp.request.lockThreadId = request.lockThreadId;
+            targetAwareOp.request.operation = ClusterOperation.GET_CALLER_THREAD_STATE;
+            targetAwareOp.doOp();
+            return targetAwareOp.getResultAsObject();
+        }
+    }
+
+    class GetState extends TargetAwareOp {
+        final Address targetAddress;
+
+        GetState(Address targetAddress) {
+            this.targetAddress = targetAddress;
+        }
+
+        @Override
+        public void setTarget() {
+            target = targetAddress;
+            System.out.println(target + "   " + request.lockThreadId);
+        }
+
+        @Override
+        public void redo() {
+            setResult("REDOING");
+        }
+
+        @Override
+        protected void memberDoesNotExist() {
+            setResult("TARGET_MEMBER_NO_LONGER_EXIST " + target);
+        }
+
+        @Override
+        protected void packetNotSent() {
+            setResult("PACKET_NOT_SENT_TO " + target);
+        }
+    }
+
     public abstract class ResponseQueueCall extends RequestBasedCall {
 
         private final BlockingQueue<Object> responses = ResponseQueueFactory.newResponseQueue();
@@ -476,6 +518,7 @@ public abstract class BaseManager {
         }
 
         public void beforeRedo() {
+            request.beforeRedo();
             node.checkNodeState();
         }
 
@@ -490,6 +533,7 @@ public abstract class BaseManager {
                     if (obj != null) {
                         return obj;
                     }
+                    logger.log(Level.WARNING, "Still no response! reason:" + getCallState(request, getTarget()));
                     node.checkNodeState();
                 } catch (InterruptedException e) {
                     handleInterruptedException();
@@ -731,7 +775,6 @@ public abstract class BaseManager {
         }
 
         protected void doReleasePacket(Packet packet) {
-
 //            checkServiceThread();
 //            packet.released = true;
 //            qServiceThreadPacketCache.offer(packet);
@@ -770,11 +813,15 @@ public abstract class BaseManager {
         }
 
         public void process() {
+            request.caller = thisAddress;
             setTarget();
             if (target == null) {
                 setResult(OBJECT_REDO);
             } else {
                 if (target.equals(thisAddress)) {
+                    long callId = localIdGen.incrementAndGet();
+                    request.callId = callId;
+                    setCallId(callId);
                     doLocalOp();
                 } else {
                     invoke();

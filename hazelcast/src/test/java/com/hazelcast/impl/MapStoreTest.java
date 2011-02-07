@@ -180,6 +180,20 @@ public class MapStoreTest extends TestUtil {
     }
 
     @Test
+    public void testOneMemberWriteThroughWithLRU() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        Config config = newConfig(testMapStore, 0);
+        config.getMapConfig("default").setMaxSize(10).setEvictionPolicy("LRU");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        for (int i = 0; i < 20; i++) {
+            map.put(String.valueOf(i), new Employee("joe", i, true, 100.00));
+        }
+        assertTrue(map.size() > 5);
+        assertTrue(map.size() <= 10);
+    }
+
+    @Test
     public void testOneMemberWriteThroughWithIndex() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         Config config = newConfig(testMapStore, 0);

@@ -22,35 +22,65 @@ import com.hazelcast.impl.ConcurrentMapManager.MEvict;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Serializer;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class ThreadContext {
 
     private final static ThreadLocal<ThreadContext> threadLocal = new ThreadLocal<ThreadContext>();
 
+    private final static AtomicInteger newThreadId = new AtomicInteger();
+
+    private final static List<ThreadContext> threadContexts = new CopyOnWriteArrayList<ThreadContext>();
+
+    private final Thread thread;
+
     private final Serializer serializer = new Serializer();
-
-    private CallContext callContext = null;
-
-    private FactoryImpl currentFactory = null;
 
     private final ConcurrentMap<FactoryImpl, CallCache> mapCallCacheForFactories = new ConcurrentHashMap<FactoryImpl, CallCache>();
 
-    private final static AtomicInteger newThreadId = new AtomicInteger();
+    private volatile CallContext callContext = null;
 
-    private ThreadContext() {
+    private volatile FactoryImpl currentFactory = null;
+
+    private ThreadContext(Thread thread) {
+        this.thread = thread;
         setCallContext(new CallContext(createNewThreadId(), false));
     }
 
     public static ThreadContext get() {
         ThreadContext threadContext = threadLocal.get();
         if (threadContext == null) {
-            threadContext = new ThreadContext();
+            threadContext = new ThreadContext(Thread.currentThread());
             threadLocal.set(threadContext);
+            threadContexts.add(threadContext);
+            for (ThreadContext context : threadContexts) {
+                if (!context.thread.isAlive()) {
+                    context.cleanup();
+                    threadContexts.remove(context);
+                }
+            }
         }
         return threadContext;
+    }
+
+    public static void shutdownAll() {
+        ThreadContext.get().cleanup();
+        for (ThreadContext threadContext : threadContexts) {
+            threadContext.cleanup();
+        }
+        threadContexts.clear();
+    }
+
+    public void cleanup() {
+        mapCallCacheForFactories.clear();
+        final CallContext currentCallContext = this.callContext;
+        if (currentCallContext != null) {
+            currentCallContext.reset();
+        }
     }
 
     public void finalizeTxn() {
@@ -157,5 +187,19 @@ public final class ThreadContext {
 
     public void setCallContext(CallContext callContext) {
         this.callContext = callContext;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ThreadContext that = (ThreadContext) o;
+        if (thread != null ? !thread.equals(that.thread) : that.thread != null) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return thread != null ? thread.hashCode() : 0;
     }
 }

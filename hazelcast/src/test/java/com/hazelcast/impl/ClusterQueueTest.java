@@ -68,7 +68,6 @@ public class ClusterQueueTest {
 
     @Test
     public void testPollTxn() throws Exception {
-        System.out.println(TimeUnit.SECONDS.toMillis(Long.MAX_VALUE));
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());

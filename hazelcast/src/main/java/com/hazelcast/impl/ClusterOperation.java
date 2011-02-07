@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 public enum ClusterOperation {
     NONE(),
     RESPONSE(),
+    GET_CALLER_THREAD_STATE(),
     LOG(),
     HEARTBEAT(),
     JOIN_CHECK(),

@@ -107,6 +107,12 @@ public class Request {
         this.record = null;
     }
 
+    public void beforeRedo() {
+        this.record = null;
+        this.scheduled = false;
+        this.response = null;
+    }
+
     public void setIndexes(Long[] newIndexes, byte[] indexTypes) {
         this.indexes = newIndexes;
         this.indexTypes = indexTypes;
