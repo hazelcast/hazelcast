@@ -79,6 +79,12 @@ public class TopicManager extends BaseManager {
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
+        while (node.outSelector.getWriteQueueSize() > 100) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException ignored) {
+            }
+        }
         enqueueAndReturn(new TopicPublishProcess(name, dataMsg));
     }
 

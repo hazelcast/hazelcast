@@ -64,6 +64,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     public void enqueueSocketWritable(SocketWritable socketWritable) {
         socketWritable.onEnqueue();
         writeQueue.offer(socketWritable);
+        outSelector.writeQueueSize.incrementAndGet();
         if (informSelector.compareAndSet(true, false)) {
             // we don't have to call wake up if this WriteHandler is
             // already in the task queue.
@@ -74,12 +75,20 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         }
     }
 
+    SocketWritable poll() {
+        SocketWritable sw = writeQueue.poll();
+        if (sw != null) {
+            outSelector.writeQueueSize.decrementAndGet();
+        }
+        return sw;
+    }
+
     public void handle() {
         if (socketWriter == null) {
             setProtocol("HZC");
         }
         if (lastWritable == null) {
-            lastWritable = writeQueue.poll();
+            lastWritable = poll();
             if (lastWritable == null && socketBB.position() == 0) {
                 ready = true;
                 return;
@@ -90,7 +99,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         try {
             while (socketBB.hasRemaining()) {
                 if (lastWritable == null) {
-                    lastWritable = writeQueue.poll();
+                    lastWritable = poll();
                 }
                 if (lastWritable != null) {
                     boolean complete = socketWriter.write(lastWritable, socketBB);
@@ -148,6 +157,9 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     @Override
     public void shutdown() {
-        writeQueue.clear();
+        Object obj = poll();
+        while (obj != null) {
+            poll();
+        }
     }
 }

@@ -23,9 +23,12 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public final class OutSelector extends SelectorBase {
+
+    AtomicLong writeQueueSize = new AtomicLong();
 
     public OutSelector(Node node) {
         super(node, 1);
@@ -40,6 +43,10 @@ public final class OutSelector extends SelectorBase {
     @Override
     public void publishUtilization() {
         node.getCpuUtilization().outThread = threadWatcher.publish();
+    }
+
+    public long getWriteQueueSize() {
+        return writeQueueSize.get();
     }
 
     private class Connector implements Runnable, SelectionHandler {
