@@ -142,10 +142,32 @@ public class HazelcastClient implements HazelcastInstance {
         return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), addresses);
     }
 
+    /**
+     * Returns a new HazelcastClient. It will shuffle the given address list and pick one address to connect.
+     * If the connected member will die, client will pick another from given addresses.
+     *
+     * @param properties    Client Properties
+     * @param addresses     Addresses of Cluster Members that client will choose one to connect. If the connected member
+     *                      dies client will switch to the next one in the list.
+     *                      An address is in the form ip:port. If you will not specify the port, it will assume the default one, 5701.
+     *                      ex: "10.90.0.1", "10.90.0.2:5702"
+     * @return Returns a new Hazelcast Client instance.
+     */
     public static HazelcastClient newHazelcastClient(ClientProperties properties, String... addresses) {
         return newHazelcastClient(properties, true, addresses);
     }
 
+    /**
+     * Returns a new HazelcastClient. It will shuffle the given address list and pick one address to connect.
+     * If the connected member will die, client will pick another from given addresses.
+     *
+     * @param properties    Client Properties
+     * @param addresses     List of addresses of Cluster Members that client will choose one to connect. If the connected member
+     *                      dies client will switch to the next one in the list.
+     *                      An address is in the form ip:port. If you will not specify the port, it will assume the default one, 5701.
+     *                      ex: "10.90.0.1", "10.90.0.2:5702"
+     * @return  Returns a new Hazelcast Client instance.
+     */
     public static HazelcastClient newHazelcastClient(ClientProperties properties, List<String> addresses) {
         final List<String> handleMembers = AddressUtil.handleMembers(addresses);
         return newHazelcastClient(properties, handleMembers.toArray(new String[0]));
@@ -168,6 +190,18 @@ public class HazelcastClient implements HazelcastInstance {
         return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), shuffle, addresses);
     }
 
+    /**
+     * Returns a new HazelcastClient.
+     * If the connected member will die, client will pick next live address from given addresses.
+     *
+     * @param properties    Client Properties
+     * @param shuffle       Specifies whether to shuffle the list of addresses
+     * @param addresses     Addresses of Cluster Members that client will choose one to connect. If the connected member
+     *                      dies client will switch to the next one in the list.
+     *                      An address is in the form ip:port. If you will not specify the port, it will assume the default one, 5701.
+     *                      ex: "10.90.0.1", "10.90.0.2:5702"
+     * @return  Returns a new Hazelcast Client instance.
+     */
     public static HazelcastClient newHazelcastClient(ClientProperties properties, boolean shuffle, String... addresses) {
         InetSocketAddress[] socketAddressArr = new InetSocketAddress[addresses.length];
         for (int i = 0; i < addresses.length; i++) {
@@ -199,24 +233,49 @@ public class HazelcastClient implements HazelcastInstance {
         return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), shuffle, addresses);
     }
 
+    /**
+     * Returns a new HazelcastClient.
+     * If the connected member will die, client will pick next live address from given addresses.
+     *
+     * @param clientProperties  Client Properties
+     * @param shuffle           Specifies whether to shuffle the list of addresses
+     * @param addresses         InetSocketAddress of Cluster Members that client will choose one to connect. If the connected member
+     *                          dies client will switch to the next one in the list.
+     * @return  Returns a new Hazelcast Client instance.
+     */
     public static HazelcastClient newHazelcastClient(ClientProperties clientProperties, boolean shuffle, InetSocketAddress... addresses) {
         return new HazelcastClient(clientProperties, shuffle, addresses, false);
     }
 
     /**
-     * Returns a new HazelcastClient.
+     *
      * Giving address of one member is enough. It will connect to that member and will get addresses of all members
      * in the cluster. If the connected member will die or leave the cluster, client will automatically
      * switch to another member in the cluster.
      *
-     * @param groupName
-     * @param groupPassword
-     * @param address
-     * @return
+     * @param groupName     Group name of a cluster that client will connect
+     * @param groupPassword Group Password of a cluster that client will connect.
+     * @param  address      Address of one of the members
+     * @return  Returns a new HazelcastClient.
      */
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String address) {
         InetSocketAddress inetSocketAddress = parse(address);
         return new HazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), inetSocketAddress);
+    }
+
+    /**
+     *
+     * Giving address of one member is enough. It will connect to that member and will get addresses of all members
+     * in the cluster. If the connected member will die or leave the cluster, client will automatically
+     * switch to another member in the cluster.
+     *
+     * @param clientProperties  Client Properties
+     * @param address           Address of one of the members
+     * @return  Returns a new HazelcastClient.
+     */
+    public static HazelcastClient newHazelcastClient(ClientProperties clientProperties, String address) {
+        InetSocketAddress inetSocketAddress = parse(address);
+        return new HazelcastClient(clientProperties, inetSocketAddress);
     }
 
     public Config getConfig() {
