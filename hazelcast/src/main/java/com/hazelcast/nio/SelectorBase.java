@@ -159,15 +159,16 @@ public abstract class SelectorBase implements Runnable {
         logger.log(Level.WARNING, msg, e);
     }
 
-    protected Connection initChannel(final SocketChannel socketChannel, final boolean acceptor)
-            throws Exception {
-        final Socket socket = socketChannel.socket();
+    protected void initSocket(Socket socket) throws Exception {
         socket.setKeepAlive(true);
         //socket.setTcpNoDelay(true);
         socket.setSoLinger(true, 1);
         socket.setReceiveBufferSize(node.connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
         socket.setSendBufferSize(node.connectionManager.SOCKET_SEND_BUFFER_SIZE);
-        socketChannel.configureBlocking(false);
+    }
+
+    protected Connection createConnection(final SocketChannel socketChannel, final boolean acceptor)
+            throws Exception {
         return node.connectionManager.createConnection(socketChannel, acceptor);
     }
 }

@@ -69,7 +69,9 @@ public final class InSelector extends SelectorBase {
                 logger.log(Level.INFO, channel.socket().getLocalPort()
                         + " is accepting socket connection from "
                         + channel.socket().getRemoteSocketAddress());
-                final Connection connection = initChannel(channel, true);
+                initSocket(channel.socket());
+                channel.configureBlocking(false);
+                final Connection connection = createConnection(channel, true);
                 channel.register(selector, SelectionKey.OP_READ, connection.getReadHandler());
                 serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, Acceptor.this);
                 selector.wakeup();

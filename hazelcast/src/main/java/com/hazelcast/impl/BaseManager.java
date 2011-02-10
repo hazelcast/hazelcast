@@ -533,7 +533,13 @@ public abstract class BaseManager {
                     if (obj != null) {
                         return obj;
                     }
-                    logger.log(Level.WARNING, "Still no response! reason:" + getCallState(request, getTarget()));
+                    try {
+                        if (node.isActive()) {
+                            Object reason = getCallState(request, getTarget());
+                            logger.log(Level.WARNING, request + "\nStill no response! reason:" + reason);
+                        }
+                    } catch (Exception ignored) {
+                    }
                     node.checkNodeState();
                 } catch (InterruptedException e) {
                     handleInterruptedException();

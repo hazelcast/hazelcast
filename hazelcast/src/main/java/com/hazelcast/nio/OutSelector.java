@@ -66,7 +66,7 @@ public final class OutSelector extends SelectorBase {
                     return;
                 }
                 logger.log(Level.FINEST, "connected to " + address);
-                final Connection connection = initChannel(socketChannel, false);
+                final Connection connection = createConnection(socketChannel, false);
                 node.connectionManager.bind(address, connection, false);
             } catch (final Exception e) {
                 try {
@@ -83,11 +83,11 @@ public final class OutSelector extends SelectorBase {
         public void run() {
             try {
                 socketChannel = SocketChannel.open();
+                initSocket(socketChannel.socket());
                 final Address thisAddress = node.getThisAddress();
                 try {
-                    socketChannel.socket().bind(
-                            new InetSocketAddress(thisAddress.getInetAddress(), 0));
                     socketChannel.configureBlocking(false);
+                    socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
                     logger.log(Level.FINEST, "connecting to " + address);
                     boolean connected = socketChannel.connect(new InetSocketAddress(address.getInetAddress(),
                             address.getPort()));

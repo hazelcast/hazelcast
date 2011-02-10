@@ -159,7 +159,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     public void shutdown() {
         Object obj = poll();
         while (obj != null) {
-            poll();
+            obj = poll();
         }
     }
 }
