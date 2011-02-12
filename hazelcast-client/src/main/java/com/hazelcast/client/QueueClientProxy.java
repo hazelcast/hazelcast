@@ -123,7 +123,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     }
 
     public int remainingCapacity() {
-        return (Integer) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_RAMAINING_CAPACITY, null, null);
+        return (Integer) proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_REMAINING_CAPACITY, null, null);
     }
 
     public int drainTo(Collection<? super E> objects) {

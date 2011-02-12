@@ -42,7 +42,7 @@ public class TopicClientProxy<T> implements ITopic {
 
     public void publish(Object message) {
         check(message);
-        proxyHelper.doOp(ClusterOperation.BLOCKING_QUEUE_PUBLISH, message, null);
+        proxyHelper.doOp(ClusterOperation.TOPIC_PUBLISH, message, null);
     }
 
     public void addMessageListener(MessageListener messageListener) {

@@ -210,7 +210,6 @@ public class ConcurrentMapManager extends BaseManager {
             for (CMap cmap : cmaps) {
                 cmap.appendState(sbState);
             }
-            node.blockingQueueManager.appendState(sbState);
             node.executorManager.appendState(sbState);
             long total = Runtime.getRuntime().totalMemory();
             long free = Runtime.getRuntime().freeMemory();

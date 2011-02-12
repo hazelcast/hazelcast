@@ -50,7 +50,6 @@ public class SyncProcess extends AbstractRemotelyCallable<Boolean> {
     public void process() {
         Node node = getNode();
         node.concurrentMapManager.syncForAdd();
-        node.blockingQueueManager.syncForAdd();
         node.listenerManager.syncForAdd();
         node.topicManager.syncForAdd();
         node.clusterManager.joinReset();

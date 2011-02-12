@@ -386,7 +386,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 lsMembersBefore.add(memberBefore);
             }
             removeMember(deadMember);
-            node.blockingQueueManager.syncForDead(deadAddress);
             node.concurrentMapManager.syncForDead(deadMember);
             node.listenerManager.syncForDead(deadAddress);
             node.topicManager.syncForDead(deadAddress);

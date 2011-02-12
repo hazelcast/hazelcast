@@ -20,6 +20,7 @@
         </repository>
     </repositories>
 
+
     <build>
         <plugins>
             <plugin>
@@ -52,6 +53,34 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.1</version>
+                        <executions>
+                            <execution>
+                                <phase>deploy</phase>
+                                <configuration>
+                                    <tasks>
+                                        <copy file="../hazelcast/target/hazelcast-${project.parent.version}-javadoc.jar"
+                                              tofile="target/hazelcast-all-${project.parent.version}-javadoc.jar"/>
+                                    </tasks>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>

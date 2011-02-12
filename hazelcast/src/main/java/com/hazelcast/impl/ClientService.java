@@ -81,13 +81,13 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[CONCURRENT_MAP_ITERATE_KEYS.getValue()] = new MapIterateKeysHandler();
         clientOperationHandlers[CONCURRENT_MAP_ITERATE_ENTRIES.getValue()] = new MapIterateEntriesHandler();
         clientOperationHandlers[CONCURRENT_MAP_VALUE_COUNT.getValue()] = new MapValueCountHandler();
+        clientOperationHandlers[TOPIC_PUBLISH.getValue()] = new TopicPublishHandler();
         clientOperationHandlers[BLOCKING_QUEUE_OFFER.getValue()] = new QueueOfferHandler();
         clientOperationHandlers[BLOCKING_QUEUE_POLL.getValue()] = new QueuePollHandler();
         clientOperationHandlers[BLOCKING_QUEUE_REMOVE.getValue()] = new QueueRemoveHandler();
         clientOperationHandlers[BLOCKING_QUEUE_PEEK.getValue()] = new QueuePeekHandler();
         clientOperationHandlers[BLOCKING_QUEUE_SIZE.getValue()] = new QueueSizeHandler();
-        clientOperationHandlers[BLOCKING_QUEUE_PUBLISH.getValue()] = new QueuePublishHandler();
-        clientOperationHandlers[BLOCKING_QUEUE_RAMAINING_CAPACITY.getValue()] = new QueueRemainingCapacityHandler();
+        clientOperationHandlers[BLOCKING_QUEUE_REMAINING_CAPACITY.getValue()] = new QueueRemainingCapacityHandler();
         clientOperationHandlers[BLOCKING_QUEUE_ENTRIES.getValue()] = new QueueEntriesHandler();
         clientOperationHandlers[TRANSACTION_BEGIN.getValue()] = new TransactionBeginHandler();
         clientOperationHandlers[TRANSACTION_COMMIT.getValue()] = new TransactionCommitHandler();
@@ -272,7 +272,7 @@ public class ClientService implements ConnectionListener {
         }
     }
 
-    private class QueuePublishHandler extends ClientOperationHandler {
+    private class TopicPublishHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             ITopic<Object> topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
             topic.publish(packet.getKeyData());

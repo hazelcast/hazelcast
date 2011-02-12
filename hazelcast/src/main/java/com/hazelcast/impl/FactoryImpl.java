@@ -21,7 +21,6 @@ import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.BlockingQueueManager.Offer;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
@@ -1406,7 +1405,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public LocalQueueStats getLocalQueueStats() {
                 operationsCounter.incrementOtherOperations();
-                LocalQueueStatsImpl localQueueStats = blockingQueueManager.getQ(name).getQueueStats();
+                LocalQueueStatsImpl localQueueStats = blockingQueueManager.getOrCreateBQ(name).getQueueStats();
                 localQueueStats.setOperationStats(operationsCounter.getPublishedStats());
                 return localQueueStats;
             }
@@ -1425,8 +1424,6 @@ public class FactoryImpl implements HazelcastInstance {
                 if (timeout < 0) {
                     timeout = 0;
                 }
-//                Offer offer = blockingQueueManager.new Offer();
-//                boolean result = offer.offer(name, obj, unit.toMillis(timeout));
                 boolean result = blockingQueueManager.offer(name, obj, unit.toMillis(timeout));
                 if (!result) {
                     operationsCounter.incrementRejectedOffers();
@@ -1437,22 +1434,17 @@ public class FactoryImpl implements HazelcastInstance {
 
             public void put(Object obj) throws InterruptedException {
                 check(obj);
-                Offer offer = blockingQueueManager.new Offer();
-                offer.offer(name, obj, -1);
+                blockingQueueManager.offer(name, obj, -1);
                 operationsCounter.incrementOffers();
             }
 
             public Object peek() {
                 operationsCounter.incrementOtherOperations();
-//                Poll poll = blockingQueueManager.new Poll();
-//                return poll.peek(name);
                 return blockingQueueManager.peek(name);
             }
 
             public Object poll() {
                 try {
-//                    Poll poll = blockingQueueManager.new Poll();
-//                    Object result = poll.poll(name, 0);
                     Object result = blockingQueueManager.poll(name, 0);
                     if (result == null) {
                         operationsCounter.incrementEmptyPolls();
@@ -1468,8 +1460,6 @@ public class FactoryImpl implements HazelcastInstance {
                 if (timeout < 0) {
                     timeout = 0;
                 }
-//                Poll poll = blockingQueueManager.new Poll();
-//                Object result = poll.poll(name, unit.toMillis(timeout));
                 Object result = blockingQueueManager.poll(name, unit.toMillis(timeout));
                 if (result == null) {
                     operationsCounter.incrementEmptyPolls();
@@ -1479,8 +1469,6 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public Object take() throws InterruptedException {
-//                Poll poll = blockingQueueManager.new Poll();
-//                Object result = poll.poll(name, -1);
                 Object result = blockingQueueManager.poll(name, -1);
                 if (result == null) {
                     operationsCounter.incrementEmptyPolls();
@@ -1491,7 +1479,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public int remainingCapacity() {
                 operationsCounter.incrementOtherOperations();
-                BlockingQueueManager.Q q = blockingQueueManager.getQ(name);
+                BlockingQueueManager.BQ q = blockingQueueManager.getOrCreateBQ(name);
                 int maxSizePerJVM = q.getMaxSizePerJVM();
                 if (maxSizePerJVM <= 0) {
                     return Integer.MAX_VALUE;
@@ -1506,23 +1494,16 @@ public class FactoryImpl implements HazelcastInstance {
             @Override
             public Iterator iterator() {
                 operationsCounter.incrementOtherOperations();
-//                QIterator iterator = blockingQueueManager.new QIterator();
-//                iterator.set(name);
-//                return iterator;
                 return blockingQueueManager.iterate(name);
             }
 
             @Override
             public int size() {
                 operationsCounter.incrementOtherOperations();
-//                BlockingQueueManager.QSize qsize = blockingQueueManager.new QSize(name);
-//                return qsize.getSize();
                 return blockingQueueManager.size(name);
             }
 
             public void addItemListener(ItemListener listener, boolean includeValue) {
-//                listenerManager.addListener(name, listener, null, includeValue,
-//                        getInstanceType());
                 blockingQueueManager.addItemListener(name, listener, includeValue);
             }
 

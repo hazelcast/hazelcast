@@ -19,7 +19,6 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.BlockingQueueManager.CommitPoll;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -367,10 +366,7 @@ class TransactionImpl implements Transaction {
         }
 
         public void commitQueue() {
-            if (removed) {
-                commitPoll();
-                // remove the backup at the next member
-            } else {
+            if (!removed) {
                 offerAgain(false);
             }
         }
@@ -395,11 +391,6 @@ class TransactionImpl implements Transaction {
             if (removed) {
                 factory.node.blockingQueueManager.rollbackPoll(name, key, value);
             }
-        }
-
-        private void commitPoll() {
-            CommitPoll commitPoll = factory.node.blockingQueueManager.new CommitPoll();
-            commitPoll.commitPoll(name);
         }
 
         private void offerAgain(boolean first) {
