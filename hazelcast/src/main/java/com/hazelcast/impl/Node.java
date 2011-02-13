@@ -377,6 +377,12 @@ public class Node {
 
     public void shutdown() {
         logger.log(Level.FINE, "** we are being asked to shutdown when active = " + String.valueOf(active));
+        while (isActive() && concurrentMapManager.partitionManager.hasActiveBackupTask()) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+        }
         if (isActive()) {
             // set the joined=false first so that
             // threads do not process unnecessary

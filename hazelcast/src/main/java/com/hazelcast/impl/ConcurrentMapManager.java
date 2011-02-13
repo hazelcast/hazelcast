@@ -484,7 +484,6 @@ public class ConcurrentMapManager extends BaseManager {
 
     class MGet extends MTargetAwareOp {
         Object keyObject = null;
-        MapNearCache nearCache = null;
 
         public Object get(String name, Object key, long timeout) {
             this.keyObject = key;
@@ -497,7 +496,7 @@ public class ConcurrentMapManager extends BaseManager {
             }
             final CMap cMap = maps.get(name);
             if (cMap != null) {
-                nearCache = cMap.mapNearCache;
+                MapNearCache nearCache = cMap.mapNearCache;
                 if (nearCache != null) {
                     Object value = nearCache.get(key);
                     if (value != null) {
@@ -546,16 +545,19 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         public void reset() {
             keyObject = null;
-            nearCache = null;
             super.reset();
         }
 
         @Override
         public final void handleNoneRedoResponse(Packet packet) {
-            if (nearCache != null) {
-                Data value = packet.getValueData();
-                if (value != null && value.size() > 0) {
-                    nearCache.put(this.keyObject, request.key, packet.getValueData());
+            final CMap cMap = maps.get(request.name);
+            if (cMap != null) {
+                MapNearCache nearCache = cMap.mapNearCache;
+                if (nearCache != null) {
+                    Data value = packet.getValueData();
+                    if (value != null && value.size() > 0) {
+                        nearCache.put(this.keyObject, request.key, packet.getValueData());
+                    }
                 }
             }
             super.handleNoneRedoResponse(packet);

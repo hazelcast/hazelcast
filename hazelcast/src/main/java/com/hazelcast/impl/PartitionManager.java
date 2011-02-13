@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_BLOCKS;
@@ -48,7 +49,7 @@ public class PartitionManager implements Runnable {
     final ParallelExecutor parallelExecutorMigration;
     final ParallelExecutor parallelExecutorBackups;
     final long timeToInitiateMigration;
-
+    final AtomicLong backupTaskCount = new AtomicLong();
     long nextMigrationMillis = System.currentTimeMillis() + MIGRATION_INTERVAL_MILLIS;
     long migrationStartTime = 0;
     int MIGRATION_COMPLETE_WAIT_SECONDS = 0;
@@ -75,6 +76,7 @@ public class PartitionManager implements Runnable {
         partitionServiceImpl.reset();
         parallelExecutorBackups.shutdown();
         parallelExecutorMigration.shutdown();
+        backupTaskCount.set(0);
     }
 
     public void run() {
@@ -493,13 +495,22 @@ public class PartitionManager implements Runnable {
             }
         }
         if (!add) logger.log(Level.FINEST, thisAddress + " will backup " + lsOwnedRecords.size());
+        backupTaskCount.addAndGet(lsOwnedRecords.size());
         for (final Record rec : lsOwnedRecords) {
             parallelExecutorBackups.execute(new FallThroughRunnable() {
                 public void doRun() {
-                    concurrentMapManager.backupRecord(rec);
+                    try {
+                        concurrentMapManager.backupRecord(rec);
+                    } finally {
+                        backupTaskCount.decrementAndGet();
+                    }
                 }
             });
         }
+    }
+
+    public boolean hasActiveBackupTask() {
+        return backupTaskCount.get() > 0;
     }
 
     void migrateBlock(final Block blockInfo) {

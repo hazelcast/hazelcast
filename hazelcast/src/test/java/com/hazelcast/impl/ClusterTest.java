@@ -64,6 +64,42 @@ public class ClusterTest {
     }
 
     @Test
+    public void testGracefulShutdown() throws Exception {
+        int size = 100000;
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        IMap m1 = h1.getMap("default");
+        for (int i = 0; i < size; i++) {
+            m1.put(i, i);
+        }
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        IMap m2 = h2.getMap("default");
+        h1.getLifecycleService().shutdown();
+        assertEquals(size, m2.size());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        IMap m3 = h3.getMap("default");
+        h2.getLifecycleService().shutdown();
+        assertEquals(size, m3.size());
+    }
+
+    @Test
+    public void testGracefulShutdown2() throws Exception {
+        int size = 100000;
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        IMap m1 = h1.getMap("default");
+        for (int i = 0; i < size; i++) {
+            m1.put(i, i);
+        }
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        IMap m2 = h2.getMap("default");
+        IMap m3 = h3.getMap("default");
+        h1.getLifecycleService().shutdown();
+        assertEquals(size, m2.size());
+        h2.getLifecycleService().shutdown();
+        assertEquals(size, m3.size());
+    }
+
+    @Test
     public void testIdle() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig("default");
