@@ -37,6 +37,7 @@ public class MemberStateImpl implements MemberState {
     Member member;
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
+    Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
 
     public void writeData(DataOutput out) throws IOException {
         member.writeData(out);
@@ -97,6 +98,10 @@ public class MemberStateImpl implements MemberState {
 
     public void putLocalQueueStats(String queueName, LocalQueueStatsImpl localQueueStats) {
         queueStats.put(queueName, localQueueStats);
+    }
+
+    public void putLocalTopicStats(String name, LocalTopicStatsImpl localTopicStats) {
+        topicStats.put(name, localTopicStats);
     }
 
     @Override

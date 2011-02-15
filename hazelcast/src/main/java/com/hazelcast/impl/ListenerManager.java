@@ -311,7 +311,25 @@ public class ListenerManager extends BaseManager {
                     mProxy.getMapOperationCounter().incrementReceivedEvents();
                 }
             }
+        }else if (listenerItem.instanceType == Instance.InstanceType.QUEUE) {
+            if (!listenerItem.name.startsWith("q:__hz_")) {
+                Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
+                if (proxy instanceof QProxy) {
+                    QProxy qProxy = (QProxy) proxy;
+                    qProxy.getQueueOperationCounter().incrementReceivedEvents();
+                }
+            }
         }
+        else if (listenerItem.instanceType == Instance.InstanceType.TOPIC) {
+            if (!listenerItem.name.startsWith("t:__hz_")) {
+                Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
+                if (proxy instanceof TopicProxy) {
+                    TopicProxy tProxy = (TopicProxy) proxy;
+                    tProxy.getTopicOperationCounter().incrementReceivedMessages();
+                }
+            }
+        }
+
         final EntryEvent event2 = listenerItem.includeValue ?
                 event :
                 (event.getValue() != null ?

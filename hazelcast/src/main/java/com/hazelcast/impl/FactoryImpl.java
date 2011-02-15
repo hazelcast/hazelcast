@@ -29,6 +29,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
@@ -378,6 +379,9 @@ public class FactoryImpl implements HazelcastInstance {
             } else if (proxyObject.getInstanceType() == Instance.InstanceType.QUEUE) {
                 QProxy qProxy = (QProxy) proxyObject;
                 memberStats.putLocalQueueStats(qProxy.getName(), (LocalQueueStatsImpl) qProxy.getLocalQueueStats());
+            } else if (proxyObject.getInstanceType() == Instance.InstanceType.TOPIC) {
+                TopicProxy topicProxy = (TopicProxy) proxyObject;
+                memberStats.putLocalTopicStats(topicProxy.getName(), (LocalTopicStatsImpl) topicProxy.getLocalTopicStats());
             }
         }
         memberStats.setMember(node.getClusterImpl().getLocalMember());
@@ -999,10 +1003,21 @@ public class FactoryImpl implements HazelcastInstance {
             return base.getName();
         }
 
+        public LocalTopicStats getLocalTopicStats() {
+            ensure();
+            return base.getLocalTopicStats();
+        }
+
+        public TopicOperationsCounter getTopicOperationCounter() {
+            return base.getTopicOperationCounter();
+        }
+
         class TopicProxyReal implements TopicProxy {
+            TopicOperationsCounter topicOperationsCounter = new TopicOperationsCounter();
 
             public void publish(Object msg) {
                 check(msg);
+                topicOperationsCounter.incrementPublishes();
                 topicManager.doPublish(name, msg);
             }
 
@@ -1029,6 +1044,17 @@ public class FactoryImpl implements HazelcastInstance {
 
             public Object getId() {
                 return name;
+            }
+
+            public LocalTopicStats getLocalTopicStats() {
+                LocalTopicStatsImpl localTopicStats = topicManager.getTopicInstance(name).getTopicSats();
+                localTopicStats.setOperationsStats(topicOperationsCounter.getPublishedStats());
+                return localTopicStats;
+
+            }
+
+            public TopicOperationsCounter getTopicOperationCounter() {
+                return topicOperationsCounter;
             }
         }
     }
@@ -1405,6 +1431,10 @@ public class FactoryImpl implements HazelcastInstance {
             return qproxyReal.peek();
         }
 
+        public QueueOperationsCounter getQueueOperationCounter() {
+            return qproxyReal.getQueueOperationCounter();
+        }
+
         private class QProxyReal extends AbstractQueue implements QProxy {
             private final QueueOperationsCounter operationsCounter = new QueueOperationsCounter();
 
@@ -1568,6 +1598,10 @@ public class FactoryImpl implements HazelcastInstance {
 
             public Object getId() {
                 return name;
+            }
+
+            public QueueOperationsCounter getQueueOperationCounter() {
+                return operationsCounter;
             }
         }
     }
