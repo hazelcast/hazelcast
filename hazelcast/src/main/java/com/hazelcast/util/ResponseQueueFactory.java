@@ -109,7 +109,12 @@ public class ResponseQueueFactory {
         }
 
         public void clear() {
-            response = null;
+            lock.lock();
+            try {
+                response = null;
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override

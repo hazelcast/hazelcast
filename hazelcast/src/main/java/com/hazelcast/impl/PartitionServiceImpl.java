@@ -28,10 +28,7 @@ import com.hazelcast.util.ResponseQueueFactory;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.nio.IOUtil.toData;
@@ -95,7 +92,12 @@ public class PartitionServiceImpl implements PartitionService {
                 }
             });
             try {
-                partitionReal = responseQ.take();
+                while (partitionReal == null) {
+                    partitionReal = responseQ.poll(5, TimeUnit.SECONDS);
+                    if (partitionVersion == null) {
+                        concurrentMapManager.node.checkNodeState();
+                    }
+                }
                 mapRealPartitions.put(partitionId, partitionReal);
                 return partitionReal;
             } catch (InterruptedException ignored) {

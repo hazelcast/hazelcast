@@ -485,7 +485,6 @@ public abstract class BaseManager {
         @Override
         public void setTarget() {
             target = targetAddress;
-            System.out.println(target + "   " + request.lockThreadId);
         }
 
         @Override

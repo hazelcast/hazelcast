@@ -118,6 +118,8 @@ public class Node {
 
     private final CallHistory callHistory = new CallHistory();
 
+    private final ServerSocketChannel serverSocketChannel;
+
     final int id;
 
     public Node(FactoryImpl factory, Config config) {
@@ -151,7 +153,7 @@ public class Node {
         } catch (Exception ignored) {
         }
         buildNumber = tmpBuildNumber;
-        ServerSocketChannel serverSocketChannel;
+        ServerSocketChannel serverSocketChannelTemp = null;
         Address localAddress = null;
         try {
             final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
@@ -159,13 +161,14 @@ public class Node {
             if (preferIPv6Address == null && preferIPv4Stack == null) {
                 System.setProperty("java.net.preferIPv4Stack", "true");
             }
-            serverSocketChannel = ServerSocketChannel.open();
-            AddressPicker addressPicker = new AddressPicker(this, serverSocketChannel);
+            serverSocketChannelTemp = ServerSocketChannel.open();
+            AddressPicker addressPicker = new AddressPicker(this, serverSocketChannelTemp);
             localAddress = addressPicker.pickAddress();
             localAddress.setThisAddress(true);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
+        serverSocketChannel = serverSocketChannelTemp;
         address = localAddress;
         localMember = new MemberImpl(address, true, localNodeType);
         packetPool = new NoneStrictObjectPool<Packet>(2000) {
@@ -320,7 +323,7 @@ public class Node {
         logger.log(Level.FINEST, thread.getName() + " is interrupted ", e);
     }
 
-    void checkNodeState() {
+    public void checkNodeState() {
         if (factory.restarted) {
             throw new IllegalStateException("Hazelcast Instance is restarted!");
         } else if (!isActive()) {
@@ -525,6 +528,21 @@ public class Node {
 
     public ConnectionManager getConnectionManager() {
         return connectionManager;
+    }
+
+    public void onOutOfMemory() {
+        try {
+            if (serverSocketChannel != null) {
+                try {
+                    serverSocketChannel.close();
+                    connectionManager.shutdown();
+                    shutdown();
+                } catch (Throwable ignored) {
+                }
+            }
+        } finally {
+            active = false;
+        }
     }
 
     public class NodeShutdownHookThread extends Thread {

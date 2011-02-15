@@ -113,6 +113,7 @@ public final class ClusterService implements Runnable, Constants {
                     l.countDown();
                 }
             });
+            node.checkNodeState();
             return l.await(seconds, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
@@ -155,21 +156,28 @@ public final class ClusterService implements Runnable, Constants {
         boolean readPackets = false;
         boolean readProcessables = false;
         while (running) {
-            threadWatcher.incrementRunCount();
-            readPackets = (dequeuePackets() != 0);
-            readProcessables = (dequeueProcessables() != 0);
-            if (!readPackets && !readProcessables) {
-                try {
-                    long startWait = System.nanoTime();
-                    synchronized (notEmptyLock) {
-                        notEmptyLock.wait(2);
+            try {
+                threadWatcher.incrementRunCount();
+                readPackets = (dequeuePackets() != 0);
+                readProcessables = (dequeueProcessables() != 0);
+                if (!readPackets && !readProcessables) {
+                    try {
+                        long startWait = System.nanoTime();
+                        synchronized (notEmptyLock) {
+                            notEmptyLock.wait(2);
+                        }
+                        long now = System.nanoTime();
+                        threadWatcher.addWait((now - startWait), now);
+                        checkPeriodics();
+                    } catch (InterruptedException e) {
+                        node.handleInterruptedException(Thread.currentThread(), e);
                     }
-                    long now = System.nanoTime();
-                    threadWatcher.addWait((now - startWait), now);
-                    checkPeriodics();
-                } catch (InterruptedException e) {
-                    node.handleInterruptedException(Thread.currentThread(), e);
                 }
+            } catch (OutOfMemoryError e) {
+                e.printStackTrace();
+                node.onOutOfMemory();
+            } catch (Throwable e) {
+                e.printStackTrace();
             }
         }
         packetQueue.clear();
@@ -180,7 +188,7 @@ public final class ClusterService implements Runnable, Constants {
         node.getCpuUtilization().serviceThread = threadWatcher.publish();
     }
 
-    private int dequeuePackets() {
+    private int dequeuePackets() throws Throwable {
         Packet packet = null;
         try {
             for (int i = 0; i < PACKET_BULK_SIZE; i++) {
@@ -193,11 +201,12 @@ public final class ClusterService implements Runnable, Constants {
             }
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "error processing messages  packet=" + packet, e);
+            throw e;
         }
         return PACKET_BULK_SIZE;
     }
 
-    private int dequeueProcessables() {
+    private int dequeueProcessables() throws Throwable {
         Processable processable = null;
         try {
             for (int i = 0; i < PROCESSABLE_BULK_SIZE; i++) {
@@ -210,6 +219,7 @@ public final class ClusterService implements Runnable, Constants {
             }
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "error processing messages  processable=" + processable, e);
+            throw e;
         }
         return PACKET_BULK_SIZE;
     }
