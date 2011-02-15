@@ -25,7 +25,10 @@ import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.*;
 import com.hazelcast.util.Prioritized;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -324,9 +327,14 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     final Address address = memberImpl.getAddress();
                     logger.log(Level.WARNING, thisAddress + " will ping " + address);
                     for (int i = 0; i < 5; i++) {
-                        if (address.getInetAddress().isReachable(1000)) {
-                            logger.log(Level.INFO, thisAddress + " pings successfully. Target: " + address);
-                            return;
+                        try {
+                            if (address.getInetAddress().isReachable(1000)) {
+                                logger.log(Level.INFO, thisAddress + " pings successfully. Target: " + address);
+                                return;
+                            }
+                        } catch (ConnectException ignored) {
+                            // no route to host
+                            // means we cannot connect anymore
                         }
                     }
                     logger.log(Level.WARNING, thisAddress + " couldn't ping " + address);
@@ -336,8 +344,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             doRemoveAddress(address);
                         }
                     });
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } catch (Throwable ignored) {
                 }
             }
         });
@@ -429,6 +436,45 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 ((Call) call).onDisconnect(deadAddress);
             }
             logger.log(Level.INFO, this.toString());
+        }
+        if (isMaster()) {
+            sendProcessableToAll(new RemoveMember(deadAddress), false);
+        }
+    }
+
+    public static class RemoveMember implements RemotelyProcessable {
+        Address deadAddress;
+        transient Node node;
+
+        public RemoveMember(Address deadAddress) {
+            this.deadAddress = deadAddress;
+        }
+
+        public RemoveMember() {
+        }
+
+        public void setConnection(Connection conn) {
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            deadAddress.writeData(out);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            deadAddress = new Address();
+            deadAddress.readData(in);
+        }
+
+        public Node getNode() {
+            return node;
+        }
+
+        public void setNode(Node node) {
+            this.node = node;
+        }
+
+        public void process() {
+            node.clusterManager.doRemoveAddress(deadAddress);
         }
     }
 
