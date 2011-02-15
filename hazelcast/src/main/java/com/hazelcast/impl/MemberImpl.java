@@ -35,6 +35,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     protected NodeType nodeType;
     protected transient long lastRead = 0;
     protected transient long lastWrite = 0;
+    protected transient volatile long lastPing = 0;
 
     public MemberImpl() {
     }
@@ -91,6 +92,14 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
 
     public void didRead() {
         lastRead = System.currentTimeMillis();
+    }
+
+    public void didPing() {
+        lastPing = System.currentTimeMillis();
+    }
+
+    public long getLastPing() {
+        return lastPing;
     }
 
     public long getLastRead() {

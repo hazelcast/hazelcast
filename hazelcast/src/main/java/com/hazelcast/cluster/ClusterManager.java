@@ -25,6 +25,7 @@ import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.*;
 import com.hazelcast.util.Prioritized;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -243,10 +244,11 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 }
                                 logger.log(Level.WARNING, "Added " + address + " to list of dead addresses because of timeout since last read");
                                 lsDeadAddresses.add(address);
+                            } else if ((now - memberImpl.getLastRead()) >= 5000 && (now - memberImpl.getLastPing()) >= 5000) {
+                                ping(memberImpl);
                             }
                             if ((now - memberImpl.getLastWrite()) > 500) {
-                                Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT, 0);
-                                sendOrReleasePacket(packet, conn);
+                                sendHeartbeat(conn);
                             }
                         } else if (conn == null && (now - memberImpl.getLastRead()) > 5000) {
                             logMissingConnection(address);
@@ -267,20 +269,22 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
         } else {
             // send heartbeat to master
-            if (getMasterAddress() != null) {
-                MemberImpl masterMember = getMember(getMasterAddress());
+            Address masterAddress = getMasterAddress();
+            if (masterAddress != null) {
+                MemberImpl masterMember = getMember(masterAddress);
                 boolean removed = false;
                 if (masterMember != null) {
                     if ((now - masterMember.getLastRead()) >= (MAX_NO_HEARTBEAT_MILLIS)) {
                         logger.log(Level.FINEST, "Master node has timed out it's heartbeat and will be removed");
-                        doRemoveAddress(getMasterAddress());
+                        doRemoveAddress(masterAddress);
                         removed = true;
+                    } else if ((now - masterMember.getLastRead()) >= 5000 && (now - masterMember.getLastPing()) >= 5000) {
+                        ping(masterMember);
                     }
                 }
                 if (!removed) {
-                    Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT, 0);
                     Connection connMaster = node.connectionManager.getOrConnect(getMasterAddress());
-                    sendOrReleasePacket(packet, connMaster);
+                    sendHeartbeat(connMaster);
                 }
             }
             for (MemberImpl member : lsMembers) {
@@ -289,9 +293,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     if (shouldConnectTo(address)) {
                         Connection conn = node.connectionManager.getOrConnect(address);
                         if (conn != null) {
-                            Packet packet = obtainPacket("heartbeat", null, null,
-                                    ClusterOperation.HEARTBEAT, 0);
-                            sendOrReleasePacket(packet, conn);
+                            sendHeartbeat(conn);
                         } else {
                             logger.log(Level.FINEST, "could not connect to " + address + " to send heartbeat");
                         }
@@ -299,8 +301,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         Connection conn = node.connectionManager.getConnection(address);
                         if (conn != null && conn.live()) {
                             if ((now - member.getLastWrite()) > 500) {
-                                Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT, 0);
-                                sendOrReleasePacket(packet, conn);
+                                sendHeartbeat(conn);
                             }
                         } else {
                             logger.log(Level.FINEST, "not sending heartbeat because connection is null or not live " + address);
@@ -313,6 +314,38 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 }
             }
         }
+    }
+
+    private void ping(final MemberImpl memberImpl) {
+        memberImpl.didPing();
+        node.executorManager.executeNow(new Runnable() {
+            public void run() {
+                try {
+                    final Address address = memberImpl.getAddress();
+                    logger.log(Level.WARNING, thisAddress + " will ping " + address);
+                    for (int i = 0; i < 5; i++) {
+                        if (address.getInetAddress().isReachable(1000)) {
+                            logger.log(Level.INFO, thisAddress + " pings successfully. Target: " + address);
+                            return;
+                        }
+                    }
+                    logger.log(Level.WARNING, thisAddress + " couldn't ping " + address);
+                    // not reachable.
+                    enqueueAndReturn(new Processable() {
+                        public void process() {
+                            doRemoveAddress(address);
+                        }
+                    });
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    void sendHeartbeat(Connection conn) {
+        Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT, 0);
+        sendOrReleasePacket(packet, conn);
     }
 
     public boolean shouldConnectTo(Address address) {
