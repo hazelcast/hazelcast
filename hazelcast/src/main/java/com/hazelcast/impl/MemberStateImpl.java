@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.MemberState;
 
 import java.io.DataInput;
@@ -86,6 +87,10 @@ public class MemberStateImpl implements MemberState {
 
     public LocalQueueStats getLocalQueueStats(String queueName) {
         return queueStats.get(queueName);
+    }
+
+    public LocalTopicStats getLocalTopicStats(String topicName) {
+        return topicStats.get(topicName);
     }
 
     public void setMember(Member member) {

@@ -27,4 +27,6 @@ public interface MemberState extends DataSerializable {
     LocalMapStats getLocalMapStats(String mapName);
 
     LocalQueueStats getLocalQueueStats(String queueName);
+
+    LocalTopicStats getLocalTopicStats(String topicName);
 }
