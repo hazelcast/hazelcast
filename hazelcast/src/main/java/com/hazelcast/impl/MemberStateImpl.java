@@ -44,6 +44,7 @@ public class MemberStateImpl implements MemberState {
         member.writeData(out);
         int mapCount = mapStats.size();
         int queueCount = queueStats.size();
+        int topicCount = topicStats.size();
         out.writeInt(mapCount);
         Set<Map.Entry<String, LocalMapStatsImpl>> maps = mapStats.entrySet();
         for (Map.Entry<String, LocalMapStatsImpl> mapStatsEntry : maps) {
@@ -55,6 +56,12 @@ public class MemberStateImpl implements MemberState {
         for (Map.Entry<String, LocalQueueStatsImpl> queueStatEntry : queueStatEntries) {
             out.writeUTF(queueStatEntry.getKey());
             queueStatEntry.getValue().writeData(out);
+        }
+        out.writeInt(topicCount);
+        Set<Map.Entry<String, LocalTopicStatsImpl>> topicStatEntries = topicStats.entrySet();
+        for (Map.Entry<String, LocalTopicStatsImpl> topicStatEntry : topicStatEntries) {
+            out.writeUTF(topicStatEntry.getKey());
+            topicStatEntry.getValue().writeData(out);
         }
     }
 
@@ -74,6 +81,13 @@ public class MemberStateImpl implements MemberState {
             LocalQueueStatsImpl localQueueStats = new LocalQueueStatsImpl();
             localQueueStats.readData(in);
             queueStats.put(queueName, localQueueStats);
+        }
+        int topicCount = in.readInt();
+        for (int i = 0; i < topicCount; i++) {
+            String topicName = in.readUTF();
+            LocalTopicStatsImpl localTopicStats = new LocalTopicStatsImpl();
+            localTopicStats.readData(in);
+            topicStats.put(topicName, localTopicStats);
         }
     }
 
