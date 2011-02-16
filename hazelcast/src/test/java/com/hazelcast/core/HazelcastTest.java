@@ -820,6 +820,10 @@ public class HazelcastTest {
         map.put("Hello", "Australia");
         values = map.get("Hello");
         assertEquals(7, values.size());
+        assertFalse(map.remove("Hello", "Unknown"));
+        assertEquals(7, map.get("Hello").size());
+        assertTrue(map.remove("Hello", "Antartica"));
+        assertEquals(6, map.get("Hello").size());
     }
 
     @Test

@@ -782,6 +782,23 @@ public class ClusterTest {
             assertEquals("value2", entry.getValue());
         }
         allMapListenerTest(map2, "5", map1);
+        MultiMap<String, String> mm1 = h1.getMultiMap("default");
+        MultiMap<String, String> mm2 = h2.getMultiMap("default");
+        mm1.put("Hello", "World");
+        Collection<String> values = mm2.get("Hello");
+        assertEquals("World", values.iterator().next());
+        mm2.put("Hello", "Europe");
+        mm1.put("Hello", "America");
+        mm1.put("Hello", "Asia");
+        mm1.put("Hello", "Africa");
+        mm1.put("Hello", "Antartica");
+        mm1.put("Hello", "Australia");
+        values = mm2.get("Hello");
+        assertEquals(7, values.size());
+        junit.framework.Assert.assertFalse(mm2.remove("Hello", "Unknown"));
+        assertEquals(7, mm1.get("Hello").size());
+        assertTrue(mm1.remove("Hello", "Antartica"));
+        assertEquals(6, mm1.get("Hello").size());
     }
 
     @Test(timeout = 120000)
