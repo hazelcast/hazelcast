@@ -740,10 +740,12 @@ public class BlockingQueueManager extends BaseManager {
             long totalAge = 0;
             for (Object localKey : localKeys) {
                 MapEntry entry = storageMap.getMapEntry(localKey);
-                long age = (now - entry.getCreationTime());
-                minAge = Math.min(minAge, age);
-                maxAge = Math.max(maxAge, age);
-                totalAge += age;
+                if(entry != null) {
+	                long age = (now - entry.getCreationTime());
+	                minAge = Math.min(minAge, age);
+	                maxAge = Math.max(maxAge, age);
+	                totalAge += age;
+                }
             }
             long aveAge = (ownedCount == 0) ? 0 : (totalAge / ownedCount);
             return new LocalQueueStatsImpl(ownedCount, backupCount, minAge, maxAge, aveAge);
