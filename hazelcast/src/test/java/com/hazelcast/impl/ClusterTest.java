@@ -2241,13 +2241,21 @@ public class ClusterTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
         LifecycleCountingListener l = new LifecycleCountingListener();
         h2.getLifecycleService().addLifecycleListener(l);
-        for (int i = 0; i < 500; i++) {
+        int size = 500;
+        for (int i = 0; i < size; i++) {
             h2.getMap("default").put(i, "value" + i);
             h2.getMultiMap("default").put(i, "value" + i);
             h2.getMultiMap("default").put(i, "value0" + i);
         }
-        assertEquals(500, h2.getMap("default").size());
-        assertEquals(1000, h2.getMultiMap("default").size());
+        for (int i = 100; i < size + 100; i++) {
+            h1.getMap("default").put(i, "value" + i);
+            h1.getMultiMap("default").put(i, "value" + i);
+            h1.getMultiMap("default").put(i, "value0" + i);
+        }
+        assertEquals(size, h2.getMap("default").size());
+        assertEquals(2 * size, h2.getMultiMap("default").size());
+        assertEquals(size, h1.getMap("default").size());
+        assertEquals(2 * size, h1.getMultiMap("default").size());
         assertEquals(1, h1.getCluster().getMembers().size());
         assertEquals(1, h2.getCluster().getMembers().size());
         Thread.sleep(2000);
@@ -2257,10 +2265,12 @@ public class ClusterTest {
         assertEquals(1, l.getCount(LifecycleEvent.LifecycleState.RESTARTED));
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
-        assertEquals(500, h1.getMap("default").size());
-        assertEquals(500, h2.getMap("default").size());
-        assertEquals(1000, h2.getMultiMap("default").size());
-        assertEquals(1000, h1.getMultiMap("default").size());
+        int newMapSize = size + 100;
+        int newMultiMapSize = 2 * newMapSize;
+        assertEquals(newMapSize, h1.getMap("default").size());
+        assertEquals(newMapSize, h2.getMap("default").size());
+        assertEquals(newMultiMapSize, h2.getMultiMap("default").size());
+        assertEquals(newMultiMapSize, h1.getMultiMap("default").size());
     }
 
     class LifecycleCountingListener implements LifecycleListener {

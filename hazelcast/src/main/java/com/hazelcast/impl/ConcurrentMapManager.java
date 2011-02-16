@@ -881,7 +881,7 @@ public class ConcurrentMapManager extends BaseManager {
             DataRecordEntry dataRecordEntry = new DataRecordEntry(record, valueData);
             request.setFromRecord(record);
             request.operation = CONCURRENT_MAP_MERGE;
-            request.value = toData(dataRecordEntry.getValue());
+            request.value = toData(dataRecordEntry);
             request.setBooleanRequest();
             doOp();
             Boolean returnObject = getResultAsBoolean();
@@ -1967,7 +1967,8 @@ public class ConcurrentMapManager extends BaseManager {
                 boolean success = false;
                 Object winner = null;
                 if (cmap.mergePolicy != null) {
-                    Record existing = cmap.getRecord(request);
+                    Record existingRecord = cmap.getRecord(request);
+                    DataRecordEntry existing = (existingRecord == null) ? null : new DataRecordEntry(existingRecord);
                     DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
                     Object key = newEntry.getKey();
                     if (key != null && newEntry.hasValue()) {
@@ -2255,7 +2256,7 @@ public class ConcurrentMapManager extends BaseManager {
                         AsynchronousExecution ae = (AsynchronousExecution) getPacketProcessor(request.operation);
                         ae.execute(request);
                     } catch (Exception e) {
-                        logger.log(Level.FINEST, "Store thrown exception for " + request.operation, e);
+                        logger.log(Level.WARNING, "Store thrown exception for " + request.operation, e);
                         request.response = toData(new AddressAwareException(e, thisAddress));
                     }
                     offerSize.decrementAndGet();

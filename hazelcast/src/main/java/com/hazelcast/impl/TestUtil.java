@@ -54,7 +54,7 @@ public class TestUtil {
         final CountDownLatch migrationLatch = new CountDownLatch(2);
         MigrationListener migrationListener = new MigrationListener() {
             public void migrationCompleted(MigrationEvent migrationEvent) {
-                if (migrationEvent.getPartitionId() == blockId && migrationEvent.getNewOwner().equals(toMember)) {
+                if (migrationEvent.getPartitionId() == blockId && toMember.equals(migrationEvent.getNewOwner())) {
                     migrationLatch.countDown();
                 }
             }

@@ -296,7 +296,8 @@ public class PartitionManager implements Runnable {
                     block = getOrCreateBlock(i);
                 }
             }
-            if (node.groupProperties.INITIAL_WAIT_SECONDS.getInteger() == 0) {
+            if (node.groupProperties.INITIAL_WAIT_SECONDS.getInteger() == 0
+                    && node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger() == 0) {
                 quickBlockRearrangement();
             } else {
                 createAllBlocks();

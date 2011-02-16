@@ -130,6 +130,27 @@ public class FactoryImpl implements HazelcastInstance {
                 } catch (InterruptedException ignored) {
                 }
             }
+            int initialMinClusterSize = factory.node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger();
+            while (factory.node.getClusterImpl().getMembers().size() < initialMinClusterSize) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
+            }
+            if (initialMinClusterSize > 0) {
+                if (firstMember) {
+                    final ConcurrentMapManager concurrentMapManager = factory.node.concurrentMapManager;
+                    concurrentMapManager.enqueueAndReturn(new Processable() {
+                        public void process() {
+                            concurrentMapManager.partitionManager.quickBlockRearrangement();
+                        }
+                    });
+                } else {
+                    Thread.sleep(4 * 1000);
+                }
+                factory.logger.log(Level.INFO, "HazelcastInstance starting after waiting for cluster size of "
+                        + initialMinClusterSize);
+            }
             factory.lifecycleService.fireLifecycleEvent(STARTED);
             return factory.hazelcastInstanceProxy;
         } catch (Throwable t) {
@@ -1050,7 +1071,6 @@ public class FactoryImpl implements HazelcastInstance {
                 LocalTopicStatsImpl localTopicStats = topicManager.getTopicInstance(name).getTopicSats();
                 localTopicStats.setOperationsStats(topicOperationsCounter.getPublishedStats());
                 return localTopicStats;
-
             }
 
             public TopicOperationsCounter getTopicOperationCounter() {
