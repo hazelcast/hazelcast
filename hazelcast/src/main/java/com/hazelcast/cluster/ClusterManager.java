@@ -393,7 +393,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void doRemoveAddress(Address deadAddress) {
-        logger.log(Level.FINEST, "Removing Address " + deadAddress);
+        logger.log(Level.INFO, "Removing Address " + deadAddress);
         if (!node.joined()) {
             node.failedConnection(deadAddress);
             return;
@@ -542,7 +542,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void handleJoinRequest(JoinRequest joinRequest) {
-        logger.log(Level.FINEST, joinInProgress + " Handling " + joinRequest);
+        logger.log(Level.FINEST, joinInProgress + " Handling join from " + joinRequest.address + " timeToStart: "
+                + (timeToStartJoin - System.currentTimeMillis()));
         if (getMember(joinRequest.address) != null) {
             return;
         }
@@ -783,6 +784,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void startJoin() {
+        logger.log(Level.INFO, "Starting join.");
         joinInProgress = true;
         final MembersUpdateCall membersUpdate = new MembersUpdateCall(lsMembers, node.getClusterImpl().getClusterTime());
         if (setJoins != null && setJoins.size() > 0) {

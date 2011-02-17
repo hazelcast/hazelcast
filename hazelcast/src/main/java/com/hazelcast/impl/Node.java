@@ -779,8 +779,11 @@ public class Node {
         int tryCount = 0;
         while (!joined) {
             logger.log(Level.FINEST, "joining... " + masterAddress);
-            masterAddress = null;
-            masterAddress = findMasterWithMulticast();
+            Address masterAddressNow = findMasterWithMulticast();
+            if (masterAddressNow != null && masterAddressNow.equals(masterAddress)) {
+                tryCount--;
+            }
+            masterAddress = masterAddressNow;
             if (masterAddress == null || address.equals(masterAddress)) {
                 TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
                 if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {

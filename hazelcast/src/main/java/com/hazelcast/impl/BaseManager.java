@@ -533,7 +533,7 @@ public abstract class BaseManager {
                         return obj;
                     }
                     try {
-                        if (node.isActive()) {
+                        if (node.isActive() && request.operation != ClusterOperation.GET_CALLER_THREAD_STATE) {
                             Object reason = getCallState(request, getTarget());
                             logger.log(Level.WARNING, request + "\nStill no response! reason:" + reason);
                         }

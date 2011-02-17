@@ -101,7 +101,7 @@ public class ConnectionManager implements MembershipListener {
                                 currentConnection = connection;
                             } catch (Throwable e) {
                                 closeConnection(connection);
-                                logger.log(Level.INFO, "got an exception on getConnection:" + e.getMessage(), e);
+                                logger.log(Level.WARNING, "got an exception on getConnection:" + e.getMessage(), e);
                                 restored = false;
                             }
                         }
@@ -161,7 +161,7 @@ public class ConnectionManager implements MembershipListener {
                             currentConnection = connection;
                         } catch (Throwable e) {
                             closeConnection(connection);
-                            logger.log(Level.INFO, "got an exception on getConnection:" + e.getMessage(), e);
+                            logger.log(Level.WARNING, "got an exception on getConnection:" + e.getMessage(), e);
                         }
                     }
                     restored = currentConnection != null;
