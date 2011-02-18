@@ -50,6 +50,8 @@ public class Node {
 
     private volatile boolean active = false;
 
+    private volatile boolean outOfMemory = false;
+
     private volatile boolean completelyShutdown = false;
 
     private final ClusterImpl clusterImpl;
@@ -379,8 +381,12 @@ public class Node {
     }
 
     public void shutdown() {
+        shutdown(false);
+    }
+
+    public void shutdown(boolean force) {
         logger.log(Level.FINE, "** we are being asked to shutdown when active = " + String.valueOf(active));
-        while (isActive() && concurrentMapManager.partitionManager.hasActiveBackupTask()) {
+        while (!force && isActive() && concurrentMapManager.partitionManager.hasActiveBackupTask()) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -435,25 +441,20 @@ public class Node {
         if (completelyShutdown) return;
         final String prefix = "hz." + this.id + ".";
         Thread inThread = new Thread(threadGroup, inSelector, prefix + "InThread");
-//        inThread.setContextClassLoader(config.getClassLoader());
         inThread.setPriority(groupProperties.IN_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + inThread.getName());
         inThread.start();
         Thread outThread = new Thread(threadGroup, outSelector, prefix + "OutThread");
-//        outThread.setContextClassLoader(config.getClassLoader());
         outThread.setPriority(groupProperties.OUT_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + outThread.getName());
         outThread.start();
         serviceThread = new Thread(threadGroup, clusterService, prefix + "ServiceThread");
-//        serviceThread.setContextClassLoader(config.getClassLoader());
         serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
         serviceThread.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-            final Thread multicastServiceThread = new Thread(threadGroup, multicastService, "hz.MulticastThread");
+            final Thread multicastServiceThread = new Thread(threadGroup, multicastService, prefix + "MulticastThread");
             multicastServiceThread.start();
-//            multicastServiceThread.setContextClassLoader(config.getClassLoader());
-//            multicastServiceThread.setPriority(6);
         }
         setActive(true);
         if (!completelyShutdown) {
@@ -530,18 +531,20 @@ public class Node {
         return connectionManager;
     }
 
-    public void onOutOfMemory() {
+    public void onOutOfMemory(OutOfMemoryError e) {
         try {
             if (serverSocketChannel != null) {
                 try {
                     serverSocketChannel.close();
                     connectionManager.shutdown();
-                    shutdown();
+                    shutdown(true);
                 } catch (Throwable ignored) {
                 }
             }
         } finally {
             active = false;
+            outOfMemory = true;
+            e.printStackTrace();
         }
     }
 
@@ -985,6 +988,10 @@ public class Node {
      */
     public boolean isActive() {
         return active;
+    }
+
+    public boolean isOutOfMemory() {
+        return outOfMemory;
     }
 
     public CpuUtilization getCpuUtilization() {

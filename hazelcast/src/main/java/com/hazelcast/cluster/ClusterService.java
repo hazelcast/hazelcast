@@ -174,8 +174,7 @@ public final class ClusterService implements Runnable, Constants {
                     }
                 }
             } catch (OutOfMemoryError e) {
-                e.printStackTrace();
-                node.onOutOfMemory();
+                node.onOutOfMemory(e);
             } catch (Throwable e) {
                 e.printStackTrace();
             }
@@ -199,6 +198,8 @@ public final class ClusterService implements Runnable, Constants {
                 }
                 processPacket(packet);
             }
+        } catch (OutOfMemoryError e) {
+            throw e;
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "error processing messages  packet=" + packet, e);
             throw e;
@@ -217,6 +218,8 @@ public final class ClusterService implements Runnable, Constants {
                 }
                 processProcessable(processable);
             }
+        } catch (OutOfMemoryError e) {
+            throw e;
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "error processing messages  processable=" + processable, e);
             throw e;

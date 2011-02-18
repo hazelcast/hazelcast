@@ -95,6 +95,8 @@ public class MulticastService implements Runnable {
                         multicastListener.onMessage(joinInfo);
                     }
                 }
+            } catch (OutOfMemoryError e) {
+                node.onOutOfMemory(e);
             } catch (Exception e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }

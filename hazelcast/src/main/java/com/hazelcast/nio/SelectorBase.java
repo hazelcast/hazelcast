@@ -144,8 +144,7 @@ public abstract class SelectorBase implements Runnable {
                 }
             }
         } catch (OutOfMemoryError e) {
-            e.printStackTrace();
-            node.onOutOfMemory();
+            node.onOutOfMemory(e);
         } catch (Throwable e) {
             logger.log(Level.WARNING, "unhandled exception in " + Thread.currentThread().getName(), e);
         } finally {

@@ -26,8 +26,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 
-import static com.hazelcast.impl.Constants.IO.KILO_BYTE;
-
 abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected final ILogger logger;
@@ -61,10 +59,14 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
     }
 
     final void handleSocketException(Throwable e) {
-        logger.log(Level.FINEST, Thread.currentThread().getName() + " Closing Socket. cause:  ", e);
-        if (sk != null)
+        if (e instanceof OutOfMemoryError) {
+            node.onOutOfMemory((OutOfMemoryError) e);
+        }
+        if (sk != null) {
             sk.cancel();
+        }
         connection.close();
+        logger.log(Level.FINEST, Thread.currentThread().getName() + " Closing Socket. cause:  ", e);
     }
 
     final void registerOp(final Selector selector, final int operation) {
