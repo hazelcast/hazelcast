@@ -214,6 +214,7 @@ public class AtomicNumberImpl extends FactoryAwareNamedProxy implements AtomicNu
         }
 
         public void destroy() {
+            factory.node.concurrentMapManager.new MRemove().remove(FactoryImpl.ATOMIC_NUMBER_MAP_NAME, nameAsData, 0);
         }
 
         public Object getId() {

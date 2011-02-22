@@ -820,7 +820,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         boolean doBooleanAtomic() {
             Data expectedData = (ignoreExpected) ? null : toData(expected);
-            setLocal(op, "c:hz_AtomicNumber", nameAsKey, expectedData, 0, 0);
+            setLocal(op, FactoryImpl.ATOMIC_NUMBER_MAP_NAME, nameAsKey, expectedData, 0, 0);
             request.longValue = value;
             request.setBooleanRequest();
             doOp();
@@ -832,7 +832,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         long doLongAtomic() {
-            setLocal(op, "c:hz_AtomicNumber", nameAsKey, null, 0, 0);
+            setLocal(op, FactoryImpl.ATOMIC_NUMBER_MAP_NAME, nameAsKey, null, 0, 0);
             request.longValue = value;
             doOp();
             Object returnObject = getResultAsObject(false);

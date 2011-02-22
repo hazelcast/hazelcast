@@ -15,22 +15,18 @@
  *
  */
 
-package com.hazelcast.impl.base;
+package com.hazelcast.monitor;
 
 import com.hazelcast.util.ThreadStats;
 
-public class CpuUtilization {
+public interface MemberHealthStats {
+    boolean isActive();
 
-    public volatile ThreadStats serviceThread = new ThreadStats(0, 0, 0);
-    public volatile ThreadStats inThread = new ThreadStats(0, 0, 0);
-    public volatile ThreadStats outThread = new ThreadStats(0, 0, 0);
+    boolean isOutOfMemory();
 
-    @Override
-    public String toString() {
-        return "CpuUtilization {" +
-                "\n\tserviceThread =" + serviceThread +
-                "\n\tinThread      =" + inThread +
-                "\n\toutThread     =" + outThread +
-                "\n}";
-    }
+    ThreadStats getServiceThreadStats();
+
+    ThreadStats getInThreadStats();
+
+    ThreadStats getOutThreadStats();
 }

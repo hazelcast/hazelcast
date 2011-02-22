@@ -35,13 +35,17 @@ public class MemberStateImpl implements MemberState {
      *
      */
     private static final long serialVersionUID = -1817978625085375340L;
-    Member member;
+    boolean outOfMemory = false;
+
+    Member member = new MemberImpl();
+    MemberHealthStatsImpl memberHealthStats = new MemberHealthStatsImpl();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
 
     public void writeData(DataOutput out) throws IOException {
         member.writeData(out);
+        memberHealthStats.writeData(out);
         int mapCount = mapStats.size();
         int queueCount = queueStats.size();
         int topicCount = topicStats.size();
@@ -66,8 +70,8 @@ public class MemberStateImpl implements MemberState {
     }
 
     public void readData(DataInput in) throws IOException {
-        member = new MemberImpl();
         member.readData(in);
+        memberHealthStats.readData(in);
         int mapCount = in.readInt();
         for (int i = 0; i < mapCount; i++) {
             String mapName = in.readUTF();
@@ -89,6 +93,10 @@ public class MemberStateImpl implements MemberState {
             localTopicStats.readData(in);
             topicStats.put(topicName, localTopicStats);
         }
+    }
+
+    public MemberHealthStatsImpl getMemberHealthStats() {
+        return memberHealthStats;
     }
 
     public Member getMember() {
@@ -125,9 +133,11 @@ public class MemberStateImpl implements MemberState {
 
     @Override
     public String toString() {
-        return "MemberStateImpl [" + member +
-                "] { mapStats=" + mapStats +
-                "\n queueStats=" + queueStats +
-                '}';
+        return "MemberStateImpl [" + member + "] " +
+                "\n{ " +
+                "\n\t" + memberHealthStats +
+                "\n\tmapStats=" + mapStats +
+                "\n\tqueueStats=" + queueStats +
+                "\n}";
     }
 }

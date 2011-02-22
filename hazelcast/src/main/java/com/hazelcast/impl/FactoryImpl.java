@@ -57,7 +57,9 @@ public class FactoryImpl implements HazelcastInstance {
 
     final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
 
-    private final static Object factoryLock = new Object();
+    final static Object factoryLock = new Object();
+
+    final static String ATOMIC_NUMBER_MAP_NAME = "c:hz_AtomicNumber";
 
     private static int nextFactoryId = 0;
 
@@ -97,6 +99,8 @@ public class FactoryImpl implements HazelcastInstance {
 
     final LifecycleServiceImpl lifecycleService;
 
+    final ManagementConsoleService managementConsoleService;
+
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         FactoryImpl factory = null;
         try {
@@ -110,6 +114,7 @@ public class FactoryImpl implements HazelcastInstance {
                 if (old != null) {
                     factory.logger.log(Level.SEVERE, "HazelcastInstance with [" + name + "] already exist!");
                     throw new RuntimeException();
+                } else {
                 }
             }
             boolean firstMember = (factory.node.getClusterImpl().getMembers().iterator().next().localMember());
@@ -174,7 +179,7 @@ public class FactoryImpl implements HazelcastInstance {
             this.hazelcastInstance = factory;
         }
 
-        FactoryImpl getFactory() {
+        public FactoryImpl getFactory() {
             return (FactoryImpl) hazelcastInstance;
         }
 
@@ -301,6 +306,7 @@ public class FactoryImpl implements HazelcastInstance {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
+            factory.proxies.clear();
             factory.node.shutdown();
             factories.remove(factory.getName());
             if (factories.size() == 0) {
@@ -384,6 +390,13 @@ public class FactoryImpl implements HazelcastInstance {
         }
         managementService = new ManagementService(this);
         managementService.register();
+        ManagementConsoleService managementConsoleServiceTmp = null;
+        try {
+            managementConsoleServiceTmp = new ManagementConsoleService(FactoryImpl.this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        managementConsoleService = managementConsoleServiceTmp;
     }
 
     public Set<String> getLongInstanceNames() {
@@ -391,7 +404,18 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public MemberStateImpl createMemberState() {
-        MemberStateImpl memberStats = new MemberStateImpl();
+        final MemberStateImpl memberState = new MemberStateImpl();
+        createMemberState(memberState);
+        return memberState;
+    }
+
+    public void createMemberState(MemberStateImpl memberStats) {
+        memberStats.setMember(node.getClusterImpl().getLocalMember());
+        memberStats.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
+        memberStats.getMemberHealthStats().setActive(node.isActive());
+        memberStats.getMemberHealthStats().setServiceThreadStats(node.getCpuUtilization().serviceThread);
+        memberStats.getMemberHealthStats().setOutThreadStats(node.getCpuUtilization().outThread);
+        memberStats.getMemberHealthStats().setInThreadStats(node.getCpuUtilization().inThread);
         Collection<HazelcastInstanceAwareInstance> proxyObjects = proxies.values();
         for (HazelcastInstanceAwareInstance proxyObject : proxyObjects) {
             if (proxyObject.getInstanceType() == Instance.InstanceType.MAP) {
@@ -405,8 +429,6 @@ public class FactoryImpl implements HazelcastInstance {
                 memberStats.putLocalTopicStats(topicProxy.getName(), (LocalTopicStatsImpl) topicProxy.getLocalTopicStats());
             }
         }
-        memberStats.setMember(node.getClusterImpl().getLocalMember());
-        return memberStats;
     }
 
     /**
@@ -532,6 +554,9 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public void shutdown() {
+        if (managementConsoleService != null) {
+            managementConsoleService.shutdown();
+        }
         lifecycleService.shutdown();
         for (ExecutorServiceProxy esp : executorServiceProxies.values()) {
             esp.shutdown();
@@ -592,13 +617,14 @@ public class FactoryImpl implements HazelcastInstance {
 //                return;
 //            }
 //        }
-        while (lifecycleService.paused.get()) {
+        while (node.isActive() && lifecycleService.paused.get()) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 return;
             }
         }
+        if (!node.isActive()) throw new IllegalStateException("Hazelcast Instance is not active!");
     }
 
     public void destroyProxy(final ProxyKey proxyKey) {

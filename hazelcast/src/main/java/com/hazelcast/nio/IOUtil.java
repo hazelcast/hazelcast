@@ -19,9 +19,41 @@ package com.hazelcast.nio;
 
 import com.hazelcast.impl.ThreadContext;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 public final class IOUtil {
+
+    public static OutputStream newOutputStream(final ByteBuffer buf) {
+        return new OutputStream() {
+            public void write(int b) throws IOException {
+                buf.put((byte) b);
+            }
+
+            public void write(byte[] bytes, int off, int len) throws IOException {
+                buf.put(bytes, off, len);
+            }
+        };
+    }
+
+    public static InputStream newInputStream(final ByteBuffer buf) {
+        return new InputStream() {
+            public int read() throws IOException {
+                if (!buf.hasRemaining()) {
+                    return -1;
+                }
+                return buf.get();
+            }
+
+            public int read(byte[] bytes, int off, int len) throws IOException {
+                len = Math.min(len, buf.remaining());
+                buf.get(bytes, off, len);
+                return len;
+            }
+        };
+    }
 
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dest) {
         if (src == null) return 0;
