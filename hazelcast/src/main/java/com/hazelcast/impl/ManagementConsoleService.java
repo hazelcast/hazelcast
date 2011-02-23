@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.newInputStream;
@@ -37,7 +37,7 @@ import static com.hazelcast.nio.IOUtil.newOutputStream;
 
 public class ManagementConsoleService implements MembershipListener {
 
-    Queue<ClientHandler> qBuffers = new LinkedBlockingDeque<ClientHandler>(100);
+    Queue<ClientHandler> qBuffers = new LinkedBlockingQueue<ClientHandler>(100);
     static int bufferSize = 100000;
     private final FactoryImpl factory;
     private volatile Members members = null;
@@ -98,7 +98,7 @@ public class ManagementConsoleService implements MembershipListener {
             MemberImpl memberImpl = (MemberImpl) member;
             SocketAddress sa = new InetSocketAddress(memberImpl.getInetAddress(), memberImpl.getPort() + 100);
             MemberStateImpl memberState = new MemberStateImpl();
-            memberState.setMember(memberImpl);
+            memberState.setAddress(memberImpl.getAddress());
             newMembers.put(i++, sa, memberState);
         }
         members = newMembers;
@@ -136,8 +136,7 @@ public class ManagementConsoleService implements MembershipListener {
                     serverSocket.doAccept(clientHandler.getSocket());
                     clientHandler.start();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ignored) {
             }
         }
     }
@@ -167,8 +166,7 @@ public class ManagementConsoleService implements MembershipListener {
                     } catch (SocketTimeoutException ignored) {
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Exception ignored) {
             }
         }
     }

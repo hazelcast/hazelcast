@@ -17,12 +17,12 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
 public interface MemberState extends DataSerializable {
 
-    Member getMember();
+    Address getAddress();
 
     MemberHealthStats getMemberHealthStats();
 

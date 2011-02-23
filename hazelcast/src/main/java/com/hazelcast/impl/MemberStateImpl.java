@@ -17,11 +17,11 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.MemberState;
+import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -35,16 +35,15 @@ public class MemberStateImpl implements MemberState {
      *
      */
     private static final long serialVersionUID = -1817978625085375340L;
-    boolean outOfMemory = false;
 
-    Member member = new MemberImpl();
+    Address address = new Address();
     MemberHealthStatsImpl memberHealthStats = new MemberHealthStatsImpl();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
 
     public void writeData(DataOutput out) throws IOException {
-        member.writeData(out);
+        address.writeData(out);
         memberHealthStats.writeData(out);
         int mapCount = mapStats.size();
         int queueCount = queueStats.size();
@@ -70,7 +69,7 @@ public class MemberStateImpl implements MemberState {
     }
 
     public void readData(DataInput in) throws IOException {
-        member.readData(in);
+        address.readData(in);
         memberHealthStats.readData(in);
         int mapCount = in.readInt();
         for (int i = 0; i < mapCount; i++) {
@@ -99,10 +98,6 @@ public class MemberStateImpl implements MemberState {
         return memberHealthStats;
     }
 
-    public Member getMember() {
-        return member;
-    }
-
     public LocalMapStats getLocalMapStats(String mapName) {
         return mapStats.get(mapName);
     }
@@ -115,8 +110,12 @@ public class MemberStateImpl implements MemberState {
         return topicStats.get(topicName);
     }
 
-    public void setMember(Member member) {
-        this.member = member;
+    public Address getAddress() {
+        return address;
+    }
+
+    public void setAddress(Address address) {
+        this.address = address;
     }
 
     public void putLocalMapStats(String mapName, LocalMapStatsImpl localMapStats) {
@@ -133,7 +132,7 @@ public class MemberStateImpl implements MemberState {
 
     @Override
     public String toString() {
-        return "MemberStateImpl [" + member + "] " +
+        return "MemberStateImpl [" + address + "] " +
                 "\n{ " +
                 "\n\t" + memberHealthStats +
                 "\n\tmapStats=" + mapStats +

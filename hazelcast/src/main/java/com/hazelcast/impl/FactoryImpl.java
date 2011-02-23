@@ -410,7 +410,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public void createMemberState(MemberStateImpl memberStats) {
-        memberStats.setMember(node.getClusterImpl().getLocalMember());
+        memberStats.setAddress(((MemberImpl) node.getClusterImpl().getLocalMember()).getAddress());
         memberStats.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
         memberStats.getMemberHealthStats().setActive(node.isActive());
         memberStats.getMemberHealthStats().setServiceThreadStats(node.getCpuUtilization().serviceThread);
