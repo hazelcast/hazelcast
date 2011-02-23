@@ -238,9 +238,7 @@ public class ManagementConsoleService implements MembershipListener {
                 while (running) {
                     int request = in.read();
                     buffer.clear();
-                    buffer.putInt(0);
                     writeState(members, dos);
-                    buffer.putInt(0, buffer.position() - 4);
                     out.write(buffer.array(), 0, buffer.position());
                 }
             } catch (Exception e) {
