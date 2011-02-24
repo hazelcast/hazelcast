@@ -65,8 +65,9 @@ public class MemberStateImpl implements MemberState {
             out.writeUTF(topicStatEntry.getKey());
             topicStatEntry.getValue().writeData(out);
         }
-        out.writeInt(lsPartitions.size());
-        for (int i = 0; i < lsPartitions.size(); i++) {
+        int partitionCount = lsPartitions.size();
+        out.writeInt(partitionCount);
+        for (int i = 0; i < partitionCount; i++) {
             out.writeInt(lsPartitions.get(i));
         }
     }

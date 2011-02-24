@@ -17,20 +17,18 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.TimedClusterState;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.DataSerializable;
 
 import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.newInputStream;
@@ -41,6 +39,7 @@ public class ManagementConsoleService implements MembershipListener {
     public static final byte STATE_OUT_OF_MEMORY = 0;
     public static final byte STATE_ACTIVE = 1;
     public static final int REQUEST_TYPE_CLUSTER_STATE = 1;
+    public static final int REQUEST_TYPE_GET_THREAD_DUMP = 2;
 
     final Queue<ClientHandler> qClientHandlers = new LinkedBlockingQueue<ClientHandler>(100);
     static int bufferSize = 100000;
@@ -54,6 +53,8 @@ public class ManagementConsoleService implements MembershipListener {
     private final TCPListener tcpListener;
     private final List<ClientHandler> lsClientHandlers = new CopyOnWriteArrayList<ClientHandler>();
     private final ILogger logger;
+    private final MemberStateImpl localState = new MemberStateImpl();
+    private final SocketAddress localSocketAddress;
 
     public ManagementConsoleService(FactoryImpl factoryImpl) throws Exception {
         this.factory = factoryImpl;
@@ -62,8 +63,10 @@ public class ManagementConsoleService implements MembershipListener {
             qClientHandlers.offer(new ClientHandler());
         }
         factory.getCluster().addMembershipListener(this);
+        MemberImpl memberLocal = (MemberImpl) factory.getCluster().getLocalMember();
+        int port = memberLocal.getInetSocketAddress().getPort() + 100;
+        localSocketAddress = new InetSocketAddress(memberLocal.getInetAddress(), port);
         updateAddresses();
-        int port = factory.getCluster().getLocalMember().getInetSocketAddress().getPort() + 100;
         datagramSocket = new DatagramSocket(port);
         serverSocket = new SocketReadyServerSocket(port);
         udpListener = new UDPListener(datagramSocket);
@@ -101,8 +104,8 @@ public class ManagementConsoleService implements MembershipListener {
         int i = 0;
         for (Member member : memberSet) {
             MemberImpl memberImpl = (MemberImpl) member;
-            SocketAddress sa = new InetSocketAddress(memberImpl.getInetAddress(), memberImpl.getPort() + 100);
-            MemberStateImpl memberState = new MemberStateImpl();
+            SocketAddress sa = (member.localMember()) ? localSocketAddress : new InetSocketAddress(memberImpl.getInetAddress(), memberImpl.getPort() + 100);
+            MemberStateImpl memberState = (member.localMember()) ? localState : new MemberStateImpl();
             memberState.setAddress(memberImpl.getAddress());
             newMembers.put(i++, sa, memberState);
         }
@@ -172,6 +175,7 @@ public class ManagementConsoleService implements MembershipListener {
                     }
                 }
             } catch (Exception ignored) {
+                ignored.printStackTrace();
             }
         }
     }
@@ -181,7 +185,6 @@ public class ManagementConsoleService implements MembershipListener {
         final DatagramPacket packet = new DatagramPacket(new byte[0], 0);
         final ByteBuffer bbState = ByteBuffer.allocate(1000000);
         final DataOutputStream dos = new DataOutputStream(newOutputStream(bbState));
-        final MemberStateImpl state = new MemberStateImpl();
 
         public UDPSender(DatagramSocket socket) throws SocketException {
             super("hz.UDP.Listener");
@@ -200,34 +203,64 @@ public class ManagementConsoleService implements MembershipListener {
         }
 
         void sendState() {
+            updateState();
             if (members != null) {
                 for (SocketAddress address : members.socketAddresses) {
-                    try {
-                        updateState();
-                        bbState.clear();
-                        state.writeData(dos);
-                        packet.setData(bbState.array(), 0, bbState.position());
-                        packet.setSocketAddress(address);
-                        socket.send(packet);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    if (!localSocketAddress.equals(address)) {
+                        try {
+                            bbState.clear();
+                            localState.writeData(dos);
+                            packet.setData(bbState.array(), 0, bbState.position());
+                            packet.setSocketAddress(address);
+                            socket.send(packet);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
         }
 
         void updateState() {
-            factory.createMemberState(state);
+            factory.createMemberState(localState);
+        }
+    }
+
+    class LazyDataInputStream extends DataInputStream {
+        LazyDataInputStream() {
+            super(null);
+        }
+
+        void setInputStream(InputStream in) {
+            super.in = in;
+        }
+    }
+
+    class LazyDataOutputStream extends DataOutputStream {
+        LazyDataOutputStream() {
+            super(null);
+        }
+
+        void setOutputStream(OutputStream out) {
+            super.out = out;
         }
     }
 
     class ClientHandler extends Thread {
         final ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
         final DataOutputStream dos = new DataOutputStream(newOutputStream(buffer));
-
+        final ConsoleRequest[] consoleRequests = new ConsoleRequest[10];
         final Socket socket = new Socket();
+        final LazyDataInputStream socketIn = new LazyDataInputStream();
+        final LazyDataOutputStream socketOut = new LazyDataOutputStream();
 
         public ClientHandler() {
+            register(new GetClusterStateRequest());
+            register(new ThreadDumpRequest());
+        }
+
+        public void register(ConsoleRequest consoleRequest) {
+            consoleRequests[consoleRequest.getType()] = consoleRequest;
         }
 
         public Socket getSocket() {
@@ -236,21 +269,22 @@ public class ManagementConsoleService implements MembershipListener {
 
         public void run() {
             try {
-                InputStream in = socket.getInputStream();
-                OutputStream out = socket.getOutputStream();
+                socketIn.setInputStream(socket.getInputStream());
+                socketOut.setOutputStream(socket.getOutputStream());
                 while (running) {
-                    int requestType = in.read();
+                    int requestType = socketIn.read();
+                    ConsoleRequest consoleRequest = consoleRequests[requestType];
+                    System.out.println("console.request " + consoleRequest);
+                    consoleRequest.readData(socketIn);
                     buffer.clear();
-                    boolean isOutOfMemory = false; //factory.node.isOutOfMemory();
+                    boolean isOutOfMemory = factory.node.isOutOfMemory();
                     if (isOutOfMemory) {
                         dos.writeByte(STATE_OUT_OF_MEMORY);
                     } else {
                         dos.writeByte(STATE_ACTIVE);
-                        if (requestType == REQUEST_TYPE_CLUSTER_STATE) {
-                            writeState(dos);
-                        }
+                        consoleRequest.writeResponse(ManagementConsoleService.this, dos);
                     }
-                    out.write(buffer.array(), 0, buffer.position());
+                    socketOut.write(buffer.array(), 0, buffer.position());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -263,6 +297,109 @@ public class ManagementConsoleService implements MembershipListener {
             } catch (Throwable ignored) {
             }
         }
+    }
+
+    public static class GetClusterStateRequest implements ConsoleRequest {
+        public int getType() {
+            return ManagementConsoleService.REQUEST_TYPE_CLUSTER_STATE;
+        }
+
+        public void writeResponse(ManagementConsoleService mcs, DataOutputStream dos) throws Exception {
+            mcs.writeState(dos);
+        }
+
+        public TimedClusterState readResponse(DataInputStream in) throws IOException {
+            TimedClusterState t = new TimedClusterState();
+            t.readData(in);
+            return t;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+        }
+
+        public void readData(DataInput in) throws IOException {
+        }
+    }
+
+    public Object call(Address address, Callable callable) {
+        try {
+            Set<Member> members = factory.getCluster().getMembers();
+            for (Member member : members) {
+                if (address.equals(((MemberImpl) member).getAddress())) {
+                    DistributedTask task = new DistributedTask(callable, member);
+                    factory.getExecutorService().execute(task);
+                    try {
+                        return task.get(1, TimeUnit.SECONDS);
+                    } catch (Throwable e) {
+                        return null;
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            return null;
+        }
+        return null;
+    }
+
+    public static class GetThreadDump implements Callable<String>, DataSerializable, HazelcastInstanceAware {
+
+        private HazelcastInstance hazelcast;
+
+        public String call() throws Exception {
+            return "THREAD DUMP";
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+        }
+
+        public void readData(DataInput in) throws IOException {
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcast = hazelcastInstance;
+        }
+    }
+
+    public static class ThreadDumpRequest implements ConsoleRequest {
+        Address target;
+
+        public ThreadDumpRequest() {
+        }
+
+        public ThreadDumpRequest(Address target) {
+            this.target = target;
+        }
+
+        public int getType() {
+            return ManagementConsoleService.REQUEST_TYPE_GET_THREAD_DUMP;
+        }
+
+        public void writeResponse(ManagementConsoleService mcs, DataOutputStream dos) throws Exception {
+            String threadDump = (String) mcs.call(target, new GetThreadDump());
+            dos.writeUTF(threadDump);
+        }
+
+        public String readResponse(DataInputStream in) throws IOException {
+            return in.readUTF();
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            target.writeData(out);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            target = new Address();
+            target.readData(in);
+        }
+    }
+
+    public static interface ConsoleRequest extends DataSerializable {
+
+        int getType();
+
+        Object readResponse(DataInputStream in) throws IOException;
+
+        void writeResponse(ManagementConsoleService mcs, DataOutputStream dos) throws Exception;
     }
 
     void writeState(final DataOutputStream dos) throws Exception {
