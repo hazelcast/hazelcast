@@ -17,65 +17,53 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.MemberStateImpl;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class TimedClusterState implements DataSerializable {
     long time;
-    Map<Member, MemberState> memberStates = new ConcurrentHashMap<Member, MemberState>();
-    ClusterStateView clusterStateView;
+    List<MemberState> lsMemberStates = new ArrayList<MemberState>(100);
+    Set<String> instanceNames = null;
 
     public void writeData(DataOutput out) throws IOException {
         out.writeLong(time);
-        out.writeInt(memberStates.size());
-        Set<Map.Entry<Member, MemberState>> memberStateEntries = memberStates.entrySet();
-        for (Map.Entry<Member, MemberState> memberStatEntry : memberStateEntries) {
-            memberStatEntry.getKey().writeData(out);
-            memberStatEntry.getValue().writeData(out);
+        out.writeInt(lsMemberStates.size());
+        for (MemberState memberState : lsMemberStates) {
+            memberState.writeData(out);
         }
-        if (clusterStateView != null) {
-            out.writeBoolean(true);
-            clusterStateView.writeData(out);
-        } else {
-            out.writeBoolean(false);
+        int nameCount = (instanceNames == null) ? 0 : instanceNames.size();
+        out.writeInt(nameCount);
+        if (instanceNames != null) {
+            for (String name : instanceNames) {
+                out.writeUTF(name);
+            }
         }
     }
 
     public void readData(DataInput in) throws IOException {
         time = in.readLong();
         int memberStatsCount = in.readInt();
+        System.out.println(time + "   " + memberStatsCount);
         for (int i = 0; i < memberStatsCount; i++) {
-            Member member = new MemberImpl();
-            member.readData(in);
-            MemberStateImpl memberStateImpl = new MemberStateImpl();
-            memberStateImpl.readData(in);
-            memberStates.put(member, memberStateImpl);
+            MemberStateImpl memberState = new MemberStateImpl();
+            memberState.readData(in);
+            lsMemberStates.add(memberState);
+            System.out.println(memberState);
         }
-        if (in.readBoolean()) {
-            clusterStateView = new ClusterStateViewImpl();
-            clusterStateView.readData(in);
+        int nameCount = in.readInt();
+        System.out.println("nameCount " + nameCount);
+        instanceNames = new HashSet<String>(nameCount);
+        for (int i = 0; i < nameCount; i++) {
+            instanceNames.add(in.readUTF());
         }
-    }
-
-    public boolean containsKey(Member member) {
-        return memberStates.containsKey(member);
-    }
-
-    public void putMemberState(Member member, MemberState mapStat) {
-        memberStates.put(member, mapStat);
-    }
-
-    public Map<Member, MemberState> getMemberState() {
-        return memberStates;
     }
 
     public void setTime(long time) {
@@ -86,12 +74,32 @@ public class TimedClusterState implements DataSerializable {
         return time;
     }
 
-    public ClusterStateView getClusterStateView() {
-        return clusterStateView;
+    public Set<String> getInstanceNames() {
+        return instanceNames;
     }
 
-    public void setClusterStateView(ClusterStateView clusterStateView) {
-        this.clusterStateView = clusterStateView;
+    public List<MemberState> getMemberStates() {
+        return lsMemberStates;
+    }
+
+    public void addMemberState(MemberState memberState) {
+        lsMemberStates.add(memberState);
+    }
+
+    public void setInstanceNames(Set<String> longInstanceNames) {
+        this.instanceNames = longInstanceNames;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("TimedClusterState{\n");
+        for (MemberState memberState : lsMemberStates) {
+            sb.append("\t");
+            sb.append(memberState);
+            sb.append("\n");
+        }
+        sb.append('}');
+        return sb.toString();
     }
 }
 

@@ -20,6 +20,8 @@ package com.hazelcast.monitor;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
+import java.util.List;
+
 public interface MemberState extends DataSerializable {
 
     Address getAddress();
@@ -31,4 +33,6 @@ public interface MemberState extends DataSerializable {
     LocalQueueStats getLocalQueueStats(String queueName);
 
     LocalTopicStats getLocalTopicStats(String topicName);
+
+    List<Integer> getPartitions();
 }

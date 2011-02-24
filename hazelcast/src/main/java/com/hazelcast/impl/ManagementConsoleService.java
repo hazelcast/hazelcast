@@ -22,6 +22,7 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.MemberState;
+import com.hazelcast.monitor.TimedClusterState;
 
 import java.io.*;
 import java.net.*;
@@ -37,7 +38,11 @@ import static com.hazelcast.nio.IOUtil.newOutputStream;
 
 public class ManagementConsoleService implements MembershipListener {
 
-    Queue<ClientHandler> qBuffers = new LinkedBlockingQueue<ClientHandler>(100);
+    public static final byte STATE_OUT_OF_MEMORY = 0;
+    public static final byte STATE_ACTIVE = 1;
+    public static final int REQUEST_TYPE_CLUSTER_STATE = 1;
+
+    final Queue<ClientHandler> qClientHandlers = new LinkedBlockingQueue<ClientHandler>(100);
     static int bufferSize = 100000;
     private final FactoryImpl factory;
     private volatile Members members = null;
@@ -54,7 +59,7 @@ public class ManagementConsoleService implements MembershipListener {
         this.factory = factoryImpl;
         logger = factory.node.getLogger(ManagementConsoleService.class.getName());
         for (int i = 0; i < 100; i++) {
-            qBuffers.offer(new ClientHandler());
+            qClientHandlers.offer(new ClientHandler());
         }
         factory.getCluster().addMembershipListener(this);
         updateAddresses();
@@ -132,7 +137,7 @@ public class ManagementConsoleService implements MembershipListener {
         public void run() {
             try {
                 while (running) {
-                    ClientHandler clientHandler = qBuffers.poll();
+                    ClientHandler clientHandler = qClientHandlers.poll();
                     serverSocket.doAccept(clientHandler.getSocket());
                     clientHandler.start();
                 }
@@ -234,9 +239,17 @@ public class ManagementConsoleService implements MembershipListener {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (running) {
-                    int request = in.read();
+                    int requestType = in.read();
                     buffer.clear();
-                    writeState(members, dos);
+                    boolean isOutOfMemory = false; //factory.node.isOutOfMemory();
+                    if (isOutOfMemory) {
+                        dos.writeByte(STATE_OUT_OF_MEMORY);
+                    } else {
+                        dos.writeByte(STATE_ACTIVE);
+                        if (requestType == REQUEST_TYPE_CLUSTER_STATE) {
+                            writeState(dos);
+                        }
+                    }
                     out.write(buffer.array(), 0, buffer.position());
                 }
             } catch (Exception e) {
@@ -252,17 +265,16 @@ public class ManagementConsoleService implements MembershipListener {
         }
     }
 
-    static void writeState(final Members members, final DataOutputStream dos) throws Exception {
-        dos.writeInt(members.socketAddresses.length);
+    void writeState(final DataOutputStream dos) throws Exception {
+        TimedClusterState timedClusterState = new TimedClusterState();
         for (SocketAddress socketAddress : members.socketAddresses) {
             MemberState memberState = members.getMemberState(socketAddress);
             if (memberState != null) {
-                dos.write((byte) 1);
-                memberState.writeData(dos);
-            } else {
-                dos.write((byte) 0);
+                timedClusterState.addMemberState(memberState);
             }
         }
+        timedClusterState.setInstanceNames(factory.getLongInstanceNames());
+        timedClusterState.writeData(dos);
     }
 
     public static class SocketReadyServerSocket extends ServerSocket {

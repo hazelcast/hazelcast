@@ -34,6 +34,7 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
@@ -416,6 +417,14 @@ public class FactoryImpl implements HazelcastInstance {
         memberStats.getMemberHealthStats().setServiceThreadStats(node.getCpuUtilization().serviceThread);
         memberStats.getMemberHealthStats().setOutThreadStats(node.getCpuUtilization().outThread);
         memberStats.getMemberHealthStats().setInThreadStats(node.getCpuUtilization().inThread);
+        PartitionService partitionService = getPartitionService();
+        Set<Partition> partitions = partitionService.getPartitions();
+        memberStats.clearPartitions();
+        for (Partition partition : partitions) {
+            if (partition.getOwner().localMember()) {
+                memberStats.addPartition(partition.getPartitionId());
+            }
+        }
         Collection<HazelcastInstanceAwareInstance> proxyObjects = proxies.values();
         for (HazelcastInstanceAwareInstance proxyObject : proxyObjects) {
             if (proxyObject.getInstanceType() == Instance.InstanceType.MAP) {

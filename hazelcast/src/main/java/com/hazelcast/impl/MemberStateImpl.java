@@ -26,9 +26,7 @@ import com.hazelcast.nio.Address;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class MemberStateImpl implements MemberState {
     /**
@@ -41,6 +39,7 @@ public class MemberStateImpl implements MemberState {
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
+    List<Integer> lsPartitions = new ArrayList<Integer>(271);
 
     public void writeData(DataOutput out) throws IOException {
         address.writeData(out);
@@ -65,6 +64,10 @@ public class MemberStateImpl implements MemberState {
         for (Map.Entry<String, LocalTopicStatsImpl> topicStatEntry : topicStatEntries) {
             out.writeUTF(topicStatEntry.getKey());
             topicStatEntry.getValue().writeData(out);
+        }
+        out.writeInt(lsPartitions.size());
+        for (int i = 0; i < lsPartitions.size(); i++) {
+            out.writeInt(lsPartitions.get(i));
         }
     }
 
@@ -92,6 +95,22 @@ public class MemberStateImpl implements MemberState {
             localTopicStats.readData(in);
             topicStats.put(topicName, localTopicStats);
         }
+        int partitionCount = in.readInt();
+        for (int i = 0; i < partitionCount; i++) {
+            lsPartitions.add(in.readInt());
+        }
+    }
+
+    public void clearPartitions() {
+        lsPartitions.clear();
+    }
+
+    public void addPartition(int partitionId) {
+        lsPartitions.add(partitionId);
+    }
+
+    public List<Integer> getPartitions() {
+        return lsPartitions;
     }
 
     public MemberHealthStatsImpl getMemberHealthStats() {
