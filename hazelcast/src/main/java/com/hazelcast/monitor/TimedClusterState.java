@@ -51,15 +51,12 @@ public class TimedClusterState implements DataSerializable {
     public void readData(DataInput in) throws IOException {
         time = in.readLong();
         int memberStatsCount = in.readInt();
-        System.out.println(time + "   " + memberStatsCount);
         for (int i = 0; i < memberStatsCount; i++) {
             MemberStateImpl memberState = new MemberStateImpl();
             memberState.readData(in);
             lsMemberStates.add(memberState);
-            System.out.println(memberState);
         }
         int nameCount = in.readInt();
-        System.out.println("nameCount " + nameCount);
         instanceNames = new HashSet<String>(nameCount);
         for (int i = 0; i < nameCount; i++) {
             instanceNames.add(in.readUTF());
@@ -98,7 +95,9 @@ public class TimedClusterState implements DataSerializable {
             sb.append(memberState);
             sb.append("\n");
         }
-        sb.append('}');
+        sb.append("}\n");
+        sb.append("Instances : ");
+        sb.append(instanceNames);
         return sb.toString();
     }
 }
