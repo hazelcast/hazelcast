@@ -157,6 +157,7 @@ public class MemberStateImpl implements MemberState {
                 "\n\t" + memberHealthStats +
                 "\n\tmapStats=" + mapStats +
                 "\n\tqueueStats=" + queueStats +
+                "\n\tpartitions=" + lsPartitions +
                 "\n}";
     }
 }
