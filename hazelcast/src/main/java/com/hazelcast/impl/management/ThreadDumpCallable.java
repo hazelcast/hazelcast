@@ -17,31 +17,21 @@
 
 package com.hazelcast.impl.management;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Member;
-import com.hazelcast.nio.DataSerializable;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class ThreadDumpCallable implements Callable<ThreadDumpResult>, DataSerializable, HazelcastInstanceAware {
+import com.hazelcast.nio.DataSerializable;
+
+public class ThreadDumpCallable implements Callable<String>, DataSerializable {
 
     private static final long serialVersionUID = -1910495089344606344L;
 
-    private transient HazelcastInstance hazelcastInstance;
-
-    public ThreadDumpResult call() throws Exception {
+    public String call() throws Exception {
         ThreadDumpGenerator generator = ThreadDumpGenerator.newInstance();
         String result = generator.dumpAllThreads();
-        Member member = hazelcastInstance.getCluster().getLocalMember();
-        return new ThreadDumpResult(member, result);
-    }
-
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        this.hazelcastInstance = hazelcastInstance;
+        return result;
     }
 
     public void writeData(DataOutput out) throws IOException {
