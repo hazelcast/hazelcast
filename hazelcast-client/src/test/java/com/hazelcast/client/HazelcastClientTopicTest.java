@@ -133,6 +133,24 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
     }
 
     @Test
+    public void testPerformance() {
+        HazelcastClient hClient = getHazelcastClient();
+        long begin = System.currentTimeMillis();
+        int count = 10000;
+        final ITopic topic = hClient.getTopic("perf");
+        ExecutorService ex = Executors.newFixedThreadPool(10);
+        for (int i = 0; i < count; i++) {
+            ex.submit(new Runnable() {
+                public void run() {
+                    topic.publish("my object");
+                }
+            });
+        }
+        long time = System.currentTimeMillis() - begin;
+        System.out.println("per second: " + count * 1000 / time);
+    }
+
+    @Test
     public void add2listenerAndRemoveOne() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         ITopic<String> topic = hClient.getTopic("removeMessageListener");

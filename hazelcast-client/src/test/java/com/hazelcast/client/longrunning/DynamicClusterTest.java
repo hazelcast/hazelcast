@@ -1071,6 +1071,7 @@ public class DynamicClusterTest {
         Thread.sleep(10000);
     }
 
+
     class LifecycleCountingListener implements LifecycleListener {
         Map<LifecycleEvent.LifecycleState, AtomicInteger> counter = new ConcurrentHashMap<LifecycleEvent.LifecycleState, AtomicInteger>();
         BlockingQueue<LifecycleEvent.LifecycleState> eventQueue = new LinkedBlockingQueue<LifecycleEvent.LifecycleState>();

@@ -256,6 +256,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public void putAll(final Map<? extends K, ? extends V> map) {
+        int counter = 0;
         List<Future> lsFutures = new ArrayList<Future>(map.size());
         for (final K key : map.keySet()) {
             final V value = map.get(key);
@@ -263,6 +264,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         }
         for (Future future : lsFutures) {
             try {
+                System.out.println("Getting " + counter++);
                 future.get();
             } catch (Exception e) {
                 e.printStackTrace();

@@ -752,6 +752,25 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         }
     }
 
+    @Test
+    public void putAllMany() {
+        HazelcastClient hClient = getHazelcastClient();
+        IMap map = hClient.getMap("putAllMany");
+        int counter = 100;
+        for (int j = 0; j < 4; j++, counter*=10) {
+            Map tempMap = new HashMap();
+            for (int i = 0; i < counter; i++) {
+
+                tempMap.put(i, i);
+            }
+            System.out.println("Doing "+ tempMap.size() + " putAll");
+            map.putAll(tempMap);
+            System.out.println("Done " + tempMap.size());
+        }
+
+        map.destroy();
+    }
+
     public static void printThreads() {
         Thread[] threads = getAllThreads();
         for (int i = 0; i < threads.length; i++) {
@@ -841,21 +860,19 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     @Test
-    public void testSqlPredicate(){
+    public void testSqlPredicate() {
         HazelcastInstance h = getHazelcastInstance();
         HazelcastClient hClient = getHazelcastClient();
         IMap<Integer, Employee> map = hClient.getMap("testSqlPredicate");
-        for(int i=0;i<100;i++){
-          h.getMap("testSqlPredicate").put(i, new Employee("" + i, i,i%2==0, i));
+        for (int i = 0; i < 100; i++) {
+            h.getMap("testSqlPredicate").put(i, new Employee("" + i, i, i % 2 == 0, i));
         }
-
         Set<Entry<Integer, Employee>> set = map.entrySet(new SqlPredicate("active AND age < 30"));
-        for(Entry<Integer, Employee> entry: set){
+        for (Entry<Integer, Employee> entry : set) {
             System.out.println(entry.getValue());
             assertTrue(entry.getValue().age < 30);
             assertTrue(entry.getValue().active);
         }
-
     }
 
     public static class Employee implements Serializable {
@@ -920,6 +937,8 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             return sb.toString();
         }
     }
+
+
 
     @AfterClass
     public static void shutdown() {
