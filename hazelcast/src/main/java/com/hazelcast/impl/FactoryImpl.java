@@ -24,6 +24,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
+import com.hazelcast.impl.management.ManagementConsoleService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
