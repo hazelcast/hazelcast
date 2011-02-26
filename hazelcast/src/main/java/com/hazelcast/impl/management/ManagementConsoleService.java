@@ -35,6 +35,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -344,20 +345,48 @@ public class ManagementConsoleService implements MembershipListener {
         return null;
     }
     
-    public Collection callOnAllMembers(Callable callable) {
+    public Object call(Callable callable) {
         try {
-            Set<Member> members = factory.getCluster().getMembers();
-        	MultiTask task = new MultiTask(callable, members);
+            DistributedTask task = new DistributedTask(callable);
             factory.getExecutorService().execute(task);
-            
             try {
                 return task.get(1, TimeUnit.SECONDS);
             } catch (Throwable e) {
                 return null;
             }
         } catch (Throwable e) {
-        	 return null;
+            return null;
         }
+    }
+    
+    public Object callOnMembers(Set<Address> addresses, Callable callable) {
+        Set<Member> members = factory.getCluster().getMembers();
+        Set<Member> selectedMembers = new HashSet<Member>(addresses.size());
+        for (Member member : members) {
+            if (addresses.contains(((MemberImpl) member).getAddress())) {
+            	selectedMembers.add(member);
+            }
+        }
+        return callOnMembers0(selectedMembers, callable);
+    }
+    
+    public Collection callOnAllMembers(Callable callable) {
+    	Set<Member> members = factory.getCluster().getMembers();
+    	return callOnMembers0(members, callable);
+    }
+    
+    private Collection callOnMembers0(Set<Member> members, Callable callable) {
+    	 try {
+         	MultiTask task = new MultiTask(callable, members);
+            factory.getExecutorService().execute(task);
+			try {
+				return task.get(1, TimeUnit.SECONDS);
+			} catch (Throwable e) {
+				return null;
+			}
+         } catch (Throwable e) {
+         	 return null;
+         }
     }
 
     void writeState(final DataOutputStream dos) throws Exception {
