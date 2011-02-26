@@ -158,7 +158,7 @@ public class AtomicNumberImpl extends FactoryAwareNamedProxy implements AtomicNu
         public long addAndGet(long delta) {
             ConcurrentMapManager.MAtomic a = newMAtomic(ClusterOperation.ATOMIC_NUMBER_ADD_AND_GET, delta);
             long result = a.doLongAtomic();
-            a.backup(result - delta);
+            a.backup(result);
             return result;
         }
 
