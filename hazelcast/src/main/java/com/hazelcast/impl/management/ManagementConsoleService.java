@@ -17,10 +17,41 @@
 
 package com.hazelcast.impl.management;
 
+import static com.hazelcast.nio.IOUtil.newInputStream;
+import static com.hazelcast.nio.IOUtil.newOutputStream;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.MultiTask;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.MemberStateImpl;
@@ -28,16 +59,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.TimedClusterState;
 import com.hazelcast.nio.Address;
-
-import java.io.*;
-import java.net.*;
-import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.logging.Level;
-
-import static com.hazelcast.nio.IOUtil.newInputStream;
-import static com.hazelcast.nio.IOUtil.newOutputStream;
 
 public class ManagementConsoleService implements MembershipListener {
 
@@ -259,6 +280,8 @@ public class ManagementConsoleService implements MembershipListener {
         public ClientHandler() {
             register(new GetClusterStateRequest());
             register(new ThreadDumpRequest());
+            register(new ExecuteScriptRequest());
+            register(new EvictLocalMapRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {
@@ -319,6 +342,22 @@ public class ManagementConsoleService implements MembershipListener {
             return null;
         }
         return null;
+    }
+    
+    public Collection callOnAllMembers(Callable callable) {
+        try {
+            Set<Member> members = factory.getCluster().getMembers();
+        	MultiTask task = new MultiTask(callable, members);
+            factory.getExecutorService().execute(task);
+            
+            try {
+                return task.get(1, TimeUnit.SECONDS);
+            } catch (Throwable e) {
+                return null;
+            }
+        } catch (Throwable e) {
+        	 return null;
+        }
     }
 
     void writeState(final DataOutputStream dos) throws Exception {
