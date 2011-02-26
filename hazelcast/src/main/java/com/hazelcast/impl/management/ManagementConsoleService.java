@@ -294,6 +294,9 @@ public class ManagementConsoleService implements MembershipListener {
                 socketOut.setOutputStream(socket.getOutputStream());
                 while (running) {
                     int requestType = socketIn.read();
+                    if(requestType < 0 || requestType >= consoleRequests.length) {
+                    	continue;	
+                    }
                     ConsoleRequest consoleRequest = consoleRequests[requestType];
                     consoleRequest.readData(socketIn);
                     buffer.clear();
