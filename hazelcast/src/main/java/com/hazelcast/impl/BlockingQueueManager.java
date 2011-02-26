@@ -732,7 +732,7 @@ public class BlockingQueueManager extends BaseManager {
             CMap cmap = getStorageCMap(name);
             IMap storageMap = getStorageMap(name);
             Set<Object> localKeys = storageMap.localKeySet();
-            int total = cmap.mapRecords.size();
+            int total = cmap != null ? cmap.mapRecords.size() : 0;
             int ownedCount = localKeys.size();
             int backupCount = Math.abs(total - ownedCount);
             long minAge = Long.MAX_VALUE;
