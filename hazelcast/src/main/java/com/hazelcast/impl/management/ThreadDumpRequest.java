@@ -1,15 +1,14 @@
 package com.hazelcast.impl.management;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
 import com.hazelcast.nio.Address;
 
+import java.io.*;
+
+import static com.hazelcast.nio.IOUtil.readLongString;
+import static com.hazelcast.nio.IOUtil.writeLongString;
+
 public class ThreadDumpRequest implements ConsoleRequest {
-	
+
     Address target;
 
     public ThreadDumpRequest() {
@@ -25,11 +24,11 @@ public class ThreadDumpRequest implements ConsoleRequest {
 
     public void writeResponse(ManagementConsoleService mcs, DataOutputStream dos) throws Exception {
         String threadDump = (String) mcs.call(target, new ThreadDumpCallable());
-        dos.writeUTF(threadDump);
+        writeLongString(dos, threadDump);
     }
 
     public String readResponse(DataInputStream in) throws IOException {
-        return in.readUTF();
+        return readLongString(in);
     }
 
     public void writeData(DataOutput out) throws IOException {

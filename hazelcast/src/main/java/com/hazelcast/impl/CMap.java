@@ -855,7 +855,7 @@ public class CMap {
             }
             Data expectedOldValue = multiData.getData(0);
             req.value = multiData.getData(1);
-            if (!record.getValueData().equals(expectedOldValue)) {
+            if (!expectedOldValue.equals(record.getValueData())) {
                 req.response = Boolean.FALSE;
                 return;
             }

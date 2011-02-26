@@ -17,35 +17,6 @@
 
 package com.hazelcast.impl.management;
 
-import static com.hazelcast.nio.IOUtil.newInputStream;
-import static com.hazelcast.nio.IOUtil.newOutputStream;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
@@ -58,9 +29,17 @@ import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.TimedClusterState;
 import com.hazelcast.nio.Address;
 
-public class ManagementConsoleService implements MembershipListener {
+import java.io.*;
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.logging.Level;
 
-    private static int bufferSize = 100000;
+import static com.hazelcast.nio.IOUtil.newInputStream;
+import static com.hazelcast.nio.IOUtil.newOutputStream;
+
+public class ManagementConsoleService implements MembershipListener {
 
     private final Queue<ClientHandler> qClientHandlers = new LinkedBlockingQueue<ClientHandler>(100);
     private final FactoryImpl factory;
@@ -75,6 +54,7 @@ public class ManagementConsoleService implements MembershipListener {
     private final ILogger logger;
     private final MemberStateImpl localState = new MemberStateImpl();
     private final SocketAddress localSocketAddress;
+    private static final int DATAGRAM_BUFFER_SIZE = 64 * 1000;
 
     public ManagementConsoleService(FactoryImpl factoryImpl) throws Exception {
         this.factory = factoryImpl;
@@ -154,7 +134,7 @@ public class ManagementConsoleService implements MembershipListener {
         final SocketReadyServerSocket serverSocket;
 
         TCPListener(SocketReadyServerSocket serverSocket) {
-        	super("hz.TCP.Listener");
+            super("hz.TCP.Listener");
             this.serverSocket = serverSocket;
         }
 
@@ -172,6 +152,9 @@ public class ManagementConsoleService implements MembershipListener {
 
     class UDPListener extends Thread {
         final DatagramSocket socket;
+        final ByteBuffer bbState = ByteBuffer.allocate(DATAGRAM_BUFFER_SIZE);
+        final DatagramPacket packet = new DatagramPacket(bbState.array(), bbState.capacity());
+        final DataInputStream dis = new DataInputStream(newInputStream(bbState));
 
         public UDPListener(DatagramSocket socket) throws SocketException {
             super("hz.UDP.Listener");
@@ -181,13 +164,12 @@ public class ManagementConsoleService implements MembershipListener {
 
         public void run() {
             try {
-                final ByteBuffer bbState = ByteBuffer.allocate(1000000);
-                final DatagramPacket packet = new DatagramPacket(bbState.array(), bbState.capacity());
-                final DataInputStream dis = new DataInputStream(newInputStream(bbState));
                 while (running) {
                     try {
                         bbState.clear();
                         socket.receive(packet);
+                        bbState.limit(packet.getLength());
+                        bbState.position(0);
                         MemberState memberState = members.getMemberState(packet.getSocketAddress());
                         if (memberState != null) {
                             memberState.readData(dis);
@@ -204,7 +186,7 @@ public class ManagementConsoleService implements MembershipListener {
     class UDPSender extends Thread {
         final DatagramSocket socket;
         final DatagramPacket packet = new DatagramPacket(new byte[0], 0);
-        final ByteBuffer bbState = ByteBuffer.allocate(1000000);
+        final ByteBuffer bbState = ByteBuffer.allocate(DATAGRAM_BUFFER_SIZE);
         final DataOutputStream dos = new DataOutputStream(newOutputStream(bbState));
 
         public UDPSender(DatagramSocket socket) throws SocketException {
@@ -231,6 +213,7 @@ public class ManagementConsoleService implements MembershipListener {
                         try {
                             bbState.clear();
                             localState.writeData(dos);
+                            dos.flush();
                             packet.setData(bbState.array(), 0, bbState.position());
                             packet.setSocketAddress(address);
                             socket.send(packet);
@@ -268,8 +251,6 @@ public class ManagementConsoleService implements MembershipListener {
     }
 
     class ClientHandler extends Thread {
-        final ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
-        final DataOutputStream dos = new DataOutputStream(newOutputStream(buffer));
         final ConsoleRequest[] consoleRequests = new ConsoleRequest[10];
         final Socket socket = new Socket();
         final LazyDataInputStream socketIn = new LazyDataInputStream();
@@ -294,20 +275,18 @@ public class ManagementConsoleService implements MembershipListener {
                 socketOut.setOutputStream(socket.getOutputStream());
                 while (running) {
                     int requestType = socketIn.read();
-                    if(requestType < 0 || requestType >= consoleRequests.length) {
-                    	continue;	
+                    if (requestType == -1) {
+                        return;
                     }
                     ConsoleRequest consoleRequest = consoleRequests[requestType];
                     consoleRequest.readData(socketIn);
-                    buffer.clear();
                     boolean isOutOfMemory = factory.node.isOutOfMemory();
                     if (isOutOfMemory) {
-                        dos.writeByte(ConsoleRequestConstants.STATE_OUT_OF_MEMORY);
+                        socketOut.writeByte(ConsoleRequestConstants.STATE_OUT_OF_MEMORY);
                     } else {
-                        dos.writeByte(ConsoleRequestConstants.STATE_ACTIVE);
-                        consoleRequest.writeResponse(ManagementConsoleService.this, dos);
+                        socketOut.writeByte(ConsoleRequestConstants.STATE_ACTIVE);
+                        consoleRequest.writeResponse(ManagementConsoleService.this, socketOut);
                     }
-                    socketOut.write(buffer.array(), 0, buffer.position());
                 }
             } catch (Exception e) {
                 e.printStackTrace();

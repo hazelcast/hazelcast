@@ -338,20 +338,6 @@ public abstract class BaseManager {
         }
     }
 
-    abstract class QueueBasedCall extends AbstractCall {
-        final protected BlockingQueue<Object> responses = ResponseQueueFactory.newResponseQueue();
-
-        public QueueBasedCall() {
-        }
-
-        @Override
-        public void redo() {
-            removeCall(getCallId());
-            responses.clear();
-            responses.offer(OBJECT_REDO);
-        }
-    }
-
     abstract class RequestBasedCall extends AbstractCall {
         final protected Request request = new Request();
 

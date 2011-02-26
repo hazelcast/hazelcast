@@ -19,9 +19,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.impl.ThreadContext;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
 
 public final class IOUtil {
@@ -44,7 +42,7 @@ public final class IOUtil {
                 if (!buf.hasRemaining()) {
                     return -1;
                 }
-                return buf.get();
+                return buf.get() & 0xff;
             }
 
             public int read(byte[] bytes, int off, int len) throws IOException {
@@ -81,6 +79,28 @@ public final class IOUtil {
             src.position(src.position() + n);
         }
         return n;
+    }
+
+    public static void writeLongString(DataOutputStream dos, String str) throws IOException {
+        int chunk = 1000;
+        int count = str.length() / chunk;
+        int remaining = str.length() - (count * chunk);
+        dos.writeInt(count + ((remaining > 0) ? 1 : 0));
+        for (int i = 0; i < count; i++) {
+            dos.writeUTF(str.substring(i * chunk, (i + 1) * chunk));
+        }
+        if (remaining > 0) {
+            dos.writeUTF(str.substring(count * chunk));
+        }
+    }
+
+    public static String readLongString(DataInputStream in) throws IOException {
+        int count = in.readInt();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            sb.append(in.readUTF());
+        }
+        return sb.toString();
     }
 
     public static void putBoolean(ByteBuffer bb, boolean value) {
