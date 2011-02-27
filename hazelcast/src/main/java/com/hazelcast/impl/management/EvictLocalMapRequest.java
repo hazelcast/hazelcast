@@ -1,9 +1,7 @@
 package com.hazelcast.impl.management;
 
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 import com.hazelcast.impl.EvictLocalMapEntriesCallable;
@@ -26,11 +24,13 @@ public class EvictLocalMapRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_EVICT_LOCAL_MAP;
     }
 
-    public void writeResponse(ManagementConsoleService mcs, DataOutputStream dos) throws Exception {
-    	mcs.callOnAllMembers(new EvictLocalMapEntriesCallable(map, percent));
+    public void writeResponse(ManagementConsoleService mcs, DataOutput dos) throws Exception {
+    	EvictLocalMapEntriesCallable call = new EvictLocalMapEntriesCallable(map, percent);
+    	call.setHazelcastInstance(mcs.getHazelcastInstance());
+    	mcs.callOnAllMembers(call);
     }
 
-    public Object readResponse(DataInputStream in) throws IOException {
+    public Object readResponse(DataInput in) throws IOException {
         return null;
     }
 

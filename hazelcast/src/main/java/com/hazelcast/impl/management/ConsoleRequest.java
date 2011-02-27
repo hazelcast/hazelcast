@@ -1,7 +1,7 @@
 package com.hazelcast.impl.management;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 import com.hazelcast.nio.DataSerializable;
@@ -10,7 +10,7 @@ public interface  ConsoleRequest extends DataSerializable {
 
     int getType();
 
-    Object readResponse(DataInputStream in) throws IOException;
+    Object readResponse(DataInput in) throws IOException;
 
-    void writeResponse(ManagementConsoleService mcs, DataOutputStream dos) throws Exception;
+    void writeResponse(ManagementConsoleService mcs, DataOutput dos) throws Exception;
 }

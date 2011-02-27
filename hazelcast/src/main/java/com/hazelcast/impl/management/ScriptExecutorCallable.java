@@ -144,4 +144,9 @@ public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>,
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcast = hazelcastInstance;
     }
+
+	public void setBindings(Map<String, Object> bindings) {
+		this.bindings = bindings;
+	}
+    
 }

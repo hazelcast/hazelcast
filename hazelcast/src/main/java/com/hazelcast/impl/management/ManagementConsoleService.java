@@ -21,6 +21,7 @@ import static com.hazelcast.nio.IOUtil.newInputStream;
 import static com.hazelcast.nio.IOUtil.newOutputStream;
 
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import com.hazelcast.core.DistributedTask;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
@@ -199,8 +201,8 @@ public class ManagementConsoleService implements MembershipListener {
                     } catch (SocketTimeoutException ignored) {
                     }
                 }
-            } catch (Exception ignored) {
-                ignored.printStackTrace();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
     }
@@ -223,7 +225,7 @@ public class ManagementConsoleService implements MembershipListener {
                     Thread.sleep(5000);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
 
@@ -240,7 +242,7 @@ public class ManagementConsoleService implements MembershipListener {
                             packet.setSocketAddress(address);
                             socket.send(packet);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            logger.log(Level.WARNING, e.getMessage(), e);
                         }
                     }
                 }
@@ -313,7 +315,7 @@ public class ManagementConsoleService implements MembershipListener {
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
 
@@ -335,6 +337,7 @@ public class ManagementConsoleService implements MembershipListener {
                     try {
                         return task.get(1, TimeUnit.SECONDS);
                     } catch (Throwable e) {
+        				logger.log(Level.FINEST, e.getMessage(), e);
                         return null;
                     }
                 }
@@ -352,6 +355,7 @@ public class ManagementConsoleService implements MembershipListener {
             try {
                 return task.get(1, TimeUnit.SECONDS);
             } catch (Throwable e) {
+				logger.log(Level.FINEST, e.getMessage(), e);
                 return null;
             }
         } catch (Throwable e) {
@@ -382,6 +386,7 @@ public class ManagementConsoleService implements MembershipListener {
 			try {
 				return task.get(1, TimeUnit.SECONDS);
 			} catch (Throwable e) {
+				logger.log(Level.FINEST, e.getMessage(), e);
 				return null;
 			}
          } catch (Throwable e) {
@@ -389,7 +394,7 @@ public class ManagementConsoleService implements MembershipListener {
          }
     }
 
-    void writeState(final DataOutputStream dos) throws Exception {
+    void writeState(final DataOutput dos) throws Exception {
         TimedClusterState timedClusterState = new TimedClusterState();
         for (SocketAddress socketAddress : members.socketAddresses) {
             MemberState memberState = members.getMemberState(socketAddress);
@@ -399,6 +404,10 @@ public class ManagementConsoleService implements MembershipListener {
         }
         timedClusterState.setInstanceNames(factory.getLongInstanceNames());
         timedClusterState.writeData(dos);
+    }
+    
+    HazelcastInstance getHazelcastInstance() {
+    	return factory;
     }
 
     public static class SocketReadyServerSocket extends ServerSocket {

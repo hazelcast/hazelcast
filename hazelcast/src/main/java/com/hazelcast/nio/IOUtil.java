@@ -81,7 +81,7 @@ public final class IOUtil {
         return n;
     }
 
-    public static void writeLongString(DataOutputStream dos, String str) throws IOException {
+    public static void writeLongString(DataOutput dos, String str) throws IOException {
         int chunk = 1000;
         int count = str.length() / chunk;
         int remaining = str.length() - (count * chunk);
@@ -94,7 +94,7 @@ public final class IOUtil {
         }
     }
 
-    public static String readLongString(DataInputStream in) throws IOException {
+    public static String readLongString(DataInput in) throws IOException {
         int count = in.readInt();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < count; i++) {
