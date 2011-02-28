@@ -51,6 +51,34 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     @Test
+    public void testIssue508() throws Exception {
+        HazelcastClient client = getHazelcastClient();
+        IMap<String, HashSet<byte[]>> callEventsMap = client.getMap("CALL_EVENTS");
+        IMap<String, Long> metaDataMap = client.getMap("CALL_META_DATA");
+        IMap<String, byte[]> callStartMap = client.getMap("CALL_START_EVENTS");
+        byte[] bytes = new byte[10];
+        HashSet<byte[]> hashSet = new HashSet<byte[]>();
+        hashSet.add(bytes);
+        callEventsMap.put("1", hashSet);
+        callStartMap.put("1", bytes);
+        metaDataMap.put("1", 10L);
+        Transaction txn = client.getTransaction();
+        txn.begin();
+        try {
+            String callId = "1";
+            // remove the data
+            callEventsMap.remove(callId);
+            // remove meta data
+            metaDataMap.remove(callId);
+            // remove call start
+            callStartMap.remove(callId);
+            txn.commit();
+        } catch (Exception e) {
+            fail();
+        }
+    }
+
+    @Test
     public void testIssue321() throws Exception {
         HazelcastClient hClient = getHazelcastClient();
         final IMap<Integer, Integer> imap = hClient.getMap("testIssue321_1");
@@ -641,7 +669,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     @Test
-    public void remove() {
+    public void removeIfSame() {
         HazelcastClient hClient = getHazelcastClient();
         IMap<String, String> map = hClient.getMap("remove");
         String result = map.put("1", "CBDEF");
@@ -757,17 +785,15 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         IMap map = hClient.getMap("putAllMany");
         int counter = 100;
-        for (int j = 0; j < 4; j++, counter*=10) {
+        for (int j = 0; j < 4; j++, counter *= 10) {
             Map tempMap = new HashMap();
             for (int i = 0; i < counter; i++) {
-
                 tempMap.put(i, i);
             }
-            System.out.println("Doing "+ tempMap.size() + " putAll");
+            System.out.println("Doing " + tempMap.size() + " putAll");
             map.putAll(tempMap);
             System.out.println("Done " + tempMap.size());
         }
-
         map.destroy();
     }
 
@@ -937,8 +963,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             return sb.toString();
         }
     }
-
-
 
     @AfterClass
     public static void shutdown() {

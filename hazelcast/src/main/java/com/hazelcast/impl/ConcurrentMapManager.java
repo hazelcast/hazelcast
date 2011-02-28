@@ -602,7 +602,7 @@ public class ConcurrentMapManager extends BaseManager {
                         Object oldObject = null;
                         Data oldValue = mlock.oldValue;
                         if (oldValue != null) {
-                            oldObject = threadContext.toObject(oldValue);
+                            oldObject = threadContext.isClient() ? oldValue : threadContext.toObject(oldValue);
                         }
                         txn.attachRemoveOp(name, key, null, (oldObject == null));
                         return (oldObject != null);
@@ -655,7 +655,7 @@ public class ConcurrentMapManager extends BaseManager {
                     Object oldObject = null;
                     Data oldValue = mlock.oldValue;
                     if (oldValue != null) {
-                        oldObject = threadContext.toObject(oldValue);
+                        oldObject = threadContext.isClient() ? oldValue : threadContext.toObject(oldValue);
                     }
                     int removedValueCount = 0;
                     if (oldObject != null) {
@@ -908,7 +908,7 @@ public class ConcurrentMapManager extends BaseManager {
                     Object oldObject = null;
                     Data oldValue = mlock.oldValue;
                     if (oldValue != null) {
-                        oldObject = toObject(oldValue);
+                        oldObject = threadContext.isClient() ? oldValue : threadContext.toObject(oldValue);
                     }
                     if (oldObject == null) {
                         return Boolean.FALSE;
@@ -958,14 +958,14 @@ public class ConcurrentMapManager extends BaseManager {
                     Object oldObject = null;
                     Data oldValue = mlock.oldValue;
                     if (oldValue != null) {
-                        oldObject = toObject(oldValue);
+                        oldObject = threadContext.isClient() ? oldValue : threadContext.toObject(oldValue);
                     }
                     if (operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT && oldObject != null) {
                         txn.attachPutOp(name, key, oldObject, 0, ttl, false);
                     } else {
                         txn.attachPutOp(name, key, value, 0, ttl, (oldObject == null));
                     }
-                    return threadContext.isClient() ? oldValue : oldObject;
+                    return oldObject;
                 } else {
                     if (operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
                         Object existingValue = txn.get(name, key);
@@ -1756,7 +1756,6 @@ public class ConcurrentMapManager extends BaseManager {
             Data value = cmap.get(request);
             request.clearForResponse();
             request.response = value;
-            //logger.log(Level.FINEST, " [" + request.name + "] get " + toObject(request.key));
         }
 
         public void afterExecute(Request request) {

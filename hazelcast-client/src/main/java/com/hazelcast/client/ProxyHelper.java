@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.impl.CollectionWrapper;
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.ClientServiceException;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.query.Predicate;
@@ -26,10 +27,8 @@ import com.hazelcast.query.Predicate;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.EventListener;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
@@ -180,7 +179,11 @@ public class ProxyHelper {
 
     protected Object getValue(Packet response) {
         if (response.getValue() != null) {
-            return toObject(response.getValue());
+            Object result = toObject(response.getValue());
+            if (result instanceof ClientServiceException) {
+                throw new RuntimeException(((ClientServiceException) result).getThrowable());
+            }
+            return result;
         }
         return null;
     }

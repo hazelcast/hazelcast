@@ -1099,7 +1099,7 @@ public class ClientService implements ConnectionListener {
                 logger.log(Level.WARNING,
                         "exception during handling " + packet.operation + ": " + e.getMessage(), e);
                 packet.clearForResponse();
-                packet.setValue(toData(e));
+                packet.setValue(toData(new ClientServiceException(e)));
             }
             sendResponse(packet);
         }

@@ -44,7 +44,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         this.name = name;
         this.proxyHelper = new ProxyHelper(name, client);
     }
-    
+
     public void addLocalEntryListener(EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("client doesn't support local entry listener");
     }
@@ -264,7 +264,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         }
         for (Future future : lsFutures) {
             try {
-                System.out.println("Getting " + counter++);
                 future.get();
             } catch (Exception e) {
                 e.printStackTrace();
