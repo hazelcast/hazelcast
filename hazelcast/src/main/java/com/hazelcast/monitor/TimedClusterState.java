@@ -23,14 +23,14 @@ import com.hazelcast.nio.DataSerializable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 public class TimedClusterState implements DataSerializable {
     long time;
-    List<MemberState> lsMemberStates = new ArrayList<MemberState>(100);
+    List<MemberState> lsMemberStates = new LinkedList<MemberState>();
     Set<String> instanceNames = null;
 
     public void writeData(DataOutput out) throws IOException {

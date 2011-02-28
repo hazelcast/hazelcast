@@ -17,44 +17,7 @@
 
 package com.hazelcast.impl.management;
 
-import static com.hazelcast.nio.IOUtil.newInputStream;
-import static com.hazelcast.nio.IOUtil.newOutputStream;
-
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-
-import com.hazelcast.core.DistributedTask;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.core.MultiTask;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.MemberStateImpl;
@@ -63,11 +26,20 @@ import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.TimedClusterState;
 import com.hazelcast.nio.Address;
 
+import java.io.*;
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.logging.Level;
+
+import static com.hazelcast.nio.IOUtil.newInputStream;
+import static com.hazelcast.nio.IOUtil.newOutputStream;
+
 public class ManagementConsoleService implements MembershipListener {
 
     private final Queue<ClientHandler> qClientHandlers = new LinkedBlockingQueue<ClientHandler>(100);
     private final FactoryImpl factory;
-    private volatile Members members = null;
     private volatile boolean running = true;
     private final DatagramSocket datagramSocket;
     private final SocketReadyServerSocket serverSocket;
@@ -76,12 +48,17 @@ public class ManagementConsoleService implements MembershipListener {
     private final TCPListener tcpListener;
     private final List<ClientHandler> lsClientHandlers = new CopyOnWriteArrayList<ClientHandler>();
     private final ILogger logger;
-    private final MemberStateImpl localState = new MemberStateImpl();
-    private final SocketAddress localSocketAddress;
     private static final int DATAGRAM_BUFFER_SIZE = 64 * 1000;
+    private final ConcurrentMap<Address, MemberState> memberStates = new ConcurrentHashMap<Address, MemberState>(1000);
+    private final ConcurrentMap<Address, SocketAddress> socketAddresses = new ConcurrentHashMap<Address, SocketAddress>(1000);
+    private final Set<Address> addresses = new CopyOnWriteArraySet<Address>();
+    private volatile MemberStateImpl latestThisMemberState = null;
+    private final Address thisAddress;
 
     public ManagementConsoleService(FactoryImpl factoryImpl) throws Exception {
         this.factory = factoryImpl;
+        thisAddress = ((MemberImpl) factory.getCluster().getLocalMember()).getAddress();
+        updateMemberOrder();
         logger = factory.node.getLogger(ManagementConsoleService.class.getName());
         for (int i = 0; i < 100; i++) {
             qClientHandlers.offer(new ClientHandler());
@@ -89,8 +66,6 @@ public class ManagementConsoleService implements MembershipListener {
         factory.getCluster().addMembershipListener(this);
         MemberImpl memberLocal = (MemberImpl) factory.getCluster().getLocalMember();
         int port = memberLocal.getInetSocketAddress().getPort() + 100;
-        localSocketAddress = new InetSocketAddress(memberLocal.getInetAddress(), port);
-        updateAddresses();
         datagramSocket = new DatagramSocket(port);
         serverSocket = new SocketReadyServerSocket(port);
         udpListener = new UDPListener(datagramSocket);
@@ -115,42 +90,30 @@ public class ManagementConsoleService implements MembershipListener {
     }
 
     public void memberAdded(MembershipEvent membershipEvent) {
-        updateAddresses();
+        updateMemberOrder();
     }
 
     public void memberRemoved(MembershipEvent membershipEvent) {
-        updateAddresses();
+        Address address = ((MemberImpl) membershipEvent.getMember()).getAddress();
+        memberStates.remove(address);
+        socketAddresses.remove(address);
+        addresses.remove(address);
     }
 
-    void updateAddresses() {
-        Set<Member> memberSet = new LinkedHashSet<Member>(factory.getCluster().getMembers());
-        final Members newMembers = new Members(memberSet.size());
-        int i = 0;
+    void updateMemberOrder() {
+        Set<Member> memberSet = factory.getCluster().getMembers();
         for (Member member : memberSet) {
             MemberImpl memberImpl = (MemberImpl) member;
-            SocketAddress sa = (member.localMember()) ? localSocketAddress : new InetSocketAddress(memberImpl.getInetAddress(), memberImpl.getPort() + 100);
-            MemberStateImpl memberState = (member.localMember()) ? localState : new MemberStateImpl();
-            memberState.setAddress(memberImpl.getAddress());
-            newMembers.put(i++, sa, memberState);
-        }
-        members = newMembers;
-    }
-
-    class Members {
-        private final Map<SocketAddress, MemberState> states = new ConcurrentHashMap<SocketAddress, MemberState>(1000);
-        private final SocketAddress[] socketAddresses;
-
-        Members(int size) {
-            socketAddresses = new SocketAddress[size];
-        }
-
-        public void put(int index, SocketAddress socketAddress, MemberState memberState) {
-            socketAddresses[index] = socketAddress;
-            states.put(socketAddress, memberState);
-        }
-
-        public MemberState getMemberState(SocketAddress socketAddress) {
-            return states.get(socketAddress);
+            Address address = memberImpl.getAddress();
+            try {
+                if (!socketAddresses.containsKey(address)) {
+                    SocketAddress socketAddress = new InetSocketAddress(address.getInetAddress(), address.getPort() + 100);
+                    socketAddresses.putIfAbsent(address, socketAddress);
+                }
+                addresses.add(address);
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -194,10 +157,9 @@ public class ManagementConsoleService implements MembershipListener {
                         socket.receive(packet);
                         bbState.limit(packet.getLength());
                         bbState.position(0);
-                        MemberState memberState = members.getMemberState(packet.getSocketAddress());
-                        if (memberState != null) {
-                            memberState.readData(dis);
-                        }
+                        MemberStateImpl memberState = new MemberStateImpl();
+                        memberState.readData(dis);
+                        memberStates.put(memberState.getAddress(), memberState);
                     } catch (SocketTimeoutException ignored) {
                     }
                 }
@@ -230,16 +192,17 @@ public class ManagementConsoleService implements MembershipListener {
         }
 
         void sendState() {
-            updateState();
-            if (members != null) {
-                for (SocketAddress address : members.socketAddresses) {
-                    if (!localSocketAddress.equals(address)) {
+            final MemberState latestState = updateLocalState();
+            for (Address address : socketAddresses.keySet()) {
+                if (!thisAddress.equals(address)) {
+                    final SocketAddress socketAddress = socketAddresses.get(address);
+                    if (socketAddress != null) {
                         try {
                             bbState.clear();
-                            localState.writeData(dos);
+                            latestState.writeData(dos);
                             dos.flush();
                             packet.setData(bbState.array(), 0, bbState.position());
-                            packet.setSocketAddress(address);
+                            packet.setSocketAddress(socketAddress);
                             socket.send(packet);
                         } catch (IOException e) {
                             logger.log(Level.WARNING, e.getMessage(), e);
@@ -248,10 +211,12 @@ public class ManagementConsoleService implements MembershipListener {
                 }
             }
         }
+    }
 
-        void updateState() {
-            factory.createMemberState(localState);
-        }
+    MemberState updateLocalState() {
+        latestThisMemberState = factory.createMemberState();
+        memberStates.put(latestThisMemberState.getAddress(), latestThisMemberState);
+        return latestThisMemberState;
     }
 
     class LazyDataInputStream extends DataInputStream {
@@ -337,7 +302,7 @@ public class ManagementConsoleService implements MembershipListener {
                     try {
                         return task.get(1, TimeUnit.SECONDS);
                     } catch (Throwable e) {
-        				logger.log(Level.FINEST, e.getMessage(), e);
+                        logger.log(Level.FINEST, e.getMessage(), e);
                         return null;
                     }
                 }
@@ -347,7 +312,7 @@ public class ManagementConsoleService implements MembershipListener {
         }
         return null;
     }
-    
+
     public Object call(Callable callable) {
         try {
             DistributedTask task = new DistributedTask(callable);
@@ -355,49 +320,52 @@ public class ManagementConsoleService implements MembershipListener {
             try {
                 return task.get(1, TimeUnit.SECONDS);
             } catch (Throwable e) {
-				logger.log(Level.FINEST, e.getMessage(), e);
+                logger.log(Level.FINEST, e.getMessage(), e);
                 return null;
             }
         } catch (Throwable e) {
             return null;
         }
     }
-    
+
     public Object callOnMembers(Set<Address> addresses, Callable callable) {
         Set<Member> members = factory.getCluster().getMembers();
         Set<Member> selectedMembers = new HashSet<Member>(addresses.size());
         for (Member member : members) {
             if (addresses.contains(((MemberImpl) member).getAddress())) {
-            	selectedMembers.add(member);
+                selectedMembers.add(member);
             }
         }
         return callOnMembers0(selectedMembers, callable);
     }
-    
+
     public Collection callOnAllMembers(Callable callable) {
-    	Set<Member> members = factory.getCluster().getMembers();
-    	return callOnMembers0(members, callable);
+        Set<Member> members = factory.getCluster().getMembers();
+        return callOnMembers0(members, callable);
     }
-    
+
     private Collection callOnMembers0(Set<Member> members, Callable callable) {
-    	 try {
-         	MultiTask task = new MultiTask(callable, members);
+        try {
+            MultiTask task = new MultiTask(callable, members);
             factory.getExecutorService().execute(task);
-			try {
-				return task.get(1, TimeUnit.SECONDS);
-			} catch (Throwable e) {
-				logger.log(Level.FINEST, e.getMessage(), e);
-				return null;
-			}
-         } catch (Throwable e) {
-         	 return null;
-         }
+            try {
+                return task.get(1, TimeUnit.SECONDS);
+            } catch (Throwable e) {
+                logger.log(Level.FINEST, e.getMessage(), e);
+                return null;
+            }
+        } catch (Throwable e) {
+            return null;
+        }
     }
 
     void writeState(final DataOutput dos) throws Exception {
+        if (latestThisMemberState == null) {
+            updateLocalState();
+        }
         TimedClusterState timedClusterState = new TimedClusterState();
-        for (SocketAddress socketAddress : members.socketAddresses) {
-            MemberState memberState = members.getMemberState(socketAddress);
+        for (Address address : addresses) {
+            MemberState memberState = memberStates.get(address);
             if (memberState != null) {
                 timedClusterState.addMemberState(memberState);
             }
@@ -405,9 +373,9 @@ public class ManagementConsoleService implements MembershipListener {
         timedClusterState.setInstanceNames(factory.getLongInstanceNames());
         timedClusterState.writeData(dos);
     }
-    
+
     HazelcastInstance getHazelcastInstance() {
-    	return factory;
+        return factory;
     }
 
     public static class SocketReadyServerSocket extends ServerSocket {
