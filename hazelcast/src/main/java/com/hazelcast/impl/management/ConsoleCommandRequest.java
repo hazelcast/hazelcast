@@ -30,7 +30,7 @@ public class ConsoleCommandRequest implements ConsoleRequest {
     		writeLongString(dos, output);
 		} catch (Throwable e) {
 			e.printStackTrace();
-			writeLongString(dos, "wrong command! type 'help' for help");
+			writeLongString(dos, e.getMessage() + " : type 'help' for help");
 		}
     }
 

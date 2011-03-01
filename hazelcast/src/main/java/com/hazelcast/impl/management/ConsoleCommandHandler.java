@@ -17,13 +17,17 @@
 
 package com.hazelcast.impl.management;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.examples.TestApp;
 
 public class ConsoleCommandHandler {
 
 	private final ConsoleApp app;
-	private final Object lock = new Object();
+	private final Lock lock = new ReentrantLock();
 	private final StringBuilder buffer = new StringBuilder();
 
 	public ConsoleCommandHandler(HazelcastInstance instance) {
@@ -31,19 +35,36 @@ public class ConsoleCommandHandler {
 		this.app = new ConsoleApp(instance);
 	}
 
-	public String handleCommand(String command) {
-		final String output ;
-		synchronized (lock) {
-			app.handleCommand(command);
-			output = buffer.toString();
-			buffer.setLength(0);
+	public String handleCommand(final String command) throws InterruptedException {
+		
+		if("exit".equals(command) || "quit".equals(command)) {
+			return "'" + command + "' is not allowed!";
 		}
+		
+		if(lock.tryLock(1, TimeUnit.SECONDS)) {
+			try {
+				return doHandleCommand(command);
+			} finally {
+				lock.unlock();
+			}
+		}
+		return "'" + command + "' execution is timed out!";
+	}
+	
+	String doHandleCommand(final String command) {
+		app.handleCommand(command);
+		final String output = buffer.toString();
+		buffer.setLength(0);
 		return output;
 	}
-
+	
 	private class ConsoleApp extends TestApp {
 		public ConsoleApp(HazelcastInstance hazelcast) {
 			super(hazelcast);
+		}
+		
+		protected void handleCommand(String command) {
+			super.handleCommand(command);
 		}
 
 		public void println(Object obj) {

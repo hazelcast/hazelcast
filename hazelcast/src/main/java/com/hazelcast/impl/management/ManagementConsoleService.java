@@ -360,9 +360,9 @@ public class ManagementConsoleService implements MembershipListener {
     }
 
     public Object callOnMembers(Set<Address> addresses, Callable callable) {
-        Set<Member> members = factory.getCluster().getMembers();
+        Set<Member> allMembers = factory.getCluster().getMembers();
         Set<Member> selectedMembers = new HashSet<Member>(addresses.size());
-        for (Member member : members) {
+        for (Member member : allMembers) {
             if (addresses.contains(((MemberImpl) member).getAddress())) {
                 selectedMembers.add(member);
             }
