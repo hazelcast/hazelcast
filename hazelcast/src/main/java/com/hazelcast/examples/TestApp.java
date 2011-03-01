@@ -158,7 +158,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleCommand(String command) {
+    public void handleCommand(String command) {
         if (echo) {
             if (Thread.currentThread().getName().toLowerCase().indexOf("main") < 0)
                 println(" [" + Thread.currentThread().getName() + "] " + command);
