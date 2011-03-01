@@ -99,6 +99,23 @@ public class ClusterTest {
         assertEquals(size, m3.size());
     }
 
+    /**
+     * AtomicNumber.incrementAndGet backup issue
+     *
+     * @throws InterruptedException
+     */
+    @Test
+    public void testIssue505() throws InterruptedException {
+        HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance superClient = Hazelcast.newHazelcastInstance(new Config());
+        AtomicNumber test = superClient.getAtomicNumber("test");
+        assertEquals(1, test.incrementAndGet());
+        HazelcastInstance hazelcastInstance3 = Hazelcast.newHazelcastInstance(new Config());
+        assertEquals(2, test.incrementAndGet());
+        hazelcastInstance1.getLifecycleService().shutdown();
+        assertEquals(3, test.incrementAndGet());
+    }
+
     @Test
     public void testIdle() throws Exception {
         Config config = new Config();
@@ -1705,6 +1722,10 @@ public class ClusterTest {
         lock.lock();
         ITopic topic = h1.getTopic("default");
         IdGenerator ig = h1.getIdGenerator("default");
+        AtomicNumber atomicNumber = h1.getAtomicNumber("default");
+        atomicNumber.incrementAndGet();
+        atomicNumber.incrementAndGet();
+        assertEquals(2, atomicNumber.get());
         assertEquals(1, ig.newId());
         ISet set = h1.getSet("default");
         set.add("item");
@@ -1715,6 +1736,7 @@ public class ClusterTest {
         h2.getMap("amap").put("5", topic);
         h2.getMap("amap").put("6", ig);
         h2.getMap("amap").put("7", set);
+        h2.getMap("amap").put("8", atomicNumber);
         Map m1 = (Map) h1.getMap("amap").get("1");
         Map m2 = (Map) h2.getMap("amap").get("1");
         assertEquals("value1", m1.get("1"));
@@ -1758,6 +1780,10 @@ public class ClusterTest {
         ISet set2 = (ISet) h2.getMap("amap").get("7");
         assertTrue(set1.contains("item"));
         assertTrue(set2.contains("item"));
+        AtomicNumber a1 = (AtomicNumber) h1.getMap("amap").get("8");
+        AtomicNumber a2 = (AtomicNumber) h2.getMap("amap").get("8");
+        assertEquals(2, a1.get());
+        assertEquals(2, a2.get());
     }
 
     /**

@@ -27,8 +27,11 @@ import com.hazelcast.nio.DataSerializable;
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class AtomicNumberImpl extends FactoryAwareNamedProxy implements AtomicNumber, DataSerializable {
-    AtomicNumberReal base = null;
+    AtomicNumber base = null;
     Data nameAsData = null;
+
+    public AtomicNumberImpl() {
+    }
 
     public AtomicNumberImpl(String name, FactoryImpl factory) {
         setName(name);
@@ -46,7 +49,7 @@ public class AtomicNumberImpl extends FactoryAwareNamedProxy implements AtomicNu
     private void ensure() {
         factory.initialChecks();
         if (base == null) {
-            base = (AtomicNumberReal) factory.getOrCreateProxyByName(name);
+            base = (AtomicNumber) factory.getOrCreateProxyByName(name);
         }
     }
 
