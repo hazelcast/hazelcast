@@ -25,11 +25,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class MapOperationsCounter {
     private final static LocalMapOperationStats empty = new MapOperationStatsImpl();
-    private final AtomicLong puts = new AtomicLong();
-    private final AtomicLong gets = new AtomicLong();
+    private final OperationCounter puts = new OperationCounter();
+    private final OperationCounter gets = new OperationCounter();
     private final AtomicLong removes = new AtomicLong();
     private final AtomicLong others = new AtomicLong();
     private final AtomicLong events = new AtomicLong();
+
     private final List<MapOperationsCounter> listOfSubStats = new ArrayList<MapOperationsCounter>();
     private final long interval;
     private final Object lock = new Object();
@@ -46,8 +47,8 @@ public class MapOperationsCounter {
     }
 
     private MapOperationsCounter getAndReset() {
-        long putsNow = puts.getAndSet(0);
-        long getsNow = gets.getAndSet(0);
+        OperationCounter putsNow = puts.copyAndReset();
+        OperationCounter getsNow = gets.copyAndReset();
         long removesNow = removes.getAndSet(0);
         long othersNow = others.getAndSet(0);
         long eventsNow = events.getAndSet(0);
@@ -77,13 +78,13 @@ public class MapOperationsCounter {
         return published;
     }
 
-    public void incrementPuts() {
-        puts.incrementAndGet();
+    public void incrementPuts(long elapsed) {
+        puts.count(elapsed);
         publishSubResult();
     }
 
-    public void incrementGets() {
-        gets.incrementAndGet();
+    public void incrementGets(long elapsed) {
+        gets.count(elapsed);
         publishSubResult();
     }
 
@@ -124,11 +125,13 @@ public class MapOperationsCounter {
 
     private LocalMapOperationStats aggregate(List<MapOperationsCounter> list) {
         MapOperationStatsImpl stats = new MapOperationStatsImpl();
+        stats.gets = stats.new OperationCounter(0, 0);
+        stats.puts = stats.new OperationCounter(0, 0);
         stats.periodStart = list.get(0).startTime;
         for (int i = 0; i < list.size(); i++) {
             MapOperationsCounter sub = list.get(i);
-            stats.numberOfGets += sub.gets.get();
-            stats.numberOfPuts += sub.puts.get();
+            stats.gets.add(sub.gets.count.get(), sub.gets.totalLatency.get());
+            stats.puts.add(sub.puts.count.get(), sub.puts.totalLatency.get());
             stats.numberOfRemoves += sub.removes.get();
             stats.numberOfOtherOperations += sub.others.get();
             stats.numberOfEvents += sub.events.get();
@@ -140,8 +143,9 @@ public class MapOperationsCounter {
     private LocalMapOperationStats getThis() {
         MapOperationStatsImpl stats = new MapOperationStatsImpl();
         stats.periodStart = this.startTime;
-        stats.numberOfGets = this.gets.get();
-        stats.numberOfPuts = this.puts.get();
+        stats.gets = stats.new OperationCounter(this.gets.count.get(), this.gets.totalLatency.get());
+        stats.puts = stats.new OperationCounter(this.puts.count.get(), this.puts.totalLatency.get());
+//        stats.numberOfPuts = this.puts.get();
         stats.numberOfRemoves = this.removes.get();
         stats.numberOfEvents = this.events.get();
         stats.periodEnd = now();
@@ -164,5 +168,45 @@ public class MapOperationsCounter {
                 ", lock=" + lock +
                 ", interval=" + interval +
                 '}';
+    }
+
+    class OperationCounter {
+        final AtomicLong count;
+        final AtomicLong totalLatency;
+
+        public OperationCounter() {
+            this(0, 0);
+        }
+
+        public OperationCounter(long c, long l) {
+            this.count = new AtomicLong(c);
+            totalLatency = new AtomicLong(l);
+        }
+
+        public OperationCounter copyAndReset() {
+            OperationCounter copy = new OperationCounter(count.get(), totalLatency.get());
+            this.count.set(0);
+            this.totalLatency.set(0);
+            return copy;
+        }
+
+        public void set(OperationCounter now) {
+            this.count.set(now.count.get());
+            this.totalLatency.set(now.totalLatency.get());
+        }
+
+        public void count(long elapsed) {
+            this.count.incrementAndGet();
+            this.totalLatency.addAndGet(elapsed);
+        }
+
+        @Override
+        public String toString() {
+            long count = this.count.get();
+            return "OperationCounter{" +
+                    "count=" + count +
+                    ", averageLatency=" + ((count==0)?0:totalLatency.get() / count) +
+                    '}';
+        }
     }
 }

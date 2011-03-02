@@ -297,19 +297,19 @@ public class AllTest {
                 }
             }
         }, 1);
-        addOperation(operations, new Runnable() {
-            public void run() {
-                IMap map = Hazelcast.getMap("myMap");
-                int key = random.nextInt(size);
-                map.lockMap(10, TimeUnit.MILLISECONDS);
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException e) {
-                } finally {
-                    map.unlockMap();
-                }
-            }
-        }, 1);
+//        addOperation(operations, new Runnable() {
+//            public void run() {
+//                IMap map = Hazelcast.getMap("myMap");
+//                int key = random.nextInt(size);
+//                map.lockMap(10, TimeUnit.MILLISECONDS);
+//                try {
+//                    Thread.sleep(1);
+//                } catch (InterruptedException e) {
+//                } finally {
+//                    map.unlockMap();
+//                }
+//            }
+//        }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = Hazelcast.getMap("myMap");

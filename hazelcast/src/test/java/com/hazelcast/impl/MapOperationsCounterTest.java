@@ -51,8 +51,8 @@ public class MapOperationsCounterTest {
     public void doAllOperations() {
         MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         for (int i = 0; i < 10; i++) {
-            mapOperationStats.incrementPuts();
-            mapOperationStats.incrementGets();
+            mapOperationStats.incrementPuts(0);
+            mapOperationStats.incrementGets(0);
             mapOperationStats.incrementRemoves();
         }
         assertEquals(10, mapOperationStats.getPublishedStats().getNumberOfGets());
@@ -64,8 +64,8 @@ public class MapOperationsCounterTest {
     public void testTotal() {
         MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         for (int i = 0; i < 10; i++) {
-            mapOperationStats.incrementPuts();
-            mapOperationStats.incrementGets();
+            mapOperationStats.incrementPuts(0);
+            mapOperationStats.incrementGets(0);
             mapOperationStats.incrementRemoves();
         }
         assertEquals(10, mapOperationStats.getPublishedStats().getNumberOfGets());
@@ -81,7 +81,7 @@ public class MapOperationsCounterTest {
         long counter = 0;
         boolean run = true;
         while (run) {
-            mapOperationStats.incrementPuts();
+            mapOperationStats.incrementPuts(0);
             counter++;
             Thread.sleep(1);
             if (System.currentTimeMillis() - start > 5) {
@@ -101,13 +101,13 @@ public class MapOperationsCounterTest {
         boolean run = true;
         while (run) {
             counter++;
-            mapOperationStats.incrementPuts();
+            mapOperationStats.incrementPuts(0);
             if (System.currentTimeMillis() - start > 50) {
                 run = false;
             }
             Thread.sleep(1);
         }
-        mapOperationStats.incrementPuts();
+        mapOperationStats.incrementPuts(0);
         counter++;
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
@@ -125,13 +125,13 @@ public class MapOperationsCounterTest {
         boolean run = true;
         while (run) {
             counter++;
-            mapOperationStats.incrementPuts();
+            mapOperationStats.incrementPuts(0);
             if (System.currentTimeMillis() - start > 95) {
                 run = false;
             }
             Thread.sleep(1);
         }
-        mapOperationStats.incrementPuts();
+        mapOperationStats.incrementPuts(0);
         counter++;
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
@@ -149,13 +149,13 @@ public class MapOperationsCounterTest {
         boolean run = true;
         while (run) {
             counter++;
-            mapOperationStats.incrementPuts();
+            mapOperationStats.incrementPuts(0);
             if (System.currentTimeMillis() - start > 105) {
                 run = false;
             }
             Thread.sleep(1);
         }
-        mapOperationStats.incrementPuts();
+        mapOperationStats.incrementPuts(0);
         counter++;
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
@@ -173,13 +173,13 @@ public class MapOperationsCounterTest {
         boolean run = true;
         while (run) {
             counter++;
-            mapOperationStats.incrementPuts();
+            mapOperationStats.incrementPuts(0);
             if (System.currentTimeMillis() - start > 205) {
                 run = false;
             }
             Thread.sleep(1);
         }
-        mapOperationStats.incrementPuts();
+        mapOperationStats.incrementPuts(0);
         counter++;
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
@@ -194,8 +194,8 @@ public class MapOperationsCounterTest {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(bos);
         MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
-        mapOperationStats.incrementPuts();
-        mapOperationStats.incrementGets();
+        mapOperationStats.incrementPuts(0);
+        mapOperationStats.incrementGets(0);
         mapOperationStats.incrementRemoves();
         ((DataSerializable) mapOperationStats.getPublishedStats()).writeData(dout);
         MapOperationStatsImpl newStat = new MapOperationStatsImpl();

@@ -2435,10 +2435,12 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public MapEntry getMapEntry(Object key) {
+                long begin = System.currentTimeMillis();
                 check(key);
-                mapOperationCounter.incrementGets();
                 MGetMapEntry mgetMapEntry = concurrentMapManager.new MGetMapEntry();
-                return mgetMapEntry.get(name, key);
+                MapEntry mapEntry = mgetMapEntry.get(name, key);
+                mapOperationCounter.incrementGets(System.currentTimeMillis() - begin);
+                return mapEntry;
             }
 
             public boolean putMulti(Object key, Object value) {
@@ -2449,11 +2451,13 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public Object put(Object key, Object value) {
+                long begin = System.currentTimeMillis();
                 check(key);
                 check(value);
-                mapOperationCounter.incrementPuts();
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
-                return mput.put(name, key, value, -1, -1);
+                Object result = mput.put(name, key, value, -1, -1);
+                mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+                return result;
             }
 
             public Future getAsync(Object key) {
@@ -2481,14 +2485,17 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public Object put(Object key, Object value, long timeout, long ttl) {
+                long begin = System.currentTimeMillis();
                 check(key);
                 check(value);
-                mapOperationCounter.incrementPuts();
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
-                return mput.put(name, key, value, timeout, ttl);
+                Object result = mput.put(name, key, value, timeout, ttl);
+                mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+                return result;
             }
 
             public boolean tryPut(Object key, Object value, long timeout, TimeUnit timeunit) {
+                long begin = System.currentTimeMillis();
                 if (timeout < 0) {
                     throw new IllegalArgumentException("timeout value cannot be negative. " + timeout);
                 }
@@ -2499,9 +2506,10 @@ public class FactoryImpl implements HazelcastInstance {
                 }
                 check(key);
                 check(value);
-                mapOperationCounter.incrementPuts();
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
-                return mput.tryPut(name, key, value, timeout, -1);
+                Boolean result = mput.tryPut(name, key, value, timeout, -1);
+                mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+                return result;
             }
 
             public Object putIfAbsent(Object key, Object value) {
@@ -2521,16 +2529,18 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public Object putIfAbsent(Object key, Object value, long timeout, long ttl) {
+                long begin = System.currentTimeMillis();
                 check(key);
                 check(value);
-                mapOperationCounter.incrementPuts();
                 MPut mput = concurrentMapManager.new MPut();
-                return mput.putIfAbsent(name, key, value, timeout, ttl);
+                Object result = mput.putIfAbsent(name, key, value, timeout, ttl);
+                mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+                return result;
             }
 
             public Object get(Object key) {
                 check(key);
-                mapOperationCounter.incrementGets();
+                long begin = System.currentTimeMillis();
                 MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
                 Object result = mget.get(name, key, -1);
                 if (result == null && name.contains("testConcurrentLockPrimitive")) {
@@ -2538,6 +2548,7 @@ public class FactoryImpl implements HazelcastInstance {
                     Object txn = ThreadContext.get().getTransaction();
                     throw new RuntimeException(result + " testConcurrentLockPrimitive returns null " + isClient + "  " + txn);
                 }
+                mapOperationCounter.incrementGets(System.currentTimeMillis() - begin);
                 return result;
             }
 
@@ -2585,20 +2596,24 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public Object replace(Object key, Object value) {
+                long begin = System.currentTimeMillis();
                 check(key);
                 check(value);
-                mapOperationCounter.incrementPuts();
                 MPut mput = concurrentMapManager.new MPut();
-                return mput.replace(name, key, value, -1, -1);
+                Object result = mput.replace(name, key, value, -1, -1);
+                mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+                return result;
             }
 
             public boolean replace(Object key, Object oldValue, Object newValue) {
+                long begin = System.currentTimeMillis();
                 check(key);
                 check(oldValue);
                 check(newValue);
-                mapOperationCounter.incrementPuts();
                 MPut mput = concurrentMapManager.new MPut();
-                return mput.replace(name, key, oldValue, newValue, -1);
+                Boolean result = mput.replace(name, key, oldValue, newValue, -1);
+                mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+                return result;
             }
 
             public boolean lockMap(long time, TimeUnit timeunit) {
