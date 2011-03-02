@@ -28,8 +28,8 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
 
     long periodStart;
     long periodEnd;
-    OperationCounter gets;
-    OperationCounter puts;
+    OperationStat gets;
+    OperationStat puts;
     long numberOfRemoves;
     long numberOfOtherOperations;
     long numberOfEvents;
@@ -45,9 +45,9 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
     }
 
     public void readData(DataInput in) throws IOException {
-        puts = new OperationCounter();
+        puts = new OperationStat();
         puts.readData(in);
-        gets = new OperationCounter();
+        gets = new OperationStat();
         gets.readData(in);
         numberOfRemoves = in.readLong();
         numberOfOtherOperations = in.readLong();
@@ -76,6 +76,14 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
         return gets.count;
     }
 
+    public long getTotalPutLatency() {
+        return puts.totalLatency;
+    }
+
+    public long getTotalGetLatency() {
+        return gets.totalLatency;
+    }
+
     public long getNumberOfRemoves() {
         return numberOfRemoves;
     }
@@ -99,22 +107,22 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
                 "}";
     }
 
-    class OperationCounter implements DataSerializable {
+    class OperationStat implements DataSerializable {
         long count;
         long totalLatency;
 
-        public OperationCounter() {
+        public OperationStat() {
             this(0, 0);
         }
 
-        public OperationCounter(long c, long l) {
+        public OperationStat(long c, long l) {
             this.count = c;
             this.totalLatency = l;
         }
 
         @Override
         public String toString() {
-            return "OperationCounter{" +
+            return "OperationStat{" +
                     "count=" + count +
                     ", averageLatency=" + ((count == 0) ? 0 : totalLatency / count) +
                     '}';

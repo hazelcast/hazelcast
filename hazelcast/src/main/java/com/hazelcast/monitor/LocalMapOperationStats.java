@@ -55,6 +55,21 @@ public interface LocalMapOperationStats extends DataSerializable {
     public long getNumberOfGets();
 
     /**
+     * Returns the total latency of put operations in this period. To get the average latency, divide to number of puts
+     *
+     * @return
+     */
+    public long getTotalPutLatency();
+
+    /**
+     * Returns the total latency of get operations in this period. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getTotalGetLatency();
+
+
+    /**
      * Returns the number of Remove operations
      *
      * @return number of remove operations

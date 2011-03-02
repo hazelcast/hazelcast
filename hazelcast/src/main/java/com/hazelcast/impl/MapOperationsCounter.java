@@ -125,8 +125,8 @@ public class MapOperationsCounter {
 
     private LocalMapOperationStats aggregate(List<MapOperationsCounter> list) {
         MapOperationStatsImpl stats = new MapOperationStatsImpl();
-        stats.gets = stats.new OperationCounter(0, 0);
-        stats.puts = stats.new OperationCounter(0, 0);
+        stats.gets = stats.new OperationStat(0, 0);
+        stats.puts = stats.new OperationStat(0, 0);
         stats.periodStart = list.get(0).startTime;
         for (int i = 0; i < list.size(); i++) {
             MapOperationsCounter sub = list.get(i);
@@ -143,8 +143,8 @@ public class MapOperationsCounter {
     private LocalMapOperationStats getThis() {
         MapOperationStatsImpl stats = new MapOperationStatsImpl();
         stats.periodStart = this.startTime;
-        stats.gets = stats.new OperationCounter(this.gets.count.get(), this.gets.totalLatency.get());
-        stats.puts = stats.new OperationCounter(this.puts.count.get(), this.puts.totalLatency.get());
+        stats.gets = stats.new OperationStat(this.gets.count.get(), this.gets.totalLatency.get());
+        stats.puts = stats.new OperationStat(this.puts.count.get(), this.puts.totalLatency.get());
 //        stats.numberOfPuts = this.puts.get();
         stats.numberOfRemoves = this.removes.get();
         stats.numberOfEvents = this.events.get();
@@ -203,7 +203,7 @@ public class MapOperationsCounter {
         @Override
         public String toString() {
             long count = this.count.get();
-            return "OperationCounter{" +
+            return "OperationStat{" +
                     "count=" + count +
                     ", averageLatency=" + ((count==0)?0:totalLatency.get() / count) +
                     '}';
