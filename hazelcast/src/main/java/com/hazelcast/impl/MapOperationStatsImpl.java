@@ -28,8 +28,8 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
 
     long periodStart;
     long periodEnd;
-    OperationStat gets;
-    OperationStat puts;
+    OperationStat gets = new OperationStat(0,0);
+    OperationStat puts = new OperationStat(0,0);
     long numberOfRemoves;
     long numberOfOtherOperations;
     long numberOfEvents;

@@ -125,8 +125,6 @@ public class MapOperationsCounter {
 
     private LocalMapOperationStats aggregate(List<MapOperationsCounter> list) {
         MapOperationStatsImpl stats = new MapOperationStatsImpl();
-        stats.gets = stats.new OperationStat(0, 0);
-        stats.puts = stats.new OperationStat(0, 0);
         stats.periodStart = list.get(0).startTime;
         for (int i = 0; i < list.size(); i++) {
             MapOperationsCounter sub = list.get(i);
