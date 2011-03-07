@@ -38,43 +38,44 @@ import static org.mockito.Mockito.when;
 public class PartitionManagerTest {
 
     @Test
-    public void testReArrangeBlocks99_271() throws UnknownHostException {
-        testReArrange(99, 271);
+    public void testPartitioning() throws Exception {
+        doTestPartitioning(271, 271);
+        doTestPartitioning(101, 999);
     }
 
-    @Test
-    public void testReArrangeBlocks8_271() throws UnknownHostException {
-        testReArrange(8, 271);
+    private void doTestPartitioning(int maxNumberOfNodes, int partitionCount) throws Exception {
+        for (int i = 1; i < maxNumberOfNodes; i++) {
+            testQuickArrange(i, partitionCount);
+            testReArrange(i, partitionCount);
+        }
     }
 
-    @Test
-    public void testReArrangeBlocks2_271() throws UnknownHostException {
-        testReArrange(2, 271);
+    private void testQuickArrange(int NODE_COUNT, int BLOCK_COUNT) throws UnknownHostException {
+        Address thisAddress = new Address("localhost", 5701);
+        testQuickArrange(NODE_COUNT, BLOCK_COUNT, createBlocks(BLOCK_COUNT, thisAddress));
     }
 
-    @Test
-    public void testReArrangeBlocks32_271() throws UnknownHostException {
-        testReArrange(32, 271);
-    }
-
-    @Test
-    public void testReArrangeBlocks1_271() throws UnknownHostException {
-        testReArrange(1, 271);
-    }
-
-    @Test
-    public void testReArrangeBlocks1_999() throws UnknownHostException {
-        testReArrange(1, 999);
-    }
-
-    @Test
-    public void testReArrangeBlocks2_999() throws UnknownHostException {
-        testReArrange(2, 999);
-    }
-
-    @Test
-    public void testReArrangeBlocks29_999() throws UnknownHostException {
-        testReArrange(29, 999);
+    private void testQuickArrange(int NODE_COUNT, int BLOCK_COUNT, Block[] blocks) throws UnknownHostException {
+        //setup
+        LinkedList<MemberImpl> members = createMembers(NODE_COUNT);
+        Address thisAddress = new Address("localhost", 5701);
+        PartitionManager partitionManager = init(BLOCK_COUNT, blocks, members, thisAddress);
+        //run the method
+        partitionManager.doQuickBlockRearrangement();
+        Map<Address, Integer> counter = new HashMap<Address, Integer>();
+        for (int i = 0; i < BLOCK_COUNT; i++) {
+            Integer count = counter.get(blocks[i].getOwner());
+            count = (count == null) ? 0 : count;
+            count++;
+            counter.put(blocks[i].getOwner(), count);
+        }
+        int partitionsPerMember = BLOCK_COUNT / NODE_COUNT;
+        for (Address address : counter.keySet()) {
+            int c = counter.get(address);
+            assertTrue(c == partitionsPerMember || c == (partitionsPerMember + 1));
+        }
+        partitionManager.reArrangeBlocks();
+        assertEquals(0, partitionManager.lsBlocksToMigrate.size());
     }
 
     private void testReArrange(int NODE_COUNT, int BLOCK_COUNT) throws UnknownHostException {
@@ -110,8 +111,8 @@ public class PartitionManagerTest {
             counter.put(blocks[i].getOwner(), count);
         }
         int partitionsPerMember = BLOCK_COUNT / NODE_COUNT;
-        for (Address addres : counter.keySet()) {
-            int c = counter.get(addres);
+        for (Address address : counter.keySet()) {
+            int c = counter.get(address);
             assertTrue(c == partitionsPerMember || c == (partitionsPerMember + 1));
         }
         partitionManager.reArrangeBlocks();
@@ -133,8 +134,8 @@ public class PartitionManagerTest {
         migrate(blocks, partitionManager.lsBlocksToMigrate);
         Map<Address, Integer> counter = countPartitionsPerMember(blocks);
         int partitionsPerMember = blockCount / NODE_COUNT;
-        for (Address addres : counter.keySet()) {
-            int c = counter.get(addres);
+        for (Address address : counter.keySet()) {
+            int c = counter.get(address);
             assertTrue(c == partitionsPerMember || c == (partitionsPerMember + 1));
         }
         partitionManager.reArrangeBlocks();
@@ -221,6 +222,7 @@ public class PartitionManagerTest {
         when(concurrentMapManager.getThisAddress()).thenReturn(thisAddress);
         when(concurrentMapManager.getMembers()).thenReturn(members);
         when(concurrentMapManager.isMaster()).thenReturn(true);
+        when(concurrentMapManager.getCMaps()).thenReturn(new HashMap());
         PartitionManager partitionManager = new PartitionManager(concurrentMapManager);
         return partitionManager;
     }

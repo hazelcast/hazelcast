@@ -146,6 +146,12 @@ public class PartitionManager implements Runnable {
 
     void quickBlockRearrangement() {
         if (!concurrentMapManager.isMaster()) return;
+        doQuickBlockRearrangement();
+        sendBlocks(null);
+        partitionServiceImpl.reset();
+    }
+
+    void doQuickBlockRearrangement() {
         createAllBlocks();
         // find storage enabled members
         Map<Address, List<Block>> addressBlocks = getCurrentMemberBlocks();
@@ -171,7 +177,7 @@ public class PartitionManager implements Runnable {
         for (final Entry<Address, List<Block>> entry : addressBlocks.entrySet()) {
             final Address address = entry.getKey();
             List<Block> blocks = entry.getValue();
-            int diff = (aveBlockOwnCount - blocks.size());
+            int diff = (aveBlockOwnCount - blocks.size() + PARTITION_COUNT) % PARTITION_COUNT;
             for (int i = 0; i < diff && lsEmptyBlocks.size() > 0; i++) {
                 Block block = lsEmptyBlocks.remove(0);
                 block.setOwner(address);
@@ -186,8 +192,6 @@ public class PartitionManager implements Runnable {
                 ownableBlock.setOwner(address);
             }
         }
-        sendBlocks(null);
-        partitionServiceImpl.reset();
     }
 
     private void createAllBlocks() {
@@ -211,7 +215,7 @@ public class PartitionManager implements Runnable {
     }
 
     boolean isBlockEmpty(int blockId) {
-        Collection<CMap> cmaps = concurrentMapManager.maps.values();
+        Collection<CMap> cmaps = concurrentMapManager.getCMaps().values();
         for (final CMap cmap : cmaps) {
             if (cmap.hasOwned(blockId)) {
                 return false;
