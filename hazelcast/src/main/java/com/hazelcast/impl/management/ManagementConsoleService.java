@@ -17,45 +17,8 @@
 
 package com.hazelcast.impl.management;
 
-import static com.hazelcast.nio.IOUtil.newInputStream;
-import static com.hazelcast.nio.IOUtil.newOutputStream;
-
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-
-import com.hazelcast.core.DistributedTask;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.core.MultiTask;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.MemberStateImpl;
@@ -63,6 +26,16 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.TimedClusterState;
 import com.hazelcast.nio.Address;
+
+import java.io.*;
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.logging.Level;
+
+import static com.hazelcast.nio.IOUtil.newInputStream;
+import static com.hazelcast.nio.IOUtil.newOutputStream;
 
 public class ManagementConsoleService implements MembershipListener {
 
@@ -82,7 +55,7 @@ public class ManagementConsoleService implements MembershipListener {
     private final Set<Address> addresses = new CopyOnWriteArraySet<Address>();
     private volatile MemberStateImpl latestThisMemberState = null;
     private final Address thisAddress;
-    private final ConsoleCommandHandler commandHandler ;
+    private final ConsoleCommandHandler commandHandler;
 
     public ManagementConsoleService(FactoryImpl factoryImpl) throws Exception {
         this.factory = factoryImpl;
@@ -145,6 +118,12 @@ public class ManagementConsoleService implements MembershipListener {
                 e.printStackTrace();
             }
         }
+    }
+
+    public boolean login(String groupName, String password) {
+        logger.log(Level.INFO, "ManagementCenter Client is trying to login.");
+        GroupConfig groupConfig = factory.getConfig().getGroupConfig();
+        return groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(password);
     }
 
     class TCPListener extends Thread {
@@ -276,6 +255,7 @@ public class ManagementConsoleService implements MembershipListener {
         final LazyDataOutputStream socketOut = new LazyDataOutputStream();
 
         public ClientHandler() {
+            register(new LoginRequest());
             register(new GetClusterStateRequest());
             register(new ThreadDumpRequest());
             register(new ExecuteScriptRequest());
@@ -408,9 +388,9 @@ public class ManagementConsoleService implements MembershipListener {
     HazelcastInstance getHazelcastInstance() {
         return factory;
     }
-    
+
     ConsoleCommandHandler getCommandHandler() {
-    	return commandHandler;
+        return commandHandler;
     }
 
     public static class SocketReadyServerSocket extends ServerSocket {
