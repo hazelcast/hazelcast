@@ -29,8 +29,7 @@ public class ConsoleCommandRequest implements ConsoleRequest {
     		final String output = handler.handleCommand(command);
     		writeLongString(dos, output);
 		} catch (Throwable e) {
-			e.printStackTrace();
-			writeLongString(dos, e.getMessage() + " : type 'help' for help");
+			writeLongString(dos, "Error: " + e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
 		}
     }
 

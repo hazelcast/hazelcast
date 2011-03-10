@@ -66,6 +66,14 @@ public class ConsoleCommandHandler {
 		protected void handleCommand(String command) {
 			super.handleCommand(command);
 		}
+		
+		protected void handleAddListener(String[] args) {
+			println("Listener commands are not allowed!");
+		}
+		
+		protected void handleRemoveListener(String[] args) {
+			println("Listener commands are not allowed!");
+		}
 
 		public void println(Object obj) {
 			print(obj);

@@ -176,8 +176,8 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     	targets = new HashSet<Address>(size);
     	for (int i = 0; i < size; i++) {
     		Address target = new Address();
-    		targets.add(target);
     		target.readData(in);
+    		targets.add(target);
 		}
     	
     	bindings = readMap(in);

@@ -406,7 +406,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handlePartitions(String[] args) {
+    protected void handlePartitions(String[] args) {
         Set<Partition> partitions = hazelcast.getPartitionService().getPartitions();
         Map<Member, Integer> partitionCounts = new HashMap<Member, Integer>();
         for (Partition partition : partitions) {
@@ -427,30 +427,30 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleInstances(String[] args) {
+    protected void handleInstances(String[] args) {
         Collection<Instance> instances = hazelcast.getInstances();
         for (Instance instance : instances) {
             println(instance);
         }
     }
 
-    private void handleListContains(String[] args) {
+    protected void handleListContains(String[] args) {
         println(getList().contains(args[1]));
     }
 
-    private void handleListRemove(String[] args) {
+    protected void handleListRemove(String[] args) {
         println(getList().remove(args[1]));
     }
 
-    private void handleListAdd(String[] args) {
+    protected void handleListAdd(String[] args) {
         println(getList().add(args[1]));
     }
 
-    private void handleMapPut(String[] args) {
+    protected void handleMapPut(String[] args) {
         println(getMap().put(args[1], args[2]));
     }
 
-    private void handleMapPutAsync(String[] args) {
+    protected void handleMapPutAsync(String[] args) {
         try {
             println(getMap().putAsync(args[1], args[2]).get());
         } catch (InterruptedException e) {
@@ -460,19 +460,19 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleMapPutIfAbsent(String[] args) {
+    protected void handleMapPutIfAbsent(String[] args) {
         println(getMap().putIfAbsent(args[1], args[2]));
     }
 
-    private void handleMapReplace(String[] args) {
+    protected void handleMapReplace(String[] args) {
         println(getMap().replace(args[1], args[2]));
     }
 
-    private void handleMapGet(String[] args) {
+    protected void handleMapGet(String[] args) {
         println(getMap().get(args[1]));
     }
 
-    private void handleMapGetAsync(String[] args) {
+    protected void handleMapGetAsync(String[] args) {
         try {
             println(getMap().getAsync(args[1]).get());
         } catch (InterruptedException e) {
@@ -482,19 +482,19 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleMapGetMapEntry(String[] args) {
+    protected void handleMapGetMapEntry(String[] args) {
         println(getMap().getMapEntry(args[1]));
     }
 
-    private void handleMapRemove(String[] args) {
+    protected void handleMapRemove(String[] args) {
         println(getMap().remove(args[1]));
     }
 
-    private void handleMapEvict(String[] args) {
+    protected void handleMapEvict(String[] args) {
         println(getMap().evict(args[1]));
     }
 
-    private void handleMapPutMany(String[] args) {
+    protected void handleMapPutMany(String[] args) {
         int count = 1;
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
@@ -533,7 +533,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleMapGetMany(String[] args) {
+    protected void handleMapGetMany(String[] args) {
         int count = 1;
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
@@ -542,7 +542,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleMapRemoveMany(String[] args) {
+    protected void handleMapRemoveMany(String[] args) {
         int count = 1;
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
@@ -557,12 +557,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("size = " + getMap().size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
     }
 
-    private void handleMapLock(String[] args) {
+    protected void handleMapLock(String[] args) {
         getMap().lock(args[1]);
         println("true");
     }
 
-    private void handleLock(String[] args) {
+    protected void handleLock(String[] args) {
         String lockStr = args[0];
         String key = args[1];
         Lock lock = hazelcast.getLock(key);
@@ -587,7 +587,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleMapTryLock(String[] args) {
+    protected void handleMapTryLock(String[] args) {
         String key = args[1];
         long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
         boolean locked = false;
@@ -598,12 +598,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println(locked);
     }
 
-    private void handleMapUnlock(String[] args) {
+    protected void handleMapUnlock(String[] args) {
         getMap().unlock(args[1]);
         println("true");
     }
 
-    private void handleAddListener(String[] args) {
+    protected void handleAddListener(String[] args) {
         String first = args[0];
         if (first.startsWith("s.")) {
             getSet().addItemListener(this, true);
@@ -622,7 +622,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleRemoveListener(String[] args) {
+    protected void handleRemoveListener(String[] args) {
         String first = args[0];
         if (first.startsWith("s.")) {
             getSet().removeItemListener(this);
@@ -641,7 +641,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleMapLocalKeys() {
+    protected void handleMapLocalKeys() {
         Set set = getMap().localKeySet();
         Iterator it = set.iterator();
         int count = 0;
@@ -652,7 +652,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("Total " + count);
     }
 
-    private void handleMapKeys() {
+    protected void handleMapKeys() {
         Set set = getMap().keySet();
         Iterator it = set.iterator();
         int count = 0;
@@ -663,7 +663,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("Total " + count);
     }
 
-    private void handleMapEntries() {
+    protected void handleMapEntries() {
         Set set = getMap().entrySet();
         Iterator it = set.iterator();
         int count = 0;
@@ -676,7 +676,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("Total " + count);
     }
 
-    private void handleMapValues() {
+    protected void handleMapValues() {
         Collection set = getMap().values();
         Iterator it = set.iterator();
         int count = 0;
@@ -687,15 +687,15 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("Total " + count);
     }
 
-    private void handleSetAdd(String[] args) {
+    protected void handleSetAdd(String[] args) {
         println(getSet().add(args[1]));
     }
 
-    private void handleSetRemove(String[] args) {
+    protected void handleSetRemove(String[] args) {
         println(getSet().remove(args[1]));
     }
 
-    private void handleSetAddMany(String[] args) {
+    protected void handleSetAddMany(String[] args) {
         int count = 1;
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
@@ -712,7 +712,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 + " evt/s");
     }
 
-    private void handleListAddMany(String[] args) {
+    protected void handleListAddMany(String[] args) {
         int count = 1;
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
@@ -729,7 +729,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 + " evt/s");
     }
 
-    private void handleSetRemoveMany(String[] args) {
+    protected void handleSetRemoveMany(String[] args) {
         int count = 1;
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
@@ -746,7 +746,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 + " evt/s");
     }
 
-    private void handleIterator(String[] args) {
+    protected void handleIterator(String[] args) {
         Iterator it = null;
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("s.")) {
@@ -774,7 +774,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleContains(String[] args) {
+    protected void handleContains(String[] args) {
         String iteratorStr = args[0];
         boolean key = false;
         boolean value = false;
@@ -797,7 +797,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("Contains : " + result);
     }
 
-    private void handleSize(String[] args) {
+    protected void handleSize(String[] args) {
         int size = 0;
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("s.")) {
@@ -812,7 +812,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("Size = " + size);
     }
 
-    private void handleClear(String[] args) {
+    protected void handleClear(String[] args) {
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("s.")) {
             getSet().clear();
@@ -826,7 +826,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("Cleared all.");
     }
 
-    private void handleDestroy(String[] args) {
+    protected void handleDestroy(String[] args) {
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("s.")) {
             getSet().destroy();
@@ -842,7 +842,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("Destroyed!");
     }
 
-    private void handleQOffer(String[] args) {
+    protected void handleQOffer(String[] args) {
         long timeout = 0;
         if (args.length > 2) {
             timeout = Long.valueOf(args[2]);
@@ -855,7 +855,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleQTake(String[] args) {
+    protected void handleQTake(String[] args) {
         try {
             println(getQueue().take());
         } catch (InterruptedException e) {
@@ -863,7 +863,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleQPoll(String[] args) {
+    protected void handleQPoll(String[] args) {
         long timeout = 0;
         if (args.length > 1) {
             timeout = Long.valueOf(args[1]);
@@ -875,11 +875,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleTopicPublish(String[] args) {
+    protected void handleTopicPublish(String[] args) {
         getTopic().publish(args[1]);
     }
 
-    private void handleQOfferMany(String[] args) {
+    protected void handleQOfferMany(String[] args) {
         int count = 1;
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
@@ -904,7 +904,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleQPollMany(String[] args) {
+    protected void handleQPollMany(String[] args) {
         int count = 1;
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
@@ -919,11 +919,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleQPeek(String[] args) {
+    protected void handleQPeek(String[] args) {
         println(getQueue().peek());
     }
 
-    private void handleQCapacity(String[] args) {
+    protected void handleQCapacity(String[] args) {
         println(getQueue().remainingCapacity());
     }
 
@@ -1119,7 +1119,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handleHelp(String command) {
+    protected void handleHelp(String command) {
         boolean silentBefore = silent;
         silent = false;
         println("Commands:");
