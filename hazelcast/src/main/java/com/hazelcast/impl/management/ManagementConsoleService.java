@@ -77,7 +77,7 @@ public class ManagementConsoleService implements MembershipListener {
         tcpListener = new TCPListener(serverSocket);
         tcpListener.start();
         commandHandler = new ConsoleCommandHandler(factory);
-        logger.log(Level.INFO, "Hazelcast Management Console started at port " + port + ".");
+        logger.log(Level.INFO, "Hazelcast Management Center started at port " + port + ".");
     }
 
     public void shutdown() {
@@ -121,7 +121,7 @@ public class ManagementConsoleService implements MembershipListener {
     }
 
     public boolean login(String groupName, String password) {
-        logger.log(Level.INFO, "ManagementCenter Client is trying to login.");
+        logger.log(Level.INFO, "Management Center Client is trying to login.");
         GroupConfig groupConfig = factory.getConfig().getGroupConfig();
         return groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(password);
     }

@@ -826,11 +826,17 @@ public class CMap {
 
     public void put(Request req) {
         long now = System.currentTimeMillis();
+        boolean sendEvictEvent = false;
+        Record evictedRecord = null;
         if (req.value == null) {
             req.value = new Data();
         }
         Record record = getRecord(req);
         if (record != null && !record.isValid(now)) {
+            if(record.isEvictable()){
+                sendEvictEvent = true;
+                evictedRecord = createNewRecord(record.getKeyData(), record.getValueData());
+            }
             record.setValue(null);
             record.setMultiValues(null);
         }
@@ -875,6 +881,11 @@ public class CMap {
             record.setExpirationTime(req.ttl);
             ttlPerRecord = true;
         }
+
+        if(sendEvictEvent){
+            concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_EVICTED, null, evictedRecord, req.caller);
+        }
+
         if (oldValue == null) {
             concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_ADDED, null, record, req.caller);
         } else {

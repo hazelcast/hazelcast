@@ -498,6 +498,43 @@ public class HazelcastTest {
         assertEquals(false, map.containsKey("key"));
     }
 
+    @Test
+    public void testMapEvictAndListener() throws InterruptedException {
+        IMap<String, String> map = Hazelcast.getMap("testMapEvictAndListener");
+        String a = "/home/data/file1.dat";
+        String b = "/home/data/file2.dat";
+        List<String> list = new CopyOnWriteArrayList<String>();
+        list.add(a);
+        list.add(b);
+        final List<String> newList = new CopyOnWriteArrayList<String>();
+        final CountDownLatch latch = new CountDownLatch(list.size());
+        map.addEntryListener(new EntryListener<String, String>() {
+            public void entryAdded(EntryEvent<String, String> stringStringEntryEvent) {
+                System.out.println(stringStringEntryEvent);
+            }
+
+            public void entryRemoved(EntryEvent<String, String> stringStringEntryEvent) {
+                System.out.println(stringStringEntryEvent);
+            }
+
+            public void entryUpdated(EntryEvent<String, String> stringStringEntryEvent) {
+                System.out.println(stringStringEntryEvent);
+            }
+
+            public void entryEvicted(EntryEvent<String, String> stringStringEntryEvent) {
+                System.out.println(stringStringEntryEvent);
+                newList.add(stringStringEntryEvent.getValue());
+                latch.countDown();
+            }
+        }, true);
+        map.put("a", list.get(0), 1, TimeUnit.SECONDS);
+        Thread.sleep(1100);
+        map.put("a", list.get(1), 1, TimeUnit.SECONDS);
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertEquals(list.get(0), newList.get(0));
+        assertEquals(list.get(1), newList.get(1));
+    }
+
     /**
      * Test for the issue 477.
      * Updates should also update the TTL
