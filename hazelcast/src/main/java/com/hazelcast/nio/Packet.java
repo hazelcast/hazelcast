@@ -242,33 +242,6 @@ public final class Packet implements SocketWritable {
         }
     }
 
-    public void reset() {
-        name = null;
-        operation = ClusterOperation.NONE;
-        threadId = -1;
-        lockCount = 0;
-        lockAddress = null;
-        timeout = -1;
-        ttl = -1;
-        txnId = -1;
-        responseType = Constants.ResponseTypes.RESPONSE_NONE;
-        blockId = -1;
-        longValue = Long.MIN_VALUE;
-        version = -1;
-        callId = -1;
-        client = false;
-        bbSizes.clear();
-        bbHeader.clear();
-        key = null;
-        value = null;
-        conn = null;
-        totalSize = 0;
-        totalWritten = 0;
-        sizeRead = false;
-        indexes = null;
-        indexTypes = null;
-    }
-
     public void clearForResponse() {
         this.name = null;
         this.key = null;

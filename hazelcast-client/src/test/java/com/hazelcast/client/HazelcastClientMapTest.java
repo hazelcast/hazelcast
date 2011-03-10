@@ -59,13 +59,13 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         byte[] bytes = new byte[10];
         HashSet<byte[]> hashSet = new HashSet<byte[]>();
         hashSet.add(bytes);
-        callEventsMap.put("1", hashSet);
-        callStartMap.put("1", bytes);
-        metaDataMap.put("1", 10L);
+        String callId = "1";
+        callEventsMap.put(callId, hashSet);
+        callStartMap.put(callId, bytes);
+        metaDataMap.put(callId, 10L);
         Transaction txn = client.getTransaction();
         txn.begin();
         try {
-            String callId = "1";
             // remove the data
             callEventsMap.remove(callId);
             // remove meta data
@@ -76,6 +76,12 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         } catch (Exception e) {
             fail();
         }
+        assertNull(callEventsMap.get(callId));
+        assertNull(metaDataMap.get(callId));
+        assertNull(callStartMap.get(callId));
+        assertEquals(0, callEventsMap.size());
+        assertEquals(0, metaDataMap.size());
+        assertEquals(0, callStartMap.size());
     }
 
     @Test

@@ -23,6 +23,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
+import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.impl.management.ManagementConsoleService;
 import com.hazelcast.jmx.ManagementService;
@@ -422,7 +423,7 @@ public class FactoryImpl implements HazelcastInstance {
         Set<Partition> partitions = partitionService.getPartitions();
         memberStats.clearPartitions();
         for (Partition partition : partitions) {
-            if (partition.getOwner().localMember()) {
+            if (partition.getOwner() != null && partition.getOwner().localMember()) {
                 memberStats.addPartition(partition.getPartitionId());
             }
         }
@@ -850,7 +851,11 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-                return factory.locksMapProxy.tryLock(key, time, unit);
+                try {
+                    return factory.locksMapProxy.tryLock(key, time, unit);
+                } catch (RuntimeInterruptedException e) {
+                    throw new InterruptedException();
+                }
             }
 
             public void unlock() {

@@ -43,6 +43,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @return name of this map
      */
     String getName();
+//    Future call(K key, Callable callable);
 
     /**
      * Asynchronously gets the given key.
@@ -393,9 +394,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      *       private int age;
      *       private String name = null;
      *       // other fields.
-     * <p/>
+     *
      *       // getters setter
-     * <p/>
+     *
      *   }
      * </pre>
      * <p/>
