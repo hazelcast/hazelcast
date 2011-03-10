@@ -396,7 +396,7 @@ public class FactoryImpl implements HazelcastInstance {
         try {
             managementConsoleServiceTmp = new ManagementConsoleService(FactoryImpl.this);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.FINEST, e.getMessage(), e);
         }
         managementConsoleService = managementConsoleServiceTmp;
     }
