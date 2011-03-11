@@ -2690,7 +2690,7 @@ public class FactoryImpl implements HazelcastInstance {
             public void addLocalEntryListener(EntryListener listener) {
                 if (listener == null)
                     throw new IllegalArgumentException("Listener cannot be null");
-                listenerManager.addListener(name, listener, null, true, getInstanceType());
+                listenerManager.addLocalListener(name, listener, getInstanceType());
             }
 
             public void addEntryListener(EntryListener listener, boolean includeValue) {
