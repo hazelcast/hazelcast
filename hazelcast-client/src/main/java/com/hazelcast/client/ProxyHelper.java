@@ -177,7 +177,7 @@ public class ProxyHelper {
         return prepareRequest(operation, key, value, 0, null);
     }
 
-    protected Object getValue(Packet response) {
+    static Object getValue(Packet response) {
         if (response.getValue() != null) {
             Object result = toObject(response.getValue());
             if (result instanceof ClientServiceException) {

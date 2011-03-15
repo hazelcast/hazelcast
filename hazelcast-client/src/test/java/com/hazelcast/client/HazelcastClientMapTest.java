@@ -34,10 +34,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
 
@@ -171,6 +168,17 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         IMap<Object, Object> map = hClient.getMap("getMapName");
         assertEquals("getMapName", map.getName());
+    }
+
+    @Test
+    public void testGetAsync() throws Exception {
+        HazelcastClient hClient = getHazelcastClient();
+        String key = "key";
+        String value1 = "value1";
+        IMap<String, String> map = hClient.getMap("map:test:getAsync");
+        map.put(key, value1);
+        Future<String> f1 = map.getAsync(key);
+        assertEquals(value1, f1.get());
     }
 
     @Test

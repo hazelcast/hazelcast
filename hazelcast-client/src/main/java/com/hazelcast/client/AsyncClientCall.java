@@ -54,7 +54,11 @@ public class AsyncClientCall<V> implements Future<V> {
         if (result != null) {
             return getResult();
         }
-        setResult(remoteCall.getResponse());
+        try {
+            processResult(remoteCall.getResponse());
+        } catch (TimeoutException e) {
+            throw new ExecutionException(e);
+        }
         return getResult();
     }
 
@@ -62,8 +66,28 @@ public class AsyncClientCall<V> implements Future<V> {
         if (result != null) {
             return getResult();
         }
-        setResult(remoteCall.getResponse(timeout, unit));
+        processResult(remoteCall.getResponse(timeout, unit));
         return getResult();
+    }
+
+    void processResult(Object result) throws InterruptedException, ExecutionException, TimeoutException {
+        if (result == null) {
+            throw new TimeoutException();
+        } else if (result instanceof Throwable) {
+            if (result instanceof InterruptedException) {
+                throw (InterruptedException) result;
+            } else if (result instanceof ExecutionException) {
+                throw (ExecutionException) result;
+            } else if (result instanceof TimeoutException) {
+                throw (TimeoutException) result;
+            } else {
+                throw new ExecutionException((Throwable) result);
+            }
+        } else if (result instanceof Packet) {
+            setResult(ProxyHelper.getValue((Packet) result));
+        } else {
+            setResult(result);
+        }
     }
 
     private V getResult() throws ExecutionException {
