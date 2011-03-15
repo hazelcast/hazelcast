@@ -483,8 +483,11 @@ public class Config implements DataSerializable {
         if (config == null){
             throw new IllegalArgumentException("Expected not null config");
         }
-        if (!this.groupConfig.equals(config.getGroupConfig())){
+        if (!this.groupConfig.getName().equals(config.getGroupConfig().getName())){
             return false;
+        }
+        if (!this.groupConfig.getPassword().equals(config.getGroupConfig().getPassword())){
+            throw new RuntimeException("Incompatible group password");
         }
         if (checkCompatibility){
             checkMapConfigCompatible(config);
