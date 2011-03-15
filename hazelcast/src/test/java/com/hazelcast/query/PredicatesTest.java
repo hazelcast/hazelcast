@@ -93,11 +93,13 @@ public class PredicatesTest {
 
     @Test
     public void testCriteriaAPI() {
-        Object value = new QueryTest.Employee("abc-123-xvz", 34, true, 10D);
+        Object value = new QueryTest.Employee(12, "abc-123-xvz", 34, true, 10D);
         EntryObject e = new PredicateBuilder().getEntryObject();
         EntryObject e2 = e.get("age");
         Predicate predicate = e2.greaterEqual(29).and(e2.lessEqual(36));
         assertTrue(predicate.apply(createEntry("1", value)));
+        e = new PredicateBuilder().getEntryObject();
+        assertTrue(e.get("id").equal(12).apply(createEntry("1", value)));
     }
 
     @Test
