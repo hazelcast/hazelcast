@@ -473,19 +473,25 @@ public class Config implements DataSerializable {
         return this;
     }
     
-    public void checkCompatibility(final Config config){
+    /**
+     * @param config
+     * @return true if config is compatible with this one, 
+     * false if config belongs to another group
+     * @throws RuntimeException if map, queue, topic configs are incompatible 
+     */
+    public boolean isCompatible(final Config config){
         if (config == null){
             throw new IllegalArgumentException("Expected not null config");
         }
         if (!this.groupConfig.equals(config.getGroupConfig())){
-            throw new RuntimeException(format("Incompatible group config this:\n{0}\nanother:\n{1}",
-                this.groupConfig, config.getGroupConfig()));
+            return false;
         }
         if (checkCompatibility){
             checkMapConfigCompatible(config);
             checkQueueConfigCompatible(config);
             checkTopicConfigCompatible(config);
         }
+        return true;
     }
 
     private void checkMapConfigCompatible(final Config config) {

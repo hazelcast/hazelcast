@@ -609,7 +609,7 @@ public class Node {
                 buildNumber == joinRequest.buildNumber;
         if (valid) {
             try {
-                config.checkCompatibility(joinRequest.config);
+                valid = config.isCompatible(joinRequest.config);
             } catch (Exception e) {
                 logger.log(Level.INFO, "Invalid join request, reason:" + e.getMessage());
                 throw e;
