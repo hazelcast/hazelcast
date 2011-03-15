@@ -280,21 +280,24 @@ public class ManagementConsoleService implements MembershipListener {
         while (it.hasNext()) {
             HazelcastInstanceAwareInstance proxyObject = it.next();
             if (proxyObject.getInstanceType() == type) {
-                if (count++ < 20) {
+                if (count < 20) {
                     if (type == Instance.InstanceType.MAP) {
                         MProxy mapProxy = (MProxy) proxyObject;
                         if (instanceFilterMap.visible(mapProxy.getName())) {
                             memberState.putLocalMapStats(mapProxy.getName(), (LocalMapStatsImpl) mapProxy.getLocalMapStats());
+                            count++;
                         }
                     } else if (type == Instance.InstanceType.QUEUE) {
                         QProxy qProxy = (QProxy) proxyObject;
                         if (instanceFilterQueue.visible(qProxy.getName())) {
                             memberState.putLocalQueueStats(qProxy.getName(), (LocalQueueStatsImpl) qProxy.getLocalQueueStats());
+                            count++;
                         }
                     } else if (type == Instance.InstanceType.TOPIC) {
                         TopicProxy topicProxy = (TopicProxy) proxyObject;
                         if (instanceFilterQueue.visible(topicProxy.getName())) {
                             memberState.putLocalTopicStats(topicProxy.getName(), (LocalTopicStatsImpl) topicProxy.getLocalTopicStats());
+                            count++;
                         }
                     }
                 }
@@ -313,27 +316,31 @@ public class ManagementConsoleService implements MembershipListener {
     }
 
     private void collectInstanceNames(Set<String> setLongInstanceNames,
-                                Iterator<HazelcastInstanceAwareInstance> it,
-                                Instance.InstanceType type) {
+                                      Iterator<HazelcastInstanceAwareInstance> it,
+                                      Instance.InstanceType type) {
         int count = 0;
         while (it.hasNext()) {
             HazelcastInstanceAwareInstance proxyObject = it.next();
+            System.out.println(proxyObject);
             if (proxyObject.getInstanceType() == type) {
-                if (count++ < 20) {
+                if (count < 20) {
                     if (type == Instance.InstanceType.MAP) {
                         MProxy mapProxy = (MProxy) proxyObject;
                         if (instanceFilterMap.visible(mapProxy.getName())) {
                             setLongInstanceNames.add(mapProxy.getLongName());
+                            count++;
                         }
                     } else if (type == Instance.InstanceType.QUEUE) {
                         QProxy qProxy = (QProxy) proxyObject;
                         if (instanceFilterQueue.visible(qProxy.getName())) {
                             setLongInstanceNames.add(qProxy.getLongName());
+                            count++;
                         }
                     } else if (type == Instance.InstanceType.TOPIC) {
                         TopicProxy topicProxy = (TopicProxy) proxyObject;
                         if (instanceFilterTopic.visible(topicProxy.getName())) {
                             setLongInstanceNames.add(topicProxy.getLongName());
+                            count++;
                         }
                     }
                 }
