@@ -29,4 +29,6 @@ public interface IndexAwarePredicate extends Predicate {
     void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes);
 
     Set<MapEntry> filter(QueryContext queryContext);
+
+    boolean isIndexed(QueryContext queryContext);
 }

@@ -36,7 +36,6 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.SerializationHelper;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
@@ -76,10 +75,6 @@ public class FactoryImpl implements HazelcastInstance {
 
     private final MProxyImpl globalProxies;
 
-    private final TopicProxyImpl memberStatsTopicProxy;
-
-    private final MultiMapProxy memberStatsMultimapProxy;
-
     private final ConcurrentMap<String, ExecutorServiceProxy> executorServiceProxies = new ConcurrentHashMap<String, ExecutorServiceProxy>(2);
 
     private final CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
@@ -95,8 +90,6 @@ public class FactoryImpl implements HazelcastInstance {
     volatile boolean restarted = false;
 
     private final ManagementService managementService;
-
-    private final MemberStatePublisher memberStatePublisher;
 
     private final ILogger logger;
 
@@ -336,11 +329,8 @@ public class FactoryImpl implements HazelcastInstance {
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
         locksMapProxy = new MProxyImpl(Prefix.MAP + "__hz_Locks", this);
         idGeneratorMapProxy = new MProxyImpl(Prefix.MAP + "__hz_IdGenerator", this);
-        memberStatsMultimapProxy = new MultiMapProxy(Prefix.MULTIMAP + MemberStatePublisher.STATS_MULTIMAP_NAME, this);
-        memberStatsTopicProxy = new TopicProxyImpl(Prefix.TOPIC + MemberStatePublisher.STATS_TOPIC_NAME, this);
         lifecycleService.fireLifecycleEvent(STARTING);
         node.start();
-        memberStatePublisher = new MemberStatePublisher(memberStatsTopicProxy, memberStatsMultimapProxy, node);
         globalProxies.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 if (node.localMember.equals(event.getMember())) {
@@ -404,42 +394,6 @@ public class FactoryImpl implements HazelcastInstance {
 
     public Set<String> getLongInstanceNames() {
         return proxiesByName.keySet();
-    }
-
-    public MemberStateImpl createMemberState() {
-        final MemberStateImpl memberState = new MemberStateImpl();
-        createMemberState(memberState);
-        return memberState;
-    }
-
-    public void createMemberState(MemberStateImpl memberStats) {
-        memberStats.setAddress(((MemberImpl) node.getClusterImpl().getLocalMember()).getAddress());
-        memberStats.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
-        memberStats.getMemberHealthStats().setActive(node.isActive());
-        memberStats.getMemberHealthStats().setServiceThreadStats(node.getCpuUtilization().serviceThread);
-        memberStats.getMemberHealthStats().setOutThreadStats(node.getCpuUtilization().outThread);
-        memberStats.getMemberHealthStats().setInThreadStats(node.getCpuUtilization().inThread);
-        PartitionService partitionService = getPartitionService();
-        Set<Partition> partitions = partitionService.getPartitions();
-        memberStats.clearPartitions();
-        for (Partition partition : partitions) {
-            if (partition.getOwner() != null && partition.getOwner().localMember()) {
-                memberStats.addPartition(partition.getPartitionId());
-            }
-        }
-        Collection<HazelcastInstanceAwareInstance> proxyObjects = proxies.values();
-        for (HazelcastInstanceAwareInstance proxyObject : proxyObjects) {
-            if (proxyObject.getInstanceType() == Instance.InstanceType.MAP) {
-                MProxy mapProxy = (MProxy) proxyObject;
-                memberStats.putLocalMapStats(mapProxy.getName(), (LocalMapStatsImpl) mapProxy.getLocalMapStats());
-            } else if (proxyObject.getInstanceType() == Instance.InstanceType.QUEUE) {
-                QProxy qProxy = (QProxy) proxyObject;
-                memberStats.putLocalQueueStats(qProxy.getName(), (LocalQueueStatsImpl) qProxy.getLocalQueueStats());
-            } else if (proxyObject.getInstanceType() == Instance.InstanceType.TOPIC) {
-                TopicProxy topicProxy = (TopicProxy) proxyObject;
-                memberStats.putLocalTopicStats(topicProxy.getName(), (LocalTopicStatsImpl) topicProxy.getLocalTopicStats());
-            }
-        }
     }
 
     /**
@@ -671,7 +625,7 @@ public class FactoryImpl implements HazelcastInstance {
                 proxy = new MProxyImpl(name, this);
             } else if (name.startsWith(Prefix.MAP_BASED)) {
                 if (BaseManager.getInstanceType(name) == Instance.InstanceType.MULTIMAP) {
-                    proxy = new MultiMapProxy(name, this);
+                    proxy = new MultiMapProxyImpl(name, this);
                 } else {
                     proxy = new CollectionProxyImpl(name, this);
                 }
@@ -1012,6 +966,10 @@ public class FactoryImpl implements HazelcastInstance {
             listenerManager = factory.node.listenerManager;
         }
 
+        public String getLongName() {
+            return base.getLongName();
+        }
+
         public Object getId() {
             ensure();
             return base.getId();
@@ -1102,6 +1060,10 @@ public class FactoryImpl implements HazelcastInstance {
 
             public String getName() {
                 return name.substring(Prefix.TOPIC.length());
+            }
+
+            public String getLongName() {
+                return name;
             }
 
             public Object getId() {
@@ -1350,6 +1312,11 @@ public class FactoryImpl implements HazelcastInstance {
             return factory;
         }
 
+        public String getLongName() {
+            ensure();
+            return qproxyReal.getLongName();
+        }
+
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             this.factory = (FactoryImpl) hazelcastInstance;
             this.blockingQueueManager = factory.node.blockingQueueManager;
@@ -1507,6 +1474,10 @@ public class FactoryImpl implements HazelcastInstance {
                 LocalQueueStatsImpl localQueueStats = blockingQueueManager.getOrCreateBQ(name).getQueueStats();
                 localQueueStats.setOperationStats(operationsCounter.getPublishedStats());
                 return localQueueStats;
+            }
+
+            public String getLongName() {
+                return name;
             }
 
             public boolean offer(Object obj) {
@@ -1667,28 +1638,33 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static class MultiMapProxy extends FactoryAwareNamedProxy implements MultiMap, DataSerializable, IGetAwareProxy {
+    public static class MultiMapProxyImpl extends FactoryAwareNamedProxy implements MultiMapProxy, DataSerializable, IGetAwareProxy {
 
-        private transient MultiMap base = null;
+        private transient MultiMapProxy base = null;
 
-        public MultiMapProxy() {
+        public MultiMapProxyImpl() {
         }
 
-        public MultiMapProxy(String name, FactoryImpl factory) {
+        public MultiMapProxyImpl(String name, FactoryImpl factory) {
             setName(name);
             setHazelcastInstance(factory);
-            this.base = new MultiMapBase();
+            this.base = new MultiMapReal();
         }
 
         private void ensure() {
             factory.initialChecks();
             if (base == null) {
-                base = (MultiMap) factory.getOrCreateProxyByName(name);
+                base = (MultiMapProxy) factory.getOrCreateProxyByName(name);
             }
         }
 
-        public MultiMapBase getBase() {
-            return (MultiMapBase) base;
+        public MultiMapReal getBase() {
+            return (MultiMapReal) base;
+        }
+
+        public MProxy getMProxy() {
+            ensure();
+            return base.getMProxy();
         }
 
         public Object getId() {
@@ -1705,7 +1681,7 @@ public class FactoryImpl implements HazelcastInstance {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            MultiMapProxy that = (MultiMapProxy) o;
+            MultiMapProxyImpl that = (MultiMapProxyImpl) o;
             return !(name != null ? !name.equals(that.name) : that.name != null);
         }
 
@@ -1857,11 +1833,15 @@ public class FactoryImpl implements HazelcastInstance {
             base.unlockMap();
         }
 
-        class MultiMapBase implements MultiMap, IGetAwareProxy {
+        class MultiMapReal implements MultiMapProxy, IGetAwareProxy {
             final MProxy mapProxy;
 
-            private MultiMapBase() {
+            private MultiMapReal() {
                 mapProxy = new MProxyImpl(name, factory);
+            }
+
+            public MProxy getMProxy() {
+                return mapProxy;
             }
 
             public String getName() {

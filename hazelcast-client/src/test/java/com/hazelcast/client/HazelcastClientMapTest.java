@@ -51,11 +51,14 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     @Test
-    public void testIssue508() throws Exception {
+    public void testIssue508And513() throws Exception {
         HazelcastClient client = getHazelcastClient();
         IMap<String, HashSet<byte[]>> callEventsMap = client.getMap("CALL_EVENTS");
         IMap<String, Long> metaDataMap = client.getMap("CALL_META_DATA");
         IMap<String, byte[]> callStartMap = client.getMap("CALL_START_EVENTS");
+        MultiMap<String, String> calls = client.getMultiMap("CALLS");
+        calls.lock("1");
+        calls.unlock("1");
         byte[] bytes = new byte[10];
         HashSet<byte[]> hashSet = new HashSet<byte[]>();
         hashSet.add(bytes);
@@ -72,6 +75,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             metaDataMap.remove(callId);
             // remove call start
             callStartMap.remove(callId);
+            calls.put(callId, callId);
             txn.commit();
         } catch (Exception e) {
             fail();

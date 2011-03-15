@@ -50,6 +50,10 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         return false;
     }
 
+    public boolean isIndexed(QueryContext queryContext) {
+        return false;
+    }
+
     public Set<MapEntry> filter(QueryContext queryContext) {
         return ((IndexAwarePredicate) predicate).filter(queryContext);
     }

@@ -2143,8 +2143,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (request.value != null) {
                         predicate = (Predicate) toObject(request.value);
                     }
-                    QueryContext queryContext = new QueryContext(cmap.getName(), predicate);
-                    queryContext.setMapIndexes(cmap.getMapIndexService().getIndexes());
+                    QueryContext queryContext = new QueryContext(cmap.getName(), predicate, cmap.getMapIndexService());
                     Set<MapEntry> results = cmap.getMapIndexService().doQuery(queryContext);
                     boolean evaluateValues = (predicate != null && !queryContext.isStrong());
                     createResultPairs(request, results, evaluateValues, predicate);

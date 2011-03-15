@@ -334,9 +334,9 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             MultiMap multiMap = (MultiMap) node.factory.getOrCreateProxyByName(packet.name);
             if (packet.getValueData() == null || packet.getValueData().size() == 0) {
-                FactoryImpl.MultiMapProxy mmProxy = (FactoryImpl.MultiMapProxy) multiMap;
-                FactoryImpl.MultiMapProxy.MultiMapBase base = mmProxy.getBase();
-                MProxy mapProxy = base.mapProxy;
+                FactoryImpl.MultiMapProxyImpl mmProxyImpl = (FactoryImpl.MultiMapProxyImpl) multiMap;
+                FactoryImpl.MultiMapProxyImpl.MultiMapReal real = mmProxyImpl.getBase();
+                MProxy mapProxy = real.mapProxy;
                 packet.setValue((Data) mapProxy.remove(packet.getKeyData()));
             } else {
                 packet.setValue(toData(multiMap.remove(packet.getKeyData(), packet.getValueData())));
@@ -664,9 +664,9 @@ public class ClientService implements ConnectionListener {
                 packet.setKey(null);
                 packet.setValue((Data) map.get(key));
             } else if (instanceType == InstanceType.MULTIMAP) {
-                FactoryImpl.MultiMapProxy multiMap = (FactoryImpl.MultiMapProxy) node.factory.getOrCreateProxyByName(packet.name);
-                FactoryImpl.MultiMapProxy.MultiMapBase base = multiMap.getBase();
-                MProxy mapProxy = base.mapProxy;
+                FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+                FactoryImpl.MultiMapProxyImpl.MultiMapReal real = multiMapImpl.getBase();
+                MProxy mapProxy = real.mapProxy;
                 packet.setKey(null);
                 packet.setValue((Data) mapProxy.get(key));
             }
@@ -785,9 +785,16 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void processCall(Node node, Packet packet) {
-            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            Instance.InstanceType type = getInstanceType(packet.name);
             long timeout = packet.timeout;
             Data value = null;
+            IMap<Object, Object> map = null;
+            if (type == Instance.InstanceType.MAP) {
+                map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            } else {
+                MultiMapProxy multiMapProxy = (MultiMapProxy) node.factory.getOrCreateProxyByName(packet.name);
+                map = multiMapProxy.getMProxy();
+            }
             if (timeout == -1) {
                 map.lock(packet.getKeyData());
                 value = null;
@@ -810,7 +817,14 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void processCall(Node node, Packet packet) {
-            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            Instance.InstanceType type = getInstanceType(packet.name);
+            IMap<Object, Object> map = null;
+            if (type == Instance.InstanceType.MAP) {
+                map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            } else {
+                MultiMapProxy multiMapProxy = (MultiMapProxy) node.factory.getOrCreateProxyByName(packet.name);
+                map = multiMapProxy.getMProxy();
+            }
             Data value = processMapOp(map, packet.getKeyData(), packet.getValueData());
             ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
             clientEndpoint.unlocked(map, packet.getKeyData(), packet.threadId);
@@ -909,9 +923,9 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void doMultiMapOp(final Node node, final Packet packet) {
-            final FactoryImpl.MultiMapProxy multiMap = (FactoryImpl.MultiMapProxy) node.factory.getOrCreateProxyByName(packet.name);
-            final FactoryImpl.MultiMapProxy.MultiMapBase base = multiMap.getBase();
-            final MProxy mapProxy = base.mapProxy;
+            final FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+            final FactoryImpl.MultiMapProxyImpl.MultiMapReal real = multiMapImpl.getBase();
+            final MProxy mapProxy = real.mapProxy;
             final Data value = getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData());
             packet.clearForResponse();
             packet.setValue(value);
@@ -961,9 +975,9 @@ public class ClientService implements ConnectionListener {
         }
 
         public void doMultiMapOp(Node node, Packet packet) {
-            FactoryImpl.MultiMapProxy multiMap = (FactoryImpl.MultiMapProxy) node.factory.getOrCreateProxyByName(packet.name);
-            FactoryImpl.MultiMapProxy.MultiMapBase base = multiMap.getBase();
-            MProxy mapProxy = base.mapProxy;
+            FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+            FactoryImpl.MultiMapProxyImpl.MultiMapReal real = multiMapImpl.getBase();
+            MProxy mapProxy = real.mapProxy;
             Data value = getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>());
             packet.clearForResponse();
             packet.setValue(value);

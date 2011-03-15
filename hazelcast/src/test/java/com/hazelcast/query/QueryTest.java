@@ -254,6 +254,20 @@ public class QueryTest extends TestUtil {
     }
 
     @Test
+    public void testOneIndexedFieldsWithTwoCriteriaField() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+//        imap.addIndex("age", false);
+        imap.put("1", new Employee(1L, "joe", 30, true, 100D));
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        PredicateBuilder a = e.get("name").equal("joe");
+        Predicate b = e.get("age").equal("30");
+        final Collection<Object> actual = imap.values(a.and(b));
+        assertEquals(1, actual.size());
+    }
+
+    @Test
     public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
         Config cfg = null;
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(cfg);

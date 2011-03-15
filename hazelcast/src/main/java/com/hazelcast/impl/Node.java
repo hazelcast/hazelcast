@@ -611,7 +611,7 @@ public class Node {
             try {
                 valid = config.isCompatible(joinRequest.config);
             } catch (Exception e) {
-                logger.log(Level.INFO, "Invalid join request, reason:" + e.getMessage());
+                logger.log(Level.FINEST, "Invalid join request, reason:" + e.getMessage());
                 throw e;
             }
         }

@@ -137,7 +137,6 @@ public class MapIndexService {
         boolean strong = false;
         Set<MapEntry> results = null;
         Predicate predicate = queryContext.getPredicate();
-        queryContext.setMapIndexes(mapIndexes);
         try {
             if (predicate != null && mapIndexes != null && predicate instanceof IndexAwarePredicate) {
                 List<IndexAwarePredicate> lsIndexAwarePredicates = new ArrayList<IndexAwarePredicate>();
@@ -155,7 +154,6 @@ public class MapIndexService {
                     }
                 }
                 int indexAwarePredicateCount = lsIndexAwarePredicates.size();
-                queryContext.setIndexedPredicateCount(indexAwarePredicateCount);
                 if (indexAwarePredicateCount == 1) {
                     IndexAwarePredicate indexAwarePredicate = lsIndexAwarePredicates.get(0);
                     Set<MapEntry> sub = indexAwarePredicate.filter(queryContext);

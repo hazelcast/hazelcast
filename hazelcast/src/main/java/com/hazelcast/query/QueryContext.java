@@ -17,30 +17,20 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
-
 import java.util.Map;
-import java.util.Set;
 
 public class QueryContext {
+    final Predicate predicate;
+    final MapIndexService mapIndexService;
+    final String mapName;
+    final Map<Expression, Index> mapIndexes;
     boolean strong = false;
-    Predicate predicate = null;
-    String mapName;
-    Set<MapEntry> results = null;
-    int indexedPredicateCount = 0;
-    Map<Expression, Index> mapIndexes = null;
 
-    public QueryContext(String mapName, Predicate predicate) {
+    public QueryContext(String mapName, Predicate predicate, MapIndexService mapIndexService) {
         this.mapName = mapName;
         this.predicate = predicate;
-    }
-
-    public int getIndexedPredicateCount() {
-        return indexedPredicateCount;
-    }
-
-    public void setIndexedPredicateCount(int indexedPredicateCount) {
-        this.indexedPredicateCount = indexedPredicateCount;
+        this.mapIndexService = mapIndexService;
+        this.mapIndexes = mapIndexService.getIndexes();
     }
 
     public boolean isStrong() {
@@ -55,31 +45,11 @@ public class QueryContext {
         return predicate;
     }
 
-    public void setPredicate(Predicate predicate) {
-        this.predicate = predicate;
-    }
-
-    public String getMapName() {
-        return mapName;
-    }
-
-    public void setMapName(String mapName) {
-        this.mapName = mapName;
-    }
-
-    public Set<MapEntry> getResults() {
-        return results;
-    }
-
-    public void setResults(Set<MapEntry> results) {
-        this.results = results;
-    }
-
-    public void setMapIndexes(Map<Expression, Index> mapIndexes) {
-        this.mapIndexes = mapIndexes;
-    }
-
     public Map<Expression, Index> getMapIndexes() {
         return mapIndexes;
+    }
+
+    public MapIndexService getMapIndexService() {
+        return mapIndexService;
     }
 }

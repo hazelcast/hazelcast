@@ -46,6 +46,10 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
         return strong;
     }
 
+    public boolean isIndexed(QueryContext queryContext) {
+        return false;
+    }
+
     public Set<MapEntry> filter(QueryContext queryContext) {
         return null;
     }

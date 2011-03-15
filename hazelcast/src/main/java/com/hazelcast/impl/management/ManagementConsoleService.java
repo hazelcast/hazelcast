@@ -19,13 +19,13 @@ package com.hazelcast.impl.management;
 
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.FactoryImpl;
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.impl.MemberStateImpl;
+import com.hazelcast.impl.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.TimedClusterState;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 
 import java.io.*;
 import java.net.*;
@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 import static com.hazelcast.nio.IOUtil.newInputStream;
 import static com.hazelcast.nio.IOUtil.newOutputStream;
@@ -56,9 +57,15 @@ public class ManagementConsoleService implements MembershipListener {
     private volatile MemberStateImpl latestThisMemberState = null;
     private final Address thisAddress;
     private final ConsoleCommandHandler commandHandler;
+    private final StatsInstanceFilter instanceFilterMap;
+    private final StatsInstanceFilter instanceFilterQueue;
+    private final StatsInstanceFilter instanceFilterTopic;
 
     public ManagementConsoleService(FactoryImpl factoryImpl) throws Exception {
         this.factory = factoryImpl;
+        this.instanceFilterMap = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_MAP_EXCLUDES.getString());
+        this.instanceFilterQueue = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_QUEUE_EXCLUDES.getString());
+        this.instanceFilterTopic = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_TOPIC_EXCLUDES.getString());
         thisAddress = ((MemberImpl) factory.getCluster().getLocalMember()).getAddress();
         updateMemberOrder();
         logger = factory.node.getLogger(ManagementConsoleService.class.getName());
@@ -173,7 +180,7 @@ public class ManagementConsoleService implements MembershipListener {
                     }
                 }
             } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.log(Level.FINEST, e.getMessage(), e);
             }
         }
     }
@@ -223,7 +230,7 @@ public class ManagementConsoleService implements MembershipListener {
     }
 
     MemberState updateLocalState() {
-        latestThisMemberState = factory.createMemberState();
+        latestThisMemberState = createMemberState();
         memberStates.put(latestThisMemberState.getAddress(), latestThisMemberState);
         return latestThisMemberState;
     }
@@ -235,6 +242,103 @@ public class ManagementConsoleService implements MembershipListener {
 
         void setInputStream(InputStream in) {
             super.in = in;
+        }
+    }
+
+    public MemberStateImpl createMemberState() {
+        final MemberStateImpl memberState = new MemberStateImpl();
+        createMemberState(memberState);
+        return memberState;
+    }
+
+    public void createMemberState(MemberStateImpl memberState) {
+        final Node node = factory.node;
+        memberState.setAddress(((MemberImpl) node.getClusterImpl().getLocalMember()).getAddress());
+        memberState.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
+        memberState.getMemberHealthStats().setActive(node.isActive());
+        memberState.getMemberHealthStats().setServiceThreadStats(node.getCpuUtilization().serviceThread);
+        memberState.getMemberHealthStats().setOutThreadStats(node.getCpuUtilization().outThread);
+        memberState.getMemberHealthStats().setInThreadStats(node.getCpuUtilization().inThread);
+        PartitionService partitionService = factory.getPartitionService();
+        Set<Partition> partitions = partitionService.getPartitions();
+        memberState.clearPartitions();
+        for (Partition partition : partitions) {
+            if (partition.getOwner() != null && partition.getOwner().localMember()) {
+                memberState.addPartition(partition.getPartitionId());
+            }
+        }
+        Collection<HazelcastInstanceAwareInstance> proxyObjects = new ArrayList<HazelcastInstanceAwareInstance>(factory.getProxies());
+        createMemState(memberState, proxyObjects.iterator(), Instance.InstanceType.MAP);
+        createMemState(memberState, proxyObjects.iterator(), Instance.InstanceType.QUEUE);
+        createMemState(memberState, proxyObjects.iterator(), Instance.InstanceType.TOPIC);
+    }
+
+    private void createMemState(MemberStateImpl memberState,
+                                Iterator<HazelcastInstanceAwareInstance> it,
+                                Instance.InstanceType type) {
+        int count = 0;
+        while (it.hasNext()) {
+            HazelcastInstanceAwareInstance proxyObject = it.next();
+            if (proxyObject.getInstanceType() == type) {
+                if (count++ < 20) {
+                    if (type == Instance.InstanceType.MAP) {
+                        MProxy mapProxy = (MProxy) proxyObject;
+                        if (instanceFilterMap.visible(mapProxy.getName())) {
+                            memberState.putLocalMapStats(mapProxy.getName(), (LocalMapStatsImpl) mapProxy.getLocalMapStats());
+                        }
+                    } else if (type == Instance.InstanceType.QUEUE) {
+                        QProxy qProxy = (QProxy) proxyObject;
+                        if (instanceFilterQueue.visible(qProxy.getName())) {
+                            memberState.putLocalQueueStats(qProxy.getName(), (LocalQueueStatsImpl) qProxy.getLocalQueueStats());
+                        }
+                    } else if (type == Instance.InstanceType.TOPIC) {
+                        TopicProxy topicProxy = (TopicProxy) proxyObject;
+                        if (instanceFilterQueue.visible(topicProxy.getName())) {
+                            memberState.putLocalTopicStats(topicProxy.getName(), (LocalTopicStatsImpl) topicProxy.getLocalTopicStats());
+                        }
+                    }
+                }
+                it.remove();
+            }
+        }
+    }
+
+    Set<String> getLongInstanceNames() {
+        Set<String> setLongInstanceNames = new HashSet<String>(10);
+        Collection<HazelcastInstanceAwareInstance> proxyObjects = new ArrayList<HazelcastInstanceAwareInstance>(factory.getProxies());
+        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), Instance.InstanceType.MAP);
+        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), Instance.InstanceType.QUEUE);
+        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), Instance.InstanceType.TOPIC);
+        return setLongInstanceNames;
+    }
+
+    private void collectInstanceNames(Set<String> setLongInstanceNames,
+                                Iterator<HazelcastInstanceAwareInstance> it,
+                                Instance.InstanceType type) {
+        int count = 0;
+        while (it.hasNext()) {
+            HazelcastInstanceAwareInstance proxyObject = it.next();
+            if (proxyObject.getInstanceType() == type) {
+                if (count++ < 20) {
+                    if (type == Instance.InstanceType.MAP) {
+                        MProxy mapProxy = (MProxy) proxyObject;
+                        if (instanceFilterMap.visible(mapProxy.getName())) {
+                            setLongInstanceNames.add(mapProxy.getLongName());
+                        }
+                    } else if (type == Instance.InstanceType.QUEUE) {
+                        QProxy qProxy = (QProxy) proxyObject;
+                        if (instanceFilterQueue.visible(qProxy.getName())) {
+                            setLongInstanceNames.add(qProxy.getLongName());
+                        }
+                    } else if (type == Instance.InstanceType.TOPIC) {
+                        TopicProxy topicProxy = (TopicProxy) proxyObject;
+                        if (instanceFilterTopic.visible(topicProxy.getName())) {
+                            setLongInstanceNames.add(topicProxy.getLongName());
+                        }
+                    }
+                }
+                it.remove();
+            }
         }
     }
 
@@ -381,7 +485,7 @@ public class ManagementConsoleService implements MembershipListener {
                 timedClusterState.addMemberState(memberState);
             }
         }
-        timedClusterState.setInstanceNames(factory.getLongInstanceNames());
+        timedClusterState.setInstanceNames(getLongInstanceNames());
         timedClusterState.writeData(dos);
     }
 
@@ -401,6 +505,48 @@ public class ManagementConsoleService implements MembershipListener {
 
         public void doAccept(Socket socket) throws IOException {
             super.implAccept(socket);
+        }
+    }
+
+    class StatsInstanceFilter {
+        final Set<Pattern> setExcludes;
+        final Set<String> setIncludeCache;
+        final Set<String> setExcludeCache;
+
+        StatsInstanceFilter(String excludes) {
+            if (excludes != null) {
+                setExcludes = new HashSet<Pattern>();
+                setIncludeCache = new HashSet<String>();
+                setExcludeCache = new HashSet<String>();
+                StringTokenizer st = new StringTokenizer(excludes, ",");
+                while (st.hasMoreTokens()) {
+                    setExcludes.add(Pattern.compile(st.nextToken().trim()));
+                }
+            } else {
+                setExcludes = null;
+                setIncludeCache = null;
+                setExcludeCache = null;
+            }
+        }
+
+        boolean visible(String instanceName) {
+            if (setExcludes == null) {
+                return true;
+            }
+            if (setIncludeCache.contains(instanceName)) {
+                return true;
+            }
+            if (setExcludeCache.contains(instanceName)) {
+                return false;
+            }
+            for (Pattern pattern : setExcludes) {
+                if (pattern.matcher(instanceName).matches()) {
+                    setExcludeCache.add(instanceName);
+                    return false;
+                }
+            }
+            setIncludeCache.add(instanceName);
+            return true;
         }
     }
 }

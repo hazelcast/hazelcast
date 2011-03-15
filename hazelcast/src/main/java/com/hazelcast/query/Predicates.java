@@ -255,6 +255,10 @@ public final class Predicates {
             }
         }
 
+        public boolean isIndexed(QueryContext queryContext) {
+            return queryContext.getMapIndexes().get(first) != null;
+        }
+
         public Set<MapEntry> filter(QueryContext queryContext) {
             checkInValues();
             Index index = queryContext.getMapIndexes().get(first);
@@ -476,6 +480,10 @@ public final class Predicates {
             }
         }
 
+        public boolean isIndexed(QueryContext queryContext) {
+            return queryContext.getMapIndexes().get(first) != null;
+        }
+
         public Set<MapEntry> filter(QueryContext queryContext) {
             Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
@@ -597,12 +605,36 @@ public final class Predicates {
             return strong;
         }
 
+        public boolean isIndexed(QueryContext queryContext) {
+            return true;
+        }
+
         public Set<MapEntry> filter(QueryContext queryContext) {
             Set<MapEntry> results = null;
             for (Predicate predicate : predicates) {
                 if (predicate instanceof IndexAwarePredicate) {
                     IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-                    final Set<MapEntry> filter = p.filter(queryContext);
+                    Set<MapEntry> filter = null;
+                    if (p.isIndexed(queryContext)) {
+                        filter = p.filter(queryContext);
+                    } else {
+                        filter = new HashSet<MapEntry>();
+                        if (and && results != null) {
+                            for (MapEntry result : results) {
+                                if (p.apply(result)) {
+                                    filter.add(result);
+                                }
+                            }
+                            results = filter;
+                            continue;
+                        } else {
+                            for (MapEntry entry : queryContext.getMapIndexService().getOwnedRecords()) {
+                                if (p.apply(entry)) {
+                                    filter.add(entry);
+                                }
+                            }
+                        }
+                    }
                     if (and && (filter == null || filter.isEmpty())) return null;
                     if (results == null) {  // first predicate
                         if (and) {

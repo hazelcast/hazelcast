@@ -51,6 +51,9 @@ public class GroupProperties {
     public static final String PROP_LOG_STATE = "hazelcast.log.state";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
     public static final String PROP_ENABLE_JMX_DETAILED = "hazelcast.jmx.detailed";
+    public static final String PROP_MC_MAP_EXCLUDES = "hazelcast.mc.map.excludes";
+    public static final String PROP_MC_QUEUE_EXCLUDES = "hazelcast.mc.queue.excludes";
+    public static final String PROP_MC_TOPIC_EXCLUDES = "hazelcast.mc.topic.excludes";
 
     public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
 
@@ -112,6 +115,12 @@ public class GroupProperties {
 
     public final GroupProperty ENABLE_JMX_DETAILED;
 
+    public final GroupProperty MC_MAP_EXCLUDES;
+
+    public final GroupProperty MC_QUEUE_EXCLUDES;
+
+    public final GroupProperty MC_TOPIC_EXCLUDES;
+
     public GroupProperties(Config config) {
         IN_THREAD_PRIORITY = new GroupProperty(config, PROP_IN_THREAD_PRIORITY, "7");
         OUT_THREAD_PRIORITY = new GroupProperty(config, PROP_OUT_THREAD_PRIORITY, "7");
@@ -140,6 +149,9 @@ public class GroupProperties {
         LOG_STATE = new GroupProperty(config, PROP_LOG_STATE, "false");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
         ENABLE_JMX_DETAILED = new GroupProperty(config, PROP_ENABLE_JMX_DETAILED, "false");
+        MC_MAP_EXCLUDES = new GroupProperty(config, PROP_MC_MAP_EXCLUDES, null);
+        MC_QUEUE_EXCLUDES = new GroupProperty(config, PROP_MC_QUEUE_EXCLUDES, null);
+        MC_TOPIC_EXCLUDES = new GroupProperty(config, PROP_MC_TOPIC_EXCLUDES, null);
     }
 
     public static class GroupProperty {

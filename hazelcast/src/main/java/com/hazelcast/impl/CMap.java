@@ -150,7 +150,8 @@ public class CMap {
         if (isMultiMap()
                 || mapConfigName.startsWith("__hz_")
                 || mapConfigName.startsWith(AS_LIST)
-                || mapConfigName.startsWith(AS_SET)) {
+                || mapConfigName.startsWith(AS_SET)
+                || mapForQueue) {
             mapConfig = new MapConfig();
         } else {
             mapConfig = node.getConfig().getMapConfig(mapConfigName);
@@ -905,9 +906,6 @@ public class CMap {
             req.response = Boolean.TRUE;
         } else {
             req.response = oldValue;
-        }
-        if (mapForQueue) {
-//            sendKeyToMaster(record.getKeyData());
         }
     }
 

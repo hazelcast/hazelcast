@@ -20,7 +20,8 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.Values;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.MultiMap;
-import org.junit.*;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -29,12 +30,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
 public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
 
-    
     @Test(expected = NullPointerException.class)
     public void testPutNull() {
         HazelcastClient hClient = getHazelcastClient();
@@ -230,6 +229,8 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         map.put("Hello", "Australia");
         values = map.get("Hello");
         assertEquals(7, values.size());
+        assertTrue(map.containsKey("Hello"));
+        assertFalse(map.containsKey("Hi"));
     }
 
     @Test
@@ -256,7 +257,7 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, String> map = hClient.getMultiMap("testMultiMapContainsKey");
         map.put("Hello", "World");
-        Assert.assertTrue(map.containsKey("Hello"));
+        assertTrue(map.containsKey("Hello"));
     }
 
     @Test
@@ -264,7 +265,7 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, String> map = hClient.getMultiMap("testMultiMapContainsValue");
         map.put("Hello", "World");
-        Assert.assertTrue(map.containsValue("World"));
+        assertTrue(map.containsValue("World"));
     }
 
     @Test
@@ -272,7 +273,7 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, String> map = hClient.getMultiMap("testMultiMapContainsEntry");
         map.put("Hello", "World");
-        Assert.assertTrue(map.containsEntry("Hello", "World"));
+        assertTrue(map.containsEntry("Hello", "World"));
     }
 
     @Test
@@ -339,7 +340,7 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         map.put("Hello", "Antartica");
         map.put("Hello", "Australia");
         boolean removed = map.remove("Hello", "World");
-        Assert.assertTrue(removed);
+        assertTrue(removed);
         assertEquals(6, map.size());
     }
 

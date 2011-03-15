@@ -17,10 +17,8 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.IQueue;
+import com.hazelcast.core.MultiMap;
 
-public interface QProxy<E> extends IQueue<E> {
-    QueueOperationsCounter getQueueOperationCounter();
-
-    String getLongName();
+public interface MultiMapProxy extends MultiMap {
+    MProxy getMProxy();
 }

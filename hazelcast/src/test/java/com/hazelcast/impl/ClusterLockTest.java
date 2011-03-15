@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import junit.framework.Assert;
 import org.junit.After;
@@ -30,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.impl.TestUtil.getCMap;
 import static junit.framework.Assert.*;
 import static org.junit.Assert.assertFalse;
 
@@ -131,5 +133,21 @@ public class ClusterLockTest {
         map2.unlock(1);
         latchLock.countDown();
         assertFalse(map2.tryLock(1));
+    }
+
+    @Test
+    public void testUnusedLocks() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        IMap map2 = h2.getMap("default");
+        for (int i = 0; i < 1000; i++) {
+            map2.lock(i);
+            map2.unlock(i);
+        }
+        CMap cmap1 = getCMap(h1, "default");
+        CMap cmap2 = getCMap(h2, "default");
+        Thread.sleep(15000);
+        assertEquals(0, cmap1.mapRecords.size());
+        assertEquals(0, cmap2.mapRecords.size());
     }
 }
