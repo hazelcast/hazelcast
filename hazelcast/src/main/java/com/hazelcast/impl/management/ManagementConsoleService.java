@@ -321,7 +321,6 @@ public class ManagementConsoleService implements MembershipListener {
         int count = 0;
         while (it.hasNext()) {
             HazelcastInstanceAwareInstance proxyObject = it.next();
-            System.out.println(proxyObject);
             if (proxyObject.getInstanceType() == type) {
                 if (count < 20) {
                     if (type == Instance.InstanceType.MAP) {
@@ -415,42 +414,22 @@ public class ManagementConsoleService implements MembershipListener {
     }
 
     public Object call(Address address, Callable callable) {
-        try {
-            Set<Member> members = factory.getCluster().getMembers();
-            for (Member member : members) {
-                if (address.equals(((MemberImpl) member).getAddress())) {
-                    DistributedTask task = new DistributedTask(callable, member);
-                    factory.getExecutorService().execute(task);
-                    try {
-                        return task.get(1, TimeUnit.SECONDS);
-                    } catch (Throwable e) {
-                        logger.log(Level.FINEST, e.getMessage(), e);
-                        return null;
-                    }
-                }
+        Set<Member> members = factory.getCluster().getMembers();
+        for (Member member : members) {
+            if (address.equals(((MemberImpl) member).getAddress())) {
+                DistributedTask task = new DistributedTask(callable, member);
+                return executeTaskAndGet(task);
             }
-        } catch (Throwable e) {
-            return null;
         }
         return null;
     }
 
     public Object call(Callable callable) {
-        try {
-            DistributedTask task = new DistributedTask(callable);
-            factory.getExecutorService().execute(task);
-            try {
-                return task.get(1, TimeUnit.SECONDS);
-            } catch (Throwable e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
-                return null;
-            }
-        } catch (Throwable e) {
-            return null;
-        }
+        DistributedTask task = new DistributedTask(callable);
+        return executeTaskAndGet(task);
     }
 
-    public Object callOnMembers(Set<Address> addresses, Callable callable) {
+    public Collection callOnMembers(Set<Address> addresses, Callable callable) {
         Set<Member> allMembers = factory.getCluster().getMembers();
         Set<Member> selectedMembers = new HashSet<Member>(addresses.size());
         for (Member member : allMembers) {
@@ -467,8 +446,12 @@ public class ManagementConsoleService implements MembershipListener {
     }
 
     private Collection callOnMembers0(Set<Member> members, Callable callable) {
-        try {
-            MultiTask task = new MultiTask(callable, members);
+    	MultiTask task = new MultiTask(callable, members);
+    	return (Collection) executeTaskAndGet(task);
+    }
+    
+    private Object executeTaskAndGet(final DistributedTask task) {
+    	try {
             factory.getExecutorService().execute(task);
             try {
                 return task.get(1, TimeUnit.SECONDS);
@@ -477,6 +460,7 @@ public class ManagementConsoleService implements MembershipListener {
                 return null;
             }
         } catch (Throwable e) {
+        	logger.log(Level.FINEST, e.getMessage(), e);
             return null;
         }
     }
