@@ -834,7 +834,7 @@ public class CMap {
         }
         Record record = getRecord(req);
         if (record != null && !record.isValid(now)) {
-            if(record.isEvictable()){
+            if (record.isEvictable()) {
                 sendEvictEvent = true;
                 evictedRecord = createNewRecord(record.getKeyData(), record.getValueData());
             }
@@ -882,11 +882,9 @@ public class CMap {
             record.setExpirationTime(req.ttl);
             ttlPerRecord = true;
         }
-
-        if(sendEvictEvent){
+        if (sendEvictEvent) {
             concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_EVICTED, null, evictedRecord, req.caller);
         }
-
         if (oldValue == null) {
             concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_ADDED, null, record, req.caller);
         } else {
@@ -1209,7 +1207,7 @@ public class CMap {
         if (lsRecordsToEvict != null && lsRecordsToEvict.size() > 0) {
             logger.log(Level.FINEST, lsRecordsToEvict.size() + " evicting");
             for (final Record recordToEvict : lsRecordsToEvict) {
-                concurrentMapManager.evictAsync(recordToEvict.getName(), recordToEvict.getKeyData());
+                concurrentMapManager.evictAsync(name, recordToEvict.getKeyData());
             }
         }
     }

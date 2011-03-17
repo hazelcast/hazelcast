@@ -67,6 +67,10 @@ public final class Record implements MapEntry {
         this.setVersion(0);
     }
 
+    public long getLastTouchTime() {
+        return Math.max(lastAccessTime, Math.max(creationTime, lastUpdateTime));
+    }
+
     public Record copy() {
         Record recordCopy = new Record(cmap, blockId, key, value, getRemainingTTL(), getRemainingIdle(), id);
         if (optionalInfo != null) {
@@ -79,10 +83,6 @@ public final class Record implements MapEntry {
         recordCopy.setCopyCount(copyCount);
         recordCopy.setVersion(getVersion());
         return recordCopy;
-    }
-
-    public CMap getCMap() {
-        return cmap;
     }
 
     public void runBackupOps() {
