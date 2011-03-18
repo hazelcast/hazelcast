@@ -834,7 +834,7 @@ public class CMap {
         }
         Record record = getRecord(req);
         if (record != null && !record.isValid(now)) {
-            if (record.isEvictable()) {
+            if (record.isActive() && record.isEvictable()) {
                 sendEvictEvent = true;
                 evictedRecord = createNewRecord(record.getKeyData(), record.getValueData());
             }

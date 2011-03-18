@@ -2539,4 +2539,32 @@ public class ClusterTest {
         assertFalse(result);
         h.getLifecycleService().shutdown();
     }
+
+    @Test
+    public void testMapEvictWithTTLAndListener() throws InterruptedException {
+        int count = 100;
+        final CountDownLatch latch = new CountDownLatch(count);
+        IMap<String, String> map = Hazelcast.newHazelcastInstance(null).getMap("testMapEvictAndListener");
+        map.addEntryListener(new EntryListener<String, String>() {
+            public void entryAdded(EntryEvent<String, String> stringStringEntryEvent) {
+            }
+
+            public void entryRemoved(EntryEvent<String, String> stringStringEntryEvent) {
+            }
+
+            public void entryUpdated(EntryEvent<String, String> stringStringEntryEvent) {
+            }
+
+            public void entryEvicted(EntryEvent<String, String> stringStringEntryEvent) {
+                latch.countDown();
+                assertNotNull("The Value is null", stringStringEntryEvent.getValue());
+
+            }
+        }, true);
+        for (int i = 0; i < count; i++) {
+            map.put("key", "" + i, 3, TimeUnit.MILLISECONDS);
+            Thread.sleep(15);
+        }
+        assertTrue(latch.await(60, TimeUnit.SECONDS));
+    }
 }
