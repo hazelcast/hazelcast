@@ -121,9 +121,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             try {
                 int written = socketChannel.write(socketBB);
             } catch (Exception e) {
-                if (lastWritable != null) {
-                    lastWritable = null;
-                }
+                lastWritable = null;
                 handleSocketException(e);
                 return;
             }

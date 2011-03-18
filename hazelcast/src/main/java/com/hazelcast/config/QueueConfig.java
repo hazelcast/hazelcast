@@ -17,16 +17,17 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.hazelcast.nio.DataSerializable;
 
 public final class QueueConfig implements DataSerializable {
 
     public final static int DEFAULT_MAX_SIZE_PER_JVM = 0;
     public final static int DEFAULT_TTL_SECONDS = 0;
+    public final static int DEFAULT_BACKUP_COUNT = 1;
 
     private String name;
 
@@ -34,9 +35,11 @@ public final class QueueConfig implements DataSerializable {
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
+    private int backupCount = DEFAULT_BACKUP_COUNT;
+
     public QueueConfig() {
     }
-    
+
     public QueueConfig(QueueConfig config) {
         this.name = config.name;
         this.maxSizePerJVM = config.maxSizePerJVM;
@@ -84,6 +87,26 @@ public final class QueueConfig implements DataSerializable {
     }
 
     /**
+     * Returns the number of backups for this queue.
+     *
+     * @return number of backups.
+     */
+    public int getBackupCount() {
+        return backupCount;
+    }
+
+    /**
+     * Sets the number of backups for this queue. Default is 1.
+     *
+     * @param backupCount number of backups.
+     * @return this queue config
+     */
+    public QueueConfig setBackupCount(int backupCount) {
+        this.backupCount = backupCount;
+        return this;
+    }
+
+    /**
      * @param timeToLiveSeconds the timeToLiveSeconds to set
      */
     public QueueConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
@@ -93,18 +116,18 @@ public final class QueueConfig implements DataSerializable {
         this.timeToLiveSeconds = timeToLiveSeconds;
         return this;
     }
-    
-    public boolean isCompatible(final QueueConfig queueConfig){
+
+    public boolean isCompatible(final QueueConfig queueConfig) {
         if (queueConfig == null) return false;
-        return (name != null ? name.equals(queueConfig.name)  : queueConfig.name == null) &&
-            this.timeToLiveSeconds == queueConfig.timeToLiveSeconds;
+        return (name != null ? name.equals(queueConfig.name) : queueConfig.name == null) &&
+                this.timeToLiveSeconds == queueConfig.timeToLiveSeconds;
     }
-    
+
     @Override
     public String toString() {
-        return "QueueConfig [name=" + this.name 
-            + ", timeToLiveSeconds=" + this.timeToLiveSeconds 
-            + ", maxSizePerJVM=" + this.maxSizePerJVM + "]";
+        return "QueueConfig [name=" + this.name
+                + ", timeToLiveSeconds=" + this.timeToLiveSeconds
+                + ", maxSizePerJVM=" + this.maxSizePerJVM + "]";
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -118,5 +141,4 @@ public final class QueueConfig implements DataSerializable {
         maxSizePerJVM = in.readInt();
         timeToLiveSeconds = in.readInt();
     }
-    
 }

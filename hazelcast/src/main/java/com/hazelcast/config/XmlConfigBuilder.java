@@ -426,6 +426,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 qConfig.setMaxSizePerJVM(getIntegerValue("max-size-per-jvm", value, QueueConfig.DEFAULT_MAX_SIZE_PER_JVM));
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 qConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value, QueueConfig.DEFAULT_TTL_SECONDS));
+            } else if ("backup-count".equals(nodeName)) {
+                qConfig.setBackupCount(getIntegerValue("backup-count", value, QueueConfig.DEFAULT_BACKUP_COUNT));
             }
         }
         this.config.addQueueConfig(qConfig);

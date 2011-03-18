@@ -29,8 +29,7 @@ class TransactionImpl implements Transaction {
 
     private final long id;
     private final FactoryImpl factory;
-
-    List<TransactionRecord> transactionRecords = new ArrayList<TransactionRecord>(1);
+    private final List<TransactionRecord> transactionRecords = new ArrayList<TransactionRecord>(1);
 
     private int status = TXN_STATUS_NO_TXN;
 

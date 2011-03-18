@@ -40,6 +40,7 @@ public class PartitionServiceImpl implements PartitionService {
     private final ConcurrentMapManager concurrentMapManager;
     private final AtomicLong partitionVersion = new AtomicLong();
     private final Set<Partition> partitions;
+    private volatile int ownedPartitionCount = -1;
 
     public PartitionServiceImpl(ConcurrentMapManager concurrentMapManager) {
         this.concurrentMapManager = concurrentMapManager;
@@ -48,6 +49,22 @@ public class PartitionServiceImpl implements PartitionService {
             PartitionProxy partitionProxy = new PartitionProxy(i);
             partitions.add(partitionProxy);
             mapPartitions.put(i, partitionProxy);
+        }
+    }
+
+    public int getOwnedPartitionCount() {
+        int currentCount = ownedPartitionCount;
+        if (currentCount > 0) {
+            return currentCount;
+        } else {
+            currentCount = 0;
+            for (Partition partition : partitions) {
+                if (partition.getOwner() == null || partition.getOwner().localMember()) {
+                    currentCount++;
+                }
+            }
+            ownedPartitionCount = currentCount;
+            return currentCount;
         }
     }
 
@@ -113,6 +130,7 @@ public class PartitionServiceImpl implements PartitionService {
         Member migrationMember = (started) ? migrationEvent.getNewOwner() : null;
         final PartitionReal partitionReal = new PartitionReal(migrationEvent.getPartitionId(), owner, migrationMember);
         mapRealPartitions.put(partitionReal.getPartitionId(), partitionReal);
+        ownedPartitionCount = -1;
         for (final MigrationListener migrationListener : lsMigrationListeners) {
             concurrentMapManager.executeLocally(new Runnable() {
                 public void run() {

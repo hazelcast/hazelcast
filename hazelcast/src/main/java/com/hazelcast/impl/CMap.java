@@ -1090,6 +1090,25 @@ public class CMap {
         executeEviction(recordsToEvict);
     }
 
+    int getMaxSizePerJVM() {
+        if (maxSize == Integer.MAX_VALUE || maxSize == 0) return Integer.MAX_VALUE;
+        if (node.getClusterImpl().getMembers().size() < 2) {
+            return maxSize;
+        } else {
+            PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
+            int partitionCount = partitionService.getPartitions().size();
+            int ownedPartitionCount = partitionService.getOwnedPartitionCount();
+            if (partitionCount < 1 || ownedPartitionCount < 1) return maxSize;
+            return (maxSize * ownedPartitionCount) / partitionCount;
+        }
+    }
+
+    int getMaxSizePerJVM2() {
+        final int clusterMemberSize = node.getClusterImpl().getMembers().size();
+        final int memberCount = (clusterMemberSize == 0) ? 1 : clusterMemberSize;
+        return maxSize / memberCount;
+    }
+
     void startCleanup(boolean forced) {
         final long now = System.currentTimeMillis();
         if (mapNearCache != null) {
@@ -1101,9 +1120,7 @@ public class CMap {
         final Set<Record> recordsToEvict = new HashSet<Record>();
         final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(evictionComparator));
         final Collection<Record> records = mapRecords.values();
-        final int clusterMemberSize = node.getClusterImpl().getMembers().size();
-        final int memberCount = (clusterMemberSize == 0) ? 1 : clusterMemberSize;
-        final int maxSizePerJVM = maxSize / memberCount;
+        final int maxSizePerJVM = getMaxSizePerJVM();
         final boolean evictionAware = evictionComparator != null && maxSizePerJVM > 0;
         final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
         int recordsStillOwned = 0;

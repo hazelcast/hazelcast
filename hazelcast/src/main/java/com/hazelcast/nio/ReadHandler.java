@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.nio.ascii.SocketTextReader;
 
+import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.logging.Level;
@@ -45,8 +46,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
             if (socketReader == null) {
                 int readBytes = socketChannel.read(protocolBuffer);
                 if (readBytes == -1) {
-                    connection.close();
-                    return;
+                    throw new EOFException();
                 }
                 if (!protocolBuffer.hasRemaining()) {
                     String protocol = new String(protocolBuffer.array());
@@ -65,8 +65,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
             if (socketReader == null) return;
             int readBytes = socketChannel.read(inBuffer);
             if (readBytes == -1) {
-                connection.close();
-                return;
+                throw new EOFException();
             }
         } catch (Throwable e) {
             handleSocketException(e);
@@ -84,7 +83,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         } catch (Exception t) {
             handleSocketException(t);
         } finally {
-            registerOp(inSelector.selector, SelectionKey.OP_READ);
+            run();
         }
     }
 
