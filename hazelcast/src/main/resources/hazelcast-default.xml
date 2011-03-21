@@ -96,7 +96,7 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size>0</max-size>
+        <max-size policy="cluster_wide_map_size">5G</max-size>
         <!--
             When max. size is reached, specified percentage of
             the map will be evicted. Any integer between 0 and 100.

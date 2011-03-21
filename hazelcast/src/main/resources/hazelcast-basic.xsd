@@ -245,9 +245,13 @@
                 Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
             </xs:documentation>
         </xs:annotation>
-        <xs:simpleType>
-            <xs:restriction base="xs:byte"/>
-        </xs:simpleType>
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="policy" use="optional" default="cluster_wide_map_size"/>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
     </xs:element>
     <xs:element name="max-pool-size" default="64">
         <xs:annotation>

@@ -44,7 +44,7 @@ public class MapConfig implements DataSerializable {
     public final static boolean DEFAULT_CACHE_VALUE = true;
 
     private String name = null;
-    
+
     private int backupCount = DEFAULT_BACKUP_COUNT;
 
     private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
@@ -55,7 +55,7 @@ public class MapConfig implements DataSerializable {
 
     private int evictionDelaySeconds = DEFAULT_EVICTION_DELAY_SECONDS;
 
-    private int maxSize = DEFAULT_MAX_SIZE;
+    private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
 
     private String evictionPolicy = DEFAULT_EVICTION_POLICY;
 
@@ -85,7 +85,7 @@ public class MapConfig implements DataSerializable {
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
         this.evictionDelaySeconds = config.evictionDelaySeconds;
-        this.maxSize = config.maxSize;
+        this.maxSizeConfig = config.maxSizeConfig;
         this.evictionPolicy = config.evictionPolicy;
         this.valueIndexed = config.valueIndexed;
         this.mapStoreConfig = config.mapStoreConfig;
@@ -262,20 +262,26 @@ public class MapConfig implements DataSerializable {
 
     /**
      * @return the maxSize
+     * @deprecated use MapSizeConfig.getSize
      */
     public int getMaxSize() {
-        return maxSize;
+        return maxSizeConfig.getSize();
     }
 
     /**
      * @param maxSize the maxSize to set
+     * @deprecated use MapSizeConfig.setSize
      */
     public MapConfig setMaxSize(final int maxSize) {
         if (maxSize < 0) {
             throw new IllegalArgumentException("map max size must be greater than 0");
         }
-        this.maxSize = maxSize;
+        this.maxSizeConfig.setSize(maxSize);
         return this;
+    }
+
+    public MaxSizeConfig getMaxSizeConfig() {
+        return maxSizeConfig;
     }
 
     /**
@@ -348,8 +354,9 @@ public class MapConfig implements DataSerializable {
                 this.evictionDelaySeconds == other.evictionDelaySeconds &&
                 this.evictionPercentage == other.evictionPercentage &&
                 this.maxIdleSeconds == other.maxIdleSeconds &&
-                (this.maxSize == other.maxSize ||
-                        (Math.min(maxSize, other.maxSize) == 0 && Math.max(maxSize, other.maxSize) == Integer.MAX_VALUE)) &&
+                (this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() ||
+                        (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
+                                && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE)) &&
                 this.timeToLiveSeconds == other.timeToLiveSeconds &&
                 this.readBackupData == other.readBackupData &&
                 this.valueIndexed == other.valueIndexed;
@@ -371,7 +378,7 @@ public class MapConfig implements DataSerializable {
                 + ((this.mapStoreConfig == null) ? 0 : this.mapStoreConfig
                 .hashCode());
         result = prime * result + this.maxIdleSeconds;
-        result = prime * result + this.maxSize;
+        result = prime * result + this.maxSizeConfig.getSize();
         result = prime
                 * result
                 + ((this.mergePolicy == null) ? 0 : this.mergePolicy.hashCode());
@@ -400,7 +407,7 @@ public class MapConfig implements DataSerializable {
                         this.evictionDelaySeconds == other.evictionDelaySeconds &&
                         this.evictionPercentage == other.evictionPercentage &&
                         this.maxIdleSeconds == other.maxIdleSeconds &&
-                        this.maxSize == other.maxSize &&
+                        this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() &&
                         this.timeToLiveSeconds == other.timeToLiveSeconds &&
                         this.readBackupData == other.readBackupData &&
                         this.valueIndexed == other.valueIndexed &&
@@ -420,7 +427,7 @@ public class MapConfig implements DataSerializable {
                 ", timeToLiveSeconds=" + timeToLiveSeconds +
                 ", maxIdleSeconds=" + maxIdleSeconds +
                 ", evictionDelaySeconds=" + evictionDelaySeconds +
-                ", maxSize=" + maxSize +
+                ", maxSizeConfig=" + maxSizeConfig +
                 ", evictionPolicy='" + evictionPolicy + '\'' +
                 ", mapStoreConfig=" + mapStoreConfig +
                 ", nearCacheConfig=" + nearCacheConfig +
@@ -435,7 +442,7 @@ public class MapConfig implements DataSerializable {
         timeToLiveSeconds = in.readInt();
         maxIdleSeconds = in.readInt();
         evictionDelaySeconds = in.readInt();
-        maxSize = in.readInt();
+        maxSizeConfig.readData(in);
         boolean[] b = ByteUtil.fromByte(in.readByte());
         valueIndexed = b[0];
         readBackupData = b[1];
@@ -452,7 +459,7 @@ public class MapConfig implements DataSerializable {
         out.writeInt(timeToLiveSeconds);
         out.writeInt(maxIdleSeconds);
         out.writeInt(evictionDelaySeconds);
-        out.writeInt(maxSize);
+        maxSizeConfig.writeData(out);
         out.writeByte(ByteUtil.toByte(valueIndexed, readBackupData));
         out.writeUTF(evictionPolicy);
         out.writeUTF(mergePolicy);

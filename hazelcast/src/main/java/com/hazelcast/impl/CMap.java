@@ -18,10 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterImpl;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
@@ -93,7 +90,7 @@ public class CMap {
 
     final Comparator<MapEntry> evictionComparator;
 
-    final int maxSize;
+    final MapMaxSizePolicy maxSizePolicy;
 
     final float evictionRate;
 
@@ -164,11 +161,23 @@ public class CMap {
         evictionPolicy = EvictionPolicy.valueOf(mapConfig.getEvictionPolicy());
         readBackupData = mapConfig.isReadBackupData();
         cacheValue = mapConfig.isCacheValue();
+        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+        if (MaxSizeConfig.POLICY_MAP_SIZE_PER_JVM.equals(maxSizeConfig.getMaxSizePolicy())) {
+            maxSizePolicy = new MaxSizePerJVMPolicy(maxSizeConfig);
+        } else if (MaxSizeConfig.POLICY_CLUSTER_WIDE_MAP_SIZE.equals(maxSizeConfig.getMaxSizePolicy())) {
+            maxSizePolicy = new MaxSizeClusterWidePolicy(maxSizeConfig);
+        } else if (MaxSizeConfig.POLICY_PARTITIONS_WIDE_MAP_SIZE.equals(maxSizeConfig.getMaxSizePolicy())) {
+            maxSizePolicy = new MaxSizePartitionsWidePolicy(maxSizeConfig);
+        } else if (MaxSizeConfig.POLICY_USED_HEAP_SIZE.equals(maxSizeConfig.getMaxSizePolicy())) {
+            maxSizePolicy = new MaxSizeHeapPolicy(maxSizeConfig);
+        } else if (MaxSizeConfig.POLICY_USED_HEAP_PERCENTAGE.equals(maxSizeConfig.getMaxSizePolicy())) {
+            maxSizePolicy = new MaxSizeHeapPercentagePolicy(maxSizeConfig);
+        } else {
+            maxSizePolicy = null;
+        }
         if (evictionPolicy == EvictionPolicy.NONE) {
-            maxSize = Integer.MAX_VALUE;
             evictionComparator = null;
         } else {
-            maxSize = (mapConfig.getMaxSize() == 0) ? MapConfig.DEFAULT_MAX_SIZE : mapConfig.getMaxSize();
             if (evictionPolicy == EvictionPolicy.LRU) {
                 evictionComparator = new ComparatorWrapper(LRU_COMPARATOR);
             } else {
@@ -250,8 +259,7 @@ public class CMap {
     }
 
     final boolean exceedingMapMaxSize(Request request) {
-        int perJVMMaxSize = maxSize / concurrentMapManager.getMembers().size();
-        if (perJVMMaxSize <= mapIndexService.size()) {
+        if (maxSizePolicy.overCapacity()) {
             boolean addOp = (request.operation == ClusterOperation.CONCURRENT_MAP_PUT)
                     || (request.operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT);
             if (addOp) {
@@ -1090,23 +1098,92 @@ public class CMap {
         executeEviction(recordsToEvict);
     }
 
-    int getMaxSizePerJVM() {
-        if (maxSize == Integer.MAX_VALUE || maxSize == 0) return Integer.MAX_VALUE;
-        if (node.getClusterImpl().getMembers().size() < 2) {
-            return maxSize;
-        } else {
-            PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
-            int partitionCount = partitionService.getPartitions().size();
-            int ownedPartitionCount = partitionService.getOwnedPartitionCount();
-            if (partitionCount < 1 || ownedPartitionCount < 1) return maxSize;
-            return (maxSize * ownedPartitionCount) / partitionCount;
+    class MaxSizePerJVMPolicy implements MapMaxSizePolicy {
+        protected final MaxSizeConfig maxSizeConfig;
+
+        MaxSizePerJVMPolicy(MaxSizeConfig maxSizeConfig) {
+            this.maxSizeConfig = maxSizeConfig;
+        }
+
+        public int getMaxSize() {
+            return maxSizeConfig.getSize();
+        }
+
+        public boolean overCapacity() {
+            return getMaxSize() <= mapIndexService.size();
         }
     }
 
-    int getMaxSizePerJVM2() {
-        final int clusterMemberSize = node.getClusterImpl().getMembers().size();
-        final int memberCount = (clusterMemberSize == 0) ? 1 : clusterMemberSize;
-        return maxSize / memberCount;
+    class MaxSizeHeapPolicy extends MaxSizePerJVMPolicy {
+        long memoryLimit = 0;
+
+        MaxSizeHeapPolicy(MaxSizeConfig maxSizeConfig) {
+            super(maxSizeConfig);
+            memoryLimit = maxSizeConfig.getSize() * 1000 * 1000; // MB to byte
+        }
+
+        public boolean overCapacity() {
+            boolean over = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) > memoryLimit;
+            if (over) {
+                Runtime.getRuntime().gc();
+            }
+            return over;
+        }
+    }
+
+    class MaxSizeHeapPercentagePolicy extends MaxSizePerJVMPolicy {
+
+        MaxSizeHeapPercentagePolicy(MaxSizeConfig maxSizeConfig) {
+            super(maxSizeConfig);
+        }
+
+        public boolean overCapacity() {
+            long total = Runtime.getRuntime().totalMemory();
+            long free = Runtime.getRuntime().freeMemory();
+            int usedPercentage = (int) (((total - free) / total) * 100D);
+            boolean over = usedPercentage > maxSizeConfig.getSize();
+            if (over) {
+                Runtime.getRuntime().gc();
+            }
+            return over;
+        }
+    }
+
+    class MaxSizeClusterWidePolicy extends MaxSizePerJVMPolicy {
+
+        MaxSizeClusterWidePolicy(MaxSizeConfig maxSizeConfig) {
+            super(maxSizeConfig);
+        }
+
+        @Override
+        public int getMaxSize() {
+            final int maxSize = maxSizeConfig.getSize();
+            final int clusterMemberSize = node.getClusterImpl().getMembers().size();
+            final int memberCount = (clusterMemberSize == 0) ? 1 : clusterMemberSize;
+            return maxSize / memberCount;
+        }
+    }
+
+    class MaxSizePartitionsWidePolicy extends MaxSizePerJVMPolicy {
+
+        MaxSizePartitionsWidePolicy(MaxSizeConfig maxSizeConfig) {
+            super(maxSizeConfig);
+        }
+
+        @Override
+        public int getMaxSize() {
+            final int maxSize = maxSizeConfig.getSize();
+            if (maxSize == Integer.MAX_VALUE || maxSize == 0) return Integer.MAX_VALUE;
+            if (node.getClusterImpl().getMembers().size() < 2) {
+                return maxSize;
+            } else {
+                PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
+                int partitionCount = partitionService.getPartitions().size();
+                int ownedPartitionCount = partitionService.getOwnedPartitionCount();
+                if (partitionCount < 1 || ownedPartitionCount < 1) return maxSize;
+                return (maxSize * ownedPartitionCount) / partitionCount;
+            }
+        }
     }
 
     void startCleanup(boolean forced) {
@@ -1120,8 +1197,8 @@ public class CMap {
         final Set<Record> recordsToEvict = new HashSet<Record>();
         final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(evictionComparator));
         final Collection<Record> records = mapRecords.values();
-        final int maxSizePerJVM = getMaxSizePerJVM();
-        final boolean evictionAware = evictionComparator != null && maxSizePerJVM > 0;
+        final boolean overCapacity = maxSizePolicy.overCapacity();
+        final boolean evictionAware = evictionComparator != null && overCapacity;
         final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
         int recordsStillOwned = 0;
         int backupPurgeCount = 0;
@@ -1164,7 +1241,7 @@ public class CMap {
                 }
             }
         }
-        if (evictionAware && ((forced) ? maxSizePerJVM <= recordsStillOwned : maxSizePerJVM < recordsStillOwned)) {
+        if (evictionAware && (forced || overCapacity)) {
             int numberOfRecordsToEvict = (int) (recordsStillOwned * evictionRate);
             int evictedCount = 0;
             for (Record record : sortedRecords) {

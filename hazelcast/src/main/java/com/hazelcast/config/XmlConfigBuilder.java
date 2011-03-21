@@ -446,8 +446,31 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("eviction-policy".equals(nodeName)) {
                 mapConfig.setEvictionPolicy(value);
             } else if ("max-size".equals(nodeName)) {
-                mapConfig.setMaxSize(getIntegerValue("max-size", value,
-                        MapConfig.DEFAULT_MAX_SIZE));
+                final MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
+                final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");
+                if (maxSizePolicy != null) {
+                    msc.setMaxSizePolicy(getTextContent(maxSizePolicy));
+                }
+                int size = 0;
+                if (value.length() < 2) {
+                    size = Integer.parseInt(value);
+                } else {
+                    char last = value.charAt(value.length() - 1);
+                    int type = 0;
+                    if (last == 'g' || last == 'G') {
+                        type = 1;
+                    } else if (last == 'm' || last == 'M') {
+                        type = 2;
+                    }
+                    if (type == 0) {
+                        size = Integer.parseInt(value);
+                    } else if (type == 1) {
+                        size = Integer.parseInt(value.substring(0, value.length() - 1)) * 1000;
+                    } else {
+                        size = Integer.parseInt(value.substring(0, value.length() - 1));
+                    }
+                }
+                msc.setSize(size);
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
                         MapConfig.DEFAULT_EVICTION_PERCENTAGE));
