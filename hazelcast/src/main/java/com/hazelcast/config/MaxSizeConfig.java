@@ -47,6 +47,9 @@ public class MaxSizeConfig implements DataSerializable {
     }
 
     public MaxSizeConfig setSize(int size) {
+        if (size == 0) {
+            size = Integer.MAX_VALUE;
+        }
         this.size = size;
         return this;
     }
