@@ -48,6 +48,48 @@ public class MapStoreTest extends TestUtil {
     }
 
     @Test
+    public void testThreeMemberGetAll() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        Map store = testMapStore.getStore();
+        Set keys = new HashSet();
+        int size = 1000;
+        for (int i = 0; i < size; i++) {
+            store.put(i, "value" + i);
+            keys.add(i);
+        }
+        Config config = newConfig(testMapStore, 2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        assertEquals("value1", map1.get(1));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(5));
+        assertEquals("value1", map1.get(1));
+        assertEquals(null, testMapStore.waitForEvent(3));
+        Map loaded = map1.getAll(keys);
+        assertEquals(size, loaded.size());
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
+        loaded = map2.getAll(keys);
+        assertEquals(size, loaded.size());
+        assertEquals(null, testMapStore.waitForEvent(5));
+        for (int i = 0; i < size; i++) {
+            map1.evict(i);
+        }
+        assertEquals(0, map1.size());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        loaded = map1.getAll(keys);
+        assertEquals(size, loaded.size());
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
+        assertEquals(0, testMapStore.getEventCount());
+        loaded = map2.getAll(keys);
+        assertEquals(size, loaded.size());
+        assertEquals(null, testMapStore.waitForEvent(5));
+    }
+
+    @Test
     public void testOneMemberWriteThroughTxnalFailingStore() {
         FailAwareMapStore testMapStore = new FailAwareMapStore();
         testMapStore.setFail(false);
@@ -489,6 +531,10 @@ public class MapStoreTest extends TestUtil {
         }
 
         public void destroy() {
+        }
+
+        public int getEventCount() {
+            return events.size();
         }
 
         public int getInitCount() {

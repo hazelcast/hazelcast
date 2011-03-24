@@ -24,6 +24,9 @@ import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.CMap.CMapEntry;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.Keys;
+import com.hazelcast.impl.base.KeyValue;
+import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
@@ -35,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     final ProxyHelper proxyHelper;
@@ -199,6 +204,21 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public V get(Object key) {
         check(key);
         return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, (K) key, null);
+    }
+
+    public Map<K, V> getAll(Set<K> setKeys) {
+        check(setKeys);
+        Keys keys = new Keys();
+        for (K key : setKeys) {
+            keys.add(toData(key));
+        }
+        Pairs pairs = (Pairs) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET_ALL, keys, null);
+        List<KeyValue> lsKeyValues = pairs.getKeyValues();
+        Map map = new HashMap();
+        for (KeyValue keyValue : lsKeyValues) {
+            map.put(toObject(keyValue.getKeyData()), toObject(keyValue.getValueData()));
+        }
+        return map;
     }
 
     public boolean isEmpty() {

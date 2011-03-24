@@ -22,10 +22,7 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +66,14 @@ public final class ReplicatedMapFactory {
             for (Entry<K, V> entry : entries) {
                 this.putIfAbsent(entry.getKey(), entry.getValue());
             }
+        }
+
+        public Map<K, V> getAll(Set<K> keys) {
+            Map map = new HashMap();
+            for (K key : keys) {
+                map.put(key, get(key));
+            }
+            return map;
         }
 
         public Future<V> getAsync(K key) {

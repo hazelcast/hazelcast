@@ -23,10 +23,12 @@ import com.hazelcast.nio.DataSerializable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 
-public class Keys implements DataSerializable {
+public class Keys extends AbstractSet<Data> implements DataSerializable {
 
     private Collection<Data> keys;
 
@@ -61,8 +63,19 @@ public class Keys implements DataSerializable {
         }
     }
 
-    public void addKey(Data obj) {
-        if (obj == null) return;
-        this.keys.add(obj);
+    public boolean add(Data data) {
+        if (data == null) return false;
+        this.keys.add(data);
+        return true;
+    }
+
+    @Override
+    public Iterator<Data> iterator() {
+        return keys.iterator();
+    }
+
+    @Override
+    public int size() {
+        return keys.size();
     }
 }

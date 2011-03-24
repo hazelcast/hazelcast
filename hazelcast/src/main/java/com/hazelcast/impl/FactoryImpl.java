@@ -2052,6 +2052,10 @@ public class FactoryImpl implements HazelcastInstance {
             return put(key, value, 0, TimeUnit.SECONDS);
         }
 
+        public Map getAll(Set keys) {
+            return dynamicProxy.getAll(keys);
+        }
+
         public Future getAsync(Object key) {
             final MProxyImpl mProxy = MProxyImpl.this;
             final Data dataKey = IOUtil.toData(key);
@@ -2443,6 +2447,13 @@ public class FactoryImpl implements HazelcastInstance {
                 Object result = mput.put(name, key, value, -1, -1);
                 mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
                 return result;
+            }
+
+            public Map getAll(Set keys) {
+                if (keys == null) {
+                    throw new NullPointerException();
+                }
+                return concurrentMapManager.getAll(name, keys);
             }
 
             public Future getAsync(Object key) {

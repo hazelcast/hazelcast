@@ -17,25 +17,20 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.Transaction;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.MultiData;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
 import com.hazelcast.util.DistributedTimeoutException;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -99,7 +94,9 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_GET, new GetOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_MERGE, new MergeOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_TRY_PUT, new PutOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_SET, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT, new PutOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_PUT_TRANSIENT, new PutTransientOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_IF_ABSENT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_SAME, new PutOperationHandler());
@@ -479,6 +476,153 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         public boolean isMigrationAware() {
             return true;
+        }
+    }
+
+    void putTransient(String name, Object key, Object value, long timeout, long ttl) {
+        MPut mput = new MPut();
+        mput.putTransient(name, key, value, timeout, ttl);
+    }
+
+    Map getAll(String name, Set keys) {
+        Pairs results = getAllPairs(name, keys);
+        List<KeyValue> lsKeyValues = results.getKeyValues();
+        Map map = new HashMap(lsKeyValues.size());
+        for (KeyValue keyValue : lsKeyValues) {
+            map.put(toObject(keyValue.getKeyData()), toObject(keyValue.getValueData()));
+        }
+        return map;
+    }
+
+    Pairs getAllPairs(String name, Set keys) {
+        while (true) {
+            node.checkNodeState();
+            try {
+                return doGetAll(name, keys);
+            } catch (Throwable e) {
+                TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
+                if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
+    Pairs doGetAll(String name, Set keys) throws ExecutionException, InterruptedException {
+        Pairs results = new Pairs(keys.size());
+        final Map<Member, Keys> targetMembers = new HashMap<Member, Keys>(10);
+        PartitionServiceImpl partitionService = partitionManager.partitionServiceImpl;
+        for (Object key : keys) {
+            Data dKey = toData(key);
+            Member owner = partitionService.getPartition(dKey).getOwner();
+            if (owner == null) {
+                owner = thisMember;
+            }
+            Keys targetKeys = targetMembers.get(owner);
+            if (targetKeys == null) {
+                targetKeys = new Keys();
+                targetMembers.put(owner, targetKeys);
+            }
+            targetKeys.add(dKey);
+        }
+        List<Future<Pairs>> lsFutures = new ArrayList<Future<Pairs>>(targetMembers.size());
+        for (Member member : targetMembers.keySet()) {
+            Keys targetKeys = targetMembers.get(member);
+            GetAllCallable callable = new GetAllCallable(name, targetKeys);
+            DistributedTask<Pairs> dt = new DistributedTask<Pairs>(callable, member);
+            lsFutures.add(dt);
+            node.factory.getExecutorService().execute(dt);
+        }
+        for (Future<Pairs> future : lsFutures) {
+            Pairs pairs = future.get();
+            if (pairs != null) {
+                for (KeyValue keyValue : pairs.getKeyValues()) {
+                    results.addKeyValue(keyValue);
+                }
+            }
+        }
+        return results;
+    }
+
+    public static class GetAllCallable implements Callable<Pairs>, HazelcastInstanceAware, DataSerializable {
+
+        private String mapName;
+        private Keys keys;
+        private FactoryImpl factory = null;
+
+        public GetAllCallable() {
+        }
+
+        public GetAllCallable(String mapName, Keys keys) {
+            this.mapName = mapName;
+            this.keys = keys;
+        }
+
+        public Pairs call() throws Exception {
+            final ConcurrentMapManager c = factory.node.concurrentMapManager;
+            Pairs pairs = new Pairs();
+            try {
+                CMap cmap = c.getMap(mapName);
+                if (cmap == null) {
+                    c.enqueueAndWait(new Processable() {
+                        public void process() {
+                            c.getOrCreateMap(mapName);
+                        }
+                    }, 100);
+                    cmap = c.getMap(mapName);
+                }
+                if (cmap != null) {
+                    Collection<Object> keysToLoad = (cmap.loader != null) ? new HashSet<Object>() : null;
+                    for (Data key : keys.getKeys()) {
+                        boolean exist = false;
+                        Record record = cmap.getRecord(key);
+                        if (record != null && record.isActive() && record.isValid()) {
+                            Data value = record.getValueData();
+                            if (value != null) {
+                                pairs.addKeyValue(new KeyValue(key, value));
+                                record.setLastAccessed();
+                                exist = true;
+                            }
+                        }
+                        if (!exist && keysToLoad != null) {
+                            keysToLoad.add(toObject(key));
+                        }
+                    }
+                    if (keysToLoad != null && keysToLoad.size() > 0 && cmap.loader != null) {
+                        final Map<Object, Object> mapLoadedEntries = cmap.loader.loadAll(keysToLoad);
+                        if (mapLoadedEntries != null) {
+                            for (Object key : mapLoadedEntries.keySet()) {
+                                Data dKey = toData(key);
+                                Object value = mapLoadedEntries.get(key);
+                                Data dValue = toData(value);
+                                if (dKey != null && dValue != null) {
+                                    pairs.addKeyValue(new KeyValue(dKey, dValue));
+                                    c.putTransient(mapName, key, value, 0, -1);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
+            return pairs;
+        }
+
+        public void readData(DataInput in) throws IOException {
+            mapName = in.readUTF();
+            keys = new Keys();
+            keys.readData(in);
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(mapName);
+            keys.writeData(out);
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.factory = (FactoryImpl) hazelcastInstance;
         }
     }
 
@@ -864,6 +1008,15 @@ public class ConcurrentMapManager extends BaseManager {
             return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl);
         }
 
+        public Object putTransient(String name, Object key, Object value, long timeout, long ttl) {
+            return txnalPut(CONCURRENT_MAP_PUT_TRANSIENT, name, key, value, timeout, ttl);
+        }
+
+        public boolean set(String name, Object key, Object value, long ttl) {
+            Object result = txnalPut(CONCURRENT_MAP_SET, name, key, value, -1, ttl);
+            return (result == Boolean.TRUE);
+        }
+
         public void merge(Record record) {
             if (getInstanceType(record.getName()).isMultiMap()) {
                 Set<Data> values = record.getMultiValues();
@@ -979,7 +1132,9 @@ public class ConcurrentMapManager extends BaseManager {
                 setLocal(operation, name, key, value, timeout, ttl);
                 request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
                 setIndexValues(request, value);
-                if (operation == CONCURRENT_MAP_TRY_PUT) {
+                if (operation == CONCURRENT_MAP_TRY_PUT
+                        || operation == CONCURRENT_MAP_SET
+                        || operation == CONCURRENT_MAP_PUT_TRANSIENT) {
                     request.setBooleanRequest();
                     doOp();
                     Boolean returnObject = getResultAsBoolean();
@@ -1625,6 +1780,19 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    class PutTransientOperationHandler extends SchedulableOperationHandler {
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            Record record = ensureRecord(request);
+            cmap.put(request);
+            if (record != null) {
+                record.setDirty(false);
+            }
+            request.value = null;
+            request.response = Boolean.TRUE;
+        }
+    }
+
     class PutOperationHandler extends StoreAwareOperationHandler {
         @Override
         protected void onNoTimeToSchedule(Request request) {
@@ -2004,7 +2172,7 @@ public class ConcurrentMapManager extends BaseManager {
             try {
                 cts.set(request.name, request.callId, request.operation);
                 CMap cmap = getOrCreateMap(request.name);
-                if (cmap.isNotLocked(request) && !cmap.exceedingMapMaxSize(request)) {
+                if (cmap.isNotLocked(request) && !cmap.overCapacity(request)) {
                     if (shouldSchedule(request)) {
                         if (request.hasEnoughTimeToSchedule()) {
                             schedule(request);

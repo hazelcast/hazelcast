@@ -43,7 +43,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @return name of this map
      */
     String getName();
-//    Future call(K key, Callable callable);
+
+    /**
+     * Returns the entries for the given keys.
+     *
+     * @param keys keys to get
+     * @return map of entries
+     */
+    Map<K, V> getAll(Set<K> keys);
 
     /**
      * Asynchronously gets the given key.

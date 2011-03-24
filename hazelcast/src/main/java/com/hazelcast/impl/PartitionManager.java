@@ -170,17 +170,23 @@ public class PartitionManager implements Runnable {
                 // without migrating
                 if (isBlockEmpty(blockReal.getBlockId())) {
                     lsEmptyBlocks.add(blockReal);
+                    blockReal.setOwner(null);
+                    blockReal.setMigrationAddress(null);
+                    blockReal.setMigrationStarted(false);
                 }
             }
         }
+        addressBlocks = getCurrentMemberBlocks();
         int aveBlockOwnCount = PARTITION_COUNT / (addressBlocks.size());
         for (final Entry<Address, List<Block>> entry : addressBlocks.entrySet()) {
             final Address address = entry.getKey();
             List<Block> blocks = entry.getValue();
-            int diff = (aveBlockOwnCount - blocks.size() + PARTITION_COUNT) % PARTITION_COUNT;
-            for (int i = 0; i < diff && lsEmptyBlocks.size() > 0; i++) {
-                Block block = lsEmptyBlocks.remove(0);
-                block.setOwner(address);
+            if (blocks.size() < aveBlockOwnCount) {
+                int diff = aveBlockOwnCount - blocks.size();
+                for (int i = 0; i < diff && lsEmptyBlocks.size() > 0; i++) {
+                    Block block = lsEmptyBlocks.remove(0);
+                    block.setOwner(address);
+                }
             }
         }
         if (lsEmptyBlocks.size() > 0) {
@@ -327,7 +333,7 @@ public class PartitionManager implements Runnable {
         }
         if (addressBlocks.size() > 0) {
             for (Block blockReal : blocks) {
-                if (blockReal != null && !blockReal.isMigrating()) {
+                if (blockReal != null && blockReal.getOwner() != null && !blockReal.isMigrating()) {
                     List<Block> ownedBlocks = addressBlocks.get(blockReal.getOwner());
                     if (ownedBlocks != null) {
                         ownedBlocks.add(new Block(blockReal));

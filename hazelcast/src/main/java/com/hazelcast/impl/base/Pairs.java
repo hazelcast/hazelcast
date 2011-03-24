@@ -31,6 +31,10 @@ public class Pairs implements DataSerializable {
     public Pairs() {
     }
 
+    public Pairs(int size) {
+        lsKeyValues = new ArrayList<KeyValue>(size);
+    }
+
     public void addKeyValue(KeyValue keyValue) {
         if (getKeyValues() == null) {
             setKeyValues(new ArrayList<KeyValue>());
@@ -78,5 +82,12 @@ public class Pairs implements DataSerializable {
      */
     public List<KeyValue> getKeyValues() {
         return lsKeyValues;
+    }
+
+    @Override
+    public String toString() {
+        return "Pairs{" +
+                "lsKeyValues=" + ((lsKeyValues == null) ? 0 : lsKeyValues.size()) +
+                '}';
     }
 }

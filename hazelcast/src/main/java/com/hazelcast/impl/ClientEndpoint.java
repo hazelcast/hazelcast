@@ -169,8 +169,8 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         Data valueEvent = null;
         if (dataAwareEntryEvent.getNewValueData() != null) {
             Keys keys = new Keys();
-            keys.addKey(dataAwareEntryEvent.getNewValueData());
-            keys.addKey(dataAwareEntryEvent.getOldValueData());
+            keys.add(dataAwareEntryEvent.getNewValueData());
+            keys.add(dataAwareEntryEvent.getOldValueData());
             valueEvent = toData(keys);
         }
         packet.set(event.getName(), ClusterOperation.EVENT, dataAwareEntryEvent.getKeyData(), valueEvent);

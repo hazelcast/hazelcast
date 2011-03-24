@@ -23,6 +23,7 @@ import com.hazelcast.impl.ConcurrentMapManager.Entries;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl.CollectionProxyReal;
 import com.hazelcast.impl.base.KeyValue;
+import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
@@ -60,6 +61,7 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[CONCURRENT_MAP_PUT_IF_ABSENT.getValue()] = new MapPutIfAbsentHandler();
         clientOperationHandlers[CONCURRENT_MAP_TRY_PUT.getValue()] = new MapTryPutHandler();
         clientOperationHandlers[CONCURRENT_MAP_GET.getValue()] = new MapGetHandler();
+        clientOperationHandlers[CONCURRENT_MAP_GET_ALL.getValue()] = new MapGetAllHandler();
         clientOperationHandlers[CONCURRENT_MAP_REMOVE.getValue()] = new MapRemoveHandler();
         clientOperationHandlers[CONCURRENT_MAP_TRY_REMOVE.getValue()] = new MapTryRemoveHandler();
         clientOperationHandlers[CONCURRENT_MAP_REMOVE_IF_SAME.getValue()] = new MapRemoveIfSameHandler();
@@ -654,6 +656,16 @@ public class ClientService implements ConnectionListener {
         }
     }
 
+    private class MapGetAllHandler extends ClientOperationHandler {
+
+        public void processCall(Node node, Packet packet) {
+            Keys keys = (Keys) toObject(packet.getKeyData());
+            Pairs pairs = node.concurrentMapManager.getAllPairs(packet.name, keys);
+            packet.clearForResponse();
+            packet.setValue(toData(pairs));
+        }
+    }
+
     private class MapGetHandler extends ClientOperationHandler {
 
         public void processCall(Node node, Packet packet) {
@@ -897,7 +909,7 @@ public class ClientService implements ConnectionListener {
             final Keys keys = new Keys(new ArrayList<Data>(list.size() << 1));
             for (final Object obj : list) {
                 final KeyValue entry = (KeyValue) obj;
-                keys.addKey(toData(entry));
+                keys.add(toData(entry));
             }
             return toData(keys);
         }
@@ -950,7 +962,7 @@ public class ClientService implements ConnectionListener {
             Keys keys = new Keys(collection);
             for (Object obj : list) {
                 KeyValue entry = (KeyValue) obj;
-                keys.addKey(entry.getKeyData());
+                keys.add(entry.getKeyData());
             }
             return toData(keys);
         }

@@ -717,7 +717,7 @@ public class BlockingQueueManager extends BaseManager {
         public void iterate(Request request) {
             Keys keys = new Keys();
             for (QData qData : queue) {
-                keys.addKey(qData.data);
+                keys.add(qData.data);
             }
             request.response = keys;
             returnResponse(request);
@@ -740,11 +740,11 @@ public class BlockingQueueManager extends BaseManager {
             long totalAge = 0;
             for (Object localKey : localKeys) {
                 MapEntry entry = storageMap.getMapEntry(localKey);
-                if(entry != null) {
-	                long age = (now - entry.getCreationTime());
-	                minAge = Math.min(minAge, age);
-	                maxAge = Math.max(maxAge, age);
-	                totalAge += age;
+                if (entry != null) {
+                    long age = (now - entry.getCreationTime());
+                    minAge = Math.min(minAge, age);
+                    maxAge = Math.max(maxAge, age);
+                    totalAge += age;
                 }
             }
             long aveAge = (ownedCount == 0) ? 0 : (totalAge / ownedCount);

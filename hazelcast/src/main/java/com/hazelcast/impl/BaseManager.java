@@ -1442,9 +1442,9 @@ public abstract class BaseManager {
             Data packetValue = value;
             if (value != null && getInstanceType(name).isMap()) {
                 Keys keys = new Keys();
-                keys.addKey(value);
+                keys.add(value);
                 if (oldValue != null) {
-                    keys.addKey(oldValue);
+                    keys.add(oldValue);
                 }
                 packetValue = toData(keys);
             }

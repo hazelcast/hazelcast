@@ -258,7 +258,7 @@ public class CMap {
                 || lockEntireMap.isLockedBy(request.lockAddress, request.lockThreadId));
     }
 
-    final boolean exceedingMapMaxSize(Request request) {
+    final boolean overCapacity(Request request) {
         if (maxSizePolicy.overCapacity()) {
             boolean addOp = (request.operation == ClusterOperation.CONCURRENT_MAP_PUT)
                     || (request.operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT);
@@ -908,7 +908,7 @@ public class CMap {
         req.clearForResponse();
         req.version = record.getVersion();
         req.longValue = record.getCopyCount();
-        if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
+        if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME || req.operation == CONCURRENT_MAP_SET) {
             req.response = Boolean.TRUE;
         } else {
             req.response = oldValue;
