@@ -34,8 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class Hazelcast {
     private static final AtomicReference<HazelcastInstance> defaultInstance = new AtomicReference<HazelcastInstance>();
-    //    private static volatile HazelcastInstance defaultInstance = null;
     private final static Object initLock = new Object();
+    private static volatile Config defaultConfig = null;
 
     private Hazelcast() {
     }
@@ -56,6 +56,7 @@ public final class Hazelcast {
             if (defaultInstance.get() != null) {
                 throw new IllegalStateException("Default Hazelcast instance is already initialized.");
             }
+            defaultConfig = config;
             HazelcastInstance defaultInstanceObject = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
             defaultInstance.set(defaultInstanceObject);
             return defaultInstanceObject;
@@ -70,11 +71,13 @@ public final class Hazelcast {
      */
     public static HazelcastInstance getDefaultInstance() {
         HazelcastInstance defaultInstanceObject = defaultInstance.get();
-        if (defaultInstanceObject == null) {
+        if (defaultInstanceObject == null
+        		|| !defaultInstanceObject.getLifecycleService().isRunning()) {
             synchronized (initLock) {
                 defaultInstanceObject = defaultInstance.get();
-                if (defaultInstanceObject == null) {
-                    defaultInstanceObject = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(null);
+                if (defaultInstanceObject == null
+                		|| !defaultInstanceObject.getLifecycleService().isRunning()) {
+                    defaultInstanceObject = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(defaultConfig);
                     defaultInstance.set(defaultInstanceObject);
                     return defaultInstanceObject;
                 } else {
@@ -82,7 +85,7 @@ public final class Hazelcast {
                 }
             }
         } else {
-            return defaultInstanceObject;
+        	return defaultInstanceObject;
         }
     }
 
