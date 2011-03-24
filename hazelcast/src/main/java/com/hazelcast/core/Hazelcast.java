@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class Hazelcast {
     private static final AtomicReference<HazelcastInstance> defaultInstance = new AtomicReference<HazelcastInstance>();
     private final static Object initLock = new Object();
-    private static volatile Config defaultConfig = null;
+    private static Config defaultConfig = null;
 
     private Hazelcast() {
     }
