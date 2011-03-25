@@ -2479,8 +2479,8 @@ public class ClusterTest {
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(true);
         join.getTcpIpConfig().setMembers(Arrays.asList(new String[]{"localhost", "nonexistinghost"}));
-        Hazelcast.init(config);
-        Hazelcast.getCluster().getMembers();
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        hz.getCluster().getMembers();
     }
 
     @Test
@@ -2558,7 +2558,6 @@ public class ClusterTest {
             public void entryEvicted(EntryEvent<String, String> stringStringEntryEvent) {
                 latch.countDown();
                 assertNotNull("The Value is null", stringStringEntryEvent.getValue());
-
             }
         }, true);
         for (int i = 0; i < count; i++) {

@@ -179,8 +179,10 @@ public class ManagementConsoleService implements MembershipListener {
                     } catch (SocketTimeoutException ignored) {
                     }
                 }
-            } catch (Exception e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
+            } catch (Throwable e) {
+                if (running && factory.node.isActive()) {
+                    logger.log(Level.WARNING, e.getMessage(), e);
+                }
             }
         }
     }
@@ -202,8 +204,10 @@ public class ManagementConsoleService implements MembershipListener {
                     sendState();
                     Thread.sleep(5000);
                 }
-            } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+            } catch (Throwable e) {
+                if (running && factory.node.isActive()) {
+                    logger.log(Level.WARNING, e.getMessage(), e);
+                }
             }
         }
 
@@ -221,7 +225,9 @@ public class ManagementConsoleService implements MembershipListener {
                             packet.setSocketAddress(socketAddress);
                             socket.send(packet);
                         } catch (IOException e) {
-                            logger.log(Level.WARNING, e.getMessage(), e);
+                            if (running && factory.node.isActive()) {
+                                logger.log(Level.WARNING, e.getMessage(), e);
+                            }
                         }
                     }
                 }
@@ -400,8 +406,10 @@ public class ManagementConsoleService implements MembershipListener {
                         consoleRequest.writeResponse(ManagementConsoleService.this, socketOut);
                     }
                 }
-            } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+            } catch (Throwable e) {
+                if (running && factory.node.isActive()) {
+                    logger.log(Level.WARNING, e.getMessage(), e);
+                }
             }
         }
 
@@ -446,12 +454,12 @@ public class ManagementConsoleService implements MembershipListener {
     }
 
     private Collection callOnMembers0(Set<Member> members, Callable callable) {
-    	MultiTask task = new MultiTask(callable, members);
-    	return (Collection) executeTaskAndGet(task);
+        MultiTask task = new MultiTask(callable, members);
+        return (Collection) executeTaskAndGet(task);
     }
-    
+
     private Object executeTaskAndGet(final DistributedTask task) {
-    	try {
+        try {
             factory.getExecutorService().execute(task);
             try {
                 return task.get(1, TimeUnit.SECONDS);
@@ -460,7 +468,9 @@ public class ManagementConsoleService implements MembershipListener {
                 return null;
             }
         } catch (Throwable e) {
-        	logger.log(Level.FINEST, e.getMessage(), e);
+            if (running && factory.node.isActive()) {
+                logger.log(Level.WARNING, e.getMessage(), e);
+            }
             return null;
         }
     }

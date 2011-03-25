@@ -131,9 +131,8 @@ public class ExecutorServiceTest {
             Callable c = null;
             Future future = executor.submit(c);
             fail();
-        }
-        catch (NullPointerException npe) {
-            ; // It's ok
+        } catch (NullPointerException npe) {
+            // It's ok
         }
     }
 
@@ -188,6 +187,26 @@ public class ExecutorServiceTest {
     }
 
     /**
+     * Test for the issue 129.
+     * Repeatedly runs tasks and check for isDone() status after
+     * get().
+     */
+    @Test
+    public void isDoneMethod2() throws Exception {
+        ExecutorService executor = Hazelcast.getExecutorService();
+        for (int i = 0; i < COUNT; i++) {
+            Callable<String> task1 = new BasicTestTask();
+            Callable<String> task2 = new BasicTestTask();
+            Future future1 = executor.submit(task1);
+            Future future2 = executor.submit(task2);
+            assertEquals(future2.get(), BasicTestTask.RESULT);
+            assertTrue(future2.isDone());
+            assertEquals(future1.get(), BasicTestTask.RESULT);
+            assertTrue(future1.isDone());
+        }
+    }
+
+    /**
      * Test the Execution Callback
      */
     @Test
@@ -224,26 +243,6 @@ public class ExecutorServiceTest {
         ExecutorService executor = Hazelcast.getExecutorService();
         Future future = executor.submit(task);
         future.get();
-    }
-
-    /**
-     * Test for the issue 129.
-     * Repeatedly runs tasks and check for isDone() status after
-     * get().
-     */
-    @Test
-    public void idDoneMethod() throws Exception {
-        ExecutorService executor = Hazelcast.getExecutorService();
-        for (int i = 0; i < COUNT; i++) {
-            Callable<String> task1 = new BasicTestTask();
-            Callable<String> task2 = new BasicTestTask();
-            Future future1 = executor.submit(task1);
-            Future future2 = executor.submit(task2);
-            assertEquals(future2.get(), BasicTestTask.RESULT);
-            assertTrue(future2.isDone());
-            assertEquals(future1.get(), BasicTestTask.RESULT);
-            assertTrue(future1.isDone());
-        }
     }
 
     /**
@@ -315,8 +314,7 @@ public class ExecutorServiceTest {
         try {
             boolean terminated = executor.awaitTermination(60L, TimeUnit.SECONDS);
             assertFalse(terminated);
-        }
-        catch (InterruptedException ie) {
+        } catch (InterruptedException ie) {
             fail("InterruptedException");
         }
         assertTrue(executor.isShutdown());
@@ -339,8 +337,7 @@ public class ExecutorServiceTest {
         try {
             Future future = executor.submit(task);
             fail("Should not be here!");
-        }
-        catch (RejectedExecutionException ree) {
+        } catch (RejectedExecutionException ree) {
             ; // It's ok
         }
         // Reanimate Hazelcast
