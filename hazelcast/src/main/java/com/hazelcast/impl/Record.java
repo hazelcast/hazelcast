@@ -310,11 +310,11 @@ public final class Record implements MapEntry {
     }
 
     public void setLastUpdated() {
-        setLastUpdateTime(System.currentTimeMillis());
         if (expirationTime != Long.MAX_VALUE && expirationTime > 0) {
-            long ttl = expirationTime - getCreationTime();
-            updateExpirationTime(ttl);
+            long ttl = expirationTime - (lastUpdateTime > 0L ? lastUpdateTime : creationTime);
+            setExpirationTime(ttl);
         }
+        setLastUpdateTime(System.currentTimeMillis());
     }
 
     public void setLastAccessed() {
@@ -353,20 +353,11 @@ public final class Record implements MapEntry {
         }
     }
 
-    public void updateExpirationTime(long ttl) {
-        if (ttl <= 0 || ttl == Long.MAX_VALUE) {
-            expirationTime = Long.MAX_VALUE;
-        } else {
-            expirationTime = System.currentTimeMillis() + ttl;
-        }
-    }
-
     public void setExpirationTime(long ttl) {
         if (ttl <= 0 || ttl == Long.MAX_VALUE) {
             expirationTime = Long.MAX_VALUE;
         } else {
-            long age = (System.currentTimeMillis() - getCreationTime());
-            expirationTime = getCreationTime() + age + ttl;
+            expirationTime = System.currentTimeMillis() + ttl;
         }
     }
 
