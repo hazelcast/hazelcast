@@ -124,6 +124,10 @@ public abstract class BaseManager {
                 return 0;
             }
 
+            public long getLastStoredTime() {
+                return 0;
+            }
+
             public long getLastUpdateTime() {
                 return 0;
             }

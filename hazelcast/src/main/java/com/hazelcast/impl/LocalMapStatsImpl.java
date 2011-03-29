@@ -40,6 +40,7 @@ public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
     private long lastEvictionTime;
     private long lockedEntryCount;
     private long lockWaitCount;
+    private long dirtyEntryCount;
     private LocalMapOperationStats operationStats;
 
     enum Op {
@@ -70,6 +71,7 @@ public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
         out.writeLong(lastEvictionTime);
         out.writeLong(lockedEntryCount);
         out.writeLong(lockWaitCount);
+        out.writeLong(dirtyEntryCount);
         operationStats.writeData(out);
     }
 
@@ -87,6 +89,7 @@ public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
         lastEvictionTime = in.readLong();
         lockedEntryCount = in.readLong();
         lockWaitCount = in.readLong();
+        dirtyEntryCount = in.readLong();
         operationStats = new MapOperationStatsImpl();
         operationStats.readData(in);
     }
@@ -203,6 +206,14 @@ public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
         this.operationStats = operationStats;
     }
 
+    public long getDirtyEntryCount() {
+        return dirtyEntryCount;
+    }
+
+    public void setDirtyEntryCount(long l) {
+        this.dirtyEntryCount = l;
+    }
+
     @Override
     public String toString() {
         return "LocalMapStatsImpl{" +
@@ -219,6 +230,7 @@ public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
                 ", hits=" + hits.get() +
                 ", lockedEntryCount=" + lockedEntryCount +
                 ", lockWaitCount=" + lockWaitCount +
+                ", dirtyEntryCount=" + dirtyEntryCount +
                 ", " + operationStats +
                 '}';
     }

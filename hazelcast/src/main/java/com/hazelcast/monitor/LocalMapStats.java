@@ -128,6 +128,14 @@ public interface LocalMapStats {
     long getLockWaitCount();
 
     /**
+     * Returns the number of entries that the member owns and are dirty (updated but not persisted yet).
+     * dirty entry count is meaningful when there is a persistence defined.
+     *
+     * @return
+     */
+    long getDirtyEntryCount();
+
+    /**
      * Returns the Operation Statistics, like number of puts, gets and etc.
      *
      * @return

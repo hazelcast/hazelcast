@@ -31,6 +31,8 @@ public interface MapEntry<K, V> extends Map.Entry<K, V> {
 
     long getLastAccessTime();
 
+    long getLastStoredTime();
+
     long getLastUpdateTime();
 
     long getVersion();

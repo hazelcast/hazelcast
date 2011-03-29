@@ -51,6 +51,10 @@ public class ClientMapEntry<K, V> implements MapEntry<K, V> {
         return mapEntry.getLastAccessTime();
     }
 
+    public long getLastStoredTime() {
+        return mapEntry.getLastStoredTime();
+    }
+
     public long getLastUpdateTime() {
         return mapEntry.getLastUpdateTime();
     }

@@ -45,6 +45,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     private byte[] indexTypes;
     private Object key = null;
     private Object value = null;
+    private long lastStoredTime;
 
     public DataRecordEntry() {
     }
@@ -59,6 +60,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         lastAccessTime = record.getLastAccessTime();
         lastUpdateTime = record.getLastUpdateTime();
         creationTime = record.getCreationTime();
+        lastStoredTime = record.getLastStoredTime();
         version = record.getVersion();
         hits = record.getHits();
         valid = record.isValid();
@@ -76,6 +78,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         out.writeLong(lastAccessTime - now);
         out.writeLong(lastUpdateTime - now);
         out.writeLong(creationTime - now);
+        out.writeLong(lastStoredTime - now);
         out.writeLong(version);
         out.writeInt(hits);
         out.writeUTF(name);
@@ -96,6 +99,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         lastAccessTime = in.readLong() + now;
         lastUpdateTime = in.readLong() + now;
         creationTime = in.readLong() + now;
+        lastStoredTime = in.readLong() + now;
         version = in.readLong();
         hits = in.readInt();
         name = in.readUTF();
@@ -143,6 +147,10 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
 
     public long getLastAccessTime() {
         return lastAccessTime;
+    }
+
+    public long getLastStoredTime() {
+        return lastStoredTime;
     }
 
     public long getLastUpdateTime() {

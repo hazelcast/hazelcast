@@ -63,6 +63,7 @@ public class MapStatistics extends InstanceStatistics {
         public long hits;
         public long lockedEntryCount;
         public long lockWaitCount;
+        public long dirtyEntryCount;
         public String memberName;
         public long periodStart;
         public long periodEnd;

@@ -76,6 +76,7 @@ public class MapStatisticsGenerator extends InstanceStatisticsGenerator {
             stat.lastUpdateTime = memberMapStat.getLocalMapStats().getLastUpdateTime();
             stat.lockedEntryCount = memberMapStat.getLocalMapStats().getLockedEntryCount();
             stat.lockWaitCount = memberMapStat.getLocalMapStats().getLockWaitCount();
+            stat.dirtyEntryCount = memberMapStat.getLocalMapStats().getDirtyEntryCount();
             stat.markedAsRemovedEntryCount = memberMapStat.getLocalMapStats().getMarkedAsRemovedEntryCount();
             stat.markedAsRemovedMemoryCost = memberMapStat.getLocalMapStats().getMarkedAsRemovedMemoryCost();
             stat.ownedEntryCount = memberMapStat.getLocalMapStats().getOwnedEntryCount();

@@ -147,6 +147,7 @@ public class ConcurrentMapManager extends BaseManager {
                 try {
                     cmap.startCleanup(forced);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     logger.log(Level.SEVERE, e.getMessage(), e);
                 } finally {
                     enqueueAndReturn(new Processable() {
@@ -2123,12 +2124,16 @@ public class ConcurrentMapManager extends BaseManager {
                 //store the entry
                 Object value = toObject(request.value);
                 cmap.store.store(toObject(request.key), value);
+                Record storedRecord = cmap.getRecord(request);
+                storedRecord.setLastStoredTime(System.currentTimeMillis());
             } else if (request.operation == CONCURRENT_MAP_REMOVE) {
                 // remove the entry
                 cmap.store.delete(toObject(request.key));
             } else if (request.operation == CONCURRENT_MAP_EVICT) {
                 //store the entry
                 cmap.store.store(toObject(request.key), toObject(request.value));
+                Record storedRecord = cmap.getRecord(request);
+                storedRecord.setLastStoredTime(System.currentTimeMillis());
                 request.response = Boolean.TRUE;
             } else if (request.operation == CONCURRENT_MAP_MERGE) {
                 boolean success = false;
@@ -2145,6 +2150,7 @@ public class ConcurrentMapManager extends BaseManager {
                             if (cmap.writeDelayMillis == 0 && cmap.store != null) {
                                 Object winnerObject = (winner instanceof Data) ? toObject((Data) winner) : winner;
                                 cmap.store.store(key, winnerObject);
+                                existingRecord.setLastStoredTime(System.currentTimeMillis());
                                 success = (request.response == null);
                             }
                         }

@@ -64,8 +64,6 @@ public class CMap {
         CLEANING
     }
 
-    public final static int DEFAULT_MAP_SIZE = 10000;
-
     final ILogger logger;
 
     final ConcurrentMapManager concurrentMapManager;
@@ -609,7 +607,7 @@ public class CMap {
             return null;
         }
         return new CMapEntry(record.getCost(), record.getExpirationTime(), record.getLastAccessTime(), record.getLastUpdateTime(),
-                record.getCreationTime(), record.getVersion(), record.getHits(), true);
+                record.getCreationTime(), record.getLastStoredTime(), record.getVersion(), record.getHits(), true);
     }
 
     public Data get(Request req) {
@@ -938,11 +936,13 @@ public class CMap {
                 public void run() {
                     try {
                         Set<Object> keysToDelete = new HashSet<Object>();
+                        Set<Record> toStore = new HashSet<Record>();
                         Map<Object, Object> updates = new HashMap<Object, Object>();
                         for (Record dirtyRecord : dirtyRecords) {
                             if (!dirtyRecord.isActive()) {
                                 keysToDelete.add(dirtyRecord.getKey());
                             } else {
+                                toStore.add(dirtyRecord);
                                 updates.put(dirtyRecord.getKey(), dirtyRecord.getValue());
                             }
                         }
@@ -951,12 +951,19 @@ public class CMap {
                         } else if (keysToDelete.size() > 1) {
                             store.deleteAll(keysToDelete);
                         }
+
                         if (updates.size() == 1) {
                             Map.Entry entry = updates.entrySet().iterator().next();
                             store.store(entry.getKey(), entry.getValue());
                         } else if (updates.size() > 1) {
                             store.storeAll(updates);
                         }
+
+                        for(Record stored: toStore){
+                            stored.setLastStoredTime(System.currentTimeMillis());
+
+                        }
+
                     } catch (Exception e) {
                         for (Record dirtyRecord : dirtyRecords) {
                             dirtyRecord.setDirty(true);
@@ -973,12 +980,14 @@ public class CMap {
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
         long markedAsRemovedEntryCount = 0;
+        long dirtyCount = 0;
         long ownedEntryMemoryCost = 0;
         long backupEntryMemoryCost = 0;
         long markedAsRemovedMemoryCost = 0;
         long hits = 0;
         long lockedEntryCount = 0;
         long lockWaitCount = 0;
+
         ClusterImpl clusterImpl = node.getClusterImpl();
         final Collection<Record> records = mapRecords.values();
         final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
@@ -992,6 +1001,9 @@ public class CMap {
                 if (owner != null && !partition.isMigrating()) {
                     boolean owned = owner.localMember();
                     if (owned) {
+                        if(record.getLastStoredTime() < Math.max(record.getLastUpdateTime(), record.getCreationTime())){
+                            dirtyCount ++;
+                        }
                         ownedEntryCount += record.valueCount();
                         ownedEntryMemoryCost += record.getCost();
                         localMapStats.setLastAccessTime(record.getLastAccessTime());
@@ -1019,6 +1031,7 @@ public class CMap {
                 }
             }
         }
+        localMapStats.setDirtyEntryCount(zeroOrPositive(dirtyCount));
         localMapStats.setMarkedAsRemovedEntryCount(zeroOrPositive(markedAsRemovedEntryCount));
         localMapStats.setMarkedAsRemovedMemoryCost(zeroOrPositive(markedAsRemovedMemoryCost));
         localMapStats.setLockWaitCount(zeroOrPositive(lockWaitCount));
@@ -1718,6 +1731,7 @@ public class CMap {
         private long expirationTime = 0;
         private long lastAccessTime = 0;
         private long lastUpdateTime = 0;
+        private long lastStoredTime = 0;
         private long creationTime = 0;
         private long version = 0;
         private int hits = 0;
@@ -1730,12 +1744,13 @@ public class CMap {
         public CMapEntry() {
         }
 
-        public CMapEntry(long cost, long expirationTime, long lastAccessTime, long lastUpdateTime, long creationTime, long version, int hits, boolean valid) {
+        public CMapEntry(long cost, long expirationTime, long lastAccessTime, long lastUpdateTime, long creationTime,  long lastStoredTime, long version, int hits, boolean valid) {
             this.cost = cost;
             this.expirationTime = expirationTime;
             this.lastAccessTime = lastAccessTime;
             this.lastUpdateTime = lastUpdateTime;
             this.creationTime = creationTime;
+            this.lastStoredTime = lastStoredTime;
             this.version = version;
             this.hits = hits;
             this.valid = valid;
@@ -1747,6 +1762,7 @@ public class CMap {
             out.writeLong(lastAccessTime);
             out.writeLong(lastUpdateTime);
             out.writeLong(creationTime);
+            out.writeLong(lastStoredTime);
             out.writeLong(version);
             out.writeInt(hits);
             out.writeBoolean(valid);
@@ -1758,6 +1774,7 @@ public class CMap {
             lastAccessTime = in.readLong();
             lastUpdateTime = in.readLong();
             creationTime = in.readLong();
+            lastStoredTime = in.readLong();
             version = in.readLong();
             hits = in.readInt();
             valid = in.readBoolean();
@@ -1794,6 +1811,10 @@ public class CMap {
 
         public long getLastAccessTime() {
             return lastAccessTime;
+        }
+
+        public long getLastStoredTime() {
+            return lastStoredTime;
         }
 
         public long getVersion() {

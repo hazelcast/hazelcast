@@ -44,6 +44,7 @@ public final class Record implements MapEntry {
     private volatile long writeTime = -1;
     private volatile long removeTime = 0;
     private volatile long lastAccessTime = 0;
+    private volatile long lastStoredTime = 0;
     private volatile long creationTime = 0;
     private volatile long expirationTime = Long.MAX_VALUE;
     private volatile long lastUpdateTime = 0;
@@ -588,6 +589,14 @@ public final class Record implements MapEntry {
             optionalInfo = new OptionalInfo();
         }
         return optionalInfo;
+    }
+
+    public void setLastStoredTime(long lastStoredTime) {
+        this.lastStoredTime = lastStoredTime;
+    }
+
+    public long getLastStoredTime() {
+        return lastStoredTime;
     }
 
     class OptionalInfo {

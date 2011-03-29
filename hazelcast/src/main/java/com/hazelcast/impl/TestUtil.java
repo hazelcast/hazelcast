@@ -303,6 +303,7 @@ public class TestUtil {
         private int hits;
         private long lastAccessTime;
         private long lastUpdateTime;
+        private long lastStoredTime;
         private int version;
         private boolean valid;
         private Object key;
@@ -331,6 +332,10 @@ public class TestUtil {
 
         public long getLastAccessTime() {
             return lastAccessTime;
+        }
+
+        public long getLastStoredTime() {
+            return lastStoredTime;
         }
 
         public long getLastUpdateTime() {

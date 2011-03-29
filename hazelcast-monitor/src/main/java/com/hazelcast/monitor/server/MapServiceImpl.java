@@ -86,6 +86,7 @@ public class MapServiceImpl extends RemoteServiceServlet implements MapService {
         result.setHits(mapEntry.getHits());
         result.setLastAccessTime(mapEntry.getLastAccessTime());
         result.setLastUpdateTime(mapEntry.getLastUpdateTime());
+        result.setLastStoredTime(mapEntry.getLastStoredTime());
         result.setValid(mapEntry.isValid());
         result.setValue(mapEntry.getValue());
         result.setVersion(mapEntry.getVersion());

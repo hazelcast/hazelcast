@@ -28,6 +28,7 @@ public class MapEntry implements Map.Entry, IsSerializable, Serializable {
     private Date expirationTime;
     private Date lastAccessTime;
     private Date lastUpdateTime;
+    private Date lastStoredTime;
     private Date creationTime;
     private long version = 0;
     private long hits = 0;
@@ -95,6 +96,10 @@ public class MapEntry implements Map.Entry, IsSerializable, Serializable {
 
     public void setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = new Date(lastUpdateTime);
+    }
+
+    public void setLastStoredTime(long lastStoredTime){
+        this.lastStoredTime = new Date(lastStoredTime);
     }
 
     public Date getCreationTime() {
