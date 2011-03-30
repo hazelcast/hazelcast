@@ -77,7 +77,7 @@ public final class HazelcastCacheProvider implements CacheProvider {
     public void start(final Properties props) throws CacheException {
         LOG.log(Level.INFO, "Starting up HazelcastCacheProvider...");
         
-        if(instance == null) {
+        if(instance == null || !instance.getLifecycleService().isRunning()) {
         	instance = HazelcastInstanceFactory.createInstance(props);
         }
     }
@@ -91,6 +91,6 @@ public final class HazelcastCacheProvider implements CacheProvider {
      */
     public void stop() {
         LOG.log(Level.INFO, "Shutting down HazelcastCacheProvider...");
-        instance.shutdown();
+        instance.getLifecycleService().shutdown();
     }
 }

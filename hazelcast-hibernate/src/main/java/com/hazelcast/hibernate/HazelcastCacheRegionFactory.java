@@ -91,14 +91,14 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
     public void start(final Settings settings, final Properties properties) throws CacheException {
         LOG.log(Level.INFO, "Starting up HazelcastCacheRegionFactory...");
         
-        if(instance == null) {
+        if(instance == null || !instance.getLifecycleService().isRunning()) {
         	 instance = HazelcastInstanceFactory.createInstance(properties);
         }
     }
 
     public void stop() {
         LOG.log(Level.INFO, "Shutting down HazelcastCacheRegionFactory...");
-        instance.shutdown();
+        instance.getLifecycleService().shutdown();
     }
     
     public HazelcastInstance getHazelcastInstance() {
