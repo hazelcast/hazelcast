@@ -85,6 +85,9 @@ public class TestFullApplicationContext {
 
     @Resource(name="atomicNumber")
     private AtomicNumber atomicNumber;
+    
+    @Resource(name="dummyMapStore")
+    private MapStore dummyMapStore;
 
     @BeforeClass
     @AfterClass
@@ -100,13 +103,13 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(2, config.getMapConfigs().size());
+        assertEquals(3, config.getMapConfigs().size());
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
         assertEquals("testMap", testMapConfig.getName());
         assertEquals(2, testMapConfig.getBackupCount());
         assertEquals("NONE", testMapConfig.getEvictionPolicy());
-        assertEquals(0, testMapConfig.getMaxSize());
+        assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
         assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
         assertEquals("hz.ADD_NEW_ENTRY", testMapConfig.getMergePolicy());
@@ -118,7 +121,7 @@ public class TestFullApplicationContext {
         assertEquals("com.hazelcast.spring.DummyStore", testMapStoreConfig.getClassName());
         assertTrue(testMapStoreConfig.isEnabled());
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
-
+        
         // Test that the testMapConfig has a nearCacheConfig and it is correct
         NearCacheConfig testNearCacheConfig = testMapConfig.getNearCacheConfig();
         assertNotNull(testNearCacheConfig);
@@ -127,13 +130,18 @@ public class TestFullApplicationContext {
         assertEquals("LRU", testNearCacheConfig.getEvictionPolicy());
         assertEquals(5000, testNearCacheConfig.getMaxSize());
         assertTrue(testNearCacheConfig.isInvalidateOnChange());
+        
+        // Test that the testMapConfig2's mapStoreConfig implementation
+        MapConfig testMapConfig2 = config.getMapConfig("testMap2");
+        assertNotNull(testMapConfig2.getMapStoreConfig().getImplementation());
+        assertEquals(dummyMapStore, testMapConfig2.getMapStoreConfig().getImplementation());
 
         MapConfig simpleMapConfig = config.getMapConfig("simpleMap");
         assertNotNull(simpleMapConfig);
         assertEquals("simpleMap", simpleMapConfig.getName());
         assertEquals(3, simpleMapConfig.getBackupCount());
         assertEquals("LRU", simpleMapConfig.getEvictionPolicy());
-        assertEquals(10, simpleMapConfig.getMaxSize());
+        assertEquals(10, simpleMapConfig.getMaxSizeConfig().getSize());
         assertEquals(50, simpleMapConfig.getEvictionPercentage());
         assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
         assertEquals("hz.LATEST_UPDATE", simpleMapConfig.getMergePolicy());

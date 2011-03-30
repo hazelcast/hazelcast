@@ -40,7 +40,8 @@
                                         <xs:complexType>
                                             <xs:sequence/>
                                             <xs:attribute name="enabled" use="required" type="xs:string"/>
-                                            <xs:attribute name="class-name" use="required" type="xs:string"/>
+                                            <xs:attribute name="class-name" use="optional" type="xs:string"/>
+                                            <xs:attribute name="implementation" use="optional" type="xs:string"/>
                                             <xs:attribute name="write-delay-seconds" use="required" type="xs:string"/>
                                         </xs:complexType>
                                     </xs:element>

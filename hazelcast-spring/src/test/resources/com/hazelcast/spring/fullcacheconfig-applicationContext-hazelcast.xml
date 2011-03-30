@@ -77,6 +77,16 @@
                 <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60" eviction-policy="LRU" max-size="5000"
                                invalidate-on-change="true"/>
             </hz:map>
+             <hz:map name="testMap2"
+                    backup-count="2"
+                    max-size="0"
+                    eviction-percentage="30"
+                    read-backup-data="true"
+                    cache-value="true"
+                    eviction-policy="NONE"
+                    merge-policy="hz.ADD_NEW_ENTRY">
+                <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0"/>
+            </hz:map>
             <hz:map name="simpleMap"
                     backup-count="3"
                     time-to-live-seconds="1"
@@ -98,4 +108,5 @@
     <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
     <hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
     
+    <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore" />
 </beans>
