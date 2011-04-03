@@ -452,47 +452,6 @@ public abstract class BaseManager {
         }
     }
 
-    Object getCallState(Request request, Address target) {
-        if (request.caller == null) {
-            return "UNKNOWN_CALLER";
-        } else {
-            TargetAwareOp targetAwareOp = new GetState((target == null) ? thisAddress : target);
-            targetAwareOp.request.name = request.name;
-            targetAwareOp.request.lockThreadId = request.lockThreadId;
-            targetAwareOp.request.operation = ClusterOperation.GET_CALLER_THREAD_STATE;
-            targetAwareOp.doOp();
-            return targetAwareOp.getResultAsObject();
-        }
-    }
-
-    class GetState extends TargetAwareOp {
-        final Address targetAddress;
-
-        GetState(Address targetAddress) {
-            this.targetAddress = targetAddress;
-        }
-
-        @Override
-        public void setTarget() {
-            target = targetAddress;
-        }
-
-        @Override
-        public void redo() {
-            setResult("REDOING");
-        }
-
-        @Override
-        protected void memberDoesNotExist() {
-            setResult("TARGET_MEMBER_NO_LONGER_EXIST " + target);
-        }
-
-        @Override
-        protected void packetNotSent() {
-            setResult("PACKET_NOT_SENT_TO " + target);
-        }
-    }
-
     public abstract class ResponseQueueCall extends RequestBasedCall {
 
         private final BlockingQueue<Object> responses = ResponseQueueFactory.newResponseQueue();
@@ -521,13 +480,6 @@ public abstract class BaseManager {
                     Object obj = responses.poll(5, TimeUnit.SECONDS);
                     if (obj != null) {
                         return obj;
-                    }
-                    try {
-                        if (node.isActive() && request.operation != ClusterOperation.GET_CALLER_THREAD_STATE) {
-                            Object reason = getCallState(request, getTarget());
-                            logger.log(Level.WARNING, request + "\nStill no response! reason:" + reason);
-                        }
-                    } catch (Exception ignored) {
                     }
                     node.checkNodeState();
                 } catch (InterruptedException e) {

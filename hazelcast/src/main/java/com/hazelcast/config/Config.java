@@ -17,8 +17,6 @@
 
 package com.hazelcast.config;
 
-import static java.text.MessageFormat.format;
-
 import com.hazelcast.merge.AddNewEntryMergePolicy;
 import com.hazelcast.merge.HigherHitsMergePolicy;
 import com.hazelcast.merge.LatestUpdateMergePolicy;
@@ -34,6 +32,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.text.MessageFormat.format;
+
 public class Config implements DataSerializable {
 
     public static final int DEFAULT_PORT = 5701;
@@ -45,7 +45,7 @@ public class Config implements DataSerializable {
     private int port = DEFAULT_PORT;
 
     private boolean checkCompatibility = true;
-    
+
     private boolean reuseAddress = false;
 
     private boolean portAutoIncrement = true;
@@ -120,40 +120,54 @@ public class Config implements DataSerializable {
         return properties.getProperty(name);
     }
 
+    public QueueConfig findMatchingQueueConfig(final String name) {
+        QueueConfig config;
+        if ((config = lookupByPattern(mapQueueConfigs, name)) != null) return config;
+        return getQueueConfig("default");
+    }
+
     public QueueConfig getQueueConfig(final String name) {
         QueueConfig config;
         if ((config = lookupByPattern(mapQueueConfigs, name)) != null) return config;
-        
         QueueConfig defConfig = mapQueueConfigs.get("default");
         if (defConfig == null) {
             defConfig = new QueueConfig();
             defConfig.setName("default");
             addQueueConfig(defConfig);
         }
-        
         config = new QueueConfig(defConfig);
         config.setName(name);
         addQueueConfig(config);
-        
         return config;
     }
 
     public MapConfig getMapConfig(final String name) {
         MapConfig config;
         if ((config = lookupByPattern(mapConfigs, name)) != null) return config;
-        
         MapConfig defConfig = mapConfigs.get("default");
         if (defConfig == null) {
             defConfig = new MapConfig();
             defConfig.setName("default");
             addMapConfig(defConfig);
         }
-        
         config = new MapConfig(defConfig);
         config.setName(name);
         addMapConfig(config);
-        
         return config;
+    }
+
+    public MapConfig findMatchingMapConfig(String name) {
+        MapConfig config;
+        if ((config = lookupByPattern(mapConfigs, name)) != null) return config;
+        return getMapConfig("default");
+    }
+
+    public TopicConfig findMatchingTopicConfig(final String name) {
+        TopicConfig config;
+        if ((config = lookupByPattern(mapTopicConfigs, name)) != null) {
+            return config;
+        }
+        return getTopicConfig("default");
     }
 
     public TopicConfig getTopicConfig(final String name) {
@@ -161,24 +175,21 @@ public class Config implements DataSerializable {
         if ((config = lookupByPattern(mapTopicConfigs, name)) != null) {
             return config;
         }
-        
         TopicConfig defConfig = mapTopicConfigs.get("default");
         if (defConfig == null) {
             defConfig = new TopicConfig();
             defConfig.setName("default");
             addTopicConfig(defConfig);
         }
-        
         config = new TopicConfig(defConfig);
         config.setName(name);
         addTopicConfig(defConfig);
-        
         return config;
     }
 
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
         T t = map.get(name);
-        if (t == null){
+        if (t == null) {
             final Set<String> tNames = map.keySet();
             for (final String pattern : tNames) {
                 if (nameMatches(name, pattern)) {
@@ -276,7 +287,7 @@ public class Config implements DataSerializable {
         this.reuseAddress = reuseAddress;
         return this;
     }
-    
+
     public boolean isCheckCompatibility() {
         return this.checkCompatibility;
     }
@@ -413,7 +424,7 @@ public class Config implements DataSerializable {
     }
 
     public void addMapConfig(MapConfig mapConfig) {
-        mapConfigs.put(mapConfig.getName(),  mapConfig);
+        mapConfigs.put(mapConfig.getName(), mapConfig);
     }
 
     /**
@@ -472,24 +483,24 @@ public class Config implements DataSerializable {
         this.superClient = superClient;
         return this;
     }
-    
+
     /**
      * @param config
-     * @return true if config is compatible with this one, 
-     * false if config belongs to another group
-     * @throws RuntimeException if map, queue, topic configs are incompatible 
+     * @return true if config is compatible with this one,
+     *         false if config belongs to another group
+     * @throws RuntimeException if map, queue, topic configs are incompatible
      */
-    public boolean isCompatible(final Config config){
-        if (config == null){
+    public boolean isCompatible(final Config config) {
+        if (config == null) {
             throw new IllegalArgumentException("Expected not null config");
         }
-        if (!this.groupConfig.getName().equals(config.getGroupConfig().getName())){
+        if (!this.groupConfig.getName().equals(config.getGroupConfig().getName())) {
             return false;
         }
-        if (!this.groupConfig.getPassword().equals(config.getGroupConfig().getPassword())){
+        if (!this.groupConfig.getPassword().equals(config.getGroupConfig().getPassword())) {
             throw new RuntimeException("Incompatible group password");
         }
-        if (checkCompatibility){
+        if (checkCompatibility) {
             checkMapConfigCompatible(config);
             checkQueueConfigCompatible(config);
             checkTopicConfigCompatible(config);
@@ -503,14 +514,14 @@ public class Config implements DataSerializable {
         for (final String name : mapConfigNames) {
             final MapConfig thisMapConfig = lookupByPattern(mapConfigs, name);
             final MapConfig thatMapConfig = lookupByPattern(config.mapConfigs, name);
-            if (thisMapConfig != null && thatMapConfig != null && 
-                !thisMapConfig.isCompatible(thatMapConfig)) {
+            if (thisMapConfig != null && thatMapConfig != null &&
+                    !thisMapConfig.isCompatible(thatMapConfig)) {
                 throw new RuntimeException(format("Incompatible map config this:\n{0}\nanother:\n{1}",
-                    thisMapConfig, thatMapConfig));
+                        thisMapConfig, thatMapConfig));
             }
         }
     }
-    
+
     private void checkQueueConfigCompatible(final Config config) {
         Set<String> queueConfigNames = new HashSet<String>(mapQueueConfigs.keySet());
         queueConfigNames.addAll(config.mapQueueConfigs.keySet());
@@ -518,13 +529,13 @@ public class Config implements DataSerializable {
             final QueueConfig thisQueueConfig = lookupByPattern(mapQueueConfigs, name);
             final QueueConfig thatQueueConfig = lookupByPattern(config.mapQueueConfigs, name);
             if (thisQueueConfig != null && thatQueueConfig != null &&
-                !thisQueueConfig.isCompatible(thatQueueConfig)) {
+                    !thisQueueConfig.isCompatible(thatQueueConfig)) {
                 throw new RuntimeException(format("Incompatible queue config this:\n{0}\nanother:\n{1}",
-                    thisQueueConfig, thatQueueConfig));
+                        thisQueueConfig, thatQueueConfig));
             }
         }
     }
-    
+
     private void checkTopicConfigCompatible(final Config config) {
         Set<String> topicConfigNames = new HashSet<String>(mapTopicConfigs.keySet());
         topicConfigNames.addAll(config.mapTopicConfigs.keySet());
@@ -532,13 +543,13 @@ public class Config implements DataSerializable {
             final TopicConfig thisTopicConfig = lookupByPattern(mapTopicConfigs, name);
             final TopicConfig thatTopicConfig = lookupByPattern(config.mapTopicConfigs, name);
             if (thisTopicConfig != null && thatTopicConfig != null &&
-                !thisTopicConfig.equals(thatTopicConfig)) {
+                    !thisTopicConfig.equals(thatTopicConfig)) {
                 throw new RuntimeException(format("Incompatible topic config this:\n{0}\nanother:\n{1}",
-                    thisTopicConfig, thatTopicConfig));
+                        thisTopicConfig, thatTopicConfig));
             }
         }
     }
-    
+
     public void readData(DataInput in) throws IOException {
         groupConfig = new GroupConfig();
         groupConfig.readData(in);
@@ -548,72 +559,67 @@ public class Config implements DataSerializable {
         reuseAddress = b1[1];
         portAutoIncrement = b1[2];
         superClient = b1[3];
-        
         boolean[] b2 = ByteUtil.fromByte(in.readByte());
-        
         boolean hasMapConfigs = b2[0];
         boolean hasMapExecutors = b2[1];
         boolean hasMapTopicConfigs = b2[2];
         boolean hasMapQueueConfigs = b2[3];
         boolean hasMapMergePolicyConfigs = b2[4];
         boolean hasProperties = b2[5];
-        
         networkConfig = new NetworkConfig();
         networkConfig.readData(in);
-        
         executorConfig = new ExecutorConfig();
         executorConfig.readData(in);
-        
-        if (hasMapConfigs){
+        if (hasMapConfigs) {
             int size = in.readInt();
             mapConfigs = new ConcurrentHashMap<String, MapConfig>(size);
-            for(int i = 0; i < size; i++){
+            for (int i = 0; i < size; i++) {
                 final MapConfig mapConfig = new MapConfig();
                 mapConfig.readData(in);
                 mapConfigs.put(mapConfig.getName(), mapConfig);
             }
         }
-        if (hasMapExecutors){
+        if (hasMapExecutors) {
             int size = in.readInt();
             mapExecutors = new ConcurrentHashMap<String, ExecutorConfig>(size);
-            for(int i = 0; i < size; i++){
+            for (int i = 0; i < size; i++) {
                 final ExecutorConfig executorConfig = new ExecutorConfig();
                 executorConfig.readData(in);
                 mapExecutors.put(executorConfig.getName(), executorConfig);
             }
         }
-        if (hasMapTopicConfigs){
+        if (hasMapTopicConfigs) {
             int size = in.readInt();
             mapTopicConfigs = new ConcurrentHashMap<String, TopicConfig>(size);
-            for(int i = 0; i < size; i++){
+            for (int i = 0; i < size; i++) {
                 final TopicConfig topicConfig = new TopicConfig();
                 topicConfig.readData(in);
                 mapTopicConfigs.put(topicConfig.getName(), topicConfig);
             }
         }
-        if (hasMapQueueConfigs){
+        if (hasMapQueueConfigs) {
             int size = in.readInt();
             mapQueueConfigs = new ConcurrentHashMap<String, QueueConfig>(size);
-            for(int i = 0; i < size; i++){
+            for (int i = 0; i < size; i++) {
                 final QueueConfig queueConfig = new QueueConfig();
                 queueConfig.readData(in);
                 mapQueueConfigs.put(queueConfig.getName(), queueConfig);
             }
         }
-        if (hasMapMergePolicyConfigs){
+        if (hasMapMergePolicyConfigs) {
             // TODO: Map<String, MergePolicyConfig> mapMergePolicyConfigs
         }
-        if (hasProperties){
+        if (hasProperties) {
             int size = in.readInt();
             properties = new Properties();
-            for(int i = 0; i < size; i++){
+            for (int i = 0; i < size; i++) {
                 final String name = in.readUTF();
                 final String value = in.readUTF();
                 properties.put(name, value);
             }
         }
     }
-    
+
     public void writeData(DataOutput out) throws IOException {
         getGroupConfig().writeData(out);
         out.writeInt(port);
@@ -623,24 +629,20 @@ public class Config implements DataSerializable {
         boolean hasMapQueueConfigs = mapQueueConfigs != null && !mapQueueConfigs.isEmpty();
         boolean hasMapMergePolicyConfigs = mapMergePolicyConfigs != null && !mapMergePolicyConfigs.isEmpty();
         boolean hasProperties = properties != null && !properties.isEmpty();
-        
         out.writeByte(ByteUtil.toByte(checkCompatibility,
-            reuseAddress, 
-            portAutoIncrement,
-            superClient));
-        
+                reuseAddress,
+                portAutoIncrement,
+                superClient));
         out.writeByte(ByteUtil.toByte(
-            hasMapConfigs,
-            hasMapExecutors,
-            hasMapTopicConfigs,
-            hasMapQueueConfigs,
-            hasMapMergePolicyConfigs,
-            hasProperties));
-        
+                hasMapConfigs,
+                hasMapExecutors,
+                hasMapTopicConfigs,
+                hasMapQueueConfigs,
+                hasMapMergePolicyConfigs,
+                hasProperties));
         networkConfig.writeData(out);
         executorConfig.writeData(out);
-        
-        if (hasMapConfigs){
+        if (hasMapConfigs) {
             out.writeInt(mapConfigs.size());
             for (final Entry<String, MapConfig> entry : mapConfigs.entrySet()) {
                 final String name = entry.getKey();
@@ -649,7 +651,7 @@ public class Config implements DataSerializable {
                 mapConfig.writeData(out);
             }
         }
-        if (hasMapExecutors){
+        if (hasMapExecutors) {
             out.writeInt(mapExecutors.size());
             for (final Entry<String, ExecutorConfig> entry : mapExecutors.entrySet()) {
                 final String name = entry.getKey();
@@ -658,7 +660,7 @@ public class Config implements DataSerializable {
                 executorConfig.writeData(out);
             }
         }
-        if (hasMapTopicConfigs){
+        if (hasMapTopicConfigs) {
             out.writeInt(mapTopicConfigs.size());
             for (final Entry<String, TopicConfig> entry : mapTopicConfigs.entrySet()) {
                 final String name = entry.getKey();
@@ -667,7 +669,7 @@ public class Config implements DataSerializable {
                 topicConfig.writeData(out);
             }
         }
-        if (hasMapQueueConfigs){
+        if (hasMapQueueConfigs) {
             out.writeInt(mapQueueConfigs.size());
             for (final Entry<String, QueueConfig> entry : mapQueueConfigs.entrySet()) {
                 final String name = entry.getKey();
@@ -676,10 +678,10 @@ public class Config implements DataSerializable {
                 queueConfig.writeData(out);
             }
         }
-        if (hasMapMergePolicyConfigs){
+        if (hasMapMergePolicyConfigs) {
             // TODO: Map<String, MergePolicyConfig> mapMergePolicyConfigs
         }
-        if (hasProperties){
+        if (hasProperties) {
             out.writeInt(properties.size());
             for (final Entry<Object, Object> entry : properties.entrySet()) {
                 final String key = (String) entry.getKey();
@@ -692,22 +694,20 @@ public class Config implements DataSerializable {
 
     @Override
     public String toString() {
-        return "Config [groupConfig=" + this.groupConfig 
-            + ", port=" + this.port 
-            + ", superClient=" + this.superClient
-            + ", reuseAddress=" + this.reuseAddress
-            + ", checkCompatibility=" + this.checkCompatibility
-            + ", portAutoIncrement=" + this.portAutoIncrement
-            + ", properties=" + this.properties 
-            + ", networkConfig=" + this.networkConfig 
-            + ", mapConfigs=" + this.mapConfigs
-            + ", mapMergePolicyConfigs=" + this.mapMergePolicyConfigs
-            + ", executorConfig=" + this.executorConfig 
-            + ", mapExecutors=" + this.mapExecutors 
-            + ", mapTopicConfigs=" + this.mapTopicConfigs 
-            + ", mapQueueConfigs=" + this.mapQueueConfigs 
-            + "]";
+        return "Config [groupConfig=" + this.groupConfig
+                + ", port=" + this.port
+                + ", superClient=" + this.superClient
+                + ", reuseAddress=" + this.reuseAddress
+                + ", checkCompatibility=" + this.checkCompatibility
+                + ", portAutoIncrement=" + this.portAutoIncrement
+                + ", properties=" + this.properties
+                + ", networkConfig=" + this.networkConfig
+                + ", mapConfigs=" + this.mapConfigs
+                + ", mapMergePolicyConfigs=" + this.mapMergePolicyConfigs
+                + ", executorConfig=" + this.executorConfig
+                + ", mapExecutors=" + this.mapExecutors
+                + ", mapTopicConfigs=" + this.mapTopicConfigs
+                + ", mapQueueConfigs=" + this.mapQueueConfigs
+                + "]";
     }
-    
-    
 }

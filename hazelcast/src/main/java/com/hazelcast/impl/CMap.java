@@ -145,11 +145,10 @@ public class CMap {
         if (isMultiMap()
                 || mapConfigName.startsWith("__hz_")
                 || mapConfigName.startsWith(AS_LIST)
-                || mapConfigName.startsWith(AS_SET)
-                || mapForQueue) {
+                || mapConfigName.startsWith(AS_SET)) {
             mapConfig = new MapConfig();
         } else {
-            mapConfig = node.getConfig().getMapConfig(mapConfigName);
+            mapConfig = node.getConfig().findMatchingMapConfig(mapConfigName);
         }
         this.mapIndexService = new MapIndexService(mapConfig.isValueIndexed());
         this.backupCount = mapConfig.getBackupCount();
@@ -932,7 +931,7 @@ public class CMap {
 
     private void executeStoreUpdate(final Set<Record> dirtyRecords) {
         if (dirtyRecords.size() > 0) {
-            concurrentMapManager.node.executorManager.executeStoreTask(new Runnable() {
+            concurrentMapManager.storeExecutor.execute(new Runnable() {
                 public void run() {
                     try {
                         Set<Object> keysToDelete = new HashSet<Object>();
@@ -951,19 +950,15 @@ public class CMap {
                         } else if (keysToDelete.size() > 1) {
                             store.deleteAll(keysToDelete);
                         }
-
                         if (updates.size() == 1) {
                             Map.Entry entry = updates.entrySet().iterator().next();
                             store.store(entry.getKey(), entry.getValue());
                         } else if (updates.size() > 1) {
                             store.storeAll(updates);
                         }
-
-                        for(Record stored: toStore){
+                        for (Record stored : toStore) {
                             stored.setLastStoredTime(System.currentTimeMillis());
-
                         }
-
                     } catch (Exception e) {
                         for (Record dirtyRecord : dirtyRecords) {
                             dirtyRecord.setDirty(true);
@@ -987,7 +982,6 @@ public class CMap {
         long hits = 0;
         long lockedEntryCount = 0;
         long lockWaitCount = 0;
-
         ClusterImpl clusterImpl = node.getClusterImpl();
         final Collection<Record> records = mapRecords.values();
         final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
@@ -1001,8 +995,8 @@ public class CMap {
                 if (owner != null && !partition.isMigrating()) {
                     boolean owned = owner.localMember();
                     if (owned) {
-                        if(record.getLastStoredTime() < Math.max(record.getLastUpdateTime(), record.getCreationTime())){
-                            dirtyCount ++;
+                        if (record.getLastStoredTime() < Math.max(record.getLastUpdateTime(), record.getCreationTime())) {
+                            dirtyCount++;
                         }
                         ownedEntryCount += record.valueCount();
                         ownedEntryMemoryCost += record.getCost();
@@ -1744,7 +1738,7 @@ public class CMap {
         public CMapEntry() {
         }
 
-        public CMapEntry(long cost, long expirationTime, long lastAccessTime, long lastUpdateTime, long creationTime,  long lastStoredTime, long version, int hits, boolean valid) {
+        public CMapEntry(long cost, long expirationTime, long lastAccessTime, long lastUpdateTime, long creationTime, long lastStoredTime, long version, int hits, boolean valid) {
             this.cost = cost;
             this.expirationTime = expirationTime;
             this.lastAccessTime = lastAccessTime;

@@ -43,49 +43,8 @@ public class QueueConfigTest {
     public void testSetName() {
         QueueConfig queueConfig = new QueueConfig().setName("a test name");
         assertEquals("a test name", queueConfig.getName());
-    }
-
-    /**
-     * Test method for {@link com.hazelcast.config.QueueConfig#getMaxSizePerJVM()}.
-     */
-    @Test
-    public void testGetMaxSizePerJVM() {
-        QueueConfig queueConfig = new QueueConfig();
-        assertEquals(QueueConfig.DEFAULT_MAX_SIZE_PER_JVM, queueConfig.getMaxSizePerJVM());
-    }
-
-    /**
-     * Test method for {@link com.hazelcast.config.QueueConfig#setMaxSizePerJVM(int)}.
-     */
-    @Test
-    public void testSetMaxSizePerJVM() {
-        QueueConfig queueConfig = new QueueConfig().setMaxSizePerJVM(1234);
-        assertEquals(1234, queueConfig.getMaxSizePerJVM());
-    }
-
-    /**
-     * Test method for {@link com.hazelcast.config.QueueConfig#setMaxSizePerJVM(int)}.
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetMaxSizePerJVMMustBePositive() {
-        new QueueConfig().setMaxSizePerJVM(-1);
-    }
-
-    /**
-     * Test method for {@link com.hazelcast.config.QueueConfig#getTimeToLiveSeconds()}.
-     */
-    @Test
-    public void testGetTimeToLiveSeconds() {
-        QueueConfig queueConfig = new QueueConfig();
-        assertEquals(QueueConfig.DEFAULT_TTL_SECONDS, queueConfig.getTimeToLiveSeconds());
-    }
-
-    /**
-     * Test method for {@link com.hazelcast.config.QueueConfig#setTimeToLiveSeconds(int)}.
-     */
-    @Test
-    public void testSetTimeToLiveSeconds() {
-        QueueConfig queueConfig = new QueueConfig().setTimeToLiveSeconds(1234);
-        assertEquals(1234, queueConfig.getTimeToLiveSeconds());
+        assertEquals("default", queueConfig.getBackingMapName());
+        queueConfig.setBackingMapName("backingMap");
+        assertEquals("backingMap", queueConfig.getBackingMapName());
     }
 }

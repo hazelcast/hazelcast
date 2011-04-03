@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.PacketProcessor;
@@ -49,9 +50,9 @@ public class BlockingQueueManager extends BaseManager {
                 queue.size(request);
             }
         });
-        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_TAKE_KEY, new ResponsiveOperationHandler() {
-            public void handle(Request request) {
-                handleTakeKey(request);
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_TAKE_KEY, new InitializationAwareOperationHandler() {
+            public void doOperation(BQ queue, Request request) {
+                queue.doTakeKey(request);
             }
         });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_PEEK_KEY, new ResponsiveOperationHandler() {
@@ -89,7 +90,7 @@ public class BlockingQueueManager extends BaseManager {
         abstract void doOperation(BQ queue, Request request);
 
         public void handle(Request request) {
-            if (isMaster() && ready()) {
+            if (isMaster() && ready(request)) {
                 BQ bq = getOrCreateBQ(request.name);
                 doOperation(bq, request);
             } else {
@@ -220,11 +221,18 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     public IMap getStorageMap(String queueName) {
-        return node.factory.getMap(queueName);
+        QueueConfig config = node.factory.getConfig().getQueueConfig(queueName);
+        return node.factory.getMap(config.getBackingMapName());
     }
 
     CMap getStorageCMap(String queueName) {
-        return node.concurrentMapManager.getMap(Prefix.MAP + queueName);
+        QueueConfig config = node.factory.getConfig().getQueueConfig(queueName);
+        return node.concurrentMapManager.getMap(Prefix.MAP + config.getBackingMapName());
+    }
+
+    CMap getOrCreateStorageCMap(String queueName) {
+        QueueConfig config = node.factory.getConfig().getQueueConfig(queueName);
+        return node.concurrentMapManager.getOrCreateMap(Prefix.MAP + config.getBackingMapName());
     }
 
     public Iterator iterate(final String name) {
@@ -391,17 +399,8 @@ public class BlockingQueueManager extends BaseManager {
         return bq;
     }
 
-    final void handleTakeKey(Request req) {
-        if (isMaster() && ready()) {
-            BQ bq = getOrCreateBQ(req.name);
-            bq.doTakeKey(req);
-        } else {
-            returnRedoResponse(req);
-        }
-    }
-
     final void handlePeekKey(Request req) {
-        if (isMaster() && ready()) {
+        if (isMaster() && ready(req)) {
             BQ bq = getOrCreateBQ(req.name);
             bq.doPeekKey(req);
         } else {
@@ -422,7 +421,7 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     final void handleAddKey(Request req) {
-        if (isMaster() && ready()) {
+        if (isMaster() && ready(req)) {
             BQ bq = getOrCreateBQ(req.name);
             bq.doAddKey(req.key, (req.longValue == 0) ? true : false);
             req.key = null;
@@ -434,7 +433,7 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     final void handleGenerateKey(Request req) {
-        if (isMaster() && ready()) {
+        if (isMaster() && ready(req)) {
             BQ bq = getOrCreateBQ(req.name);
             bq.doGenerateKey(req);
         } else {
@@ -448,56 +447,55 @@ public class BlockingQueueManager extends BaseManager {
         READY
     }
 
-    MasterState state = MasterState.NOT_INITIALIZED;
-
-    boolean ready() {
-        if (state != MasterState.READY) {
-            if (isVeryFirstMember()) {
-                state = MasterState.READY;
-                return true;
-            }
-            if (state == MasterState.NOT_INITIALIZED) {
-                state = MasterState.INITIALIZING;
-                initialize();
-            }
-            return false;
+    boolean ready(Request request) {
+        BQ q = getOrCreateBQ(request.name);
+        if (q.state == MasterState.READY) {
+            return true;
+        } else if (q.state == MasterState.NOT_INITIALIZED) {
+            q.state = MasterState.INITIALIZING;
+            initialize(request.name);
         }
-        return true;
+        return false;
     }
 
-    void initialize() {
-        checkServiceThread();
-        executeLocally(new FallThroughRunnable() {
-            public void doRun() {
-                Set<String> instanceNames = node.factory.getLongInstanceNames();
-                final Map<String, Set<Long>> queueKeys = new HashMap<String, Set<Long>>();
-                for (String instanceName : instanceNames) {
-                    if (instanceName.startsWith("q:")) {
-                        Set<Long> keys = getStorageMap(instanceName).keySet();
-                        if (keys.size() > 0) {
-                            queueKeys.put(instanceName, new TreeSet<Long>(keys));
-                        }
+    void initialize(final String queueName) {
+        final BQ q = getOrCreateBQ(queueName);
+        final CMap cmapStorage = getOrCreateStorageCMap(queueName);
+        executeLocally(new Runnable() {
+            public void run() {
+                TreeSet<Long> itemKeys = null;
+                if (cmapStorage.loader != null) {
+                    Set<Long> keys = cmapStorage.loader.loadAllKeys();
+                    if (keys != null && keys.size() > 0) {
+                        itemKeys = new TreeSet<Long>(keys);
                     }
                 }
-                enqueueAndReturn(new Processable() {
-                    public void process() {
-                        Set<String> queueNames = queueKeys.keySet();
-                        for (String queueName : queueNames) {
-                            BQ q = getOrCreateBQ(queueName);
-                            Set<Long> keys = queueKeys.get(queueName);
-                            if (keys != null) {
-                                for (Long key : keys) {
-                                    Data keyData = toData(key);
-                                    q.keys.add(keyData);
+                Set<Long> keys = getStorageMap(queueName).keySet();
+                if (keys.size() > 0) {
+                    if (itemKeys == null) {
+                        itemKeys = new TreeSet<Long>(keys);
+                    } else {
+                        itemKeys.addAll(keys);
+                    }
+                }
+                if (itemKeys != null) {
+                    final Set<Long> queueKeys = itemKeys;
+                    enqueueAndReturn(new Processable() {
+                        public void process() {
+                            for (Long key : queueKeys) {
+                                Data keyData = toData(key);
+                                if (q.keys.add(keyData)) {
                                     q.queue.add(new QData(keyData));
                                     q.nextKey = Math.max(q.nextKey, key);
                                 }
-                                q.nextKey += BILLION;
                             }
+                            q.nextKey += BILLION;
+                            q.state = MasterState.READY;
                         }
-                        state = MasterState.READY;
-                    }
-                });
+                    });
+                } else {
+                    q.state = MasterState.READY;
+                }
             }
         });
     }
@@ -556,13 +554,15 @@ public class BlockingQueueManager extends BaseManager {
         final long ttl;
         final String name;
         long nextKey = 0;
+        volatile MasterState state = MasterState.NOT_INITIALIZED;
 
         BQ(String name) {
             this.name = name;
-            QueueConfig qConfig = node.getConfig().getQueueConfig(name.substring(Prefix.QUEUE.length()));
+            QueueConfig qConfig = node.getConfig().findMatchingQueueConfig(name.substring(Prefix.QUEUE.length()));
+            MapConfig backingMapConfig = node.getConfig().findMatchingMapConfig(qConfig.getBackingMapName());
+            int backingMapTTL = backingMapConfig.getTimeToLiveSeconds();
             this.maxSizePerJVM = (qConfig.getMaxSizePerJVM() == 0) ? Integer.MAX_VALUE : qConfig.getMaxSizePerJVM();
-            this.ttl = (qConfig.getTimeToLiveSeconds() == 0) ? Integer.MAX_VALUE :
-                    TimeUnit.SECONDS.toMillis(qConfig.getTimeToLiveSeconds());
+            this.ttl = (backingMapTTL == 0) ? Integer.MAX_VALUE : TimeUnit.SECONDS.toMillis(backingMapTTL);
         }
 
         int maxSize() {

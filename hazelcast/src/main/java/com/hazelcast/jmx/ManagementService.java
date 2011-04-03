@@ -19,6 +19,8 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.impl.ExecutorThreadFactory;
 import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -31,7 +33,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The management service instruments Hazelcast with MBeans required to
@@ -47,25 +48,27 @@ import java.util.logging.Logger;
  */
 public class ManagementService {
 
-    private final static Logger logger = Logger.getLogger(ManagementService.class.getName());
+    private static final AtomicInteger counter = new AtomicInteger(0);
 
-    private static final AtomicInteger counter = new AtomicInteger(0); 
-    
     private volatile static ScheduledThreadPoolExecutor statCollectors;
 
-    private boolean started = false;
+    final ILogger logger;
 
     final FactoryImpl instance;
-    private String name;
+
+    String name;
+
+    boolean started = false;
 
     public ManagementService(FactoryImpl instance) {
         this.instance = instance;
+        this.logger = instance.node.getLogger(ManagementService.class.getName());
     }
-    
+
     private synchronized void start() {
         final boolean jmxProperty = instance.node.groupProperties.ENABLE_JMX.getBoolean();
         if (!jmxProperty) {
-         // JMX disabled
+            // JMX disabled
             return;
         }
         logger.log(Level.INFO, "Hazelcast JMX agent enabled");
@@ -86,14 +89,13 @@ public class ManagementService {
             final String name = object.getObjectName().getKeyProperty("name");
             try {
                 idx = Math.max(idx, Integer.parseInt(name));
-            } catch(NumberFormatException e){
+            } catch (NumberFormatException e) {
                 // ignore
             }
         }
-        
         this.name = Integer.toString(idx + 1);
     }
-    
+
     /**
      * Register all the MBeans.
      */
@@ -108,14 +110,12 @@ public class ManagementService {
         // Register the cluster monitor
         try {
             nameLookup();
-            
             ClusterMBean clusterMBean = new ClusterMBean(this, this.name);
             mbs.registerMBean(clusterMBean, clusterMBean.getObjectName());
             DataMBean dataMBean = new DataMBean(this);
             dataMBean.setParentName(clusterMBean.getRootName());
             mbs.registerMBean(dataMBean, dataMBean.getObjectName());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to start JMX service", e);
             return;
         }
@@ -140,8 +140,7 @@ public class ManagementService {
                     mbs.unregisterMBean(name);
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Error unregistering MBeans", e);
         }
         counter.decrementAndGet();
@@ -168,9 +167,8 @@ public class ManagementService {
                     mbs.unregisterMBean(name);
                 }
             }
-        }
-        catch (Exception e) {
-            logger.log(Level.FINE, "Error unregistering MBeans", e);
+        } catch (Exception e) {
+            Logger.getLogger("hz.ManagementCenter").log(Level.FINE, "Error unregistering MBeans", e);
         }
         if (statCollectors != null) {
             statCollectors.shutdownNow();

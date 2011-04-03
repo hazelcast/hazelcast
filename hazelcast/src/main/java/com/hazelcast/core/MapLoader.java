@@ -19,6 +19,7 @@ package com.hazelcast.core;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Hazelcast distributed map implementation is an in-memory data store but
@@ -52,4 +53,11 @@ public interface MapLoader<K, V> {
      * @return map of loaded key-value pairs.
      */
     Map<K, V> loadAll(Collection<K> keys);
+
+    /**
+     * Loads all of the keys from the store.
+     *
+     * @return all the keys
+     */
+    Set<K> loadAllKeys();
 }

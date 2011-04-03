@@ -574,14 +574,6 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public void initialChecks() {
-//        while (Runtime.getRuntime().freeMemory() < 10000000) {
-//            try {
-//                logger.log(Level.SEVERE, "Not Enough Memory");
-//                Thread.sleep(2000);
-//            } catch (InterruptedException e) {
-//                return;
-//            }
-//        }
         while (node.isActive() && lifecycleService.paused.get()) {
             try {
                 Thread.sleep(100);
@@ -2368,9 +2360,26 @@ public class FactoryImpl implements HazelcastInstance {
 
         private class MProxyReal implements MProxy {
             private final transient MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
+            private final Object initLock = new Object();
+            private volatile boolean initialized = false;
 
             public MProxyReal() {
                 super();
+            }
+
+            public Object getLock() {
+                return initLock;
+            }
+
+            public boolean isInitialized() {
+                return initialized;
+            }
+
+            public void initialize() {
+                if (!initialized) {
+                    concurrentMapManager.initialize(name);
+                }
+                initialized = true;
             }
 
             @Override

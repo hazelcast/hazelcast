@@ -26,24 +26,18 @@ import java.io.IOException;
 public final class QueueConfig implements DataSerializable {
 
     public final static int DEFAULT_MAX_SIZE_PER_JVM = 0;
-    public final static int DEFAULT_TTL_SECONDS = 0;
-    public final static int DEFAULT_BACKUP_COUNT = 1;
 
     private String name;
-
+    private String backingMapName;
     private int maxSizePerJVM = DEFAULT_MAX_SIZE_PER_JVM;
-
-    private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
-
-    private int backupCount = DEFAULT_BACKUP_COUNT;
 
     public QueueConfig() {
     }
 
     public QueueConfig(QueueConfig config) {
         this.name = config.name;
+        this.backingMapName = config.backingMapName;
         this.maxSizePerJVM = config.maxSizePerJVM;
-        this.timeToLiveSeconds = config.timeToLiveSeconds;
     }
 
     /**
@@ -55,9 +49,13 @@ public final class QueueConfig implements DataSerializable {
 
     /**
      * @param name the name to set
+     * @return this queue config
      */
     public QueueConfig setName(String name) {
         this.name = name;
+        if (backingMapName == null) {
+            backingMapName = "q:" + name;
+        }
         return this;
     }
 
@@ -79,66 +77,38 @@ public final class QueueConfig implements DataSerializable {
         return this;
     }
 
-    /**
-     * @return the timeToLiveSeconds
-     */
-    public int getTimeToLiveSeconds() {
-        return timeToLiveSeconds;
+    public String getBackingMapName() {
+        return backingMapName;
     }
 
-    /**
-     * Returns the number of backups for this queue.
-     *
-     * @return number of backups.
-     */
-    public int getBackupCount() {
-        return backupCount;
-    }
-
-    /**
-     * Sets the number of backups for this queue. Default is 1.
-     *
-     * @param backupCount number of backups.
-     * @return this queue config
-     */
-    public QueueConfig setBackupCount(int backupCount) {
-        this.backupCount = backupCount;
-        return this;
-    }
-
-    /**
-     * @param timeToLiveSeconds the timeToLiveSeconds to set
-     */
-    public QueueConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
-        if (timeToLiveSeconds < 0) {
-            throw new IllegalArgumentException("queue TTL must be positive");
-        }
-        this.timeToLiveSeconds = timeToLiveSeconds;
+    public QueueConfig setBackingMapName(String backingMapName) {
+        this.backingMapName = backingMapName;
         return this;
     }
 
     public boolean isCompatible(final QueueConfig queueConfig) {
         if (queueConfig == null) return false;
         return (name != null ? name.equals(queueConfig.name) : queueConfig.name == null) &&
-                this.timeToLiveSeconds == queueConfig.timeToLiveSeconds;
+                this.backingMapName.equals(queueConfig.backingMapName) &&
+                this.maxSizePerJVM == queueConfig.maxSizePerJVM;
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(backingMapName);
+        out.writeInt(maxSizePerJVM);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        name = in.readUTF();
+        backingMapName = in.readUTF();
+        maxSizePerJVM = in.readInt();
     }
 
     @Override
     public String toString() {
         return "QueueConfig [name=" + this.name
-                + ", timeToLiveSeconds=" + this.timeToLiveSeconds
+                + ", backingMapName=" + this.backingMapName
                 + ", maxSizePerJVM=" + this.maxSizePerJVM + "]";
-    }
-
-    public void writeData(DataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeInt(maxSizePerJVM);
-        out.writeInt(timeToLiveSeconds);
-    }
-
-    public void readData(DataInput in) throws IOException {
-        name = in.readUTF();
-        maxSizePerJVM = in.readInt();
-        timeToLiveSeconds = in.readInt();
     }
 }

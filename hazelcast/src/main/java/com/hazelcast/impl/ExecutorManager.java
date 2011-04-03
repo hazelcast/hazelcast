@@ -49,7 +49,6 @@ public class ExecutorManager extends BaseManager {
     private final ParallelExecutor asyncExecutorService;
     private final NamedExecutorService defaultExecutorService;
     private final NamedExecutorService queryExecutorService;
-    private final NamedExecutorService storeExecutorService;
     private final NamedExecutorService eventExecutorService;
     private volatile boolean started = false;
 
@@ -89,7 +88,6 @@ public class ExecutorManager extends BaseManager {
         parallelExecutorService = new ParallelExecutorService(threadPoolExecutor);
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
-        storeExecutorService = getOrCreateNamedExecutorService(STORE_EXECUTOR_SERVICE, gp.EXECUTOR_STORE_THREAD_COUNT);
         eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
         asyncExecutorService = parallelExecutorService.newBlockingParallelExecutor(24, 1000);
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
@@ -289,10 +287,6 @@ public class ExecutorManager extends BaseManager {
 
     public void executeQueryTask(Runnable runnable) {
         queryExecutorService.execute(runnable);
-    }
-
-    public void executeStoreTask(Runnable runnable) {
-        storeExecutorService.execute(runnable);
     }
 
     public void call(String name, DistributedTask dtask) {

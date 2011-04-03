@@ -21,9 +21,18 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class DummyStore implements MapLoader, MapStore {
+
+    public Set loadAllKeys() {
+        System.out.println("Loader.loadAllKeys ");
+        Set keys = new HashSet();
+        keys.add("key");
+        return keys;
+    }
 
     public Object load(Object key) {
         System.out.println("Loader.load " + key);

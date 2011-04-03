@@ -58,6 +58,7 @@
         <keep-alive-seconds>60</keep-alive-seconds>
     </executor-service>
     <queue name="default">
+
         <!--
             Maximum size of the queue. When a JVM's local queue size reaches the maximum,
             all put/offer operations will get blocked until the queue size
@@ -66,14 +67,9 @@
             Integer.MAX_VALUE. Default is 0.
         -->
         <max-size-per-jvm>0</max-size-per-jvm>
-        <!--
-            Maximum number of seconds for each item to stay in the queue. Items that are
-            not consumed in <time-to-live-seconds> will automatically
-            get evicted from the queue.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means
-            infinite. Default is 0.
-        -->
-        <time-to-live-seconds>0</time-to-live-seconds>
+
+        <backing-map-name>default</backing-map-name>
+
     </queue>
     <map name="default">
         <!--

@@ -25,6 +25,7 @@ import com.hazelcast.core.MapStore;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 public class MapStoreWrapper implements MapStore {
 
@@ -100,6 +101,11 @@ public class MapStoreWrapper implements MapStore {
     public void deleteAll(Collection keys) {
         checkInit();
         mapStore.deleteAll(keys);
+    }
+
+    public Set loadAllKeys() {
+        checkInit();
+        return mapLoader.loadAllKeys();
     }
 
     public Object load(Object key) {

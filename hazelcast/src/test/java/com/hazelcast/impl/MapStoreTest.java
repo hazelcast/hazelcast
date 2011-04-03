@@ -48,6 +48,38 @@ public class MapStoreTest extends TestUtil {
     }
 
     @Test
+    public void testPersistentQueue() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        Config config = newConfig("themap", testMapStore, 0);
+        config.getQueueConfig("default").setBackingMapName("themap");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IQueue q1 = h1.getQueue("default");
+        for (int i = 0; i < 100; i++) {
+            q1.put("value" + i);
+        }
+        assertEquals(100, q1.size());
+        assertEquals(100, testMapStore.store.size());
+        h1.getLifecycleService().shutdown();
+        h1 = Hazelcast.newHazelcastInstance(config);
+        q1 = h1.getQueue("default");
+        assertEquals(100, q1.size());
+        for (int i = 0; i < 100; i++) {
+            assertEquals("value" + i, q1.take());
+        }
+        for (int i = 0; i < 100; i++) {
+            q1.put("value" + i);
+        }
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IQueue q2 = h2.getQueue("default");
+        assertEquals(100, q2.size());
+        h1.getLifecycleService().shutdown();
+        assertEquals(100, q2.size());
+        for (int i = 0; i < 100; i++) {
+            assertEquals("value" + i, q2.take());
+        }
+    }
+
+    @Test
     public void testThreeMemberGetAll() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Map store = testMapStore.getStore();
@@ -195,7 +227,7 @@ public class MapStoreTest extends TestUtil {
         assertEquals(1, testMapStore.getStore().size());
         assertEquals(1, map.size());
         testMapStore.assertAwait(10);
-        assertEquals(3, testMapStore.callCount.get());
+        assertEquals(4, testMapStore.callCount.get());
     }
 
     @Test
@@ -380,9 +412,13 @@ public class MapStoreTest extends TestUtil {
         assertEquals(null, testMapStore.waitForEvent(10));
     }
 
-    private Config newConfig(Object storeImpl, int writeDelaySeconds) {
+    protected Config newConfig(Object storeImpl, int writeDelaySeconds) {
+        return newConfig("default", storeImpl, writeDelaySeconds);
+    }
+
+    protected Config newConfig(String mapName, Object storeImpl, int writeDelaySeconds) {
         Config config = new XmlConfigBuilder().build();
-        MapConfig mapConfig = config.getMapConfig("default");
+        MapConfig mapConfig = config.getMapConfig(mapName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setImplementation(storeImpl);
         mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
@@ -399,6 +435,7 @@ public class MapStoreTest extends TestUtil {
         final CountDownLatch latchDelete;
         final CountDownLatch latchDeleteAll;
         final CountDownLatch latchLoad;
+        final CountDownLatch latchLoadAllKeys;
         final CountDownLatch latchLoadAll;
         final AtomicInteger callCount = new AtomicInteger();
         final AtomicInteger initCount = new AtomicInteger();
@@ -412,12 +449,20 @@ public class MapStoreTest extends TestUtil {
 
         public TestMapStore(int expectedStore, int expectedStoreAll, int expectedDelete,
                             int expectedDeleteAll, int expectedLoad, int expectedLoadAll) {
+            this(expectedStore, expectedStoreAll, expectedDelete, expectedDeleteAll,
+                    expectedLoad, expectedLoadAll, 0);
+        }
+
+        public TestMapStore(int expectedStore, int expectedStoreAll, int expectedDelete,
+                            int expectedDeleteAll, int expectedLoad, int expectedLoadAll,
+                            int expectedLoadAllKeys) {
             latchStore = new CountDownLatch(expectedStore);
             latchStoreAll = new CountDownLatch(expectedStoreAll);
             latchDelete = new CountDownLatch(expectedDelete);
             latchDeleteAll = new CountDownLatch(expectedDeleteAll);
             latchLoad = new CountDownLatch(expectedLoad);
             latchLoadAll = new CountDownLatch(expectedLoadAll);
+            latchLoadAllKeys = new CountDownLatch(expectedLoadAllKeys);
         }
 
         public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
@@ -469,6 +514,12 @@ public class MapStoreTest extends TestUtil {
             latchStore.countDown();
         }
 
+        public Set loadAllKeys() {
+            callCount.incrementAndGet();
+            latchLoadAllKeys.countDown();
+            return store.keySet();
+        }
+
         public Object load(Object key) {
             callCount.incrementAndGet();
             latchLoad.countDown();
@@ -509,19 +560,19 @@ public class MapStoreTest extends TestUtil {
         }
     }
 
-    public static class TestEventBasedMapStore implements MapLoaderLifecycleSupport, MapStore {
+    public static class TestEventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapStore<K, V> {
 
-        enum STORE_EVENTS {
-            STORE, STORE_ALL, DELETE, DELETE_ALL, LOAD, LOAD_ALL
+        protected enum STORE_EVENTS {
+            STORE, STORE_ALL, DELETE, DELETE_ALL, LOAD, LOAD_ALL, LOAD_ALL_KEYS
         }
 
-        final Map store = new ConcurrentHashMap();
-        final BlockingQueue events = new LinkedBlockingQueue();
-        final AtomicInteger callCount = new AtomicInteger();
-        final AtomicInteger initCount = new AtomicInteger();
-        private HazelcastInstance hazelcastInstance;
-        private Properties properties;
-        private String mapName;
+        protected final Map<K, V> store = new ConcurrentHashMap();
+        protected final BlockingQueue events = new LinkedBlockingQueue();
+        protected final AtomicInteger callCount = new AtomicInteger();
+        protected final AtomicInteger initCount = new AtomicInteger();
+        protected HazelcastInstance hazelcastInstance;
+        protected Properties properties;
+        protected String mapName;
 
         public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
             this.hazelcastInstance = hazelcastInstance;
@@ -561,17 +612,17 @@ public class MapStoreTest extends TestUtil {
             return store;
         }
 
-        public void insert(Object key, Object value) {
+        public void insert(K key, V value) {
             store.put(key, value);
         }
 
-        public void store(Object key, Object value) {
+        public void store(K key, V value) {
             store.put(key, value);
             callCount.incrementAndGet();
             events.offer(STORE_EVENTS.STORE);
         }
 
-        public Object load(Object key) {
+        public V load(K key) {
             callCount.incrementAndGet();
             events.offer(STORE_EVENTS.LOAD);
             return store.get(key);
@@ -583,10 +634,16 @@ public class MapStoreTest extends TestUtil {
             events.offer(STORE_EVENTS.STORE_ALL);
         }
 
-        public void delete(Object key) {
+        public void delete(K key) {
             store.remove(key);
             callCount.incrementAndGet();
             events.offer(STORE_EVENTS.DELETE);
+        }
+
+        public Set<K> loadAllKeys() {
+            callCount.incrementAndGet();
+            events.offer(STORE_EVENTS.LOAD_ALL_KEYS);
+            return store.keySet();
         }
 
         public Map loadAll(Collection keys) {
@@ -620,6 +677,7 @@ public class MapStoreTest extends TestUtil {
         final AtomicLong storeAlls = new AtomicLong();
         final AtomicLong loads = new AtomicLong();
         final AtomicLong loadAlls = new AtomicLong();
+        final AtomicLong loadAllKeys = new AtomicLong();
         final AtomicBoolean shouldFail = new AtomicBoolean(false);
         final List<BlockingQueue> listeners = new CopyOnWriteArrayList<BlockingQueue>();
 
@@ -672,6 +730,18 @@ public class MapStoreTest extends TestUtil {
             } finally {
                 stores.incrementAndGet();
                 notifyListeners();
+            }
+        }
+
+        public Set loadAllKeys() {
+            try {
+                if (shouldFail.get()) {
+                    throw new RuntimeException();
+                } else {
+                    return db.keySet();
+                }
+            } finally {
+                loadAllKeys.incrementAndGet();
             }
         }
 

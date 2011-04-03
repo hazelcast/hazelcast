@@ -118,8 +118,6 @@ public class Node {
 
     private final CpuUtilization cpuUtilization = new CpuUtilization();
 
-    private final CallHistory callHistory = new CallHistory();
-
     private final ServerSocketChannel serverSocketChannel;
 
     final int id;
@@ -287,10 +285,6 @@ public class Node {
             return false;
         }
         return true;
-    }
-
-    public CallHistory getCallHistory() {
-        return callHistory;
     }
 
     public void failedConnection(Address address) {

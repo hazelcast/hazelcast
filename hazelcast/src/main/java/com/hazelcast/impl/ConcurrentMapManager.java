@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.MultiData;
+import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.query.Predicate;
@@ -54,9 +55,11 @@ public class ConcurrentMapManager extends BaseManager {
     final PartitionManager partitionManager;
     long newRecordId = 0;
     volatile long nextCleanup = 0;
+    final ParallelExecutor storeExecutor;
 
     ConcurrentMapManager(Node node) {
         super(node);
+        storeExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
         CLEANUP_DELAY_MILLIS = node.groupProperties.CLEANUP_DELAY_SECONDS.getLong() * 1000L;
@@ -1656,6 +1659,19 @@ public class ConcurrentMapManager extends BaseManager {
         return maps.get(name);
     }
 
+    public void initialize(final String name) {
+        enqueueAndWait(new Processable() {
+            public void process() {
+                getOrCreateMap(name);
+            }
+        }, 10);
+        CMap cmap = getMap(name);
+        if (cmap.loader != null) {
+            if (!cmap.isMapForQueue()) {
+            }
+        }
+    }
+
     public CMap getOrCreateMap(String name) {
         checkServiceThread();
         CMap map = maps.get(name);
@@ -2102,7 +2118,7 @@ public class ConcurrentMapManager extends BaseManager {
         OrderedExecutionTask orderedExecutionTask = orderedExecutionTasks[getBlockId(request)];
         int size = orderedExecutionTask.offer(request);
         if (size == 1) {
-            node.executorManager.executeStoreTask(orderedExecutionTask);
+            storeExecutor.execute(orderedExecutionTask);
         }
     }
 
@@ -2127,8 +2143,17 @@ public class ConcurrentMapManager extends BaseManager {
                 Record storedRecord = cmap.getRecord(request);
                 storedRecord.setLastStoredTime(System.currentTimeMillis());
             } else if (request.operation == CONCURRENT_MAP_REMOVE) {
+                Object key = toObject(request.key);
+                if (cmap.loader != null && request.value == null) {
+                    Object removedObject = cmap.loader.load(key);
+                    if (removedObject == null) {
+                        return;
+                    } else {
+                        request.response = toData(removedObject);
+                    }
+                }
                 // remove the entry
-                cmap.store.delete(toObject(request.key));
+                cmap.store.delete(key);
             } else if (request.operation == CONCURRENT_MAP_EVICT) {
                 //store the entry
                 cmap.store.store(toObject(request.key), toObject(request.value));
@@ -2174,34 +2199,29 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public void handle(Request request) {
-            CallHistory.CallerThreadState cts = node.getCallHistory().getOrCreateCallerThreadState(request.caller, request.lockThreadId);
-            try {
-                cts.set(request.name, request.callId, request.operation);
-                CMap cmap = getOrCreateMap(request.name);
-                if (cmap.isNotLocked(request) && !cmap.overCapacity(request)) {
-                    if (shouldSchedule(request)) {
-                        if (request.hasEnoughTimeToSchedule()) {
-                            schedule(request);
-                        } else {
-                            onNoTimeToSchedule(request);
-                        }
-                        return;
+            CMap cmap = getOrCreateMap(request.name);
+            boolean checkCapacity = (cmap.store == null &&
+                    (request.operation == CONCURRENT_MAP_PUT
+                            || request.operation == CONCURRENT_MAP_TRY_PUT));
+            boolean overCapacity = checkCapacity && cmap.overCapacity(request);
+            if (cmap.isNotLocked(request) && !overCapacity) {
+                if (shouldSchedule(request)) {
+                    if (request.hasEnoughTimeToSchedule()) {
+                        schedule(request);
+                    } else {
+                        onNoTimeToSchedule(request);
                     }
-                    if (shouldExecuteAsync(request)) {
-                        executeAsync(request);
-                        return;
-                    }
-                    doOperation(request);
-                    returnResponse(request);
-                } else {
-                    request.response = OBJECT_REDO;
-                    returnResponse(request);
+                    return;
                 }
-            } finally {
-                if (request.scheduled) {
-                    cts.setScheduled();
+                if (shouldExecuteAsync(request)) {
+                    executeAsync(request);
+                    return;
                 }
-                cts.response = request.response;
+                doOperation(request);
+                returnResponse(request);
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
             }
         }
 
@@ -2212,7 +2232,11 @@ public class ConcurrentMapManager extends BaseManager {
             if (request.response == null) {
                 doOperation(request);
             } else {
-                request.value = (Data) request.response;
+                Data response = (Data) request.response;
+                if (request.operation == CONCURRENT_MAP_REMOVE) {
+                    doOperation(request);
+                }
+                request.value = response;
             }
             returnResponse(request);
         }

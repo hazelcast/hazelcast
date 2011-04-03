@@ -422,12 +422,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(n.getNodeName());
             final String value = getTextContent(n).trim();
-            if ("max-size-per-jvm".equals(nodeName)) {
+            if ("backing-map-name".equals(nodeName)) {
+                qConfig.setBackingMapName(value);
+            } else if ("max-size-per-jvm".equals(nodeName)) {
                 qConfig.setMaxSizePerJVM(getIntegerValue("max-size-per-jvm", value, QueueConfig.DEFAULT_MAX_SIZE_PER_JVM));
-            } else if ("time-to-live-seconds".equals(nodeName)) {
-                qConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value, QueueConfig.DEFAULT_TTL_SECONDS));
-            } else if ("backup-count".equals(nodeName)) {
-                qConfig.setBackupCount(getIntegerValue("backup-count", value, QueueConfig.DEFAULT_BACKUP_COUNT));
             }
         }
         this.config.addQueueConfig(qConfig);
