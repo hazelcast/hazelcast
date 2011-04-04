@@ -21,13 +21,11 @@ import com.hazelcast.core.HazelcastInstance;
 
 public final class HazelcastTimestamper {
 	
-	private final static int TRUNC_RATIO = 10;
-	
 	// 60 seconds
-	private final static int TIMEOUT = (60 * 1000) / TRUNC_RATIO;
+	private final static int TIMEOUT = (60 * 1000);
 	
 	public static long nextTimestamp(HazelcastInstance instance) {
-		return instance.getCluster().getClusterTime() / TRUNC_RATIO;
+		return instance.getCluster().getClusterTime() ;
 	}
 
 	public static int getTimeout() {
