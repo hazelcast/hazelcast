@@ -4,6 +4,7 @@ import com.hazelcast.core.MapStore;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 public class DummyStore implements MapStore {
     public void store(final Object key, final Object value) {
@@ -31,4 +32,9 @@ public class DummyStore implements MapStore {
         // not implemented
         return null;
     }
+
+	public Set loadAllKeys() {
+		// not implemented
+		return null;
+	}
 }

@@ -30,7 +30,7 @@
                                 <xs:sequence/>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="max-size-per-jvm" use="required" type="xs:string"/>
-                                <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
+                                <xs:attribute name="backing-map-name" use="optional" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="map" minOccurs="0" maxOccurs="unbounded">

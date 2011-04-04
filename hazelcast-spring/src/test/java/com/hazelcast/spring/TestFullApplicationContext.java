@@ -159,12 +159,13 @@ public class TestFullApplicationContext {
         assertNotNull(testQConfig);
         assertEquals("testQ", testQConfig.getName());
         assertEquals(1000, testQConfig.getMaxSizePerJVM());
-        assertEquals(0, testQConfig.getTimeToLiveSeconds());
+        assertEquals("testQMap", testQConfig.getBackingMapName());
+        
         QueueConfig qConfig = config.getQueueConfig("q");
         assertNotNull(qConfig);
         assertEquals("q", qConfig.getName());
         assertEquals(2500, qConfig.getMaxSizePerJVM());
-        assertEquals(1, qConfig.getTimeToLiveSeconds());
+        assertEquals("qMap", qConfig.getBackingMapName());
     }
 
     @Test

@@ -61,10 +61,10 @@
                                  keep-alive-seconds="20"/>
             <hz:queue name="testQ"
                       max-size-per-jvm="1000"
-                      time-to-live-seconds="0"/>
+                      backing-map-name="testQMap"/>
             <hz:queue name="q"
                       max-size-per-jvm="2500"
-                      time-to-live-seconds="1"/>
+                      backing-map-name="qMap"/>
             <hz:map name="testMap"
                     backup-count="2"
                     max-size="0"
