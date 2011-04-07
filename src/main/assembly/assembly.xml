@@ -26,6 +26,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>hazelcast-spring/target</directory>
+            <outputDirectory>/lib/</outputDirectory>
+            <includes>
+                <include>hazelcast-spring-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>hazelcast-client/target</directory>
             <outputDirectory>/lib/</outputDirectory>
             <includes>
