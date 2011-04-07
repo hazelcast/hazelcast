@@ -19,6 +19,7 @@ package com.hazelcast.impl.ascii.memcache;
 
 import com.hazelcast.impl.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.impl.ascii.TextCommandService;
+import com.hazelcast.nio.IOUtil;
 
 public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand> {
     final boolean single;
@@ -36,12 +37,24 @@ public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand
             mapName = key.substring(0, index);
             key = key.substring(index + 1);
         }
-        byte[] valueBytes = textCommandService.getByteArray(mapName, key);
+        Object value = textCommandService.get(mapName, key);
+        MemcacheEntry entry = null;
+        if (value != null) {
+            if (value instanceof MemcacheEntry) {
+                entry = (MemcacheEntry) value;
+            } else {
+                try {
+                    entry = new MemcacheEntry(key, IOUtil.serializeToBytes(value), 0);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         textCommandService.incrementGetCount();
-        if (valueBytes != null) {
+        if (entry != null) {
             textCommandService.incrementHitCount();
         }
-        getCommand.setValue(valueBytes, single);
+        getCommand.setValue(entry, single);
         textCommandService.sendResponse(getCommand);
     }
 

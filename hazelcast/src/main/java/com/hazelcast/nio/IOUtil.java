@@ -134,4 +134,20 @@ public final class IOUtil {
     public static Object toObject(DataHolder dataHolder) {
         return toObject(dataHolder.toData());
     }
+
+    public static Object serializeToObject(byte[] bytes) throws Exception {
+        if (bytes == null) return null;
+        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes));
+        Object obj = in.readObject();
+        in.close();
+        return obj;
+    }
+
+    public static byte[] serializeToBytes(Object object) throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(bos);
+        out.writeObject(object);
+        out.close();
+        return bos.toByteArray();
+    }
 }

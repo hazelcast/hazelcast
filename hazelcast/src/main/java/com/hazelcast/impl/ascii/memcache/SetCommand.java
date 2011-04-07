@@ -97,6 +97,10 @@ public class SetCommand extends AbstractTextCommand {
         return bbValue.array();
     }
 
+    public int getFlag() {
+        return flag;
+    }
+
     @Override
     public String toString() {
         return "SetCommand [" + type + "]{" +

@@ -45,37 +45,20 @@ public class GetCommand extends AbstractTextCommand {
         return true;
     }
 
-    public void setValue(byte[] value, boolean singleGet) {
-        if (value == null) {
-            if (singleGet) {
-                lastOne = ByteBuffer.wrap(END);
-            }
-            return;
-        }
-        lastOne = ByteBuffer.wrap((singleGet) ? RETURN_END : RETURN);
-        this.value = ByteBuffer.wrap(value);
-        int valueLenInt = value.length;
-        byte[] valueLen = String.valueOf(valueLenInt).getBytes();
-        byte[] keyBytes = key.getBytes();
-        int headerSize = VALUE_SPACE.length
-                + keyBytes.length
-                + FLAG_ZERO.length
-                + valueLen.length
-                + RETURN.length;
-        header = ByteBuffer.allocate(headerSize);
-        header.put(VALUE_SPACE);
-        header.put(keyBytes);
-        header.put(FLAG_ZERO);
-        header.put(valueLen);
-        header.put(RETURN);
-        header.flip();
+    public void setValue(MemcacheEntry entry, boolean singleGet) {
+        if (entry != null) value = entry.toNewBuffer();
+        lastOne = (singleGet) ? ByteBuffer.wrap(END) : null;
     }
 
     public boolean writeTo(ByteBuffer bb) {
-        IOUtil.copyToHeapBuffer(header, bb);
-        IOUtil.copyToHeapBuffer(value, bb);
-        IOUtil.copyToHeapBuffer(lastOne, bb);
-        return !(header != null && header.hasRemaining() || (value != null && value.hasRemaining()) || (lastOne != null && lastOne.hasRemaining()));
+        if (value != null) {
+            IOUtil.copyToHeapBuffer(value, bb);
+        }
+        if (lastOne != null) {
+            IOUtil.copyToHeapBuffer(lastOne, bb);
+        }
+        return !(value != null && value.hasRemaining())
+                || (lastOne != null && lastOne.hasRemaining());
     }
 
     @Override

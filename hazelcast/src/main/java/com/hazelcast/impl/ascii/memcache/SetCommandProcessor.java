@@ -49,7 +49,7 @@ public class SetCommandProcessor extends AbstractTextCommandProcessor<SetCommand
      * item is in a delete queue (see the "delete" command below).
      */
     public void handle(SetCommand request) {
-//            System.out.println("Processing " + request);
+//        System.out.println("Processing " + request);
         String key = request.getKey();
         String mapName = "default";
         int index = key.indexOf(':');
@@ -57,7 +57,7 @@ public class SetCommandProcessor extends AbstractTextCommandProcessor<SetCommand
             mapName = key.substring(0, index);
             key = key.substring(index + 1);
         }
-        byte[] value = request.getValue();
+        Object value = new MemcacheEntry(key, request.getValue(), request.getFlag());
         int ttl = textCommandService.getAdjustedTTLSeconds(request.getExpiration());
         textCommandService.incrementSetCount();
         if (SET == request.getType()) {
