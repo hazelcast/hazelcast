@@ -87,7 +87,12 @@ public class MapNearCache {
             return null;
         } else {
             if (entry.isValid(now)) {
-                Object value = entry.getValue();
+                Object value = null;
+                if (ThreadContext.get().isClient()) {
+                    value = entry.getValueData();
+                } else {
+                    value = entry.getValue();
+                }
                 cmap.concurrentMapManager.enqueueAndReturn(entry);
                 entry.touch(now);
                 return value;

@@ -21,9 +21,9 @@ import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,8 +33,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 
+import static com.hazelcast.client.TestUtility.destroyClients;
+import static com.hazelcast.client.TestUtility.newHazelcastClient;
 import static org.junit.Assert.*;
-import static com.hazelcast.client.TestUtility.*;
 
 public class HazelcastClientClusterTest {
 
@@ -62,6 +63,27 @@ public class HazelcastClientClusterTest {
         Thread.sleep(50L);
         HazelcastClient client = newHazelcastClient(h2);
         assertEquals("Q", client.getMap("q").get("q"));
+    }
+
+    @Test
+    public void testNearCache() throws Exception {
+        final Config config = new Config();
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setMaxSize(1000);
+        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap m1 = h1.getMap("default");
+        m1.put("1", "value");
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap m2 = h2.getMap("default");
+        assertEquals("value", m2.get("1"));
+        assertEquals("value", m1.get("1"));
+        HazelcastClient client1 = newHazelcastClient(h1);
+        HazelcastClient client2 = newHazelcastClient(h2);
+        for (int i = 0; i < 10; i++) {
+            assertEquals("value", client1.getMap("default").get("1"));
+            assertEquals("value", client2.getMap("default").get("1"));
+        }
     }
 
     @Test
