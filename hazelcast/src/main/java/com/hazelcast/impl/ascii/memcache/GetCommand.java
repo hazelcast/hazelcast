@@ -24,7 +24,6 @@ import java.nio.ByteBuffer;
 
 public class GetCommand extends AbstractTextCommand {
     final String key;
-    ByteBuffer header;
     ByteBuffer value;
     ByteBuffer lastOne;
 
