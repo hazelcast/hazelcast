@@ -42,15 +42,18 @@ import com.hazelcast.logging.Logger;
 public final class HazelcastCache implements Cache {
 
     private static final ILogger LOG = Logger.getLogger(HazelcastCache.class.getName());
+    
     private final HazelcastInstance instance;
     private final IMap cache;
     private final String regionName;
+    private final int timeout ;
 
     public HazelcastCache(final HazelcastInstance instance, final String regionName) {
         LOG.log(Level.INFO, "Creating new HazelcastCache with region name: " + regionName);
         this.instance = instance;
         this.cache = instance.getMap(regionName);
         this.regionName = regionName;
+        this.timeout = HazelcastTimestamper.getTimeout(instance, regionName);
     }
 
     public void clear() throws CacheException {
@@ -95,7 +98,7 @@ public final class HazelcastCache implements Cache {
     }
 
     public int getTimeout() {
-    	return HazelcastTimestamper.getTimeout();
+    	return timeout;
     }
 
     public long nextTimestamp() {
@@ -129,7 +132,7 @@ public final class HazelcastCache implements Cache {
     public void update(final Object key, final Object value) throws CacheException {
         put(key, value);
     }
-
+    
     /**
      * @return the internal <code>IMap</code> used for this cache.
      */

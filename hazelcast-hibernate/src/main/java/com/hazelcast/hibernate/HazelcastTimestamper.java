@@ -17,18 +17,35 @@
 
 package com.hazelcast.hibernate;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 
 public final class HazelcastTimestamper {
 	
-	// 60 seconds
-	private final static int TIMEOUT = (60 * 1000);
+	// one hour in ms
+	private final static int DEFAULT_TIMEOUT = (3600 * 1000);
 	
 	public static long nextTimestamp(HazelcastInstance instance) {
-		return instance.getCluster().getClusterTime() ;
+		return instance.getCluster().getClusterTime() ; // System time in ms.
 	}
 
+	@Deprecated
 	public static int getTimeout() {
-        return TIMEOUT;
+        return (60 * 1000); // 60 seconds in ms.
     }
+	
+	public static int getTimeout(HazelcastInstance instance, String regionName) {
+		int ttl = DEFAULT_TIMEOUT;
+		try {
+			final MapConfig cfg = instance.getConfig().getMapConfig(regionName);
+			if(cfg.getTimeToLiveSeconds() > 0) {
+				ttl = cfg.getTimeToLiveSeconds() * 1000; // TTL in ms.
+			}
+		} catch (UnsupportedOperationException ignore) {
+			// HazelcastInstance is instance of HazelcastClient, its getConfig() method is not implemented.
+			// We are not checking this by using 'instanceof', 
+			// because HazelcastClient class may not be known by classloader.
+		}
+		return ttl;
+	}
 }

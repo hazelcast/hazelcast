@@ -34,12 +34,14 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
 	private final HazelcastInstance instance;
     private final IMap cache;
     private final String regionName;
+    private final int timeout;
 
     protected AbstractHazelcastRegion(final HazelcastInstance instance, final String regionName) {
     	super();
     	this.instance = instance;
         this.cache = instance.getMap(regionName);
         this.regionName = regionName;
+        this.timeout = HazelcastTimestamper.getTimeout(instance, regionName);
     }
 
     public final IMap getCache() {
@@ -90,7 +92,7 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
     }
 
     public int getTimeout() {
-        return HazelcastTimestamper.getTimeout();
+        return timeout;
     }
 
     public long nextTimestamp() {
