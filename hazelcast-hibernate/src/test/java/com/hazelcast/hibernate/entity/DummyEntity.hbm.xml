@@ -6,7 +6,10 @@
 <hibernate-mapping package="com.hazelcast.hibernate.entity">
 	<class name="DummyEntity" table="dummy_entities">
 	
-		<cache usage="read-write"/>
+<!--		<cache usage="read-only"/>-->
+<!--		<cache usage="nonstrict-read-write"/>-->
+<!--		<cache usage="read-write"/>-->
+		<cache usage="transactional"/>
 		
 		<id name="id" column="uid" type="long" unsaved-value="null">
 			<generator class="assigned" />
