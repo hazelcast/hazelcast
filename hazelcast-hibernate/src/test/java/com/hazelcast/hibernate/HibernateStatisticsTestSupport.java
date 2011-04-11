@@ -2,7 +2,9 @@ package com.hazelcast.hibernate;
 
 import static org.junit.Assert.*;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 
 import org.hibernate.Query;
@@ -69,17 +71,35 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 		insertDummyEntities(count);
 		sleep(1);
 		
+		List<DummyEntity> list = new ArrayList<DummyEntity>(count);
 		Session	session = sf.openSession();
 		try {
 			for (int i = 0; i < count; i++) {
-				session.get(DummyEntity.class, new Long(i));
+				DummyEntity e = (DummyEntity) session.get(DummyEntity.class, new Long(i));
+				session.evict(e);
+				list.add(e);
 			}
 		} finally {
 			session.close();
 		}
 		
+		session = sf.openSession();
+		Transaction tx = session.beginTransaction();
+		try {
+			for (DummyEntity dummy : list) {
+				dummy.setDate(new Date());
+				session.update(dummy);
+			}
+			tx.commit();
+		} catch (Exception e) {
+			tx.rollback();
+			e.printStackTrace();
+		} finally {
+			session.close();
+		}
+		
 		assertEquals(count, stats.getEntityInsertCount());
-		assertEquals(count, stats.getSecondLevelCachePutCount());
+		assertEquals(count * 2, stats.getSecondLevelCachePutCount());
 		assertEquals(0, stats.getEntityLoadCount());
 		assertEquals(count, stats.getSecondLevelCacheHitCount());
 		assertEquals(0, stats.getSecondLevelCacheMissCount());
@@ -97,9 +117,25 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 		insertDummyEntities(entityCount);
 		sleep(1);
 		
+		List<DummyEntity> list = null;
 		for (int i = 0; i < queryCount; i++) {
-			executeQuery(entityCount);
+			list = executeQuery();
+			assertEquals(entityCount, list.size());
 			sleep(1);
+		}
+		
+		Session session = sf.openSession();
+		Transaction tx = session.beginTransaction();
+		try {
+			for (DummyEntity dummy : list) {
+				session.delete(dummy);
+			}
+			tx.commit();
+		} catch (Exception e) {
+			tx.rollback();
+			e.printStackTrace();
+		} finally {
+			session.close();
 		}
 		
 		assertEquals(1, stats.getQueryCachePutCount());
@@ -111,6 +147,8 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 //		HazelcastRegionFactory puts into L2 cache 2 times; 1 on insert, 1 on query execution 
 //		assertEquals(entityCount, stats.getSecondLevelCachePutCount());
 		assertEquals(entityCount, stats.getEntityLoadCount());
+		assertEquals(entityCount, stats.getEntityDeleteCount());
+		
 		assertEquals(entityCount * (queryCount - 1), stats.getSecondLevelCacheHitCount());
 		assertEquals(0, stats.getSecondLevelCacheMissCount());
 		assertEquals(1, hz.getMap(StandardQueryCache.class.getName()).size());
@@ -118,12 +156,12 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 		stats.logSummary();
 	}
 	
-	private void executeQuery(final int entityCount) {
+	private List<DummyEntity> executeQuery() {
 		Session	session = sf.openSession();
 		try {
 			Query query = session.createQuery("from " + DummyEntity.class.getName());
 			query.setCacheable(true);
-			assertEquals(entityCount, query.list().size());
+			return query.list();
 		} finally {
 			session.close();
 		}

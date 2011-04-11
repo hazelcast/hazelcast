@@ -23,8 +23,6 @@ import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 
 import com.hazelcast.hibernate.region.HazelcastRegion;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 
 /**
@@ -33,11 +31,9 @@ import com.hazelcast.logging.Logger;
 
 public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrictReadWriteAccessDelegate<T> {
 
-    private static final ILogger LOG = Logger.getLogger(ReadOnlyAccessDelegate.class.getName());
-
-    public ReadOnlyAccessDelegate(final T hazelcastRegion) {
-        super(hazelcastRegion);
-    }
+    public ReadOnlyAccessDelegate(T hazelcastRegion) {
+		super(hazelcastRegion);
+	}
 
     /**
      * @throws UnsupportedOperationException

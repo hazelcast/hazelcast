@@ -8,8 +8,7 @@
 	
 <!--		<cache usage="read-only"/>-->
 <!--		<cache usage="nonstrict-read-write"/>-->
-<!--		<cache usage="read-write"/>-->
-		<cache usage="transactional"/>
+		<cache usage="read-write"/>
 		
 		<id name="id" column="uid" type="long" unsaved-value="null">
 			<generator class="assigned" />
