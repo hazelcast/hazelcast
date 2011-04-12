@@ -83,7 +83,11 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         out.writeInt(hits);
         out.writeUTF(name);
         keyData.writeData(out);
-        valueData.writeData(out);
+        boolean valueNull = (valueData == null);
+        out.writeBoolean(valueNull);
+        if (!valueNull) {
+            valueData.writeData(out);
+        }
         byte indexCount = (indexes == null) ? 0 : (byte) indexes.length;
         out.write(indexCount);
         for (byte i = 0; i < indexCount; i++) {
@@ -105,8 +109,11 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         name = in.readUTF();
         keyData = new Data();
         keyData.readData(in);
-        valueData = new Data();
-        valueData.readData(in);
+        boolean valueNull = in.readBoolean();
+        if (!valueNull) {
+            valueData = new Data();
+            valueData.readData(in);
+        }
         byte indexCount = in.readByte();
         if (indexCount > 0) {
             indexes = new Long[indexCount];
