@@ -17,6 +17,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.Semaphore;
 import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.config.Config;
@@ -377,6 +378,10 @@ public class HazelcastClient implements HazelcastInstance {
 
     public AtomicNumber getAtomicNumber(String name) {
         return (AtomicNumber) getClientProxy(Prefix.ATOMIC_NUMBER + name);
+    }
+    
+    public Semaphore getSemaphore(String name) {
+        return (Semaphore) getClientProxy(Prefix.SEMAPHORE + name);
     }
 
     public Collection<Instance> getInstances() {

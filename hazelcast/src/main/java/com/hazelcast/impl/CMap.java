@@ -829,6 +829,49 @@ public class CMap {
             req.value = null;
         }
     }
+    
+    public void doSemaphore(Request request) {
+
+        Record record = getRecord(request);
+        if (record == null) {
+            record = createNewRecord(request.key, toData(1));
+            mapRecords.put(request.key, record);
+        }
+
+        Integer total =  (Integer) toObject(request.value);
+        Integer available =  (Integer) toObject(record.getValueData());
+        
+        if (request.operation == SEMAPHORE_ACQUIRE) {
+            while(total > 0) {
+                while(available <= 0) {
+                 available =  (Integer) toObject(record.getValueData());
+                 if(total > 0 && available == 0) {
+                     request.response = total;
+                     return;
+                 }
+                }
+             record.setValue(IOUtil.addDelta(record.getValueData(), -1));
+             available =  (Integer) toObject(record.getValueData());
+             total--;
+             request.response=0;
+            }
+        } else if (request.operation == SEMAPHORE_RELEASE) {
+            while(total > 0) {
+             record.setValue(IOUtil.addDelta(record.getValueData(), 1));
+             available =  (Integer) toObject(record.getValueData());
+             total--;
+            }
+            request.response = available;
+        } else if (request.operation == SEMAPHORE_AVAILABLE_PERIMITS) {
+            request.response = available;
+        } else if (request.operation == SEMAPHORE_DRAIN_PERIMITS) {
+            while(available > 0) {
+             record.setValue(IOUtil.addDelta(record.getValueData(),-1));
+             available =  (Integer) toObject(record.getValueData());
+            }
+            request.response = Boolean.TRUE;
+        }
+    }
 
     public void put(Request req) {
         long now = System.currentTimeMillis();

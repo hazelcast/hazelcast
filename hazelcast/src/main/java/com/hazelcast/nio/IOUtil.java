@@ -127,6 +127,11 @@ public final class IOUtil {
         return toData(longValue + delta);
     }
 
+     public static Data addDelta(Data intData, int delta) {
+        int intValue = (Integer) toObject(intData);
+        return toData(intValue + delta);
+    }
+
     public static Object toObject(Data data) {
         return ThreadContext.get().toObject(data);
     }

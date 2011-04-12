@@ -108,7 +108,11 @@ public enum ClusterOperation {
     CLIENT_ADD_INSTANCE_LISTENER(),
     CLIENT_GET_PARTITIONS(),
     BLOCKING_QUEUE_REMAINING_CAPACITY(),
-    BLOCKING_QUEUE_ENTRIES();
+    BLOCKING_QUEUE_ENTRIES(),
+    SEMAPHORE_ACQUIRE(),
+    SEMAPHORE_RELEASE(),
+    SEMAPHORE_AVAILABLE_PERIMITS(),
+    SEMAPHORE_DRAIN_PERIMITS();
 
     public final static byte OPERATION_COUNT = (byte) values().length;
     private final static ClusterOperation[] clusterOperations = new ClusterOperation[OPERATION_COUNT];

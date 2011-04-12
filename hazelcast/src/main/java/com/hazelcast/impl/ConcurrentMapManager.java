@@ -138,6 +138,10 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(ATOMIC_NUMBER_GET_AND_ADD, new AtomicOperationHandler());
         registerPacketProcessor(ATOMIC_NUMBER_COMPARE_AND_SET, new AtomicOperationHandler());
         registerPacketProcessor(ATOMIC_NUMBER_ADD_AND_GET, new AtomicOperationHandler());
+        registerPacketProcessor(SEMAPHORE_ACQUIRE, new SemaphoreOperationHandler());
+        registerPacketProcessor(SEMAPHORE_RELEASE, new SemaphoreOperationHandler());
+        registerPacketProcessor(SEMAPHORE_AVAILABLE_PERIMITS, new SemaphoreOperationHandler());
+        registerPacketProcessor(SEMAPHORE_DRAIN_PERIMITS, new SemaphoreOperationHandler());
     }
 
     private void executeCleanup(final CMap cmap, final boolean forced) {
@@ -993,6 +997,92 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    class MSemaphore extends MBackupAndMigrationAwareOp {
+        final Data nameAsKey;
+        final ClusterOperation op;
+        final int expected;
+        final int value;
+        final boolean ignoreExpected;
+
+        MSemaphore(Data nameAsKey, ClusterOperation op, int value, int expected, boolean ignoreExpected) {
+            this.nameAsKey = nameAsKey;
+            this.op = op;
+            this.value = value;
+            this.expected = expected;
+            this.ignoreExpected = ignoreExpected;
+        }
+
+        MSemaphore(Data nameAsKey, ClusterOperation op, int value, int expected) {
+            this(nameAsKey, op, value, expected, false);
+        }
+
+        MSemaphore(Data nameAsKey, ClusterOperation op, int value) {
+            this(nameAsKey, op, value, 0, true);
+        }
+
+        boolean tryAcquire(int permits,long timeout,TimeUnit timeUnit) {
+            Boolean result = false;
+            long start = System.currentTimeMillis();
+            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, permits,timeUnit.convert(timeout,TimeUnit.MILLISECONDS) , 0);
+            request.longValue = value;
+            request.caller=thisAddress;
+            request.operation=SEMAPHORE_ACQUIRE;
+            doOp();
+            Integer remaining = (Integer) getResultAsObject(false);
+            long end = System.currentTimeMillis();
+            //Estimate the invocation time, so that it can be deducted from the timeout.
+            long diff = end - start;
+
+            if(remaining > 0) {
+                if(timeout > 0 && timeout > diff) {
+                  result = tryAcquire(remaining,timeout-diff,timeUnit);
+                } else if(timeout < 0) {
+                  result = tryAcquire(remaining,timeout,timeUnit);
+                } else {
+                    result = false;
+                }
+            } else result = true;
+
+
+            if(!result) {
+               tryRelease(permits - remaining,-1,TimeUnit.MILLISECONDS);
+            }
+            return result;
+        }
+
+        void tryRelease(int permits,long timeout,TimeUnit timeUnit) {
+            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, permits,timeUnit.convert(timeout,TimeUnit.MILLISECONDS) , 0);
+            request.longValue = value;
+            request.caller=thisAddress;
+            request.operation=SEMAPHORE_RELEASE;
+            doOp();
+            Integer result = (Integer) getResultAsObject(false);
+        }
+
+        int availablePermits() {
+            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0 , 0);
+            request.longValue = value;
+            request.caller=thisAddress;
+            request.operation=SEMAPHORE_AVAILABLE_PERIMITS;
+            doOp();
+            Object returnObject = getResultAsObject(false);
+            return (Integer) returnObject;
+        }
+
+        void drainPermits() {
+            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0 , 0);
+            request.longValue = value;
+            request.caller=thisAddress;
+            request.operation=SEMAPHORE_DRAIN_PERIMITS;
+            doOp();
+        }
+
+        void backup(Long value) {
+            request.value = toData(value);
+            backup(CONCURRENT_MAP_BACKUP_PUT);
+        }
+    }
+
     class MPut extends MBackupAndMigrationAwareOp {
 
         public boolean replace(String name, Object key, Object oldValue, Object newValue, long timeout) {
@@ -1833,6 +1923,13 @@ public class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             cmap.doAtomic(request);
+        }
+    }
+        
+    class SemaphoreOperationHandler extends MTargetAwareOperationHandler {
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            cmap.doSemaphore(request);
         }
     }
 

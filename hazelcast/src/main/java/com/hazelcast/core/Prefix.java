@@ -86,6 +86,11 @@ public final class Prefix {
      * The Constant EXECUTOR_SERVICE: "x:"
      */
     public static final String EXECUTOR_SERVICE = "x:";
+    
+    /**
+     * The Constant SEMAPHORE: "smp:"
+     */
+    public static final String SEMAPHORE = "smp:";
 
     /**
      * Private constructor to avoid instances of the class.

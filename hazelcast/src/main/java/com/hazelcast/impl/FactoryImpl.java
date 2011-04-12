@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.Semaphore;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -62,6 +63,7 @@ public class FactoryImpl implements HazelcastInstance {
     final static Object factoryLock = new Object();
 
     final static String ATOMIC_NUMBER_MAP_NAME = "c:hz_AtomicNumber";
+    final static String SEMAPHORE_MAP_NAME = "c:hz_SEMAPHORE";
 
     private static int nextFactoryId = 0;
 
@@ -245,6 +247,10 @@ public class FactoryImpl implements HazelcastInstance {
 
         public ILock getLock(Object key) {
             return hazelcastInstance.getLock(key);
+        }
+        
+        public Semaphore getSemaphore(String name) {
+            return hazelcastInstance.getSemaphore(name);
         }
 
         public void addInstanceListener(InstanceListener instanceListener) {
@@ -490,6 +496,11 @@ public class FactoryImpl implements HazelcastInstance {
     public AtomicNumber getAtomicNumber(String name) {
         return (AtomicNumber) getOrCreateProxyByName(Prefix.ATOMIC_NUMBER + name);
     }
+    
+    public Semaphore getSemaphore(String name) {
+        Semaphore semaphore = (Semaphore) getOrCreateProxyByName(Prefix.SEMAPHORE + name);
+        return semaphore;
+    }
 
     public Transaction getTransaction() {
         initialChecks();
@@ -627,6 +638,8 @@ public class FactoryImpl implements HazelcastInstance {
                 proxy = new IdGeneratorProxy(name, this);
             } else if (name.equals("lock")) {
                 proxy = new LockProxy(this, proxyKey.key);
+            } else if (name.startsWith(Prefix.SEMAPHORE)) {
+                proxy = new SemaphoreImpl(name,this);
             }
             final HazelcastInstanceAwareInstance anotherProxy = proxies.putIfAbsent(proxyKey, proxy);
             if (anotherProxy != null) {

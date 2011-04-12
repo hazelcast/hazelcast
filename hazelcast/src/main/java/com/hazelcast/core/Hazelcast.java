@@ -263,6 +263,16 @@ public final class Hazelcast {
     public static AtomicNumber getAtomicNumber(String name) {
         return getDefaultInstance().getAtomicNumber(name);
     }
+    
+    /**
+     * Creates a cluster-wide semaphore. Semaphore is a distributed
+     * implementation of <tt>java.util.concurrent.Semaphore</tt>.
+     * @param name
+     * @return
+     */
+    public static Semaphore getSemaphore(String name) {
+        return getDefaultInstance().getSemaphore(name);
+    }
 
     /**
      * Creates cluster-wide unique IDs. Generated IDs are long type primitive values
