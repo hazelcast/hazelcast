@@ -191,6 +191,14 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         return new JoinCall(conn).checkJoin();
     }
 
+    public void appendState(StringBuffer sbState) {
+        sbState.append("\nClusterManager {");
+        for (ScheduledAction sa : setScheduledActions) {
+            sbState.append("\n\tSchedule Request from  " + sa.getRequest().caller);
+        }
+        sbState.append("\n}");
+    }
+
     class JoinCall extends ConnectionAwareOp {
         JoinCall(Connection target) {
             super(target);
@@ -816,7 +824,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
         heartBeater();
         node.getClusterImpl().setMembers(lsMembers);
-        node.unlock();
+        node.setJoined();
         logger.log(Level.INFO, this.toString());
     }
 

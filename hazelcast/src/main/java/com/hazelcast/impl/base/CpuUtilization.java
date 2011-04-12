@@ -21,16 +21,17 @@ import com.hazelcast.util.ThreadStats;
 
 public class CpuUtilization {
 
-    public volatile ThreadStats serviceThread = new ThreadStats(0, 0, 0);
-    public volatile ThreadStats inThread = new ThreadStats(0, 0, 0);
-    public volatile ThreadStats outThread = new ThreadStats(0, 0, 0);
+    public volatile ThreadStats serviceThread = new ThreadStats(0, 0, 0, true);
+    public volatile ThreadStats inThread = new ThreadStats(0, 0, 0, true);
+    public volatile ThreadStats outThread = new ThreadStats(0, 0, 0, true);
 
     @Override
     public String toString() {
+        long now = System.currentTimeMillis();
         return "CpuUtilization {" +
-                "\n\tserviceThread =" + serviceThread +
-                "\n\tinThread      =" + inThread +
-                "\n\toutThread     =" + outThread +
+                "\n\tserviceThread =" + serviceThread + " lastExe:" + serviceThread.getSecondsBetween(now) +
+                "\n\tinThread      =" + inThread + " lastExe:" + inThread.getSecondsBetween(now) +
+                "\n\toutThread     =" + outThread + " lastExe:" + outThread.getSecondsBetween(now) +
                 "\n}";
     }
 }

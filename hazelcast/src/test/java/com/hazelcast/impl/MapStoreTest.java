@@ -80,6 +80,40 @@ public class MapStoreTest extends TestUtil {
     }
 
     @Test
+    public void testGetAllKeys() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        Map store = testMapStore.getStore();
+        Set keys = new HashSet();
+        int size = 1000;
+        for (int i = 0; i < size; i++) {
+            store.put(i, "value" + i);
+            keys.add(i);
+        }
+        Config config = newConfig(testMapStore, 2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        assertEquals("value1", map1.get(1));
+        assertEquals("value1", map2.get(1));
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        IMap map3 = h3.getMap("default");
+        assertEquals("value1", map1.get(1));
+        assertEquals("value1", map2.get(1));
+        assertEquals("value1", map3.get(1));
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+        assertEquals(1000, map3.size());
+        h3.getLifecycleService().shutdown();
+        assertEquals("value1", map1.get(1));
+        assertEquals("value1", map2.get(1));
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+    }
+
+    @Test
     public void testThreeMemberGetAll() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Map store = testMapStore.getStore();

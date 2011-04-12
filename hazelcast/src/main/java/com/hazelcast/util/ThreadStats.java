@@ -21,11 +21,15 @@ public class ThreadStats {
     private final long waitCount;
     private final long runCount;
     private final int utilizationPercentage;
+    private final long createMillis;
+    private final boolean running;
 
-    public ThreadStats(int utilizationPercentage, long runCount, long waitCount) {
+    public ThreadStats(int utilizationPercentage, long runCount, long waitCount, boolean running) {
         this.utilizationPercentage = utilizationPercentage;
         this.runCount = runCount;
         this.waitCount = waitCount;
+        this.running = running;
+        this.createMillis = System.currentTimeMillis();
     }
 
     public long getRunCount() {
@@ -40,12 +44,25 @@ public class ThreadStats {
         return waitCount;
     }
 
+    public long getCreateMillis() {
+        return createMillis;
+    }
+
+    public long getSecondsBetween(long millis) {
+        return (millis - createMillis) / 1000;
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
     @Override
     public String toString() {
         return "ThreadStats{" +
                 "utilization=" + utilizationPercentage +
-                ", runCount=" + runCount +
-                ", waitCount=" + waitCount +
+                ", runs=" + runCount +
+                ", waits=" + waitCount +
+                ", running=" + running +
                 '}';
     }
 }

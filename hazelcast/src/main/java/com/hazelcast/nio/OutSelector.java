@@ -42,7 +42,7 @@ public final class OutSelector extends SelectorBase {
 
     @Override
     public void publishUtilization() {
-        node.getCpuUtilization().outThread = threadWatcher.publish();
+        node.getCpuUtilization().outThread = threadWatcher.publish(live);
     }
 
     public long getWriteQueueSize() {
@@ -54,6 +54,10 @@ public final class OutSelector extends SelectorBase {
 
         SocketChannel socketChannel = null;
 
+        long startTime = System.currentTimeMillis();
+
+        long lastCheck = startTime;
+
         public Connector(Address address) {
             this.address = address;
         }
@@ -62,16 +66,21 @@ public final class OutSelector extends SelectorBase {
             try {
                 final boolean finished = socketChannel.finishConnect();
                 if (!finished) {
+                    long now = System.currentTimeMillis();
+                    if (now - lastCheck > 5000) {
+                        logger.log(Level.WARNING, "Couldn't connect to " + address
+                                + " for " + ((now - startTime) / 1000) + " seconds!");
+                        lastCheck = now;
+                    }
                     socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);
                     return;
                 }
                 logger.log(Level.FINEST, "connected to " + address);
                 final Connection connection = createConnection(socketChannel, false);
                 node.connectionManager.bind(address, connection, false);
-            } catch (final Exception e) {
+            } catch (Throwable e) {
                 try {
-                    final String msg = "Couldn't connect to " + address + ", cause: "
-                            + e.getMessage();
+                    final String msg = "Couldn't connect to " + address + ", cause: " + e.getMessage();
                     logger.log(Level.FINEST, msg, e);
                     socketChannel.close();
                     node.connectionManager.failedConnection(address);
@@ -85,23 +94,20 @@ public final class OutSelector extends SelectorBase {
                 socketChannel = SocketChannel.open();
                 initSocket(socketChannel.socket());
                 final Address thisAddress = node.getThisAddress();
-                try {
-                    socketChannel.configureBlocking(false);
-                    socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
-                    logger.log(Level.FINEST, "connecting to " + address);
-                    boolean connected = socketChannel.connect(new InetSocketAddress(address.getInetAddress(),
-                            address.getPort()));
-                    logger.log(Level.FINEST, "connection check. connected: " + connected + ", " + address);
-                    if (connected) {
-                        handle();
-                        return;
-                    }
-                } catch (final Throwable e) {
-                    logger.log(Level.FINEST, address + " ConnectionFailed.", e);
-                    // ignore
-                }
-                socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);
-            } catch (final Throwable e) {
+                socketChannel.configureBlocking(false);
+                socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
+                logger.log(Level.FINEST, "connecting to " + address);
+                boolean connected = socketChannel.connect(new InetSocketAddress(address.getInetAddress(),
+                        address.getPort()));
+                logger.log(Level.FINEST, "connection check. connected: " + connected + ", " + address);
+//                if (connected) {
+//                    handle();
+//                    return;
+//                }
+//                socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);
+                handle();
+            } catch (Throwable e) {
+                logger.log(Level.WARNING, e.getMessage(), e);
                 if (socketChannel != null) {
                     try {
                         socketChannel.close();

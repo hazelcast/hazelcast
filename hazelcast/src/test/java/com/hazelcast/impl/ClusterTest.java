@@ -2527,8 +2527,7 @@ public class ClusterTest {
     @Test
     public void issue427QOfferIncorrectWithinTransaction() {
         Config config = new Config();
-        config.getMapConfig("default").getMaxSizeConfig().setSize(100);
-        config.getQueueConfig("default").setBackingMapName("default");
+        config.getQueueConfig("default").setBackingMapName("default").setMaxSizePerJVM(100);
         HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
         h.getTransaction().begin();
         IQueue q = h.getQueue("default");

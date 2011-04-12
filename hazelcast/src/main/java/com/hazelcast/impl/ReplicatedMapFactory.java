@@ -92,6 +92,10 @@ public final class ReplicatedMapFactory {
             return distributedMap.put(key, value, ttl, timeunit);
         }
 
+        public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
+            distributedMap.put(key, value, ttl, timeunit);
+        }
+
         @Override
         public V put(K key, V value) {
             return distributedMap.put(key, value);

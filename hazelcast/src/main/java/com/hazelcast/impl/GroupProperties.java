@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 
 public class GroupProperties {
 
+    public static final String PROP_MAP_LOAD_CHUNK_SIZE = "hazelcast.map.load.chunk.size";
     public static final String PROP_IN_THREAD_PRIORITY = "hazelcast.in.thread.priority";
     public static final String PROP_OUT_THREAD_PRIORITY = "hazelcast.out.thread.priority";
     public static final String PROP_SERVICE_THREAD_PRIORITY = "hazelcast.service.thread.priority";
@@ -66,6 +67,8 @@ public class GroupProperties {
     public final GroupProperty OUT_THREAD_PRIORITY;
 
     public final GroupProperty SERVICE_THREAD_PRIORITY;
+
+    public final GroupProperty MAP_LOAD_CHUNK_SIZE;
 
     public final GroupProperty MERGE_FIRST_RUN_DELAY_SECONDS;
 
@@ -122,6 +125,7 @@ public class GroupProperties {
     public final GroupProperty MC_TOPIC_EXCLUDES;
 
     public GroupProperties(Config config) {
+        MAP_LOAD_CHUNK_SIZE = new GroupProperty(config, PROP_MAP_LOAD_CHUNK_SIZE, "1000");
         IN_THREAD_PRIORITY = new GroupProperty(config, PROP_IN_THREAD_PRIORITY, "7");
         OUT_THREAD_PRIORITY = new GroupProperty(config, PROP_OUT_THREAD_PRIORITY, "7");
         SERVICE_THREAD_PRIORITY = new GroupProperty(config, PROP_SERVICE_THREAD_PRIORITY, "8");

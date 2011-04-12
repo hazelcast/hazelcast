@@ -49,7 +49,7 @@ public final class InSelector extends SelectorBase {
 
     @Override
     public void publishUtilization() {
-        node.getCpuUtilization().inThread = threadWatcher.publish();
+        node.getCpuUtilization().inThread = threadWatcher.publish(live);
     }
 
     @Override

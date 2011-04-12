@@ -184,7 +184,7 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     private void publishUtilization() {
-        node.getCpuUtilization().serviceThread = threadWatcher.publish();
+        node.getCpuUtilization().serviceThread = threadWatcher.publish(running);
     }
 
     private int dequeuePackets() throws Throwable {

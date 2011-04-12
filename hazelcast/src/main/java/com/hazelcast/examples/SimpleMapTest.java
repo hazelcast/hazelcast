@@ -20,11 +20,13 @@ package com.hazelcast.examples;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.partition.Partition;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 
 public class SimpleMapTest {
 
@@ -36,6 +38,7 @@ public class SimpleMapTest {
     public static int PUT_PERCENTAGE = 40;
 
     public static void main(String[] args) {
+        final ILogger logger = Hazelcast.getLoggingService().getLogger("SimpleMapTest");
         boolean load = false;
         if (args != null && args.length > 0) {
             for (String arg : args) {
@@ -55,17 +58,17 @@ public class SimpleMapTest {
                 }
             }
         } else {
-            System.out.println("Help: sh test.sh t200 v130 p10 g85 ");
-            System.out.println("    // means 200 threads, value-size 130 bytes, 10% put, 85% get");
-            System.out.println("");
+            logger.log(Level.INFO, "Help: sh test.sh t200 v130 p10 g85 ");
+            logger.log(Level.INFO, "    // means 200 threads, value-size 130 bytes, 10% put, 85% get");
+            logger.log(Level.INFO, "");
         }
-        System.out.println("Starting Test with ");
-        System.out.println("      Thread Count: " + THREAD_COUNT);
-        System.out.println("       Entry Count: " + ENTRY_COUNT);
-        System.out.println("        Value Size: " + VALUE_SIZE);
-        System.out.println("    Get Percentage: " + GET_PERCENTAGE);
-        System.out.println("    Put Percentage: " + PUT_PERCENTAGE);
-        System.out.println(" Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
+        logger.log(Level.INFO, "Starting Test with ");
+        logger.log(Level.INFO, "      Thread Count: " + THREAD_COUNT);
+        logger.log(Level.INFO, "       Entry Count: " + ENTRY_COUNT);
+        logger.log(Level.INFO, "        Value Size: " + VALUE_SIZE);
+        logger.log(Level.INFO, "    Get Percentage: " + GET_PERCENTAGE);
+        logger.log(Level.INFO, "    Put Percentage: " + PUT_PERCENTAGE);
+        logger.log(Level.INFO, " Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
         ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
         final IMap<String, byte[]> map = Hazelcast.getMap("default");
         if (load) {
@@ -104,15 +107,14 @@ public class SimpleMapTest {
                 while (true) {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
-                        System.out.println("cluster size:"
-                                + Hazelcast.getCluster().getMembers().size());
+                        logger.log(Level.INFO, "cluster size:" + Hazelcast.getCluster().getMembers().size());
                         LocalMapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();
                         long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
                         if (period == 0) {
                             continue;
                         }
-                        System.out.println(mapOpStats);
-                        System.out.println("Operations per Second : " + mapOpStats.total() / period);
+                        logger.log(Level.INFO, mapOpStats.toString());
+                        logger.log(Level.INFO, "Operations per Second : " + mapOpStats.total() / period);
                     } catch (InterruptedException ignored) {
                         return;
                     }

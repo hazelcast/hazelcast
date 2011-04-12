@@ -158,6 +158,18 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     V put(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
+     * Same as {@link #put(K, V, long, TimeUnit)} but MapStore, if defined,
+     * will not be called to store/persist the entry.
+     *
+     * @param key      key of the entry
+     * @param value    value of the entry
+     * @param ttl      maximum time for this entry to stay in the map
+     * @param timeunit time unit for the ttl
+     * @return old value of the entry
+     */
+    void putTransient(K key, V value, long ttl, TimeUnit timeunit);
+
+    /**
      * Puts an entry into this map with a given ttl (time to live) value
      * if the specified key is not already associated
      * with a value
@@ -359,7 +371,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @return result value collection of the query
      */
 
-    <V> Collection<V> values(Predicate predicate);
+    Collection<V> values(Predicate predicate);
 
     /**
      * Returns the locally owned set of keys.

@@ -17,11 +17,11 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.Semaphore;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
+import com.hazelcast.core.Semaphore;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.base.RuntimeInterruptedException;
@@ -75,7 +75,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     private final MProxy idGeneratorMapProxy;
 
-    private final MProxyImpl globalProxies;
+    private final MProxy globalProxies;
 
     private final ConcurrentMap<String, ExecutorServiceProxy> executorServiceProxies = new ConcurrentHashMap<String, ExecutorServiceProxy>(2);
 
@@ -248,7 +248,7 @@ public class FactoryImpl implements HazelcastInstance {
         public ILock getLock(Object key) {
             return hazelcastInstance.getLock(key);
         }
-        
+
         public Semaphore getSemaphore(String name) {
             return hazelcastInstance.getSemaphore(name);
         }
@@ -413,7 +413,7 @@ public class FactoryImpl implements HazelcastInstance {
      * @return
      */
     public static long toMillis(long time, TimeUnit unit) {
-        if (time == 0) {
+        if (time == 0 || unit == null) {
             return 0;
         } else if (time < 0) {
             return -1;
@@ -496,7 +496,7 @@ public class FactoryImpl implements HazelcastInstance {
     public AtomicNumber getAtomicNumber(String name) {
         return (AtomicNumber) getOrCreateProxyByName(Prefix.ATOMIC_NUMBER + name);
     }
-    
+
     public Semaphore getSemaphore(String name) {
         Semaphore semaphore = (Semaphore) getOrCreateProxyByName(Prefix.SEMAPHORE + name);
         return semaphore;
@@ -572,6 +572,7 @@ public class FactoryImpl implements HazelcastInstance {
         if (proxy == null) {
             proxy = getOrCreateProxy(new ProxyKey(name, null));
         }
+        checkInitialization(proxy);
         return proxy;
     }
 
@@ -582,6 +583,84 @@ public class FactoryImpl implements HazelcastInstance {
             proxy = createInstanceClusterWide(proxyKey);
         }
         return proxy;
+    }
+
+    private void checkInitialization(Object proxy) {
+        if (proxy instanceof MProxy) {
+            MProxy mProxy = (MProxy) proxy;
+            CMap cmap = node.concurrentMapManager.getMap(mProxy.getLongName());
+            if (!cmap.isMapForQueue() && !cmap.initialized) {
+                synchronized (cmap.getInitLock()) {
+                    if (!cmap.initialized) {
+                        if (cmap.loader != null) {
+                            if (getAtomicNumber(name).compareAndSet(0, 1)) {
+                                ExecutorService es = getExecutorService();
+                                MultiTask task = new MultiTask(new InitializeMap(mProxy.getName()), getCluster().getMembers());
+                                es.execute(task);
+                            }
+                            Set keys = cmap.loader.loadAllKeys();
+                            if (keys != null) {
+                                int count = 0;
+                                PartitionService partitionService = getPartitionService();
+                                Set ownedKeys = new HashSet();
+                                for (Object key : keys) {
+                                    if (partitionService.getPartition(key).getOwner().localMember()) {
+                                        ownedKeys.add(key);
+                                        count++;
+                                        if (ownedKeys.size() >= node.groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger()) {
+                                            loadKeys(mProxy, cmap, ownedKeys);
+                                            ownedKeys.clear();
+                                        }
+                                    }
+                                }
+                                loadKeys(mProxy, cmap, ownedKeys);
+                                logger.log(Level.INFO, node.address + "[" + mProxy.getName() + "] loaded " + count);
+                            }
+                        }
+                    }
+                    cmap.initialized = true;
+                }
+            }
+        }
+    }
+
+    private void loadKeys(MProxy mProxy, CMap cmap, Set keys) {
+        if (keys.size() > 0) {
+            Map map = cmap.loader.loadAll(keys);
+            Set<Map.Entry> entries = map.entrySet();
+            for (Map.Entry entry : entries) {
+                mProxy.putTransient(entry.getKey(), entry.getValue(), 0, null);
+            }
+        }
+    }
+
+    public static class InitializeMap implements Callable<Boolean>, DataSerializable, HazelcastInstanceAware {
+        String name;
+        private transient HazelcastInstance hazelcast = null;
+
+        public InitializeMap(String name) {
+            this.name = name;
+        }
+
+        public InitializeMap() {
+        }
+
+        public Boolean call() throws Exception {
+            hazelcast.getMap(name).getName();
+            return Boolean.TRUE;
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcast = hazelcastInstance;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+        }
     }
 
     public void initialChecks() {
@@ -615,6 +694,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     // should only be called from service thread!!
     public Object createProxy(ProxyKey proxyKey) {
+        node.clusterManager.checkServiceThread();
         boolean created = false;
         HazelcastInstanceAwareInstance proxy = proxies.get(proxyKey);
         if (proxy == null) {
@@ -626,6 +706,7 @@ public class FactoryImpl implements HazelcastInstance {
                 proxy = new TopicProxyImpl(name, this);
             } else if (name.startsWith(Prefix.MAP)) {
                 proxy = new MProxyImpl(name, this);
+                node.concurrentMapManager.getOrCreateMap(name);
             } else if (name.startsWith(Prefix.MAP_BASED)) {
                 if (BaseManager.getInstanceType(name) == Instance.InstanceType.MULTIMAP) {
                     proxy = new MultiMapProxyImpl(name, this);
@@ -639,7 +720,7 @@ public class FactoryImpl implements HazelcastInstance {
             } else if (name.equals("lock")) {
                 proxy = new LockProxy(this, proxyKey.key);
             } else if (name.startsWith(Prefix.SEMAPHORE)) {
-                proxy = new SemaphoreImpl(name,this);
+                proxy = new SemaphoreImpl(name, this);
             }
             final HazelcastInstanceAwareInstance anotherProxy = proxies.putIfAbsent(proxyKey, proxy);
             if (anotherProxy != null) {
@@ -2152,6 +2233,10 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
 
+        public void putTransient(Object key, Object value, long time, TimeUnit timeunit) {
+            dynamicProxy.putTransient(key, value, time, timeunit);
+        }
+
         public boolean tryPut(Object key, Object value, long time, TimeUnit timeunit) {
             return dynamicProxy.tryPut(key, value, time, timeunit);
         }
@@ -2500,6 +2585,18 @@ public class FactoryImpl implements HazelcastInstance {
                     ttl = toMillis(ttl, timeunit);
                 }
                 return put(key, value, -1, ttl);
+            }
+
+            public void putTransient(Object key, Object value, long ttl, TimeUnit timeunit) {
+                if (ttl < 0) {
+                    throw new IllegalArgumentException("ttl value cannot be negative. " + ttl);
+                }
+                if (ttl == 0) {
+                    ttl = -1;
+                } else {
+                    ttl = toMillis(ttl, timeunit);
+                }
+                concurrentMapManager.putTransient(name, key, value, -1, ttl);
             }
 
             public Object put(Object key, Object value, long timeout, long ttl) {

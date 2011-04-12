@@ -130,6 +130,10 @@ public class CMap {
 
     CleanupState cleanupState = CleanupState.NONE;
 
+    volatile boolean initialized = false;
+
+    final Object initLock = new Object();
+
     CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
         this.logger = concurrentMapManager.node.getLogger(CMap.class.getName());
@@ -243,6 +247,10 @@ public class CMap {
         }
         this.mergePolicy = mergePolicyTemp;
         this.creationTime = System.currentTimeMillis();
+    }
+
+    public Object getInitLock() {
+        return initLock;
     }
 
     boolean isUserMap() {
@@ -829,45 +837,42 @@ public class CMap {
             req.value = null;
         }
     }
-    
-    public void doSemaphore(Request request) {
 
+    public void doSemaphore(Request request) {
         Record record = getRecord(request);
         if (record == null) {
             record = createNewRecord(request.key, toData(1));
             mapRecords.put(request.key, record);
         }
-
-        Integer total =  (Integer) toObject(request.value);
-        Integer available =  (Integer) toObject(record.getValueData());
-        
+        Integer total = (Integer) toObject(request.value);
+        Integer available = (Integer) toObject(record.getValueData());
         if (request.operation == SEMAPHORE_ACQUIRE) {
-            while(total > 0) {
-                while(available <= 0) {
-                 available =  (Integer) toObject(record.getValueData());
-                 if(total > 0 && available == 0) {
-                     request.response = total;
-                     return;
-                 }
+            while (total > 0) {
+                while (available <= 0) {
+                    available = (Integer) toObject(record.getValueData());
+                    if (total > 0 && available == 0) {
+                        request.response = total;
+                        return;
+                    }
                 }
-             record.setValue(IOUtil.addDelta(record.getValueData(), -1));
-             available =  (Integer) toObject(record.getValueData());
-             total--;
-             request.response=0;
+                record.setValue(IOUtil.addDelta(record.getValueData(), -1));
+                available = (Integer) toObject(record.getValueData());
+                total--;
+                request.response = 0;
             }
         } else if (request.operation == SEMAPHORE_RELEASE) {
-            while(total > 0) {
-             record.setValue(IOUtil.addDelta(record.getValueData(), 1));
-             available =  (Integer) toObject(record.getValueData());
-             total--;
+            while (total > 0) {
+                record.setValue(IOUtil.addDelta(record.getValueData(), 1));
+                available = (Integer) toObject(record.getValueData());
+                total--;
             }
             request.response = available;
         } else if (request.operation == SEMAPHORE_AVAILABLE_PERIMITS) {
             request.response = available;
         } else if (request.operation == SEMAPHORE_DRAIN_PERIMITS) {
-            while(available > 0) {
-             record.setValue(IOUtil.addDelta(record.getValueData(),-1));
-             available =  (Integer) toObject(record.getValueData());
+            while (available > 0) {
+                record.setValue(IOUtil.addDelta(record.getValueData(), -1));
+                available = (Integer) toObject(record.getValueData());
             }
             request.response = Boolean.TRUE;
         }
@@ -1623,6 +1628,11 @@ public class CMap {
             mapNearCache.appendState(sbState);
         }
         mapIndexService.appendState(sbState);
+        for (Record record : mapRecords.values()) {
+            if (record.isLocked()) {
+                sbState.append("\nLocked Record by " + record.getLock());
+            }
+        }
     }
 
     public static class Values implements Collection, DataSerializable {

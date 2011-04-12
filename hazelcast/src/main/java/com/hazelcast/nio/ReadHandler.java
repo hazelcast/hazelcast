@@ -32,12 +32,17 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     SocketReader socketReader = null;
 
+    long runCount = 0;
+
     public ReadHandler(Connection connection) {
         super(connection);
         inBuffer = ByteBuffer.allocate(node.connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
     }
 
     public final void handle() {
+//        if (runCount++ % 10000 == 0) {
+//            System.out.println("read count " + runCount);
+//        }
         if (!connection.live()) {
             logger.log(Level.FINEST, ">>>> We are being to asked to read, but connection is not live so we won't");
             return;

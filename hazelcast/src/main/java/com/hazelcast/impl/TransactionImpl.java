@@ -24,12 +24,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 class TransactionImpl implements Transaction {
 
     private final long id;
     private final FactoryImpl factory;
-    private final List<TransactionRecord> transactionRecords = new ArrayList<TransactionRecord>(1);
+    private final List<TransactionRecord> transactionRecords = new CopyOnWriteArrayList<TransactionRecord>();
 
     private int status = TXN_STATUS_NO_TXN;
 

@@ -23,4 +23,6 @@ public interface LoggingService {
     void addLogListener(Level level, LogListener logListener);
 
     void removeLogListener(LogListener logListener);
+
+    ILogger getLogger(String name);
 }

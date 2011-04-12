@@ -51,6 +51,10 @@ public abstract class SelectorBase implements Runnable {
 
     protected final ThreadWatcher threadWatcher = new ThreadWatcher();
 
+    final static long TEN_SECOND_MILLIS = TimeUnit.SECONDS.toMillis(10);
+
+    private long lastPublish = 0;
+
     public SelectorBase(Node node, int waitTime) {
         this.node = node;
         logger = node.getLogger(this.getClass().getName());
@@ -105,8 +109,14 @@ public abstract class SelectorBase implements Runnable {
     public final void run() {
         try {
             while (live) {
-                if (threadWatcher.incrementRunCount() % 10000 == 0) {
+//                 if (threadWatcher.incrementRunCount() % 10000 == 0) {
+//                    publishUtilization();
+//                }
+                threadWatcher.incrementRunCount();
+                long currentMillis = System.currentTimeMillis();
+                if ((currentMillis - lastPublish) > TEN_SECOND_MILLIS) {
                     publishUtilization();
+                    lastPublish = currentMillis;
                 }
                 processSelectionQueue();
                 if (!live) return;
@@ -132,9 +142,11 @@ public abstract class SelectorBase implements Runnable {
                     final SelectionKey sk = it.next();
                     it.remove();
                     try {
-                        sk.interestOps(sk.interestOps() & ~sk.readyOps());
-                        SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
-                        selectionHandler.handle();
+                        if (sk.isValid()) {
+                            sk.interestOps(sk.interestOps() & ~sk.readyOps());
+                            SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
+                            selectionHandler.handle();
+                        }
                     } catch (CancelledKeyException e) {
                         // nothing do
                     } catch (Throwable e) {
@@ -169,8 +181,7 @@ public abstract class SelectorBase implements Runnable {
         socket.setSendBufferSize(node.connectionManager.SOCKET_SEND_BUFFER_SIZE);
     }
 
-    protected Connection createConnection(final SocketChannel socketChannel, final boolean acceptor)
-            throws Exception {
+    protected Connection createConnection(final SocketChannel socketChannel, final boolean acceptor) {
         return node.connectionManager.createConnection(socketChannel, acceptor);
     }
 }

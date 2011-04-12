@@ -477,9 +477,12 @@ public abstract class BaseManager {
         public Object waitAndGetResult() {
             while (true) {
                 try {
-                    Object obj = responses.poll(5, TimeUnit.SECONDS);
+                    Object obj = responses.poll(10, TimeUnit.SECONDS);
                     if (obj != null) {
                         return obj;
+                    }
+                    if (node.isActive()) {
+                        logger.log(Level.FINEST, "Still no response! " + request);
                     }
                     node.checkNodeState();
                 } catch (InterruptedException e) {

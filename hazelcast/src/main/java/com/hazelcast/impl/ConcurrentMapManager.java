@@ -196,30 +196,33 @@ public class ConcurrentMapManager extends BaseManager {
         long now = System.currentTimeMillis();
         if (LOG_STATE && ((now - lastLogStateTime) > 15000)) {
             StringBuffer sbState = new StringBuffer(thisAddress + " State[" + new Date(now));
-            sbState.append("]======================");
+            sbState.append("]");
+            Collection<Call> calls = mapCalls.values();
+//            for (Call call : calls) {
+//                if (call.getEnqueueCount() > 15 || (now - call.getFirstEnqueueTime() > 15000)) {
+//                    sbState.append("\n");
+//                    sbState.append(call);
+//                }
+//            }
+            sbState.append("\nCall Count:" + calls.size());
             for (Block block : blocks) {
                 if (block != null && block.isMigrating()) {
                     sbState.append("\n");
                     sbState.append(block);
                 }
             }
-            Collection<Call> calls = mapCalls.values();
-            for (Call call : calls) {
-                if (call.getEnqueueCount() > 15 || (now - call.getFirstEnqueueTime() > 15000)) {
-                    sbState.append("\n");
-                    sbState.append(call);
-                }
-            }
-            sbState.append("\nCall Count:" + calls.size());
             Collection<CMap> cmaps = maps.values();
             for (CMap cmap : cmaps) {
                 cmap.appendState(sbState);
             }
+            CpuUtilization cpuUtilization = node.getCpuUtilization();
+            node.connectionManager.appendState(sbState);
             node.executorManager.appendState(sbState);
+            node.clusterManager.appendState(sbState);
             long total = Runtime.getRuntime().totalMemory();
             long free = Runtime.getRuntime().freeMemory();
             sbState.append("\nCluster Size:" + lsMembers.size());
-            sbState.append("\n" + node.getCpuUtilization());
+            sbState.append("\n" + cpuUtilization);
             sbState.append("\nUsed Memory:");
             sbState.append((total - free) / 1024 / 1024);
             sbState.append("MB");
@@ -1020,60 +1023,57 @@ public class ConcurrentMapManager extends BaseManager {
             this(nameAsKey, op, value, 0, true);
         }
 
-        boolean tryAcquire(int permits,long timeout,TimeUnit timeUnit) {
+        boolean tryAcquire(int permits, long timeout, TimeUnit timeUnit) {
             Boolean result = false;
             long start = System.currentTimeMillis();
-            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, permits,timeUnit.convert(timeout,TimeUnit.MILLISECONDS) , 0);
+            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, permits, timeUnit.convert(timeout, TimeUnit.MILLISECONDS), 0);
             request.longValue = value;
-            request.caller=thisAddress;
-            request.operation=SEMAPHORE_ACQUIRE;
+            request.caller = thisAddress;
+            request.operation = SEMAPHORE_ACQUIRE;
             doOp();
             Integer remaining = (Integer) getResultAsObject(false);
             long end = System.currentTimeMillis();
             //Estimate the invocation time, so that it can be deducted from the timeout.
             long diff = end - start;
-
-            if(remaining > 0) {
-                if(timeout > 0 && timeout > diff) {
-                  result = tryAcquire(remaining,timeout-diff,timeUnit);
-                } else if(timeout < 0) {
-                  result = tryAcquire(remaining,timeout,timeUnit);
+            if (remaining > 0) {
+                if (timeout > 0 && timeout > diff) {
+                    result = tryAcquire(remaining, timeout - diff, timeUnit);
+                } else if (timeout < 0) {
+                    result = tryAcquire(remaining, timeout, timeUnit);
                 } else {
                     result = false;
                 }
             } else result = true;
-
-
-            if(!result) {
-               tryRelease(permits - remaining,-1,TimeUnit.MILLISECONDS);
+            if (!result) {
+                tryRelease(permits - remaining, -1, TimeUnit.MILLISECONDS);
             }
             return result;
         }
 
-        void tryRelease(int permits,long timeout,TimeUnit timeUnit) {
-            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, permits,timeUnit.convert(timeout,TimeUnit.MILLISECONDS) , 0);
+        void tryRelease(int permits, long timeout, TimeUnit timeUnit) {
+            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, permits, timeUnit.convert(timeout, TimeUnit.MILLISECONDS), 0);
             request.longValue = value;
-            request.caller=thisAddress;
-            request.operation=SEMAPHORE_RELEASE;
+            request.caller = thisAddress;
+            request.operation = SEMAPHORE_RELEASE;
             doOp();
             Integer result = (Integer) getResultAsObject(false);
         }
 
         int availablePermits() {
-            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0 , 0);
+            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0, 0);
             request.longValue = value;
-            request.caller=thisAddress;
-            request.operation=SEMAPHORE_AVAILABLE_PERIMITS;
+            request.caller = thisAddress;
+            request.operation = SEMAPHORE_AVAILABLE_PERIMITS;
             doOp();
             Object returnObject = getResultAsObject(false);
             return (Integer) returnObject;
         }
 
         void drainPermits() {
-            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0 , 0);
+            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0, 0);
             request.longValue = value;
-            request.caller=thisAddress;
-            request.operation=SEMAPHORE_DRAIN_PERIMITS;
+            request.caller = thisAddress;
+            request.operation = SEMAPHORE_DRAIN_PERIMITS;
             doOp();
         }
 
@@ -1758,7 +1758,7 @@ public class ConcurrentMapManager extends BaseManager {
         CMap cmap = getMap(name);
         if (cmap.loader != null) {
             if (!cmap.isMapForQueue()) {
-            	//TODO
+                //TODO
             }
         }
     }
@@ -1926,7 +1926,7 @@ public class ConcurrentMapManager extends BaseManager {
             cmap.doAtomic(request);
         }
     }
-        
+
     class SemaphoreOperationHandler extends MTargetAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);

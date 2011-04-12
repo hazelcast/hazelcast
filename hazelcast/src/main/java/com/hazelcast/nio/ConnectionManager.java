@@ -229,4 +229,14 @@ public class ConnectionManager {
     public void incrementTextConnections() {
         allTextConnections.incrementAndGet();
     }
+
+    public void appendState(StringBuffer sbState) {
+        sbState.append("\nConnectionManager {");
+        for (Connection conn : mapConnections.values()) {
+            sbState.append("\n\tEndPoint: " + conn.getEndPoint());
+            sbState.append("  " + conn.live());
+            sbState.append("  " + conn.getWriteHandler().size());
+        }
+        sbState.append("\n}");
+    }
 }

@@ -29,9 +29,9 @@ public class MemberHealthStatsImpl implements MemberHealthStats, DataSerializabl
 
     boolean outOfMemory;
     boolean active;
-    ThreadStats serviceThreadStats = new ThreadStats(0, 0, 0);
-    ThreadStats inThreadStats = new ThreadStats(0, 0, 0);
-    ThreadStats outThreadStats = new ThreadStats(0, 0, 0);
+    ThreadStats serviceThreadStats = new ThreadStats(0, 0, 0, true);
+    ThreadStats inThreadStats = new ThreadStats(0, 0, 0, true);
+    ThreadStats outThreadStats = new ThreadStats(0, 0, 0, true);
 
     public void readData(DataInput in) throws IOException {
         outOfMemory = in.readBoolean();
@@ -53,10 +53,11 @@ public class MemberHealthStatsImpl implements MemberHealthStats, DataSerializabl
         out.writeInt(t.getUtilizationPercentage());
         out.writeLong(t.getRunCount());
         out.writeLong(t.getWaitCount());
+        out.writeBoolean(t.isRunning());
     }
 
     ThreadStats readThreadStats(DataInput in) throws IOException {
-        return new ThreadStats(in.readInt(), in.readLong(), in.readLong());
+        return new ThreadStats(in.readInt(), in.readLong(), in.readLong(), in.readBoolean());
     }
 
     public ThreadStats getInThreadStats() {

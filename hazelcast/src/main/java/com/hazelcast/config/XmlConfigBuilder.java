@@ -111,7 +111,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     public Config build() {
-        return build(new Config());
+        Config config = new Config();
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        return build(config);
     }
 
     public Config build(Config config) {
@@ -119,7 +121,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     public Config build(Element element) {
-        return build(new Config(), element);
+        Config config = new Config();
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        return build(config, element);
     }
 
     Config build(Config config, Element element) {

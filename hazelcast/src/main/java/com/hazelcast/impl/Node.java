@@ -190,37 +190,6 @@ public class Node {
             public void onRelease(Packet packet) {
             }
 
-            //            @Override
-//            public void onRelease(Packet packet) {
-//                packet.released = true;
-//            }
-//
-//            @Override
-//            public boolean release(Packet packet) {
-//                if (packet.released) {
-//                    logger.log(Level.WARNING, "Packet is already released.");
-//                    return false;
-//                } else {
-//                    return super.release(packet);
-//                }
-//            }
-//
-//            @Override
-//            public void onObtain(Packet packet) {
-//                packet.reset();
-//                packet.released = false;
-//            }
-//
-//            @Override
-//            public Packet obtain() {
-//                Packet p = super.obtain();
-//                if (p.released) {
-//                    logger.log(Level.WARNING, "Obtained un-released packet.");
-//                    p = createNew();
-//                }
-//                return p;
-//            }
-//
             public Packet createNew() {
                 return new Packet();
             }
@@ -458,6 +427,15 @@ public class Node {
         logger.log(Level.FINEST, "finished starting threads, calling join");
         join();
         postJoin();
+        int clusterSize = clusterImpl.getMembers().size();
+        if (address.getPort() >= config.getPort() + clusterSize) {
+            StringBuilder sb = new StringBuilder("Config seed port is ");
+            sb.append(config.getPort());
+            sb.append(" and cluster size is ");
+            sb.append(clusterSize);
+            sb.append(". Some of the ports seem occupied!");
+            logger.log(Level.WARNING, sb.toString());
+        }
     }
 
     private void postJoin() {
@@ -565,7 +543,7 @@ public class Node {
         }
     }
 
-    public void unlock() {
+    public void setJoined() {
         joined = true;
     }
 
@@ -725,13 +703,15 @@ public class Node {
 
     void join() {
         try {
-            if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
+            boolean multicastEnabled = config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled();
+            boolean tcpEnabled = config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled();
+            if (multicastEnabled) {
                 joinWithMulticast();
-            } else {
-                if (!config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled()) {
-                    logger.log(Level.WARNING, "Neither multicast nor tcp/ip join is enabled! Trying tcp/ip join...");
-                }
+            } else if (tcpEnabled) {
                 joinWithTCP();
+            } else {
+                logger.log(Level.WARNING, "Neither multicast nor tcp/ip join is enabled! Starting standalone.");
+                setAsMaster();
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage());
@@ -750,7 +730,7 @@ public class Node {
                 clusterImpl.setMembers(baseVariables.lsMembers);
             }
         }, 5);
-        unlock();
+        setJoined();
     }
 
     private void failedJoiningToMaster(boolean multicast, int tryCount) {

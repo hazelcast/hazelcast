@@ -81,6 +81,19 @@ public final class IOUtil {
         return n;
     }
 
+    public static int copyFromDirectToDirectBuffer(ByteBuffer src, ByteBuffer dest) {
+        int n = Math.min(src.remaining(), dest.remaining());
+        if (src.remaining() <= n) {
+            dest.put(src);
+        } else {
+            int realLimit = src.limit();
+            src.limit(src.position() + n);
+            dest.put(src);
+            src.limit(realLimit);
+        }
+        return n;
+    }
+
     public static void writeLongString(DataOutput dos, String str) throws IOException {
         int chunk = 1000;
         int count = str.length() / chunk;
@@ -127,7 +140,7 @@ public final class IOUtil {
         return toData(longValue + delta);
     }
 
-     public static Data addDelta(Data intData, int delta) {
+    public static Data addDelta(Data intData, int delta) {
         int intValue = (Integer) toObject(intData);
         return toData(intValue + delta);
     }

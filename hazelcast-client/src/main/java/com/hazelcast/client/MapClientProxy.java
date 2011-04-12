@@ -269,6 +269,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT, key, value, ttl, timeunit);
     }
 
+    public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
+        check(key);
+        check(value);
+        proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT_TRANSIENT, key, value, ttl, timeunit);
+    }
+
     public boolean tryPut(K key, V value, long timeout, TimeUnit timeunit) {
         check(key);
         check(value);
@@ -276,7 +282,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public void putAll(final Map<? extends K, ? extends V> map) {
-        int counter = 0;
         List<Future> lsFutures = new ArrayList<Future>(map.size());
         for (final K key : map.keySet()) {
             final V value = map.get(key);

@@ -40,6 +40,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private volatile SocketWriter socketWriter = null;
 
+    private long runCount = 0;
+
     WriteHandler(Connection connection) {
         super(connection);
         socketBB = ByteBuffer.allocate(node.connectionManager.SOCKET_SEND_BUFFER_SIZE);
@@ -84,6 +86,9 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void handle() {
+//        if (runCount++ % 10000 == 0) {
+//            System.out.println("write count " + runCount);
+//        }
         if (socketWriter == null) {
             setProtocol("HZC");
         }
@@ -117,18 +122,20 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                     break;
                 }
             }
-            socketBB.flip();
-            try {
-                int written = socketChannel.write(socketBB);
-            } catch (Exception e) {
-                lastWritable = null;
-                handleSocketException(e);
-                return;
-            }
-            if (socketBB.hasRemaining()) {
-                socketBB.compact();
-            } else {
-                socketBB.clear();
+            if (socketBB.position() > 0) {
+                socketBB.flip();
+                try {
+                    int written = socketChannel.write(socketBB);
+                } catch (Exception e) {
+                    lastWritable = null;
+                    handleSocketException(e);
+                    return;
+                }
+                if (socketBB.hasRemaining()) {
+                    socketBB.compact();
+                } else {
+                    socketBB.clear();
+                }
             }
         } catch (Throwable t) {
             logger.log(Level.SEVERE, "Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
@@ -159,5 +166,9 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         while (obj != null) {
             obj = poll();
         }
+    }
+
+    public int size() {
+        return writeQueue.size();
     }
 }
