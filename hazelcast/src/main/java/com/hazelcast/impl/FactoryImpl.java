@@ -593,28 +593,32 @@ public class FactoryImpl implements HazelcastInstance {
                 synchronized (cmap.getInitLock()) {
                     if (!cmap.initialized) {
                         if (cmap.loader != null) {
-                            if (getAtomicNumber(name).compareAndSet(0, 1)) {
-                                ExecutorService es = getExecutorService();
-                                MultiTask task = new MultiTask(new InitializeMap(mProxy.getName()), getCluster().getMembers());
-                                es.execute(task);
-                            }
-                            Set keys = cmap.loader.loadAllKeys();
-                            if (keys != null) {
-                                int count = 0;
-                                PartitionService partitionService = getPartitionService();
-                                Set ownedKeys = new HashSet();
-                                for (Object key : keys) {
-                                    if (partitionService.getPartition(key).getOwner().localMember()) {
-                                        ownedKeys.add(key);
-                                        count++;
-                                        if (ownedKeys.size() >= node.groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger()) {
-                                            loadKeys(mProxy, cmap, ownedKeys);
-                                            ownedKeys.clear();
+                            try {
+                                if (getAtomicNumber(name).compareAndSet(0, 1)) {
+                                    ExecutorService es = getExecutorService();
+                                    MultiTask task = new MultiTask(new InitializeMap(mProxy.getName()), getCluster().getMembers());
+                                    es.execute(task);
+                                }
+                                Set keys = cmap.loader.loadAllKeys();
+                                if (keys != null) {
+                                    int count = 0;
+                                    PartitionService partitionService = getPartitionService();
+                                    Set ownedKeys = new HashSet();
+                                    for (Object key : keys) {
+                                        if (partitionService.getPartition(key).getOwner().localMember()) {
+                                            ownedKeys.add(key);
+                                            count++;
+                                            if (ownedKeys.size() >= node.groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger()) {
+                                                loadKeys(mProxy, cmap, ownedKeys);
+                                                ownedKeys.clear();
+                                            }
                                         }
                                     }
+                                    loadKeys(mProxy, cmap, ownedKeys);
+                                    logger.log(Level.INFO, node.address + "[" + mProxy.getName() + "] loaded " + count);
                                 }
-                                loadKeys(mProxy, cmap, ownedKeys);
-                                logger.log(Level.INFO, node.address + "[" + mProxy.getName() + "] loaded " + count);
+                            } catch (Throwable e) {
+                                logger.log(Level.SEVERE, e.getMessage(), e);
                             }
                         }
                     }
@@ -627,9 +631,11 @@ public class FactoryImpl implements HazelcastInstance {
     private void loadKeys(MProxy mProxy, CMap cmap, Set keys) {
         if (keys.size() > 0) {
             Map map = cmap.loader.loadAll(keys);
-            Set<Map.Entry> entries = map.entrySet();
-            for (Map.Entry entry : entries) {
-                mProxy.putTransient(entry.getKey(), entry.getValue(), 0, null);
+            if (map != null && map.size() > 0) {
+                Set<Map.Entry> entries = map.entrySet();
+                for (Map.Entry entry : entries) {
+                    mProxy.putTransient(entry.getKey(), entry.getValue(), 0, null);
+                }
             }
         }
     }

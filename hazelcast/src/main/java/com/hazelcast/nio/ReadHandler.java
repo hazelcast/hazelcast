@@ -34,12 +34,16 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     long runCount = 0;
 
+    volatile long lastRegistration = 0;
+    volatile long lastHandle;
+
     public ReadHandler(Connection connection) {
         super(connection);
         inBuffer = ByteBuffer.allocate(node.connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
     }
 
     public final void handle() {
+        lastHandle = System.currentTimeMillis();
 //        if (runCount++ % 10000 == 0) {
 //            System.out.println("read count " + runCount);
 //        }
@@ -85,14 +89,16 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
             } else {
                 inBuffer.clear();
             }
-        } catch (Exception t) {
+        } catch (Throwable t) {
             handleSocketException(t);
-        } finally {
-            run();
         }
+//        finally {
+//            run();
+//        }
     }
 
     public final void run() {
+        lastRegistration = System.currentTimeMillis();
         registerOp(inSelector.selector, SelectionKey.OP_READ);
     }
 }

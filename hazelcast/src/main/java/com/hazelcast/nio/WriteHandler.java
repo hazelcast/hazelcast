@@ -42,6 +42,9 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private long runCount = 0;
 
+    volatile long lastRegistration = 0;
+    volatile long lastHandle = 0;
+
     WriteHandler(Connection connection) {
         super(connection);
         socketBB = ByteBuffer.allocate(node.connectionManager.SOCKET_SEND_BUFFER_SIZE);
@@ -67,7 +70,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         socketWritable.onEnqueue();
         writeQueue.offer(socketWritable);
         outSelector.writeQueueSize.incrementAndGet();
-        if (informSelector.compareAndSet(true, false)) {
+        if (true || informSelector.compareAndSet(true, false)) {
             // we don't have to call wake up if this WriteHandler is
             // already in the task queue.
             // we can have a counter to check this later on.
@@ -86,9 +89,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void handle() {
-//        if (runCount++ % 10000 == 0) {
-//            System.out.println("write count " + runCount);
-//        }
+        lastHandle = System.currentTimeMillis();
+        runCount++;
         if (socketWriter == null) {
             setProtocol("HZC");
         }
@@ -157,6 +159,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     private void registerWrite() {
+        lastRegistration = System.currentTimeMillis();
         registerOp(outSelector.selector, SelectionKey.OP_WRITE);
     }
 

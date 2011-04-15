@@ -75,6 +75,7 @@ public class ClusterQueueTest {
         final IQueue q2 = h2.getQueue("default");
         final IQueue q3 = h3.getQueue("default");
         assertTrue(q2.offer("item"));
+        assertEquals(1, h2.getMap("q:default").size());
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread(new Runnable() {
             public void run() {
@@ -85,10 +86,9 @@ public class ClusterQueueTest {
             }
         }).start();
         latch.await();
-        System.out.println(h2.getMap("q:default").keySet().size());
         h3.getLifecycleService().shutdown();
         Thread.sleep(2000);
-        System.out.println(h2.getMap("q:default").keySet().size());
+        assertEquals(1, h2.getMap("q:default").size());
         assertEquals("item", q2.poll());
         final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
         final IQueue q4 = h4.getQueue("default");
@@ -103,11 +103,8 @@ public class ClusterQueueTest {
             }
         }).start();
         latch2.await();
-        System.out.println(h1.getMap("q:default").keySet().size());
-        System.out.println(h2.getMap("q:default").keySet().size());
         h1.getLifecycleService().shutdown();
         Thread.sleep(2000);
-        System.out.println(h2.getMap("q:default").keySet().size());
         assertEquals("item2", q2.poll());
     }
 

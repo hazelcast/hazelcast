@@ -221,18 +221,15 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     public IMap getStorageMap(String queueName) {
-        QueueConfig config = node.factory.getConfig().getQueueConfig(queueName);
-        return node.factory.getMap(config.getBackingMapName());
+        return node.factory.getMap(queueName);
     }
 
     CMap getStorageCMap(String queueName) {
-        QueueConfig config = node.factory.getConfig().getQueueConfig(queueName);
-        return node.concurrentMapManager.getMap(Prefix.MAP + config.getBackingMapName());
+        return node.concurrentMapManager.getMap(Prefix.MAP + queueName);
     }
 
     CMap getOrCreateStorageCMap(String queueName) {
-        QueueConfig config = node.factory.getConfig().getQueueConfig(queueName);
-        return node.concurrentMapManager.getOrCreateMap(Prefix.MAP + config.getBackingMapName());
+        return node.concurrentMapManager.getOrCreateMap(Prefix.MAP + queueName);
     }
 
     public Iterator iterate(final String name) {
@@ -558,7 +555,8 @@ public class BlockingQueueManager extends BaseManager {
 
         BQ(String name) {
             this.name = name;
-            QueueConfig qConfig = node.getConfig().findMatchingQueueConfig(name.substring(Prefix.QUEUE.length()));
+            String shortName = name.substring(Prefix.QUEUE.length());
+            QueueConfig qConfig = node.getConfig().findMatchingQueueConfig(shortName);
             MapConfig backingMapConfig = node.getConfig().findMatchingMapConfig(qConfig.getBackingMapName());
             int backingMapTTL = backingMapConfig.getTimeToLiveSeconds();
             this.maxSizePerJVM = (qConfig.getMaxSizePerJVM() == 0) ? Integer.MAX_VALUE : qConfig.getMaxSizePerJVM();

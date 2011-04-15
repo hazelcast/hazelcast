@@ -143,11 +143,14 @@ public abstract class SelectorBase implements Runnable {
                     it.remove();
                     try {
                         if (sk.isValid()) {
-                            sk.interestOps(sk.interestOps() & ~sk.readyOps());
+                            if (!sk.isReadable()) sk.interestOps(sk.interestOps() & ~sk.readyOps());
                             SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
                             selectionHandler.handle();
+                        } else {
+                            logger.log(Level.WARNING, sk.isWritable() + " not valid @ " + Thread.currentThread().getName());
                         }
                     } catch (CancelledKeyException e) {
+                        logger.log(Level.WARNING, "CancelledKey at " + Thread.currentThread().getName(), e);
                         // nothing do
                     } catch (Throwable e) {
                         handleSelectorException(e);

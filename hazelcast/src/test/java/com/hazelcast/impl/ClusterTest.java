@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
+import com.hazelcast.core.Semaphore;
 import com.hazelcast.examples.TestApp;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.LocalMapStats;
@@ -731,7 +732,21 @@ public class ClusterTest {
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         testTwoNodes(h1, h2);
-        Thread.sleep(5000);
+    }
+
+    @Test(timeout = 60000)
+    public void testTcpIp2() throws Exception {
+        Config c = new Config();
+        c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
+        c.getNetworkConfig().getInterfaces().setEnabled(true);
+        c.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
+        assertEquals(1, h1.getCluster().getMembers().size());
+        h1.getMap("default").put("1", "value1");
+        assertEquals("value1", h1.getMap("default").put("1", "value2"));
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
+        testTwoNodes(h1, h2);
     }
 
     @Test(timeout = 60000)
@@ -2565,5 +2580,76 @@ public class ClusterTest {
             Thread.sleep(15);
         }
         assertTrue(latch.await(60, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testMultiInstanceSemaphore() {
+        final Random random = new Random();
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(null);
+        final Semaphore semaphore1 = instance1.getSemaphore("testMultiSemaphore");
+        final Semaphore semaphore2 = instance2.getSemaphore("testMultiSemaphore");
+        final Semaphore semaphore3 = instance3.getSemaphore("testMultiSemaphore");
+        assertEquals(1, semaphore1.availablePermits());
+        assertEquals(1, semaphore2.availablePermits());
+        assertEquals(1, semaphore3.availablePermits());
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        executorService.execute(new Runnable() {
+            public void run() {
+                for (int i = 0; i < 10; i++) {
+                    System.out.println("Requesting semaphore 1");
+                    semaphore1.tryAcquire();
+                    System.out.println("Acquired semaphore 1");
+                    assertEquals(0, semaphore1.availablePermits());
+                    try {
+                        Thread.sleep(random.nextInt(100));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("Releashing semaphore 1");
+                    semaphore1.release();
+                }
+            }
+        });
+        executorService.execute(new Runnable() {
+            public void run() {
+                for (int i = 0; i < 20; i++) {
+                    System.out.println("Requesting semaphore 2");
+                    semaphore2.tryAcquire();
+                    System.out.println("Acquired semaphore 2");
+                    assertEquals(0, semaphore2.availablePermits());
+                    try {
+                        Thread.sleep(random.nextInt(100));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("Releashing semaphore 2");
+                    semaphore2.release();
+                }
+            }
+        });
+        executorService.execute(new Runnable() {
+            public void run() {
+                for (int i = 0; i < 30; i++) {
+                    System.out.println("Requesting semaphore 3");
+                    semaphore3.tryAcquire();
+                    System.out.println("Acquired semaphore 3");
+                    assertEquals(0, semaphore3.availablePermits());
+                    try {
+                        Thread.sleep(random.nextInt(100));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("Releashing semaphore 3");
+                    semaphore3.release();
+                }
+            }
+        });
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

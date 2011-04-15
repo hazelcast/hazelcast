@@ -41,9 +41,10 @@ public class QueueConfigTest {
      */
     @Test
     public void testSetName() {
-        QueueConfig queueConfig = new QueueConfig().setName("a test name");
-        assertEquals("a test name", queueConfig.getName());
-        assertEquals("default", queueConfig.getBackingMapName());
+        String name = "a test name";
+        QueueConfig queueConfig = new QueueConfig().setName(name);
+        assertEquals(name, queueConfig.getName());
+        assertEquals("q:" + name, queueConfig.getBackingMapName());
         queueConfig.setBackingMapName("backingMap");
         assertEquals("backingMap", queueConfig.getBackingMapName());
     }

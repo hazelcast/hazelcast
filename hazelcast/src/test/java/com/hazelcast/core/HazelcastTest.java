@@ -17,10 +17,7 @@
 
 package com.hazelcast.core;
 
-import junit.framework.*;
 import org.junit.*;
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.*;
@@ -233,113 +230,28 @@ public class HazelcastTest {
 
     @Test
     public void testSemaphoreWithTimeout() {
-        Semaphore semaphore = Hazelcast.getSemaphore("testSemaphore");
+        Semaphore semaphore = Hazelcast.getSemaphore("testSemaphoreWithTimeout");
         //Test acquire and timeout.
         assertEquals(1, semaphore.availablePermits());
         semaphore.tryAcquire();
         assertEquals(0, semaphore.availablePermits());
-        assertEquals(false,semaphore.tryAcquire(1,10,TimeUnit.MILLISECONDS));
+        assertEquals(false, semaphore.tryAcquire(1, 10, TimeUnit.MILLISECONDS));
         assertEquals(0, semaphore.availablePermits());
         //Test acquire and timeout and check for partial acquisitions.
         semaphore.release(10);
         assertEquals(10, semaphore.availablePermits());
-        assertEquals(false,semaphore.tryAcquire(20,10,TimeUnit.MILLISECONDS));
+        assertEquals(false, semaphore.tryAcquire(20, 10, TimeUnit.MILLISECONDS));
         assertEquals(10, semaphore.availablePermits());
     }
 
     @Test
     public void testSimpleSemaphore() {
-        Semaphore semaphore = Hazelcast.getSemaphore("testSemaphore");
+        Semaphore semaphore = Hazelcast.getSemaphore("testSimpleSemaphore");
         assertEquals(1, semaphore.availablePermits());
         semaphore.tryAcquire();
         assertEquals(0, semaphore.availablePermits());
         semaphore.release();
         assertEquals(1, semaphore.availablePermits());
-    }
-
-
-    @Test
-    public void testMultiInstanceSemaphore() {
-        final Random random = new Random();
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(null);
-
-        final Semaphore semaphore1 = instance1.getSemaphore("testMultiSemaphore");
-        final Semaphore semaphore2 = instance2.getSemaphore("testMultiSemaphore");
-        final Semaphore semaphore3 = instance3.getSemaphore("testMultiSemaphore");
-
-        assertEquals(1, semaphore1.availablePermits());
-        assertEquals(1, semaphore2.availablePermits());
-        assertEquals(1, semaphore3.availablePermits());
-
-        ExecutorService executorService = Executors.newCachedThreadPool();
-
-        executorService.execute(new Runnable() {
-            public void run() {
-                for (int i = 0; i < 10; i++) {
-                    System.out.println("Requesting semaphore 1");
-                    semaphore1.tryAcquire();
-                    System.out.println("Acquired semaphore 1");
-                    assertEquals(0, semaphore1.availablePermits());
-                    try {
-                        Thread.sleep(random.nextInt(100));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    System.out.println("Releashing semaphore 1");
-                    semaphore1.release();
-                }
-            }
-        });
-
-        executorService.execute(new Runnable() {
-            public void run() {
-                for (int i = 0; i < 20; i++) {
-                    System.out.println("Requesting semaphore 2");
-                    semaphore2.tryAcquire();
-                    System.out.println("Acquired semaphore 2");
-                    assertEquals(0, semaphore2.availablePermits());
-                    try {
-                        Thread.sleep(random.nextInt(100));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    System.out.println("Releashing semaphore 2");
-                    semaphore2.release();
-                }
-            }
-        });
-
-        executorService.execute(new Runnable() {
-            public void run() {
-                for (int i = 0; i < 30; i++) {
-                    System.out.println("Requesting semaphore 3");
-                    semaphore3.tryAcquire();
-                    System.out.println("Acquired semaphore 3");
-                    assertEquals(0, semaphore3.availablePermits());
-                    try {
-                        Thread.sleep(random.nextInt(100));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    System.out.println("Releashing semaphore 3");
-                    semaphore3.release();
-                }
-            }
-        });
-
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testr() {
-        AtomicNumber an = Hazelcast.getAtomicNumber("testAtomicNumber");
-        an.get();
     }
 
     @Test

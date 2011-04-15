@@ -63,6 +63,20 @@ public final class Predicates {
         }
 
         @Override
+        public void readData(DataInput in) throws IOException {
+            super.readData(in);
+            equal = in.readBoolean();
+            less = in.readBoolean();
+        }
+
+        @Override
+        public void writeData(DataOutput out) throws IOException {
+            super.writeData(out);
+            out.writeBoolean(equal);
+            out.writeBoolean(less);
+        }
+
+        @Override
         public String toString() {
             final StringBuffer sb = new StringBuffer();
             sb.append(first);

@@ -2239,7 +2239,9 @@ public class ConcurrentMapManager extends BaseManager {
                 Object value = toObject(request.value);
                 cmap.store.store(toObject(request.key), value);
                 Record storedRecord = cmap.getRecord(request);
-                storedRecord.setLastStoredTime(System.currentTimeMillis());
+                if (storedRecord != null) {
+                    storedRecord.setLastStoredTime(System.currentTimeMillis());
+                }
             } else if (request.operation == CONCURRENT_MAP_REMOVE) {
                 Object key = toObject(request.key);
                 if (cmap.loader != null && request.value == null) {
@@ -2298,9 +2300,8 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            boolean checkCapacity = (cmap.store == null &&
-                    (request.operation == CONCURRENT_MAP_PUT
-                            || request.operation == CONCURRENT_MAP_TRY_PUT));
+            boolean checkCapacity = (request.operation == CONCURRENT_MAP_PUT
+                    || request.operation == CONCURRENT_MAP_TRY_PUT);
             boolean overCapacity = checkCapacity && cmap.overCapacity(request);
             if (cmap.isNotLocked(request) && !overCapacity) {
                 if (shouldSchedule(request)) {

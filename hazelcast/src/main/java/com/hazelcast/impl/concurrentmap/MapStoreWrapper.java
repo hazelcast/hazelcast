@@ -59,7 +59,7 @@ public class MapStoreWrapper implements MapStore {
     }
 
     void checkInit() {
-        if (!initialized && shouldInitialize) {
+        if (shouldInitialize && !initialized) {
             synchronized (initLock) {
                 if (!initialized) {
                     ((MapLoaderLifecycleSupport) impl).init(hazelcastInstance, properties, mapName);

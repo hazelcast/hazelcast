@@ -231,11 +231,18 @@ public class ConnectionManager {
     }
 
     public void appendState(StringBuffer sbState) {
+        long now = System.currentTimeMillis();
         sbState.append("\nConnectionManager {");
         for (Connection conn : mapConnections.values()) {
+            long wr = (now - conn.getWriteHandler().lastRegistration) / 1000;
+            long wh = (now - conn.getWriteHandler().lastHandle) / 1000;
+            long rr = (now - conn.getReadHandler().lastRegistration) / 1000;
+            long rh = (now - conn.getReadHandler().lastHandle) / 1000;
             sbState.append("\n\tEndPoint: " + conn.getEndPoint());
             sbState.append("  " + conn.live());
             sbState.append("  " + conn.getWriteHandler().size());
+            sbState.append("  w:").append(wr).append("/").append(wh);
+            sbState.append("  r:").append(rr).append("/").append(rh);
         }
         sbState.append("\n}");
     }

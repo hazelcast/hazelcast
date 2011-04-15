@@ -151,6 +151,10 @@ public class CMap {
                 || mapConfigName.startsWith(AS_LIST)
                 || mapConfigName.startsWith(AS_SET)) {
             mapConfig = new MapConfig();
+        } else if (mapForQueue) {
+            String queueShortName = name.substring(4);
+            QueueConfig qConfig = node.getConfig().findMatchingQueueConfig(queueShortName);
+            mapConfig = node.getConfig().findMatchingMapConfig(qConfig.getBackingMapName());
         } else {
             mapConfig = node.getConfig().findMatchingMapConfig(mapConfigName);
         }
@@ -200,6 +204,10 @@ public class CMap {
                         node.factory.getHazelcastInstanceProxy(),
                         mapStoreConfig.getProperties(),
                         mapConfigName);
+                if (!mapStoreWrapper.isMapLoader() && !mapStoreWrapper.isMapStore()) {
+                    throw new Exception("MapStore class [" + storeInstance.getClass().getName()
+                            + "] should implement either MapLoader or MapStore!");
+                }
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
             }
