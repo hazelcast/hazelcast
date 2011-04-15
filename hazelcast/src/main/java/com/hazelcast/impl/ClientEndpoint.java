@@ -196,26 +196,54 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     public void connectionRemoved(Connection connection) {
         LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) node.factory.getLifecycleService();
         if (connection.equals(this.conn) && !lifecycleService.paused.get()) {
-            for (Integer threadId : locks.keySet()) {
-                ThreadContext.get().setCallContext(getCallContext(threadId));
-                Map<IMap, List<Data>> mapOfLocks = locks.get(threadId);
-                for (IMap map : mapOfLocks.keySet()) {
-                    List<Data> list = mapOfLocks.get(map);
-                    for (Data key : list) {
-                        map.unlock(key);
-                    }
+            removeLocks();
+            rollbackTransactions();
+            removeEntryListeners();
+            removeEntryListenersWithKey();
+            removeMessageListeners();
+        }
+    }
+
+    private void rollbackTransactions() {
+        for(CallContext callContext: callContexts.values()){
+            ThreadContext.get().setCallContext(callContext);
+            if(callContext.getTransaction()!=null && callContext.getTransaction().getStatus() ==  Transaction.TXN_STATUS_ACTIVE ){
+                callContext.getTransaction().rollback();
+            }
+
+        }
+
+    }
+
+    private void removeLocks() {
+        for (Integer threadId : locks.keySet()) {
+            ThreadContext.get().setCallContext(getCallContext(threadId));
+            Map<IMap, List<Data>> mapOfLocks = locks.get(threadId);
+            for (IMap map : mapOfLocks.keySet()) {
+                List<Data> list = mapOfLocks.get(map);
+                for (Data key : list) {
+                    map.unlock(key);
                 }
             }
-            for (IMap map : listeningMaps) {
-                map.removeEntryListener(this);
-            }
-            for (Map.Entry e : listeningKeysOfMaps) {
-                IMap m = (IMap) e.getKey();
-                m.removeEntryListener(this, e.getValue());
-            }
-            for (ITopic topic : messageListeners.keySet()) {
-                topic.removeMessageListener(messageListeners.get(topic));
-            }
+        }
+    }
+
+    private void removeMessageListeners() {
+        for (ITopic topic : messageListeners.keySet()) {
+            topic.removeMessageListener(messageListeners.get(topic));
+        }
+    }
+
+    private void removeEntryListenersWithKey() {
+        for (Map.Entry e : listeningKeysOfMaps) {
+            IMap m = (IMap) e.getKey();
+            m.removeEntryListener(this, e.getValue());
+        }
+    }
+
+    private void removeEntryListeners() {
+        for (IMap map : listeningMaps) {
+            map.removeEntryListener(this);
         }
     }
 

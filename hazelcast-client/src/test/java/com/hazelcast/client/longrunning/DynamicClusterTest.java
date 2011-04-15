@@ -31,10 +31,7 @@ import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.SleepCallable;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -49,6 +46,7 @@ import static com.hazelcast.client.HazelcastClientMapTest.getAllThreads;
 import static com.hazelcast.client.TestUtility.destroyClients;
 import static com.hazelcast.client.TestUtility.newHazelcastClient;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
@@ -685,6 +683,27 @@ public class DynamicClusterTest {
         h1.shutdown();
         h2.shutdown();
     }
+
+
+    @Test
+    public void rollbackTransactionWhenClientDies() {
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance client = newHazelcastClient(h);
+        Transaction transaction = client.getTransaction();
+        transaction.begin();
+        Map<String, String> map = client.getMap("rollbackTransactionWhenClientDies");
+        map.put("1", "A");
+
+        client.getLifecycleService().shutdown();
+
+        assertTrue(h.getMap("rollbackTransactionWhenClientDies").isEmpty());
+        h.getMap("rollbackTransactionWhenClientDies").put("1", "B");
+        assertEquals("B", h.getMap("rollbackTransactionWhenClientDies").get("1"));
+
+
+    }
+
+
 
     @Test
     public void multiTaskWithTwoMember() throws ExecutionException, InterruptedException {
