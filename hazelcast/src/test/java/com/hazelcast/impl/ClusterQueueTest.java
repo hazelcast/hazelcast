@@ -238,7 +238,7 @@ public class ClusterQueueTest {
     @Test
     public void testOfferLong() throws Exception {
         Config config = new Config();
-        config.getQueueConfig("default").setBackingMapName("default").setMaxSizePerJVM(100);
+        config.getQueueConfig("default").setBackingMapRef("default").setMaxSizePerJVM(100);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         final IQueue q1 = h1.getQueue("default");

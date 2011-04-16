@@ -557,7 +557,7 @@ public class BlockingQueueManager extends BaseManager {
             this.name = name;
             String shortName = name.substring(Prefix.QUEUE.length());
             QueueConfig qConfig = node.getConfig().findMatchingQueueConfig(shortName);
-            MapConfig backingMapConfig = node.getConfig().findMatchingMapConfig(qConfig.getBackingMapName());
+            MapConfig backingMapConfig = node.getConfig().findMatchingMapConfig(qConfig.getBackingMapRef());
             int backingMapTTL = backingMapConfig.getTimeToLiveSeconds();
             this.maxSizePerJVM = (qConfig.getMaxSizePerJVM() == 0) ? Integer.MAX_VALUE : qConfig.getMaxSizePerJVM();
             this.ttl = (backingMapTTL == 0) ? Integer.MAX_VALUE : TimeUnit.SECONDS.toMillis(backingMapTTL);

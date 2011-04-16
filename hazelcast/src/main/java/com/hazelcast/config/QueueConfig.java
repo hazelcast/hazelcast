@@ -28,7 +28,7 @@ public final class QueueConfig implements DataSerializable {
     public final static int DEFAULT_MAX_SIZE_PER_JVM = 0;
 
     private String name;
-    private String backingMapName;
+    private String backingMapRef;
     private int maxSizePerJVM = DEFAULT_MAX_SIZE_PER_JVM;
 
     public QueueConfig() {
@@ -36,7 +36,7 @@ public final class QueueConfig implements DataSerializable {
 
     public QueueConfig(QueueConfig config) {
         this.name = config.name;
-        this.backingMapName = config.backingMapName;
+        this.backingMapRef = config.backingMapRef;
         this.maxSizePerJVM = config.maxSizePerJVM;
     }
 
@@ -53,8 +53,8 @@ public final class QueueConfig implements DataSerializable {
      */
     public QueueConfig setName(String name) {
         this.name = name;
-        if (backingMapName == null) {
-            backingMapName = "q:" + name;
+        if (backingMapRef == null) {
+            backingMapRef = "q:" + name;
         }
         return this;
     }
@@ -77,38 +77,38 @@ public final class QueueConfig implements DataSerializable {
         return this;
     }
 
-    public String getBackingMapName() {
-        return backingMapName;
+    public String getBackingMapRef() {
+        return backingMapRef;
     }
 
-    public QueueConfig setBackingMapName(String backingMapName) {
-        this.backingMapName = backingMapName;
+    public QueueConfig setBackingMapRef(String backingMapRef) {
+        this.backingMapRef = backingMapRef;
         return this;
     }
 
     public boolean isCompatible(final QueueConfig queueConfig) {
         if (queueConfig == null) return false;
         return (name != null ? name.equals(queueConfig.name) : queueConfig.name == null) &&
-                this.backingMapName.equals(queueConfig.backingMapName) &&
+                this.backingMapRef.equals(queueConfig.backingMapRef) &&
                 this.maxSizePerJVM == queueConfig.maxSizePerJVM;
     }
 
     public void writeData(DataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(backingMapName);
+        out.writeUTF(backingMapRef);
         out.writeInt(maxSizePerJVM);
     }
 
     public void readData(DataInput in) throws IOException {
         name = in.readUTF();
-        backingMapName = in.readUTF();
+        backingMapRef = in.readUTF();
         maxSizePerJVM = in.readInt();
     }
 
     @Override
     public String toString() {
         return "QueueConfig [name=" + this.name
-                + ", backingMapName=" + this.backingMapName
+                + ", backingMapRef=" + this.backingMapRef
                 + ", maxSizePerJVM=" + this.maxSizePerJVM + "]";
     }
 }

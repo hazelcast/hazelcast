@@ -68,7 +68,7 @@
         -->
         <max-size-per-jvm>0</max-size-per-jvm>
 
-        <backing-map-name>default</backing-map-name>
+        <backing-map-ref>default</backing-map-ref>
 
     </queue>
     <map name="default">

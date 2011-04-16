@@ -51,7 +51,7 @@ public class MapStoreTest extends TestUtil {
     public void testPersistentQueue() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig("themap", testMapStore, 0);
-        config.getQueueConfig("default").setBackingMapName("themap");
+        config.getQueueConfig("default").setBackingMapRef("themap");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         IQueue q1 = h1.getQueue("default");
         for (int i = 0; i < 100; i++) {

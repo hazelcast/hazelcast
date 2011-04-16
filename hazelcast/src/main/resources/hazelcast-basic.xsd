@@ -36,7 +36,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="max-size-per-jvm"/>
-                <xs:element ref="backing-map-name"/>
+                <xs:element ref="backing-map-ref"/>
             </xs:sequence>
             <xs:attribute name="name" use="optional" default="default">
                 <xs:simpleType>
@@ -238,10 +238,10 @@
             <xs:restriction base="xs:short"/>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="backing-map-name">
+    <xs:element name="backing-map-ref">
         <xs:annotation>
             <xs:documentation>
-                Name of the backing distributed map to store queue items.
+                Name of the backing distributed map configuration.
             </xs:documentation>
         </xs:annotation>
         <xs:simpleType>

@@ -30,7 +30,7 @@
                                 <xs:sequence/>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="max-size-per-jvm" use="required" type="xs:string"/>
-                                <xs:attribute name="backing-map-name" use="optional" type="xs:string"/>
+                                <xs:attribute name="backing-map-ref" use="optional" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="map" minOccurs="0" maxOccurs="unbounded">
@@ -114,9 +114,9 @@
     <xs:element name="executorService" type="hazelcast-instance"/>
     <xs:element name="idGenerator" type="hazelcast-instance"/>
     <xs:element name="atomicNumber" type="hazelcast-instance"/>
-    
-    <xs:element name="hibernate-cache-provider" type="hibernate-cache" />
-    <xs:element name="hibernate-region-factory" type="hibernate-cache" />
+
+    <xs:element name="hibernate-cache-provider" type="hibernate-cache"/>
+    <xs:element name="hibernate-region-factory" type="hibernate-cache"/>
 
     <!-- internal elements -->
     <xs:complexType name="hazelcast-instance">
@@ -295,11 +295,11 @@
         <xs:attribute name="store-password" use="optional" type="xs:string"/>
         <xs:attribute name="store-path" use="optional" type="xs:string"/>
     </xs:complexType>
-    
+
     <xs:complexType name="hibernate-cache">
         <xs:complexContent>
             <xs:extension base="beans:identifiedType">
-            	<xs:attribute name="instance-ref" type="xs:string" use="required"/>
+                <xs:attribute name="instance-ref" type="xs:string" use="required"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

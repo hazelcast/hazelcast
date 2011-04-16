@@ -426,8 +426,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(n.getNodeName());
             final String value = getTextContent(n).trim();
-            if ("backing-map-name".equals(nodeName)) {
-                qConfig.setBackingMapName(value);
+            if ("backing-map-ref".equals(nodeName)) {
+                qConfig.setBackingMapRef(value);
             } else if ("max-size-per-jvm".equals(nodeName)) {
                 qConfig.setMaxSizePerJVM(getIntegerValue("max-size-per-jvm", value, QueueConfig.DEFAULT_MAX_SIZE_PER_JVM));
             }

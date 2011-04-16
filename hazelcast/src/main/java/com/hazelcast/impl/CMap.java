@@ -154,7 +154,7 @@ public class CMap {
         } else if (mapForQueue) {
             String queueShortName = name.substring(4);
             QueueConfig qConfig = node.getConfig().findMatchingQueueConfig(queueShortName);
-            mapConfig = node.getConfig().findMatchingMapConfig(qConfig.getBackingMapName());
+            mapConfig = node.getConfig().findMatchingMapConfig(qConfig.getBackingMapRef());
         } else {
             mapConfig = node.getConfig().findMatchingMapConfig(mapConfigName);
         }
