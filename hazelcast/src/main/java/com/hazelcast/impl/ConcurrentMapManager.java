@@ -546,7 +546,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
         for (Future<Pairs> future : lsFutures) {
             Pairs pairs = future.get();
-            if (pairs != null) {
+            if (pairs != null && pairs.getKeyValues()!=null) {
                 for (KeyValue keyValue : pairs.getKeyValues()) {
                     results.addKeyValue(keyValue);
                 }
