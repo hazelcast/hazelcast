@@ -61,10 +61,10 @@
                                  keep-alive-seconds="20"/>
             <hz:queue name="testQ"
                       max-size-per-jvm="1000"
-                      backing-map-name="testQMap"/>
+                      backing-map-ref="testQMap"/>
             <hz:queue name="q"
                       max-size-per-jvm="2500"
-                      backing-map-name="qMap"/>
+                      backing-map-ref="qMap"/>
             <hz:map name="testMap"
                     backup-count="2"
                     max-size="0"
@@ -77,7 +77,7 @@
                 <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60" eviction-policy="LRU" max-size="5000"
                                invalidate-on-change="true"/>
             </hz:map>
-             <hz:map name="testMap2"
+            <hz:map name="testMap2"
                     backup-count="2"
                     max-size="0"
                     eviction-percentage="30"
@@ -107,6 +107,6 @@
     <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
     <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
     <hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
-    
-    <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore" />
+
+    <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
 </beans>

@@ -460,15 +460,15 @@ public class BlockingQueueManager extends BaseManager {
         final CMap cmapStorage = getOrCreateStorageCMap(queueName);
         executeLocally(new Runnable() {
             public void run() {
-                TreeSet<Long> itemKeys = null;
+                TreeSet itemKeys = null;
                 if (cmapStorage.loader != null) {
-                    Set<Long> keys = cmapStorage.loader.loadAllKeys();
+                    Set keys = cmapStorage.loader.loadAllKeys();
                     if (keys != null && keys.size() > 0) {
                         itemKeys = new TreeSet<Long>(keys);
                     }
                 }
-                Set<Long> keys = getStorageMap(queueName).keySet();
-                if (keys.size() > 0) {
+                Set keys = getStorageMap(queueName).keySet();
+                if (keys != null && keys.size() > 0) {
                     if (itemKeys == null) {
                         itemKeys = new TreeSet<Long>(keys);
                     } else {

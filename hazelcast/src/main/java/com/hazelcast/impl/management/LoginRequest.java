@@ -20,7 +20,7 @@ public class LoginRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_LOGIN;
     }
 
-    public void writeResponse(ManagementConsoleService mcs, DataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
         boolean success = mcs.login(groupName, password);
         dos.writeBoolean(success);
         if (!success) {

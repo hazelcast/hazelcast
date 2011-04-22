@@ -52,7 +52,7 @@ public abstract class AsyncCall implements Future, Runnable {
     }
 
     public boolean isDone() {
-        return false;
+        return result != null;
     }
 
     public Object get() throws InterruptedException, ExecutionException {

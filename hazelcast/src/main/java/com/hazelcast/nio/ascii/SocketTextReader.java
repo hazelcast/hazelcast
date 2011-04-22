@@ -63,13 +63,17 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
     private final TextCommandService textCommandService;
     private final SocketTextWriter socketTextWriter;
     private final Connection connection;
-    long requestIdGen;
+    private final boolean restEnabled;
+    private final boolean memcacheEnabled;
     boolean connectionTypeSet = false;
+    long requestIdGen;
 
     public SocketTextReader(Node node, Connection connection) {
         this.textCommandService = node.getTextCommandService();
         this.socketTextWriter = (SocketTextWriter) connection.getWriteHandler().getSocketWriter();
         this.connection = connection;
+        this.memcacheEnabled = node.getGroupProperties().MEMCACHE_ENABLED.getBoolean();
+        this.restEnabled = node.getGroupProperties().REST_ENABLED.getBoolean();
     }
 
     public void sendResponse(TextCommand command) {
@@ -130,8 +134,14 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
 //        System.out.println("publishing " + command);
         if (!connectionTypeSet) {
             if (command instanceof HttpCommand) {
+                if (!restEnabled) {
+                    connection.close();
+                }
                 connection.setType(Connection.Type.REST_CLIENT);
             } else {
+                if (!memcacheEnabled) {
+                    connection.close();
+                }
                 connection.setType(Connection.Type.MEMCACHE_CLIENT);
             }
             connectionTypeSet = true;

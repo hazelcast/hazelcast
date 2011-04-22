@@ -221,6 +221,9 @@ public class CMap {
         }
         loader = (mapStoreWrapper == null || !mapStoreWrapper.isMapLoader()) ? null : mapStoreWrapper;
         store = (mapStoreWrapper == null || !mapStoreWrapper.isMapStore()) ? null : mapStoreWrapper;
+        if (mapForQueue && loader != null) {
+            logger.log(Level.WARNING, name + " loader " + loader);
+        }
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         if (nearCacheConfig == null) {
             mapNearCache = null;
@@ -641,7 +644,7 @@ public class CMap {
         if (data != null) {
             returnValue = data;
         } else {
-            if (record.getMultiValues() != null) {
+            if (record.getMultiValues() != null && record.getMultiValues().size() > 0) {
                 Values values = new Values(record.getMultiValues());
                 returnValue = toData(values);
             }

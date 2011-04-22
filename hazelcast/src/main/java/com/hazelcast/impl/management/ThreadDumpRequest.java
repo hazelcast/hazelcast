@@ -1,13 +1,13 @@
 package com.hazelcast.impl.management;
 
-import static com.hazelcast.nio.IOUtil.readLongString;
-import static com.hazelcast.nio.IOUtil.writeLongString;
+import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.hazelcast.nio.Address;
+import static com.hazelcast.nio.IOUtil.readLongString;
+import static com.hazelcast.nio.IOUtil.writeLongString;
 
 public class ThreadDumpRequest implements ConsoleRequest {
 
@@ -24,7 +24,7 @@ public class ThreadDumpRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_GET_THREAD_DUMP;
     }
 
-    public void writeResponse(ManagementConsoleService mcs, DataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
         String threadDump = (String) mcs.call(target, new ThreadDumpCallable());
         writeLongString(dos, threadDump);
     }

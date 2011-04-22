@@ -12,7 +12,7 @@ public class GetClusterStateRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_CLUSTER_STATE;
     }
 
-    public void writeResponse(ManagementConsoleService mcs, DataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
         mcs.writeState(dos);
     }
 

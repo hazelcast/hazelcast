@@ -117,4 +117,13 @@ public class MapStoreWrapper implements MapStore {
         checkInit();
         return mapLoader.loadAll(keys);
     }
+
+    @Override
+    public String toString() {
+        return "MapStoreWrapper{" +
+                "mapName='" + mapName + '\'' +
+                ", mapStore=" + mapStore +
+                ", mapLoader=" + mapLoader +
+                '}';
+    }
 }

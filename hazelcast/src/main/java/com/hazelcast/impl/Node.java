@@ -373,6 +373,7 @@ public class Node {
             logger.log(Level.FINEST, "Shutting down the NIO socket selector for output");
             outSelector.shutdown();
             logger.log(Level.FINEST, "Shutting down the cluster service");
+            concurrentMapManager.shutdown();
             clusterService.stop();
             logger.log(Level.FINEST, "Shutting down the query service");
             if (multicastService != null) {

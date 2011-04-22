@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
 import static com.hazelcast.nio.IOUtil.newInputStream;
 import static com.hazelcast.nio.IOUtil.newOutputStream;
 
-public class ManagementConsoleService implements MembershipListener {
+public class ManagementCenterService implements MembershipListener {
 
     private final Queue<ClientHandler> qClientHandlers = new LinkedBlockingQueue<ClientHandler>(100);
     private final FactoryImpl factory;
@@ -61,14 +61,14 @@ public class ManagementConsoleService implements MembershipListener {
     private final StatsInstanceFilter instanceFilterQueue;
     private final StatsInstanceFilter instanceFilterTopic;
 
-    public ManagementConsoleService(FactoryImpl factoryImpl) throws Exception {
+    public ManagementCenterService(FactoryImpl factoryImpl) throws Exception {
         this.factory = factoryImpl;
         this.instanceFilterMap = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_MAP_EXCLUDES.getString());
         this.instanceFilterQueue = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_QUEUE_EXCLUDES.getString());
         this.instanceFilterTopic = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_TOPIC_EXCLUDES.getString());
         thisAddress = ((MemberImpl) factory.getCluster().getLocalMember()).getAddress();
         updateMemberOrder();
-        logger = factory.node.getLogger(ManagementConsoleService.class.getName());
+        logger = factory.node.getLogger(ManagementCenterService.class.getName());
         for (int i = 0; i < 100; i++) {
             qClientHandlers.offer(new ClientHandler());
         }
@@ -95,6 +95,7 @@ public class ManagementConsoleService implements MembershipListener {
             for (ClientHandler clientHandler : lsClientHandlers) {
                 clientHandler.shutdown();
             }
+            udpSender.interrupt();
         } catch (Throwable ignored) {
         }
     }
@@ -403,7 +404,7 @@ public class ManagementConsoleService implements MembershipListener {
                         socketOut.writeByte(ConsoleRequestConstants.STATE_OUT_OF_MEMORY);
                     } else {
                         socketOut.writeByte(ConsoleRequestConstants.STATE_ACTIVE);
-                        consoleRequest.writeResponse(ManagementConsoleService.this, socketOut);
+                        consoleRequest.writeResponse(ManagementCenterService.this, socketOut);
                     }
                 }
             } catch (Throwable e) {

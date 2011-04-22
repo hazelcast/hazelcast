@@ -21,6 +21,9 @@ import com.hazelcast.config.Config;
 
 public class GroupProperties {
 
+    public static final String PROP_MANCENTER_ENABLED = "hazelcast.mancenter.enabled";
+    public static final String PROP_MEMCACHE_ENABLED = "hazelcast.memcache.enabled";
+    public static final String PROP_REST_ENABLED = "hazelcast.rest.enabled";
     public static final String PROP_MAP_LOAD_CHUNK_SIZE = "hazelcast.map.load.chunk.size";
     public static final String PROP_IN_THREAD_PRIORITY = "hazelcast.in.thread.priority";
     public static final String PROP_OUT_THREAD_PRIORITY = "hazelcast.out.thread.priority";
@@ -61,6 +64,12 @@ public class GroupProperties {
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
 
     public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "6");
+
+    public final GroupProperty MANCENTER_ENABLED;
+
+    public final GroupProperty MEMCACHE_ENABLED;
+
+    public final GroupProperty REST_ENABLED;
 
     public final GroupProperty IN_THREAD_PRIORITY;
 
@@ -125,6 +134,9 @@ public class GroupProperties {
     public final GroupProperty MC_TOPIC_EXCLUDES;
 
     public GroupProperties(Config config) {
+        MANCENTER_ENABLED = new GroupProperty(config, PROP_MANCENTER_ENABLED, "true");
+        MEMCACHE_ENABLED = new GroupProperty(config, PROP_MEMCACHE_ENABLED, "true");
+        REST_ENABLED = new GroupProperty(config, PROP_REST_ENABLED, "true");
         MAP_LOAD_CHUNK_SIZE = new GroupProperty(config, PROP_MAP_LOAD_CHUNK_SIZE, "1000");
         IN_THREAD_PRIORITY = new GroupProperty(config, PROP_IN_THREAD_PRIORITY, "7");
         OUT_THREAD_PRIORITY = new GroupProperty(config, PROP_OUT_THREAD_PRIORITY, "7");

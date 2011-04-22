@@ -25,6 +25,7 @@ import java.util.Arrays;
 public final class Data implements DataSerializable {
 
     public byte[] buffer = null;
+    private int hash = Integer.MIN_VALUE;
 
     public Data() {
     }
@@ -55,7 +56,9 @@ public final class Data implements DataSerializable {
     @Override
     public int hashCode() {
         if (buffer == null) return Integer.MIN_VALUE;
-        return Arrays.hashCode(buffer);
+        if (hash != Integer.MIN_VALUE) return hash;
+        hash = Arrays.hashCode(buffer);
+        return hash;
     }
 
     @Override

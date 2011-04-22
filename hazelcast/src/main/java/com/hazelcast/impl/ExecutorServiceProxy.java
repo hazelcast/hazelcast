@@ -81,17 +81,14 @@ public class ExecutorServiceProxy implements ExecutorService {
                 if (!f.isDone()) {
                     try {
                         f.get();
-                    }
-                    catch (CancellationException ignore) {
-                    }
-                    catch (ExecutionException ignore) {
+                    } catch (CancellationException ignore) {
+                    } catch (ExecutionException ignore) {
                     }
                 }
             }
             done = true;
             return futures;
-        }
-        finally {
+        } finally {
             if (!done)
                 for (Future f : futures)
                     f.cancel(true);
@@ -164,8 +161,8 @@ public class ExecutorServiceProxy implements ExecutorService {
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
-        node.factory.initialChecks();
         if (!active) throw new RejectedExecutionException("ExecutorService[" + name + "] is not active");
+        node.factory.initialChecks();
         ThreadContext.get().setCurrentFactory(node.factory);
         DistributedTask dtask;
         if (task instanceof DistributedTask) {

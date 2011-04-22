@@ -57,6 +57,7 @@ public class ClientService implements ConnectionListener {
         this.logger = node.getLogger(this.getClass().getName());
         node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
         clientOperationHandlers[CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
+        clientOperationHandlers[CONCURRENT_MAP_PUT_ALL.getValue()] = new MapPutAllHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_MULTI.getValue()] = new MapPutMultiHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_IF_ABSENT.getValue()] = new MapPutIfAbsentHandler();
         clientOperationHandlers[CONCURRENT_MAP_TRY_PUT.getValue()] = new MapTryPutHandler();
@@ -589,6 +590,19 @@ public class ClientService implements ConnectionListener {
     private class AddIndexHandler extends ClientMapOperationHandler {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
             map.addIndex((String) toObject(key), (Boolean) toObject(value));
+            return null;
+        }
+    }
+
+    private class MapPutAllHandler extends ClientMapOperationHandler {
+        public Data processMapOp(IMap<Object, Object> imap, Data key, Data value) {
+            MProxy mproxy = (MProxy) imap;
+            Pairs pairs = (Pairs) toObject(value);
+            try {
+                node.concurrentMapManager.doPutAll(mproxy.getLongName(), pairs);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return null;
         }
     }

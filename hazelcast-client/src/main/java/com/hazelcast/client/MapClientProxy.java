@@ -282,18 +282,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public void putAll(final Map<? extends K, ? extends V> map) {
-        List<Future> lsFutures = new ArrayList<Future>(map.size());
+        Pairs pairs = new Pairs(map.size());
         for (final K key : map.keySet()) {
             final V value = map.get(key);
-            lsFutures.add(putAsync(key, value));
+            pairs.addKeyValue(new KeyValue(toData(key), toData(value)));
         }
-        for (Future future : lsFutures) {
-            try {
-                future.get();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT_ALL, null, pairs);
     }
 
     public V remove(Object arg0) {

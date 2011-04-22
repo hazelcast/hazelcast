@@ -365,6 +365,41 @@ public class MapStoreTest extends TestUtil {
     }
 
     @Test
+    public void testOneMemberFlushOnShutdown() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 200);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        assertEquals(0, map1.size());
+        for (int i = 0; i < 100; i++) {
+            map1.put(i, i);
+        }
+        assertEquals(100, map1.size());
+        assertEquals(0, testMapStore.getStore().size());
+        h1.getLifecycleService().shutdown();
+        assertEquals(100, testMapStore.getStore().size());
+    }
+
+    @Test
+    public void testOneMemberFlush() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 200);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        assertEquals(0, map.size());
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+        }
+        assertEquals(100, map.size());
+        assertEquals(0, testMapStore.getStore().size());
+        getConcurrentMapManager(h1).flush(Prefix.MAP + "default");
+        assertEquals(100, testMapStore.getStore().size());
+        assertEquals(100, map.size());
+    }
+
+    @Test
     public void testOneMemberWriteBehind() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);

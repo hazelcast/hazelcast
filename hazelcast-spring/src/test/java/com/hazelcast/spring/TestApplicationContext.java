@@ -16,7 +16,11 @@
  */
 package com.hazelcast.spring;
 
-import static org.junit.Assert.*;
+import com.hazelcast.core.HazelcastInstance;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -24,24 +28,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-import com.hazelcast.core.HazelcastInstance;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 public class TestApplicationContext {
 
     private Thread[] initialThreads;
 
     @Before
-    public void before(){
+    public void before() {
         this.initialThreads = getAllThreads();
     }
-    
+
     @After
-    public void after(){
+    public void after() {
+        try {
+            Thread.sleep(300);
+        } catch (InterruptedException e) {
+        }
         List<Thread> listOfThreads = new ArrayList<Thread>(Arrays.asList(getAllThreads()));
         for (Thread thread : initialThreads) {
             listOfThreads.remove(thread);
@@ -50,28 +54,27 @@ public class TestApplicationContext {
             assertFalse(thread.getName().startsWith("hz."));
         }
     }
-    
+
     @Test
     public void testNodeContext() throws Exception {
-        final ClassPathXmlApplicationContext context = 
-            new ClassPathXmlApplicationContext("classpath:/com/hazelcast/spring/fullcacheconfig-applicationContext-hazelcast.xml");
+        final ClassPathXmlApplicationContext context =
+                new ClassPathXmlApplicationContext("classpath:/com/hazelcast/spring/fullcacheconfig-applicationContext-hazelcast.xml");
         final HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
         assertNotNull(instance);
         context.destroy();
     }
-    
+
     @Test
     public void testNodeClientContext() throws Exception {
-        final ClassPathXmlApplicationContext context = 
-            new ClassPathXmlApplicationContext("classpath:/com/hazelcast/spring/node-client-applicationContext-hazelcast.xml");
+        final ClassPathXmlApplicationContext context =
+                new ClassPathXmlApplicationContext("classpath:/com/hazelcast/spring/node-client-applicationContext-hazelcast.xml");
         final HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
         assertNotNull(instance);
-        
         final HazelcastInstance client = (HazelcastInstance) context.getBean("client");
         assertNotNull(client);
         context.destroy();
     }
-    
+
     static ThreadGroup rootThreadGroup = null;
 
     public static ThreadGroup getRootThreadGroup() {
@@ -83,7 +86,7 @@ public class TestApplicationContext {
             tg = ptg;
         return tg;
     }
-    
+
     public static Thread[] getAllThreads() {
         final ThreadGroup root = getRootThreadGroup();
         final ThreadMXBean thbean = ManagementFactory.getThreadMXBean();

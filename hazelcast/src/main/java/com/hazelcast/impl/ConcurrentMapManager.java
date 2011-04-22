@@ -184,6 +184,31 @@ public class ConcurrentMapManager extends BaseManager {
         partitionManager.reset();
     }
 
+    public void shutdown() {
+        for (CMap cmap : maps.values()) {
+            try {
+                flush(cmap.name);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+            }
+        }
+    }
+
+    public void flush(String name) {
+        CMap cmap = getMap(name);
+        if (cmap != null && cmap.store != null && cmap.writeDelayMillis > 0) {
+            Map mapDirtyEntries = new HashMap();
+            for (Record record : cmap.mapRecords.values()) {
+                if (record.isDirty()) {
+                    mapDirtyEntries.put(record.getKey(), record.getValue());
+                }
+            }
+            if (mapDirtyEntries.size() > 0) {
+                cmap.store.storeAll(mapDirtyEntries);
+            }
+        }
+    }
+
     public void syncForDead(MemberImpl deadMember) {
         partitionManager.syncForDead(deadMember);
     }
@@ -546,13 +571,113 @@ public class ConcurrentMapManager extends BaseManager {
         }
         for (Future<Pairs> future : lsFutures) {
             Pairs pairs = future.get();
-            if (pairs != null && pairs.getKeyValues()!=null) {
+            if (pairs != null && pairs.getKeyValues() != null) {
                 for (KeyValue keyValue : pairs.getKeyValues()) {
                     results.addKeyValue(keyValue);
                 }
             }
         }
         return results;
+    }
+
+    void doPutAll(String name, Map entries) {
+        Pairs pairs = new Pairs(entries.size());
+        for (Object key : entries.keySet()) {
+            Object value = entries.get(key);
+            pairs.addKeyValue(new KeyValue(toData(key), toData(value)));
+        }
+        try {
+            doPutAll(name, pairs);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void doPutAll(String name, Pairs pairs) throws ExecutionException, InterruptedException {
+        final Map<Member, Pairs> targetMembers = new HashMap<Member, Pairs>(10);
+        PartitionServiceImpl partitionService = partitionManager.partitionServiceImpl;
+        for (KeyValue keyValue : pairs.getKeyValues()) {
+            Member owner = partitionService.getPartition(keyValue.getKeyData()).getOwner();
+            if (owner == null) {
+                owner = thisMember;
+            }
+            Pairs targetPairs = targetMembers.get(owner);
+            if (targetPairs == null) {
+                targetPairs = new Pairs();
+                targetMembers.put(owner, targetPairs);
+            }
+            targetPairs.addKeyValue(keyValue);
+        }
+        List<Future<Boolean>> lsFutures = new ArrayList<Future<Boolean>>(targetMembers.size());
+        for (Member member : targetMembers.keySet()) {
+            Pairs targetPairs = targetMembers.get(member);
+            if (targetPairs != null && targetMembers.size() > 0) {
+                PutAllCallable callable = new PutAllCallable(name, targetPairs);
+                DistributedTask<Boolean> dt = new DistributedTask<Boolean>(callable, member);
+                lsFutures.add(dt);
+                node.factory.getExecutorService().execute(dt);
+            }
+        }
+        for (Future<Boolean> future : lsFutures) {
+            future.get();
+        }
+    }
+
+    public static class PutAllCallable implements Callable<Boolean>, HazelcastInstanceAware, DataSerializable {
+
+        private String mapName;
+        private Pairs pairs;
+        private FactoryImpl factory = null;
+
+        public PutAllCallable() {
+        }
+
+        public PutAllCallable(String mapName, Pairs pairs) {
+            this.mapName = mapName;
+            this.pairs = pairs;
+        }
+
+        public Boolean call() throws Exception {
+            final ConcurrentMapManager c = factory.node.concurrentMapManager;
+            try {
+                CMap cmap = c.getMap(mapName);
+                if (cmap == null) {
+                    c.enqueueAndWait(new Processable() {
+                        public void process() {
+                            c.getOrCreateMap(mapName);
+                        }
+                    }, 100);
+                    cmap = c.getMap(mapName);
+                }
+                if (cmap != null) {
+                    for (KeyValue keyValue : pairs.getKeyValues()) {
+                        Object value = (cmap.getMapIndexService().hasIndexedAttributes()) ?
+                                keyValue.getValue() : keyValue.getValueData();
+                        IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(cmap.name);
+                        map.put(keyValue.getKeyData(), value);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
+            return Boolean.TRUE;
+        }
+
+        public void readData(DataInput in) throws IOException {
+            mapName = in.readUTF();
+            pairs = new Pairs();
+            pairs.readData(in);
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(mapName);
+            pairs.writeData(out);
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.factory = (FactoryImpl) hazelcastInstance;
+        }
     }
 
     public static class GetAllCallable implements Callable<Pairs>, HazelcastInstanceAware, DataSerializable {

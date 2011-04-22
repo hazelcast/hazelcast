@@ -22,6 +22,7 @@ import com.hazelcast.core.InstanceEvent.InstanceEventType;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -38,6 +39,18 @@ import static junit.framework.Assert.assertFalse;
 import static org.junit.Assert.*;
 
 public class HazelcastClientTest extends HazelcastClientTestBase {
+
+    @BeforeClass
+    public static void before() {
+        single.destroy();
+        single.init();
+    }
+
+    @AfterClass
+    public static void after() {
+        System.out.println("AfterClass " + runningTestName);
+        single.destroy();
+    }
 
     @Test
     public void testGetClusterMemberSize() {
@@ -736,9 +749,5 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
             assertNotNull(partition.getPartitionId());
             assertTrue(set.add(partition.getPartitionId()));
         }
-    }
-
-    @AfterClass
-    public static void shutdown() {
     }
 }

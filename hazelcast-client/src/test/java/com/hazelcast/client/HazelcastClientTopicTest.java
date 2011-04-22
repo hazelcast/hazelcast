@@ -133,19 +133,22 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
     }
 
     @Test
-    public void testPerformance() {
+    public void testPerformance() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         long begin = System.currentTimeMillis();
         int count = 10000;
         final ITopic topic = hClient.getTopic("perf");
         ExecutorService ex = Executors.newFixedThreadPool(10);
+        final CountDownLatch l = new CountDownLatch(count);
         for (int i = 0; i < count; i++) {
             ex.submit(new Runnable() {
                 public void run() {
                     topic.publish("my object");
+                    l.countDown();
                 }
             });
         }
+        assertTrue(l.await(20, TimeUnit.SECONDS));
         long time = System.currentTimeMillis() - begin;
         System.out.println("per second: " + count * 1000 / time);
     }

@@ -26,7 +26,7 @@ import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
-import com.hazelcast.impl.management.ManagementConsoleService;
+import com.hazelcast.impl.management.ManagementCenterService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -97,7 +97,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     final LifecycleServiceImpl lifecycleService;
 
-    final ManagementConsoleService managementConsoleService;
+    final ManagementCenterService managementCenterService;
 
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         FactoryImpl factory = null;
@@ -389,13 +389,15 @@ public class FactoryImpl implements HazelcastInstance {
         }
         managementService = new ManagementService(this);
         managementService.register();
-        ManagementConsoleService managementConsoleServiceTmp = null;
-        try {
-            managementConsoleServiceTmp = new ManagementConsoleService(FactoryImpl.this);
-        } catch (Exception e) {
-            logger.log(Level.FINEST, e.getMessage(), e);
+        ManagementCenterService managementCenterServiceTmp = null;
+        if (node.groupProperties.MANCENTER_ENABLED.getBoolean()) {
+            try {
+                managementCenterServiceTmp = new ManagementCenterService(FactoryImpl.this);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+            }
         }
-        managementConsoleService = managementConsoleServiceTmp;
+        managementCenterService = managementCenterServiceTmp;
     }
 
     public Set<String> getLongInstanceNames() {
@@ -530,8 +532,8 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public void shutdown() {
-        if (managementConsoleService != null) {
-            managementConsoleService.shutdown();
+        if (managementCenterService != null) {
+            managementCenterService.shutdown();
         }
         lifecycleService.shutdown();
         for (ExecutorServiceProxy esp : executorServiceProxies.values()) {
@@ -1788,7 +1790,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public void destroy() {
-            Instance instance = factory.proxies.remove(name);
+            Instance instance = factory.proxies.remove(new ProxyKey(name, null));
             if (instance != null) {
                 ensure();
                 base.destroy();
@@ -2890,31 +2892,33 @@ public class FactoryImpl implements HazelcastInstance {
                         put(entry.getKey(), entry.getValue());
                     }
                 } else {
-                    final ExecutorService es = Executors.newFixedThreadPool(10);
-                    final CountDownLatch latch = new CountDownLatch(entries.size());
-                    final List<Throwable> throwables = new CopyOnWriteArrayList<Throwable>();
-                    for (final Entry entry : entries) {
-                        es.execute(new Runnable() {
-                            public void run() {
-                                try {
-                                    put(entry.getKey(), entry.getValue());
-                                } catch (Throwable e) {
-                                    throwables.add(e);
-                                } finally {
-                                    latch.countDown();
-                                }
-                            }
-                        });
-                    }
-                    try {
-                        latch.await();
-                        es.shutdown();
-                    } catch (InterruptedException ignored) {
-                    }
-                    if (!throwables.isEmpty()) {
-                        final Throwable throwable = throwables.get(0);
-                        throw new RuntimeException(throwable.getMessage(), throwable);
-                    }
+//                    final ExecutorService es = Executors.newFixedThreadPool(10);
+//                    final CountDownLatch latch = new CountDownLatch(entries.size());
+//                    final List<Throwable> throwables = new CopyOnWriteArrayList<Throwable>();
+//                    for (final Entry entry : entries) {
+//                        es.execute(new Runnable() {
+//                            public void run() {
+//                                try {
+//                                    put(entry.getKey(), entry.getValue());
+//                                } catch (Throwable e) {
+//                                    throwables.add(e);
+//                                } finally {
+//                                    latch.countDown();
+//                                }
+//                            }
+//                        });
+//                    }
+//                    try {
+//                        latch.await();
+//                        es.shutdown();
+//                        es.awaitTermination(5, TimeUnit.SECONDS);
+//                    } catch (InterruptedException ignored) {
+//                    }
+//                    if (!throwables.isEmpty()) {
+//                        final Throwable throwable = throwables.get(0);
+//                        throw new RuntimeException(throwable.getMessage(), throwable);
+//                    }
+                    concurrentMapManager.doPutAll(name, map);
                 }
             }
 

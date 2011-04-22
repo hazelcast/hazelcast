@@ -558,8 +558,8 @@ public class ClusterTest {
         String mapName = "testTTL";
         int ttl = 1;
         Config myConfig = configTTLForMap(mapName, ttl);
-        Hazelcast.init(myConfig);
-        IMap<String, String> myMap = Hazelcast.getMap(mapName);
+        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(myConfig);
+        IMap<String, String> myMap = hazelcast.getMap(mapName);
         String key = "1";
         String value = "value1";
         myMap.put(key, value);
@@ -576,8 +576,8 @@ public class ClusterTest {
         String mapName = "testTTL";
         int ttl = 1;
         Config myConfig = configTTLForMap(mapName, ttl);
-        Hazelcast.init(myConfig);
-        IMap<String, String> myMap = Hazelcast.getMap(mapName);
+        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(myConfig);
+        IMap<String, String> myMap = hazelcast.getMap(mapName);
         String key = "1";
         String value = "value1";
         myMap.put(key, value);
@@ -735,12 +735,12 @@ public class ClusterTest {
     }
 
     @Test(timeout = 60000)
-    public void testTcpIp2() throws Exception {
+    public void testTcpIpWithoutInterfaces() throws Exception {
         Config c = new Config();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         c.getNetworkConfig().getInterfaces().setEnabled(true);
-        c.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
+        c.getNetworkConfig().getJoin().getTcpIpConfig().addAddress(new Address("127.0.0.1", 5701));
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         assertEquals(1, h1.getCluster().getMembers().size());
         h1.getMap("default").put("1", "value1");
@@ -2525,15 +2525,15 @@ public class ClusterTest {
     }
 
     @Test
-    public void multimapShouldntBeAffectedByDefaultMapConfig() {
+    public void multimapShouldNotBeAffectedByDefaultMapConfig() {
         Config config = new XmlConfigBuilder().build();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setWriteDelaySeconds(0);
         mapStoreConfig.setClassName("com.hazelcast.examples.DummyStore");
         config.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
-        Hazelcast.init(config);
-        MultiMap<Object, Object> mmap = Hazelcast.getMultiMap("testmultimap");
+        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(config);
+        MultiMap<Object, Object> mmap = hazelcast.getMultiMap("testmultimap");
         mmap.put("foo", "1");
         mmap.put("foo", "2");
         mmap.get("foo").size();
@@ -2650,6 +2650,35 @@ public class ClusterTest {
             Thread.sleep(10000);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testGetAll() {
+        Hazelcast.newHazelcastInstance(new Config());
+        Hazelcast.newHazelcastInstance(new Config());
+        Set<String> keys = new HashSet<String>(1000);
+        for (int i = 0; i < 1000; i++) {
+            keys.add(String.valueOf(i));
+        }
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        IMap<String, Object> map = h3.getMap("default");
+        map.getAll(keys);
+    }
+
+    @Test
+    public void testPutAll() {
+        Hazelcast.newHazelcastInstance(new Config());
+        Hazelcast.newHazelcastInstance(new Config());
+        Map<Integer, Integer> entries = new HashMap<Integer, Integer>(1000);
+        for (int i = 0; i < 1000; i++) {
+            entries.put(i, i);
+        }
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        IMap<Integer, Integer> map = h3.getMap("default");
+        map.putAll(entries);
+        for (int i = 0; i < 1000; i++) {
+            assertEquals(i, map.get(i).intValue());
         }
     }
 }

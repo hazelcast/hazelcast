@@ -93,7 +93,8 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(3, config.getMapConfigs().size());
+        System.out.println(config.getMapConfigs().keySet());
+        assertEquals(4, config.getMapConfigs().size());
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
         assertEquals("testMap", testMapConfig.getName());
