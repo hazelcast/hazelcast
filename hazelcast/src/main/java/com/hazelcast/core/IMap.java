@@ -38,6 +38,13 @@ import java.util.concurrent.TimeoutException;
 public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
     /**
+     * If this map has a MapStore and write-delay-seconds is
+     * bigger than 0 (write-behind) then this method flushes
+     * all the local dirty entries by calling MapStore.storeAll()
+     */
+    void flush();
+
+    /**
      * Returns the name of this map
      *
      * @return name of this map

@@ -68,6 +68,7 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[CONCURRENT_MAP_REMOVE_IF_SAME.getValue()] = new MapRemoveIfSameHandler();
         clientOperationHandlers[CONCURRENT_MAP_REMOVE_MULTI.getValue()] = new MapRemoveMultiHandler();
         clientOperationHandlers[CONCURRENT_MAP_EVICT.getValue()] = new MapEvictHandler();
+        clientOperationHandlers[CONCURRENT_MAP_FLUSH.getValue()] = new MapFlushHandler();
         clientOperationHandlers[CONCURRENT_MAP_REPLACE_IF_NOT_NULL.getValue()] = new MapReplaceIfNotNullHandler();
         clientOperationHandlers[CONCURRENT_MAP_REPLACE_IF_SAME.getValue()] = new MapReplaceIfSameHandler();
         clientOperationHandlers[CONCURRENT_MAP_SIZE.getValue()] = new MapSizeHandler();
@@ -714,6 +715,13 @@ public class ClientService implements ConnectionListener {
     private class MapEvictHandler extends ClientMapOperationHandler {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
             return toData(map.evict(key));
+        }
+    }
+
+    private class MapFlushHandler extends ClientMapOperationHandler {
+        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+            map.flush();
+            return null;
         }
     }
 

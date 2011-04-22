@@ -2241,6 +2241,10 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
 
+        public void flush() {
+            dynamicProxy.flush();
+        }
+
         public void putTransient(Object key, Object value, long time, TimeUnit timeunit) {
             dynamicProxy.putTransient(key, value, time, timeunit);
         }
@@ -2536,6 +2540,10 @@ public class FactoryImpl implements HazelcastInstance {
                     latch.await();
                 } catch (InterruptedException ignored) {
                 }
+            }
+
+            public void flush() {
+                concurrentMapManager.flush(name);
             }
 
             public MapEntry getMapEntry(Object key) {

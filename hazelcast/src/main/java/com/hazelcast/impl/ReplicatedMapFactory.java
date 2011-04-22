@@ -68,6 +68,10 @@ public final class ReplicatedMapFactory {
             }
         }
 
+        public void flush() {
+            distributedMap.flush();
+        }
+
         public Map<K, V> getAll(Set<K> keys) {
             Map map = new HashMap();
             for (K key : keys) {
