@@ -178,8 +178,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
     /**
      * Puts an entry into this map with a given ttl (time to live) value
-     * if the specified key is not already associated
-     * with a value
+     * if the specified key is not already associated with a value.
      * Entry will expire and get evicted after the ttl.
      *
      * @param key      key of the entry
@@ -189,6 +188,35 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @return old value of the entry
      */
     V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit);
+
+    /**
+     * Tries to acquire the lock for the specified key and returns
+     * the value of the key if lock is required in time.
+     * <p>If the lock is not available then
+     * the current thread becomes disabled for thread scheduling
+     * purposes and lies dormant until one of two things happens:
+     * <ul>
+     * <li>The lock is acquired by the current thread; or
+     * <li>The specified waiting time elapses
+     * </ul>
+     *
+     * @param key      key of the entry
+     * @param time     maximum time to wait for the lock
+     * @param timeunit time unit of the <tt>time</tt> argument.
+     * @return value of the key in this map
+     * @throws java.util.concurrent.TimeoutException
+     *          if lock cannot be acquired in time.
+     */
+    V tryLockAndGet(K key, long time, TimeUnit timeunit) throws TimeoutException;
+
+    /**
+     * Puts the key and value into this map and unlocks the key
+     * if the calling thread owns the lock.
+     *
+     * @param key   key of the entry
+     * @param value value of the entry
+     */
+    void putAndUnlock(K key, V value);
 
     /**
      * Acquires the lock for the specified key.
@@ -226,8 +254,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * <li>The specified waiting time elapses
      * </ul>
      *
-     * @param time     the maximum time to wait for the lock
-     * @param timeunit the time unit of the <tt>time</tt> argument.
+     * @param key      key to lock in this map
+     * @param time     maximum time to wait for the lock
+     * @param timeunit time unit of the <tt>time</tt> argument.
      * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
      *         if the waiting time elapsed before the lock was acquired.
      */
@@ -253,8 +282,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * <li>The specified waiting time elapses
      * </ul>
      *
-     * @param time     the maximum time to wait for the lock
-     * @param timeunit the time unit of the <tt>time</tt> argument.
+     * @param time     maximum time to wait for the lock
+     * @param timeunit time unit of the <tt>time</tt> argument.
      * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
      *         if the waiting time elapsed before the lock was acquired.
      */
@@ -309,7 +338,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * add/remove/update/evict events of the specified key only.
      *
      * @param listener     entry listener
-     * @param key          the key to listen
+     * @param key          key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      */
@@ -447,7 +476,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     /**
      * Adds an index to this map based on the provided expression.
      *
-     * @param expression The expression for the index.
+     * @param expression expression for the index.
      * @param ordered    <tt>true</tt> if index should be ordered,
      *                   <tt>false</tt> otherwise.
      */

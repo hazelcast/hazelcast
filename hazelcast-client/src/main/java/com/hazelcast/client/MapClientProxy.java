@@ -136,6 +136,21 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, 0, null);
     }
 
+    public V tryLockAndGet(K key, long timeout, TimeUnit timeunit) throws TimeoutException {
+        check(key);
+        Object result = proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_TRY_LOCK_AND_GET, key, null, timeout, timeunit);
+        if (result instanceof DistributedTimeoutException) {
+            throw new TimeoutException();
+        }
+        return (V) result;
+    }
+
+    public void putAndUnlock(K key, V value) {
+        check(key);
+        check(value);
+        proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT_AND_UNLOCK, key, value);
+    }
+
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
         check(key);
         ProxyHelper.checkTime(time, timeunit);

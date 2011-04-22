@@ -25,8 +25,33 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
+import java.util.concurrent.TimeUnit;
 
 public class Util {
+
+    /**
+     * Returns milliseconds by taking care of
+     * the overflow issues.
+     * TimeUnit.SECONDS.toMillis(Long.MAX_VALUE) would be negative
+     * for example. -1 means infinite.
+     *
+     * @param time
+     * @param unit
+     * @return
+     */
+    public static long toMillis(long time, TimeUnit unit) {
+        if (time == 0 || unit == null) {
+            return 0;
+        } else if (time < 0) {
+            return -1;
+        } else {
+            long millis = unit.toMillis(time);
+            if (millis < 1) {
+                millis = -1;
+            }
+            return millis;
+        }
+    }
 
     public static void copyFile(final File src, final File dest) {
         try {

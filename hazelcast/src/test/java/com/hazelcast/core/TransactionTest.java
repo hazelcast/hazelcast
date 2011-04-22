@@ -439,6 +439,43 @@ public class TransactionTest {
     }
 
     @Test
+    public void testMapTryLockAndGet() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapTryLockAndGet");
+        IMap txnMap2 = Hazelcast.getMap("testMapTryLockAndGet");
+        txnMap.put("1", "value1");
+        try {
+            assertEquals("value1", txnMap.tryLockAndGet("1", 0, TimeUnit.SECONDS));
+        } catch (TimeoutException e) {
+            fail();
+        }
+        assertEquals("value1", txnMap.get("1"));
+        assertEquals("value1", txnMap2.get("1"));
+        long start = System.currentTimeMillis();
+        try {
+            txnMap2.tryLockAndGet("1", 0, TimeUnit.SECONDS);
+            fail("Shouldn't be able to lock");
+        } catch (TimeoutException e) {
+            assertTrue(System.currentTimeMillis() - start < 1000);
+        }
+        start = System.currentTimeMillis();
+        try {
+            assertNull(txnMap2.tryLockAndGet("1", 3, TimeUnit.SECONDS));
+            fail("Shouldn't be able to lock");
+        } catch (TimeoutException e) {
+            long took = (System.currentTimeMillis() - start);
+            assertTrue(took >= 3000 && took < 5000);
+        }
+        txnMap.putAndUnlock("1", "value2");
+        try {
+            assertEquals("value2", txnMap2.tryLockAndGet("1", 0, TimeUnit.SECONDS));
+        } catch (TimeoutException e) {
+            fail();
+        }
+        assertEquals("value2", txnMap.get("1"));
+        assertEquals("value2", txnMap2.get("1"));
+    }
+
+    @Test
     public void testMapRemoveWithTwoTxn3() {
         TransactionalMap txnMap = newTransactionalMapProxy("testMapRemoveWithTwoTxn3");
         TransactionalMap txnMap2 = newTransactionalMapProxy("testMapRemoveWithTwoTxn3");

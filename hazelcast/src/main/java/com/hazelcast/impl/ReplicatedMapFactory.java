@@ -72,6 +72,14 @@ public final class ReplicatedMapFactory {
             distributedMap.flush();
         }
 
+        public void putAndUnlock(K key, V value) {
+            distributedMap.putAndUnlock(key, value);
+        }
+
+        public V tryLockAndGet(K key, long time, TimeUnit timeunit) throws TimeoutException {
+            return distributedMap.tryLockAndGet(key, time, timeunit);
+        }
+
         public Map<K, V> getAll(Set<K> keys) {
             Map map = new HashMap();
             for (K key : keys) {

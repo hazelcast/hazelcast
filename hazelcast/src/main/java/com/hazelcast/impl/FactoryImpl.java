@@ -45,6 +45,7 @@ import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.*;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
@@ -55,6 +56,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+import static com.hazelcast.impl.Util.toMillis;
 
 public class FactoryImpl implements HazelcastInstance {
 
@@ -309,6 +311,12 @@ public class FactoryImpl implements HazelcastInstance {
                 e.printStackTrace();
             }
             factory.proxies.clear();
+            if (factory.managementCenterService != null) {
+                factory.managementCenterService.shutdown();
+            }
+            for (ExecutorServiceProxy esp : factory.executorServiceProxies.values()) {
+                esp.shutdown();
+            }
             factory.node.shutdown();
             factories.remove(factory.getName());
             if (factories.size() == 0) {
@@ -402,30 +410,6 @@ public class FactoryImpl implements HazelcastInstance {
 
     public Set<String> getLongInstanceNames() {
         return proxiesByName.keySet();
-    }
-
-    /**
-     * Returns milliseconds by taking care of
-     * the overflow issues.
-     * TimeUnit.SECONDS.toMillis(Long.MAX_VALUE) would be negative
-     * for example. -1 means infinite.
-     *
-     * @param time
-     * @param unit
-     * @return
-     */
-    public static long toMillis(long time, TimeUnit unit) {
-        if (time == 0 || unit == null) {
-            return 0;
-        } else if (time < 0) {
-            return -1;
-        } else {
-            long millis = unit.toMillis(time);
-            if (millis < 1) {
-                millis = -1;
-            }
-            return millis;
-        }
     }
 
     @Override
@@ -532,13 +516,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public void shutdown() {
-        if (managementCenterService != null) {
-            managementCenterService.shutdown();
-        }
         lifecycleService.shutdown();
-        for (ExecutorServiceProxy esp : executorServiceProxies.values()) {
-            esp.shutdown();
-        }
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
@@ -2084,7 +2062,10 @@ public class FactoryImpl implements HazelcastInstance {
                 try {
                     return method.invoke(mproxyReal, args);
                 } catch (Throwable e) {
-                    if (e instanceof RuntimeException) {
+                    if (e instanceof InvocationTargetException) {
+                        InvocationTargetException ite = (InvocationTargetException) e;
+                        throw ite.getCause();
+                    } else if (e instanceof RuntimeException) {
                         throw (RuntimeException) e;
                     } else {
                         throw new RuntimeException(e);
@@ -2144,10 +2125,6 @@ public class FactoryImpl implements HazelcastInstance {
 
         public Object put(Object key, Object value) {
             return put(key, value, 0, TimeUnit.SECONDS);
-        }
-
-        public Map getAll(Set keys) {
-            return dynamicProxy.getAll(keys);
         }
 
         public Future getAsync(Object key) {
@@ -2239,6 +2216,18 @@ public class FactoryImpl implements HazelcastInstance {
             } finally {
                 afterCall();
             }
+        }
+
+        public void putAndUnlock(Object key, Object value) {
+            dynamicProxy.putAndUnlock(key, value);
+        }
+
+        public Object tryLockAndGet(Object key, long time, TimeUnit timeunit) throws TimeoutException {
+            return dynamicProxy.tryLockAndGet(key, time, timeunit);
+        }
+
+        public Map getAll(Set keys) {
+            return dynamicProxy.getAll(keys);
         }
 
         public void flush() {
@@ -2470,26 +2459,9 @@ public class FactoryImpl implements HazelcastInstance {
 
         private class MProxyReal implements MProxy {
             private final transient MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
-            private final Object initLock = new Object();
-            private volatile boolean initialized = false;
 
             public MProxyReal() {
                 super();
-            }
-
-            public Object getLock() {
-                return initLock;
-            }
-
-            public boolean isInitialized() {
-                return initialized;
-            }
-
-            public void initialize() {
-                if (!initialized) {
-                    concurrentMapManager.initialize(name);
-                }
-                initialized = true;
             }
 
             @Override
@@ -2641,6 +2613,26 @@ public class FactoryImpl implements HazelcastInstance {
                 Boolean result = mput.tryPut(name, key, value, timeout, -1);
                 mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
                 return result;
+            }
+
+            public Object tryLockAndGet(Object key, long timeout, TimeUnit timeunit) throws TimeoutException {
+                long begin = System.currentTimeMillis();
+                if (timeout < 0) {
+                    throw new IllegalArgumentException("timeout value cannot be negative. " + timeout);
+                }
+                timeout = toMillis(timeout, timeunit);
+                check(key);
+                Object result = concurrentMapManager.tryLockAndGet(name, key, timeout);
+                mapOperationCounter.incrementGets(System.currentTimeMillis() - begin);
+                return result;
+            }
+
+            public void putAndUnlock(Object key, Object value) {
+                long begin = System.currentTimeMillis();
+                check(key);
+                check(value);
+                concurrentMapManager.putAndUnlock(name, key, value);
+                mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
             }
 
             public Object putIfAbsent(Object key, Object value) {

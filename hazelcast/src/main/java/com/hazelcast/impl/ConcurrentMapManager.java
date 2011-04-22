@@ -99,6 +99,7 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_TRY_PUT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_SET, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT, new PutOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_PUT_AND_UNLOCK, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_TRANSIENT, new PutTransientOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_IF_ABSENT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, new PutOperationHandler());
@@ -114,7 +115,7 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_REMOVE, new BackupPacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_LOCK, new BackupPacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_LOCK, new LockOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_LOCK_AND_GET_VALUE, new LockOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_TRY_LOCK_AND_GET, new LockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_UNLOCK, new UnlockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_LOCK_MAP, new LockMapOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_UNLOCK_MAP, new LockMapOperationHandler());
@@ -311,6 +312,19 @@ public class ConcurrentMapManager extends BaseManager {
         return maps;
     }
 
+    Object tryLockAndGet(String name, Object key, long timeout) throws TimeoutException {
+        MLock mlock = new MLock();
+        boolean locked = mlock.lockAndGetValue(name, key, timeout);
+        if (!locked) {
+            throw new TimeoutException();
+        } else return toObject(mlock.oldValue);
+    }
+
+    void putAndUnlock(String name, Object key, Object value) {
+        MPut mput = ThreadContext.get().getCallCache(node.factory).getMPut();
+        mput.txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, -1, -1);
+    }
+
     class MLock extends MBackupAndMigrationAwareOp {
         volatile Data oldValue = null;
 
@@ -335,7 +349,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean lockAndGetValue(String name, Object key, Object value, long timeout) {
-            boolean locked = booleanCall(CONCURRENT_MAP_LOCK_AND_GET_VALUE, name, key, value, timeout, -1);
+            boolean locked = booleanCall(CONCURRENT_MAP_TRY_LOCK_AND_GET, name, key, value, timeout, -1);
             if (locked) {
                 backup(CONCURRENT_MAP_BACKUP_LOCK);
             }
@@ -344,7 +358,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void afterGettingResult(Request request) {
-            if (request.operation == CONCURRENT_MAP_LOCK_AND_GET_VALUE) {
+            if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET) {
                 if (oldValue == null) {
                     oldValue = request.value;
                 }
@@ -354,7 +368,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void handleNoneRedoResponse(Packet packet) {
-            if (request.operation == CONCURRENT_MAP_LOCK_AND_GET_VALUE) {
+            if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET) {
                 oldValue = packet.getValueData();
             }
             super.handleNoneRedoResponse(packet);
@@ -1317,7 +1331,7 @@ public class ConcurrentMapManager extends BaseManager {
             }
         }
 
-        private Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout, long ttl) {
+        Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout, long ttl) {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
@@ -1353,6 +1367,7 @@ public class ConcurrentMapManager extends BaseManager {
                 setIndexValues(request, value);
                 if (operation == CONCURRENT_MAP_TRY_PUT
                         || operation == CONCURRENT_MAP_SET
+                        || operation == CONCURRENT_MAP_PUT_AND_UNLOCK
                         || operation == CONCURRENT_MAP_PUT_TRANSIENT) {
                     request.setBooleanRequest();
                     doOp();
@@ -2030,7 +2045,8 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         protected void onNoTimeToSchedule(Request request) {
             request.response = null;
-            if (request.operation == CONCURRENT_MAP_TRY_PUT) {
+            if (request.operation == CONCURRENT_MAP_TRY_PUT
+                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
                 request.response = Boolean.FALSE;
             }
             returnResponse(request);
@@ -2039,7 +2055,8 @@ public class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             cmap.put(request);
-            if (request.operation == CONCURRENT_MAP_TRY_PUT) {
+            if (request.operation == CONCURRENT_MAP_TRY_PUT
+                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
                 request.response = Boolean.TRUE;
             }
         }
@@ -2426,7 +2443,8 @@ public class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             boolean checkCapacity = (request.operation == CONCURRENT_MAP_PUT
-                    || request.operation == CONCURRENT_MAP_TRY_PUT);
+                    || request.operation == CONCURRENT_MAP_TRY_PUT
+                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK);
             boolean overCapacity = checkCapacity && cmap.overCapacity(request);
             if (cmap.isNotLocked(request) && !overCapacity) {
                 if (shouldSchedule(request)) {

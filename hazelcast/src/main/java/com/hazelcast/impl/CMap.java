@@ -221,9 +221,6 @@ public class CMap {
         }
         loader = (mapStoreWrapper == null || !mapStoreWrapper.isMapLoader()) ? null : mapStoreWrapper;
         store = (mapStoreWrapper == null || !mapStoreWrapper.isMapStore()) ? null : mapStoreWrapper;
-        if (mapForQueue && loader != null) {
-            logger.log(Level.WARNING, name + " loader " + loader);
-        }
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         if (nearCacheConfig == null) {
             mapNearCache = null;
@@ -675,7 +672,7 @@ public class CMap {
         Data reqValue = request.value;
         request.value = null;
         Record rec = concurrentMapManager.ensureRecord(request);
-        if (request.operation == CONCURRENT_MAP_LOCK_AND_GET_VALUE) {
+        if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET) {
             if (reqValue == null) {
                 request.value = rec.getValueData();
                 if (rec.getMultiValues() != null) {
@@ -955,7 +952,7 @@ public class CMap {
             fireInvalidation(record);
             concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_UPDATED, oldValue, record, req.caller);
         }
-        if (req.txnId != -1) {
+        if (req.txnId != -1 || req.operation == ClusterOperation.CONCURRENT_MAP_PUT_AND_UNLOCK) {
             unlock(record);
         }
         record.setIndexes(req.indexes, req.indexTypes);

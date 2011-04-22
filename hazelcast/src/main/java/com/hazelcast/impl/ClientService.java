@@ -57,6 +57,7 @@ public class ClientService implements ConnectionListener {
         this.logger = node.getLogger(this.getClass().getName());
         node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
         clientOperationHandlers[CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
+        clientOperationHandlers[CONCURRENT_MAP_PUT_AND_UNLOCK.getValue()] = new MapPutAndUnlockHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_ALL.getValue()] = new MapPutAllHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_MULTI.getValue()] = new MapPutMultiHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_IF_ABSENT.getValue()] = new MapPutIfAbsentHandler();
@@ -73,6 +74,7 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[CONCURRENT_MAP_REPLACE_IF_SAME.getValue()] = new MapReplaceIfSameHandler();
         clientOperationHandlers[CONCURRENT_MAP_SIZE.getValue()] = new MapSizeHandler();
         clientOperationHandlers[CONCURRENT_MAP_GET_MAP_ENTRY.getValue()] = new GetMapEntryHandler();
+        clientOperationHandlers[CONCURRENT_MAP_TRY_LOCK_AND_GET.getValue()] = new MapTryLockAndGetHandler();
         clientOperationHandlers[CONCURRENT_MAP_LOCK.getValue()] = new MapLockHandler();
         clientOperationHandlers[CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnlockHandler();
         clientOperationHandlers[CONCURRENT_MAP_LOCK_MAP.getValue()] = new MapLockMapHandler();
@@ -637,11 +639,35 @@ public class ClientService implements ConnectionListener {
         }
     }
 
+    private class MapPutAndUnlockHandler extends ClientMapOperationHandlerWithTTL {
+        @Override
+        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
+            MProxy mproxy = (MProxy) map;
+            Object v = value;
+            if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
+                v = toObject(value);
+            }
+            map.putAndUnlock(key, v);
+            return null;
+        }
+    }
+
     private class MapTryRemoveHandler extends ClientMapOperationHandlerWithTTL {
         @Override
         protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
             try {
                 return toData(map.tryRemove(key, ttl, TimeUnit.MILLISECONDS));
+            } catch (TimeoutException e) {
+                return toData(new DistributedTimeoutException());
+            }
+        }
+    }
+
+    private class MapTryLockAndGetHandler extends ClientMapOperationHandlerWithTTL {
+        @Override
+        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
+            try {
+                return toData(map.tryLockAndGet(key, ttl, TimeUnit.MILLISECONDS));
             } catch (TimeoutException e) {
                 return toData(new DistributedTimeoutException());
             }
