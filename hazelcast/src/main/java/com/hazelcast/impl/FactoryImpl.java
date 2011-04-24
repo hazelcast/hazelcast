@@ -536,7 +536,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public <E> IList<E> getList(String name) {
-        return (IList) getOrCreateProxyByName(Prefix.LIST + name);
+        return (IList) getOrCreateProxyByName(Prefix.AS_LIST + name);
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
@@ -693,6 +693,8 @@ public class FactoryImpl implements HazelcastInstance {
             } else if (name.startsWith(Prefix.MAP)) {
                 proxy = new MProxyImpl(name, this);
                 node.concurrentMapManager.getOrCreateMap(name);
+            } else if (name.startsWith(Prefix.AS_LIST)) {
+                proxy = new ListProxyImpl(name, this);
             } else if (name.startsWith(Prefix.MAP_BASED)) {
                 if (BaseManager.getInstanceType(name) == Instance.InstanceType.MULTIMAP) {
                     proxy = new MultiMapProxyImpl(name, this);
@@ -2892,32 +2894,6 @@ public class FactoryImpl implements HazelcastInstance {
                         put(entry.getKey(), entry.getValue());
                     }
                 } else {
-//                    final ExecutorService es = Executors.newFixedThreadPool(10);
-//                    final CountDownLatch latch = new CountDownLatch(entries.size());
-//                    final List<Throwable> throwables = new CopyOnWriteArrayList<Throwable>();
-//                    for (final Entry entry : entries) {
-//                        es.execute(new Runnable() {
-//                            public void run() {
-//                                try {
-//                                    put(entry.getKey(), entry.getValue());
-//                                } catch (Throwable e) {
-//                                    throwables.add(e);
-//                                } finally {
-//                                    latch.countDown();
-//                                }
-//                            }
-//                        });
-//                    }
-//                    try {
-//                        latch.await();
-//                        es.shutdown();
-//                        es.awaitTermination(5, TimeUnit.SECONDS);
-//                    } catch (InterruptedException ignored) {
-//                    }
-//                    if (!throwables.isEmpty()) {
-//                        final Throwable throwable = throwables.get(0);
-//                        throw new RuntimeException(throwable.getMessage(), throwable);
-//                    }
                     concurrentMapManager.doPutAll(name, map);
                 }
             }

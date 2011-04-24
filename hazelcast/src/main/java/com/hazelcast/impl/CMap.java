@@ -975,7 +975,7 @@ public class CMap {
     void sendKeyToMaster(Data key) {
         String queueName = name.substring(2);
         if (concurrentMapManager.isMaster()) {
-            node.blockingQueueManager.doAddKey(queueName, key, true);
+            node.blockingQueueManager.doAddKey(queueName, key, Integer.MAX_VALUE);
         } else {
             Packet packet = concurrentMapManager.obtainPacket();
             packet.name = queueName;

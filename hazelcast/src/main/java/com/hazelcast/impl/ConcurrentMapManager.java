@@ -600,10 +600,17 @@ public class ConcurrentMapManager extends BaseManager {
             Object value = entries.get(key);
             pairs.addKeyValue(new KeyValue(toData(key), toData(value)));
         }
-        try {
-            doPutAll(name, pairs);
-        } catch (Exception e) {
-            e.printStackTrace();
+        while (true) {
+            node.checkNodeState();
+            try {
+                doPutAll(name, pairs);
+                return;
+            } catch (Throwable e) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e1) {
+                }
+            }
         }
     }
 
@@ -1511,6 +1518,11 @@ public class ConcurrentMapManager extends BaseManager {
         protected volatile int backupCount = 0;
 
         protected void backup(ClusterOperation operation) {
+            if (thisAddress.equals(target) &&
+                    (operation == CONCURRENT_MAP_LOCK
+                            || operation == CONCURRENT_MAP_UNLOCK)) {
+                return;
+            }
             if (backupCount > 0) {
                 for (int i = 0; i < backupCount; i++) {
                     int distance = i + 1;
@@ -1834,8 +1846,17 @@ public class ConcurrentMapManager extends BaseManager {
             if (isMaster() && !isSuperClient()) {
                 block = partitionManager.getOrCreateBlock(blockId);
                 block.setOwner(thisAddress);
-            } else
+                block.setMigrationAddress(null);
+                partitionManager.lsBlocksToMigrate.clear();
+                partitionManager.invalidateBlocksHash();
+            } else {
                 return null;
+            }
+        } else if (block.getOwner() == null && isMaster() && !isSuperClient()) {
+            block.setOwner(thisAddress);
+            block.setMigrationAddress(null);
+            partitionManager.lsBlocksToMigrate.clear();
+            partitionManager.invalidateBlocksHash();
         }
         if (block.isMigrating()) {
             return null;

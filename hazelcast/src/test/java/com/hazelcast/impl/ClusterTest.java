@@ -281,9 +281,9 @@ public class ClusterTest {
 
     @Test(timeout = 50000)
     public void testPutAfterRestart() {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         Map map = h1.getMap("default");
-        h1.restart();
+        h1.getLifecycleService().restart();
         map.put("1", "value");
     }
 

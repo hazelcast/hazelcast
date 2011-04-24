@@ -19,19 +19,40 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Transaction;
 
+import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 public final class ClientThreadContext {
-    private static final ThreadLocal<ClientThreadContext> threadLocal = new ThreadLocal<ClientThreadContext>();
+    private static final ConcurrentMap<Thread, ClientThreadContext> mapContexts = new ConcurrentHashMap<Thread, ClientThreadContext>(100);
     private static final Object lock = new Object();
     TransactionClientProxy transactionProxy;
-    ClientSerializer serializer = new ClientSerializer();
+    final ClientSerializer serializer = new ClientSerializer();
+    final Thread thread;
+
+    public ClientThreadContext(Thread thread) {
+        this.thread = thread;
+    }
 
     public static ClientThreadContext get() {
-        ClientThreadContext threadContext = threadLocal.get();
+        Thread currentThread = Thread.currentThread();
+        ClientThreadContext threadContext = mapContexts.get(currentThread);
         if (threadContext == null) {
-            threadContext = new ClientThreadContext();
-            threadLocal.set(threadContext);
+            threadContext = new ClientThreadContext(currentThread);
+            mapContexts.put(currentThread, threadContext);
+            Iterator<Thread> threads = mapContexts.keySet().iterator();
+            while (threads.hasNext()) {
+                Thread thread = threads.next();
+                if (!thread.isAlive()) {
+                    threads.remove();
+                }
+            }
         }
         return threadContext;
+    }
+
+    public static void shutdown() {
+        mapContexts.clear();
     }
 
     public Transaction getTransaction(HazelcastClient client) {

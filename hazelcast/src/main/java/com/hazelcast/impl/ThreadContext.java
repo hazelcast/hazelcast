@@ -22,19 +22,14 @@ import com.hazelcast.impl.ConcurrentMapManager.MEvict;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Serializer;
 
-import java.util.List;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class ThreadContext {
 
-    private final static ThreadLocal<ThreadContext> threadLocal = new ThreadLocal<ThreadContext>();
-
     private final static AtomicInteger newThreadId = new AtomicInteger();
-
-    private final static List<ThreadContext> threadContexts = new CopyOnWriteArrayList<ThreadContext>();
 
     private final Thread thread;
 
@@ -46,21 +41,24 @@ public final class ThreadContext {
 
     private volatile FactoryImpl currentFactory = null;
 
+    private static final ConcurrentMap<Thread, ThreadContext> mapContexts = new ConcurrentHashMap<Thread, ThreadContext>(1000);
+
     private ThreadContext(Thread thread) {
         this.thread = thread;
         setCallContext(new CallContext(createNewThreadId(), false));
     }
 
     public static ThreadContext get() {
-        ThreadContext threadContext = threadLocal.get();
+        Thread currentThread = Thread.currentThread();
+        ThreadContext threadContext = mapContexts.get(currentThread);
         if (threadContext == null) {
             threadContext = new ThreadContext(Thread.currentThread());
-            threadLocal.set(threadContext);
-            threadContexts.add(threadContext);
-            for (ThreadContext context : threadContexts) {
-                if (!context.thread.isAlive()) {
-                    context.cleanup();
-                    threadContexts.remove(context);
+            mapContexts.put(currentThread, threadContext);
+            Iterator<Thread> threads = mapContexts.keySet().iterator();
+            while (threads.hasNext()) {
+                Thread thread = threads.next();
+                if (!thread.isAlive()) {
+                    threads.remove();
                 }
             }
         }
@@ -68,11 +66,7 @@ public final class ThreadContext {
     }
 
     public static void shutdownAll() {
-        ThreadContext.get().cleanup();
-        for (ThreadContext threadContext : threadContexts) {
-            threadContext.cleanup();
-        }
-        threadContexts.clear();
+        mapContexts.clear();
     }
 
     public void cleanup() {

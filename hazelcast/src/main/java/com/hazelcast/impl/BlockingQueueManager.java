@@ -25,14 +25,18 @@ import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.Packet;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class BlockingQueueManager extends BaseManager {
     private final static long BILLION = 1000 * 1000 * 1000;
@@ -50,9 +54,24 @@ public class BlockingQueueManager extends BaseManager {
                 queue.size(request);
             }
         });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_GET_KEY_BY_INDEX, new InitializationAwareOperationHandler() {
+            public void doOperation(BQ queue, Request request) {
+                queue.doGetKeyByIndex(request);
+            }
+        });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_GET_INDEX_BY_KEY, new InitializationAwareOperationHandler() {
+            public void doOperation(BQ queue, Request request) {
+                queue.doGetIndexByKey(request);
+            }
+        });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_TAKE_KEY, new InitializationAwareOperationHandler() {
             public void doOperation(BQ queue, Request request) {
                 queue.doTakeKey(request);
+            }
+        });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_SET, new InitializationAwareOperationHandler() {
+            public void doOperation(BQ queue, Request request) {
+                queue.doSet(request);
             }
         });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_PEEK_KEY, new ResponsiveOperationHandler() {
@@ -101,17 +120,17 @@ public class BlockingQueueManager extends BaseManager {
 
     boolean addKeyAsync = false;
 
-    private void sendKeyToMaster(final String queueName, final Data key, final boolean last) {
+    private void sendKeyToMaster(final String queueName, final Data key, final int index) {
         enqueueAndReturn(new Processable() {
             public void process() {
                 if (isMaster()) {
-                    doAddKey(queueName, key, last);
+                    doAddKey(queueName, key, index);
                 } else {
                     Packet packet = obtainPacket();
                     packet.name = queueName;
                     packet.setKey(key);
                     packet.operation = ClusterOperation.BLOCKING_OFFER_KEY;
-                    packet.longValue = (last) ? 0 : 1;
+                    packet.longValue = index;
                     boolean sent = send(packet, getMasterAddress());
                 }
             }
@@ -128,7 +147,36 @@ public class BlockingQueueManager extends BaseManager {
         return size;
     }
 
+    public boolean remove(String name, Object obj) {
+        Set<Long> keys = getValueKeys(name, toData(obj));
+        if (keys != null) {
+            for (Long key : keys) {
+                Data keyData = toData(key);
+                if (removeKey(name, keyData)) {
+                    try {
+                        getStorageMap(name).tryRemove(keyData, 0, TimeUnit.SECONDS);
+                    } catch (TimeoutException ignored) {
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean add(String name, Object obj, int index) {
+        try {
+            return offer(name, obj, index, 0);
+        } catch (InterruptedException ignored) {
+            return false;
+        }
+    }
+
     public boolean offer(String name, Object obj, long timeout) throws InterruptedException {
+        return offer(name, obj, Integer.MAX_VALUE, timeout);
+    }
+
+    public boolean offer(String name, Object obj, int index, long timeout) throws InterruptedException {
         Long key = generateKey(name, timeout);
         ThreadContext threadContext = ThreadContext.get();
         TransactionImpl txn = threadContext.getCallContext().getTransaction();
@@ -136,29 +184,61 @@ public class BlockingQueueManager extends BaseManager {
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 txn.attachPutOp(name, key, obj, timeout, true);
             } else {
-                storeQueueItem(name, key, obj, true);
+                storeQueueItem(name, key, obj, index);
             }
             return true;
         }
         return false;
     }
 
+    public Object set(String name, Object newValue, int index) {
+        if (index < 0) {
+            throw new IllegalArgumentException();
+        }
+        Data key = getKeyByIndex(name, index);
+        if (key == null) {
+            throw new IndexOutOfBoundsException();
+        }
+        IMap imap = getStorageMap(name);
+        return imap.put(key, newValue);
+    }
+
+    public Object remove(String name, int index) {
+        if (index < 0) {
+            throw new IllegalArgumentException();
+        }
+        Data key = null;
+        try {
+            key = takeKey(name, index, 0L);
+        } catch (InterruptedException ignored) {
+        }
+        if (key == null) {
+            throw new IndexOutOfBoundsException();
+        }
+        IMap imap = getStorageMap(name);
+        try {
+            return imap.tryRemove(key, 0, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            return null;
+        }
+    }
+
     public void offerCommit(String name, Object key, Object obj) {
-        storeQueueItem(name, key, obj, true);
+        storeQueueItem(name, key, obj, Integer.MAX_VALUE);
     }
 
     public void rollbackPoll(String name, Object key, Object obj) {
-        storeQueueItem(name, key, obj, false);
+        storeQueueItem(name, key, obj, 0);
     }
 
-    private void storeQueueItem(String name, Object key, Object obj, boolean last) {
+    private void storeQueueItem(String name, Object key, Object obj, int index) {
         IMap imap = getStorageMap(name);
         final Data dataKey = toData(key);
         imap.put(dataKey, obj);
         if (addKeyAsync) {
-            sendKeyToMaster(name, dataKey, last);
+            sendKeyToMaster(name, dataKey, index);
         } else {
-            addKey(name, dataKey, last);
+            addKey(name, dataKey, index);
         }
     }
 
@@ -202,8 +282,13 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     private Data takeKey(String name, long timeout) throws InterruptedException {
+        return takeKey(name, -1, timeout);
+    }
+
+    private Data takeKey(String name, int index, long timeout) throws InterruptedException {
         try {
             MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, timeout);
+            op.request.longValue = index;
             op.initOp();
             return (Data) op.getResultAsIs();
         } catch (Exception e) {
@@ -212,6 +297,143 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
         return null;
+    }
+
+    int getIndexOf(String name, Object obj, boolean first) {
+        Set<Long> keys = getValueKeys(name, toData(obj));
+        if (keys == null || keys.size() == 0) return -1;
+        Long key = null;
+        if (first) {
+            key = keys.iterator().next();
+        } else {
+            key = (Long) keys.toArray()[keys.size() - 1];
+        }
+        return getIndexByKey(name, toData(key));
+    }
+
+    Set<Long> getValueKeys(String name, Data item) {
+        while (true) {
+            node.checkNodeState();
+            try {
+                return doGetValueKeys(name, item);
+            } catch (Throwable e) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e1) {
+                }
+            }
+        }
+    }
+
+    Set<Long> doGetValueKeys(String name, Data item) throws ExecutionException, InterruptedException {
+        Set<Member> members = node.getClusterImpl().getMembers();
+        List<Future<Keys>> lsFutures = new ArrayList<Future<Keys>>(members.size());
+        for (Member member : members) {
+            GetValueKeysCallable callable = new GetValueKeysCallable(name, item);
+            DistributedTask<Keys> dt = new DistributedTask<Keys>(callable, member);
+            lsFutures.add(dt);
+            node.factory.getExecutorService().execute(dt);
+        }
+        Set<Long> foundKeys = new TreeSet<Long>();
+        for (Future<Keys> future : lsFutures) {
+            Keys keys = future.get();
+            if (keys != null) {
+                for (Data keyData : keys.getKeys()) {
+                    foundKeys.add((Long) toObject(keyData));
+                }
+            }
+        }
+        return foundKeys;
+    }
+
+    public static class Integers implements DataSerializable {
+        final Set<Integer> integerSet = new HashSet<Integer>();
+
+        public void readData(DataInput in) throws IOException {
+            int count = in.readInt();
+            for (int i = 0; i < count; i++) {
+                integerSet.add(in.readInt());
+            }
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeInt(integerSet.size());
+            for (Integer integer : integerSet) {
+                out.writeInt(integer);
+            }
+        }
+    }
+
+    public static class GetValueKeysCallable implements Callable<Keys>, DataSerializable, HazelcastInstanceAware {
+        HazelcastInstance hazelcast;
+        Data item;
+        String name;
+
+        public GetValueKeysCallable() {
+        }
+
+        public GetValueKeysCallable(String name, Data item) {
+            this.name = name;
+            this.item = item;
+        }
+
+        public Keys call() throws Exception {
+            IMap imap = hazelcast.getMap(name);
+            Set localKeys = imap.localKeySet();
+            if (localKeys != null) {
+                Object itemObject = toObject(item);
+                Keys keys = new Keys();
+                for (Object key : localKeys) {
+                    Object v = imap.get(key);
+                    if (v != null && v.equals(itemObject)) {
+                        keys.add(toData(key));
+                    }
+                }
+                return keys;
+            }
+            return null;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+            item.writeData(out);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+            item = new Data();
+            item.readData(in);
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcast = hazelcastInstance;
+        }
+    }
+
+    Object getItemByIndex(String name, int index) {
+        if (index < 0) {
+            throw new IllegalArgumentException();
+        }
+        Data key = getKeyByIndex(name, index);
+        if (key == null) {
+            throw new IndexOutOfBoundsException();
+        }
+        IMap imap = getStorageMap(name);
+        return imap.get(key);
+    }
+
+    private Data getKeyByIndex(String name, int index) {
+        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GET_KEY_BY_INDEX, name, 0);
+        op.request.longValue = index;
+        op.initOp();
+        return (Data) op.getResultAsIs();
+    }
+
+    private Integer getIndexByKey(String name, Data keyData) {
+        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GET_INDEX_BY_KEY, name, 0);
+        op.request.key = keyData;
+        op.initOp();
+        return (Integer) op.getResultAsObject();
     }
 
     private Data peekKey(String name) {
@@ -309,13 +531,22 @@ public class BlockingQueueManager extends BaseManager {
         };
     }
 
-    public boolean addKey(String name, Data key, boolean last) {
+    public boolean addKey(String name, Data key, int index) {
         MasterOp op = new MasterOp(ClusterOperation.BLOCKING_ADD_KEY, name, 0);
         op.request.key = key;
         op.request.setBooleanRequest();
-        op.request.longValue = (last) ? 0 : 1;
+        op.request.longValue = index;
         op.initOp();
         return op.getResultAsBoolean();
+    }
+
+    public Data set(String name, Data key, int index) {
+        MasterOp op = new MasterOp(ClusterOperation.BLOCKING_SET, name, 0);
+        op.request.key = key;
+        op.request.setBooleanRequest();
+        op.request.longValue = index;
+        op.initOp();
+        return (Data) op.getResultAsIs();
     }
 
     public boolean removeKey(String name, Data key) {
@@ -407,20 +638,20 @@ public class BlockingQueueManager extends BaseManager {
 
     final void handleOfferKey(Packet packet) {
         if (isMaster()) {
-            doAddKey(packet.name, packet.getKeyData(), (packet.longValue == 0) ? true : false);
+            doAddKey(packet.name, packet.getKeyData(), (int) packet.longValue);
         }
         releasePacket(packet);
     }
 
-    final void doAddKey(String name, Data key, boolean last) {
+    final void doAddKey(String name, Data key, int index) {
         BQ bq = getOrCreateBQ(name);
-        bq.doAddKey(key, last);
+        bq.doAddKey(key, index);
     }
 
     final void handleAddKey(Request req) {
         if (isMaster() && ready(req)) {
             BQ bq = getOrCreateBQ(req.name);
-            bq.doAddKey(req.key, (req.longValue == 0) ? true : false);
+            bq.doAddKey(req.key, (int) req.longValue);
             req.key = null;
             req.response = Boolean.TRUE;
             returnResponse(req);
@@ -507,8 +738,8 @@ public class BlockingQueueManager extends BaseManager {
         final boolean includeValue;
 
         QueueItemListener(ItemListener itemListener, boolean includeValue) {
-            this.includeValue = includeValue;
             this.itemListener = itemListener;
+            this.includeValue = includeValue;
         }
 
         public void entryAdded(EntryEvent entryEvent) {
@@ -601,15 +832,40 @@ public class BlockingQueueManager extends BaseManager {
             returnResponse(req);
         }
 
-        void doAddKey(Data key, boolean last) {
+        void doSet(Request req) {
+            int index = (int) req.longValue;
+            Data key = req.key;
+            Data oldKey = null;
+            boolean added = false;
+            if (queue.size() >= index) {
+                queue.add(new QData(key));
+                added = true;
+            } else {
+                QData old = queue.set(index, new QData(key));
+                if (isValid(old, System.currentTimeMillis())) {
+                    oldKey = old.data;
+                } else {
+                    added = true;
+                }
+            }
+            if (added) {
+                takeOne();
+            }
+            req.response = oldKey;
+            returnResponse(req);
+        }
+
+        void doAddKey(Data key, int index) {
             if (keys.add(key)) {
                 if (leases.size() > 0) {
                     leases.remove(0);
                 }
-                if (last) {
+                if (index == Integer.MAX_VALUE || index >= queue.size()) {
                     queue.offer(new QData(key));
-                } else {
+                } else if (index == 0) {
                     queue.addFirst(new QData(key));
+                } else {
+                    queue.add(index, new QData(key));
                 }
                 takeOne();
             }
@@ -671,12 +927,24 @@ public class BlockingQueueManager extends BaseManager {
             return qdata;
         }
 
+        QData removeItemByIndex(int index) {
+            if (index >= queue.size()) {
+                return null;
+            }
+            return queue.remove(index);
+        }
+
         boolean isValid(QData qdata, long now) {
             return qdata != null && (now - qdata.createDate) < ttl;
         }
 
         void doTakeKey(Request req) {
-            QData qdata = pollValidItem();
+            QData qdata = null;
+            if (req.longValue > 0) {
+                qdata = removeItemByIndex((int) req.longValue);
+            } else {
+                qdata = pollValidItem();
+            }
             if (qdata != null) {
                 keys.remove(qdata.data);
                 req.response = qdata.data;
@@ -690,6 +958,39 @@ public class BlockingQueueManager extends BaseManager {
                     returnResponse(req);
                 }
             }
+        }
+
+        void doGetIndexByKey(Request req) {
+            Data keyData = req.key;
+            int i = -1;
+            for (QData qdata : queue) {
+                if (qdata.data.equals(keyData)) {
+                    i++;
+                    break;
+                } else {
+                    i++;
+                }
+            }
+            req.response = toData(i);
+            returnResponse(req);
+        }
+
+        void doGetKeyByIndex(Request req) {
+            int index = (int) req.longValue;
+            long now = System.currentTimeMillis();
+            int i = 0;
+            QData key = null;
+            for (QData qdata : queue) {
+                if (isValid(qdata, now)) {
+                    if (index == i) {
+                        key = qdata;
+                        break;
+                    }
+                    i++;
+                }
+            }
+            req.response = (key == null) ? null : key.data;
+            returnResponse(req);
         }
 
         void doPeekKey(Request req) {

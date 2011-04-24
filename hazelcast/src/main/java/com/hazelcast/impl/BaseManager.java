@@ -725,21 +725,9 @@ public abstract class BaseManager {
         }
 
         protected void doReleasePacket(Packet packet) {
-//            checkServiceThread();
-//            packet.released = true;
-//            qServiceThreadPacketCache.offer(packet);
         }
 
         protected Packet doObtainPacket() {
-//            checkServiceThread();
-//            Packet p = qServiceThreadPacketCache.poll();
-//            if (p != null) {
-//                p.reset();
-//            } else {
-//                p = new Packet();
-//            }
-//            p.released = false;
-//            return p;
             return new Packet();
         }
 

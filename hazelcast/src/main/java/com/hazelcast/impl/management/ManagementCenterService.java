@@ -112,18 +112,24 @@ public class ManagementCenterService implements MembershipListener {
     }
 
     void updateMemberOrder() {
-        Set<Member> memberSet = factory.getCluster().getMembers();
-        for (Member member : memberSet) {
-            MemberImpl memberImpl = (MemberImpl) member;
-            Address address = memberImpl.getAddress();
-            try {
-                if (!socketAddresses.containsKey(address)) {
-                    SocketAddress socketAddress = new InetSocketAddress(address.getInetAddress(), address.getPort() + 100);
-                    socketAddresses.putIfAbsent(address, socketAddress);
+        try {
+            Set<Member> memberSet = factory.getCluster().getMembers();
+            for (Member member : memberSet) {
+                MemberImpl memberImpl = (MemberImpl) member;
+                Address address = memberImpl.getAddress();
+                try {
+                    if (!socketAddresses.containsKey(address)) {
+                        SocketAddress socketAddress = new InetSocketAddress(address.getInetAddress(), address.getPort() + 100);
+                        socketAddresses.putIfAbsent(address, socketAddress);
+                    }
+                    addresses.add(address);
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
                 }
-                addresses.add(address);
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
+            }
+        } catch (Throwable e) {
+            if (running && factory.node.isActive()) {
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
     }

@@ -201,7 +201,11 @@ public class PartitionManager implements Runnable {
     }
 
     private void createAllBlocks() {
-        //create all blocks
+        if (!node.isMaster()) {
+            logger.log(Level.WARNING, "Only master should create the blocks!");
+        }
+        // I am the master
+        // create all blocks
         for (int i = 0; i < PARTITION_COUNT; i++) {
             Block block = blocks[i];
             if (block == null) {
