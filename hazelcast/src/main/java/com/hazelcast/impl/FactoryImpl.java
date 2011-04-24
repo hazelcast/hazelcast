@@ -598,7 +598,9 @@ public class FactoryImpl implements HazelcastInstance {
                                     logger.log(Level.INFO, node.address + "[" + mProxy.getName() + "] loaded " + count);
                                 }
                             } catch (Throwable e) {
-                                logger.log(Level.SEVERE, e.getMessage(), e);
+                                if (node.isActive()) {
+                                    logger.log(Level.SEVERE, e.getMessage(), e);
+                                }
                             }
                         }
                     }

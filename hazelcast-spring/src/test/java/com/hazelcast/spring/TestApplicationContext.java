@@ -51,7 +51,12 @@ public class TestApplicationContext {
             listOfThreads.remove(thread);
         }
         for (final Thread thread : listOfThreads) {
-            assertFalse(thread.getName().startsWith("hz."));
+            if (thread != null) {
+                String name = thread.getName();
+                if (name != null) {
+                    assertFalse(thread.getName().startsWith("hz."));
+                }
+            }
         }
     }
 

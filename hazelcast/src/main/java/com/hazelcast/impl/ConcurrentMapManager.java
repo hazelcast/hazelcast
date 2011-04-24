@@ -189,8 +189,10 @@ public class ConcurrentMapManager extends BaseManager {
         for (CMap cmap : maps.values()) {
             try {
                 flush(cmap.name);
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+            } catch (Throwable e) {
+                if (node.isActive()) {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                }
             }
         }
     }
@@ -201,7 +203,11 @@ public class ConcurrentMapManager extends BaseManager {
             Map mapDirtyEntries = new HashMap();
             for (Record record : cmap.mapRecords.values()) {
                 if (record.isDirty()) {
-                    mapDirtyEntries.put(record.getKey(), record.getValue());
+                    Object key = record.getKey();
+                    Object value = record.getValue();
+                    if (key != null && value != null) {
+                        mapDirtyEntries.put(key, value);
+                    }
                 }
             }
             if (mapDirtyEntries.size() > 0) {
