@@ -441,7 +441,6 @@ public class Node {
 
     private void postJoin() {
         if (!isMaster()) {
-            Set<Member> members = null;
             boolean allConnected = false;
             int checkCount = 0;
             while (checkCount++ < 100 && !allConnected) {
@@ -449,7 +448,7 @@ public class Node {
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
                 }
-                members = clusterImpl.getMembers();
+                Set<Member> members = clusterImpl.getMembers();
                 allConnected = true;
                 for (Member member : members) {
                     MemberImpl memberImpl = (MemberImpl) member;
@@ -459,7 +458,7 @@ public class Node {
                 }
             }
             if (!allConnected) {
-                logger.log(Level.WARNING, "Failed to connect to all other members after " + checkCount + "seconds.");
+                logger.log(Level.WARNING, "Failed to connect to all other members after " + checkCount + " seconds.");
                 logger.log(Level.WARNING, "Rebooting after 10 seconds.");
                 try {
                     Thread.sleep(10000);

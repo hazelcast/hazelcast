@@ -540,6 +540,24 @@ public class ConcurrentMapManager extends BaseManager {
         mput.putTransient(name, key, value, timeout, ttl);
     }
 
+    void putTransient(Request request) {
+        MPut mput = new MPut();
+        mput.request.key = request.key;
+        mput.request.value = request.value;
+        mput.request.timeout = 0;
+        mput.request.ttl = -1;
+        mput.request.indexes = request.indexes;
+        mput.request.indexTypes = request.indexTypes;
+        mput.request.local = true;
+        mput.request.setFromRequest(request);
+        mput.request.operation = CONCURRENT_MAP_PUT_TRANSIENT;
+        mput.request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
+        request.setBooleanRequest();
+        mput.doOp();
+        mput.getResultAsBoolean();
+        mput.backup(CONCURRENT_MAP_BACKUP_PUT);
+    }
+
     Map getAll(String name, Set keys) {
         Pairs results = getAllPairs(name, keys);
         List<KeyValue> lsKeyValues = results.getKeyValues();
@@ -868,6 +886,11 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
             super.handleNoneRedoResponse(packet);
+        }
+
+        @Override
+        public void doLocalOp() {
+            super.doLocalOp();
         }
 
         @Override
@@ -2059,9 +2082,10 @@ public class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             Record record = ensureRecord(request);
+            boolean dirty = (record == null) ? false : record.isDirty();
             cmap.put(request);
             if (record != null) {
-                record.setDirty(false);
+                record.setDirty(dirty);
             }
             request.value = null;
             request.response = Boolean.TRUE;
@@ -2403,6 +2427,7 @@ public class ConcurrentMapManager extends BaseManager {
                     setIndexValues(request, value);
                     request.value = toData(value);
                 }
+                putTransient(request);
             } else if (request.operation == CONCURRENT_MAP_PUT || request.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
                 //store the entry
                 Object value = toObject(request.value);

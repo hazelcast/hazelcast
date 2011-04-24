@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
+import com.hazelcast.nio.Data;
 import com.hazelcast.query.SqlPredicate;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -33,12 +34,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.nio.IOUtil.toData;
 import static org.junit.Assert.*;
 
 public class MapStoreTest extends TestUtil {
 
     @BeforeClass
     public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         Hazelcast.shutdownAll();
     }
 
@@ -426,6 +429,40 @@ public class MapStoreTest extends TestUtil {
         assertEquals(0, map.size());
         testMapStore.assertAwait(12);
         assertEquals(0, testMapStore.getStore().size());
+    }
+
+    @Test
+    public void testWriteBehindBackupLoaded() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 20);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        testMapStore.insert("1", "value1");
+        IMap map = h1.getMap("default");
+        assertEquals(0, map.size());
+        map.lock("1");
+        assertEquals("value1", map.get("1"));
+        assertEquals(1, map.size());
+        h1.getLifecycleService().shutdown();
+        IMap map2 = h2.getMap("default");
+        assertEquals(1, map2.size());
+        map2.putTransient("2", "value2", 100, TimeUnit.DAYS);
+        CMap cmap = getCMap(h2, "default");
+        Data key = toData("2");
+        Record record = cmap.getRecord(key);
+        assertFalse(record.isDirty());
+        assertTrue(record.isValid());
+        assertTrue(record.isActive());
+        assertEquals("value2", record.getValue());
+        map2.put("2", "value22");
+        assertTrue(record.isDirty());
+        assertTrue(record.isValid());
+        assertTrue(record.isActive());
+        map2.putTransient("2", "value222", 100, TimeUnit.DAYS);
+        assertTrue(record.isDirty());
+        assertTrue(record.isValid());
+        assertTrue(record.isActive());
     }
 
     @Test
