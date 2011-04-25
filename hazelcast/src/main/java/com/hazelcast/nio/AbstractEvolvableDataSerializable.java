@@ -15,7 +15,7 @@
  *
  */
 /*
-   contributed by Eugen DŸck <eugen@dueck.org>
+   contributed by Eugen Duck <eugen@dueck.org>
 */
 package com.hazelcast.nio;
 

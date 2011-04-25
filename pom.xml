@@ -16,9 +16,9 @@
         <module>hazelcast-wm</module>
         <module>hazelcast-ra</module>
         <module>hazelcast-client</module>
-        <module>hazelcast-monitor</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-all</module>
+        <module>hazelcast-monitor</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -145,7 +145,18 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>2.7</version>
                         <configuration>
+                            <javaApiLinks>
+                                <property>
+                                    <name>api_1.5</name>
+                                    <value>http://download.oracle.com/javase/1.5.0/docs/api/</value>
+                                </property>
+                                <property>
+                                    <name>api_1.6</name>
+                                    <value>http://download.oracle.com/javase/1.6.0/docs/api/</value>
+                                </property>
+                            </javaApiLinks>
                             <excludePackageNames>com.hazelcast.impl.*:com.hazelcast.nio.*</excludePackageNames>
                         </configuration>
                         <executions>
@@ -157,6 +168,8 @@
                             </execution>
                         </executions>
                     </plugin>
+
+
                 </plugins>
             </build>
         </profile>

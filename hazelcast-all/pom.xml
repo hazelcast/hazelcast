@@ -60,19 +60,64 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.1</version>
                         <executions>
                             <execution>
-                                <phase>deploy</phase>
-                                <configuration>
-                                    <tasks>
-                                        <copy file="../hazelcast/target/hazelcast-${project.parent.version}-javadoc.jar"
-                                              tofile="target/hazelcast-all-${project.parent.version}-javadoc.jar"/>
-                                    </tasks>
-                                </configuration>
+                                <id>all-javadoc</id>
+                                <phase>compile</phase>
                                 <goals>
                                     <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <javadoc destdir="target/apidocs" author="true" version="true" use="true"
+                                                 windowtitle="Hazelcast API">
+                                            <fileset dir="../hazelcast/src/main/java/" defaultexcludes="true">
+                                                <include name="**/nio/DataSerializable*"/>
+                                                <include name="**/core/**"/>
+                                                <include name="**/monitor/**"/>
+                                                <include name="**/merge/**"/>
+                                                <include name="**/config/**"/>
+                                                <include name="**/jmx/**"/>
+                                                <include name="**/query/**"/>
+                                                <include name="**/partition/**"/>
+                                                <exclude name="**/*.html"/>
+                                            </fileset>
+                                            <fileset dir="../hazelcast-client/src/main/java/" defaultexcludes="true">
+                                                <include name="**/HazelcastClient.java"/>
+                                                <exclude name="**/*.html"/>
+                                            </fileset>
+                                            <fileset dir="../hazelcast-spring/src/main/java/" defaultexcludes="true">
+                                                <include name="**/*.java"/>
+                                                <exclude name="**/*.html"/>
+                                            </fileset>
+                                            <doctitle>
+                                                <![CDATA[<h1>Hazelcast</h1>]]>
+                                            </doctitle>
+                                            <bottom>
+                                                <![CDATA[<i>Copyright &#1.9.3-RC; 2008-2011 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
+                                            <link href="http://download.oracle.com/javase/1.5.0/docs/api/"/>
+                                            <link href="http://java.sun.com/products/servlet/2.3/javadoc/"/>
+                                        </javadoc>
+                                        <jar jarfile="target/hazelcast-all-${project.parent.version}-javadoc.jar">
+                                            <fileset dir="target/apidocs"/>
+                                        </jar>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
                                 </goals>
                             </execution>
                         </executions>
@@ -98,6 +143,12 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-hibernate</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-spring</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>
         </dependency>
