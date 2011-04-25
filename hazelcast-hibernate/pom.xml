@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>1.9.3-SNAPSHOT</version>
+        <version>1.9.3-RC</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -46,32 +46,32 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-        	<groupId>hsqldb</groupId>
-        	<artifactId>hsqldb</artifactId>
-        	<version>1.8.0.10</version>
-        	<type>jar</type>
-        	<scope>test</scope>
+            <groupId>hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <version>1.8.0.10</version>
+            <type>jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
-        	<groupId>org.slf4j</groupId>
-        	<artifactId>slf4j-api</artifactId>
-        	<version>1.5.8</version>
-        	<type>jar</type>
-        	<scope>test</scope>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.5.8</version>
+            <type>jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
-        	<groupId>org.slf4j</groupId>
-        	<artifactId>slf4j-simple</artifactId>
-        	<version>1.5.8</version>
-        	<type>jar</type>
-        	<scope>test</scope>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.5.8</version>
+            <type>jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
-        	<groupId>javassist</groupId>
-        	<artifactId>javassist</artifactId>
-        	<version>3.12.1.GA</version>
-        	<type>jar</type>
-        	<scope>test</scope>
+            <groupId>javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.12.1.GA</version>
+            <type>jar</type>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
