@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<sun-connector>
-    <resource-adapter
-            jndi-name="HazelcastCF" max-pool-size="20"
-            steady-pool-size="10" max-wait-time-in-millis="300000"
-            idle-timeout-in-seconds="5000">
-    </resource-adapter>
-</sun-connector> 
