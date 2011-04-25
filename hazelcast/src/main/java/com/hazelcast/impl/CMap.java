@@ -814,7 +814,7 @@ public class CMap {
         if (req.txnId != -1) {
             unlock(record);
         }
-        logger.log(Level.FINEST, record.getValueData() + " PutMulti " + record.getMultiValues());
+//        logger.log(Level.FINEST, record.getValueData() + " PutMulti " + record.getMultiValues());
         req.clearForResponse();
         req.version = record.getVersion();
         return added;
