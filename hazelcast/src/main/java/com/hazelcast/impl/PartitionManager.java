@@ -83,10 +83,12 @@ public class PartitionManager implements Runnable {
         long now = System.currentTimeMillis();
         if (now > nextMigrationMillis) {
             if (migrationStartTime != 0) {
-                logger.log(Level.WARNING,
-                        "Migration is not completed for " + ((now - migrationStartTime) / 1000) + " seconds.");
                 for (Block block : blocks) {
-                    logger.log(Level.WARNING, block == null ? "null" : block.toString());
+                    if (block != null && block.isMigrating()) {
+                        long seconds = ((now - migrationStartTime) / 1000);
+                        String msg = block.toString() + " migration is not completed for " + seconds + " seconds.";
+                        logger.log(Level.WARNING, msg);
+                    }
                 }
             }
             nextMigrationMillis = now + MIGRATION_INTERVAL_MILLIS;
@@ -529,6 +531,12 @@ public class PartitionManager implements Runnable {
     }
 
     void migrateBlock(final Block blockInfo) {
+        List<Record> lsRecordsToMigrate = prepareMigratingRecords(blockInfo);
+        if (lsRecordsToMigrate == null) return;
+        migrateRecords(blockInfo, lsRecordsToMigrate);
+    }
+
+    List<Record> prepareMigratingRecords(Block blockInfo) {
         Block blockReal = blocks[blockInfo.getBlockId()];
         if (!thisAddress.equals(blockInfo.getOwner())) {
             throw new RuntimeException(thisAddress + ". migrateBlock should be called from owner: " + blockInfo);
@@ -540,12 +548,12 @@ public class PartitionManager implements Runnable {
             throw new RuntimeException(thisAddress + ". migrateBlock cannot have same owner and migrationAddress:" + blockInfo);
         }
         if (!node.isActive() || node.factory.restarted) {
-            return;
+            return null;
         }
         if (concurrentMapManager.isSuperClient()) {
-            return;
+            return null;
         }
-        if (blockReal.isMigrationStarted()) return;
+        if (blockReal.isMigrationStarted()) return null;
         blockReal.setMigrationStarted(true);
         blockReal.setOwner(blockInfo.getOwner());
         blockReal.setMigrationAddress(blockInfo.getMigrationAddress());
@@ -567,6 +575,10 @@ public class PartitionManager implements Runnable {
                 }
             }
         }
+        return lsRecordsToMigrate;
+    }
+
+    void migrateRecords(final Block blockInfo, final List<Record> lsRecordsToMigrate) {
         logger.log(Level.FINEST, "Migrating [" + lsRecordsToMigrate.size() + "] " + blockInfo);
         final CountDownLatch latch = new CountDownLatch(lsRecordsToMigrate.size());
         for (final Record rec : lsRecordsToMigrate) {
@@ -631,7 +643,7 @@ public class PartitionManager implements Runnable {
             blockReal.setOwner(block.getOwner());
             blockReal.setMigrationAddress(block.getMigrationAddress());
             if (thisAddress.equals(blockReal.getOwner()) && blockReal.isMigrating()) {
-                startMigration(new Block(block));
+                fireMigrationEventAndMigrate(new Block(block));
             } else if (!same && block.getOwner() != null) {
                 boolean started = blockReal.isMigrating();
                 if (started) {
@@ -677,7 +689,7 @@ public class PartitionManager implements Runnable {
         return blocksHash;
     }
 
-    void startMigration(Block block) {
+    void fireMigrationEventAndMigrate(Block block) {
         logger.log(Level.FINEST, "Migration Started " + block);
         fireMigrationEvent(true, new Block(block));
         migrateBlock(block);

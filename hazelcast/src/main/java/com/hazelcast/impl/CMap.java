@@ -405,8 +405,6 @@ public class CMap {
                 Request reqCopy = req.hardCopy();
                 record.addBackupOp(new VersionedBackupOp(this, reqCopy));
                 return true;
-            } else if (req.version <= record.getVersion()) {
-                return false;
             }
         }
         doBackup(req);
