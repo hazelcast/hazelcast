@@ -567,13 +567,15 @@ public class ClientService implements ConnectionListener {
             String nodeGroupPassword = node.factory.getConfig().getGroupConfig().getPassword();
             Object groupName = toObject(packet.getKeyData());
             Object groupPassword = toObject(packet.getValueData());
-            boolean value = (nodeGroupName.equals(groupName) && nodeGroupPassword.equals(groupPassword));
-            logger.log(Level.INFO, "received auth from " + packet.conn
+
+
+            boolean authenticated = (nodeGroupName.equals(groupName) && nodeGroupPassword.equals(groupPassword));
+            logger.log((authenticated?Level.INFO : Level.WARNING), "received auth from " + packet.conn
                     + ", this group name:" + nodeGroupName + ", auth group name:" + groupName
-                    + ", " + (value ?
+                    + ", " + (authenticated ?
                     "successfully authenticated" : "authentication failed"));
             packet.clearForResponse();
-            packet.setValue(toData(value));
+            packet.setValue(toData(authenticated));
         }
     }
 
