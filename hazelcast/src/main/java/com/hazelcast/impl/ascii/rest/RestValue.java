@@ -61,4 +61,21 @@ public class RestValue implements DataSerializable {
     public void setValue(byte[] value) {
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        String contentTypeStr = (contentType == null) ? "unknown-content-type" : new String(contentType);
+        String valueStr;
+        if (value == null) {
+            valueStr = "value.length=0";
+        } else if (contentTypeStr.contains("text")) {
+            valueStr = "value=\"" + new String(value) + "\"";
+        } else {
+            valueStr = "value.length=" + value.length;
+        }
+        return "RestValue{" +
+                "contentType='" + contentTypeStr +
+                "', " + valueStr +
+                '}';
+    }
 }

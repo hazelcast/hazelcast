@@ -34,6 +34,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final byte[] RES_404 = "HTTP/1.1 404 Not Found\r\n\r\n".getBytes();
     public static final byte[] RES_100 = "HTTP/1.1 100 Continue\r\n\r\n".getBytes();
     public static final byte[] RES_204 = "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\n\r\n".getBytes();
+    public static final byte[] RES_503 = "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\n\r\n".getBytes();
     public static final byte[] CONTENT_TYPE = "Content-TextCommandType: ".getBytes();
     public static final byte[] CONTENT_LENGTH = "Content-Length: ".getBytes();
 

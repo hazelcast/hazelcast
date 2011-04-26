@@ -160,6 +160,10 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         return hazelcast.getMap(mapName).remove(key);
     }
 
+    public boolean offer(String queueName, Object value) {
+        return hazelcast.getQueue(queueName).offer(value);
+    }
+
     public byte[] get(String key) {
         String mapName = "default";
         int index = key.indexOf(':');

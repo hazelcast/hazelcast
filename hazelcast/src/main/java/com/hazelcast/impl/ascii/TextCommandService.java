@@ -22,6 +22,8 @@ import com.hazelcast.impl.ascii.memcache.Stats;
 
 public interface TextCommandService {
 
+    boolean offer(String queueName, Object value);
+
     void processRequest(TextCommand command);
 
     void sendResponse(TextCommand textCommand);
