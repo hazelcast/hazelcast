@@ -68,6 +68,10 @@
         -->
         <max-size-per-jvm>0</max-size-per-jvm>
 
+        <!--
+            Name of the map configuration that will be used for the backing distributed
+            map for this queue.
+        -->
         <backing-map-ref>default</backing-map-ref>
 
     </queue>
