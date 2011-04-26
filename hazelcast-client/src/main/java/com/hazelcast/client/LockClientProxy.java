@@ -42,6 +42,7 @@ public class LockClientProxy implements ILock {
     }
 
     public void lockInterruptibly() throws InterruptedException {
+        throw new UnsupportedOperationException("lockInterruptibly is not implemented!");
     }
 
     public boolean tryLock() {

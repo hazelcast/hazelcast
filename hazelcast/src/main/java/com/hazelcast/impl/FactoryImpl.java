@@ -870,6 +870,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void lockInterruptibly() throws InterruptedException {
+                throw new UnsupportedOperationException("lockInterruptibly is not implemented!");
             }
 
             public Condition newCondition() {
