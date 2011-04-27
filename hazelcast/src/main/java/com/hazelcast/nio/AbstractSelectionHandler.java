@@ -21,7 +21,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
 
-import java.io.EOFException;
+import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -72,7 +72,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         sb.append(" Closing socket to endpoint ");
         sb.append(connection.getEndPoint());
         sb.append(", Cause:").append(e);
-        if (e instanceof EOFException) {
+        if (e instanceof IOException) {
             logger.log(Level.WARNING, sb.toString());
         } else {
             logger.log(Level.WARNING, sb.toString(), e);
