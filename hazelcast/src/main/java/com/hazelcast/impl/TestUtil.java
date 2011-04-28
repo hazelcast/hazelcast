@@ -30,6 +30,7 @@ import com.hazelcast.partition.PartitionService;
 import org.junit.Ignore;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -109,6 +110,7 @@ public class TestUtil {
         concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
             public void process() {
                 Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
+                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.clear();
                 concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
                 concurrentMapManagerOldest.partitionManager.initiateMigration();
             }
@@ -117,6 +119,76 @@ public class TestUtil {
             fail("Migration should get started in 20 seconds!!");
         }
         return true;
+    }
+
+    public abstract static class MigrationProcess {
+
+        public abstract boolean prepare() throws Exception;
+
+        public abstract boolean finish() throws Exception;
+    }
+
+    public static MigrationProcess createMigrationProcess(final int partitionId,
+                                                          final int completeWaitSeconds,
+                                                          final HazelcastInstance oldest,
+                                                          final HazelcastInstance from,
+                                                          final HazelcastInstance to) throws Exception {
+        final MemberImpl currentOwnerMember = (MemberImpl) getPartitionById(oldest.getPartitionService(), partitionId).getOwner();
+        final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
+        if (currentOwnerMember.equals(toMember)) {
+            throw new RuntimeException();
+        }
+        final ConcurrentMapManager concurrentMapManagerOldest = getConcurrentMapManager(oldest);
+        final ConcurrentMapManager concurrentMapManagerFrom = getConcurrentMapManager(from);
+        final ConcurrentMapManager concurrentMapManagerTo = getConcurrentMapManager(to);
+        final Address addressCurrentOwner = currentOwnerMember.getAddress();
+        final Address addressNewOwner = toMember.getAddress();
+        final int blockId = getPartitionById(oldest.getPartitionService(), partitionId).getPartitionId();
+        final Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
+        return new MigrationProcess() {
+            List<Record> lsMigratingRecords = null;
+            final CountDownLatch migrationLatch = new CountDownLatch(1);
+
+            @Override
+            public boolean prepare() throws Exception {
+                MigrationListener migrationListener = new MigrationListener() {
+                    public void migrationCompleted(MigrationEvent migrationEvent) {
+                        System.out.println(migrationEvent.getSource() + "  " + migrationEvent);
+                        migrationLatch.countDown();
+                    }
+
+                    public void migrationStarted(MigrationEvent migrationEvent) {
+                    }
+                };
+                from.getPartitionService().addMigrationListener(migrationListener);
+                to.getPartitionService().addMigrationListener(migrationListener);
+                return concurrentMapManagerOldest.enqueueAndWait(new Processable() {
+                    public void process() {
+                        concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.clear();
+                        concurrentMapManagerOldest.partitionManager.fireMigrationEvent(true, blockToMigrate);
+                        concurrentMapManagerOldest.partitionManager.invalidateBlocksHash();
+                        lsMigratingRecords = concurrentMapManagerOldest.partitionManager.prepareMigratingRecords(blockToMigrate);
+                    }
+                }, 10);
+            }
+
+            @Override
+            public boolean finish() throws Exception {
+                concurrentMapManagerFrom.enqueueAndWait(new Processable() {
+                    public void process() {
+                        concurrentMapManagerFrom.partitionManager.MIGRATION_COMPLETE_WAIT_SECONDS = completeWaitSeconds;
+                        concurrentMapManagerFrom.partitionManager.invalidateBlocksHash();
+                    }
+                }, 5);
+                concurrentMapManagerOldest.enqueueAndWait(new Processable() {
+                    public void process() {
+                        concurrentMapManagerOldest.partitionManager.invalidateBlocksHash();
+                        concurrentMapManagerOldest.partitionManager.migrateRecords(blockToMigrate, lsMigratingRecords);
+                    }
+                }, 5);
+                return migrationLatch.await(20, TimeUnit.SECONDS);
+            }
+        };
     }
 
     public static boolean migrateKey(Object key, HazelcastInstance oldest, HazelcastInstance to) throws Exception {

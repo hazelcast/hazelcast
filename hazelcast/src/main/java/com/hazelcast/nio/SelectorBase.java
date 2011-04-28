@@ -143,7 +143,7 @@ public abstract class SelectorBase implements Runnable {
                     it.remove();
                     try {
                         if (sk.isValid()) {
-                            if (!sk.isReadable()) sk.interestOps(sk.interestOps() & ~sk.readyOps());
+                            sk.interestOps(sk.interestOps() & ~sk.readyOps());
                             SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
                             selectionHandler.handle();
                         } else {
@@ -177,9 +177,9 @@ public abstract class SelectorBase implements Runnable {
     }
 
     protected void initSocket(Socket socket) throws Exception {
-        socket.setKeepAlive(true);
-        //socket.setTcpNoDelay(true);
         socket.setSoLinger(true, 1);
+        socket.setKeepAlive(node.connectionManager.SOCKET_KEEP_ALIVE);
+        socket.setTcpNoDelay(node.connectionManager.SOCKET_NO_DELAY);
         socket.setReceiveBufferSize(node.connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
         socket.setSendBufferSize(node.connectionManager.SOCKET_SEND_BUFFER_SIZE);
     }

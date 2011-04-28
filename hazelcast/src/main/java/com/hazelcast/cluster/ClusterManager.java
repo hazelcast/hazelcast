@@ -194,7 +194,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     public void appendState(StringBuffer sbState) {
         sbState.append("\nClusterManager {");
         for (ScheduledAction sa : setScheduledActions) {
-            sbState.append("\n\tSchedule Request from  " + sa.getRequest().caller);
+            sbState.append("\n\t" + sa + ", from:" + sa.getRequest().caller);
         }
         sbState.append("\n}");
     }

@@ -44,7 +44,7 @@ public abstract class ScheduledAction {
     public abstract boolean consume();
 
     public boolean expired() {
-        return !valid || timeout != -1 && System.currentTimeMillis() >= getExpireTime();
+        return !valid || (timeout != -1 && System.currentTimeMillis() >= getExpireTime());
     }
 
     public long getExpireTime() {
@@ -98,8 +98,7 @@ public abstract class ScheduledAction {
 
     @Override
     public String toString() {
-        return "ScheduledAction {neverExpires=" + neverExpires() + ", timeout= " + timeout
-                + "}";
+        return this.getClass().getSimpleName() + "[" + id + "]{ neverExpires=" + neverExpires() + ", timeout= " + timeout + "}";
     }
 
     public Request getRequest() {

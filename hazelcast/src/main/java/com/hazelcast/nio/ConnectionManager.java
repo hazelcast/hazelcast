@@ -40,6 +40,10 @@ public class ConnectionManager {
 
     final int SOCKET_SEND_BUFFER_SIZE;
 
+    final boolean SOCKET_KEEP_ALIVE;
+
+    final boolean SOCKET_NO_DELAY;
+
     private final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
 
     private final Set<Address> setConnectionInProgress = new CopyOnWriteArraySet<Address>();
@@ -63,6 +67,8 @@ public class ConnectionManager {
         this.logger = node.getLogger(ConnectionManager.class.getName());
         this.SOCKET_RECEIVE_BUFFER_SIZE = this.node.getGroupProperties().SOCKET_RECEIVE_BUFFER_SIZE.getInteger() * KILO_BYTE;
         this.SOCKET_SEND_BUFFER_SIZE = this.node.getGroupProperties().SOCKET_SEND_BUFFER_SIZE.getInteger() * KILO_BYTE;
+        this.SOCKET_KEEP_ALIVE = this.node.getGroupProperties().SOCKET_KEEP_ALIVE.getBoolean();
+        this.SOCKET_NO_DELAY = this.node.getGroupProperties().SOCKET_NO_DELAY.getBoolean();
     }
 
     public void addConnectionListener(ConnectionListener listener) {

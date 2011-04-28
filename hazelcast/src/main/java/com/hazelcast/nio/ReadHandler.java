@@ -91,10 +91,9 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
             }
         } catch (Throwable t) {
             handleSocketException(t);
+        } finally {
+            run();
         }
-//        finally {
-//            run();
-//        }
     }
 
     public final void run() {

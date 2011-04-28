@@ -267,7 +267,8 @@ public final class Packet implements SocketWritable {
                 + ", connection=" + conn
                 + ",blockId="
                 + blockId + ", keySize=" + keySize + ", valueSize=" + valueSize
-                + " client=" + client;
+                + " client=" + client
+                + " callId=" + callId;
     }
 
     public void flipBuffers() {

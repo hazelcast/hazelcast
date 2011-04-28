@@ -70,7 +70,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         socketWritable.onEnqueue();
         writeQueue.offer(socketWritable);
         outSelector.writeQueueSize.incrementAndGet();
-        if (true || informSelector.compareAndSet(true, false)) {
+        if (informSelector.compareAndSet(true, false)) {
             // we don't have to call wake up if this WriteHandler is
             // already in the task queue.
             // we can have a counter to check this later on.
