@@ -2681,17 +2681,21 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public Object remove(Object key) {
+                long begin = System.currentTimeMillis();
                 check(key);
-                mapOperationCounter.incrementRemoves();
                 MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
-                return mremove.remove(name, key, -1);
+                Object result = mremove.remove(name, key, -1);
+                mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+                return result;
             }
 
             public Object tryRemove(Object key, long timeout, TimeUnit timeunit) throws TimeoutException {
+                long begin = System.currentTimeMillis();
                 check(key);
-                mapOperationCounter.incrementRemoves();
                 MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
-                return mremove.tryRemove(name, key, toMillis(timeout, timeunit));
+                Object result = mremove.tryRemove(name, key, toMillis(timeout, timeunit));
+                mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+                return result;
             }
 
             public int size() {
@@ -2716,11 +2720,13 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean remove(Object key, Object value) {
+                long begin = System.currentTimeMillis();
                 check(key);
                 check(value);
-                mapOperationCounter.incrementRemoves();
                 MRemove mremove = concurrentMapManager.new MRemove();
-                return (mremove.removeIfSame(name, key, value, -1) != null);
+                boolean result = (mremove.removeIfSame(name, key, value, -1) != null);
+                mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+                return result;
             }
 
             public Object replace(Object key, Object value) {
@@ -2913,10 +2919,12 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean removeKey(Object key) {
+                long begin = System.currentTimeMillis();
                 check(key);
-                mapOperationCounter.incrementRemoves();
                 MRemoveItem mRemoveItem = concurrentMapManager.new MRemoveItem();
-                return mRemoveItem.removeItem(name, key);
+                boolean result = mRemoveItem.removeItem(name, key);
+                mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+                return result;
             }
 
             public void clear() {

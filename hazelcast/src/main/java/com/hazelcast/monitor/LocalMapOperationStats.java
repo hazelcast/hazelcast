@@ -68,6 +68,12 @@ public interface LocalMapOperationStats extends DataSerializable {
      */
     public long getTotalGetLatency();
 
+    /**
+     * Returns the total latency of remove operations in this period. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getTotalRemoveLatency();
 
     /**
      * Returns the number of Remove operations

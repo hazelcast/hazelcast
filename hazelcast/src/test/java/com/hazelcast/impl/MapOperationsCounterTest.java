@@ -53,7 +53,7 @@ public class MapOperationsCounterTest {
         for (int i = 0; i < 10; i++) {
             mapOperationStats.incrementPuts(0);
             mapOperationStats.incrementGets(0);
-            mapOperationStats.incrementRemoves();
+            mapOperationStats.incrementRemoves(0);
         }
         assertEquals(10, mapOperationStats.getPublishedStats().getNumberOfGets());
         assertEquals(10, mapOperationStats.getPublishedStats().getNumberOfPuts());
@@ -66,7 +66,7 @@ public class MapOperationsCounterTest {
         for (int i = 0; i < 10; i++) {
             mapOperationStats.incrementPuts(0);
             mapOperationStats.incrementGets(0);
-            mapOperationStats.incrementRemoves();
+            mapOperationStats.incrementRemoves(0);
         }
         assertEquals(10, mapOperationStats.getPublishedStats().getNumberOfGets());
         assertEquals(10, mapOperationStats.getPublishedStats().getNumberOfPuts());
@@ -196,7 +196,7 @@ public class MapOperationsCounterTest {
         MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
         mapOperationStats.incrementPuts(0);
         mapOperationStats.incrementGets(0);
-        mapOperationStats.incrementRemoves();
+        mapOperationStats.incrementRemoves(0);
         ((DataSerializable) mapOperationStats.getPublishedStats()).writeData(dout);
         MapOperationStatsImpl newStat = new MapOperationStatsImpl();
         ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());

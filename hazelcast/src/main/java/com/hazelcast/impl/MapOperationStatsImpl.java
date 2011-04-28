@@ -30,14 +30,14 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
     long periodEnd;
     OperationStat gets = new OperationStat(0,0);
     OperationStat puts = new OperationStat(0,0);
-    long numberOfRemoves;
+    OperationStat removes = new OperationStat(0,0);
     long numberOfOtherOperations;
     long numberOfEvents;
 
     public void writeData(DataOutput out) throws IOException {
         puts.writeData(out);
         gets.writeData(out);
-        out.writeLong(numberOfRemoves);
+        removes.writeData(out);
         out.writeLong(numberOfOtherOperations);
         out.writeLong(numberOfEvents);
         out.writeLong(periodStart);
@@ -49,7 +49,8 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
         puts.readData(in);
         gets = new OperationStat();
         gets.readData(in);
-        numberOfRemoves = in.readLong();
+        removes = new OperationStat();
+        removes.readData(in);
         numberOfOtherOperations = in.readLong();
         numberOfEvents = in.readLong();
         periodStart = in.readLong();
@@ -57,7 +58,7 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
     }
 
     public long total() {
-        return puts.count + gets.count + numberOfRemoves + numberOfOtherOperations;
+        return puts.count + gets.count + removes.count + numberOfOtherOperations;
     }
 
     public long getPeriodStart() {
@@ -84,8 +85,12 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
         return gets.totalLatency;
     }
 
+    public long getTotalRemoveLatency() {
+        return removes.totalLatency;
+    }
+
     public long getNumberOfRemoves() {
-        return numberOfRemoves;
+        return removes.count;
     }
 
     public long getNumberOfOtherOperations() {
@@ -101,7 +106,7 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
                 "total= " + total() +
                 "\n, puts:" + puts +
                 "\n, gets:" + gets +
-                "\n, removes:" + numberOfRemoves +
+                "\n, removes:" + removes +
                 "\n, others: " + numberOfOtherOperations +
                 "\n, received events: " + numberOfEvents +
                 "}";

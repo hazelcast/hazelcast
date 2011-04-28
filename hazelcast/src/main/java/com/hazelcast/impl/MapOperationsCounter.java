@@ -27,7 +27,7 @@ public class MapOperationsCounter {
     private final static LocalMapOperationStats empty = new MapOperationStatsImpl();
     private final OperationCounter puts = new OperationCounter();
     private final OperationCounter gets = new OperationCounter();
-    private final AtomicLong removes = new AtomicLong();
+    private final OperationCounter removes = new OperationCounter();
     private final AtomicLong others = new AtomicLong();
     private final AtomicLong events = new AtomicLong();
 
@@ -49,7 +49,7 @@ public class MapOperationsCounter {
     private MapOperationsCounter getAndReset() {
         OperationCounter putsNow = puts.copyAndReset();
         OperationCounter getsNow = gets.copyAndReset();
-        long removesNow = removes.getAndSet(0);
+        OperationCounter removesNow = removes.copyAndReset();
         long othersNow = others.getAndSet(0);
         long eventsNow = events.getAndSet(0);
         MapOperationsCounter newOne = new MapOperationsCounter();
@@ -88,8 +88,8 @@ public class MapOperationsCounter {
         publishSubResult();
     }
 
-    public void incrementRemoves() {
-        removes.incrementAndGet();
+    public void incrementRemoves(long elapsed) {
+        removes.count(elapsed);
         publishSubResult();
     }
 
@@ -130,7 +130,7 @@ public class MapOperationsCounter {
             MapOperationsCounter sub = list.get(i);
             stats.gets.add(sub.gets.count.get(), sub.gets.totalLatency.get());
             stats.puts.add(sub.puts.count.get(), sub.puts.totalLatency.get());
-            stats.numberOfRemoves += sub.removes.get();
+            stats.removes.add(sub.removes.count.get(), sub.removes.totalLatency.get());
             stats.numberOfOtherOperations += sub.others.get();
             stats.numberOfEvents += sub.events.get();
             stats.periodEnd = sub.endTime;
@@ -143,8 +143,7 @@ public class MapOperationsCounter {
         stats.periodStart = this.startTime;
         stats.gets = stats.new OperationStat(this.gets.count.get(), this.gets.totalLatency.get());
         stats.puts = stats.new OperationStat(this.puts.count.get(), this.puts.totalLatency.get());
-//        stats.numberOfPuts = this.puts.get();
-        stats.numberOfRemoves = this.removes.get();
+        stats.removes = stats.new OperationStat(this.removes.count.get(), this.removes.totalLatency.get());
         stats.numberOfEvents = this.events.get();
         stats.periodEnd = now();
         return stats;
