@@ -106,6 +106,7 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[ADD_INDEX.getValue()] = new AddIndexHandler();
         clientOperationHandlers[NEW_ID.getValue()] = new NewIdHandler();
         clientOperationHandlers[EXECUTE.getValue()] = new ExecutorServiceHandler();
+        clientOperationHandlers[CANCEL_EXECUTION.getValue()] = new CancelExecutionHandler();
         clientOperationHandlers[GET_INSTANCES.getValue()] = new GetInstancesHandler();
         clientOperationHandlers[GET_MEMBERS.getValue()] = new GetMembersHandler();
         clientOperationHandlers[GET_CLUSTER_TIME.getValue()] = new GetClusterTimeHandler();
@@ -350,7 +351,22 @@ public class ClientService implements ConnectionListener {
         }
     }
 
-    //    private class ExecutorServiceHandler extends ClientOperationHandler {
+    private class CancelExecutionHandler extends ClientOperationHandler {
+
+        @Override
+        public void processCall(Node node, Packet packet) {
+            long taskId = (Long) toObject(packet.getKeyData());
+            boolean mayInterruptIfRunning = (Boolean) toObject(packet.getValue());
+            ClientEndpoint thisEndPoint = getClientEndpoint(packet.conn);
+            DistributedTask task = thisEndPoint.getTask(taskId);
+            boolean cancelled = task.cancel(mayInterruptIfRunning);
+            if (cancelled) {
+                thisEndPoint.removeTask(taskId);
+            }
+            packet.setValue(toData(cancelled));
+        }
+    }
+
     private class ExecutorServiceHandler extends ClientOperationHandler {
         @Override
         public void processCall(Node node, Packet packet) {
@@ -372,14 +388,19 @@ public class ClientService implements ConnectionListener {
                 } else {
                     task = new DistributedTask(cdt.getCallable());
                 }
+                final ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
+                clientEndpoint.storeTask(packet.callId, task);
                 task.setExecutionCallback(new ExecutionCallback() {
                     public void done(Future future) {
                         Object result;
                         try {
+                            clientEndpoint.removeTask(packet.callId);
                             result = future.get();
                             packet.setValue(toData(result));
                         } catch (InterruptedException e) {
                             return;
+                        } catch (CancellationException e) {
+                            packet.setValue(toData(e));
                         } catch (ExecutionException e) {
                             packet.setValue(toData(e));
                         }
@@ -567,10 +588,8 @@ public class ClientService implements ConnectionListener {
             String nodeGroupPassword = node.factory.getConfig().getGroupConfig().getPassword();
             Object groupName = toObject(packet.getKeyData());
             Object groupPassword = toObject(packet.getValueData());
-
-
             boolean authenticated = (nodeGroupName.equals(groupName) && nodeGroupPassword.equals(groupPassword));
-            logger.log((authenticated?Level.INFO : Level.WARNING), "received auth from " + packet.conn
+            logger.log((authenticated ? Level.INFO : Level.WARNING), "received auth from " + packet.conn
                     + ", this group name:" + nodeGroupName + ", auth group name:" + groupName
                     + ", " + (authenticated ?
                     "successfully authenticated" : "authentication failed"));

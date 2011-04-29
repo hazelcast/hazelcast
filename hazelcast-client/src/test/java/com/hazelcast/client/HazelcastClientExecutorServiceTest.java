@@ -24,15 +24,11 @@ import com.hazelcast.monitor.DistributedMemberInfoCallable;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static junit.framework.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class HazelcastClientExecutorServiceTest extends HazelcastClientTestBase {
 
@@ -231,4 +227,89 @@ public class HazelcastClientExecutorServiceTest extends HazelcastClientTestBase 
 //        getHazelcastClient().shutdown();
 //        Hazelcast.shutdownAll();
 //    }
+
+    @Test
+    public void cancelMayInterrupt() throws InterruptedException {
+        ExecutorService esService = getExecutorService();
+//        IMap<Integer, Boolean> map = getHazelcastClient().getMap("cancel");
+        IMap<Integer, Boolean> map = getHazelcastInstance().getMap("cancel");
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryListener<Integer, Boolean>() {
+            public void entryAdded(EntryEvent<Integer, Boolean> integerBooleanEntryEvent) {
+                latch.countDown();
+                fail("Not cancelled");
+            }
+
+            public void entryRemoved(EntryEvent<Integer, Boolean> integerBooleanEntryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            public void entryUpdated(EntryEvent<Integer, Boolean> integerBooleanEntryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            public void entryEvicted(EntryEvent<Integer, Boolean> integerBooleanEntryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+        }, false);
+
+        Future f = esService.submit(new MyRunnable());
+        Thread.sleep(500);
+        boolean cancelled = f.cancel(true);
+        assertTrue("should be cancelled", cancelled);
+
+        assertFalse(latch.await(2000, TimeUnit.MILLISECONDS));
+        assertFalse(getHazelcastInstance().getMap("interrupted").isEmpty());
+
+    }
+
+    @Test
+    public void cancelMayNotInterrupt() throws InterruptedException {
+        ExecutorService esService = getExecutorService();
+        IMap<Integer, Boolean> map = getHazelcastClient().getMap("cancel");
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryListener<Integer, Boolean>() {
+            public void entryAdded(EntryEvent<Integer, Boolean> integerBooleanEntryEvent) {
+                latch.countDown();
+            }
+
+            public void entryRemoved(EntryEvent<Integer, Boolean> integerBooleanEntryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            public void entryUpdated(EntryEvent<Integer, Boolean> integerBooleanEntryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            public void entryEvicted(EntryEvent<Integer, Boolean> integerBooleanEntryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+        }, false);
+
+        Future f = esService.submit(new MyRunnable());
+        Thread.sleep(500);
+
+        boolean cancelled = f.cancel(false);
+        assertTrue("should be cancelled", cancelled);
+
+        assertTrue(latch.await(2000, TimeUnit.MILLISECONDS));
+        assertTrue(getHazelcastInstance().getMap("interrupted").isEmpty());
+    }
+
+    static class MyRunnable extends HazelcastInstanceAwareObject implements Runnable, Serializable {
+
+
+        public void run() {
+            try {
+                System.out.println("Running");
+                Thread.sleep(1000);
+                System.out.println("Setting to false");
+                getHazelcastInstance().getMap("cancel").put(1, false);
+
+            } catch (InterruptedException e) {
+                System.out.println("Interrupted");
+                getHazelcastInstance().getMap("interrupted").put(1, true);
+            }
+        }
+    }
 }

@@ -39,7 +39,8 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     private final Map<Integer, Map<IMap, List<Data>>> locks = new ConcurrentHashMap<Integer, Map<IMap, List<Data>>>();
     private final List<IMap> listeningMaps = new ArrayList<IMap>();
     private final List<Map.Entry<IMap, Object>> listeningKeysOfMaps = new ArrayList<Map.Entry<IMap, Object>>();
-    public Map<IQueue, ItemListener<Object>> queueItemListeners = new HashMap<IQueue, ItemListener<Object>>();
+    public Map<IQueue, ItemListener<Object>> queueItemListeners = new ConcurrentHashMap<IQueue, ItemListener<Object>>();
+    private Map<Long,DistributedTask> runningExecutorTasks = new ConcurrentHashMap<Long, DistributedTask>();
     private final Node node;
 
     ClientEndpoint(Node node, Connection conn) {
@@ -282,6 +283,18 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
                 }
             }
         }
+    }
+
+    public void storeTask(long callId, DistributedTask task) {
+        this.runningExecutorTasks.put(callId, task);
+    }
+
+    public void removeTask(long callId) {
+        this.runningExecutorTasks.remove(callId);
+    }
+
+    public DistributedTask getTask(long taskId) {
+        return this.runningExecutorTasks.get(taskId);
     }
 
     static class Entry implements Map.Entry {
