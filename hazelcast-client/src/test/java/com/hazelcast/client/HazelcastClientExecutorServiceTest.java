@@ -231,8 +231,9 @@ public class HazelcastClientExecutorServiceTest extends HazelcastClientTestBase 
     @Test
     public void cancelMayInterrupt() throws InterruptedException {
         ExecutorService esService = getExecutorService();
-//        IMap<Integer, Boolean> map = getHazelcastClient().getMap("cancel");
         IMap<Integer, Boolean> map = getHazelcastInstance().getMap("cancel");
+        getHazelcastInstance().getMap("interrupted").clear();
+        map.clear();
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener(new EntryListener<Integer, Boolean>() {
             public void entryAdded(EntryEvent<Integer, Boolean> integerBooleanEntryEvent) {
@@ -267,6 +268,8 @@ public class HazelcastClientExecutorServiceTest extends HazelcastClientTestBase 
     public void cancelMayNotInterrupt() throws InterruptedException {
         ExecutorService esService = getExecutorService();
         IMap<Integer, Boolean> map = getHazelcastClient().getMap("cancel");
+        getHazelcastInstance().getMap("interrupted").clear();
+        map.clear();
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener(new EntryListener<Integer, Boolean>() {
             public void entryAdded(EntryEvent<Integer, Boolean> integerBooleanEntryEvent) {
