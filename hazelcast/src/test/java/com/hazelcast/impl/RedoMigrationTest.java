@@ -71,6 +71,8 @@ public class RedoMigrationTest extends RedoTestService {
         }
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        IMap imap2 = h2.getMap("default");
+        IMap imap3 = h3.getMap("default");
         TestUtil.migratePartition(28, h1, h2);
         assertEquals(getPartitionById(h1.getPartitionService(), 28).getOwner(), h2.getCluster().getLocalMember());
         assertEquals(getPartitionById(h2.getPartitionService(), 28).getOwner(), h2.getCluster().getLocalMember());
@@ -109,6 +111,8 @@ public class RedoMigrationTest extends RedoTestService {
             }
             fail("Migration should get completed in 20 seconds!!");
         }
+        assertEquals(10000, imap1.size());
+        assertEquals(10000, imap3.size());
     }
 
     @Test(timeout = 100000)

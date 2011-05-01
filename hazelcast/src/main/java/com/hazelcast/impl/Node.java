@@ -229,8 +229,8 @@ public class Node {
                 multicastSocket.setTimeToLive(32);
                 // set the send interface
                 multicastSocket.setInterface(address.getInetAddress());
-                multicastSocket.setReceiveBufferSize(1024);
-                multicastSocket.setSendBufferSize(1024);
+                multicastSocket.setReceiveBufferSize(64 * 1024);
+                multicastSocket.setSendBufferSize(64 * 1024);
                 multicastSocket.joinGroup(InetAddress
                         .getByName(join.getMulticastConfig().getMulticastGroup()));
                 multicastSocket.setSoTimeout(1000);

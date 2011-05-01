@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.impl.TestUtil.getCMap;
 import static java.lang.Thread.sleep;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
@@ -2680,5 +2681,58 @@ public class ClusterTest {
         for (int i = 0; i < 1000; i++) {
             assertEquals(i, map.get(i).intValue());
         }
+    }
+
+    @Test
+    public void testMultiMapDestroy() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        final MultiMap<Integer, Integer> m1 = h1.getMultiMap("default");
+        final MultiMap<Integer, Integer> m2 = h2.getMultiMap("default");
+        for (int i = 0; i < 999; i++) {
+            m1.put(i, i);
+        }
+        assertTrue(m1.containsKey(1));
+        assertTrue(m2.containsKey(1));
+        m1.destroy();
+        Thread.sleep(1000);
+        String longName = Prefix.MULTIMAP + "default";
+        assertFalse(TestUtil.getNode(h1).factory.proxies.containsKey(new FactoryImpl.ProxyKey(longName, null)));
+        assertFalse(TestUtil.getNode(h1).factory.proxiesByName.containsKey(longName));
+        assertFalse(TestUtil.getNode(h2).factory.proxies.containsKey(new FactoryImpl.ProxyKey(longName, null)));
+        assertFalse(TestUtil.getNode(h2).factory.proxiesByName.containsKey(longName));
+        assertNull(getCMap(h1, longName));
+        assertNull(getCMap(h2, longName));
+        assertFalse(m1.containsKey(1));
+        assertFalse(m2.containsKey(1));
+    }
+
+    @Test
+    public void testQueueDestroy() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        final IQueue q1 = h1.getQueue("default");
+        final IQueue q2 = h2.getQueue("default");
+        for (int i = 0; i < 999; i++) {
+            q2.offer(i);
+        }
+        assertEquals(999, q1.size());
+        assertEquals(999, q2.size());
+        q1.destroy();
+        Thread.sleep(1000);
+        String queueLongName = Prefix.QUEUE + "default";
+        String mapLongName = Prefix.MAP + Prefix.QUEUE + "default";
+        assertFalse(TestUtil.getNode(h1).factory.proxies.containsKey(new FactoryImpl.ProxyKey(queueLongName, null)));
+        assertFalse(TestUtil.getNode(h1).factory.proxiesByName.containsKey(queueLongName));
+        assertFalse(TestUtil.getNode(h2).factory.proxies.containsKey(new FactoryImpl.ProxyKey(queueLongName, null)));
+        assertFalse(TestUtil.getNode(h2).factory.proxiesByName.containsKey(queueLongName));
+        assertFalse(TestUtil.getNode(h1).factory.proxies.containsKey(new FactoryImpl.ProxyKey(mapLongName, null)));
+        assertFalse(TestUtil.getNode(h1).factory.proxiesByName.containsKey(mapLongName));
+        assertFalse(TestUtil.getNode(h2).factory.proxies.containsKey(new FactoryImpl.ProxyKey(mapLongName, null)));
+        assertFalse(TestUtil.getNode(h2).factory.proxiesByName.containsKey(mapLongName));
+        assertNull(getCMap(h1, mapLongName));
+        assertNull(getCMap(h2, mapLongName));
+        assertEquals(0, q1.size());
+        assertEquals(0, q2.size());
     }
 }

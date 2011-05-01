@@ -69,37 +69,37 @@ public class FactoryImpl implements HazelcastInstance {
 
     private static int nextFactoryId = 0;
 
-    private final ConcurrentMap<String, HazelcastInstanceAwareInstance> proxiesByName = new ConcurrentHashMap<String, HazelcastInstanceAwareInstance>(1000);
+    final ConcurrentMap<String, HazelcastInstanceAwareInstance> proxiesByName = new ConcurrentHashMap<String, HazelcastInstanceAwareInstance>(1000);
 
-    private final ConcurrentMap<ProxyKey, HazelcastInstanceAwareInstance> proxies = new ConcurrentHashMap<ProxyKey, HazelcastInstanceAwareInstance>(1000);
+    final ConcurrentMap<ProxyKey, HazelcastInstanceAwareInstance> proxies = new ConcurrentHashMap<ProxyKey, HazelcastInstanceAwareInstance>(1000);
 
-    private final MProxy locksMapProxy;
+    final MProxy locksMapProxy;
 
-    private final MProxy idGeneratorMapProxy;
+    final MProxy idGeneratorMapProxy;
 
-    private final MProxy globalProxies;
+    final MProxy globalProxies;
 
-    private final ConcurrentMap<String, ExecutorServiceProxy> executorServiceProxies = new ConcurrentHashMap<String, ExecutorServiceProxy>(2);
+    final ConcurrentMap<String, ExecutorServiceProxy> executorServiceProxies = new ConcurrentHashMap<String, ExecutorServiceProxy>(2);
 
-    private final CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
+    final CopyOnWriteArrayList<InstanceListener> lsInstanceListeners = new CopyOnWriteArrayList<InstanceListener>();
 
-    private final String name;
+    final String name;
 
-    private final TransactionFactory transactionFactory;
+    final TransactionFactory transactionFactory;
 
-    private final HazelcastInstanceProxy hazelcastInstanceProxy;
+    final HazelcastInstanceProxy hazelcastInstanceProxy;
 
-    public final Node node;
+    final ManagementService managementService;
 
-    volatile boolean restarted = false;
-
-    private final ManagementService managementService;
-
-    private final ILogger logger;
+    final ILogger logger;
 
     final LifecycleServiceImpl lifecycleService;
 
     final ManagementCenterService managementCenterService;
+
+    public final Node node;
+
+    volatile boolean restarted = false;
 
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         FactoryImpl factory = null;
@@ -1699,6 +1699,7 @@ public class FactoryImpl implements HazelcastInstance {
             public void destroy() {
                 operationsCounter.incrementOtherOperations();
                 factory.destroyInstanceClusterWide(name, null);
+                factory.destroyInstanceClusterWide(Prefix.MAP + name, null);
             }
 
             public Instance.InstanceType getInstanceType() {
@@ -1773,11 +1774,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public void destroy() {
-            Instance instance = factory.proxies.remove(new ProxyKey(name, null));
-            if (instance != null) {
-                ensure();
-                base.destroy();
-            }
+            factory.destroyInstanceClusterWide(name, null);
         }
 
         public String getName() {

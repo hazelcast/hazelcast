@@ -50,7 +50,7 @@ public class ConcurrentMapManager extends BaseManager {
     long lastLogStateTime = System.currentTimeMillis();
     final Block[] blocks;
     final ConcurrentMap<String, CMap> maps;
-    final ConcurrentMap<String, MapNearCache> mapCaches;
+    final ConcurrentMap<String, NearCache> mapCaches;
     final OrderedExecutionTask[] orderedExecutionTasks;
     final PartitionManager partitionManager;
     long newRecordId = 0;
@@ -66,7 +66,7 @@ public class ConcurrentMapManager extends BaseManager {
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         blocks = new Block[PARTITION_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
-        mapCaches = new ConcurrentHashMap<String, MapNearCache>(10, 0.75f, 1);
+        mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
         orderedExecutionTasks = new OrderedExecutionTask[PARTITION_COUNT];
         partitionManager = new PartitionManager(this);
         for (int i = 0; i < PARTITION_COUNT; i++) {
@@ -383,7 +383,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     class MContainsKey extends MTargetAwareOp {
         Object keyObject = null;
-        MapNearCache nearCache = null;
+        NearCache nearCache = null;
 
         public boolean containsEntry(String name, Object key, Object value) {
             return booleanCall(CONCURRENT_MAP_CONTAINS, name, key, value, 0, -1);
@@ -459,7 +459,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public final void handleNoneRedoResponse(Packet packet) {
-            MapNearCache nearCache = mapCaches.get(request.name);
+            NearCache nearCache = mapCaches.get(request.name);
             if (nearCache != null) {
                 nearCache.invalidate(request.key);
             }
@@ -821,7 +821,7 @@ public class ConcurrentMapManager extends BaseManager {
             }
             final CMap cMap = maps.get(name);
             if (cMap != null) {
-                MapNearCache nearCache = cMap.mapNearCache;
+                NearCache nearCache = cMap.nearCache;
                 if (nearCache != null) {
                     Object value = nearCache.get(key);
                     if (value != null) {
@@ -877,7 +877,7 @@ public class ConcurrentMapManager extends BaseManager {
         public final void handleNoneRedoResponse(Packet packet) {
             final CMap cMap = maps.get(request.name);
             if (cMap != null) {
-                MapNearCache nearCache = cMap.mapNearCache;
+                NearCache nearCache = cMap.nearCache;
                 if (nearCache != null) {
                     Data value = packet.getValueData();
                     if (value != null && value.size() > 0) {
@@ -1020,7 +1020,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public final void handleNoneRedoResponse(Packet packet) {
-            MapNearCache nearCache = mapCaches.get(request.name);
+            NearCache nearCache = mapCaches.get(request.name);
             if (nearCache != null) {
                 nearCache.invalidate(request.key);
             }
@@ -1758,7 +1758,7 @@ public class ConcurrentMapManager extends BaseManager {
     public class MEmpty {
 
         public boolean isEmpty(String name) {
-            MapNearCache nearCache = mapCaches.get(name);
+            NearCache nearCache = mapCaches.get(name);
             if (nearCache != null && !nearCache.isEmpty()) {
                 return false;
             }
@@ -2034,9 +2034,9 @@ public class ConcurrentMapManager extends BaseManager {
         public void process(Packet packet) {
             CMap cmap = getMap(packet.name);
             if (cmap != null) {
-                MapNearCache mapNearCache = cmap.mapNearCache;
-                if (mapNearCache != null) {
-                    mapNearCache.invalidate(packet.getKeyData());
+                NearCache nearCache = cmap.nearCache;
+                if (nearCache != null) {
+                    nearCache.invalidate(packet.getKeyData());
                 }
             }
             releasePacket(packet);

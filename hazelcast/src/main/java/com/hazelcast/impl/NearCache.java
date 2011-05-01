@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class MapNearCache {
+public class NearCache {
     private final ILogger logger;
     private final SortedHashMap<Data, Object> sortedMap;
     private final ConcurrentMap<Object, CacheEntry> cache;
@@ -43,9 +43,9 @@ public class MapNearCache {
     private final AtomicInteger counter = new AtomicInteger();
     private long lastEvictionTime = 0;
 
-    public MapNearCache(CMap cmap, SortedHashMap.OrderingType orderingType, int maxSize, long ttl, long maxIdleTime, boolean invalidateOnChange) {
+    public NearCache(CMap cmap, SortedHashMap.OrderingType orderingType, int maxSize, long ttl, long maxIdleTime, boolean invalidateOnChange) {
         this.cmap = cmap;
-        this.logger = cmap.concurrentMapManager.node.getLogger(MapNearCache.class.getName());
+        this.logger = cmap.concurrentMapManager.node.getLogger(NearCache.class.getName());
         this.maxSize = maxSize;
         this.ttl = ttl;
         this.maxIdleTime = maxIdleTime;

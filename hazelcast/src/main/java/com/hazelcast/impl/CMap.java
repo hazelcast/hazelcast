@@ -112,7 +112,7 @@ public class CMap {
 
     final MapIndexService mapIndexService;
 
-    final MapNearCache mapNearCache;
+    final NearCache nearCache;
 
     final long creationTime;
 
@@ -223,19 +223,19 @@ public class CMap {
         store = (mapStoreWrapper == null || !mapStoreWrapper.isMapStore()) ? null : mapStoreWrapper;
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         if (nearCacheConfig == null) {
-            mapNearCache = null;
+            nearCache = null;
         } else {
-            MapNearCache mapNearCache = new MapNearCache(this,
+            NearCache nearCache = new NearCache(this,
                     SortedHashMap.getOrderingTypeByName(nearCacheConfig.getEvictionPolicy()),
                     nearCacheConfig.getMaxSize(),
                     nearCacheConfig.getTimeToLiveSeconds() * 1000L,
                     nearCacheConfig.getMaxIdleSeconds() * 1000L,
                     nearCacheConfig.isInvalidateOnChange());
-            final MapNearCache anotherMapNearCache = concurrentMapManager.mapCaches.putIfAbsent(name, mapNearCache);
-            if (anotherMapNearCache != null) {
-                mapNearCache = anotherMapNearCache;
+            final NearCache anotherNearCache = concurrentMapManager.mapCaches.putIfAbsent(name, nearCache);
+            if (anotherNearCache != null) {
+                nearCache = anotherNearCache;
             }
-            this.mapNearCache = mapNearCache;
+            this.nearCache = nearCache;
         }
         MergePolicy mergePolicyTemp = null;
         String mergePolicyName = mapConfig.getMergePolicy();
@@ -1249,8 +1249,8 @@ public class CMap {
 
     void startCleanup(boolean forced) {
         final long now = System.currentTimeMillis();
-        if (mapNearCache != null) {
-            mapNearCache.evict(now, false);
+        if (nearCache != null) {
+            nearCache.evict(now, false);
         }
         final Set<Record> recordsDirty = new HashSet<Record>();
         final Set<Record> recordsUnknown = new HashSet<Record>();
@@ -1368,7 +1368,7 @@ public class CMap {
     }
 
     void fireInvalidation(Record record) {
-        if (mapNearCache != null && mapNearCache.shouldInvalidateOnChange()) {
+        if (nearCache != null && nearCache.shouldInvalidateOnChange()) {
             for (MemberImpl member : concurrentMapManager.lsMembers) {
                 if (!member.localMember()) {
                     if (member.getAddress() != null) {
@@ -1383,7 +1383,7 @@ public class CMap {
                     }
                 }
             }
-            mapNearCache.invalidate(record.getKeyData());
+            nearCache.invalidate(record.getKeyData());
         }
     }
 
@@ -1521,8 +1521,8 @@ public class CMap {
                 }
             }
         }
-        if (mapNearCache != null) {
-            mapNearCache.reset();
+        if (nearCache != null) {
+            nearCache.reset();
         }
         mapRecords.clear();
         mapIndexService.clear();
@@ -1630,8 +1630,8 @@ public class CMap {
         sbState.append(name);
         sbState.append("] r:");
         sbState.append(mapRecords.size());
-        if (mapNearCache != null) {
-            mapNearCache.appendState(sbState);
+        if (nearCache != null) {
+            nearCache.appendState(sbState);
         }
         mapIndexService.appendState(sbState);
         for (Record record : mapRecords.values()) {
