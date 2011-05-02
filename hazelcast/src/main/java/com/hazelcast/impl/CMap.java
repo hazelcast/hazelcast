@@ -266,9 +266,14 @@ public class CMap {
     }
 
     final boolean isNotLocked(Request request) {
-        return (lockEntireMap == null
+        boolean result = (lockEntireMap == null
                 || !lockEntireMap.isLocked()
                 || lockEntireMap.isLockedBy(request.lockAddress, request.lockThreadId));
+        if (!result) {
+            System.out.println(thisAddress + " and caller is " + request.caller);
+            System.out.println(lockEntireMap + " LOCKED !! " + request.operation);
+        }
+        return result;
     }
 
     final boolean overCapacity(Request request) {
@@ -293,7 +298,9 @@ public class CMap {
             if (lockEntireMap == null) {
                 lockEntireMap = new DistributedLock();
             }
-            lockEntireMap.lock(request.lockAddress, request.lockThreadId);
+            if (!lockEntireMap.isLockedBy(request.lockAddress, request.lockThreadId)) {
+                lockEntireMap.lock(request.lockAddress, request.lockThreadId);
+            }
             request.clearForResponse();
             request.response = Boolean.TRUE;
         } else if (request.operation == CONCURRENT_MAP_UNLOCK_MAP) {
@@ -733,6 +740,15 @@ public class CMap {
                     node.clusterManager.deregisterScheduledAction(sa);
                     it.remove();
                 }
+            }
+        }
+    }
+
+    public void onDisconnect(Address deadAddress) {
+        if (deadAddress == null) return;
+        if (lockEntireMap != null) {
+            if (deadAddress.equals(lockEntireMap.getLockAddress())) {
+                lockEntireMap = null;
             }
         }
     }

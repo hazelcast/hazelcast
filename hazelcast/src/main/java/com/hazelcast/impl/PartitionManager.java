@@ -411,6 +411,7 @@ public class PartitionManager implements Runnable {
         }
         Collection<CMap> cmaps = concurrentMapManager.maps.values();
         for (CMap cmap : cmaps) {
+            cmap.onDisconnect(deadAddress);
             Object[] records = cmap.mapRecords.values().toArray();
             for (Object recordObject : records) {
                 if (recordObject != null) {
