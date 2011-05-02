@@ -2608,7 +2608,7 @@ public class ClusterTest {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    System.out.println("Releashing semaphore 1");
+                    System.out.println("Releasing semaphore 1");
                     semaphore1.release();
                 }
             }
@@ -2625,7 +2625,7 @@ public class ClusterTest {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    System.out.println("Releashing semaphore 2");
+                    System.out.println("Releasing semaphore 2");
                     semaphore2.release();
                 }
             }
@@ -2642,7 +2642,7 @@ public class ClusterTest {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    System.out.println("Releashing semaphore 3");
+                    System.out.println("Releasing semaphore 3");
                     semaphore3.release();
                 }
             }
@@ -2684,13 +2684,42 @@ public class ClusterTest {
     }
 
     @Test
-    public void testMultiMapDestroy() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+    public void testMapAndMultiMapDestroyWithNearCache() throws Exception {
+        Config config = new Config();
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setMaxSize(1000);
+        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        map1.put("1", "value");
+        // call map.get() to make sure they are near cached.
+        for (int i = 0; i < 2; i++) {
+            map1.get("1");
+            map2.get("1");
+        }
+        map1.destroy();
+        Thread.sleep(1000);
+        assertNull(map2.get("1"));
+        assertNull(h2.getMap("default").get("1"));
+        assertFalse(map2.containsKey("1"));
+        assertFalse(h2.getMap("default").containsKey("1"));
+        assertEquals(0, map2.size());
+        assertEquals(0, map2.entrySet().size());
+        assertNull(map1.get("1"));
+        assertFalse(map1.containsKey("1"));
+        assertEquals(0, map1.size());
+        assertEquals(0, map1.entrySet().size());
+        // now test multimap destroy
         final MultiMap<Integer, Integer> m1 = h1.getMultiMap("default");
         final MultiMap<Integer, Integer> m2 = h2.getMultiMap("default");
         for (int i = 0; i < 999; i++) {
             m1.put(i, i);
+            for (int a = 0; a < 2; a++) {
+                m1.get(i);
+                m2.get(i);
+            }
         }
         assertTrue(m1.containsKey(1));
         assertTrue(m2.containsKey(1));
