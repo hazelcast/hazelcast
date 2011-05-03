@@ -101,8 +101,8 @@ public class SplitBrainHandler implements Runnable {
         if (tcpEnabled) {
             final Collection<Address> colPossibleAddresses;
             try {
-                colPossibleAddresses = Node.getPossibleMembers(node.getConfig(), node.getThisAddress());
-            } catch (Exception e) {
+                colPossibleAddresses = Node.getPossibleMembers(node.getConfig(), node.getThisAddress(), logger);
+            } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
                 return;
             }

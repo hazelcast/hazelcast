@@ -2486,7 +2486,7 @@ public class ClusterTest {
         hzi2.getLifecycleService().shutdown();
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void unresolvableHostName() {
         Config config = new Config();
         config.getGroupConfig().setName("abc");
@@ -2496,7 +2496,7 @@ public class ClusterTest {
         join.getTcpIpConfig().setEnabled(true);
         join.getTcpIpConfig().setMembers(Arrays.asList(new String[]{"localhost", "nonexistinghost"}));
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-        hz.getCluster().getMembers();
+        assertEquals(1, hz.getCluster().getMembers().size());
     }
 
     @Test

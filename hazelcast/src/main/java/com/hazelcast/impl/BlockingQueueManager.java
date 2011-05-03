@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -344,24 +343,6 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
         return foundKeys;
-    }
-
-    public static class Integers implements DataSerializable {
-        final Set<Integer> integerSet = new HashSet<Integer>();
-
-        public void readData(DataInput in) throws IOException {
-            int count = in.readInt();
-            for (int i = 0; i < count; i++) {
-                integerSet.add(in.readInt());
-            }
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeInt(integerSet.size());
-            for (Integer integer : integerSet) {
-                out.writeInt(integer);
-            }
-        }
     }
 
     public static class GetValueKeysCallable implements Callable<Keys>, DataSerializable, HazelcastInstanceAware {
@@ -820,16 +801,6 @@ public class BlockingQueueManager extends BaseManager {
         void generateKeyAndLease(Request req) {
             leases.add(new Lease(req.caller));
             req.response = nextKey++;
-        }
-
-        void offerKey(Request req) {
-            if (size() > maxSize()) {
-                req.response = OBJECT_REDO;
-            } else {
-                leases.add(new Lease(req.caller));
-                req.response = Boolean.TRUE;
-            }
-            returnResponse(req);
         }
 
         void doSet(Request req) {

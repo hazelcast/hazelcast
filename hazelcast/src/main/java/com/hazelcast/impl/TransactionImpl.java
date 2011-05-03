@@ -28,6 +28,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 class TransactionImpl implements Transaction {
 
+    public static final long DEFAULT_TXN_TIMEOUT = 30 * 1000;
+
     private final long id;
     private final FactoryImpl factory;
     private final List<TransactionRecord> transactionRecords = new CopyOnWriteArrayList<TransactionRecord>();

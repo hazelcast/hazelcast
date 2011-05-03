@@ -636,7 +636,7 @@ public class Node {
         return list;
     }
 
-    static Collection<Address> getPossibleMembers(Config config, Address thisAddress) throws Exception {
+    static Collection<Address> getPossibleMembers(Config config, Address thisAddress, ILogger logger) {
         Join join = config.getNetworkConfig().getJoin();
         final Set<String> lsJoinMembers = new HashSet<String>();
         for (String member : join.getTcpIpConfig().getMembers()) {
@@ -644,48 +644,52 @@ public class Node {
         }
         final Set<Address> setPossibleAddresses = new HashSet<Address>();
         for (final String lsJoinMember : lsJoinMembers) {
-            String host = lsJoinMember;
-            int port = config.getPort();
-            final int indexColon = host.indexOf(':');
-            if (indexColon >= 0) {
-                port = Integer.parseInt(host.substring(indexColon + 1));
-                host = host.substring(0, indexColon);
-            }
-            // check if host is hostname of ip address
-            final boolean ip = isIP(host);
-            if (ip) {
-                for (final Address addrs : getPossibleIpAddresses(host, port, indexColon >= 0)) {
-                    if (!addrs.equals(thisAddress)) {
-                        setPossibleAddresses.add(addrs);
-                    }
+            try {
+                String host = lsJoinMember;
+                int port = config.getPort();
+                final int indexColon = host.indexOf(':');
+                if (indexColon >= 0) {
+                    port = Integer.parseInt(host.substring(indexColon + 1));
+                    host = host.substring(0, indexColon);
                 }
-            } else {
-                final InetAddress[] allAddresses = InetAddress.getAllByName(host);
-                for (final InetAddress inetAddress : allAddresses) {
-                    boolean shouldCheck = true;
-                    Address addrs;
-                    Interfaces interfaces = config.getNetworkConfig().getInterfaces();
-                    if (interfaces.isEnabled()) {
-                        addrs = new Address(inetAddress.getAddress(), port);
-                        shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getInterfaces());
+                // check if host is hostname of ip address
+                final boolean ip = isIP(host);
+                if (ip) {
+                    for (final Address addrs : getPossibleIpAddresses(host, port, indexColon >= 0)) {
+                        if (!addrs.equals(thisAddress)) {
+                            setPossibleAddresses.add(addrs);
+                        }
                     }
-                    if (indexColon < 0) {
-                        // port is not set
-                        if (shouldCheck) {
-                            for (int i = -2; i < 3; i++) {
-                                final Address addressProper = new Address(inetAddress.getAddress(), port + i);
-                                if (!addressProper.equals(thisAddress)) {
-                                    setPossibleAddresses.add(addressProper);
+                } else {
+                    final InetAddress[] allAddresses = InetAddress.getAllByName(host);
+                    for (final InetAddress inetAddress : allAddresses) {
+                        boolean shouldCheck = true;
+                        Address addrs;
+                        Interfaces interfaces = config.getNetworkConfig().getInterfaces();
+                        if (interfaces.isEnabled()) {
+                            addrs = new Address(inetAddress.getAddress(), port);
+                            shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getInterfaces());
+                        }
+                        if (indexColon < 0) {
+                            // port is not set
+                            if (shouldCheck) {
+                                for (int i = -2; i < 3; i++) {
+                                    final Address addressProper = new Address(inetAddress.getAddress(), port + i);
+                                    if (!addressProper.equals(thisAddress)) {
+                                        setPossibleAddresses.add(addressProper);
+                                    }
                                 }
                             }
-                        }
-                    } else {
-                        final Address addressProper = new Address(inetAddress.getAddress(), port);
-                        if (!addressProper.equals(thisAddress)) {
-                            setPossibleAddresses.add(addressProper);
+                        } else {
+                            final Address addressProper = new Address(inetAddress.getAddress(), port);
+                            if (!addressProper.equals(thisAddress)) {
+                                setPossibleAddresses.add(addressProper);
+                            }
                         }
                     }
                 }
+            } catch (UnknownHostException e) {
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
         setPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
@@ -802,7 +806,7 @@ public class Node {
     private void joinViaPossibleMembers() {
         try {
             failedConnections.clear();
-            final Collection<Address> colPossibleAddresses = getPossibleMembers(config, address);
+            final Collection<Address> colPossibleAddresses = getPossibleMembers(config, address, logger);
             colPossibleAddresses.remove(address);
             for (final Address possibleAddress : colPossibleAddresses) {
                 logger.log(Level.FINEST, "connecting to " + possibleAddress);

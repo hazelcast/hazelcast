@@ -38,7 +38,7 @@ import java.util.logging.Level;
 import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
-import static com.hazelcast.impl.Constants.Timeouts.DEFAULT_TXN_TIMEOUT;
+import static com.hazelcast.impl.TransactionImpl.DEFAULT_TXN_TIMEOUT;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -1937,20 +1937,6 @@ public class ConcurrentMapManager extends BaseManager {
 
     CMap getMap(String name) {
         return maps.get(name);
-    }
-
-    public void initialize(final String name) {
-        enqueueAndWait(new Processable() {
-            public void process() {
-                getOrCreateMap(name);
-            }
-        }, 10);
-        CMap cmap = getMap(name);
-        if (cmap.loader != null) {
-            if (!cmap.isMapForQueue()) {
-                //TODO
-            }
-        }
     }
 
     public CMap getOrCreateMap(String name) {

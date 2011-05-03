@@ -72,13 +72,6 @@ public interface Constants {
         public static final Data EMPTY_DATA = new Data();
     }
 
-    interface Timeouts {
-
-        public static final long DEFAULT_TXN_TIMEOUT = 8000;
-
-        public static final long DEFAULT_TIMEOUT = 1000 * 1000;
-    }
-
     public interface ResponseTypes {
 
         public static final byte RESPONSE_NONE = 2;
