@@ -313,12 +313,6 @@ public class CMap {
     }
 
     public void addIndex(Expression expression, boolean ordered, int attributeIndex) {
-        if (mapIndexService.size() > 0) {
-            StringBuilder sb = new StringBuilder("Index can only be added before adding entries!");
-            sb.append("\n");
-            sb.append("Add indexes first and only once then put entries.");
-            throw new RuntimeException(sb.toString());
-        }
         mapIndexService.addIndex(expression, ordered, attributeIndex);
     }
 

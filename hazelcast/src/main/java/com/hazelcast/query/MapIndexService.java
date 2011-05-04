@@ -121,6 +121,12 @@ public class MapIndexService {
     public Index addIndex(Expression expression, boolean ordered, int attributeIndex) {
         Index index = mapIndexes.get(expression);
         if (index == null) {
+            if (size() > 0) {
+                StringBuilder sb = new StringBuilder("Index can only be added before adding entries!");
+                sb.append("\n");
+                sb.append("Add indexes first and only once then put entries.");
+                throw new RuntimeException(sb.toString());
+            }
             if (attributeIndex == -1) {
                 attributeIndex = mapIndexes.size();
             }
