@@ -448,20 +448,26 @@ public class TestUtil {
     public static class Employee implements Serializable {
         long id;
         String name;
+        String city;
         int age;
         boolean active;
         double salary;
 
         public Employee(long id, String name, int age, boolean live, double price) {
-            this.id = id;
-            this.name = name;
-            this.age = age;
-            this.active = live;
-            this.salary = price;
+            this(id, name, null, age, live, price);
         }
 
         public Employee(String name, int age, boolean live, double price) {
             this(-1, name, age, live, price);
+        }
+
+        public Employee(long id, String name, String city, int age, boolean live, double price) {
+            this.id = id;
+            this.name = name;
+            this.city = city;
+            this.age = age;
+            this.active = live;
+            this.salary = price;
         }
 
         public Employee() {
@@ -469,6 +475,10 @@ public class TestUtil {
 
         public String getName() {
             return name;
+        }
+
+        public String getCity() {
+            return city;
         }
 
         public int getAge() {
@@ -512,6 +522,7 @@ public class TestUtil {
             final StringBuffer sb = new StringBuffer();
             sb.append("Employee");
             sb.append("{name='").append(name).append('\'');
+            sb.append(", city=").append(city);
             sb.append(", age=").append(age);
             sb.append(", active=").append(active);
             sb.append(", salary=").append(salary);

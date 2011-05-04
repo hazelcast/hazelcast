@@ -32,17 +32,21 @@ public class ChatApplication {
 
     public static void main(String[] args) {
         ChatApplication application = new ChatApplication();
-        System.out.println("enter username:");
-        int input;
-        StringBuilder u = new StringBuilder();
-        try {
-            while ((input = System.in.read()) != '\n')
-                u.append((char) input);
-        } catch (IOException e) {
-            e.printStackTrace();
+        String username = (args != null && args.length > 0) ? args[0] : null;
+        if (username == null) {
+            System.out.println("enter username:");
+            int input;
+            StringBuilder u = new StringBuilder();
+            try {
+                while ((input = System.in.read()) != '\n')
+                    u.append((char) input);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            username = u.toString();
         }
-        System.out.println("hello " + u.toString());
-        application.setUsername(u.toString());
+        System.out.println("hello " + username);
+        application.setUsername(username);
         application.run();
     }
 

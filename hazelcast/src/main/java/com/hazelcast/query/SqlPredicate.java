@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
-import java.util.Map.Entry;
 
 import static com.hazelcast.query.Predicates.*;
 
@@ -111,7 +110,6 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         }
         root:
         while (tokens.size() > 1) {
-//            System.out.println(tokens);
             for (int i = 0; i < tokens.size(); i++) {
                 Object tokenObj = tokens.get(i);
                 if (tokenObj instanceof String && parser.isOperand((String) tokenObj)) {
@@ -183,13 +181,13 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         }
         return (Predicate) tokens.get(0);
     }
-    
-    private Object toValue(final Object key, final Map<String, String> phrases){
+
+    private Object toValue(final Object key, final Map<String, String> phrases) {
         final String value = phrases.get(key);
         return value != null ? value : key;
     }
-    
-    private String[] toValue(final String[] keys, final Map<String, String> phrases){
+
+    private String[] toValue(final String[] keys, final Map<String, String> phrases) {
         for (int i = 0; i < keys.length; i++) {
             final String value = phrases.get(keys[i]);
             if (value != null) keys[i] = value;

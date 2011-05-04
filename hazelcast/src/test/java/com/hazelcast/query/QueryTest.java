@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.TestUtil;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -37,6 +38,7 @@ public class QueryTest extends TestUtil {
 
     @BeforeClass
     public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         Hazelcast.shutdownAll();
     }
 
@@ -311,7 +313,7 @@ public class QueryTest extends TestUtil {
     }
 
     @Test
-    public void testTwoNodesWithIndexes() throws Exception {
+    public void testTwoNodesWithPartialIndexes() throws Exception {
         HazelcastInstance h1 = newInstance();
         HazelcastInstance h2 = newInstance();
         IMap imap = h1.getMap("employees");
@@ -319,7 +321,8 @@ public class QueryTest extends TestUtil {
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         for (int i = 0; i < 5000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
+            Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), Double.valueOf(i));
+            imap.put(String.valueOf(i), employee);
         }
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
@@ -327,11 +330,66 @@ public class QueryTest extends TestUtil {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
+        Collection<Employee> entries = imap.values(new SqlPredicate("name='name3' and city='city3' and age > 2"));
+        assertEquals(50, entries.size());
+        for (Employee e : entries) {
+            assertEquals("name3", e.getName());
+            assertEquals("city3", e.getCity());
+        }
+        entries = imap.values(new SqlPredicate("name LIKE '%name3' and city like '%city3' and age > 2"));
+        assertEquals(50, entries.size());
+        for (Employee e : entries) {
+            assertEquals("name3", e.getName());
+            assertEquals("city3", e.getCity());
+            assertTrue(e.getAge() > 2);
+        }
+        entries = imap.values(new SqlPredicate("name LIKE '%name3%' and city like '%city30%'"));
+        assertEquals(50, entries.size());
+        for (Employee e : entries) {
+            assertTrue(e.getName().startsWith("name3"));
+            assertTrue(e.getCity().startsWith("city3"));
+        }
+    }
+
+    @Test
+    public void testTwoNodesWithIndexes() throws Exception {
+        HazelcastInstance h1 = newInstance();
+        HazelcastInstance h2 = newInstance();
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("city", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
         for (int i = 0; i < 5000; i++) {
-            imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
+            Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), Double.valueOf(i));
+            imap.put(String.valueOf(i), employee);
         }
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
+        imap = h2.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("city", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        Collection<Employee> entries = imap.values(new SqlPredicate("name='name3' and city='city3' and age > 2"));
+        assertEquals(50, entries.size());
+        for (Employee e : entries) {
+            assertEquals("name3", e.getName());
+            assertEquals("city3", e.getCity());
+        }
+        entries = imap.values(new SqlPredicate("name LIKE '%name3' and city like '%city3' and age > 2"));
+        assertEquals(50, entries.size());
+        for (Employee e : entries) {
+            assertEquals("name3", e.getName());
+            assertEquals("city3", e.getCity());
+            assertTrue(e.getAge() > 2);
+        }
+        entries = imap.values(new SqlPredicate("name LIKE '%name3%' and city like '%city30%'"));
+        assertEquals(50, entries.size());
+        for (Employee e : entries) {
+            assertTrue(e.getName().startsWith("name3"));
+            assertTrue(e.getCity().startsWith("city3"));
+        }
     }
 
     @Test

@@ -625,53 +625,51 @@ public final class Predicates {
         public Set<MapEntry> filter(QueryContext queryContext) {
             Set<MapEntry> results = null;
             for (Predicate predicate : predicates) {
-                if (predicate instanceof IndexAwarePredicate) {
+                Set<MapEntry> filter = null;
+                if (predicate instanceof IndexAwarePredicate && ((IndexAwarePredicate) predicate).isIndexed(queryContext)) {
                     IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-                    Set<MapEntry> filter = null;
-                    if (p.isIndexed(queryContext)) {
-                        filter = p.filter(queryContext);
-                    } else {
-                        filter = new HashSet<MapEntry>();
-                        if (and && results != null) {
-                            for (MapEntry result : results) {
-                                if (p.apply(result)) {
-                                    filter.add(result);
-                                }
+                    filter = p.filter(queryContext);
+                } else {
+                    filter = new HashSet<MapEntry>();
+                    if (and && results != null) {
+                        for (MapEntry result : results) {
+                            if (predicate.apply(result)) {
+                                filter.add(result);
                             }
-                            results = filter;
-                            continue;
-                        } else {
-                            for (MapEntry entry : queryContext.getMapIndexService().getOwnedRecords()) {
-                                if (p.apply(entry)) {
-                                    filter.add(entry);
-                                }
+                        }
+                        results = filter;
+                        continue;
+                    } else {
+                        for (MapEntry entry : queryContext.getMapIndexService().getOwnedRecords()) {
+                            if (predicate.apply(entry)) {
+                                filter.add(entry);
                             }
                         }
                     }
-                    if (and && (filter == null || filter.isEmpty())) return null;
-                    if (results == null) {  // first predicate
-                        if (and) {
-                            results = filter;
-                        } else if (filter == null) {
-                            results = new HashSet<MapEntry>();
-                        } else {
-                            results = new HashSet<MapEntry>(filter);
-                        }
+                }
+                if (and && (filter == null || filter.isEmpty())) return null;
+                if (results == null) {  // first predicate
+                    if (and) {
+                        results = filter;
+                    } else if (filter == null) {
+                        results = new HashSet<MapEntry>();
                     } else {
-                        if (and) {
-                            boolean direct = results.size() < filter.size();
-                            final Set<MapEntry> s1 = direct ? results : filter;
-                            final Set<MapEntry> s2 = direct ? filter : results;
-                            results = new HashSet<MapEntry>();
-                            for (MapEntry next : s1) {
-                                if (s2.contains(next)) {
-                                    results.add(next);
-                                }
+                        results = new HashSet<MapEntry>(filter);
+                    }
+                } else {
+                    if (and) {
+                        boolean direct = results.size() < filter.size();
+                        final Set<MapEntry> s1 = direct ? results : filter;
+                        final Set<MapEntry> s2 = direct ? filter : results;
+                        results = new HashSet<MapEntry>();
+                        for (MapEntry next : s1) {
+                            if (s2.contains(next)) {
+                                results.add(next);
                             }
-                            if (results.isEmpty()) return null;
-                        } else if (filter != null) { // 'OR' case so add all none-null results
-                            results.addAll(filter);
                         }
+                        if (results.isEmpty()) return null;
+                    } else if (filter != null) { // 'OR' case so add all none-null results
+                        results.addAll(filter);
                     }
                 }
             }
