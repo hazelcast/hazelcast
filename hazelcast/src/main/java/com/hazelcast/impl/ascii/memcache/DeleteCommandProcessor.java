@@ -20,6 +20,9 @@ package com.hazelcast.impl.ascii.memcache;
 import com.hazelcast.impl.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.impl.ascii.TextCommandService;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+
 public class DeleteCommandProcessor extends AbstractTextCommandProcessor<DeleteCommand> {
 
     public DeleteCommandProcessor(TextCommandService textCommandService) {
@@ -27,7 +30,12 @@ public class DeleteCommandProcessor extends AbstractTextCommandProcessor<DeleteC
     }
 
     public void handle(DeleteCommand command) {
-        String key = command.getKey();
+        String key = null;
+        try {
+            key = URLDecoder.decode(command.getKey(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         String mapName = "default";
         int index = key.indexOf(':');
         if (index != -1) {

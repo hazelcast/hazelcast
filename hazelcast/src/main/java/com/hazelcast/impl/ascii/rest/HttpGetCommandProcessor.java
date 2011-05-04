@@ -30,11 +30,9 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
     public void handle(HttpGetCommand command) {
         String uri = command.getURI();
-//            System.out.println("URI " + uri);
         if (uri.startsWith(URI_MAPS)) {
             int indexEnd = uri.indexOf('/', URI_MAPS.length());
             String mapName = uri.substring(URI_MAPS.length(), indexEnd);
-//                System.out.println("mapName " + mapName);
             String key = uri.substring(indexEnd + 1);
             Object value = textCommandService.get(mapName, key);
             if (value == null) {
@@ -45,6 +43,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 } else if (value instanceof RestValue) {
                     RestValue restValue = (RestValue) value;
                     command.setResponse(restValue.getContentType(), restValue.getValue());
+                } else if (value instanceof String) {
+                    command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, ((String) value).getBytes());
                 } else {
                     command.setResponse(ThreadContext.get().toByteArray(value));
                 }

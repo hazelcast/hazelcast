@@ -21,6 +21,9 @@ import com.hazelcast.impl.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.nio.IOUtil;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+
 public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand> {
     final boolean single;
 
@@ -30,7 +33,12 @@ public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand
     }
 
     public void handle(GetCommand getCommand) {
-        String key = getCommand.getKey();
+        String key = null;
+        try {
+            key = URLDecoder.decode(getCommand.getKey(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         String mapName = "default";
         int index = key.indexOf(':');
         if (index != -1) {
@@ -44,7 +52,7 @@ public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand
                 entry = (MemcacheEntry) value;
             } else {
                 try {
-                    entry = new MemcacheEntry(key, IOUtil.serializeToBytes(value), 0);
+                    entry = new MemcacheEntry(getCommand.getKey(), IOUtil.serializeToBytes(value), 0);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

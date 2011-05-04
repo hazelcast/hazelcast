@@ -20,6 +20,9 @@ package com.hazelcast.impl.ascii.memcache;
 import com.hazelcast.impl.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.impl.ascii.TextCommandService;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+
 import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.*;
 
 public class SetCommandProcessor extends AbstractTextCommandProcessor<SetCommand> {
@@ -50,14 +53,19 @@ public class SetCommandProcessor extends AbstractTextCommandProcessor<SetCommand
      */
     public void handle(SetCommand request) {
 //        System.out.println("Processing " + request);
-        String key = request.getKey();
+        String key = null;
+        try {
+            key = URLDecoder.decode(request.getKey(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         String mapName = "default";
         int index = key.indexOf(':');
         if (index != -1) {
             mapName = key.substring(0, index);
             key = key.substring(index + 1);
         }
-        Object value = new MemcacheEntry(key, request.getValue(), request.getFlag());
+        Object value = new MemcacheEntry(request.getKey(), request.getValue(), request.getFlag());
         int ttl = textCommandService.getAdjustedTTLSeconds(request.getExpiration());
         textCommandService.incrementSetCount();
         if (SET == request.getType()) {

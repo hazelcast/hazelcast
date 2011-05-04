@@ -164,30 +164,12 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         return hazelcast.getQueue(queueName).offer(value);
     }
 
-    public byte[] get(String key) {
-        String mapName = "default";
-        int index = key.indexOf(':');
-        if (index != -1) {
-            mapName = key.substring(0, index);
-            key = key.substring(index + 1);
+    public Object poll(String queueName, int seconds) {
+        try {
+            return hazelcast.getQueue(queueName).poll(seconds, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            return null;
         }
-        Object value = hazelcast.getMap(mapName).get(key);
-        if (value != null && value instanceof RestValue) {
-            RestValue restValue = (RestValue) value;
-            return restValue.getValue();
-        } else {
-            return (byte[]) value;
-        }
-    }
-
-    public void set(String key, byte[] value, int ttl) {
-        String mapName = "default";
-        int index = key.indexOf(':');
-        if (index != -1) {
-            mapName = key.substring(0, index);
-            key = key.substring(index + 1);
-        }
-        hazelcast.getMap(mapName).put(key, value);
     }
 
     class CommandExecutor implements Runnable {
@@ -201,7 +183,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
             try {
                 TextCommandType type = command.getType();
                 textCommandProcessors[type.getValue()].handle(command);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }

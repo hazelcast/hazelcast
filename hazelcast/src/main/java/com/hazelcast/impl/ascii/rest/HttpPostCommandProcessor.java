@@ -28,35 +28,39 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     public void handle(HttpPostCommand command) {
-        String uri = command.getURI();
-        if (uri.startsWith(URI_MAPS)) {
-            int indexEnd = uri.indexOf('/', URI_MAPS.length());
-            String mapName = uri.substring(URI_MAPS.length(), indexEnd);
-            String key = uri.substring(indexEnd + 1);
-            byte[] data = command.getData();
-            textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), 0);
-            command.setResponse(HttpCommand.RES_204);
-        } else if (uri.startsWith(URI_QUEUES)) {
-            int indexEnd = uri.indexOf('/', URI_QUEUES.length());
-            String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
-            String simpleValue = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
-            byte[] data;
-            byte[] contentType;
-            if (simpleValue == null) {
-                data = command.getData();
-                contentType = command.getContentType();
-            } else {
-                data = simpleValue.getBytes();
-                contentType = QUEUE_SIMPLE_VALUE_CONTENT_TYPE;
-            }
-            boolean offerResult = textCommandService.offer(queueName, new RestValue(data, contentType));
-            if (offerResult) {
+        try {
+            String uri = command.getURI();
+            if (uri.startsWith(URI_MAPS)) {
+                int indexEnd = uri.indexOf('/', URI_MAPS.length());
+                String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+                String key = uri.substring(indexEnd + 1);
+                byte[] data = command.getData();
+                textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), 0);
                 command.setResponse(HttpCommand.RES_204);
+            } else if (uri.startsWith(URI_QUEUES)) {
+                int indexEnd = uri.indexOf('/', URI_QUEUES.length());
+                String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
+                String simpleValue = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
+                byte[] data;
+                byte[] contentType;
+                if (simpleValue == null) {
+                    data = command.getData();
+                    contentType = command.getContentType();
+                } else {
+                    data = simpleValue.getBytes();
+                    contentType = QUEUE_SIMPLE_VALUE_CONTENT_TYPE;
+                }
+                boolean offerResult = textCommandService.offer(queueName, new RestValue(data, contentType));
+                if (offerResult) {
+                    command.setResponse(HttpCommand.RES_204);
+                } else {
+                    command.setResponse(HttpCommand.RES_503);
+                }
             } else {
-                command.setResponse(HttpCommand.RES_503);
+                command.setResponse(HttpCommand.RES_400);
             }
-        } else {
-            command.setResponse(HttpCommand.RES_400);
+        } catch (Exception e) {
+            command.setResponse(HttpCommand.RES_505);
         }
         textCommandService.sendResponse(command);
     }

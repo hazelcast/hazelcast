@@ -18,11 +18,12 @@
 package com.hazelcast.impl.ascii.rest;
 
 import com.hazelcast.impl.ascii.AbstractTextCommand;
+import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 
 public abstract class HttpCommand extends AbstractTextCommand {
-    public static final String HEADER_CONTENT_TYPE = "Content-TextCommandType: ";
+    public static final String HEADER_CONTENT_TYPE = "Content-Type: ";
     public static final String HEADER_CONTENT_LENGTH = "Content-Length: ";
     public static final String HEADER_CHUNKED = "Transfer-Encoding: chunked";
 
@@ -35,8 +36,10 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final byte[] RES_100 = "HTTP/1.1 100 Continue\r\n\r\n".getBytes();
     public static final byte[] RES_204 = "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\n\r\n".getBytes();
     public static final byte[] RES_503 = "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\n\r\n".getBytes();
-    public static final byte[] CONTENT_TYPE = "Content-TextCommandType: ".getBytes();
+    public static final byte[] RES_505 = "HTTP/1.1 505 Internal Server Error\r\nContent-Length: 0\r\n\r\n".getBytes();
+    public static final byte[] CONTENT_TYPE = "Content-Type: ".getBytes();
     public static final byte[] CONTENT_LENGTH = "Content-Length: ".getBytes();
+    public static final byte[] CONTENT_TYPE_PLAIN_TEXT = "text/plain".getBytes();
 
     public HttpCommand(TextCommandType type, String uri) {
         super(type);
@@ -62,11 +65,57 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public void setResponse(byte[] value) {
         this.response = ByteBuffer.wrap(value);
     }
+//    public boolean writeTo(ByteBuffer bb) {
+//        while (bb.hasRemaining() && response.hasRemaining()) {
+//            bb.put(response.get());
+//        }
+//        return !response.hasRemaining();
+//    }
+
+    /**
+     * HTTP/1.0 200 OK
+     * Date: Fri, 31 Dec 1999 23:59:59 GMT
+     * Content-TextCommandType: text/html
+     * Content-Length: 1354
+     *
+     * @param contentType
+     * @param value
+     */
+    public void setResponse(byte[] contentType, byte[] value) {
+        int valueSize = (value == null) ? 0 : value.length;
+        byte[] len = String.valueOf(valueSize).getBytes();
+        int size = RES_200.length;
+        if (contentType != null) {
+            size += CONTENT_TYPE.length;
+            size += contentType.length;
+            size += RETURN.length;
+        }
+        size += CONTENT_LENGTH.length;
+        size += len.length;
+        size += RETURN.length;
+        size += RETURN.length;
+        size += valueSize;
+        size += RETURN.length;
+        this.response = ByteBuffer.allocate(size);
+        response.put(RES_200);
+        if (contentType != null) {
+            response.put(CONTENT_TYPE);
+            response.put(contentType);
+            response.put(RETURN);
+        }
+        response.put(CONTENT_LENGTH);
+        response.put(len);
+        response.put(RETURN);
+        response.put(RETURN);
+        if (value != null) {
+            response.put(value);
+        }
+        response.put(RETURN);
+        response.flip();
+    }
 
     public boolean writeTo(ByteBuffer bb) {
-        while (bb.hasRemaining() && response.hasRemaining()) {
-            bb.put(response.get());
-        }
+        IOUtil.copyToHeapBuffer(response, bb);
         return !response.hasRemaining();
     }
 

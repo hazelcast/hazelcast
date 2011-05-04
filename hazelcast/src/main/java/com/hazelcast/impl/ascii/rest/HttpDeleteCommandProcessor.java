@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl.ascii.rest;
 
+import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.ascii.TextCommandService;
 
 public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteCommand> {
@@ -33,6 +34,28 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
             String key = uri.substring(indexEnd + 1);
             Object value = textCommandService.delete(mapName, key);
             command.send204();
+        } else if (uri.startsWith(URI_QUEUES)) {
+            // Poll an item from the default queue in 3 seconds
+            // http://127.0.0.1:5701/hazelcast/rest/queues/default/3
+            int indexEnd = uri.indexOf('/', URI_QUEUES.length());
+            String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
+            String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
+            int seconds = (secondStr == null) ? 0 : Integer.parseInt(secondStr);
+            Object value = textCommandService.poll(queueName, seconds);
+            if (value == null) {
+                command.send204();
+            } else {
+                if (value instanceof byte[]) {
+                    command.setResponse(null, (byte[]) value);
+                } else if (value instanceof RestValue) {
+                    RestValue restValue = (RestValue) value;
+                    command.setResponse(restValue.getContentType(), restValue.getValue());
+                } else if (value instanceof String) {
+                    command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, ((String) value).getBytes());
+                } else {
+                    command.setResponse(null, ThreadContext.get().toByteArray(value));
+                }
+            }
         } else {
             command.send400();
         }
