@@ -839,6 +839,8 @@ public class CMap {
         if (record == null) {
             record = createNewRecord(req.key, toData(0L));
             mapRecords.put(req.key, record);
+        } else if (record.getValue() == null) {
+            record.setValue(toData(0L));
         }
         if (req.operation == ATOMIC_NUMBER_GET_AND_SET) {
             req.response = record.getValueData();

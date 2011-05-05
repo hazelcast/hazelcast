@@ -3069,7 +3069,7 @@ public class FactoryImpl implements HazelcastInstance {
             public long newId() {
                 long idAddition = currentId.incrementAndGet();
                 if (idAddition >= MILLION) {
-                    synchronized (this) {
+                    synchronized (IdGeneratorBase.this) {
                         try {
                             idAddition = currentId.get();
                             if (idAddition >= MILLION) {
@@ -3089,14 +3089,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             private Long getNewMillion() {
-                try {
-                    DistributedTask<Long> task = new DistributedTask<Long>(new IncrementTask(name, factory), name);
-                    factory.getExecutorService("default").execute(task);
-                    return task.get();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return null;
+                return factory.getAtomicNumber("__idGen" + name).incrementAndGet() - 1;
             }
 
             public InstanceType getInstanceType() {
@@ -3104,58 +3097,18 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public void destroy() {
-                factory.destroyInstanceClusterWide(name, null);
+                currentId.set(2 * MILLION);
+                synchronized (IdGeneratorBase.this) {
+                    factory.destroyInstanceClusterWide(name, null);
+                    factory.getAtomicNumber("__idGen" + name).destroy();
+                    currentId.set(2 * MILLION);
+                    million.set(-1);
+                }
             }
 
             public Object getId() {
                 return name;
             }
-        }
-    }
-
-    public static class IncrementTask implements Callable<Long>, DataSerializable, HazelcastInstanceAware {
-        String name = null;
-        transient HazelcastInstance hazelcastInstance = null;
-
-        public IncrementTask() {
-            super();
-        }
-
-        public IncrementTask(String uuidName, HazelcastInstance hazelcastInstance) {
-            super();
-            this.name = uuidName;
-            this.hazelcastInstance = hazelcastInstance;
-        }
-
-        public Long call() {
-            MProxy map = ((FactoryImpl) hazelcastInstance).idGeneratorMapProxy;
-            map.lock(name);
-            try {
-                Long max = (Long) map.get(name);
-                if (max == null) {
-                    max = 0L;
-                    map.put(name, 0L);
-                    return max;
-                } else {
-                    Long newMax = max + 1;
-                    map.put(name, newMax);
-                    return newMax;
-                }
-            } finally {
-                map.unlock(name);
-            }
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(name);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            this.name = in.readUTF();
-        }
-
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.hazelcastInstance = hazelcastInstance;
         }
     }
 }
