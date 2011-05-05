@@ -27,6 +27,7 @@ import org.hibernate.cache.EntityRegion;
 import org.hibernate.cache.QueryResultsRegion;
 import org.hibernate.cache.RegionFactory;
 import org.hibernate.cache.TimestampsRegion;
+import org.hibernate.cache.access.AccessType;
 import org.hibernate.cfg.Settings;
 
 import com.hazelcast.core.HazelcastInstance;
@@ -104,4 +105,8 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
     public HazelcastInstance getHazelcastInstance() {
     	return instance;
     }
+
+	public AccessType getDefaultAccessType() {
+		return AccessType.READ_WRITE;
+	}
 }

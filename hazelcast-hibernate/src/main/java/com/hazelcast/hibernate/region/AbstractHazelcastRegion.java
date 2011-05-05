@@ -107,4 +107,8 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
     public Map toMap() {
         return getCache();
     }
+    
+    public boolean contains(Object key) {
+		return getCache().containsKey(key);
+	}
 }
