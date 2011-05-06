@@ -1,0 +1,167 @@
+/** Add css rules here for your application. */
+
+h1 {
+    font-size: 2em;
+    font-weight: bold;
+    color: #777777;
+    margin: 40px 0px 70px;
+    text-align: center;
+}
+
+
+
+.toolTip {
+    font-size: 10pt;
+    color: black;
+    background-color: #FFFED3; /*font-style: italic;*/
+
+}
+
+.table {
+    width: 810px;
+}
+
+.mapstatsHeader {
+    background-color: #11839C;
+    color: white;
+    text-align: center;
+}
+
+.header {
+    font-weight: bold;
+    font-size: 20pt;
+    text-align: left;
+}
+
+.mapstatsEvenRow {
+    background-color: #ADF9FE;
+}
+
+.mapstats {
+    border: 1px solid silver;
+    padding: 2px;
+    margin-bottom: 6px;
+    width: 810px;
+
+}
+
+.mapstatsStringColumn {
+    text-align: center;
+}
+
+.mapstatsNumericColumn {
+    text-align: right;
+}
+
+.img-shadow {
+    float: left;
+    background: url(./images/shadowAlpha.png) no-repeat bottom right !important;
+    background: url(./images/shadow.gif) no-repeat bottom right;
+    margin: 10px 0 0 10px !important;
+    margin: 10px 0 0 5px;
+
+}
+
+.img-shadow img {
+    display: block;
+    position: relative;
+    background-color: #fff;
+    border: 1px solid #a9a9a9;
+    margin: -6px 6px 6px -6px;
+    padding: 4px;
+}
+
+.img-shadow table {
+    display: block;
+    position: relative;
+    background-color: #fff;
+    border: 1px solid #a9a9a9;
+    margin: -6px 6px 6px -6px;
+    padding: 4px;
+}
+
+.p-shadow {
+    width: 90%;
+    float: left;
+    background: url(../src/main/webapp/images/shadowAlpha.png) no-repeat bottom right !important;
+    background: url(../src/main/webapp/images/shadow.gif) no-repeat bottom right;
+    margin: 10px 0 0 10px !important;
+    margin: 10px 0 0 5px;
+}
+
+.p-shadow div {
+    background: none !important;
+    background: url(../src/main/webapp/images/shadow2.gif) no-repeat left top;
+    padding: 0 !important;
+    padding: 0 6px 6px 0;
+}
+
+.p-shadow p {
+    color: #777;
+    background-color: #fff;
+    font: italic 1em georgia, serif;
+    border: 1px solid #a9a9a9;
+    padding: 4px;
+    margin: -6px 6px 6px -6px !important;
+    margin: 0;
+}
+
+.sendButton {
+    display: block;
+    font-size: 16pt;
+}
+
+.gwt-DialogBox {
+    width: 400px;
+}
+
+.gwt-Hyperlink {
+
+}
+
+.gwt-Anchor {
+    color:blue;
+    /*font-weight:bold;*/
+    text-decoration:none;
+}
+
+.gwt-Anchor:hover {
+    color:red;
+    text-decoration:none;
+    /*font-weight:bold;*/
+}
+
+.dialogVPanel {
+    margin: 5px;
+}
+
+.serverResponseLabelError {
+    color: red;
+}
+
+#closeButton {
+    margin: 15px 6px 6px;
+}
+
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font: 12px century gothic, helvetica, arial, "Trebuchet MS", Arial, Helvetica, sans-serif;
+}
+
+}
+.map_get_value {
+    width:100px;
+
+}
+
+.map_get_button{
+    width:50px;
+}
+
+.bold {
+    font-weight:bold;
+
+}
