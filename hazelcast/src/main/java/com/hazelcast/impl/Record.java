@@ -22,9 +22,10 @@ import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -234,7 +235,7 @@ public final class Record implements MapEntry {
     public void addValue(Data value) {
         if (value != null) {
             if (getMultiValues() == null) {
-                setMultiValues(new CopyOnWriteArraySet<Data>() {
+                setMultiValues(new ConcurrentHashSet<Data>() {
                     @Override
                     public boolean add(Data e) {
                         return e != null && super.add(e);
