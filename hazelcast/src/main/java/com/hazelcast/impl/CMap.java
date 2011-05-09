@@ -796,7 +796,6 @@ public class CMap {
         if (removed) {
             record.incrementVersion();
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKeyData(), null, req.value, record.getListeners(), req.caller);
-            logger.log(Level.FINEST, record.getValueData() + " RemoveMulti " + record.getMultiValues());
         }
         req.version = record.getVersion();
         if (record.valueCount() == 0) {
@@ -828,7 +827,6 @@ public class CMap {
         if (req.txnId != -1) {
             unlock(record);
         }
-//        logger.log(Level.FINEST, record.getValueData() + " PutMulti " + record.getMultiValues());
         req.clearForResponse();
         req.version = record.getVersion();
         return added;
