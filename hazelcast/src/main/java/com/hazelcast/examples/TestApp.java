@@ -101,12 +101,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         map = null;
         list = null;
         set = null;
+
         queue = null;
         topic = null;
     }
 
     public static void main(String[] args) throws Exception {
-        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(null));
+        TestApp testApp = new TestApp(Hazelcast.getDefaultInstance());
         testApp.start(args);
     }
 
