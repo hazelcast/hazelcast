@@ -660,7 +660,7 @@ public class ConcurrentMapManager extends BaseManager {
                 PutAllCallable callable = new PutAllCallable(name, targetPairs);
                 DistributedTask<Boolean> dt = new DistributedTask<Boolean>(callable, member);
                 lsFutures.add(dt);
-                node.factory.getExecutorService().execute(dt);
+                node.factory.getExecutorService("hz:putAll").execute(dt);
             }
         }
         for (Future<Boolean> future : lsFutures) {
