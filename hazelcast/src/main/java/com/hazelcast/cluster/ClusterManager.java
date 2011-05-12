@@ -43,6 +43,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private final long HEARTBEAT_INTERVAL_MILLIS;
 
+    private final boolean ICMP_ENABLED;
+
     private final Set<ScheduledAction> setScheduledActions = new LinkedHashSet<ScheduledAction>(1000);
 
     private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
@@ -60,6 +62,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         WAIT_MILLIS_BEFORE_JOIN = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         MAX_NO_HEARTBEAT_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         HEARTBEAT_INTERVAL_MILLIS = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger() * 1000L;
+        ICMP_ENABLED = node.groupProperties.ICMP_ENABLED.getBoolean();
         node.clusterService.registerPeriodicRunnable(new SplitBrainHandler(node));
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
@@ -322,6 +325,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private void ping(final MemberImpl memberImpl) {
         memberImpl.didPing();
+        if (!ICMP_ENABLED) return;
         node.executorManager.executeNow(new Runnable() {
             public void run() {
                 try {
