@@ -6,6 +6,11 @@
            version="1.5">
     <description>Hazelcast Resource Adapter</description>
     <display-name>HazelcastRA</display-name>
+    <!--
+    icon element seems to cause a problem with JBoss 5.1.
+    icon element doesn't seem to be part of the connector dtd.
+    try also removing it.
+    -->
     <icon></icon>
     <vendor-name>Hazelcast.com</vendor-name>
     <eis-type>Hazelcast</eis-type>
