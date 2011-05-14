@@ -2416,8 +2416,9 @@ public class ConcurrentMapManager extends BaseManager {
                 putTransient(request);
             } else if (request.operation == CONCURRENT_MAP_PUT || request.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
                 //store the entry
+                Object key = toObject(request.key);
                 Object value = toObject(request.value);
-                cmap.store.store(toObject(request.key), value);
+                cmap.store.store(key, value);
                 Record storedRecord = cmap.getRecord(request);
                 if (storedRecord != null) {
                     storedRecord.setLastStoredTime(System.currentTimeMillis());
@@ -2732,6 +2733,12 @@ public class ConcurrentMapManager extends BaseManager {
                         AsynchronousExecution ae = (AsynchronousExecution) getPacketProcessor(request.operation);
                         ae.execute(request);
                     } catch (Exception e) {
+                        if (e instanceof ClassCastException) {
+                            CMap cmap = getMap(request.name);
+                            if (cmap.isMapForQueue() && e.getMessage().contains("java.lang.Long cannot be")) {
+                                logger.log(Level.SEVERE, "This is MapStore for Queue. Make sure you treat the key as Long");
+                            }
+                        }
                         logger.log(Level.WARNING, "Store thrown exception for " + request.operation, e);
                         request.response = toData(new AddressAwareException(e, thisAddress));
                     }
