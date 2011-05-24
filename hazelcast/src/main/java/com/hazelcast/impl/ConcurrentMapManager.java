@@ -376,6 +376,7 @@ public class ConcurrentMapManager extends BaseManager {
         public void handleNoneRedoResponse(Packet packet) {
             if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET) {
                 oldValue = packet.getValueData();
+                request.value = packet.getValueData();
             }
             super.handleNoneRedoResponse(packet);
         }

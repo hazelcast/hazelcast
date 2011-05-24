@@ -202,4 +202,20 @@ public class HazelcastClusterTest {
         m1.put(1, 1);
         assertEquals(1, m1.get(1));
     }
+
+    @Test
+    public void testMultiMapTransactions() throws Exception {
+        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(new Config());
+        Hazelcast.newHazelcastInstance(new Config());
+        MultiMap<String, String> multimap = hazelcast.getMultiMap("def");
+        final Transaction transaction = hazelcast.getTransaction();
+        transaction.begin();
+        for (int i = 0; (i < 1000); ++i) {
+            final String element = Integer.toString(i);
+            multimap.put(element, element);
+        }
+        transaction.commit();
+        Thread.sleep(2000);
+        assertEquals(1000, multimap.size());
+    }
 }
