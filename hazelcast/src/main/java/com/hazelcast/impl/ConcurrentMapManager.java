@@ -56,6 +56,7 @@ public class ConcurrentMapManager extends BaseManager {
     long newRecordId = 0;
     volatile long nextCleanup = 0;
     final ParallelExecutor storeExecutor;
+    private static final String BATCH_OPS_EXECUTOR_NAME = "hz_batch";
 
     ConcurrentMapManager(Node node) {
         super(node);
@@ -606,7 +607,7 @@ public class ConcurrentMapManager extends BaseManager {
             GetAllCallable callable = new GetAllCallable(name, targetKeys);
             DistributedTask<Pairs> dt = new DistributedTask<Pairs>(callable, member);
             lsFutures.add(dt);
-            node.factory.getExecutorService().execute(dt);
+            node.factory.getExecutorService(BATCH_OPS_EXECUTOR_NAME).execute(dt);
         }
         for (Future<Pairs> future : lsFutures) {
             Pairs pairs = future.get();
@@ -661,7 +662,7 @@ public class ConcurrentMapManager extends BaseManager {
                 PutAllCallable callable = new PutAllCallable(name, targetPairs);
                 DistributedTask<Boolean> dt = new DistributedTask<Boolean>(callable, member);
                 lsFutures.add(dt);
-                node.factory.getExecutorService("hz:putAll").execute(dt);
+                node.factory.getExecutorService(BATCH_OPS_EXECUTOR_NAME).execute(dt);
             }
         }
         for (Future<Boolean> future : lsFutures) {
