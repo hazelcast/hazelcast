@@ -22,6 +22,8 @@ public class CallContext {
     final boolean client;
     private volatile TransactionImpl txn = null;
 
+    static final CallContext DUMMY_CLIENT = new CallContext(0, true);
+
     public CallContext(int threadId, boolean client) {
         this.threadId = threadId;
         this.client = client;

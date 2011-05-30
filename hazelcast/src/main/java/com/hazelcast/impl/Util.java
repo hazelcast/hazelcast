@@ -30,26 +30,20 @@ import java.util.concurrent.TimeUnit;
 public class Util {
 
     /**
-     * Returns milliseconds by taking care of
-     * the overflow issues.
-     * TimeUnit.SECONDS.toMillis(Long.MAX_VALUE) would be negative
-     * for example. -1 means infinite.
+     * -1 means infinite.
+     * 0 means no-wait.
      *
-     * @param time
+     * @param duration
      * @param unit
      * @return
      */
-    public static long toMillis(long time, TimeUnit unit) {
-        if (time == 0 || unit == null) {
+    public static long toMillis(long duration, TimeUnit unit) {
+        if (duration == 0 || unit == null) {
             return 0;
-        } else if (time < 0) {
+        } else if (duration < 0) {
             return -1;
         } else {
-            long millis = unit.toMillis(time);
-            if (millis < 1) {
-                millis = -1;
-            }
-            return millis;
+            return unit.toMillis(duration);
         }
     }
 
