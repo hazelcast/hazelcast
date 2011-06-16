@@ -24,6 +24,7 @@ import com.hazelcast.examples.TestApp;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
@@ -2779,5 +2780,28 @@ public class ClusterTest {
         h1multimap.put("h1", "somekey");
         txn.commit();
         assertTrue(h1map.containsKey("somekey"));
+    }
+
+    @Test
+    public void testSplitBrain() throws InterruptedException {
+        Config config = new Config();
+        config.getGroupConfig().setName("split");
+        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
+        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        FactoryImpl f1 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h1).getHazelcastInstance();
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        FactoryImpl f2 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h2).getHazelcastInstance();
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        FactoryImpl.HazelcastInstanceProxy p3 = (FactoryImpl.HazelcastInstanceProxy) h3;
+        FactoryImpl f3 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h3).getHazelcastInstance();
+        Connection c13 = f1.node.connectionManager.getConnection(f3.node.address);
+        Connection c23 = f2.node.connectionManager.getConnection(f3.node.address);
+        c13.close();
+        c23.close();
+        Thread.sleep(30000);
+        assertEquals(3, h1.getCluster().getMembers().size());
+        assertEquals(3, h2.getCluster().getMembers().size());
+        assertEquals(3, h3.getCluster().getMembers().size());
     }
 }

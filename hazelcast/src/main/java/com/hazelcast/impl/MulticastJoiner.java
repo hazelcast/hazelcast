@@ -92,8 +92,10 @@ public class MulticastJoiner extends AbstractJoiner {
             JoinInfo joinInfo = (JoinInfo) q.poll(3, TimeUnit.SECONDS);
             if (joinInfo != null) {
                 node.multicastService.removeMulticastListener(listener);
+                System.out.println("Should merge: " + shouldMerge(joinInfo));
                 if (shouldMerge(joinInfo)) {
                     logger.log(Level.WARNING, node.address + " is merging [multicast] to " + joinInfo.address);
+                    logger.log(Level.FINEST, "Merging because: " + joinInfo + ", this node member count: " + node.getClusterImpl().getMembers().size());
                     node.factory.restart();
                     return;
                 }
