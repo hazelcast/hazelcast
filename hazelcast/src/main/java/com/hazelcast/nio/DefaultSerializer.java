@@ -21,9 +21,10 @@ import com.hazelcast.impl.GroupProperties;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.TreeSet;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -49,49 +50,69 @@ public class DefaultSerializer implements CustomSerializer {
 
     private static final byte SERIALIZER_TYPE_EXTERNALIZABLE = 8;
 
+    private static final int SERIALIZER_PRIORITY_OBJECT = Integer.MAX_VALUE;
+
+    private static final int SERIALIZER_PRIORITY_BYTE_ARRAY = 100;
+
+    private static final int SERIALIZER_PRIORITY_INTEGER = 300;
+
+    private static final int SERIALIZER_PRIORITY_LONG = 200;
+
+    private static final int SERIALIZER_PRIORITY_CLASS = 500;
+
+    private static final int SERIALIZER_PRIORITY_STRING = 400;
+
+    private static final int SERIALIZER_PRIORITY_DATE = 500;
+
+    private static final int SERIALIZER_PRIORITY_BIG_INTEGER = 600;
+
+    private static final int SERIALIZER_PRIORITY_EXTERNALIZABLE = 50;
+
     private static final boolean shared = GroupProperties.SERIALIZER_SHARED.getBoolean();
     private static final boolean gzipEnabled = GroupProperties.SERIALIZER_GZIP_ENABLED.getBoolean();
 
-    private static final TypeSerializer[] serializers =
-            sort(new TypeSerializer[]{
-                    new ByteArraySerializer(),
-                    new LongSerializer(),
-                    new IntegerSerializer(),
-                    new StringSerializer(),
-                    new ClassSerializer(),
-                    new DateSerializer(),
-                    new BigIntegerSerializer(),
-                    new Externalizer(),
-                    new ObjectSerializer()
-            });
-    private TypeSerializer[] serializer;
+    private static final Collection<TypeSerializer> serializers = new TreeSet<TypeSerializer>(new Comparator<TypeSerializer>() {
+        public int compare(TypeSerializer o1, TypeSerializer o2) {
+            final int p1 = o1.priority();
+            final int p2 = o2.priority();
+            return p1 < p2 ? -1 : p1 == p2 ? (o1.getTypeId() - o2.getTypeId()) : 1;
+        }
+    });
+
     private TypeSerializer[] typeSerializer;
 
-    public static TypeSerializer[] sort(final TypeSerializer[] serializers) {
-        Arrays.sort(serializers, new Comparator<TypeSerializer>() {
-            public int compare(TypeSerializer o1, TypeSerializer o2) {
-                final int p1 = o1.priority();
-                final int p2 = o2.priority();
-                return p1 < p2 ? -1 : p1 == p2 ? 0 : 1;
-            }
-        });
-        return serializers;
+    static {
+        registerSerializer(new ByteArraySerializer());
+        registerSerializer(new LongSerializer());
+        registerSerializer(new IntegerSerializer());
+        registerSerializer(new StringSerializer());
+        registerSerializer(new ClassSerializer());
+        registerSerializer(new DateSerializer());
+        registerSerializer(new BigIntegerSerializer());
+        registerSerializer(new Externalizer());
+        registerSerializer(new ObjectSerializer());
+    }
+
+    public static void registerSerializer(TypeSerializer ts) {
+        if (ts != null) {
+            serializers.add(ts);
+        }
     }
 
     public DefaultSerializer() {
-        this.serializer = serializers;
-        this.typeSerializer = new TypeSerializer[serializers.length];
-        for (int i = 0; i < serializers.length; i++) {
-            this.typeSerializer[serializers[i].getTypeId()] = serializers[i];
+        this.typeSerializer = new TypeSerializer[serializers.size()];
+        for (TypeSerializer ts : serializers) {
+            this.typeSerializer[ts.getTypeId()] = ts;
         }
     }
 
     public void write(OutputStream os, Object obj) throws Exception {
         FastByteArrayOutputStream bos = (FastByteArrayOutputStream) os;
         byte typeId = -1;
-        for (int i = 0; i < this.serializer.length; i++) {
-            if (this.serializer[i].isSuitable(obj)) {
-                typeId = this.serializer[i].getTypeId();
+        for (TypeSerializer ts : serializers) {
+            if (ts.isSuitable(obj)) {
+                this.typeSerializer[ts.getTypeId()] = ts;
+                typeId = ts.getTypeId();
                 break;
             }
         }
@@ -122,7 +143,7 @@ public class DefaultSerializer implements CustomSerializer {
 
     public static class LongSerializer implements TypeSerializer<Long> {
         public final int priority() {
-            return 200;
+            return SERIALIZER_PRIORITY_LONG;
         }
 
         public final boolean isSuitable(final Object obj) {
@@ -144,7 +165,7 @@ public class DefaultSerializer implements CustomSerializer {
 
     public static class DateSerializer implements TypeSerializer<Date> {
         public int priority() {
-            return 500;
+            return SERIALIZER_PRIORITY_DATE;
         }
 
         public final boolean isSuitable(final Object obj) {
@@ -166,7 +187,7 @@ public class DefaultSerializer implements CustomSerializer {
 
     public static class BigIntegerSerializer implements TypeSerializer<BigInteger> {
         public final int priority() {
-            return 600;
+            return SERIALIZER_PRIORITY_BIG_INTEGER;
         }
 
         public final boolean isSuitable(final Object obj) {
@@ -192,7 +213,7 @@ public class DefaultSerializer implements CustomSerializer {
 
     public static class IntegerSerializer implements TypeSerializer<Integer> {
         public final int priority() {
-            return 300;
+            return SERIALIZER_PRIORITY_INTEGER;
         }
 
         public final boolean isSuitable(final Object obj) {
@@ -214,7 +235,7 @@ public class DefaultSerializer implements CustomSerializer {
 
     public static class ClassSerializer implements TypeSerializer<Class> {
         public final int priority() {
-            return 500;
+            return SERIALIZER_PRIORITY_CLASS;
         }
 
         public final boolean isSuitable(final Object obj) {
@@ -240,7 +261,7 @@ public class DefaultSerializer implements CustomSerializer {
 
     public static class StringSerializer implements TypeSerializer<String> {
         public final int priority() {
-            return 400;
+            return SERIALIZER_PRIORITY_STRING;
         }
 
         public final boolean isSuitable(final Object obj) {
@@ -262,7 +283,7 @@ public class DefaultSerializer implements CustomSerializer {
 
     public static class ByteArraySerializer implements TypeSerializer<byte[]> {
         public final int priority() {
-            return 100;
+            return SERIALIZER_PRIORITY_BYTE_ARRAY;
         }
 
         public final boolean isSuitable(final Object obj) {
@@ -288,7 +309,7 @@ public class DefaultSerializer implements CustomSerializer {
 
     public static class Externalizer implements TypeSerializer<Externalizable> {
         public final int priority() {
-            return 50;
+            return SERIALIZER_PRIORITY_EXTERNALIZABLE;
         }
 
         public final boolean isSuitable(final Object obj) {
@@ -321,7 +342,7 @@ public class DefaultSerializer implements CustomSerializer {
 
     public static class ObjectSerializer implements TypeSerializer<Object> {
         public final int priority() {
-            return Integer.MAX_VALUE;
+            return SERIALIZER_PRIORITY_OBJECT;
         }
 
         public final boolean isSuitable(final Object obj) {

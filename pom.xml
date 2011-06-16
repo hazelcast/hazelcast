@@ -7,7 +7,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>1.9.3</version>
+    <version>1.9.4-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -21,6 +21,7 @@
         <module>hazelcast-spring</module>
         <module>hazelcast-all</module>
         <module>hazelcast-monitor</module>
+        <module>hazelcast-cloud</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

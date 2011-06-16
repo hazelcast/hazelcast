@@ -16,6 +16,10 @@
             <tcp-ip enabled="false">
                 <interface>127.0.0.1</interface>
             </tcp-ip>
+            <aws enabled="false">
+                <access-key>my-access-key</access-key>
+                <secret-key>my-secret-key</secret-key>
+            </aws>
         </join>
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>

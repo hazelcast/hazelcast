@@ -156,11 +156,33 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
+
+
+    <xs:element name="access-key">
+        <xs:simpleType>
+            <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="secret-key">
+        <xs:simpleType>
+            <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+    </xs:element>
     <xs:element name="multicast">
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="multicast-group" minOccurs="0"/>
                 <xs:element ref="multicast-port" minOccurs="0"/>
+            </xs:sequence>
+            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="aws">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="access-key" minOccurs="0"/>
+                <xs:element ref="secret-key" minOccurs="0"/>
             </xs:sequence>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
         </xs:complexType>
@@ -303,6 +325,7 @@
             <xs:sequence>
                 <xs:element ref="multicast" minOccurs="0"/>
                 <xs:element ref="tcp-ip" minOccurs="0"/>
+                <xs:element ref="aws" minOccurs="0"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>

@@ -377,13 +377,41 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleMulticast(child);
             } else if ("tcp-ip".equals(name)) {
                 handleTcpIp(child);
+            } else if ("aws".equals(name)) {
+                handleAWS(child);
             }
         }
     }
 
-    private void handleMulticast(final org.w3c.dom.Node node) {
-        final NamedNodeMap atts = node.getAttributes();
+    private void handleAWS(Node node) {
         final Join join = config.getNetworkConfig().getJoin();
+        boolean enabled = isEnabled(node);
+        join.getAwsConfig().setEnabled(enabled);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String value = getTextContent(n).trim();
+            if ("secret-key".equals(cleanNodeName(n.getNodeName()))) {
+                join.getAwsConfig().setSecretKey(value);
+            } else if ("access-key".equals(cleanNodeName(n.getNodeName()))) {
+                join.getAwsConfig().setAccessKey(value);
+            }
+        }
+    }
+
+    private boolean isEnabled(Node node) {
+        final NamedNodeMap atts = node.getAttributes();
+        for (int a = 0; a < atts.getLength(); a++) {
+            final Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+                return checkTrue(value);
+            }
+        }
+        return false;
+    }
+
+    private void handleMulticast(final org.w3c.dom.Node node) {
+        final Join join = config.getNetworkConfig().getJoin();
+        final NamedNodeMap atts = node.getAttributes();
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
@@ -399,6 +427,49 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 join.getMulticastConfig().setMulticastPort(Integer.parseInt(value));
             } else if ("multicast-timeout-seconds".equals(cleanNodeName(n.getNodeName()))) {
                 join.getMulticastConfig().setMulticastTimeoutSeconds(Integer.parseInt(value));
+            }
+        }
+    }
+
+    private void handleTcpIp(final org.w3c.dom.Node node) {
+        final NamedNodeMap atts = node.getAttributes();
+        final Join join = config.getNetworkConfig().getJoin();
+        for (int a = 0; a < atts.getLength(); a++) {
+            final org.w3c.dom.Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if (att.getNodeName().equals("enabled")) {
+                join.getTcpIpConfig().setEnabled(checkTrue(value));
+            } else if (att.getNodeName().equals("conn-timeout-seconds")) {
+                join.getTcpIpConfig().setConnectionTimeoutSeconds(getIntegerValue("conn-timeout-seconds", value, 5));
+            }
+        }
+        final NodeList nodelist = node.getChildNodes();
+        for (int i = 0; i < nodelist.getLength(); i++) {
+            final org.w3c.dom.Node n = nodelist.item(i);
+            final String value = getTextContent(n).trim();
+            if (cleanNodeName(n.getNodeName()).equals("required-member")) {
+                join.getTcpIpConfig().setRequiredMember(value);
+            } else if (cleanNodeName(n.getNodeName()).equals("hostname")) {
+                join.getTcpIpConfig().addMember(value);
+            } else if (cleanNodeName(n.getNodeName()).equals("address")) {
+                int colonIndex = value.indexOf(':');
+                if (colonIndex == -1) {
+                    logger.log(Level.WARNING, "Address should be in the form of ip:port. Address [" + value + "] is not valid.");
+                } else {
+                    String hostStr = value.substring(0, colonIndex);
+                    String portStr = value.substring(colonIndex + 1);
+                    try {
+                        join.getTcpIpConfig().addAddress(new Address(hostStr, Integer.parseInt(portStr), true));
+                    } catch (UnknownHostException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else if ("interface".equals(cleanNodeName(n.getNodeName()))) {
+                join.getTcpIpConfig().addMember(value);
+            } else if ("member".equals(cleanNodeName(n.getNodeName()))) {
+                join.getTcpIpConfig().addMember(value);
+            } else if ("members".equals(cleanNodeName(n.getNodeName()))) {
+                join.getTcpIpConfig().addMember(value);
             }
         }
     }
@@ -522,49 +593,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
         handleProperties(node, mapStoreConfig.getProperties());
         return mapStoreConfig;
-    }
-
-    private void handleTcpIp(final org.w3c.dom.Node node) {
-        final NamedNodeMap atts = node.getAttributes();
-        final Join join = config.getNetworkConfig().getJoin();
-        for (int a = 0; a < atts.getLength(); a++) {
-            final org.w3c.dom.Node att = atts.item(a);
-            final String value = getTextContent(att).trim();
-            if (att.getNodeName().equals("enabled")) {
-                join.getTcpIpConfig().setEnabled(checkTrue(value));
-            } else if (att.getNodeName().equals("conn-timeout-seconds")) {
-                join.getTcpIpConfig().setConnectionTimeoutSeconds(getIntegerValue("conn-timeout-seconds", value, 5));
-            }
-        }
-        final NodeList nodelist = node.getChildNodes();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
-            final String value = getTextContent(n).trim();
-            if (cleanNodeName(n.getNodeName()).equals("required-member")) {
-                join.getTcpIpConfig().setRequiredMember(value);
-            } else if (cleanNodeName(n.getNodeName()).equals("hostname")) {
-                join.getTcpIpConfig().addMember(value);
-            } else if (cleanNodeName(n.getNodeName()).equals("address")) {
-                int colonIndex = value.indexOf(':');
-                if (colonIndex == -1) {
-                    logger.log(Level.WARNING, "Address should be in the form of ip:port. Address [" + value + "] is not valid.");
-                } else {
-                    String hostStr = value.substring(0, colonIndex);
-                    String portStr = value.substring(colonIndex + 1);
-                    try {
-                        join.getTcpIpConfig().addAddress(new Address(hostStr, Integer.parseInt(portStr), true));
-                    } catch (UnknownHostException e) {
-                        e.printStackTrace();
-                    }
-                }
-            } else if ("interface".equals(cleanNodeName(n.getNodeName()))) {
-                join.getTcpIpConfig().addMember(value);
-            } else if ("member".equals(cleanNodeName(n.getNodeName()))) {
-                join.getTcpIpConfig().addMember(value);
-            } else if ("members".equals(cleanNodeName(n.getNodeName()))) {
-                join.getTcpIpConfig().addMember(value);
-            }
-        }
     }
 
     public void handleTopic(final org.w3c.dom.Node node) {

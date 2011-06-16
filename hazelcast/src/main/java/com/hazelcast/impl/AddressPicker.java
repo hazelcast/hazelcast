@@ -94,7 +94,7 @@ public class AddressPicker {
             if (currentAddress == null) {
                 final Set<String> interfaces = new HashSet<String>();
                 if (config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled()) {
-                    Collection<Address> possibleAddresses = Node.getPossibleMembers(config, null, logger);
+                    Collection<Address> possibleAddresses = new TcpIpJoiner(node).getPossibleMembers(config, null, logger);
                     for (Address possibleAddress : possibleAddresses) {
                         interfaces.add(possibleAddress.getHost());
                     }

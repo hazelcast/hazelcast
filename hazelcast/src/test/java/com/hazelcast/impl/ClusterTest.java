@@ -2764,4 +2764,20 @@ public class ClusterTest {
         assertEquals(0, q1.size());
         assertEquals(0, q2.size());
     }
+
+    @Test
+    public void testTxn() throws Exception {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap<Object, Object> h1map = h1.getMap("TestMap");
+        MultiMap<Object, Object> h1multimap = h1.getMultiMap("multiMap");
+        IMap<Object, Object> h2map = h2.getMap("TestMap");
+        MultiMap<Object, Object> h2multimap = h2.getMultiMap("multiMap");
+        Transaction txn = h1.getTransaction();
+        txn.begin();
+        h1map.put("somekey", "somevalue");
+        h1multimap.put("h1", "somekey");
+        txn.commit();
+        assertTrue(h1map.containsKey("somekey"));
+    }
 }

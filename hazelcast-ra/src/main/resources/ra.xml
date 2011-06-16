@@ -14,7 +14,7 @@
     <icon></icon>
     <vendor-name>Hazelcast.com</vendor-name>
     <eis-type>Hazelcast</eis-type>
-    <resourceadapter-version>1.9.3</resourceadapter-version>
+    <resourceadapter-version>1.9.4-SNAPSHOT</resourceadapter-version>
 
     <license>
         <description>Copyright (c) Hazelcast.com</description>

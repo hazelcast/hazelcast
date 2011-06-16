@@ -495,6 +495,7 @@ public abstract class BaseManager {
             if (node.factory.restarted) {
                 throw new RuntimeException();
             } else {
+                //Thread.currentThread().interrupt();
                 throw new RuntimeInterruptedException();
             }
         }

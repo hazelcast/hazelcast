@@ -19,34 +19,33 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.Join;
-import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.Member;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
 import com.hazelcast.impl.base.CpuUtilization;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
-import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.NoneStrictObjectPool;
 
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
-import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
-import java.util.*;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class Node {
     private final ILogger logger;
 
-    private volatile boolean joined = false;
+    //private volatile boolean joined = false;
+    private AtomicBoolean joined = new AtomicBoolean(false);
 
     private volatile boolean active = false;
 
@@ -244,18 +243,6 @@ public class Node {
         this.multicastService = mcService;
     }
 
-    private boolean addMember(final Address address, final NodeType nodeType) {
-        if (!clusterManager.enqueueAndWait(new Processable() {
-            public void process() {
-                clusterManager.addMember(address, nodeType);
-            }
-        }, 5)) {
-            logger.log(Level.WARNING, "Adding member failed!");
-            return false;
-        }
-        return true;
-    }
-
     public void failedConnection(Address address) {
         failedConnections.add(address);
     }
@@ -296,33 +283,12 @@ public class Node {
         }
     }
 
-    public static boolean isIP(final String address) {
-        if (address.indexOf('.') == -1) {
-            return false;
-        } else {
-            final StringTokenizer st = new StringTokenizer(address, ".");
-            int tokenCount = 0;
-            while (st.hasMoreTokens()) {
-                final String token = st.nextToken();
-                tokenCount++;
-                try {
-                    Integer.parseInt(token);
-                } catch (final Exception e) {
-                    return false;
-                }
-            }
-            if (tokenCount != 4)
-                return false;
-        }
-        return true;
-    }
-
     public final boolean isSuperClient() {
         return superClient;
     }
 
     public boolean joined() {
-        return joined;
+        return joined.get();
     }
 
     public boolean isMaster() {
@@ -360,7 +326,7 @@ public class Node {
             // threads do not process unnecessary
             // events, such as remove address
             long start = System.currentTimeMillis();
-            joined = false;
+            joined.set(false);
             setActive(false);
             try {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
@@ -427,7 +393,6 @@ public class Node {
         }
         logger.log(Level.FINEST, "finished starting threads, calling join");
         join();
-        postJoin();
         int clusterSize = clusterImpl.getMembers().size();
         if (address.getPort() >= config.getPort() + clusterSize) {
             StringBuilder sb = new StringBuilder("Config seed port is ");
@@ -437,50 +402,6 @@ public class Node {
             sb.append(". Some of the ports seem occupied!");
             logger.log(Level.WARNING, sb.toString());
         }
-    }
-
-    private void postJoin() {
-        if (!isMaster()) {
-            boolean allConnected = false;
-            int checkCount = 0;
-            while (checkCount++ < 100 && !allConnected) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
-                Set<Member> members = clusterImpl.getMembers();
-                allConnected = true;
-                for (Member member : members) {
-                    MemberImpl memberImpl = (MemberImpl) member;
-                    if (!memberImpl.localMember() && connectionManager.getConnection(memberImpl.getAddress()) == null) {
-                        allConnected = false;
-                    }
-                }
-            }
-            if (!allConnected) {
-                logger.log(Level.WARNING, "Failed to connect to all other members after " + checkCount + " seconds.");
-                logger.log(Level.WARNING, "Rebooting after 10 seconds.");
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    shutdown();
-                }
-                rejoin();
-                return;
-            } else {
-                clusterManager.finalizeJoin();
-            }
-        }
-        clusterManager.enqueueAndWait(new Processable() {
-            public void process() {
-                if (baseVariables.lsMembers.size() == 1) {
-                    final StringBuilder sb = new StringBuilder();
-                    sb.append("\n");
-                    sb.append(clusterManager);
-                    logger.log(Level.INFO, sb.toString());
-                }
-            }
-        }, 5);
     }
 
     public ILogger getLogger(String name) {
@@ -520,6 +441,10 @@ public class Node {
         }
     }
 
+    public Set<Address> getFailedConnections() {
+        return failedConnections;
+    }
+
     public class NodeShutdownHookThread extends Thread {
 
         NodeShutdownHookThread(String name) {
@@ -544,36 +469,12 @@ public class Node {
     }
 
     public void setJoined() {
-        joined = true;
+        joined.set(true);
     }
 
     public JoinInfo createJoinInfo() {
         return new JoinInfo(true, address, config, getLocalNodeType(),
                 Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size());
-    }
-
-    private Address findMasterWithMulticast() {
-        try {
-            final String ip = System.getProperty("join.ip");
-            if (ip == null) {
-                JoinInfo joinInfo = createJoinInfo();
-                int tryCount = config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds() * 100;
-                for (int i = 0; i < tryCount; i++) {
-                    multicastService.send(joinInfo);
-                    if (masterAddress == null) {
-                        Thread.sleep(10);
-                    } else {
-                        return masterAddress;
-                    }
-                }
-            } else {
-                logger.log(Level.FINEST, "RETURNING join.ip");
-                return new Address(ip, config.getPort());
-            }
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     public boolean validateJoinRequest(JoinRequest joinRequest) throws Exception {
@@ -590,137 +491,46 @@ public class Node {
         return valid;
     }
 
-    private Address getAddressFor(String host) {
-        int port = config.getPort();
-        final int indexColon = host.indexOf(':');
-        if (indexColon != -1) {
-            port = Integer.parseInt(host.substring(indexColon + 1));
-            host = host.substring(0, indexColon);
-        }
-        final boolean ip = isIP(host);
-        try {
-            if (ip) {
-                return new Address(host, port, true);
-            } else {
-                final InetAddress[] allAddresses = InetAddress.getAllByName(host);
-                for (final InetAddress inetAddress : allAddresses) {
-                    boolean shouldCheck = true;
-                    Address address;
-                    Interfaces interfaces = config.getNetworkConfig().getInterfaces();
-                    if (interfaces.isEnabled()) {
-                        address = new Address(inetAddress.getAddress(), port);
-                        shouldCheck = AddressPicker.matchAddress(address.getHost(), interfaces.getInterfaces());
-                    }
-                    if (shouldCheck) {
-                        return new Address(inetAddress.getAddress(), port);
-                    }
-                }
-            }
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private static List<Address> getPossibleIpAddresses(final String host, final int port, boolean portSet)
-            throws UnknownHostException {
-        final List<Address> list;
-        if (portSet) {
-            list = Collections.singletonList(new Address(host, port, true));
-        } else {
-            list = new ArrayList(6);
-            for (int i = -2; i < 3; i++) {
-                list.add(new Address(host, port + i, true));
-            }
-        }
-        return list;
-    }
-
-    static Collection<Address> getPossibleMembers(Config config, Address thisAddress, ILogger logger) {
-        Join join = config.getNetworkConfig().getJoin();
-        final Set<String> lsJoinMembers = new HashSet<String>();
-        for (String member : join.getTcpIpConfig().getMembers()) {
-            lsJoinMembers.addAll(AddressUtil.handleMember(member));
-        }
-        final Set<Address> setPossibleAddresses = new HashSet<Address>();
-        for (final String lsJoinMember : lsJoinMembers) {
-            try {
-                String host = lsJoinMember;
-                int port = config.getPort();
-                final int indexColon = host.indexOf(':');
-                if (indexColon >= 0) {
-                    port = Integer.parseInt(host.substring(indexColon + 1));
-                    host = host.substring(0, indexColon);
-                }
-                // check if host is hostname of ip address
-                final boolean ip = isIP(host);
-                if (ip) {
-                    for (final Address addrs : getPossibleIpAddresses(host, port, indexColon >= 0)) {
-                        if (!addrs.equals(thisAddress)) {
-                            setPossibleAddresses.add(addrs);
-                        }
-                    }
-                } else {
-                    final InetAddress[] allAddresses = InetAddress.getAllByName(host);
-                    for (final InetAddress inetAddress : allAddresses) {
-                        boolean shouldCheck = true;
-                        Address addrs;
-                        Interfaces interfaces = config.getNetworkConfig().getInterfaces();
-                        if (interfaces.isEnabled()) {
-                            addrs = new Address(inetAddress.getAddress(), port);
-                            shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getInterfaces());
-                        }
-                        if (indexColon < 0) {
-                            // port is not set
-                            if (shouldCheck) {
-                                for (int i = -2; i < 3; i++) {
-                                    final Address addressProper = new Address(inetAddress.getAddress(), port + i);
-                                    if (!addressProper.equals(thisAddress)) {
-                                        setPossibleAddresses.add(addressProper);
-                                    }
-                                }
-                            }
-                        } else {
-                            final Address addressProper = new Address(inetAddress.getAddress(), port);
-                            if (!addressProper.equals(thisAddress)) {
-                                setPossibleAddresses.add(addressProper);
-                            }
-                        }
-                    }
-                }
-            } catch (UnknownHostException e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-            }
-        }
-        setPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
-        return setPossibleAddresses;
-    }
-
     void rejoin() {
         masterAddress = null;
-        joined = false;
+        joined.set(false);
         clusterImpl.reset();
         failedConnections.clear();
         join();
-        postJoin();
     }
 
     void join() {
         try {
-            boolean multicastEnabled = config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled();
-            boolean tcpEnabled = config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled();
-            if (multicastEnabled) {
-                joinWithMulticast();
-            } else if (tcpEnabled) {
-                joinWithTCP();
-            } else {
-                logger.log(Level.WARNING, "Neither multicast nor tcp/ip join is enabled! Starting standalone.");
+            Joiner joiner = getJoiner();
+            if (joiner == null) {
+                logger.log(Level.WARNING, "No join method is enabled! Starting standalone.");
                 setAsMaster();
+            } else {
+                joiner.join(joined);
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage());
             factory.lifecycleService.restart();
         }
+    }
+
+    Joiner getJoiner() {
+        Join join = config.getNetworkConfig().getJoin();
+        if (join.getMulticastConfig().isEnabled() && multicastService != null) {
+            return new MulticastJoiner(this);
+        } else if (join.getTcpIpConfig().isEnabled()) {
+            return new TcpIpJoiner(this);
+        } else if (join.getAwsConfig().isEnabled()) {
+            try {
+                Class clazz = Class.forName("com.hazelcast.impl.TcpIpJoinerOverAWS");
+                Constructor constructor = clazz.getConstructor(Node.class);
+                return (Joiner) constructor.newInstance(this);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, e.getMessage());
+                return null;
+            }
+        }
+        return null;
     }
 
     void setAsMaster() {
@@ -737,217 +547,8 @@ public class Node {
         setJoined();
     }
 
-    private void failedJoiningToMaster(boolean multicast, int tryCount) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n");
-        sb.append("===========================");
-        sb.append("\n");
-        sb.append("Couldn't connect to discovered master! tryCount: ").append(tryCount);
-        sb.append("\n");
-        sb.append("thisAddress: ").append(address);
-        sb.append("\n");
-        sb.append("masterAddress: ").append(masterAddress);
-        sb.append("\n");
-        sb.append("multicast: ").append(multicast);
-        sb.append("\n");
-        sb.append("connection: ").append(connectionManager.getConnection(masterAddress));
-        sb.append("===========================");
-        sb.append("\n");
-        throw new IllegalStateException(sb.toString());
-    }
-
-    private void joinWithMulticast() {
-        int tryCount = 0;
-        while (!joined) {
-            logger.log(Level.FINEST, "joining... " + masterAddress);
-            Address masterAddressNow = findMasterWithMulticast();
-            if (masterAddressNow != null && masterAddressNow.equals(masterAddress)) {
-                tryCount--;
-            }
-            masterAddress = masterAddressNow;
-            if (masterAddress == null || address.equals(masterAddress)) {
-                TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
-                if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {
-                    masterAddress = null;
-                    logger.log(Level.FINEST, "Multicast couldn't find cluster. Trying TCP/IP");
-                    joinWithTCP();
-                } else {
-                    setAsMaster();
-                }
-                return;
-            }
-            if (tryCount++ > 22) {
-                failedJoiningToMaster(true, tryCount);
-            }
-            if (!masterAddress.equals(address)) {
-                connectAndSendJoinRequest(masterAddress);
-            } else {
-                masterAddress = null;
-                tryCount = 0;
-            }
-            try {
-                Thread.sleep(500L);
-            } catch (InterruptedException ignored) {
-            }
-        }
-    }
-
-    private void connectAndSendJoinRequest(Address masterAddress) {
-        if (masterAddress == null || masterAddress.equals(address)) {
-            throw new IllegalArgumentException();
-        }
-        Connection conn = connectionManager.getOrConnect(masterAddress);
-        logger.log(Level.FINEST, "Master connection " + conn);
-        if (conn != null) {
-            clusterManager.sendJoinRequest(masterAddress);
-        }
-    }
-
-    private void joinViaPossibleMembers() {
-        try {
-            failedConnections.clear();
-            final Collection<Address> colPossibleAddresses = getPossibleMembers(config, address, logger);
-            colPossibleAddresses.remove(address);
-            for (final Address possibleAddress : colPossibleAddresses) {
-                logger.log(Level.FINEST, "connecting to " + possibleAddress);
-                connectionManager.getOrConnect(possibleAddress);
-            }
-            boolean found = false;
-            int numberOfSeconds = 0;
-            final int connectionTimeoutSeconds = config.getNetworkConfig().getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();
-            while (!found && numberOfSeconds < connectionTimeoutSeconds) {
-                colPossibleAddresses.removeAll(failedConnections);
-                if (colPossibleAddresses.size() == 0) {
-                    break;
-                }
-                Thread.sleep(1000L);
-                numberOfSeconds++;
-                int numberOfJoinReq = 0;
-                logger.log(Level.FINEST, "we are going to try to connect to each address, but no more than five times");
-                for (Address possibleAddress : colPossibleAddresses) {
-                    logger.log(Level.FINEST, "connection attempt " + numberOfJoinReq + " to " + possibleAddress);
-                    final Connection conn = connectionManager.getOrConnect(possibleAddress);
-                    if (conn != null && numberOfJoinReq < 5) {
-                        found = true;
-                        logger.log(Level.FINEST, "found and sending join request for " + possibleAddress);
-                        clusterManager.sendJoinRequest(possibleAddress);
-                        numberOfJoinReq++;
-                    } else {
-                        logger.log(Level.FINEST, "number of join requests is greater than 5, no join request will be sent for " + possibleAddress);
-                    }
-                }
-            }
-            logger.log(Level.FINEST, "FOUND " + found);
-            if (!found) {
-                logger.log(Level.FINEST, "This node will assume master role since no possible member where connected to");
-                setAsMaster();
-            } else {
-                while (!joined) {
-                    int maxTryCount = 3;
-                    for (Address possibleAddress : colPossibleAddresses) {
-                        if (address.hashCode() > possibleAddress.hashCode()) {
-                            maxTryCount = 6;
-                            break;
-                        } else if (address.hashCode() == possibleAddress.hashCode()) {
-                            maxTryCount = 3 + ((int) (Math.random() * 10));
-                            break;
-                        }
-                    }
-                    int tryCount = 0;
-                    while (tryCount++ < maxTryCount && (masterAddress == null)) {
-                        connectAndSendJoinRequest(colPossibleAddresses);
-                        Thread.sleep(1000L);
-                    }
-                    int requestCount = 0;
-                    while (masterAddress != null && !joined) {
-                        Thread.sleep(1000L);
-                        clusterManager.sendJoinRequest(masterAddress);
-                        if (requestCount++ > 22) {
-                            failedJoiningToMaster(false, requestCount);
-                        }
-                    }
-                    if (masterAddress == null) { // no-one knows the master
-                        boolean masterCandidate = true;
-                        for (Address address : colPossibleAddresses) {
-                            if (this.address.hashCode() > address.hashCode()) {
-                                masterCandidate = false;
-                            }
-                        }
-                        if (masterCandidate) {
-                            logger.log(Level.FINEST, "I am the master candidate, setting as master");
-                            setAsMaster();
-                        }
-                    }
-                }
-            }
-            colPossibleAddresses.clear();
-            failedConnections.clear();
-        } catch (Throwable t) {
-            logger.log(Level.SEVERE, t.getMessage(), t);
-        }
-    }
-
-    private void connectAndSendJoinRequest(Collection<Address> colPossibleAddresses) {
-        int numberOfJoinReq = 0;
-        colPossibleAddresses.removeAll(failedConnections);
-        for (Address possibleAddress : colPossibleAddresses) {
-            final Connection conn = connectionManager.getOrConnect(possibleAddress);
-            if (conn != null && numberOfJoinReq < 5) {
-                logger.log(Level.FINEST, "sending join request for " + possibleAddress);
-                clusterManager.sendJoinRequest(possibleAddress);
-                numberOfJoinReq++;
-            } else {
-                logger.log(Level.FINEST, "number of join request is greater than 5, no join request will be sent for " + possibleAddress + " the second time");
-            }
-        }
-    }
-
-    private void joinViaRequiredMember() {
-        try {
-            final Address requiredAddress = getAddressFor(config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember());
-            logger.log(Level.FINEST, "Joining over required member " + requiredAddress);
-            if (requiredAddress == null) {
-                throw new RuntimeException("Invalid required member "
-                        + config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember());
-            }
-            if (requiredAddress.equals(address)) {
-                setAsMaster();
-                return;
-            }
-            connectionManager.getOrConnect(requiredAddress);
-            Connection conn = null;
-            while (conn == null) {
-                conn = connectionManager.getOrConnect(requiredAddress);
-                Thread.sleep(2000L);
-            }
-            while (!joined) {
-                final Connection connection = connectionManager.getOrConnect(requiredAddress);
-                if (connection == null) {
-                    joinViaRequiredMember();
-                }
-                logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
-                clusterManager.sendJoinRequest(requiredAddress);
-                Thread.sleep(3000L);
-            }
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void joinWithTCP() {
-        if (config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember() != null) {
-            joinViaRequiredMember();
-        } else {
-            joinViaPossibleMembers();
-        }
-    }
-
     public Config getConfig() {
         return config;
-    }
-
-    public int getBuildNumber() {
-        return buildNumber;
     }
 
     public ExecutorManager getExecutorManager() {

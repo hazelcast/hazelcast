@@ -17,18 +17,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.JoinInfo;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-
-import java.util.Collection;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 public class SplitBrainHandler implements Runnable {
     final Node node;
@@ -37,17 +26,12 @@ public class SplitBrainHandler implements Runnable {
     volatile boolean inProgress = false;
     final long FIRST_RUN_DELAY_MILLIS;
     final long NEXT_RUN_DELAY_MILLIS;
-    final boolean multicastEnabled;
-    final boolean tcpEnabled;
 
     public SplitBrainHandler(Node node) {
         this.node = node;
         this.logger = node.getLogger(SplitBrainHandler.class.getName());
         FIRST_RUN_DELAY_MILLIS = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong() * 1000L;
         NEXT_RUN_DELAY_MILLIS = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000L;
-        Config config = node.getConfig();
-        multicastEnabled = config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled();
-        tcpEnabled = config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled();
         lastRun = System.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
     }
 
@@ -69,110 +53,14 @@ public class SplitBrainHandler implements Runnable {
     }
 
     private void searchForOtherClusters() {
-        if (multicastEnabled && node.multicastService != null) {
-            final BlockingQueue q = new LinkedBlockingQueue();
-            MulticastListener listener = new MulticastListener() {
-                public void onMessage(Object msg) {
-                    if (msg != null && msg instanceof JoinInfo) {
-                        JoinInfo joinInfo = (JoinInfo) msg;
-                        if (node.address != null && !node.address.equals(joinInfo.address)) {
-                            q.offer(msg);
-                        }
-                    }
-                }
-            };
-            node.multicastService.addMulticastListener(listener);
-            node.multicastService.send(node.createJoinInfo());
-            try {
-                JoinInfo joinInfo = (JoinInfo) q.poll(3, TimeUnit.SECONDS);
-                if (joinInfo != null) {
-                    node.multicastService.removeMulticastListener(listener);
-                    if (shouldMerge(joinInfo)) {
-                        logger.log(Level.WARNING, node.address + " is merging [multicast] to " + joinInfo.address);
-                        node.factory.restart();
-                        return;
-                    }
-                }
-            } catch (InterruptedException ignored) {
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        if (tcpEnabled) {
-            final Collection<Address> colPossibleAddresses;
-            try {
-                colPossibleAddresses = Node.getPossibleMembers(node.getConfig(), node.getThisAddress(), logger);
-            } catch (Throwable e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
-                return;
-            }
-            colPossibleAddresses.remove(node.getThisAddress());
-            for (Member member : node.getClusterImpl().getMembers()) {
-                colPossibleAddresses.remove(((MemberImpl) member).getAddress());
-            }
-            if (colPossibleAddresses.size() == 0) {
-                return;
-            }
-            for (final Address possibleAddress : colPossibleAddresses) {
-                logger.log(Level.FINEST, node.getThisAddress() + " is connecting to " + possibleAddress);
-                node.connectionManager.getOrConnect(possibleAddress);
-            }
-            for (Address possibleAddress : colPossibleAddresses) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    return;
-                }
-                final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
-                if (conn != null) {
-                    JoinInfo response = node.clusterManager.checkJoin(conn);
-                    if (shouldMerge(response)) {
-                        // we will join so delay the merge checks.
-                        logger.log(Level.WARNING, node.address + " is merging [tcp/ip] to " + possibleAddress);
-                        lastRun = System.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
-                        node.factory.restart();
-                    }
-                    // trying one live connection is good enough
-                    // no need to try other connections
-                    return;
-                }
-            }
+        Joiner joiner = node.getJoiner();
+        if (joiner != null) {
+            joiner.searchForOtherClusters(this);
         }
     }
 
-    boolean shouldMerge(JoinInfo joinInfo) {
-        boolean shouldMerge = false;
-        if (joinInfo != null) {
-            boolean validJoinRequest;
-            try {
-                try {
-                    validJoinRequest = node.validateJoinRequest(joinInfo);
-                } catch (Exception e) {
-                    validJoinRequest = false;
-                }
-                if (validJoinRequest) {
-                    for (Member member : node.getClusterImpl().getMembers()) {
-                        MemberImpl memberImpl = (MemberImpl) member;
-                        if (memberImpl.getAddress().equals(joinInfo.address)) {
-                            return false;
-                        }
-                    }
-                    int currentMemberCount = node.getClusterImpl().getMembers().size();
-                    if (joinInfo.getMemberCount() > currentMemberCount) {
-                        // I should join the other cluster
-                        shouldMerge = true;
-                    } else if (joinInfo.getMemberCount() == currentMemberCount) {
-                        // compare the hashes
-                        if (node.getThisAddress().hashCode() > joinInfo.address.hashCode()) {
-                            shouldMerge = true;
-                        }
-                    }
-                }
-            } catch (Throwable e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
-                return false;
-            }
-        }
-        return shouldMerge;
+    public void restart() {
+        lastRun = System.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
+        node.factory.restart();
     }
 }

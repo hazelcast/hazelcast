@@ -447,7 +447,7 @@ public class MapStoreTest extends TestUtil {
         h1.getLifecycleService().shutdown();
         IMap map2 = h2.getMap("default");
         assertEquals(1, map2.size());
-        map2.putTransient("2", "value2", 100, TimeUnit.DAYS);
+        map2.putTransient("2", "value2", 100 * 24 * 6000, TimeUnit.SECONDS);
         CMap cmap = getCMap(h2, "default");
         Data key = toData("2");
         Record record = cmap.getRecord(key);
@@ -459,7 +459,7 @@ public class MapStoreTest extends TestUtil {
         assertTrue(record.isDirty());
         assertTrue(record.isValid());
         assertTrue(record.isActive());
-        map2.putTransient("2", "value222", 100, TimeUnit.DAYS);
+        map2.putTransient("2", "value222", 100 * 24 * 6000, TimeUnit.SECONDS);
         assertTrue(record.isDirty());
         assertTrue(record.isValid());
         assertTrue(record.isActive());
