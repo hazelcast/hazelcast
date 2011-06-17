@@ -44,9 +44,6 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * Run these tests with
@@ -175,7 +172,7 @@ public class ClusterTest {
         h2.shutdown();
         assertEquals(0, a3.get());
     }
-
+    
     @Test
     public void testFirstNodeNoWait() throws Exception {
         final Config config = new Config();
@@ -435,9 +432,18 @@ public class ClusterTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         IMap map1 = h1.getMap("def");
-        Object old = map1.replace("k", "v");
+        Object old = map1.replace(1, "v");
         assertNull(old);
-        assertFalse(map1.containsKey("k"));
+        old = map1.replace(200, "v");
+        assertNull(old);
+        old = map1.replace(140, "v");
+        assertNull(old);
+        old = map1.replace(55, "v");
+        assertNull(old);
+        assertFalse(map1.containsKey(1));
+        assertFalse(map1.containsKey(200));
+        assertFalse(map1.containsKey(55));
+        
         assertEquals(0, map1.getLocalMapStats().getBackupEntryCount());
         IMap map2 = h2.getMap("def");
         assertEquals(0, map2.getLocalMapStats().getBackupEntryCount());
