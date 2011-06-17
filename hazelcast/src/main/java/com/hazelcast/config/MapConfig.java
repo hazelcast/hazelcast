@@ -262,7 +262,7 @@ public class MapConfig implements DataSerializable {
 
     /**
      * @return the maxSize
-     * @deprecated use MapSizeConfig.getSize
+     * @deprecated use MaxSizeConfig.getSize
      */
     public int getMaxSize() {
         return maxSizeConfig.getSize();
@@ -270,7 +270,7 @@ public class MapConfig implements DataSerializable {
 
     /**
      * @param maxSize the maxSize to set
-     * @deprecated use MapSizeConfig.setSize
+     * @deprecated use MaxSizeConfig.setSize
      */
     public MapConfig setMaxSize(final int maxSize) {
         if (maxSize < 0) {
@@ -446,6 +446,7 @@ public class MapConfig implements DataSerializable {
         boolean[] b = ByteUtil.fromByte(in.readByte());
         valueIndexed = b[0];
         readBackupData = b[1];
+        cacheValue = b[2];
         evictionPolicy = in.readUTF();
         mergePolicy = in.readUTF();
         // TODO: MapStoreConfig mapStoreConfig
@@ -460,7 +461,7 @@ public class MapConfig implements DataSerializable {
         out.writeInt(maxIdleSeconds);
         out.writeInt(evictionDelaySeconds);
         maxSizeConfig.writeData(out);
-        out.writeByte(ByteUtil.toByte(valueIndexed, readBackupData));
+        out.writeByte(ByteUtil.toByte(valueIndexed, readBackupData, cacheValue));
         out.writeUTF(evictionPolicy);
         out.writeUTF(mergePolicy);
         // TODO: MapStoreConfig mapStoreConfig
