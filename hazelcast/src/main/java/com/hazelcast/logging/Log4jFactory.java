@@ -17,30 +17,19 @@
 
 package com.hazelcast.logging;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-public class Log4jFactory implements LoggerFactory {
-    final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
 
-    public ILogger getLogger(String name) {
-        ILogger logger = mapLoggers.get(name);
-        if (logger == null) {
-            Logger l = Logger.getLogger(name);
-            ILogger newLogger = new Log4jLogger(l);
-            logger = mapLoggers.putIfAbsent(name, newLogger);
-            if (logger == null) {
-                logger = newLogger;
-            }
-        }
-        return logger;
-    }
-
+public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory {
+	
+	protected ILogger createLogger(String name) {
+		final Logger l = Logger.getLogger(name);
+        return new Log4jLogger(l);
+	}
+	
     class Log4jLogger implements ILogger {
         private final Logger logger;
         private final Level level;

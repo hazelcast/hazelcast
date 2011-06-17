@@ -17,28 +17,17 @@
 
 package com.hazelcast.logging;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-public class StandardLoggerFactory implements LoggerFactory {
-    final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
+public class StandardLoggerFactory extends LoggerFactorySupport implements LoggerFactory {
 
-    public ILogger getLogger(String name) {
-        ILogger logger = mapLoggers.get(name);
-        if (logger == null) {
-            Logger l = Logger.getLogger(name);
-            ILogger newLogger = new StandardLogger(l);
-            logger = mapLoggers.putIfAbsent(name, newLogger);
-            if (logger == null) {
-                logger = newLogger;
-            }
-        }
-        return logger;
-    }
-
+	protected ILogger createLogger(String name) {
+		final Logger l = Logger.getLogger(name);
+        return new StandardLogger(l);
+	}
+	
     class StandardLogger implements ILogger {
         private final Logger logger;
 
