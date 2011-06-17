@@ -132,10 +132,12 @@ public abstract class AbstractJoiner implements Joiner {
                     int currentMemberCount = node.getClusterImpl().getMembers().size();
                     if (joinInfo.getMemberCount() > currentMemberCount) {
                         // I should join the other cluster
+                        logger.log(Level.FINEST, node.address + "Merging because : joinInfo.getMemberCount() > currentMemberCount" + joinInfo + ", this node member count: " + node.getClusterImpl().getMembers().size());
                         shouldMerge = true;
                     } else if (joinInfo.getMemberCount() == currentMemberCount) {
                         // compare the hashes
                         if (node.getThisAddress().hashCode() > joinInfo.address.hashCode()) {
+                            logger.log(Level.FINEST, node.address + "Merging because : node.getThisAddress().hashCode() > joinInfo.address.hashCode()" + joinInfo + ", this node member count: " + node.getClusterImpl().getMembers().size());
                             shouldMerge = true;
                         }
                     }

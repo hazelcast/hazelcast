@@ -27,7 +27,6 @@ import java.net.DatagramPacket;
 
 public class JoinInfo extends JoinRequest implements DataSerializable {
 
-    
     private boolean request = true;
     private int memberCount = 0;
 
@@ -41,7 +40,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
         this.memberCount = memberCount;
     }
 
-    public JoinInfo copy(boolean newRequest, Address newAddress) {
+    public JoinInfo copy(boolean newRequest, Address newAddress, int memberCount) {
         return new JoinInfo(newRequest, newAddress, config,
                 nodeType, packetVersion, buildNumber, memberCount);
     }

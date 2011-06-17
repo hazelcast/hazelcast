@@ -2789,19 +2789,67 @@ public class ClusterTest {
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        FactoryImpl f1 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h1).getHazelcastInstance();
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        FactoryImpl f2 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h2).getHazelcastInstance();
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        FactoryImpl.HazelcastInstanceProxy p3 = (FactoryImpl.HazelcastInstanceProxy) h3;
-        FactoryImpl f3 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h3).getHazelcastInstance();
-        Connection c13 = f1.node.connectionManager.getConnection(f3.node.address);
-        Connection c23 = f2.node.connectionManager.getConnection(f3.node.address);
-        c13.close();
-        c23.close();
-        Thread.sleep(30000);
+        Thread.sleep(1000);
+        closeConnectionBetween(h1, h3);
+        closeConnectionBetween(h2, h3);
+        Thread.sleep(200000);
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
+        assertEquals(1, h3.getCluster().getMembers().size());
+        Thread.sleep(40000);
         assertEquals(3, h1.getCluster().getMembers().size());
         assertEquals(3, h2.getCluster().getMembers().size());
         assertEquals(3, h3.getCluster().getMembers().size());
+        Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void recoverFromNodeCrashesAndNetworkOutages() throws InterruptedException {
+        int nodeCount = 5;
+        final Config config = new Config();
+        config.getGroupConfig().setName("split");
+        int port = 7801;
+        config.setPort(port);
+        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
+        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
+        for (int i = 0; i < nodeCount; i++) {
+            config.getNetworkConfig().getJoin().getTcpIpConfig().addMember("localhost:" + (port + i));
+        }
+        final ConcurrentMap<Integer, HazelcastInstance> nodes = new ConcurrentHashMap<Integer, HazelcastInstance>();
+        for (int j = 0; j < nodeCount; j++) {
+            final int i = j;
+            new Thread(new Runnable() {
+                public void run() {
+                    HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+                    nodes.put(i, h);
+                }
+            }).start();
+        }
+        Random random = new Random(System.currentTimeMillis());
+        for (; ;) {
+            Thread.sleep(random.nextInt(10000));
+            for (int i : nodes.keySet()) {
+                if (i != nodeCount - 1) {
+                    HazelcastInstance h = nodes.get(i);
+                    HazelcastInstance last = nodes.get(nodeCount - 1);
+                    closeConnectionBetween(nodes.get(i), nodes.get(nodeCount - 1));
+                    Thread.sleep(10000);
+                }
+            }
+        }
+    }
+
+    private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
+        if (h1 == null) return;
+        if (h2 == null) return;
+        FactoryImpl f1 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h1).getHazelcastInstance();
+        FactoryImpl f2 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h2).getHazelcastInstance();
+        Connection connection = f1.node.connectionManager.getConnection(f2.node.address);
+        if (connection == null) return;
+        connection.close();
     }
 }

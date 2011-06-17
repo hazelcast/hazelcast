@@ -40,7 +40,7 @@ public class NodeMulticastListener implements MulticastListener {
                 if (validJoinRequest) {
                     if (node.isMaster() && node.isActive() && node.joined()) {
                         if (joinInfo.isRequest()) {
-                            node.multicastService.send(joinInfo.copy(false, node.address));
+                            node.multicastService.send(joinInfo.copy(false, node.address, node.getClusterImpl().getMembers().size()));
                         }
                     } else {
                         if (!node.joined() && !joinInfo.isRequest()) {
