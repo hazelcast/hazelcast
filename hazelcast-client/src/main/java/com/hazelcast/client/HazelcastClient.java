@@ -303,7 +303,7 @@ public class HazelcastClient implements HazelcastInstance {
                         String name = (String) o;
                         if (name.startsWith(Prefix.MAP)) {
                             proxy = new MapClientProxy<K, V>(this, name);
-                        } else if (name.startsWith(Prefix.LIST)) {
+                        } else if (name.startsWith(Prefix.AS_LIST)) {
                             proxy = new ListClientProxy<E>(this, name);
                         } else if (name.startsWith(Prefix.SET)) {
                             proxy = new SetClientProxy<E>(this, name);
@@ -387,7 +387,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <E> IList<E> getList(String name) {
-        return (IList<E>) getClientProxy(Prefix.LIST + name);
+        return (IList<E>) getClientProxy(Prefix.AS_LIST + name);
     }
 
     public ILock getLock(Object obj) {

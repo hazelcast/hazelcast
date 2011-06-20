@@ -21,9 +21,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 import static com.hazelcast.client.ProxyHelper.check;
 
@@ -59,8 +57,45 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
         }
     }
 
+    @Override
+    protected Collection<E> getTheCollection() {
+        final Collection<Map.Entry<?, E>> entries = proxyHelper.entries(null);
+        final Iterator<Map.Entry<?, E>> it = entries.iterator();
+        final ListClientProxy thisListProxy = this;
+        return new AbstractCollection<E>() {
+            @Override
+            public Iterator<E> iterator() {
+                return new Iterator<E>() {
+                    volatile E lastRecord;
+
+                    public boolean hasNext() {
+                        return it.hasNext();
+                    }
+
+                    public E next() {
+                        lastRecord = it.next().getValue();
+                        return lastRecord;
+                    }
+
+                    public void remove() {
+                        if (lastRecord == null) {
+                            throw new IllegalStateException();
+                        }
+                        it.remove();
+                        thisListProxy.remove(lastRecord);
+                    }
+                };
+            }
+
+            @Override
+            public int size() {
+                return entries.size();
+            }
+        };
+    }
+
     public String getName() {
-        return name.substring(Prefix.LIST.length());
+        return name.substring(Prefix.AS_LIST.length());
     }
 
     public InstanceType getInstanceType() {

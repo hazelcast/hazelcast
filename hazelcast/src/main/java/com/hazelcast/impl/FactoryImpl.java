@@ -1331,7 +1331,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public String getName() {
-                return name.substring(Prefix.LIST.length());
+                return name.substring(Prefix.SET.length());
             }
 
             @Override

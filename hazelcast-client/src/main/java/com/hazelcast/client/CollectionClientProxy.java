@@ -51,7 +51,7 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
 
     @Override
     public Iterator<E> iterator() {
-        final Collection<E> collection = proxyHelper.keys(null);
+        final Collection<E> collection = getTheCollection();
         final AbstractCollection<E> proxy = this;
         return new Iterator<E>() {
             Iterator<E> iterator = collection.iterator();
@@ -72,6 +72,8 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
             }
         };
     }
+
+    abstract protected Collection<E> getTheCollection();
 
     @Override
     public String toString() {

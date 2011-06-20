@@ -21,6 +21,8 @@ import com.hazelcast.core.ISet;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
 
+import java.util.Collection;
+
 import static com.hazelcast.client.ProxyHelper.check;
 
 public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<E> {
@@ -58,6 +60,11 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
         } else {
             return false;
         }
+    }
+
+    @Override
+    protected Collection<E> getTheCollection() {
+        return proxyHelper.keys(null);
     }
 
     public String getName() {

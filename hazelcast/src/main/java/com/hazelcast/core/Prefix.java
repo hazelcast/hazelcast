@@ -38,11 +38,6 @@ public final class Prefix {
     public static final String AS_LIST = "l:";
 
     /**
-     * The Constant LIST: "m:l:"
-     */
-    public static final String LIST = MAP_BASED + AS_LIST;
-
-    /**
      * The Constant AS_SET: "s:"
      */
     public static final String AS_SET = "s:";
@@ -83,10 +78,15 @@ public final class Prefix {
     public static final String MULTIMAP = MAP_BASED + AS_MULTIMAP;
 
     /**
+     * The Constant MAP, BACKING LIST: "c:q:l:"
+     */
+    public static final String MAP_OF_LIST = MAP + QUEUE + AS_LIST;
+
+    /**
      * The Constant EXECUTOR_SERVICE: "x:"
      */
     public static final String EXECUTOR_SERVICE = "x:";
-    
+
     /**
      * The Constant SEMAPHORE: "smp:"
      */

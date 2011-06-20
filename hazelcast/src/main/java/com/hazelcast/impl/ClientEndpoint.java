@@ -40,7 +40,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     private final List<IMap> listeningMaps = new ArrayList<IMap>();
     private final List<Map.Entry<IMap, Object>> listeningKeysOfMaps = new ArrayList<Map.Entry<IMap, Object>>();
     public Map<IQueue, ItemListener<Object>> queueItemListeners = new ConcurrentHashMap<IQueue, ItemListener<Object>>();
-    private Map<Long,DistributedTask> runningExecutorTasks = new ConcurrentHashMap<Long, DistributedTask>();
+    private Map<Long, DistributedTask> runningExecutorTasks = new ConcurrentHashMap<Long, DistributedTask>();
     private final Node node;
 
     ClientEndpoint(Node node, Connection conn) {
@@ -174,7 +174,12 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
             keys.add(dataAwareEntryEvent.getOldValueData());
             valueEvent = toData(keys);
         }
-        packet.set(event.getName(), ClusterOperation.EVENT, dataAwareEntryEvent.getKeyData(), valueEvent);
+        String name = event.getName();
+        if (name.startsWith(Prefix.MAP_OF_LIST)) {
+            name = name.substring(Prefix.MAP.length() + Prefix.QUEUE.length());
+            valueEvent = ((DataAwareEntryEvent) event).getNewValueData();
+        }
+        packet.set(name, ClusterOperation.EVENT, dataAwareEntryEvent.getKeyData(), valueEvent);
         packet.longValue = event.getEventType().getType();
         return packet;
     }
@@ -206,14 +211,12 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     }
 
     private void rollbackTransactions() {
-        for(CallContext callContext: callContexts.values()){
+        for (CallContext callContext : callContexts.values()) {
             ThreadContext.get().setCallContext(callContext);
-            if(callContext.getTransaction()!=null && callContext.getTransaction().getStatus() ==  Transaction.TXN_STATUS_ACTIVE ){
+            if (callContext.getTransaction() != null && callContext.getTransaction().getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 callContext.getTransaction().rollback();
             }
-
         }
-
     }
 
     private void removeLocks() {

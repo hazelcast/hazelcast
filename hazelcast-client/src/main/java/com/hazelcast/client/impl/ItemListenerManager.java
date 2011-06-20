@@ -41,17 +41,17 @@ public class ItemListenerManager {
         this.entryListenerManager = entryListenerManager;
     }
 
-    public synchronized <E, V> void registerListener(String name, final ItemListener<E> itemListener) {
+    public synchronized <E, V> void registerListener(String name, final ItemListener<V> itemListener) {
         EntryListener<E, V> e = new EntryAdapter<E, V>() {
             public void entryAdded(EntryEvent<E, V> event) {
-                itemListener.itemAdded(event.getKey());
+                itemListener.itemAdded(event.getValue());
             }
 
             public void entryRemoved(EntryEvent<E, V> event) {
-                itemListener.itemRemoved(event.getKey());
+                itemListener.itemRemoved(event.getValue());
             }
         };
-        entryListenerManager.registerListener(name, null, false, e);
+        entryListenerManager.registerListener(name, null, true, e);
         itemListener2EntryListener.put(itemListener, e);
     }
 

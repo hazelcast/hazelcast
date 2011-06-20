@@ -210,12 +210,6 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    public void collectInitialProcess(List<AbstractRemotelyProcessable> lsProcessables) {
-        for (ListenerItem listenerItem : listeners) {
-            lsProcessables.add(listenerItem);
-        }
-    }
-
     void sendAddListener(Address toAddress, String name, Data key,
                          boolean includeValue) {
         Packet packet = obtainPacket();
@@ -311,7 +305,7 @@ public class ListenerManager extends BaseManager {
                     mProxy.getMapOperationCounter().incrementReceivedEvents();
                 }
             }
-        }else if (listenerItem.instanceType == Instance.InstanceType.QUEUE) {
+        } else if (listenerItem.instanceType == Instance.InstanceType.QUEUE) {
             if (!listenerItem.name.startsWith("q:__hz_")) {
                 Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
                 if (proxy instanceof QProxy) {
@@ -319,8 +313,7 @@ public class ListenerManager extends BaseManager {
                     qProxy.getQueueOperationCounter().incrementReceivedEvents();
                 }
             }
-        }
-        else if (listenerItem.instanceType == Instance.InstanceType.TOPIC) {
+        } else if (listenerItem.instanceType == Instance.InstanceType.TOPIC) {
             if (!listenerItem.name.startsWith("t:__hz_")) {
                 Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
                 if (proxy instanceof TopicProxy) {
@@ -329,7 +322,6 @@ public class ListenerManager extends BaseManager {
                 }
             }
         }
-
         final EntryEvent event2 = listenerItem.includeValue ?
                 event :
                 (event.getValue() != null ?

@@ -985,8 +985,7 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void doListOp(final Node node, final Packet packet) {
-            final CollectionProxyImpl collectionProxy = (CollectionProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
-            final MProxy mapProxy = ((CollectionProxyReal) collectionProxy.getBase()).mapProxy;
+            IMap mapProxy = (IMap) node.factory.getOrCreateProxyByName(Prefix.MAP + Prefix.QUEUE + packet.name);
             packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData()));
         }
 
@@ -1038,8 +1037,7 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void doListOp(Node node, Packet packet) {
-            CollectionProxyImpl collectionProxy = (CollectionProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
-            MProxy mapProxy = ((CollectionProxyReal) collectionProxy.getBase()).mapProxy;
+            IMap mapProxy = (IMap) node.factory.getOrCreateProxyByName(Prefix.MAP + Prefix.QUEUE + packet.name);
             packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new ArrayList<Data>()));
         }
 
@@ -1076,7 +1074,11 @@ public class ClientService implements ConnectionListener {
             if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
                 IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
                 clientEndpoint.addThisAsListener(map, packet.getKeyData(), includeValue);
-            } else if (getInstanceType(packet.name).equals(InstanceType.LIST) || getInstanceType(packet.name).equals(InstanceType.SET)) {
+            } else if (getInstanceType(packet.name).equals(InstanceType.LIST)) {
+                ListProxyImpl listProxy = (ListProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+                IMap map = (IMap) node.factory.getOrCreateProxyByName(Prefix.MAP + (String) listProxy.getId());
+                clientEndpoint.addThisAsListener(map, null, true);
+            } else if (getInstanceType(packet.name).equals(InstanceType.SET)) {
                 CollectionProxyImpl collectionProxy = (CollectionProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
                 IMap map = ((CollectionProxyReal) collectionProxy.getBase()).mapProxy;
                 clientEndpoint.addThisAsListener(map, null, includeValue);

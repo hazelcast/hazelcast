@@ -17,16 +17,19 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
-import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class HazelcastClientListTest extends HazelcastClientTestBase {
 
@@ -65,6 +68,49 @@ public class HazelcastClientListTest extends HazelcastClientTestBase {
         Thread.sleep(10);
         assertEquals(2, addLatch.getCount());
         assertEquals(2, removeLatch.getCount());
+    }
+
+    @Test
+    public void testListItemListener() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(2);
+        String name = "testListListener";
+        listener(latch, getHazelcastInstance().<String>getList(name), getHazelcastClient().<String>getList(name));
+    }
+
+    @Test
+    public void testListItemListenerOtherWay() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(2);
+        String name = "testListListener";
+        listener(latch, getHazelcastClient().<String>getList(name), getHazelcastInstance().<String>getList(name));
+    }
+
+    private void listener(final CountDownLatch latch, IList<String> listOperation, IList<String> listListener) {
+        listListener.addItemListener(new ItemListener<String>() {
+            public void itemAdded(String item) {
+                assertEquals("hello", item);
+                latch.countDown();
+            }
+
+            public void itemRemoved(String item) {
+                assertEquals("hello", item);
+                latch.countDown();
+            }
+        }, true);
+        listOperation.add("hello");
+        listOperation.remove("hello");
+        try {
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
+        } catch (InterruptedException ignored) {
+        }
+    }
+
+    @Test(timeout = 2000)
+    public void testListAddFromServerGetFromClient() {
+        HazelcastInstance h = getHazelcastInstance();
+        HazelcastInstance client = getHazelcastClient();
+        String name = "testListAddFromServerGetFromClient";
+        h.getList(name).add("message");
+        assertTrue(client.getList(name).contains("message"));
     }
 
     @Test
@@ -182,7 +228,7 @@ public class HazelcastClientListTest extends HazelcastClientTestBase {
         }
         assertEquals(count, list.size());
         list.clear();
-        assertTrue(list.isEmpty());
+        assertTrue("List is not empty " + list.size(), list.isEmpty());
     }
 
     @Test
@@ -213,8 +259,8 @@ public class HazelcastClientListTest extends HazelcastClientTestBase {
         counter.put(2, 2);
         counter.put(3, 1);
         for (Iterator<Integer> iterator = list.iterator(); iterator.hasNext();) {
-            Integer integer = (Integer) iterator.next();
-            counter.put(integer, (Integer) counter.get(integer) - 1);
+            Integer integer = iterator.next();
+            counter.put(integer, counter.get(integer) - 1);
             iterator.remove();
         }
         assertEquals(Integer.valueOf(0), counter.get(1));

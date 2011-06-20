@@ -109,7 +109,7 @@ public class ClusterStateViewImpl implements ClusterStateView, DataSerializable 
     }
 
     public Set<String> getLists() {
-        return getInstances(Prefix.LIST);
+        return getInstances(Prefix.AS_LIST);
     }
 
     public Set<String> getTopics() {
