@@ -93,6 +93,13 @@ public class Config implements DataSerializable {
     public MergePolicyConfig getMergePolicyConfig(String name) {
         return mapMergePolicyConfigs.get(name);
     }
+    
+    /**
+     * @return the mapMergePolicyConfigs
+     */
+    public Map<String, MergePolicyConfig> getMergePolicyConfigs() {
+        return Collections.unmodifiableMap(mapMergePolicyConfigs);
+    }
 
     public ClassLoader getClassLoader() {
         return classLoader;
