@@ -46,8 +46,11 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         DescribeInstancesResult result = ec2.describeInstances(new DescribeInstancesRequest());
         for (Reservation reservation : result.getReservations()) {
             for (Instance instance : reservation.getInstances()) {
+                System.out.println(instance);
                 String ip = instance.getPrivateIpAddress();
-                possibleMembers.add(ip);
+                if (ip != null) {
+                    possibleMembers.add(ip);
+                }
             }
         }
         return possibleMembers;
