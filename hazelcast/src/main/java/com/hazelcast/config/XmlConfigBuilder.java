@@ -263,6 +263,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     public void handleProperties(final org.w3c.dom.Node node, Properties properties) {
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+        	if(n.getNodeType() == org.w3c.dom.Node.TEXT_NODE
+        		|| n.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
+        		continue;
+        	}
             final String name = cleanNodeName(n.getNodeName());
             final String propertyName;
             if ("property".equals(name)) {
