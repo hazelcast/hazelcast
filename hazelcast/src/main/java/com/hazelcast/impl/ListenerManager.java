@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.partition.Partition;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -238,7 +239,9 @@ public class ListenerManager extends BaseManager {
             if (!remotelyRegister) {
                 break;
             }
-            if (listenerItem.name.equals(name)) {
+            // If existing listener is local then continue 
+            // and don't take into account for remote registration check. (issue:584)
+            if (!listenerItem.localListener && listenerItem.name.equals(name)) {
                 if (key == null) {
                     if (listenerItem.key == null &&
                             (!includeValue || listenerItem.includeValue == includeValue)) {
@@ -295,6 +298,14 @@ public class ListenerManager extends BaseManager {
     }
 
     private void callListener(final ListenerItem listenerItem, final EntryEvent event) {
+    	// If listener is local, first check if this member equals owner of the key.
+    	if(listenerItem.localListener) {
+	    	Partition p = node.factory.getPartitionService().getPartition(event.getKey());
+	    	if(!node.localMember.equals(p.getOwner())) {
+	    		return;
+	    	}
+    	}
+    	
         final Object listener = listenerItem.listener;
         final EntryEventType entryEventType = event.getEventType();
         if (listenerItem.instanceType == Instance.InstanceType.MAP) {
