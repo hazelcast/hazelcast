@@ -87,11 +87,11 @@ public abstract class ThreadDumpGenerator {
         return s.toString();
     }
 
-    protected ThreadInfo[] getAllThreads() {
+    public ThreadInfo[] getAllThreads() {
         return getThreads(threadMxBean.getAllThreadIds());
     }
 
-    protected ThreadInfo[] findDeadlockedThreads() {
+    public ThreadInfo[] findDeadlockedThreads() {
         return getThreads(threadMxBean.findMonitorDeadlockedThreads());
     }
 

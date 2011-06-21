@@ -46,7 +46,7 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
         super(bean);
     }
 
-    protected ThreadInfo[] getAllThreads() {
+    public ThreadInfo[] getAllThreads() {
         if (booleanCall(threadMxBean, ThreadMXBean_isObjectMonitorUsageSupported)
                 && booleanCall(threadMxBean, ThreadMXBean_isSynchronizerUsageSupported)) {
             return parameterizedObjectCall(threadMxBean, ThreadMXBean_dumpAllThreads,
@@ -56,9 +56,9 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
         }
     }
 
-    protected ThreadInfo[] findDeadlockedThreads() {
+    public ThreadInfo[] findDeadlockedThreads() {
         if (booleanCall(threadMxBean, ThreadMXBean_isSynchronizerUsageSupported)) {
-            Long[] tids = objectCall(threadMxBean, ThreadMXBean_findDeadlockedThreads);
+            long[] tids = objectCall(threadMxBean, ThreadMXBean_findDeadlockedThreads);
             if (tids == null || tids.length == 0) {
                 return null;
             }
@@ -90,12 +90,16 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
             sb.append(" (in native)");
         }
         sb.append('\n');
-        StackTraceElement[] stackTrace = info.getStackTrace();
+        
+        final StackTraceElement[] stackTrace = info.getStackTrace();
+        final Object lockInfo = objectCall(info, ThreadInfo_getLockInfo);
+        final Object[] monitorInfo = objectCall(info, ThreadInfo_getLockedMonitors);
+        
         for (int i = 0; i < stackTrace.length; i++) {
             StackTraceElement ste = stackTrace[i];
             sb.append("\tat " + ste.toString());
             sb.append('\n');
-            Object lockInfo = objectCall(info, ThreadInfo_getLockInfo);
+            
             if (i == 0 && lockInfo != null) {
                 Thread.State ts = info.getThreadState();
                 switch (ts) {
@@ -114,7 +118,7 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
                     default:
                 }
             }
-            Object[] monitorInfo = objectCall(info, ThreadInfo_getLockedMonitors);
+            
             for (Object mi : monitorInfo) {
                 Integer depth = objectCall(mi, MonitorInfo_getLockedStackDepth);
                 if (depth == i) {
@@ -123,7 +127,8 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
                 }
             }
         }
-        Object[] locks = objectCall(info, ThreadInfo_getLockedSynchronizers);
+        
+        final Object[] locks = objectCall(info, ThreadInfo_getLockedSynchronizers);
         if (locks.length > 0) {
             sb.append("\n\tNumber of locked synchronizers = " + locks.length);
             sb.append('\n');
