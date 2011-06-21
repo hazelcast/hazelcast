@@ -57,16 +57,8 @@ public class HazelcastAttribute implements DataSerializable {
 		return sessionId;
 	}
 
-	public void setSessionId(String sessionId) {
-		this.sessionId = sessionId;
-	}
-
 	public String getName() {
 		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
 	}
 
 	public Object getValue() {
@@ -100,5 +92,10 @@ public class HazelcastAttribute implements DataSerializable {
 		name = in.readUTF();
 		value = SerializationHelper.readObject(in);
 	}
-	
+
+	@Override
+	public String toString() {
+		return "HazelcastAttribute [sessionId=" + sessionId + ", name=" + name
+				+ ", value=" + value + "]";
+	}
 }

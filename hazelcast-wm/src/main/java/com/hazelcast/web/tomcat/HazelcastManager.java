@@ -25,14 +25,16 @@ import org.apache.catalina.session.StandardSession;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 
+import com.hazelcast.core.IMap;
+
 /**
  * @author ali
  *
  */
 
-public class HazelcastManager extends StandardManager implements HazelcastConstants {
+public class HazelcastManager extends StandardManager {
 	
-	private final Log log = LogFactory.getLog(HazelcastManager.class); // must not be static
+	private final Log log = LogFactory.getLog(HazelcastManager.class);
 	
     /**
      * The descriptive information string for this implementation.
@@ -44,8 +46,11 @@ public class HazelcastManager extends StandardManager implements HazelcastConsta
      */
     protected static String name = "HazelManager";
 	
+	public String getInfo() {
+		return info;
+	}
 
-    /**
+	/**
      * Get new session class to be used in the doLoad() method.
      */
 	protected StandardSession getNewSession() {
@@ -59,7 +64,8 @@ public class HazelcastManager extends StandardManager implements HazelcastConsta
 			return session;
 		}
 		
-		HazelcastAttribute mark = (HazelcastAttribute)hazelAttributes.get(id +"_" + HAZEL_SESSION_MARK);
+		final IMap<String, HazelcastAttribute> sessionAttrMap = HazelcastClusterSupport.get().getAttributesMap();
+		HazelcastAttribute mark = sessionAttrMap.get(id + "_" + HazelcastSession.SESSION_MARK);
 		if(mark != null && mark.getValue() != null){
 			session = createSession(id);
 		}

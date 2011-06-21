@@ -42,13 +42,13 @@ public class HazelcastSessionFacade extends StandardSessionFacade {
 		this.session = session;
 	}
 	
-	public List<HazelcastAttribute> getTouchedAttributes(long requestId){
+	public List<HazelcastAttribute> getTouchedAttributes(long requestId) {
 		List<HazelcastAttribute> touchedList = new ArrayList<HazelcastAttribute>();
 		Enumeration<String> attNames = session.getAttributeNames();
-		HazelcastSession hses = (HazelcastSession)session;
+		HazelcastSession hazelcastSession = (HazelcastSession) session;
 		while (attNames.hasMoreElements()) {
-			String attName = (String) attNames.nextElement();
-			HazelcastAttribute hattribute = (HazelcastAttribute)hses.getLocalAttribute(attName);
+			String attName = attNames.nextElement();
+			HazelcastAttribute hattribute = (HazelcastAttribute) hazelcastSession.getLocalAttribute(attName);
 			if(hattribute != null && hattribute.isTouched(requestId)){
 				touchedList.add(hattribute);
 			}

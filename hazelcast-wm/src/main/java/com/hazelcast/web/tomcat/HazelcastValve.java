@@ -23,36 +23,64 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.ServletException;
 
+import org.apache.catalina.Lifecycle;
+import org.apache.catalina.LifecycleException;
+import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
+import org.apache.catalina.util.LifecycleSupport;
 import org.apache.catalina.valves.ValveBase;
+
+import com.hazelcast.core.IMap;
 
 /**
  * @author ali
  *
  */
 
-public class HazelcastValve extends ValveBase implements HazelcastConstants {
+public class HazelcastValve extends ValveBase implements Lifecycle {
 	
-	public static ThreadLocal<Long> requestLocal = new ThreadLocal<Long>();
-	
-	private static AtomicLong lastRequestId = new AtomicLong(0);
+	private final AtomicLong lastRequestId = new AtomicLong(0);
+	private final LifecycleSupport lifecycle = new LifecycleSupport(this);
 
-	@Override
 	public void invoke(Request request, Response response) throws IOException, ServletException {
-		try{
-			long requestId = lastRequestId.addAndGet(1);
-			requestLocal.set(requestId);
+		final long requestId = lastRequestId.incrementAndGet();
+		LocalRequestId.set(requestId);
+		try {
+			final IMap<String, HazelcastAttribute> sessionAttrMap = HazelcastClusterSupport.get().getAttributesMap();
 			getNext().invoke(request, response);
-			HazelcastSessionFacade ses =  (HazelcastSessionFacade)request.getSession();
-			List<HazelcastAttribute> touchedList = ses.getTouchedAttributes(requestId);
-			for (HazelcastAttribute hattribute : touchedList) {
-				hazelAttributes.put(hattribute.getKey(), hattribute);
+			final HazelcastSessionFacade session = (HazelcastSessionFacade) request.getSession(false);
+			if(session != null) {
+				final List<HazelcastAttribute> touchedAttributes = session.getTouchedAttributes(requestId);
+				for (HazelcastAttribute attribute : touchedAttributes) {
+					sessionAttrMap.put(attribute.getKey(), attribute);
+				}
 			}
 		}
-		finally{
-			requestLocal.remove();
+		finally {
+			LocalRequestId.reset();
 		}
 	}
 
+	public void start() throws LifecycleException {
+		lifecycle.fireLifecycleEvent(START_EVENT, null);
+		HazelcastClusterSupport.get().start();
+	}
+
+	public void stop() throws LifecycleException {
+		lifecycle.fireLifecycleEvent(STOP_EVENT, null);
+		HazelcastClusterSupport.get().stop();
+	}
+
+	public void addLifecycleListener(LifecycleListener l) {
+		lifecycle.addLifecycleListener(l);
+	}
+
+	public LifecycleListener[] findLifecycleListeners() {
+		return lifecycle.findLifecycleListeners();
+	}
+
+	public void removeLifecycleListener(LifecycleListener l) {
+		lifecycle.removeLifecycleListener(l);
+	}
 }
