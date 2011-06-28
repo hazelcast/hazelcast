@@ -17,8 +17,6 @@
 
 package com.hazelcast.impl;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.PropertiesCredentials;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -26,7 +24,9 @@ import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.Properties;
 
 public class TcpIpJoinerOverAWSTest extends TestCase {
 
@@ -35,9 +35,11 @@ public class TcpIpJoinerOverAWSTest extends TestCase {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getAwsConfig().setEnabled(true);
-        AWSCredentials credentials = new PropertiesCredentials(new File("/Users/Malikov/.aws/AwsCredentials.properties"));
-        config.getNetworkConfig().getJoin().getAwsConfig().setAccessKey(credentials.getAWSAccessKeyId());
-        config.getNetworkConfig().getJoin().getAwsConfig().setSecretKey(credentials.getAWSSecretKey());
+        Properties bundle = new Properties();
+        bundle.load(new FileReader(new File("/Users/Malikov/.aws/AwsCredentials.properties")));
+        config.getNetworkConfig().getJoin().getAwsConfig().setAccessKey(bundle.getProperty("accessKey"));
+        config.getNetworkConfig().getJoin().getAwsConfig().setSecretKey(bundle.getProperty("secretKey"));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        h2.getLifecycleService().shutdown();
     }
 }

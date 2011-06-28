@@ -17,13 +17,7 @@
 
 package com.hazelcast.impl;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.Reservation;
+import com.hazelcast.aws.impl.AWSClient;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 
@@ -31,28 +25,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TcpIpJoinerOverAWS extends TcpIpJoiner {
-    final AmazonEC2Client ec2;
+
+    final AWSClient aws;
 
     public TcpIpJoinerOverAWS(Node node) {
         super(node);
         AwsConfig awsConfig = node.getConfig().getNetworkConfig().getJoin().getAwsConfig();
-        AWSCredentials credentials = new BasicAWSCredentials(awsConfig.getAccessKey(), awsConfig.getSecretKey());
-        ec2 = new AmazonEC2Client(credentials);
+        aws = new AWSClient(awsConfig.getAccessKey(), awsConfig.getSecretKey());
     }
 
     @Override
     protected List<String> getMembers(Config config) {
-        List<String> possibleMembers = new ArrayList<String>();
-        DescribeInstancesResult result = ec2.describeInstances(new DescribeInstancesRequest());
-        for (Reservation reservation : result.getReservations()) {
-            for (Instance instance : reservation.getInstances()) {
-                System.out.println(instance);
-                String ip = instance.getPrivateIpAddress();
-                if (ip != null) {
-                    possibleMembers.add(ip);
-                }
-            }
+        try {
+            return aws.getPrivateDnsNames();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<String>();
         }
-        return possibleMembers;
     }
 }
