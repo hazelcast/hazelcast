@@ -62,7 +62,7 @@ public class ListenerManager extends BaseManager {
         String name = packet.name;
         Address from = packet.lockAddress;
         releasePacket(packet);
-        enqueueEvent(eventType, name, key, value, from);
+        enqueueEvent(eventType, name, key, value, from, false);
     }
 
     private void handleAddRemoveListener(boolean add, Packet packet) {
@@ -298,12 +298,8 @@ public class ListenerManager extends BaseManager {
     }
 
     private void callListener(final ListenerItem listenerItem, final EntryEvent event) {
-    	// If listener is local, first check if this member equals owner of the key.
-    	if(listenerItem.localListener) {
-	    	Partition p = node.factory.getPartitionService().getPartition(event.getKey());
-	    	if(!p.getOwner().localMember()) {
-	    		return;
-	    	}
+    	if(listenerItem.localListener && !((DataAwareEntryEvent) event).firedLocally) {
+	    	return;
     	}
     	
         final Object listener = listenerItem.listener;

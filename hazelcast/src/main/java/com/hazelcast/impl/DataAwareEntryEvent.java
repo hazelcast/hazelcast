@@ -29,14 +29,17 @@ public class DataAwareEntryEvent extends EntryEvent {
     protected final Data dataNewValue;
 
     protected final Data dataOldValue;
+    
+    protected final boolean firedLocally; 
 
     public DataAwareEntryEvent(Member from, int eventType,
                                String name, Data dataKey,
-                               Data dataNewValue, Data dataOldValue) {
+                               Data dataNewValue, Data dataOldValue, boolean firedLocally) {
         super(name, from, eventType, null, null);
         this.dataKey = dataKey;
         this.dataNewValue = dataNewValue;
         this.dataOldValue = dataOldValue;
+        this.firedLocally = firedLocally;
     }
 
     public Data getKeyData() {

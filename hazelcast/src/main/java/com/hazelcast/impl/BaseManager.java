@@ -1078,7 +1078,7 @@ public abstract class BaseManager {
                 final Address toAddress = listener.getKey();
                 final boolean includeValue = listener.getValue();
                 if (toAddress.isThisAddress()) {
-                    enqueueEvent(eventType, name, key, (includeValue) ? value : null, callerAddress);
+                    enqueueEvent(eventType, name, key, (includeValue) ? value : null, callerAddress, true);
                 } else {
                     final Packet packet = obtainPacket();
                     packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
@@ -1294,7 +1294,7 @@ public abstract class BaseManager {
                 + key);
     }
 
-    void enqueueEvent(int eventType, String name, Data key, Data value, Address from) {
+    void enqueueEvent(int eventType, String name, Data key, Data value, Address from, boolean localEvent) {
         try {
             Member member = getMember(from);
             if (member == null) {
@@ -1315,7 +1315,7 @@ public abstract class BaseManager {
                     }
                 }
             }
-            final DataAwareEntryEvent dataAwareEntryEvent = new DataAwareEntryEvent(member, eventType, name, key, newValue, oldValue);
+            final DataAwareEntryEvent dataAwareEntryEvent = new DataAwareEntryEvent(member, eventType, name, key, newValue, oldValue, localEvent);
             int hash;
             if (key != null) {
                 hash = key.hashCode();
