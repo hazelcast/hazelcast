@@ -68,6 +68,11 @@ public class BlockingQueueManager extends BaseManager {
                 queue.doTakeKey(request);
             }
         });
+        node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_CANCEL_TAKE_KEY, new InitializationAwareOperationHandler() {
+            public void doOperation(BQ queue, Request request) {
+                queue.cancelTakeKey(request);
+            }
+        });
         node.clusterService.registerPacketProcessor(ClusterOperation.BLOCKING_SET, new InitializationAwareOperationHandler() {
             public void doOperation(BQ queue, Request request) {
                 queue.doSet(request);
@@ -288,10 +293,15 @@ public class BlockingQueueManager extends BaseManager {
         try {
             MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, timeout);
             op.request.longValue = index;
+            op.request.txnId = ThreadContext.get().getThreadId();
             op.initOp();
             return (Data) op.getResultAsIs();
         } catch (Exception e) {
             if (e instanceof RuntimeInterruptedException) {
+                MasterOp op = new MasterOp(ClusterOperation.BLOCKING_CANCEL_TAKE_KEY, name, timeout);
+                op.request.longValue = index;
+                op.request.txnId = ThreadContext.get().getThreadId();
+                op.initOp();
                 throw new InterruptedException();
             }
         }
@@ -542,6 +552,7 @@ public class BlockingQueueManager extends BaseManager {
         try {
             MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GENERATE_KEY, name, timeout);
             op.request.setLongRequest();
+            op.request.txnId = ThreadContext.get().getThreadId();
             op.initOp();
             return (Long) op.getResultAsObject();
         } catch (Exception e) {
@@ -755,7 +766,7 @@ public class BlockingQueueManager extends BaseManager {
 
     class BQ {
         final LinkedList<ScheduledAction> offerWaitList = new LinkedList<ScheduledAction>();
-        final LinkedList<ScheduledAction> pollWaitList = new LinkedList<ScheduledAction>();
+        final LinkedList<PollAction> pollWaitList = new LinkedList<PollAction>();
         final LinkedList<Lease> leases = new LinkedList<Lease>();
         final LinkedList<QData> queue = new LinkedList<QData>();
         final Set<Data> keys = new HashSet<Data>(1000);
@@ -911,8 +922,12 @@ public class BlockingQueueManager extends BaseManager {
             return qdata != null && (now - qdata.createDate) < ttl;
         }
 
+        void cancelTakeKey(Request req) {
+            cancelPollAction(req);
+        }
+
         void doTakeKey(Request req) {
-            QData qdata = null;
+            QData qdata;
             if (req.longValue > 0) {
                 qdata = removeItemByIndex((int) req.longValue);
             } else {
@@ -975,6 +990,20 @@ public class BlockingQueueManager extends BaseManager {
         void addPollAction(PollAction pollAction) {
             pollWaitList.add(pollAction);
             node.clusterManager.registerScheduledAction(pollAction);
+        }
+
+        void cancelPollAction(Request req) {
+            PollAction toCancel = null;
+            for (PollAction pollAction : pollWaitList) {
+                Request pReq = pollAction.getRequest();
+                if (pReq.caller.equals(req.caller) && pReq.longValue == req.longValue && pReq.txnId == req.txnId) {
+                    toCancel = pollAction;
+                }
+            }
+            if (toCancel != null) {
+                pollWaitList.remove(toCancel);
+                node.clusterManager.deregisterScheduledAction(toCancel);
+            }
         }
 
         void addOfferAction(OfferAction offerAction) {

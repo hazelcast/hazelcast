@@ -22,6 +22,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     private final List<Map.Entry<IMap, Object>> listeningKeysOfMaps = new ArrayList<Map.Entry<IMap, Object>>();
     public Map<IQueue, ItemListener<Object>> queueItemListeners = new ConcurrentHashMap<IQueue, ItemListener<Object>>();
     private Map<Long, DistributedTask> runningExecutorTasks = new ConcurrentHashMap<Long, DistributedTask>();
+    private ConcurrentHashSet<ClientRequestHandler> currentRequests = new ConcurrentHashSet<ClientRequestHandler>();
     private final Node node;
 
     ClientEndpoint(Node node, Connection conn) {
@@ -207,7 +209,15 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
             removeEntryListeners();
             removeEntryListenersWithKey();
             removeMessageListeners();
+            interruptRunningOperations();
         }
+    }
+
+    private void interruptRunningOperations() {
+        for (ClientRequestHandler clientRequestHandler : currentRequests) {
+            clientRequestHandler.interrupt();
+        }
+        currentRequests.clear();
     }
 
     private void rollbackTransactions() {
@@ -298,6 +308,14 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
 
     public DistributedTask getTask(long taskId) {
         return this.runningExecutorTasks.get(taskId);
+    }
+
+    public void addRequest(ClientRequestHandler clientRequestHandler) {
+        this.currentRequests.add(clientRequestHandler);
+    }
+
+    public void removeRequest(ClientRequestHandler clientRequestHandler) {
+        this.currentRequests.remove(clientRequestHandler);
     }
 
     static class Entry implements Map.Entry {

@@ -40,6 +40,7 @@ public enum ClusterOperation {
     BLOCKING_ITERATE(),
     BLOCKING_SIZE(),
     BLOCKING_TAKE_KEY(),
+    BLOCKING_CANCEL_TAKE_KEY(),
     BLOCKING_SET(),
     BLOCKING_PEEK_KEY(),
     BLOCKING_GET_KEY_BY_INDEX(),

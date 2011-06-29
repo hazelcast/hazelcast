@@ -1089,4 +1089,23 @@ public class HazelcastTest {
         }
         assertFalse(found);
     }
+
+    @Test
+    public void testInterruption() throws InterruptedException {
+        final IQueue q = Hazelcast.getQueue("testInterruption");
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    q.take();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
+            }
+        });
+        t.start();
+        Thread.sleep(2000);
+        t.interrupt();
+        q.offer("message");
+        assertEquals(1, q.size());
+    }
 }

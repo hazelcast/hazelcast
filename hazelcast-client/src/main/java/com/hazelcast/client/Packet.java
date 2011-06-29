@@ -151,7 +151,6 @@ public class Packet {
         //version always -1
         booleans = ByteUtil.setTrue(booleans, 6); // client = true
         booleans = ByteUtil.setTrue(booleans, 7); // lockAddressNull = true
-        //logger.log(Level.INFO, "getHeader booleans:" + ByteUtil.toBinaryString(booleans));
         writeHeaderBuffer.put(booleans);
         if (timeout != -1) {
             writeHeaderBuffer.putLong(timeout);

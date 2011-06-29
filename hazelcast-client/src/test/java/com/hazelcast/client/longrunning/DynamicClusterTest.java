@@ -31,7 +31,10 @@ import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.SleepCallable;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -40,6 +43,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.client.HazelcastClientMapTest.getAllThreads;
@@ -355,7 +359,7 @@ public class DynamicClusterTest {
     @Test
     @Ignore
     public void testGetInstancesCreatedFromCluster
-            () {
+    () {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
         List list = h.getList("testGetInstancesCreatedFromCluster");
         Map map = h.getMap("testGetInstancesCreatedFromCluster");
@@ -684,7 +688,6 @@ public class DynamicClusterTest {
         h2.shutdown();
     }
 
-
     @Test
     public void rollbackTransactionWhenClientDies() {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
@@ -693,17 +696,11 @@ public class DynamicClusterTest {
         transaction.begin();
         Map<String, String> map = client.getMap("rollbackTransactionWhenClientDies");
         map.put("1", "A");
-
         client.getLifecycleService().shutdown();
-
         assertTrue(h.getMap("rollbackTransactionWhenClientDies").isEmpty());
         h.getMap("rollbackTransactionWhenClientDies").put("1", "B");
         assertEquals("B", h.getMap("rollbackTransactionWhenClientDies").get("1"));
-
-
     }
-
-
 
     @Test
     public void multiTaskWithTwoMember() throws ExecutionException, InterruptedException {
@@ -1017,11 +1014,9 @@ public class DynamicClusterTest {
         final int x;
         byte[] b = new byte[100];
         String str = "asdadsddad";
-//    final private CountDownLatch latch;
 
         public MyTask(int x) {
             this.x = x;
-//        this.latch = latch;
         }
 
         public Object call() throws Exception {
@@ -1029,12 +1024,57 @@ public class DynamicClusterTest {
             byte[] value = map.get(x);
             map.put(x, value);
             Thread.sleep(10);
-//        latch.countDown();
             return x;
         }
     }
 
-        @Test
+    @Test
+    public void testClientCrashOnQTake() throws InterruptedException {
+        Config config = new Config();
+        final HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        final HazelcastClient client = newHazelcastClient(h);
+        final String qName = "testClientCrashOnQTake";
+        final String mName = "q:testClientCrashOnQTake";
+        h.getMap(mName).addEntryListener(new EntryListener<Object, Object>() {
+            public void entryAdded(EntryEvent<Object, Object> objectObjectEntryEvent) {
+                System.out.println("Added " + objectObjectEntryEvent);
+            }
+
+            public void entryRemoved(EntryEvent<Object, Object> objectObjectEntryEvent) {
+                System.out.println("Removed " + objectObjectEntryEvent);
+            }
+
+            public void entryUpdated(EntryEvent<Object, Object> objectObjectEntryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            public void entryEvicted(EntryEvent<Object, Object> objectObjectEntryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+        }, true);
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    client.getQueue(qName).take();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
+            }
+        }).start();
+        Thread.sleep(1000);
+        client.shutdown();
+        //Expect the client take operation to be discarded by the server.
+        Thread.sleep(10000);
+        assertEquals(0, h.getQueue(qName).size());
+        h.getQueue(qName).offer("message");
+        assertEquals(1, h.getMap(mName).size());
+        System.out.println(h.getMap(mName).entrySet().iterator().next());
+        System.out.println(h.getQueue(qName).poll());
+        assertEquals(1, h.getQueue(qName).size());
+        h.getLifecycleService().shutdown();
+    }
+
+    @Test
     public void splitBrain() throws Exception {
         boolean multicast = true;
         Config c1 = new Config();
@@ -1058,7 +1098,6 @@ public class DynamicClusterTest {
         c2.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
         c2.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
-
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
         HazelcastClient client2 = HazelcastClient.newHazelcastClient(c2.getGroupConfig().getName(), c2.getGroupConfig().getPassword(), "127.0.0.1:5702");
         client2.getTopic("def").addMessageListener(new MessageListener<Object>() {
@@ -1090,6 +1129,52 @@ public class DynamicClusterTest {
         Thread.sleep(10000);
     }
 
+    @Test
+    public void testUpdateEventOrder() throws InterruptedException {
+        Config config = new Config();
+        final HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        //HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final AtomicInteger counter1 = new AtomicInteger(0);
+        final AtomicInteger counterOfFails = new AtomicInteger(0);
+        final AtomicReference<Integer> last = new AtomicReference<Integer>(0);
+        HazelcastClient client = newHazelcastClient(h);
+        client.getMap("testUpdateEventOrder").addEntryListener(new EntryListener<Object, Object>() {
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                this.entryUpdated(event);
+            }
+
+            public void entryRemoved(EntryEvent<Object, Object> objectObjectEntryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+                if ((Integer) event.getValue() - last.get() != 1) {
+                    System.out.println(Thread.currentThread() + ": " + last.get() + "::" + event.getValue());
+                    counterOfFails.incrementAndGet();
+                }
+                last.set((Integer) event.getValue());
+            }
+
+            public void entryEvicted(EntryEvent<Object, Object> objectObjectEntryEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+        }, true);
+        ExecutorService ex = Executors.newFixedThreadPool(2);
+        int count = 10000;
+        final CountDownLatch latch = new CountDownLatch(count);
+        for (int i = 0; i < count; i++) {
+            ex.execute(new Runnable() {
+                public void run() {
+                    synchronized (latch) {
+                        h.getMap("testUpdateEventOrder").put("key", counter1.incrementAndGet());
+                        latch.countDown();
+                    }
+                }
+            });
+        }
+        latch.await();
+        System.out.println(counterOfFails.get() + " out of " + count);
+    }
 
     class LifecycleCountingListener implements LifecycleListener {
         Map<LifecycleEvent.LifecycleState, AtomicInteger> counter = new ConcurrentHashMap<LifecycleEvent.LifecycleState, AtomicInteger>();

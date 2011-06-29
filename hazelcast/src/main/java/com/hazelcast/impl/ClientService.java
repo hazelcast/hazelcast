@@ -141,6 +141,7 @@ public class ClientService implements ConnectionListener {
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandler);
+        clientEndpoint.addRequest(clientRequestHandler);
         if (packet.operation == CONCURRENT_MAP_UNLOCK) {
             node.executorManager.executeNow(clientRequestHandler);
         } else {
