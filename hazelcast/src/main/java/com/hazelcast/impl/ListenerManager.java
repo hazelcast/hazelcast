@@ -301,7 +301,7 @@ public class ListenerManager extends BaseManager {
     	// If listener is local, first check if this member equals owner of the key.
     	if(listenerItem.localListener) {
 	    	Partition p = node.factory.getPartitionService().getPartition(event.getKey());
-	    	if(!node.localMember.equals(p.getOwner())) {
+	    	if(!p.getOwner().localMember()) {
 	    		return;
 	    	}
     	}
