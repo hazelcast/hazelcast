@@ -176,7 +176,7 @@ public final class ClusterService implements Runnable, Constants {
             } catch (OutOfMemoryError e) {
                 node.onOutOfMemory(e);
             } catch (Throwable e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, e.getMessage(), e);
             }
         }
         packetQueue.clear();
