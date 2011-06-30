@@ -21,7 +21,6 @@ import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
-import com.hazelcast.core.Semaphore;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.base.RuntimeInterruptedException;
@@ -251,7 +250,7 @@ public class FactoryImpl implements HazelcastInstance {
             return hazelcastInstance.getLock(key);
         }
 
-        public Semaphore getSemaphore(String name) {
+        public ISemaphore getSemaphore(String name) {
             return hazelcastInstance.getSemaphore(name);
         }
 
@@ -483,8 +482,13 @@ public class FactoryImpl implements HazelcastInstance {
         return (AtomicNumber) getOrCreateProxyByName(Prefix.ATOMIC_NUMBER + name);
     }
 
-    public Semaphore getSemaphore(String name) {
-        Semaphore semaphore = (Semaphore) getOrCreateProxyByName(Prefix.SEMAPHORE + name);
+    public ISemaphore getSemaphore(String name) {
+        ISemaphore semaphore = (ISemaphore) getOrCreateProxyByName(Prefix.SEMAPHORE + name);
+        return semaphore;
+    }
+
+    public ISemaphore getSemaphore(String name, int initalPermits) {
+        ISemaphore semaphore = (ISemaphore) getOrCreateProxyByName(Prefix.SEMAPHORE + name);
         return semaphore;
     }
 

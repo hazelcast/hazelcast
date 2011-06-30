@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.DistributedLock;
+import com.hazelcast.impl.base.DistributedSemaphore;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.LFUMapEntryComparator;
 import com.hazelcast.impl.concurrentmap.LRUMapEntryComparator;
@@ -774,6 +775,12 @@ public class CMap {
                 unlock(record);
             }
         }
+        if (record.getValue() instanceof DistributedSemaphore) {
+            DistributedSemaphore semaphore = (DistributedSemaphore) record.getValue();
+            if (semaphore.hasPermits(deadAddress)) {
+                semaphore.releaseAll(deadAddress);
+            }
+        }
     }
 
     public boolean removeMulti(Request req) {
@@ -863,39 +870,49 @@ public class CMap {
     public void doSemaphore(Request request) {
         Record record = getRecord(request);
         if (record == null) {
-            record = createNewRecord(request.key, toData(1));
+            SemaphoreConfig semaphoreConfig = node.getConfig().getSemaphoreConfig(request.name);
+            record = createNewRecord(request.key, null);
+            record.setValue(new DistributedSemaphore(semaphoreConfig.getSize()));
             mapRecords.put(request.key, record);
         }
         Integer total = (Integer) toObject(request.value);
-        Integer available = (Integer) toObject(record.getValueData());
+        DistributedSemaphore semaphore = (DistributedSemaphore) record.getValue();
+        Integer available = semaphore.getPermits();
         if (request.operation == SEMAPHORE_ACQUIRE) {
             while (total > 0) {
+                available = semaphore.getPermits();
                 while (available <= 0) {
-                    available = (Integer) toObject(record.getValueData());
+                    available = semaphore.getPermits();
                     if (total > 0 && available == 0) {
                         request.response = total;
                         return;
                     }
                 }
-                record.setValue(IOUtil.addDelta(record.getValueData(), -1));
-                available = (Integer) toObject(record.getValueData());
-                total--;
-                request.response = 0;
+                if (semaphore.acquire(request.lockAddress)) {
+                    total--;
+                    request.response = 0;
+                } else {
+                }
             }
         } else if (request.operation == SEMAPHORE_RELEASE) {
             while (total > 0) {
-                record.setValue(IOUtil.addDelta(record.getValueData(), 1));
-                available = (Integer) toObject(record.getValueData());
-                total--;
+                if (semaphore.release(request.lockAddress)) {
+                    available = semaphore.getPermits();
+                    total--;
+                }
             }
             request.response = available;
         } else if (request.operation == SEMAPHORE_AVAILABLE_PERIMITS) {
             request.response = available;
         } else if (request.operation == SEMAPHORE_DRAIN_PERIMITS) {
             while (available > 0) {
-                record.setValue(IOUtil.addDelta(record.getValueData(), -1));
-                available = (Integer) toObject(record.getValueData());
+                if (semaphore.acquire(request.lockAddress)) {
+                    available = semaphore.getPermits();
+                }
             }
+            request.response = Boolean.TRUE;
+        } else if (request.operation == SEMAPHORE_REDUCE_PERIMITS) {
+            semaphore.reducePermits(total);
             request.response = Boolean.TRUE;
         }
     }

@@ -16,8 +16,9 @@
  */
 package com.hazelcast.impl;
 
+import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.Instance;
-import com.hazelcast.core.Semaphore;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.nio.Data;
 
@@ -25,9 +26,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
-public class SemaphoreImpl extends FactoryAwareNamedProxy implements Semaphore {
+public class SemaphoreImpl extends FactoryAwareNamedProxy implements ISemaphore {
 
-    Semaphore base = null;
+    ISemaphore base = null;
     Data nameAsData = null;
 
     public SemaphoreImpl() {
@@ -46,7 +47,6 @@ public class SemaphoreImpl extends FactoryAwareNamedProxy implements Semaphore {
         return nameAsData;
     }
 
-
     public Object getId() {
         ensure();
         return base.getId();
@@ -56,7 +56,6 @@ public class SemaphoreImpl extends FactoryAwareNamedProxy implements Semaphore {
         ensure();
         base.destroy();
     }
-
 
     public InstanceType getInstanceType() {
         return InstanceType.SEMAPHORE;
@@ -122,21 +121,30 @@ public class SemaphoreImpl extends FactoryAwareNamedProxy implements Semaphore {
         base.acquire();
     }
 
+    public void reducePermits(int permits) {
+        ensure();
+        base.reducePermits(permits);
+    }
+
     private void ensure() {
         factory.initialChecks();
         if (base == null) {
-            base = (Semaphore) factory.getOrCreateProxyByName(name);
+            base = (ISemaphore) factory.getOrCreateProxyByName(name);
         }
     }
 
-    private class SemaphoreReal implements Semaphore {
+    private class SemaphoreReal implements ISemaphore {
 
         ConcurrentMapManager.MSemaphore newMSemaphore(ClusterOperation op, int value) {
             return factory.node.concurrentMapManager.new MSemaphore(getNameAsData(), op, value);
         }
 
+        public String getName() {
+            return name.substring(Prefix.SEMAPHORE.length());
+        }
+
         public void acquire() throws InterruptedException {
-             tryAcquire();
+            tryAcquire();
         }
 
         public void acquireUninterruptibly() {
@@ -144,7 +152,7 @@ public class SemaphoreImpl extends FactoryAwareNamedProxy implements Semaphore {
         }
 
         public boolean tryAcquire(int permits) {
-            return tryAcquire(permits,-1,TimeUnit.MILLISECONDS);
+            return tryAcquire(permits, -1, TimeUnit.MILLISECONDS);
         }
 
         public boolean tryAcquire() {
@@ -152,14 +160,13 @@ public class SemaphoreImpl extends FactoryAwareNamedProxy implements Semaphore {
         }
 
         public boolean tryAcquire(long timeout, TimeUnit unit) {
-            return tryAcquire(1,timeout,unit);
+            return tryAcquire(1, timeout, unit);
         }
 
         public boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
             ConcurrentMapManager.MSemaphore s = newMSemaphore(ClusterOperation.SEMAPHORE_ACQUIRE, 1);
-            return s.tryAcquire(permits,timeout,unit);
+            return s.tryAcquire(permits, timeout, unit);
         }
-
 
         public void release() {
             release(1);
@@ -186,8 +193,13 @@ public class SemaphoreImpl extends FactoryAwareNamedProxy implements Semaphore {
 
         public int drainPermits() {
             ConcurrentMapManager.MSemaphore s = newMSemaphore(ClusterOperation.SEMAPHORE_DRAIN_PERIMITS, 0);
-            s.availablePermits();
-            return (Integer) s.getResult();
+            int result = s.drainPermits();
+            return (Integer) result;
+        }
+
+        public void reducePermits(int permits) {
+            ConcurrentMapManager.MSemaphore s = newMSemaphore(ClusterOperation.SEMAPHORE_REDUCE_PERIMITS, permits);
+            s.reducePermits(permits);
         }
 
         public InstanceType getInstanceType() {

@@ -144,6 +144,7 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(SEMAPHORE_RELEASE, new SemaphoreOperationHandler());
         registerPacketProcessor(SEMAPHORE_AVAILABLE_PERIMITS, new SemaphoreOperationHandler());
         registerPacketProcessor(SEMAPHORE_DRAIN_PERIMITS, new SemaphoreOperationHandler());
+        registerPacketProcessor(SEMAPHORE_REDUCE_PERIMITS, new SemaphoreOperationHandler());
     }
 
     private void executeCleanup(final CMap cmap, final boolean forced) {
@@ -1219,28 +1220,27 @@ public class ConcurrentMapManager extends BaseManager {
 
         boolean tryAcquire(int permits, long timeout, TimeUnit timeUnit) {
             Boolean result = false;
-            long start = System.currentTimeMillis();
-            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, permits, timeUnit.convert(timeout, TimeUnit.MILLISECONDS), 0);
-            request.longValue = value;
-            request.caller = thisAddress;
-            request.operation = SEMAPHORE_ACQUIRE;
-            doOp();
-            Integer remaining = (Integer) getResultAsObject(false);
-            long end = System.currentTimeMillis();
-            //Estimate the invocation time, so that it can be deducted from the timeout.
-            long diff = end - start;
-            if (remaining > 0) {
-                if (timeout > 0 && timeout > diff) {
-                    result = tryAcquire(remaining, timeout - diff, timeUnit);
-                } else if (timeout < 0) {
-                    result = tryAcquire(remaining, timeout, timeUnit);
-                } else {
-                    result = false;
+            int remaining = permits;
+            long elapsed = 0;
+            do {
+                long start = System.currentTimeMillis();
+                setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, remaining, timeUnit.convert(timeout - elapsed, TimeUnit.MILLISECONDS), 0);
+                request.longValue = value;
+                request.caller = thisAddress;
+                request.operation = SEMAPHORE_ACQUIRE;
+                doOp();
+                remaining = (Integer) getResultAsObject(false);
+                long end = System.currentTimeMillis();
+                //Estimate the invocation time, so that it can be deducted from the timeout.
+                elapsed += end - start;
+                if (remaining == 0) {
+                    result = true;
                 }
-            } else result = true;
+            } while (remaining > 0 && (timeout > 0 && timeout > elapsed));
             if (!result) {
                 tryRelease(permits - remaining, -1, TimeUnit.MILLISECONDS);
             }
+            backup(SEMAPHORE_ACQUIRE);
             return result;
         }
 
@@ -1251,6 +1251,7 @@ public class ConcurrentMapManager extends BaseManager {
             request.operation = SEMAPHORE_RELEASE;
             doOp();
             Integer result = (Integer) getResultAsObject(false);
+            backup(SEMAPHORE_RELEASE);
         }
 
         int availablePermits() {
@@ -1263,12 +1264,24 @@ public class ConcurrentMapManager extends BaseManager {
             return (Integer) returnObject;
         }
 
-        void drainPermits() {
+        int drainPermits() {
             setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0, 0);
             request.longValue = value;
             request.caller = thisAddress;
             request.operation = SEMAPHORE_DRAIN_PERIMITS;
             doOp();
+            Object returnObject = getResultAsObject(false);
+            backup(SEMAPHORE_DRAIN_PERIMITS);
+            return (Integer) returnObject;
+        }
+
+        void reducePermits(int permits) {
+            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, permits, 0, 0);
+            request.longValue = value;
+            request.caller = thisAddress;
+            request.operation = SEMAPHORE_REDUCE_PERIMITS;
+            doOp();
+            backup(SEMAPHORE_REDUCE_PERIMITS);
         }
 
         void backup(Long value) {
@@ -1567,8 +1580,11 @@ public class ConcurrentMapManager extends BaseManager {
 
         protected void backup(ClusterOperation operation) {
             if (thisAddress.equals(target) &&
-                    (operation == CONCURRENT_MAP_LOCK
-                            || operation == CONCURRENT_MAP_UNLOCK)) {
+                    (operation == CONCURRENT_MAP_LOCK || operation == CONCURRENT_MAP_UNLOCK ||
+                            operation == ClusterOperation.SEMAPHORE_ACQUIRE ||
+                            operation == ClusterOperation.SEMAPHORE_RELEASE ||
+                            operation == SEMAPHORE_DRAIN_PERIMITS ||
+                            operation == ClusterOperation.SEMAPHORE_REDUCE_PERIMITS)) {
                 return;
             }
             if (backupCount > 0) {

@@ -229,32 +229,6 @@ public class HazelcastTest {
     }
 
     @Test
-    public void testSemaphoreWithTimeout() {
-        Semaphore semaphore = Hazelcast.getSemaphore("testSemaphoreWithTimeout");
-        //Test acquire and timeout.
-        assertEquals(1, semaphore.availablePermits());
-        semaphore.tryAcquire();
-        assertEquals(0, semaphore.availablePermits());
-        assertEquals(false, semaphore.tryAcquire(1, 10, TimeUnit.MILLISECONDS));
-        assertEquals(0, semaphore.availablePermits());
-        //Test acquire and timeout and check for partial acquisitions.
-        semaphore.release(10);
-        assertEquals(10, semaphore.availablePermits());
-        assertEquals(false, semaphore.tryAcquire(20, 10, TimeUnit.MILLISECONDS));
-        assertEquals(10, semaphore.availablePermits());
-    }
-
-    @Test
-    public void testSimpleSemaphore() {
-        Semaphore semaphore = Hazelcast.getSemaphore("testSimpleSemaphore");
-        assertEquals(1, semaphore.availablePermits());
-        semaphore.tryAcquire();
-        assertEquals(0, semaphore.availablePermits());
-        semaphore.release();
-        assertEquals(1, semaphore.availablePermits());
-    }
-
-    @Test
     public void testMapIsEmpty() {
         IMap<String, String> map = Hazelcast.getMap("testMapIsEmpty");
         assertTrue(map.isEmpty());

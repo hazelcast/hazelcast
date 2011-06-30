@@ -72,11 +72,11 @@ public final class Hazelcast {
     public static HazelcastInstance getDefaultInstance() {
         HazelcastInstance defaultInstanceObject = defaultInstance.get();
         if (defaultInstanceObject == null
-        		|| !defaultInstanceObject.getLifecycleService().isRunning()) {
+                || !defaultInstanceObject.getLifecycleService().isRunning()) {
             synchronized (initLock) {
                 defaultInstanceObject = defaultInstance.get();
                 if (defaultInstanceObject == null
-                		|| !defaultInstanceObject.getLifecycleService().isRunning()) {
+                        || !defaultInstanceObject.getLifecycleService().isRunning()) {
                     defaultInstanceObject = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(defaultConfig);
                     defaultInstance.set(defaultInstanceObject);
                     return defaultInstanceObject;
@@ -85,7 +85,7 @@ public final class Hazelcast {
                 }
             }
         } else {
-        	return defaultInstanceObject;
+            return defaultInstanceObject;
         }
     }
 
@@ -263,14 +263,15 @@ public final class Hazelcast {
     public static AtomicNumber getAtomicNumber(String name) {
         return getDefaultInstance().getAtomicNumber(name);
     }
-    
+
     /**
-     * Creates a cluster-wide semaphore. Semaphore is a distributed
-     * implementation of <tt>java.util.concurrent.Semaphore</tt>.
+     * Creates a cluster-wide semaphore. ISemaphore is a distributed
+     * implementation of <tt>java.util.concurrent.ISemaphore</tt>.
+     *
      * @param name
      * @return
      */
-    public static Semaphore getSemaphore(String name) {
+    public static ISemaphore getSemaphore(String name) {
         return getDefaultInstance().getSemaphore(name);
     }
 

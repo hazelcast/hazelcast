@@ -134,5 +134,10 @@
         	</map-merge-policy>
     	</merge-policies>
     -->
-
+    <semaphore name="default">
+        <!--
+         The number of permits available to the Semaphore
+        -->
+        <size>1</size>
+    </semaphore>
 </hazelcast>

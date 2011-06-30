@@ -60,6 +60,8 @@ public class Config implements DataSerializable {
 
     private Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
+    private Map<String, SemaphoreConfig> mapSemaphores = new ConcurrentHashMap<String, SemaphoreConfig>();
+
     private URL configurationUrl;
 
     private File configurationFile;
@@ -93,7 +95,7 @@ public class Config implements DataSerializable {
     public MergePolicyConfig getMergePolicyConfig(String name) {
         return mapMergePolicyConfigs.get(name);
     }
-    
+
     /**
      * @return the mapMergePolicyConfigs
      */
@@ -450,6 +452,67 @@ public class Config implements DataSerializable {
             entry.getValue().setName(entry.getKey());
         }
         return this;
+    }
+
+    /**
+     * @param semaphoreConfig the semaphoreConfig to set
+     * @deprecated use addSemaphoreConfig instead
+     */
+    public Config setSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
+        addSemaphoreConfig(semaphoreConfig);
+        return this;
+    }
+
+    /**
+     * Adds a new SemaphoreConfig by name
+     *
+     * @param semaphoreConfig semaphore config to add
+     * @return this config instance
+     */
+    public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
+        this.mapSemaphores.put(semaphoreConfig.getName(), semaphoreConfig);
+        return this;
+    }
+
+    /**
+     * Returns the SemaphoreConfig for the given name
+     *
+     * @param name name of the semaphore config
+     * @return SemaphoreConfig
+     */
+    public SemaphoreConfig getSemaphoreConfig(String name) {
+        SemaphoreConfig ec = this.mapSemaphores.get(name);
+        if (ec == null) {
+            SemaphoreConfig defaultConfig = mapSemaphores.get("default");
+            if (defaultConfig != null) {
+                ec = new SemaphoreConfig(name, defaultConfig.getSize());
+            }
+        }
+        if (ec == null) {
+            ec = new SemaphoreConfig(name);
+            mapSemaphores.put(name, ec);
+        }
+        return ec;
+    }
+
+    /**
+     * Returns the collection of semaphore configs.
+     *
+     * @return collection of semaphore configs.
+     */
+    public Collection<SemaphoreConfig> getSemaphoreConfigs() {
+        return mapSemaphores.values();
+    }
+
+    public Map<String, SemaphoreConfig> getSemaphoreConfigMap() {
+        return Collections.unmodifiableMap(mapSemaphores);
+    }
+
+    public void setSemaphoreConfigMap(Map<String, SemaphoreConfig> mapSemaphores) {
+        this.mapSemaphores = mapSemaphores;
+        for (final Entry<String, SemaphoreConfig> entry : this.mapSemaphores.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
     }
 
     /**

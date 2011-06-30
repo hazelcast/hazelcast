@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.core.Semaphore;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
@@ -317,6 +316,8 @@ public class HazelcastClient implements HazelcastInstance {
                             proxy = new IdGeneratorClientProxy(this, name);
                         } else if (name.startsWith(Prefix.MULTIMAP)) {
                             proxy = new MultiMapClientProxy(this, name);
+                        } else if (name.startsWith(Prefix.SEMAPHORE)) {
+                            proxy = new SemaphoreClientProxy(this, name);
                         } else {
                             proxy = new LockClientProxy(o, this);
                         }
@@ -378,8 +379,9 @@ public class HazelcastClient implements HazelcastInstance {
         return (AtomicNumber) getClientProxy(Prefix.ATOMIC_NUMBER + name);
     }
 
-    public Semaphore getSemaphore(String name) {
-        return (Semaphore) getClientProxy(Prefix.SEMAPHORE + name);
+    public ISemaphore getSemaphore(String name) {
+        ISemaphore semaphore = (ISemaphore) getClientProxy(Prefix.SEMAPHORE + name);
+        return semaphore;
     }
 
     public Collection<Instance> getInstances() {

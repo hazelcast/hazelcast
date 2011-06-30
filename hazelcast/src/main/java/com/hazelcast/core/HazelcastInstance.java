@@ -201,14 +201,15 @@ public interface HazelcastInstance {
      * @return AtomicNumber for the given name
      */
     AtomicNumber getAtomicNumber(String name);
-    
+
     /**
-     * Creates cluster-wide semaphore. Semaphore is distributed
-     * implementation of <tt>java.util.concurrent.Semaphore</tt>.
+     * Creates cluster-wide semaphore. ISemaphore is distributed
+     * implementation of <tt>java.util.concurrent.ISemaphore</tt>.
+     *
      * @param name
      * @return Semaphore for the given name
      */
-    Semaphore getSemaphore(String name);
+    ISemaphore getSemaphore(String name);
 
     /**
      * Detaches this member from the cluster.

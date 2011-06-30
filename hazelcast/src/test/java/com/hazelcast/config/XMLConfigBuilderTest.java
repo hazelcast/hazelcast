@@ -64,6 +64,26 @@ public class XMLConfigBuilderTest {
     }
 
     @Test
+    public void readSemaphoreConfig() {
+        String xml =
+                "<hazelcast>\n" +
+                        "    <semaphore name=\"default\">\n" +
+                        "        <size>1</size>\n" +
+                        "    </semaphore>" +
+                        "    <semaphore name=\"custom\">\n" +
+                        "        <size>10</size>\n" +
+                        "    </semaphore>" +
+                        "</hazelcast>";
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        Config config = configBuilder.build();
+        SemaphoreConfig defaultConfig = config.getSemaphoreConfig("default");
+        SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
+        assertEquals(1, defaultConfig.getSize());
+        assertEquals(10, customConfig.getSize());
+    }
+
+    @Test
     @Ignore
     public void testXSDDefaultXML() throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");

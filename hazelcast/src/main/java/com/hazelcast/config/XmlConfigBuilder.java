@@ -200,6 +200,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleMap(node);
             } else if ("topic".equals(nodeName)) {
                 handleTopic(node);
+            } else if ("semaphore".equals(nodeName)) {
+                handleSemaphore(node);
             } else if ("merge-policies".equals(nodeName)) {
                 handleMergePolicies(node);
             }
@@ -263,10 +265,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     public void handleProperties(final org.w3c.dom.Node node, Properties properties) {
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-        	if(n.getNodeType() == org.w3c.dom.Node.TEXT_NODE
-        		|| n.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
-        		continue;
-        	}
+            if (n.getNodeType() == org.w3c.dom.Node.TEXT_NODE
+                    || n.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
+                continue;
+            }
             final String name = cleanNodeName(n.getNodeName());
             final String propertyName;
             if ("property".equals(name)) {
@@ -611,6 +613,20 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         config.addTopicConfig(tConfig);
+    }
+
+    public void handleSemaphore(final org.w3c.dom.Node node) {
+        final Node attName = node.getAttributes().getNamedItem("name");
+        final String name = getTextContent(attName);
+        final SemaphoreConfig sConfig = new SemaphoreConfig();
+        sConfig.setName(name);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String value = getTextContent(n).trim();
+            if (cleanNodeName(n.getNodeName()).equals("size")) {
+                sConfig.setSize(getIntegerValue("size", value, 1));
+            }
+        }
+        config.addSemaphoreConfig(sConfig);
     }
 
     public void handleMergePolicies(final org.w3c.dom.Node node) throws Exception {

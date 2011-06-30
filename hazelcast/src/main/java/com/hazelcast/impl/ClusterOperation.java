@@ -119,7 +119,8 @@ public enum ClusterOperation {
     SEMAPHORE_ACQUIRE(),
     SEMAPHORE_RELEASE(),
     SEMAPHORE_AVAILABLE_PERIMITS(),
-    SEMAPHORE_DRAIN_PERIMITS();
+    SEMAPHORE_DRAIN_PERIMITS(),
+    SEMAPHORE_REDUCE_PERIMITS();
 
     public final static byte OPERATION_COUNT = (byte) values().length;
     private final static ClusterOperation[] clusterOperations = new ClusterOperation[OPERATION_COUNT];

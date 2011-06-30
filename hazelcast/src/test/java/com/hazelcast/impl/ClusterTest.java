@@ -19,7 +19,6 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
-import com.hazelcast.core.Semaphore;
 import com.hazelcast.examples.TestApp;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.LocalMapStats;
@@ -44,6 +43,9 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Run these tests with
@@ -172,7 +174,7 @@ public class ClusterTest {
         h2.shutdown();
         assertEquals(0, a3.get());
     }
-    
+
     @Test
     public void testFirstNodeNoWait() throws Exception {
         final Config config = new Config();
@@ -443,7 +445,6 @@ public class ClusterTest {
         assertFalse(map1.containsKey(1));
         assertFalse(map1.containsKey(200));
         assertFalse(map1.containsKey(55));
-        
         assertEquals(0, map1.getLocalMapStats().getBackupEntryCount());
         IMap map2 = h2.getMap("def");
         assertEquals(0, map2.getLocalMapStats().getBackupEntryCount());
@@ -2596,9 +2597,9 @@ public class ClusterTest {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(null);
-        final Semaphore semaphore1 = instance1.getSemaphore("testMultiSemaphore");
-        final Semaphore semaphore2 = instance2.getSemaphore("testMultiSemaphore");
-        final Semaphore semaphore3 = instance3.getSemaphore("testMultiSemaphore");
+        final ISemaphore semaphore1 = instance1.getSemaphore("testMultiSemaphore");
+        final ISemaphore semaphore2 = instance2.getSemaphore("testMultiSemaphore");
+        final ISemaphore semaphore3 = instance3.getSemaphore("testMultiSemaphore");
         assertEquals(1, semaphore1.availablePermits());
         assertEquals(1, semaphore2.availablePermits());
         assertEquals(1, semaphore3.availablePermits());
