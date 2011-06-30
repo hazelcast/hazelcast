@@ -234,8 +234,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         Pairs pairs = (Pairs) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET_ALL, keys, null);
         List<KeyValue> lsKeyValues = pairs.getKeyValues();
         Map map = new HashMap();
-        for (KeyValue keyValue : lsKeyValues) {
-            map.put(toObject(keyValue.getKeyData()), toObject(keyValue.getValueData()));
+        if (lsKeyValues != null) {
+            for (KeyValue keyValue : lsKeyValues) {
+                map.put(toObject(keyValue.getKeyData()), toObject(keyValue.getValueData()));
+            }
         }
         return map;
     }
