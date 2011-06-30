@@ -83,25 +83,27 @@ public class CMap {
 
     final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
-    final int backupCount;
+    int backupCount;
 
-    final EvictionPolicy evictionPolicy;
+    EvictionPolicy evictionPolicy;
 
-    final Comparator<MapEntry> evictionComparator;
+    Comparator<MapEntry> evictionComparator;
 
-    final MapMaxSizePolicy maxSizePolicy;
+    MapMaxSizePolicy maxSizePolicy;
 
-    final float evictionRate;
+    float evictionRate;
 
-    final long ttl; //ttl for entries
+    long ttl; //ttl for entries
 
-    final long maxIdle; //maxIdle for entries
+    long maxIdle; //maxIdle for entries
 
     final Instance.InstanceType instanceType;
 
     final MapLoader loader;
 
     final MapStore store;
+    
+    private MapStoreWrapper mapStoreWrapper ;
 
     final MergePolicy mergePolicy;
 
@@ -109,7 +111,7 @@ public class CMap {
 
     final long removeDelayMillis;
 
-    final long evictionDelayMillis;
+    long evictionDelayMillis;
 
     final MapIndexService mapIndexService;
 
@@ -117,9 +119,9 @@ public class CMap {
 
     final long creationTime;
 
-    final boolean readBackupData;
+    boolean readBackupData;
 
-    final boolean cacheValue;
+    boolean cacheValue;
 
     final boolean mapForQueue;
 
@@ -134,7 +136,7 @@ public class CMap {
     volatile boolean initialized = false;
 
     final Object initLock = new Object();
-
+    
     CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
         this.logger = concurrentMapManager.node.getLogger(CMap.class.getName());
@@ -160,41 +162,11 @@ public class CMap {
             mapConfig = node.getConfig().findMatchingMapConfig(mapConfigName);
         }
         this.mapIndexService = new MapIndexService(mapConfig.isValueIndexed());
-        this.backupCount = mapConfig.getBackupCount();
-        ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
-        evictionDelayMillis = mapConfig.getEvictionDelaySeconds() * 1000L;
-        maxIdle = mapConfig.getMaxIdleSeconds() * 1000L;
-        evictionPolicy = EvictionPolicy.valueOf(mapConfig.getEvictionPolicy());
-        readBackupData = mapConfig.isReadBackupData();
-        cacheValue = mapConfig.isCacheValue();
-        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
-        if (MaxSizeConfig.POLICY_MAP_SIZE_PER_JVM.equals(maxSizeConfig.getMaxSizePolicy())) {
-            maxSizePolicy = new MaxSizePerJVMPolicy(maxSizeConfig);
-        } else if (MaxSizeConfig.POLICY_CLUSTER_WIDE_MAP_SIZE.equals(maxSizeConfig.getMaxSizePolicy())) {
-            maxSizePolicy = new MaxSizeClusterWidePolicy(maxSizeConfig);
-        } else if (MaxSizeConfig.POLICY_PARTITIONS_WIDE_MAP_SIZE.equals(maxSizeConfig.getMaxSizePolicy())) {
-            maxSizePolicy = new MaxSizePartitionsWidePolicy(maxSizeConfig);
-        } else if (MaxSizeConfig.POLICY_USED_HEAP_SIZE.equals(maxSizeConfig.getMaxSizePolicy())) {
-            maxSizePolicy = new MaxSizeHeapPolicy(maxSizeConfig);
-        } else if (MaxSizeConfig.POLICY_USED_HEAP_PERCENTAGE.equals(maxSizeConfig.getMaxSizePolicy())) {
-            maxSizePolicy = new MaxSizeHeapPercentagePolicy(maxSizeConfig);
-        } else {
-            maxSizePolicy = null;
-        }
-        if (evictionPolicy == EvictionPolicy.NONE) {
-            evictionComparator = null;
-        } else {
-            if (evictionPolicy == EvictionPolicy.LRU) {
-                evictionComparator = new ComparatorWrapper(LRU_COMPARATOR);
-            } else {
-                evictionComparator = new ComparatorWrapper(LFU_COMPARATOR);
-            }
-        }
-        evictionRate = mapConfig.getEvictionPercentage() / 100f;
+        setRuntimeConfig(mapConfig);
+
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        MapStoreWrapper mapStoreWrapper = null;
         int writeDelaySeconds = -1;
-        if (!node.isSuperClient() && mapStoreConfig != null && mapStoreConfig.isEnabled()) {
+        if (!node.isSuperClient() && mapStoreConfig != null) {
             try {
                 MapStoreFactory factory = (MapStoreFactory) mapStoreConfig.getFactoryImplementation();
                 if (factory == null) {
@@ -213,7 +185,8 @@ public class CMap {
                 mapStoreWrapper = new MapStoreWrapper(storeInstance,
                         node.factory.getHazelcastInstanceProxy(),
                         mapStoreConfig.getProperties(),
-                        mapConfigName);
+                        mapConfigName, mapStoreConfig.isEnabled());
+                
                 if (!mapStoreWrapper.isMapLoader() && !mapStoreWrapper.isMapStore()) {
                     throw new Exception("MapStore class [" + storeInstance.getClass().getName()
                             + "] should implement either MapLoader or MapStore!");
@@ -225,7 +198,7 @@ public class CMap {
         }
         writeDelayMillis = (writeDelaySeconds == -1) ? -1L : writeDelaySeconds * 1000L;
         if (writeDelaySeconds > 0) {
-            removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS + writeDelaySeconds;
+            removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS + writeDelayMillis;
         } else {
             removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS;
         }
@@ -265,6 +238,58 @@ public class CMap {
         }
         this.mergePolicy = mergePolicyTemp;
         this.creationTime = System.currentTimeMillis();
+    }
+    
+    public void setRuntimeConfig(MapConfig mapConfig) {
+    	 backupCount = mapConfig.getBackupCount();
+         ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
+         evictionDelayMillis = mapConfig.getEvictionDelaySeconds() * 1000L;
+         maxIdle = mapConfig.getMaxIdleSeconds() * 1000L;
+         evictionPolicy = EvictionPolicy.valueOf(mapConfig.getEvictionPolicy());
+         readBackupData = mapConfig.isReadBackupData();
+         cacheValue = mapConfig.isCacheValue();
+         MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+         if (MaxSizeConfig.POLICY_MAP_SIZE_PER_JVM.equals(maxSizeConfig.getMaxSizePolicy())) {
+             maxSizePolicy = new MaxSizePerJVMPolicy(maxSizeConfig);
+         } else if (MaxSizeConfig.POLICY_CLUSTER_WIDE_MAP_SIZE.equals(maxSizeConfig.getMaxSizePolicy())) {
+             maxSizePolicy = new MaxSizeClusterWidePolicy(maxSizeConfig);
+         } else if (MaxSizeConfig.POLICY_PARTITIONS_WIDE_MAP_SIZE.equals(maxSizeConfig.getMaxSizePolicy())) {
+             maxSizePolicy = new MaxSizePartitionsWidePolicy(maxSizeConfig);
+         } else if (MaxSizeConfig.POLICY_USED_HEAP_SIZE.equals(maxSizeConfig.getMaxSizePolicy())) {
+             maxSizePolicy = new MaxSizeHeapPolicy(maxSizeConfig);
+         } else if (MaxSizeConfig.POLICY_USED_HEAP_PERCENTAGE.equals(maxSizeConfig.getMaxSizePolicy())) {
+             maxSizePolicy = new MaxSizeHeapPercentagePolicy(maxSizeConfig);
+         } else {
+             maxSizePolicy = null;
+         }
+         if (evictionPolicy == EvictionPolicy.NONE) {
+             evictionComparator = null;
+         } else {
+             if (evictionPolicy == EvictionPolicy.LRU) {
+                 evictionComparator = new ComparatorWrapper(LRU_COMPARATOR);
+             } else {
+                 evictionComparator = new ComparatorWrapper(LFU_COMPARATOR);
+             }
+         }
+         evictionRate = mapConfig.getEvictionPercentage() / 100f;
+    }
+    
+    public MapConfig getRuntimeConfig() {
+    	MapConfig mapConfig = new MapConfig(name);
+    	mapConfig.setBackupCount(backupCount);
+    	mapConfig.setTimeToLiveSeconds((int) (ttl/1000));
+    	mapConfig.setEvictionDelaySeconds((int) (evictionDelayMillis/1000));
+    	mapConfig.setMaxIdleSeconds((int) (maxIdle / 1000));
+    	mapConfig.setEvictionPolicy(evictionPolicy.toString());
+    	mapConfig.setReadBackupData(readBackupData);
+    	mapConfig.setCacheValue(cacheValue);
+    	if(maxSizePolicy != null) {
+	    	mapConfig.getMaxSizeConfig().setMaxSizePolicy(maxSizePolicy.getMaxSizeConfig().getMaxSizePolicy());
+	    	mapConfig.getMaxSizeConfig().setSize(maxSizePolicy.getMaxSizeConfig().getSize());
+    	}
+    	mapConfig.setEvictionPercentage((int) (evictionRate * 100));
+    	
+    	return mapConfig;
     }
 
     public Object getInitLock() {
@@ -874,6 +899,9 @@ public class CMap {
             }
             req.value = null;
         }
+        // Update request's version to record's. 
+        // It is required on backupOneValue version check.
+        req.version = record.getVersion();
     }
 
     public void doSemaphore(Request request) {
@@ -950,6 +978,8 @@ public class CMap {
             }
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_NOT_NULL) {
             if (record == null || !record.isActive() || !record.isValid(now) || record.getValueData() == null) {
+            	// When request is remote, its value is used as response, so req.value should be cleared. 
+            	req.value = null;
                 return;
             }
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
@@ -1214,6 +1244,10 @@ public class CMap {
 
         public boolean overCapacity() {
             return getMaxSize() <= mapIndexService.size();
+        }
+        
+        public MaxSizeConfig getMaxSizeConfig() {
+        	return maxSizeConfig;
         }
     }
 
@@ -1568,9 +1602,9 @@ public class CMap {
         }
         mapRecords.clear();
         mapIndexService.clear();
-        if (store != null && store instanceof MapStoreWrapper) {
+        if (mapStoreWrapper != null) {
             try {
-                ((MapStoreWrapper) store).destroy();
+                mapStoreWrapper.destroy();
             } catch (Exception e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
@@ -1988,4 +2022,10 @@ public class CMap {
     public MapIndexService getMapIndexService() {
         return mapIndexService;
     }
+    
+//    public void setMapStoreEnabled(boolean enable) {
+//    	if(mapStoreWrapper != null) {
+//    		mapStoreWrapper.setEnabled(enable);
+//    	}
+//    }
 }

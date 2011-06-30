@@ -384,6 +384,7 @@ public class ManagementCenterService implements MembershipListener {
             register(new ExecuteScriptRequest());
             register(new EvictLocalMapRequest());
             register(new ConsoleCommandRequest());
+            register(new MapConfigRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {
@@ -469,7 +470,7 @@ public class ManagementCenterService implements MembershipListener {
         try {
             factory.getExecutorService().execute(task);
             try {
-                return task.get(1, TimeUnit.SECONDS);
+                return task.get(3, TimeUnit.SECONDS);
             } catch (Throwable e) {
                 logger.log(Level.FINEST, e.getMessage(), e);
                 return null;
@@ -482,7 +483,7 @@ public class ManagementCenterService implements MembershipListener {
         }
     }
 
-    void writeState(final DataOutput dos) throws Exception {
+    TimedClusterState getState() {
         if (latestThisMemberState == null) {
             updateLocalState();
         }
@@ -494,7 +495,7 @@ public class ManagementCenterService implements MembershipListener {
             }
         }
         timedClusterState.setInstanceNames(getLongInstanceNames());
-        timedClusterState.writeData(dos);
+        return timedClusterState;
     }
 
     HazelcastInstance getHazelcastInstance() {

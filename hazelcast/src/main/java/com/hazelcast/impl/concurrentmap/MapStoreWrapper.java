@@ -17,113 +17,137 @@
 
 package com.hazelcast.impl.concurrentmap;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
 public class MapStoreWrapper implements MapStore {
 
-    private final MapLoader mapLoader;
-    private final MapStore mapStore;
-    private final Object initLock = new Object();
-    private final boolean shouldInitialize;
-    private final Object impl;
-    private final HazelcastInstance hazelcastInstance;
-    private final Properties properties;
-    private final String mapName;
+	private final MapLoader mapLoader;
+	private final MapStore mapStore;
+	private final Object initLock = new Object();
+	private final boolean shouldInitialize;
+	private final Object impl;
+	private final HazelcastInstance hazelcastInstance;
+	private final Properties properties;
+	private final String mapName;
 
-    volatile boolean initialized = false;
+	volatile boolean initialized = false;
 
-    public MapStoreWrapper(Object impl, HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
-        this.impl = impl;
-        this.hazelcastInstance = hazelcastInstance;
-        this.properties = properties;
-        this.mapName = mapName;
-        MapLoader loader = null;
-        MapStore store = null;
-        if (impl instanceof MapStore) {
-            store = (MapStore) impl;
-        }
-        if (impl instanceof MapLoader) {
-            loader = (MapLoader) impl;
-        }
-        this.mapLoader = loader;
-        this.mapStore = store;
-        this.shouldInitialize = (impl instanceof MapLoaderLifecycleSupport);
-    }
+	private final AtomicBoolean enabled = new AtomicBoolean(false);
 
-    void checkInit() {
-        if (shouldInitialize && !initialized) {
-            synchronized (initLock) {
-                if (!initialized) {
-                    ((MapLoaderLifecycleSupport) impl).init(hazelcastInstance, properties, mapName);
-                    initialized = true;
-                }
-            }
-        }
-    }
+	public MapStoreWrapper(Object impl, HazelcastInstance hazelcastInstance,
+			Properties properties, String mapName, boolean enabled) {
+		this.impl = impl;
+		this.hazelcastInstance = hazelcastInstance;
+		this.properties = properties;
+		this.mapName = mapName;
+		MapLoader loader = null;
+		MapStore store = null;
+		if (impl instanceof MapStore) {
+			store = (MapStore) impl;
+		}
+		if (impl instanceof MapLoader) {
+			loader = (MapLoader) impl;
+		}
+		this.mapLoader = loader;
+		this.mapStore = store;
+		this.shouldInitialize = (impl instanceof MapLoaderLifecycleSupport);
+		this.enabled.set(enabled);
+	}
 
-    public void destroy() {
-        if (impl instanceof MapLoaderLifecycleSupport) {
-            ((MapLoaderLifecycleSupport) impl).destroy();
-        }
-    }
+	void checkInit() {
+		if (shouldInitialize && !initialized) {
+			synchronized (initLock) {
+				if (!initialized) {
+					((MapLoaderLifecycleSupport) impl).init(hazelcastInstance,
+							properties, mapName);
+					initialized = true;
+				}
+			}
+		}
+	}
 
-    public boolean isMapStore() {
-        return (mapStore != null);
-    }
+	public void setEnabled(boolean enable) {
+		this.enabled.set(enable);
+	}
 
-    public boolean isMapLoader() {
-        return (mapLoader != null);
-    }
+	public void destroy() {
+		if (impl instanceof MapLoaderLifecycleSupport) {
+			((MapLoaderLifecycleSupport) impl).destroy();
+		}
+	}
 
-    public void delete(Object key) {
-        checkInit();
-        mapStore.delete(key);
-    }
+	public boolean isMapStore() {
+		return (mapStore != null);
+	}
 
-    public void store(Object key, Object value) {
-        checkInit();
-        mapStore.store(key, value);
-    }
+	public boolean isMapLoader() {
+		return (mapLoader != null);
+	}
 
-    public void storeAll(Map map) {
-        checkInit();
-        mapStore.storeAll(map);
-    }
+	public void delete(Object key) {
+		if (enabled.get()) {
+			checkInit();
+			mapStore.delete(key);
+		}
+	}
 
-    public void deleteAll(Collection keys) {
-        checkInit();
-        mapStore.deleteAll(keys);
-    }
+	public void store(Object key, Object value) {
+		if (enabled.get()) {
+			checkInit();
+			mapStore.store(key, value);
+		}
+	}
 
-    public Set loadAllKeys() {
-        checkInit();
-        return mapLoader.loadAllKeys();
-    }
+	public void storeAll(Map map) {
+		if (enabled.get()) {
+			checkInit();
+			mapStore.storeAll(map);
+		}
+	}
 
-    public Object load(Object key) {
-        checkInit();
-        return mapLoader.load(key);
-    }
+	public void deleteAll(Collection keys) {
+		if (enabled.get()) {
+			checkInit();
+			mapStore.deleteAll(keys);
+		}
+	}
 
-    public Map loadAll(Collection keys) {
-        checkInit();
-        return mapLoader.loadAll(keys);
-    }
+	public Set loadAllKeys() {
+		if (enabled.get()) {
+			checkInit();
+			return mapLoader.loadAllKeys();
+		}
+		return null;
+	}
 
-    @Override
-    public String toString() {
-        return "MapStoreWrapper{" +
-                "mapName='" + mapName + '\'' +
-                ", mapStore=" + mapStore +
-                ", mapLoader=" + mapLoader +
-                '}';
-    }
+	public Object load(Object key) {
+		if (enabled.get()) {
+			checkInit();
+			return mapLoader.load(key);
+		}
+		return null;
+	}
+
+	public Map loadAll(Collection keys) {
+		if (enabled.get()) {
+			checkInit();
+			return mapLoader.loadAll(keys);
+		}
+		return null;
+	}
+
+	@Override
+	public String toString() {
+		return "MapStoreWrapper{" + "mapName='" + mapName + '\''
+				+ ", mapStore=" + mapStore + ", mapLoader=" + mapLoader + '}';
+	}
 }

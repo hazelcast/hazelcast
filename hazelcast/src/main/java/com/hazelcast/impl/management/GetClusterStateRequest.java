@@ -1,10 +1,10 @@
 package com.hazelcast.impl.management;
 
-import com.hazelcast.monitor.TimedClusterState;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+
+import com.hazelcast.monitor.TimedClusterState;
 
 public class GetClusterStateRequest implements ConsoleRequest {
 
@@ -13,7 +13,8 @@ public class GetClusterStateRequest implements ConsoleRequest {
     }
 
     public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
-        mcs.writeState(dos);
+        TimedClusterState ts = mcs.getState();
+        ts.writeData(dos);
     }
 
     public TimedClusterState readResponse(DataInput in) throws IOException {

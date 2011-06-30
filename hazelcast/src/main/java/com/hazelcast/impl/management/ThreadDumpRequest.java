@@ -11,13 +11,15 @@ import static com.hazelcast.nio.IOUtil.writeLongString;
 
 public class ThreadDumpRequest implements ConsoleRequest {
 
-    Address target;
+	private boolean isDeadlock;
+    private Address target;
 
     public ThreadDumpRequest() {
     }
 
-    public ThreadDumpRequest(Address target) {
+    public ThreadDumpRequest(Address target, boolean deadlock) {
         this.target = target;
+        this.isDeadlock = deadlock;
     }
 
     public int getType() {
@@ -25,20 +27,33 @@ public class ThreadDumpRequest implements ConsoleRequest {
     }
 
     public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
-        String threadDump = (String) mcs.call(target, new ThreadDumpCallable());
-        writeLongString(dos, threadDump);
+        String threadDump = (String) mcs.call(target, new ThreadDumpCallable(isDeadlock));
+        if(threadDump != null) {
+        	dos.writeBoolean(true);
+        	writeLongString(dos, threadDump);
+        }
+        else {
+        	dos.writeBoolean(false);
+        }
     }
 
     public String readResponse(DataInput in) throws IOException {
-        return readLongString(in);
+    	if(in.readBoolean()) {
+    		return readLongString(in);
+    	}
+    	else {
+    		return null;
+    	}
     }
 
     public void writeData(DataOutput out) throws IOException {
         target.writeData(out);
+        out.writeBoolean(isDeadlock);
     }
 
     public void readData(DataInput in) throws IOException {
         target = new Address();
         target.readData(in);
+        isDeadlock = in.readBoolean();
     }
 }

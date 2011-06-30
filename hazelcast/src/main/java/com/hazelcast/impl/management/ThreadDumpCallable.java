@@ -27,18 +27,29 @@ import com.hazelcast.nio.DataSerializable;
 public class ThreadDumpCallable implements Callable<String>, DataSerializable {
 
     private static final long serialVersionUID = -1910495089344606344L;
+    
+    private boolean isDeadlock;
+    
+    public ThreadDumpCallable() {
+    	this(false);
+	}
+    
+    public ThreadDumpCallable(boolean deadlock) {
+    	super();
+    	this.isDeadlock = deadlock;
+	}
 
     public String call() throws Exception {
-        ThreadDumpGenerator generator = ThreadDumpGenerator.newInstance();
-        String result = generator.dumpAllThreads();
+        ThreadDumpGenerator gen = ThreadDumpGenerator.newInstance();
+        String result = isDeadlock ? gen.dumpDeadlocks() : gen.dumpAllThreads();
         return result;
     }
 
     public void writeData(DataOutput out) throws IOException {
-        //nop
+        out.writeBoolean(isDeadlock);
     }
 
     public void readData(DataInput in) throws IOException {
-        //nop
+        isDeadlock = in.readBoolean();
     }
 }
