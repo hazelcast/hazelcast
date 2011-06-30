@@ -40,7 +40,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+
                 <configuration>
+                    <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M</argLine>
                     <excludes>
                         <exclude>**/HazelcastClientPerformanceTest.java</exclude>
                         <exclude>**/DynamicClusterTest.java</exclude>
