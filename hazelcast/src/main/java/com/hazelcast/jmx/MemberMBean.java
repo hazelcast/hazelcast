@@ -58,16 +58,16 @@ public class MemberMBean extends AbstractMBean<Member> {
         return getParentName().getNested("Member", memberName);
     }
 
-    @JMXDescription("The network address")
+    @JMXDescription("The network Port")
     @JMXAttribute("Port")
     public int getPort() {
-        return getManagedObject().getPort();
+        return getManagedObject().getInetSocketAddress().getPort();
     }
 
     @JMXAttribute("InetAddress")
-    @JMXDescription("The network port")
+    @JMXDescription("The network address")
     public InetAddress getInetAddress() {
-        return getManagedObject().getInetAddress();
+        return getManagedObject().getInetSocketAddress().getAddress();
     }
 
     @JMXAttribute("SuperClient")
