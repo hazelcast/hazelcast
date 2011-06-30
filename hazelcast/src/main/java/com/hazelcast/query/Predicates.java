@@ -895,7 +895,6 @@ public final class Predicates {
                 }
                 return getter.getValue(obj);
             } catch (Throwable e) {
-                e.printStackTrace();
                 throw new RuntimeException(e);
             }
         }

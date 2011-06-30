@@ -19,14 +19,20 @@ package com.hazelcast.impl.ascii.memcache;
 
 import com.hazelcast.impl.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.impl.ascii.TextCommandService;
+import com.hazelcast.logging.ILogger;
+
+import java.util.logging.Level;
 
 import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 
 public class SimpleCommandProcessor extends AbstractTextCommandProcessor<SimpleCommand> {
 
+    private final ILogger logger;
+
     public SimpleCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
+        logger = textCommandService.getNode().getLogger(this.getClass().getName());
     }
 
     public void handle(SimpleCommand command) {
@@ -34,7 +40,7 @@ public class SimpleCommandProcessor extends AbstractTextCommandProcessor<SimpleC
             try {
                 command.getSocketTextReader().closeConnection();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         } else if (command.getType() == UNKNOWN) {
             command.setResponse(ERROR);

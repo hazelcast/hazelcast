@@ -142,7 +142,7 @@ public final class Connection {
             readHandler.shutdown();
             writeHandler.shutdown();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
         logger.log(Level.FINE, "Connection lost " + this.socketChannel.socket().getRemoteSocketAddress());
         connectionManager.destroyConnection(this);

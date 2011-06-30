@@ -23,6 +23,8 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,6 +32,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import static com.hazelcast.client.IOUtil.toObject;
 import static com.hazelcast.impl.BaseManager.getInstanceType;
@@ -44,6 +47,7 @@ public class ListenerManager extends ClientRunnable {
     final private EntryListenerManager entryListenerManager;
     final private ItemListenerManager itemListenerManager;
     final private QueueItemListenerManager queueItemListenerManager;
+    final ILogger logger = Logger.getLogger(this.getClass().getName());
 
     public ListenerManager(HazelcastClient hazelcastClient) {
         this.client = hazelcastClient;
@@ -59,7 +63,7 @@ public class ListenerManager extends ClientRunnable {
         try {
             queue.put(object);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.log(Level.FINEST, e.getMessage(), e);
         }
     }
 

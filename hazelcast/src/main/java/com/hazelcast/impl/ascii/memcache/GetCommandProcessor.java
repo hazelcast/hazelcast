@@ -19,17 +19,21 @@ package com.hazelcast.impl.ascii.memcache;
 
 import com.hazelcast.impl.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.impl.ascii.TextCommandService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.logging.Level;
 
 public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand> {
     final boolean single;
+    private final ILogger logger;
 
     public GetCommandProcessor(TextCommandService textCommandService, boolean single) {
         super(textCommandService);
         this.single = single;
+        logger = textCommandService.getNode().getLogger(this.getClass().getName());
     }
 
     public void handle(GetCommand getCommand) {
@@ -37,7 +41,7 @@ public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand
         try {
             key = URLDecoder.decode(getCommand.getKey(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
         String mapName = "default";
         int index = key.indexOf(':');
@@ -54,7 +58,7 @@ public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand
                 try {
                     entry = new MemcacheEntry(getCommand.getKey(), IOUtil.serializeToBytes(value), 0);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.log(Level.WARNING, e.getMessage(), e);
                 }
             }
         }

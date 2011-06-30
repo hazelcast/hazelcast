@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
@@ -27,6 +28,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, DataSerializable {
 
@@ -36,6 +38,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     protected transient long lastRead = 0;
     protected transient long lastWrite = 0;
     protected transient volatile long lastPing = 0;
+    private volatile transient ILogger logger;
 
     public MemberImpl() {
     }
@@ -68,7 +71,9 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         try {
             return address.getInetAddress();
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            if (logger != null) {
+                logger.log(Level.WARNING, e.getMessage(), e);
+            }
             return null;
         }
     }
@@ -77,7 +82,9 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         try {
             return address.getInetSocketAddress();
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            if (logger != null) {
+                logger.log(Level.WARNING, e.getMessage(), e);
+            }
             return null;
         }
     }
@@ -117,6 +124,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         FactoryImpl factoryImpl = (FactoryImpl) hazelcastInstance;
         localMember = factoryImpl.node.address.equals(address);
+        logger = factoryImpl.node.getLogger(this.getClass().getName());
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {

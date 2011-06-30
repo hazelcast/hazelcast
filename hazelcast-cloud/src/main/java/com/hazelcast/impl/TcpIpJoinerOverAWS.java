@@ -20,13 +20,17 @@ package com.hazelcast.impl;
 import com.hazelcast.aws.impl.AWSClient;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 
     final AWSClient aws;
+    final ILogger logger = Logger.getLogger(this.getClass().getName());
 
     public TcpIpJoinerOverAWS(Node node) {
         super(node);
@@ -39,7 +43,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         try {
             return aws.getPrivateDnsNames();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
             return new ArrayList<String>();
         }
     }

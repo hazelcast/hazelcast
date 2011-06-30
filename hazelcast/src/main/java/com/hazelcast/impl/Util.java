@@ -17,6 +17,8 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.OutputKeys;
@@ -26,8 +28,11 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 public class Util {
+
+    final static ILogger logger = Logger.getLogger(Util.class.getName());
 
     /**
      * -1 means infinite.
@@ -55,7 +60,7 @@ public class Util {
             in.close();
             out.close();
         } catch (final Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -93,7 +98,7 @@ public class Util {
             final StreamResult result = new StreamResult(out);
             transformer.transform(source, result);
         } catch (final Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -103,7 +108,7 @@ public class Util {
             bw.write(str);
             bw.flush();
         } catch (final Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 }

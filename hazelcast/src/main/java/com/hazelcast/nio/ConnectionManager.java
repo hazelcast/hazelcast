@@ -121,7 +121,7 @@ public class ConnectionManager {
                 // SelectionKey.OP_READ, readHandler);
             }
         } catch (final Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
         return connection;
     }
@@ -189,14 +189,14 @@ public class ConnectionManager {
             try {
                 destroyConnection(conn);
             } catch (final Throwable ignore) {
-                ignore.printStackTrace();
+                logger.log(Level.FINEST, ignore.getMessage(), ignore);
             }
         }
         for (Connection conn : setActiveConnections) {
             try {
                 destroyConnection(conn);
             } catch (final Throwable ignore) {
-                ignore.printStackTrace();
+                logger.log(Level.FINEST, ignore.getMessage(), ignore);
             }
         }
         setConnectionInProgress.clear();

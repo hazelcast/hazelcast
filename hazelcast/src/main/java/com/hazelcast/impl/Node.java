@@ -237,7 +237,6 @@ public class Node {
                 mcService.addMulticastListener(new NodeMulticastListener(this));
             }
         } catch (Exception e) {
-            e.printStackTrace();
             logger.log(Level.SEVERE, e.getMessage(), e);
         }
         this.multicastService = mcService;
@@ -463,7 +462,7 @@ public class Node {
                     logger.log(Level.FINEST, "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
     }
@@ -473,7 +472,7 @@ public class Node {
     }
 
     public JoinInfo createJoinInfo() {
-        return new JoinInfo(true, address, config, getLocalNodeType(),
+        return new JoinInfo(this.getLogger(JoinInfo.class.getName()), true, address, config, getLocalNodeType(),
                 Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size());
     }
 

@@ -157,7 +157,6 @@ public class ConcurrentMapManager extends BaseManager {
                 try {
                     cmap.startCleanup(forced);
                 } catch (Exception e) {
-                    e.printStackTrace();
                     logger.log(Level.SEVERE, e.getMessage(), e);
                 } finally {
                     enqueueAndReturn(new Processable() {
@@ -687,27 +686,22 @@ public class ConcurrentMapManager extends BaseManager {
 
         public Boolean call() throws Exception {
             final ConcurrentMapManager c = factory.node.concurrentMapManager;
-            try {
-                CMap cmap = c.getMap(mapName);
-                if (cmap == null) {
-                    c.enqueueAndWait(new Processable() {
-                        public void process() {
-                            c.getOrCreateMap(mapName);
-                        }
-                    }, 100);
-                    cmap = c.getMap(mapName);
-                }
-                if (cmap != null) {
-                    for (KeyValue keyValue : pairs.getKeyValues()) {
-                        Object value = (cmap.getMapIndexService().hasIndexedAttributes()) ?
-                                keyValue.getValue() : keyValue.getValueData();
-                        IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(cmap.name);
-                        map.put(keyValue.getKeyData(), value);
+            CMap cmap = c.getMap(mapName);
+            if (cmap == null) {
+                c.enqueueAndWait(new Processable() {
+                    public void process() {
+                        c.getOrCreateMap(mapName);
                     }
+                }, 100);
+                cmap = c.getMap(mapName);
+            }
+            if (cmap != null) {
+                for (KeyValue keyValue : pairs.getKeyValues()) {
+                    Object value = (cmap.getMapIndexService().hasIndexedAttributes()) ?
+                            keyValue.getValue() : keyValue.getValueData();
+                    IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(cmap.name);
+                    map.put(keyValue.getKeyData(), value);
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw e;
             }
             return Boolean.TRUE;
         }
@@ -745,73 +739,68 @@ public class ConcurrentMapManager extends BaseManager {
         public Pairs call() throws Exception {
             final ConcurrentMapManager c = factory.node.concurrentMapManager;
             Pairs pairs = new Pairs();
-            try {
-                CMap cmap = c.getMap(mapName);
-                if (cmap == null) {
-                    c.enqueueAndWait(new Processable() {
-                        public void process() {
-                            c.getOrCreateMap(mapName);
+            CMap cmap = c.getMap(mapName);
+            if (cmap == null) {
+                c.enqueueAndWait(new Processable() {
+                    public void process() {
+                        c.getOrCreateMap(mapName);
+                    }
+                }, 100);
+                cmap = c.getMap(mapName);
+            }
+            if (cmap != null) {
+                Collection<Object> keysToLoad = (cmap.loader != null) ? new HashSet<Object>() : null;
+                Set<Data> missingKeys = new HashSet<Data>(1);
+                for (Data key : keys.getKeys()) {
+                    boolean exist = false;
+                    Record record = cmap.getRecord(key);
+                    if (record != null && record.isActive() && record.isValid()) {
+                        Data value = record.getValueData();
+                        if (value != null) {
+                            pairs.addKeyValue(new KeyValue(key, value));
+                            record.setLastAccessed();
+                            exist = true;
                         }
-                    }, 100);
-                    cmap = c.getMap(mapName);
+                    }
+                    if (!exist) {
+                        missingKeys.add(key);
+                        if (keysToLoad != null) {
+                            keysToLoad.add(toObject(key));
+                        }
+                    }
                 }
-                if (cmap != null) {
-                    Collection<Object> keysToLoad = (cmap.loader != null) ? new HashSet<Object>() : null;
-                    Set<Data> missingKeys = new HashSet<Data>(1);
-                    for (Data key : keys.getKeys()) {
-                        boolean exist = false;
-                        Record record = cmap.getRecord(key);
-                        if (record != null && record.isActive() && record.isValid()) {
-                            Data value = record.getValueData();
+                if (keysToLoad != null && keysToLoad.size() > 0 && cmap.loader != null) {
+                    final Map<Object, Object> mapLoadedEntries = cmap.loader.loadAll(keysToLoad);
+                    if (mapLoadedEntries != null) {
+                        for (Object key : mapLoadedEntries.keySet()) {
+                            Data dKey = toData(key);
+                            Object value = mapLoadedEntries.get(key);
+                            Data dValue = toData(value);
+                            if (dKey != null && dValue != null) {
+                                pairs.addKeyValue(new KeyValue(dKey, dValue));
+                                c.putTransient(mapName, key, value, 0, -1);
+                            } else {
+                                missingKeys.add(dKey);
+                            }
+                        }
+                    }
+                }
+                if (cmap.loader == null && !missingKeys.isEmpty()) {
+                    ThreadContext threadContext = ThreadContext.get();
+                    CallContext realCallContext = threadContext.getCallContext();
+                    try {
+                        threadContext.setCallContext(CallContext.DUMMY_CLIENT);
+                        MProxy mproxy = (MProxy) factory.getOrCreateProxyByName(mapName);
+                        for (Data key : missingKeys) {
+                            Data value = (Data) mproxy.get(key);
                             if (value != null) {
                                 pairs.addKeyValue(new KeyValue(key, value));
-                                record.setLastAccessed();
-                                exist = true;
                             }
                         }
-                        if (!exist) {
-                            missingKeys.add(key);
-                            if (keysToLoad != null) {
-                                keysToLoad.add(toObject(key));
-                            }
-                        }
-                    }
-                    if (keysToLoad != null && keysToLoad.size() > 0 && cmap.loader != null) {
-                        final Map<Object, Object> mapLoadedEntries = cmap.loader.loadAll(keysToLoad);
-                        if (mapLoadedEntries != null) {
-                            for (Object key : mapLoadedEntries.keySet()) {
-                                Data dKey = toData(key);
-                                Object value = mapLoadedEntries.get(key);
-                                Data dValue = toData(value);
-                                if (dKey != null && dValue != null) {
-                                    pairs.addKeyValue(new KeyValue(dKey, dValue));
-                                    c.putTransient(mapName, key, value, 0, -1);
-                                } else {
-                                    missingKeys.add(dKey);
-                                }
-                            }
-                        }
-                    }
-                    if (cmap.loader == null && !missingKeys.isEmpty()) {
-                        ThreadContext threadContext = ThreadContext.get();
-                        CallContext realCallContext = threadContext.getCallContext();
-                        try {
-                            threadContext.setCallContext(CallContext.DUMMY_CLIENT);
-                            MProxy mproxy = (MProxy) factory.getOrCreateProxyByName(mapName);
-                            for (Data key : missingKeys) {
-                                Data value = (Data) mproxy.get(key);
-                                if (value != null) {
-                                    pairs.addKeyValue(new KeyValue(key, value));
-                                }
-                            }
-                        } finally {
-                            threadContext.setCallContext(realCallContext);
-                        }
+                    } finally {
+                        threadContext.setCallContext(realCallContext);
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw e;
             }
             return pairs;
         }
@@ -960,7 +949,7 @@ public class ConcurrentMapManager extends BaseManager {
                         return (txn.attachRemoveOp(name, key, null, false) != null);
                     }
                 } catch (Exception e1) {
-                    e1.printStackTrace();
+                    logger.log(Level.WARNING, e1.getMessage(), e1);
                 }
                 return false;
             } else {

@@ -26,6 +26,7 @@ import com.hazelcast.impl.ascii.rest.HttpGetCommandProcessor;
 import com.hazelcast.impl.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.impl.ascii.rest.RestValue;
 import com.hazelcast.impl.executor.ParallelExecutor;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.util.SimpleBlockingQueue;
 
@@ -33,6 +34,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 
 import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.*;
 
@@ -48,10 +50,12 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     private final long startTime = System.currentTimeMillis();
     private volatile ResponseThreadRunnable responseThreadRunnable;
     private volatile boolean running = true;
+    private final ILogger logger;
 
     public TextCommandServiceImpl(Node node) {
         this.node = node;
         this.hazelcast = node.factory;
+        this.logger = node.getLogger(this.getClass().getName());
         this.parallelExecutor = this.node.executorManager.newParallelExecutor(40);
         textCommandProcessors[GET.getValue()] = new GetCommandProcessor(this, true);
         textCommandProcessors[PARTIAL_GET.getValue()] = new GetCommandProcessor(this, false);
@@ -184,7 +188,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
                 TextCommandType type = command.getType();
                 textCommandProcessors[type.getValue()].handle(command);
             } catch (Throwable e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
     }

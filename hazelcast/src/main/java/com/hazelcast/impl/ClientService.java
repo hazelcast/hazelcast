@@ -626,7 +626,7 @@ public class ClientService implements ConnectionListener {
             try {
                 node.concurrentMapManager.doPutAll(mproxy.getLongName(), pairs);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, e.getMessage(), e);
             }
             return null;
         }

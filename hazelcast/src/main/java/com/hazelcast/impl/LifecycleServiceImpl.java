@@ -132,7 +132,7 @@ public class LifecycleServiceImpl implements LifecycleService {
                             mput.merge(ownedRecord);
                             latch.countDown();
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            logger.log(Level.WARNING, e.getMessage(), e);
                         }
                     }
                 });

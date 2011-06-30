@@ -27,12 +27,14 @@ import com.hazelcast.impl.ascii.rest.HttpCommand;
 import com.hazelcast.impl.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.impl.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.impl.ascii.rest.HttpPostCommandParser;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.SocketReader;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.*;
 
@@ -67,6 +69,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
     private final boolean memcacheEnabled;
     boolean connectionTypeSet = false;
     long requestIdGen;
+    private final ILogger logger;
 
     public SocketTextReader(Node node, Connection connection) {
         this.textCommandService = node.getTextCommandService();
@@ -74,6 +77,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
         this.connection = connection;
         this.memcacheEnabled = node.getGroupProperties().MEMCACHE_ENABLED.getBoolean();
         this.restEnabled = node.getGroupProperties().REST_ENABLED.getBoolean();
+        this.logger = node.getLogger(this.getClass().getName());
     }
 
     public void sendResponse(TextCommand command) {
@@ -162,7 +166,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
                 command = new ErrorCommand(UNKNOWN);
             }
         } catch (Throwable t) {
-            t.printStackTrace();
+            logger.log(Level.FINEST, t.getMessage(), t);
             command = new ErrorCommand(ERROR_CLIENT, "Invalid command : " + cmd);
         }
     }

@@ -298,17 +298,7 @@ public class FactoryImpl implements HazelcastInstance {
     public static void shutdown(HazelcastInstanceProxy hazelcastInstanceProxy) {
         synchronized (factoryLock) {
             FactoryImpl factory = hazelcastInstanceProxy.getFactory();
-            try {
-                /**
-                 * if JMX service cannot unregister
-                 * just printStackTrace and continue
-                 * shutting down.
-                 *
-                 */
-                factory.managementService.unregister();
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
+            factory.managementService.unregister();
             factory.proxies.clear();
             if (factory.managementCenterService != null) {
                 factory.managementCenterService.shutdown();
@@ -325,11 +315,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     private static void shutdownManagementService() {
-        try {
-            ManagementService.shutdown();
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+        ManagementService.shutdown();
     }
 
     public FactoryImpl(String name, Config config) {
@@ -2998,14 +2984,17 @@ public class FactoryImpl implements HazelcastInstance {
     public static class IdGeneratorProxy extends FactoryAwareNamedProxy implements IdGenerator, DataSerializable {
 
         private transient IdGenerator base = null;
+        private transient final ILogger logger;
 
         public IdGeneratorProxy() {
+            logger = factory.getLoggingService().getLogger(this.getClass().getName());
         }
 
         public IdGeneratorProxy(String name, FactoryImpl factory) {
             setName(name);
             setHazelcastInstance(factory);
             base = new IdGeneratorBase();
+            logger = factory.getLoggingService().getLogger(this.getClass().getName());
         }
 
         private void ensure() {
@@ -3084,7 +3073,7 @@ public class FactoryImpl implements HazelcastInstance {
                             }
                             return newId();
                         } catch (Throwable t) {
-                            t.printStackTrace();
+                            logger.log(Level.WARNING, t.getMessage(), t);
                         }
                     }
                 }

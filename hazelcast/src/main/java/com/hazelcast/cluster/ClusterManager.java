@@ -262,7 +262,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             memberImpl.didRead();
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
                         logger.log(Level.SEVERE, e.getMessage(), e);
                     }
                 }
@@ -693,7 +692,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 result = arp.call();
                 setResult(result);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.FINEST, e.getMessage(), e);
             }
         }
 

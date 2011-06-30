@@ -100,7 +100,9 @@ public class MulticastJoiner extends AbstractJoiner {
             }
         } catch (InterruptedException ignored) {
         } catch (Exception e) {
-            e.printStackTrace();
+            if (logger != null) {
+                logger.log(Level.WARNING, e.getMessage(), e);
+            }
         }
     }
 
@@ -134,7 +136,9 @@ public class MulticastJoiner extends AbstractJoiner {
                 return new Address(ip, config.getPort());
             }
         } catch (final Exception e) {
-            e.printStackTrace();
+            if (logger != null) {
+                logger.log(Level.WARNING, e.getMessage(), e);
+            }
         }
         return null;
     }

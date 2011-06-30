@@ -279,7 +279,7 @@ public class OutRunnable extends IORunnable {
             logger.log(Level.FINEST, "From " + Thread.currentThread() + ": Enqueue: " + call);
             queue.offer(call);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 

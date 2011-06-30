@@ -85,7 +85,7 @@ public class ExecutorManager extends BaseManager {
                 threadContext.setCallContext(callContext);
             }
         };
-        parallelExecutorService = new ParallelExecutorService(threadPoolExecutor);
+        parallelExecutorService = new ParallelExecutorService(node.getLogger(ParallelExecutorService.class.getName()), threadPoolExecutor);
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
         eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);

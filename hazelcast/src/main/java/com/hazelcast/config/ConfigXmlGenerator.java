@@ -1,5 +1,7 @@
 package com.hazelcast.config;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 
 import javax.xml.transform.OutputKeys;
@@ -14,10 +16,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.Level;
 
 public class ConfigXmlGenerator {
 
     private final boolean formatted;
+    final ILogger logger = Logger.getLogger(this.getClass().getName());
 
     public ConfigXmlGenerator() {
         this(true);
@@ -180,7 +184,7 @@ public class ConfigXmlGenerator {
             transformer.transform(xmlInput, xmlOutput);
             return xmlOutput.getWriter().toString();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
             return input;
         }
     }

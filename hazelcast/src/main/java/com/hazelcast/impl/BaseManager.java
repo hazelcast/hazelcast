@@ -1327,12 +1327,12 @@ public abstract class BaseManager {
                     try {
                         node.listenerManager.callListeners(dataAwareEntryEvent);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.log(Level.WARNING, e.getMessage(), e);
                     }
                 }
             });
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -1398,7 +1398,7 @@ public abstract class BaseManager {
             }
             sendEvents(eventType, name, key, packetValue, mapTargetListeners, callerAddress);
         } catch (final Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 

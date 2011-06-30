@@ -17,10 +17,17 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import java.io.*;
 import java.util.Date;
+import java.util.logging.Level;
 
 public class SerializationHelper {
+
+    final static ILogger logger = Logger.getLogger(SerializationHelper.class.getName());
+
     public static void writeObject(DataOutput out, Object obj) throws IOException {
         if (obj == null) {
             out.writeByte(0);
@@ -97,7 +104,7 @@ public class SerializationHelper {
             try {
                 return oin.readObject();
             } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
             oin.close();
         } else {

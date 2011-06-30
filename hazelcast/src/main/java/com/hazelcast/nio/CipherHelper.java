@@ -20,6 +20,8 @@ package com.hazelcast.nio;
 import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.impl.Node;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -29,10 +31,12 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.KeySpec;
+import java.util.logging.Level;
 
 final class CipherHelper {
     static AsymmetricCipherBuilder asymmetricCipherBuilder = null;
     static SymmetricCipherBuilder symmetricCipherBuilder = null;
+    final static ILogger logger = Logger.getLogger(CipherHelper.class.getName());
 
     static {
         try {
@@ -41,7 +45,7 @@ final class CipherHelper {
                 Security.addProvider((Provider) Class.forName(provider).newInstance());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -114,7 +118,7 @@ final class CipherHelper {
                 keyStore.load(fis, password);
                 fis.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
 
@@ -241,7 +245,7 @@ final class CipherHelper {
     }
 
     public static void handleCipherException(Exception e, Connection connection) {
-        e.printStackTrace();
+        logger.log(Level.WARNING, e.getMessage(), e);
         connection.close();
     }
 }

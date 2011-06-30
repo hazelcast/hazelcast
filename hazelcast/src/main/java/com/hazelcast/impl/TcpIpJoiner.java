@@ -27,8 +27,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.AddressUtil;
 
-import java.net.InetAddress;
 import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,7 +68,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 Thread.sleep(3000L);
             }
         } catch (final Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -183,7 +183,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 }
             }
         } catch (final Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
         return null;
     }
@@ -258,13 +258,12 @@ public class TcpIpJoiner extends AbstractJoiner {
                 } else {
                     final InetAddress[] allAddresses = InetAddress.getAllByName(host);
                     for (final InetAddress inetAddress : allAddresses) {
-                    	// IPv6 can not be used atm.
-                    	if(inetAddress instanceof Inet6Address) { 
-                    		logger.log(Level.FINEST,  "This address [" + inetAddress + "] is not usable. " +
-                    				"Hazelcast does not have support for IPv6 at the moment.");
-                    		continue;
-                    	}
-                    	
+                        // IPv6 can not be used atm.
+                        if (inetAddress instanceof Inet6Address) {
+                            logger.log(Level.FINEST, "This address [" + inetAddress + "] is not usable. " +
+                                    "Hazelcast does not have support for IPv6 at the moment.");
+                            continue;
+                        }
                         boolean shouldCheck = true;
                         Address addrs;
                         Interfaces interfaces = config.getNetworkConfig().getInterfaces();

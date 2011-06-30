@@ -461,7 +461,7 @@ public class HazelcastClient implements HazelcastInstance {
             try {
                 return future.get();
             } catch (Throwable e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
                 return null;
             }
         } finally {

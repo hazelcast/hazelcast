@@ -39,7 +39,7 @@ public final class InSelector extends SelectorBase {
         try {
             sKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, new Acceptor());
         } catch (final ClosedChannelException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
         key = sKey;
         logger.log(Level.FINEST, "Started Selector at "

@@ -1563,7 +1563,7 @@ public class CMap {
             try {
                 ((MapStoreWrapper) store).destroy();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
     }

@@ -327,7 +327,6 @@ public class DefaultSerializer implements CustomSerializer {
                 ds.readExternal(newObjectInputStream(bbis));
                 return ds;
             } catch (final Exception e) {
-                e.printStackTrace();
                 throw new IOException("Problem reading Externalizable class : " + className + ", exception: " + e);
             }
         }

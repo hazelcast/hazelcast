@@ -19,12 +19,14 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.Transaction;
+import com.hazelcast.logging.ILogger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
 
 class TransactionImpl implements Transaction {
 
@@ -35,10 +37,12 @@ class TransactionImpl implements Transaction {
     private final List<TransactionRecord> transactionRecords = new CopyOnWriteArrayList<TransactionRecord>();
 
     private int status = TXN_STATUS_NO_TXN;
+    private final ILogger logger;
 
     public TransactionImpl(FactoryImpl factory, long txnId) {
         this.id = txnId;
         this.factory = factory;
+        this.logger = factory.getLoggingService().getLogger(this.getClass().getName());
     }
 
     public Object attachAddOp(String name, Object key) {
@@ -204,7 +208,7 @@ class TransactionImpl implements Transaction {
                 transactionRecord.rollback();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         } finally {
             finalizeTxn();
             status = TXN_STATUS_ROLLED_BACK;

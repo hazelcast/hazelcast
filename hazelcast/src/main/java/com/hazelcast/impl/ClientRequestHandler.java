@@ -18,7 +18,10 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.ClientService.ClientOperationHandler;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
+
+import java.util.logging.Level;
 
 public class ClientRequestHandler extends FallThroughRunnable {
     private final Packet packet;
@@ -26,12 +29,14 @@ public class ClientRequestHandler extends FallThroughRunnable {
     private final Node node;
     private final ClientService.ClientOperationHandler clientOperationHandler;
     private volatile Thread runningThread = null;
+    private final ILogger logger;
 
     public ClientRequestHandler(Node node, Packet packet, CallContext callContext, ClientOperationHandler clientOperationHandler) {
         this.packet = packet;
         this.callContext = callContext;
         this.node = node;
         this.clientOperationHandler = clientOperationHandler;
+        this.logger = node.getLogger(this.getClass().getName());
     }
 
     @Override
@@ -43,7 +48,7 @@ public class ClientRequestHandler extends FallThroughRunnable {
                 clientOperationHandler.handle(node, packet);
                 node.clientService.getClientEndpoint(packet.conn).removeRequest(this);
             } catch (Throwable e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
                 if (node.isActive()) {
                     throw (RuntimeException) e;
                 }

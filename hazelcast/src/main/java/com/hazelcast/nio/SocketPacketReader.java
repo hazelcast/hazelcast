@@ -193,7 +193,7 @@ class SocketPacketReader implements SocketReader {
                         size = -1;
                     }
                 } catch (ShortBufferException e) {
-                    e.printStackTrace();
+                    logger.log(Level.WARNING, e.getMessage(), e);
                 }
                 cipherBuffer.flip();
                 while (cipherBuffer.hasRemaining()) {

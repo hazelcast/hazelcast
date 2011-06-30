@@ -19,29 +19,33 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.NodeType;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.*;
 import java.net.DatagramPacket;
+import java.util.logging.Level;
 
 public class JoinInfo extends JoinRequest implements DataSerializable {
 
     private boolean request = true;
     private int memberCount = 0;
+    ILogger logger;
 
     public JoinInfo() {
     }
 
-    public JoinInfo(boolean request, Address address, Config config,
+    public JoinInfo(ILogger logger, boolean request, Address address, Config config,
                     NodeType type, byte packetVersion, int buildNumber, int memberCount) {
         super(address, config, type, packetVersion, buildNumber);
         this.request = request;
         this.memberCount = memberCount;
+        this.logger = logger;
     }
 
     public JoinInfo copy(boolean newRequest, Address newAddress, int memberCount) {
-        return new JoinInfo(newRequest, newAddress, config,
+        return new JoinInfo(logger, newRequest, newAddress, config,
                 nodeType, packetVersion, buildNumber, memberCount);
     }
 
@@ -59,7 +63,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
             out.writeBoolean(isRequest());
             out.writeInt(memberCount);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINEST, e.getMessage(), e);
         }
     }
 
@@ -72,7 +76,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
             packet.setData(bos.toByteArray());
             packet.setLength(bos.size());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINEST, e.getMessage(), e);
         }
     }
 
@@ -82,7 +86,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
         try {
             readData(dis);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINEST, e.getMessage(), e);
         }
     }
 

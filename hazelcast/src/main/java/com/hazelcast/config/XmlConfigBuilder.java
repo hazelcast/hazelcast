@@ -106,7 +106,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         } catch (final Throwable e) {
             logger.log(Level.SEVERE, "Error while creating configuration:" + e.getMessage(), e);
-            e.printStackTrace();
         }
     }
 
@@ -233,7 +232,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             logger.log(Level.INFO, parameterName + " parameter value, [" + value
                     + "], is not a proper integer. Default value, [" + defaultValue
                     + "], will be used!");
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
             return defaultValue;
         }
     }
@@ -342,7 +341,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 method.invoke(target, new Object[]{Boolean.parseBoolean(value)});
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -467,7 +466,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     try {
                         join.getTcpIpConfig().addAddress(new Address(hostStr, Integer.parseInt(portStr), true));
                     } catch (UnknownHostException e) {
-                        e.printStackTrace();
+                        logger.log(Level.WARNING, e.getMessage(), e);
                     }
                 }
             } else if ("interface".equals(cleanNodeName(n.getNodeName()))) {

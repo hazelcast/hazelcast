@@ -17,17 +17,22 @@
 
 package com.hazelcast.impl.executor;
 
+import com.hazelcast.logging.ILogger;
+
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 
 public class ParallelExecutorService {
     private final ExecutorService executorService;
     private final List<ParallelExecutor> lsParallelExecutors = new CopyOnWriteArrayList<ParallelExecutor>();
+    private final ILogger logger;
 
-    public ParallelExecutorService(ExecutorService executorService) {
+    public ParallelExecutorService(ILogger logger, ExecutorService executorService) {
         this.executorService = executorService;
+        this.logger = logger;
     }
 
     public void shutdown() {
@@ -180,7 +185,7 @@ public class ParallelExecutorService {
                         afterRun();
                         waitingExecutions.decrementAndGet();
                     } catch (Throwable e) {
-                        e.printStackTrace();
+                        logger.log(Level.WARNING, e.getMessage(), e);
                     }
                     size.decrementAndGet();
                     r = q.poll();

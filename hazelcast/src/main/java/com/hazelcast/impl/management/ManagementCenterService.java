@@ -124,7 +124,7 @@ public class ManagementCenterService implements MembershipListener {
                     }
                     addresses.add(address);
                 } catch (UnknownHostException e) {
-                    e.printStackTrace();
+                    logger.log(Level.WARNING, e.getMessage(), e);
                 }
             }
         } catch (Throwable e) {
