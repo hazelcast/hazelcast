@@ -44,6 +44,12 @@ public class RFC2104HMAC {
 		return result;
 	}
 
+	/**
+	 *  Copyright 1999-2002,2004 The Apache Software Foundation.
+	 *  
+	 *  Method below is taken from org.apache.xerces.internal.Base64 class
+	 */
+	
 	static private final int LOOKUPLENGTH = 64;
 	static private final int TWENTYFOURBITGROUP = 24;
 	static private final int EIGHTBIT = 8;
