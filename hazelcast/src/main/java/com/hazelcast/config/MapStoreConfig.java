@@ -27,8 +27,10 @@ public final class MapStoreConfig {
 
     private boolean enabled = true;
     private String className = null;
+    private String factoryClassName = null;
     private int writeDelaySeconds = DEFAULT_WRITE_DELAY_SECONDS;
     private Object implementation;
+    private Object factoryImplementation;
     private Properties properties = new Properties();
 
     /**
@@ -47,6 +49,25 @@ public final class MapStoreConfig {
      */
     public MapStoreConfig setClassName(String className) {
         this.className = className;
+        return this;
+    }
+
+    /**
+     * Returns the name of the MapStoreFactory implementation class
+     *
+     * @return the name of the class
+     */
+    public String getFactoryClassName() {
+        return factoryClassName;
+    }
+
+    /**
+     * Sets the name for the MapStoreFactory implementation class
+     *
+     * @param factoryClassName the name of the MapStoreFactory implementation class to set
+     */
+    public MapStoreConfig setFactoryClassName(String factoryClassName) {
+        this.factoryClassName = factoryClassName;
         return this;
     }
 
@@ -108,6 +129,26 @@ public final class MapStoreConfig {
         return implementation;
     }
 
+    /**
+     * Sets the map store factory implementation object
+     *
+     * @param factoryImplementation factory implementation object
+     * @return this MapStoreConfig instance
+     */
+    public MapStoreConfig setFactoryImplementation(Object factoryImplementation) {
+        this.factoryImplementation = factoryImplementation;
+        return this;
+    }
+
+    /**
+     * Returns the map store factory implementation object
+     *
+     * @return map store factory implementation object
+     */
+    public Object getFactoryImplementation() {
+        return factoryImplementation;
+    }
+
     public MapStoreConfig setProperty(String name, String value) {
         properties.put(name, value);
         return this;
@@ -120,7 +161,7 @@ public final class MapStoreConfig {
     public Properties getProperties() {
         return properties;
     }
-    
+
     public void setProperties(Properties properties) {
         this.properties = properties;
     }

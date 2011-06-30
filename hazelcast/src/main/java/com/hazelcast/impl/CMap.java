@@ -196,7 +196,16 @@ public class CMap {
         int writeDelaySeconds = -1;
         if (!node.isSuperClient() && mapStoreConfig != null && mapStoreConfig.isEnabled()) {
             try {
-                Object storeInstance = mapStoreConfig.getImplementation();
+                MapStoreFactory factory = (MapStoreFactory) mapStoreConfig.getFactoryImplementation();
+                if (factory == null) {
+                    String factoryClassName = mapStoreConfig.getFactoryClassName();
+                    if (factoryClassName != null && !"".equals(factoryClassName)) {
+                        factory = (MapStoreFactory)
+                                Serializer.classForName(node.getConfig().getClassLoader(), factoryClassName).newInstance();
+                    }
+                }
+                Object storeInstance = factory == null ? mapStoreConfig.getImplementation() :
+                        factory.newMapStore(name, mapStoreConfig.getProperties());
                 if (storeInstance == null) {
                     String mapStoreClassName = mapStoreConfig.getClassName();
                     storeInstance = Serializer.classForName(node.getConfig().getClassLoader(), mapStoreClassName).newInstance();
