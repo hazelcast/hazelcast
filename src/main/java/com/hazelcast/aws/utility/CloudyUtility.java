@@ -19,14 +19,14 @@ package com.hazelcast.aws.utility;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.impl.Util;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,10 +35,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 import static com.hazelcast.config.AbstractXmlConfigHelper.cleanNodeName;
 
 public class CloudyUtility {
+    final static ILogger logger = Logger.getLogger(CloudyUtility.class.getName());
+
     public static String getQueryString(Map<String, String> attributes) {
         StringBuilder query = new StringBuilder();
         for (Iterator<String> iterator = attributes.keySet().iterator(); iterator.hasNext();) {
@@ -71,12 +74,8 @@ public class CloudyUtility {
             NodeHolder elementNodeHolder = new NodeHolder(element);
             List<String> names = elementNodeHolder.getSub("reservationset").getSub("item").getSub("instancesset").getList("privateipaddress");
             return names;
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (SAXException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (Exception e) {
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
         return new ArrayList<String>();
     }
@@ -89,24 +88,28 @@ public class CloudyUtility {
         }
 
         public NodeHolder getSub(String name) {
-            for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
-                String nodeName = cleanNodeName(node.getNodeName());
-                if (name.equals(nodeName)) {
-                    return new NodeHolder(node);
+            if (node != null) {
+                for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
+                    String nodeName = cleanNodeName(node.getNodeName());
+                    if (name.equals(nodeName)) {
+                        return new NodeHolder(node);
+                    }
                 }
             }
-            return null;
+            return new NodeHolder(null);
         }
 
         public List<String> getList(String name) {
             List<String> list = new ArrayList<String>();
-            for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
-                String nodeName = cleanNodeName(node.getNodeName());
-                if ("item".equals(nodeName)) {
-                    if (new NodeHolder(node).getSub("instancestate").getSub("name").getNode().getFirstChild().getNodeValue().equals("running")) {
-                        String ip = new NodeHolder(node).getSub(name).getNode().getFirstChild().getNodeValue();
-                        if (ip != null) {
-                            list.add(ip);
+            if (node != null) {
+                for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
+                    String nodeName = cleanNodeName(node.getNodeName());
+                    if ("item".equals(nodeName)) {
+                        if (new NodeHolder(node).getSub("instancestate").getSub("name").getNode().getFirstChild().getNodeValue().equals("running")) {
+                            String ip = new NodeHolder(node).getSub(name).getNode().getFirstChild().getNodeValue();
+                            if (ip != null) {
+                                list.add(ip);
+                            }
                         }
                     }
                 }
