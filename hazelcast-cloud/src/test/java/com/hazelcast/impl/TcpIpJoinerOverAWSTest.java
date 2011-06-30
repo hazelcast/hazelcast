@@ -24,7 +24,7 @@ import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -36,7 +36,7 @@ public class TcpIpJoinerOverAWSTest extends TestCase {
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getAwsConfig().setEnabled(true);
         Properties bundle = new Properties();
-        bundle.load(new FileReader(new File("/Users/Malikov/.aws/AwsCredentials.properties")));
+        bundle.load(new FileInputStream(new File("/Users/Malikov/.aws/AwsCredentials.properties")));
         config.getNetworkConfig().getJoin().getAwsConfig().setAccessKey(bundle.getProperty("accessKey"));
         config.getNetworkConfig().getJoin().getAwsConfig().setSecretKey(bundle.getProperty("secretKey"));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
