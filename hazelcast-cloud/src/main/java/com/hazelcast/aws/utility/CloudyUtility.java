@@ -24,8 +24,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -54,12 +52,9 @@ public class CloudyUtility {
         return result;
     }
 
-    public static Object unmarshalTheResponse(InputStream stream) throws IOException, JAXBException {
+    public static Object unmarshalTheResponse(InputStream stream) throws IOException {
         Object o = parse(stream);
-        if (o instanceof JAXBElement) {
-            return ((JAXBElement) o).getValue();
-        } else
-            return o;
+        return o;
     }
 
     private static Object parse(InputStream in) {
