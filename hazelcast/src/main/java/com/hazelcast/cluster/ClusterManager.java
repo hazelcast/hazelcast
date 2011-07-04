@@ -39,6 +39,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private final long WAIT_MILLIS_BEFORE_JOIN;
 
+    private final long MAX_WAIT_SECONDS_BEFORE_JOIN;
+
     private final long MAX_NO_HEARTBEAT_MILLIS;
 
     private final long HEARTBEAT_INTERVAL_MILLIS;
@@ -53,6 +55,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private long timeToStartJoin = 0;
 
+    private long firstJoinRequest = 0;
+
     private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
 
     private long lastHeartbeat = 0;
@@ -60,6 +64,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     public ClusterManager(final Node node) {
         super(node);
         WAIT_MILLIS_BEFORE_JOIN = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
+        MAX_WAIT_SECONDS_BEFORE_JOIN = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger();
         MAX_NO_HEARTBEAT_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         HEARTBEAT_INTERVAL_MILLIS = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger() * 1000L;
         ICMP_ENABLED = node.groupProperties.ICMP_ENABLED.getBoolean();
@@ -301,6 +306,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         if (conn != null) {
                             sendHeartbeat(conn);
                         } else {
+//                            System.out.println(node.getThisAddress() + " can not connect to " + address);
                             logger.log(Level.FINEST, "could not connect to " + address + " to send heartbeat");
                         }
                     } else {
@@ -569,13 +575,22 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
                     return;
                 }
+                long now = System.currentTimeMillis();
                 if (!joinInProgress) {
-                    MemberInfo newMemberInfo = new MemberInfo(joinRequest.address, joinRequest.nodeType);
-                    if (setJoins.add(newMemberInfo)) {
-                        sendProcessableTo(new Master(node.getMasterAddress()), conn);
-                        timeToStartJoin = System.currentTimeMillis() + WAIT_MILLIS_BEFORE_JOIN;
+                    if (firstJoinRequest != 0 && now - firstJoinRequest >= MAX_WAIT_SECONDS_BEFORE_JOIN * 1000) {
+                        startJoin();
                     } else {
-                        if (System.currentTimeMillis() > timeToStartJoin) {
+                        MemberInfo newMemberInfo = new MemberInfo(joinRequest.address, joinRequest.nodeType);
+                        if (setJoins.add(newMemberInfo)) {
+                            sendProcessableTo(new Master(node.getMasterAddress()), conn);
+                            if (firstJoinRequest == 0) {
+                                firstJoinRequest = now;
+                            }
+                            if (now - firstJoinRequest < MAX_WAIT_SECONDS_BEFORE_JOIN * 1000) {
+                                timeToStartJoin = now + WAIT_MILLIS_BEFORE_JOIN;
+                            }
+                        }
+                        if (now > timeToStartJoin) {
                             startJoin();
                         }
                     }
@@ -639,6 +654,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         joinInProgress = false;
         setJoins.clear();
         timeToStartJoin = System.currentTimeMillis() + WAIT_MILLIS_BEFORE_JOIN;
+        firstJoinRequest = 0;
     }
 
     public void onRestart() {

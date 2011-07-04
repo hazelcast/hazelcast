@@ -42,6 +42,7 @@ public class GroupProperties {
     public static final String PROP_PACKET_VERSION = "hazelcast.packet.version";
     public static final String PROP_SHUTDOWNHOOK_ENABLED = "hazelcast.shutdownhook.enabled";
     public static final String PROP_WAIT_SECONDS_BEFORE_JOIN = "hazelcast.wait.seconds.before.join";
+    public static final String PROP_MAX_WAIT_SECONDS_BEFORE_JOIN = "hazelcast.max.wait.seconds.before.join";
     public static final String PROP_HEARTBEAT_INTERVAL_SECONDS = "hazelcast.heartbeat.interval.seconds";
     public static final String PROP_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.max.no.heartbeat.seconds";
     public static final String PROP_ICMP_ENABLED = "hazelcast.icmp.enabled";
@@ -105,6 +106,8 @@ public class GroupProperties {
 
     public final GroupProperty WAIT_SECONDS_BEFORE_JOIN;
 
+    public final GroupProperty MAX_WAIT_SECONDS_BEFORE_JOIN;
+
     public final GroupProperty MAX_NO_HEARTBEAT_SECONDS;
 
     public final GroupProperty HEARTBEAT_INTERVAL_SECONDS;
@@ -164,6 +167,7 @@ public class GroupProperties {
         SOCKET_NO_DELAY = new GroupProperty(config, PROP_SOCKET_NO_DELAY, "true");
         SHUTDOWNHOOK_ENABLED = new GroupProperty(config, PROP_SHUTDOWNHOOK_ENABLED, "true");
         WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, PROP_WAIT_SECONDS_BEFORE_JOIN, "5");
+        MAX_WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, PROP_MAX_WAIT_SECONDS_BEFORE_JOIN, "20");
         HEARTBEAT_INTERVAL_SECONDS = new GroupProperty(config, PROP_HEARTBEAT_INTERVAL_SECONDS, "1");
         MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_MAX_NO_HEARTBEAT_SECONDS, "300");
         ICMP_ENABLED = new GroupProperty(config, PROP_ICMP_ENABLED, "false");
