@@ -131,7 +131,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     while (node.getMasterAddress() != null && !joined.get()) {
                         Thread.sleep(1000L);
                         node.clusterManager.sendJoinRequest(node.getMasterAddress());
-                        if (requestCount++ > 22) {
+                        if (requestCount++ > node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) {
                             failedJoiningToMaster(false, requestCount);
                         }
                     }
