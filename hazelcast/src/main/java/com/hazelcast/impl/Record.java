@@ -25,7 +25,6 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -377,7 +376,7 @@ public final class Record implements MapEntry {
     }
 
     public boolean isValid() {
-        return isValid(System.currentTimeMillis());
+        return active && isValid(System.currentTimeMillis());
     }
 
     public void markRemoved() {

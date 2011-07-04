@@ -57,6 +57,7 @@ public class ClusterTest {
     @BeforeClass
     public static void init() throws Exception {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
@@ -2671,8 +2672,8 @@ public class ClusterTest {
             keys.add(String.valueOf(i));
         }
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
-        IMap<String, Object> map = h3.getMap("default");
-        map.getAll(keys);
+        IMap<String, Object> map3 = h3.getMap("default");
+        map3.getAll(keys);
     }
 
     @Test

@@ -481,6 +481,7 @@ public class FactoryImpl implements HazelcastInstance {
     public Transaction getTransaction() {
         initialChecks();
         ThreadContext threadContext = ThreadContext.get();
+        threadContext.setCurrentFactory(this);
         TransactionImpl txn = threadContext.getCallContext().getTransaction();
         if (txn == null) {
             txn = transactionFactory.newTransaction();
@@ -1391,6 +1392,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         private void ensure() {
+            ThreadContext.get().setCurrentFactory(factory);
             factory.initialChecks();
             if (qproxyReal == null) {
                 qproxyReal = (QProxy) factory.getOrCreateProxyByName(name);
@@ -2226,6 +2228,14 @@ public class FactoryImpl implements HazelcastInstance {
             dynamicProxy.flush();
         }
 
+        public void putForSync(Object key, Object value) {
+            dynamicProxy.putForSync(key, value);
+        }
+
+        public void removeForSync(Object key) {
+            dynamicProxy.removeForSync(key);
+        }
+
         public void putTransient(Object key, Object value, long time, TimeUnit timeunit) {
             dynamicProxy.putTransient(key, value, time, timeunit);
         }
@@ -2534,6 +2544,23 @@ public class FactoryImpl implements HazelcastInstance {
                 Object result = mput.put(name, key, value, -1, -1);
                 mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
                 return result;
+            }
+
+            public void putForSync(Object key, Object value) {
+                long begin = System.currentTimeMillis();
+                check(key);
+                check(value);
+                MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
+                mput.putForSync(name, key, value);
+                mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+            }
+
+            public void removeForSync(Object key) {
+                long begin = System.currentTimeMillis();
+                check(key);
+                MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
+                mremove.removeForSync(name, key);
+                mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
             }
 
             public Map getAll(Set keys) {

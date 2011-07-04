@@ -41,4 +41,8 @@ public interface MProxy extends IMap, IRemoveAwareProxy, IGetAwareProxy {
     Set allKeys();
 
     MapOperationsCounter getMapOperationCounter();
+
+    void putForSync(Object key, Object value);
+
+    void removeForSync(Object key);
 }

@@ -186,19 +186,17 @@ public class SemaphoreImpl extends FactoryAwareNamedProxy implements ISemaphore 
         }
 
         public int availablePermits() {
-            ConcurrentMapManager.MSemaphore s = newMSemaphore(ClusterOperation.SEMAPHORE_AVAILABLE_PERIMITS, 0);
-            int result = s.availablePermits();
-            return (Integer) result;
+            ConcurrentMapManager.MSemaphore s = newMSemaphore(ClusterOperation.SEMAPHORE_AVAILABLE_PERMITS, 0);
+            return s.availablePermits();
         }
 
         public int drainPermits() {
-            ConcurrentMapManager.MSemaphore s = newMSemaphore(ClusterOperation.SEMAPHORE_DRAIN_PERIMITS, 0);
-            int result = s.drainPermits();
-            return (Integer) result;
+            ConcurrentMapManager.MSemaphore s = newMSemaphore(ClusterOperation.SEMAPHORE_DRAIN_PERMITS, 0);
+            return s.drainPermits();
         }
 
         public void reducePermits(int permits) {
-            ConcurrentMapManager.MSemaphore s = newMSemaphore(ClusterOperation.SEMAPHORE_REDUCE_PERIMITS, permits);
+            ConcurrentMapManager.MSemaphore s = newMSemaphore(ClusterOperation.SEMAPHORE_REDUCE_PERMITS, permits);
             s.reducePermits(permits);
         }
 

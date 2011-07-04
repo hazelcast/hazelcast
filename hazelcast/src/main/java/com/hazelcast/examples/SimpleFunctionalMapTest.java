@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class SimpleFunctionalMapTest {
 
-    public static final int ENTRY_COUNT = 100;
-    public static final int KB = 1024;
+    public static final int ENTRY_COUNT = 1000;
+    public static final int KB = 10240;
     public static final int STATS_SECONDS = 10;
 
     public static void main(String[] args) {

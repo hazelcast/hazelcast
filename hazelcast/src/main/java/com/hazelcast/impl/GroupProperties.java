@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 
 public class GroupProperties {
 
+    public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_MANCENTER_ENABLED = "hazelcast.mancenter.enabled";
     public static final String PROP_MEMCACHE_ENABLED = "hazelcast.memcache.enabled";
     public static final String PROP_REST_ENABLED = "hazelcast.rest.enabled";
@@ -67,6 +68,8 @@ public class GroupProperties {
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
 
     public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "6");
+
+    public final GroupProperty VERSION_CHECK_ENABLED;
 
     public final GroupProperty MANCENTER_ENABLED;
 
@@ -143,6 +146,7 @@ public class GroupProperties {
     public final GroupProperty MC_TOPIC_EXCLUDES;
 
     public GroupProperties(Config config) {
+        VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         MANCENTER_ENABLED = new GroupProperty(config, PROP_MANCENTER_ENABLED, "true");
         MEMCACHE_ENABLED = new GroupProperty(config, PROP_MEMCACHE_ENABLED, "true");
         REST_ENABLED = new GroupProperty(config, PROP_REST_ENABLED, "true");

@@ -6,6 +6,22 @@
         <name>dev</name>
         <password>dev-pass</password>
     </group>
+    <wan-replication name="my-wan-cluster">
+        <target-cluster group-name="tokyo" group-password="tokyo-pass">
+            <replication-impl>com.hazelcast.impl.wan.WanNoDelayReplication</replication-impl>
+            <end-points>
+                <address>10.2.1.1:5701</address>
+                <address>10.2.1.2:5701</address>
+            </end-points>
+        </target-cluster>
+        <target-cluster group-name="london" group-password="london-pass">
+            <replication-impl>com.hazelcast.impl.wan.WanNoDelayReplication</replication-impl>
+            <end-points>
+                <address>10.3.5.1:5701</address>
+                <address>10.3.5.2:5701</address>
+            </end-points>
+        </target-cluster>
+    </wan-replication>
     <network>
         <port auto-increment="true">5701</port>
         <join>
@@ -126,6 +142,11 @@
             hz.LATEST_UPDATE ; entry with the latest update wins.
         -->
         <merge-policy>hz.ADD_NEW_ENTRY</merge-policy>
+
+
+        <wan-replication-ref name="my-wan-cluster">
+            <merge-policy>hz.MERGING_WINS</merge-policy>
+        </wan-replication-ref>
     </map>
     <!-- Add your own map merge policy implementations here:     
     	<merge-policies>

@@ -78,7 +78,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             final Collection<Address> colPossibleAddresses = getPossibleMembers(config, node.address, logger);
             colPossibleAddresses.remove(node.address);
             for (final Address possibleAddress : colPossibleAddresses) {
-                logger.log(Level.FINEST, "connecting to " + possibleAddress);
+                logger.log(Level.INFO, "connecting to " + possibleAddress);
                 node.connectionManager.getOrConnect(possibleAddress);
             }
             boolean found = false;

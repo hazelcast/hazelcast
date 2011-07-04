@@ -111,7 +111,7 @@ public class LoggingServiceImpl implements LoggingService {
         public void log(Level level, String message, Throwable thrown) {
             boolean loggable = logger.isLoggable(level);
             if (loggable || level.intValue() >= minLevel.intValue()) {
-                message = "[" + groupName + "] " + message;
+                message = thisMember.getInetSocketAddress() + " [" + groupName + "] " + message;
                 LogRecord logRecord = new LogRecord(level, message);
                 logRecord.setThrown(thrown);
                 logRecord.setLoggerName(name);

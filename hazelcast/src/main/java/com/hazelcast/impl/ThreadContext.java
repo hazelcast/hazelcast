@@ -17,7 +17,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ConcurrentMapManager.MEvict;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Serializer;
@@ -35,9 +34,7 @@ public final class ThreadContext {
 
     private final Serializer serializer = new Serializer();
 
-    private final ConcurrentMap<FactoryImpl, CallCache> mapCallCacheForFactories = new ConcurrentHashMap<FactoryImpl, CallCache>();
-
-    private volatile CallContext callContext = null;
+    private final ConcurrentMap<FactoryImpl, HazelcastInstanceContext> mapHazelcastInstanceContexts = new ConcurrentHashMap<FactoryImpl, HazelcastInstanceContext>(2);
 
     private volatile FactoryImpl currentFactory = null;
 
@@ -45,7 +42,6 @@ public final class ThreadContext {
 
     private ThreadContext(Thread thread) {
         this.thread = thread;
-        setCallContext(new CallContext(createNewThreadId(), false));
     }
 
     public static ThreadContext get() {
@@ -69,19 +65,11 @@ public final class ThreadContext {
         mapContexts.clear();
     }
 
-    public void cleanup() {
-        mapCallCacheForFactories.clear();
-        final CallContext currentCallContext = this.callContext;
-        if (currentCallContext != null) {
-            currentCallContext.reset();
-        }
-    }
-
     public void finalizeTxn() {
         getCallContext().finalizeTransaction();
     }
 
-    public Transaction getTransaction() {
+    public TransactionImpl getTransaction() {
         return getCallContext().getTransaction();
     }
 
@@ -113,13 +101,16 @@ public final class ThreadContext {
         return serializer.readObject(data);
     }
 
+    public HazelcastInstanceContext getHazelcastInstanceContext(FactoryImpl factory) {
+        HazelcastInstanceContext hic = mapHazelcastInstanceContexts.get(factory);
+        if (hic != null) return hic;
+        hic = new HazelcastInstanceContext(factory);
+        mapHazelcastInstanceContexts.put(factory, hic);
+        return hic;
+    }
+
     public CallCache getCallCache(FactoryImpl factory) {
-        CallCache callCache = mapCallCacheForFactories.get(factory);
-        if (callCache == null) {
-            callCache = new CallCache(factory);
-            mapCallCacheForFactories.put(factory, callCache);
-        }
-        return callCache;
+        return getHazelcastInstanceContext(factory).getCallCache();
     }
 
     /**
@@ -136,7 +127,35 @@ public final class ThreadContext {
     }
 
     public CallContext getCallContext() {
-        return callContext;
+        return getHazelcastInstanceContext(currentFactory).getCallContext();
+    }
+
+    class HazelcastInstanceContext {
+        FactoryImpl factory;
+        CallCache callCache;
+        volatile CallContext callContext = null;
+
+        HazelcastInstanceContext(FactoryImpl factory) {
+            this.factory = factory;
+            callCache = new CallCache(factory);
+            setCallContext(new CallContext(createNewThreadId(), false));
+        }
+
+        public CallCache getCallCache() {
+            return callCache;
+        }
+
+        public FactoryImpl getFactory() {
+            return factory;
+        }
+
+        public CallContext getCallContext() {
+            return callContext;
+        }
+
+        public void setCallContext(CallContext callContext) {
+            this.callContext = callContext;
+        }
     }
 
     class CallCache {
@@ -180,7 +199,7 @@ public final class ThreadContext {
     }
 
     public void setCallContext(CallContext callContext) {
-        this.callContext = callContext;
+        getHazelcastInstanceContext(currentFactory).setCallContext(callContext);
     }
 
     @Override

@@ -801,6 +801,12 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         IMap map = hClient.getMap("putAll");
         int counter = 100;
+        Set keys = new HashSet(counter);
+        for (int i = 0; i < counter; i++) {
+            keys.add(i);
+        }
+        Map all = map.getAll(keys);
+        assertEquals(0, all.size());
         Map tempMap = new HashMap();
         for (int i = 0; i < counter; i++) {
             tempMap.put(i, i);
@@ -809,6 +815,8 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         for (int i = 0; i < counter; i++) {
             assertEquals(i, map.get(i));
         }
+        all = map.getAll(keys);
+        assertEquals(counter, all.size());
     }
 
     @Test

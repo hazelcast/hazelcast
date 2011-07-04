@@ -23,6 +23,8 @@ import com.hazelcast.config.Join;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
 import com.hazelcast.impl.base.CpuUtilization;
+import com.hazelcast.impl.base.VersionCheck;
+import com.hazelcast.impl.wan.WanReplicationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
@@ -121,6 +123,8 @@ public class Node {
 
     final int id;
 
+    final WanReplicationService wanReplicationService;
+
     public Node(FactoryImpl factory, Config config) {
         this.id = counter.incrementAndGet();
         this.threadGroup = new ThreadGroup(factory.getName());
@@ -215,7 +219,8 @@ public class Node {
         ILogger systemLogger = getLogger("com.hazelcast.system");
         systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
                 + build + ") starting at " + address);
-        systemLogger.log(Level.INFO, "Copyright (C) 2008-2010 Hazelcast.com");
+        systemLogger.log(Level.INFO, "Copyright (C) 2008-2011 Hazelcast.com");
+        VersionCheck.check(this, build, version);
         Join join = config.getNetworkConfig().getJoin();
         MulticastService mcService = null;
         try {
@@ -240,9 +245,11 @@ public class Node {
             logger.log(Level.SEVERE, e.getMessage(), e);
         }
         this.multicastService = mcService;
+        wanReplicationService = null; //new WanReplicationService(this);
     }
 
     public void failedConnection(Address address) {
+        logger.log(Level.WARNING, getThisAddress() + "failed " + address);
         failedConnections.add(address);
     }
 

@@ -73,6 +73,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
 
     public void writeData(DataOutput out) throws IOException {
         long now = System.currentTimeMillis();
+        out.writeBoolean(valid);
         out.writeLong(cost);
         out.writeLong(expirationTime - now);
         out.writeLong(lastAccessTime - now);
@@ -98,6 +99,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
 
     public void readData(DataInput in) throws IOException {
         long now = System.currentTimeMillis();
+        valid = in.readBoolean();
         cost = in.readLong();
         expirationTime = in.readLong() + now;
         lastAccessTime = in.readLong() + now;

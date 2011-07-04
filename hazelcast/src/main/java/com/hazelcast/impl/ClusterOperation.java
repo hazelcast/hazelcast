@@ -60,6 +60,7 @@ public enum ClusterOperation {
     CONCURRENT_MAP_PUT_TRANSIENT(),
     CONCURRENT_MAP_SET(),
     CONCURRENT_MAP_MERGE(),
+    CONCURRENT_MAP_ASYNC_MERGE(),
     CONCURRENT_MAP_TRY_PUT(),
     CONCURRENT_MAP_PUT_AND_UNLOCK(),
     CONCURRENT_MAP_GET(),
@@ -118,9 +119,9 @@ public enum ClusterOperation {
     BLOCKING_QUEUE_ENTRIES(),
     SEMAPHORE_ACQUIRE(),
     SEMAPHORE_RELEASE(),
-    SEMAPHORE_AVAILABLE_PERIMITS(),
-    SEMAPHORE_DRAIN_PERIMITS(),
-    SEMAPHORE_REDUCE_PERIMITS();
+    SEMAPHORE_AVAILABLE_PERMITS(),
+    SEMAPHORE_DRAIN_PERMITS(),
+    SEMAPHORE_REDUCE_PERMITS();
 
     public final static byte OPERATION_COUNT = (byte) values().length;
     private final static ClusterOperation[] clusterOperations = new ClusterOperation[OPERATION_COUNT];

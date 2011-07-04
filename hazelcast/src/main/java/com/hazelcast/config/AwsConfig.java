@@ -31,16 +31,18 @@ public class AwsConfig {
         return accessKey;
     }
 
-    public void setAccessKey(String accessKey) {
+    public AwsConfig setAccessKey(String accessKey) {
         this.accessKey = accessKey;
+        return this;
     }
 
     public String getSecretKey() {
         return secretKey;
     }
 
-    public void setSecretKey(String secretKey) {
+    public AwsConfig setSecretKey(String secretKey) {
         this.secretKey = secretKey;
+        return this;
     }
 
     @Override

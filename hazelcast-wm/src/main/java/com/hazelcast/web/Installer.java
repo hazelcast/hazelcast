@@ -52,6 +52,8 @@ public class Installer {
 
     private String version = "1.8.3";
 
+    private String libDir = "../lib/";
+
     public static void main(final String[] args) {
         final Installer installer = new Installer();
         installer.install(args);
@@ -130,8 +132,8 @@ public class Installer {
                 log("Jar Location " + jarLocation);
                 String hazelcastJarName = "hazelcast-" + version + ".jar";
                 String hazelcastWMJarName = "hazelcast-wm-" + version + ".jar";
-                addFileToZipStream(("../lib/" + hazelcastJarName), (jarLocation +  hazelcastJarName), out);
-                addFileToZipStream(("../lib/" + hazelcastWMJarName), (jarLocation +  hazelcastWMJarName), out);
+                addFileToZipStream((libDir + hazelcastJarName), (jarLocation + hazelcastJarName), out);
+                addFileToZipStream((libDir + hazelcastWMJarName), (jarLocation + hazelcastWMJarName), out);
             }
             out.flush();
             out.close();
@@ -345,7 +347,9 @@ public class Installer {
                         appsSharingSessions = true;
                         addHazellib = false;
                     } else if (arg.startsWith("-version")) {
-                        version = arg.substring(arg.indexOf("-version") + 8);
+                        version = arg.substring(arg.indexOf("-version") + "-version".length());
+                    } else if (arg.startsWith("-libDir")) {
+                        libDir = arg.substring(arg.indexOf("-libDir") + "-libDir".length());
                     }
                 } else {
                     setApps.add(arg);

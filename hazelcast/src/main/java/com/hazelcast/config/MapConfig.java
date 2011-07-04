@@ -71,6 +71,8 @@ public class MapConfig implements DataSerializable {
 
     private String mergePolicy = DEFAULT_MERGE_POLICY;
 
+    private WanReplicationRef wanReplicationRef;
+
     public MapConfig(String name) {
         this.name = name;
     }
@@ -342,6 +344,15 @@ public class MapConfig implements DataSerializable {
 
     public MapConfig setReadBackupData(boolean readBackupData) {
         this.readBackupData = readBackupData;
+        return this;
+    }
+
+    public WanReplicationRef getWanReplicationRef() {
+        return wanReplicationRef;
+    }
+
+    public MapConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+        this.wanReplicationRef = wanReplicationRef;
         return this;
     }
 

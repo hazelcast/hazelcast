@@ -237,7 +237,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    protected String getTextContent(final Node node) {
+    public String getTextContent(final Node node) {
         if (domLevel3) {
             return node.getTextContent();
         } else {

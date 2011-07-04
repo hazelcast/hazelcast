@@ -20,6 +20,7 @@ package com.hazelcast.config;
 import com.hazelcast.merge.AddNewEntryMergePolicy;
 import com.hazelcast.merge.HigherHitsMergePolicy;
 import com.hazelcast.merge.LatestUpdateMergePolicy;
+import com.hazelcast.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.util.ByteUtil;
 
@@ -76,6 +77,8 @@ public class Config implements DataSerializable {
 
     private Map<String, MergePolicyConfig> mapMergePolicyConfigs = new ConcurrentHashMap<String, MergePolicyConfig>();
 
+    private Map<String, WanReplicationConfig> mapWanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
+
     public Config() {
         final String superClientProp = System.getProperty("hazelcast.super.client");
         if ("true".equalsIgnoreCase(superClientProp)) {
@@ -86,6 +89,7 @@ public class Config implements DataSerializable {
         addMergePolicyConfig(new MergePolicyConfig(AddNewEntryMergePolicy.NAME, new AddNewEntryMergePolicy()));
         addMergePolicyConfig(new MergePolicyConfig(HigherHitsMergePolicy.NAME, new HigherHitsMergePolicy()));
         addMergePolicyConfig(new MergePolicyConfig(LatestUpdateMergePolicy.NAME, new LatestUpdateMergePolicy()));
+        addMergePolicyConfig(new MergePolicyConfig(PassThroughMergePolicy.NAME, new PassThroughMergePolicy()));
     }
 
     public void addMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
@@ -96,11 +100,20 @@ public class Config implements DataSerializable {
         return mapMergePolicyConfigs.get(name);
     }
 
-    /**
-     * @return the mapMergePolicyConfigs
-     */
     public Map<String, MergePolicyConfig> getMergePolicyConfigs() {
-        return Collections.unmodifiableMap(mapMergePolicyConfigs);
+        return mapMergePolicyConfigs;
+    }
+
+    public WanReplicationConfig getWanReplicationConfig(String name) {
+        return mapWanReplicationConfigs.get(name);
+    }
+
+    public void addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
+        mapWanReplicationConfigs.put(wanReplicationConfig.getName(), wanReplicationConfig);
+    }
+
+    public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
+        return mapWanReplicationConfigs;
     }
 
     public ClassLoader getClassLoader() {

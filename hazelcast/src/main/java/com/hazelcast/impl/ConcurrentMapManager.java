@@ -21,6 +21,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.impl.executor.ParallelExecutor;
+import com.hazelcast.merge.MergePolicy;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.query.Predicate;
@@ -96,6 +97,7 @@ public class ConcurrentMapManager extends BaseManager {
         node.clusterService.registerPeriodicRunnable(partitionManager);
         registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET, new GetOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_ASYNC_MERGE, new AsyncMergePacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_MERGE, new MergeOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_TRY_PUT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_SET, new PutOperationHandler());
@@ -142,9 +144,9 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(ATOMIC_NUMBER_ADD_AND_GET, new AtomicOperationHandler());
         registerPacketProcessor(SEMAPHORE_ACQUIRE, new SemaphoreOperationHandler());
         registerPacketProcessor(SEMAPHORE_RELEASE, new SemaphoreOperationHandler());
-        registerPacketProcessor(SEMAPHORE_AVAILABLE_PERIMITS, new SemaphoreOperationHandler());
-        registerPacketProcessor(SEMAPHORE_DRAIN_PERIMITS, new SemaphoreOperationHandler());
-        registerPacketProcessor(SEMAPHORE_REDUCE_PERIMITS, new SemaphoreOperationHandler());
+        registerPacketProcessor(SEMAPHORE_AVAILABLE_PERMITS, new SemaphoreOperationHandler());
+        registerPacketProcessor(SEMAPHORE_DRAIN_PERMITS, new SemaphoreOperationHandler());
+        registerPacketProcessor(SEMAPHORE_REDUCE_PERMITS, new SemaphoreOperationHandler());
     }
 
     private void executeCleanup(final CMap cmap, final boolean forced) {
@@ -965,23 +967,27 @@ public class ConcurrentMapManager extends BaseManager {
     class MRemove extends MBackupAndMigrationAwareOp {
 
         public Object remove(String name, Object key, long timeout) {
-            return txnalRemove(CONCURRENT_MAP_REMOVE, name, key, null, timeout);
+            return txnalRemove(CONCURRENT_MAP_REMOVE, name, key, null, timeout, -1L);
         }
 
         public Object removeIfSame(String name, Object key, Object value, long timeout) {
-            return txnalRemove(CONCURRENT_MAP_REMOVE_IF_SAME, name, key, value, timeout);
+            return txnalRemove(CONCURRENT_MAP_REMOVE_IF_SAME, name, key, value, timeout, -1L);
         }
 
         public Object tryRemove(String name, Object key, long timeout) throws TimeoutException {
-            Object result = txnalRemove(CONCURRENT_MAP_REMOVE, name, key, null, timeout);
+            Object result = txnalRemove(CONCURRENT_MAP_REMOVE, name, key, null, timeout, -1L);
             if (result != null && result instanceof DistributedTimeoutException) {
                 throw new TimeoutException();
             }
             return result;
         }
 
+        public void removeForSync(String name, Object key) {
+            txnalRemove(CONCURRENT_MAP_REMOVE, name, key, null, -1, Long.MIN_VALUE);
+        }
+
         private Object txnalRemove(ClusterOperation operation, String name,
-                                   Object key, Object value, long timeout) {
+                                   Object key, Object value, long timeout, long txnId) {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
@@ -1014,6 +1020,7 @@ public class ConcurrentMapManager extends BaseManager {
                     return txn.attachRemoveOp(name, key, value, false);
                 }
             } else {
+                request.txnId = txnId;
                 Object oldValue = objectCall(operation, name, key, value, timeout, -1);
                 if (oldValue != null) {
                     if (oldValue instanceof AddressAwareException) {
@@ -1247,7 +1254,7 @@ public class ConcurrentMapManager extends BaseManager {
             setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0, 0);
             request.longValue = value;
             request.caller = thisAddress;
-            request.operation = SEMAPHORE_AVAILABLE_PERIMITS;
+            request.operation = SEMAPHORE_AVAILABLE_PERMITS;
             doOp();
             Object returnObject = getResultAsObject(false);
             return (Integer) returnObject;
@@ -1257,10 +1264,10 @@ public class ConcurrentMapManager extends BaseManager {
             setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0, 0);
             request.longValue = value;
             request.caller = thisAddress;
-            request.operation = SEMAPHORE_DRAIN_PERIMITS;
+            request.operation = SEMAPHORE_DRAIN_PERMITS;
             doOp();
             Object returnObject = getResultAsObject(false);
-            backup(SEMAPHORE_DRAIN_PERIMITS);
+            backup(SEMAPHORE_DRAIN_PERMITS);
             return (Integer) returnObject;
         }
 
@@ -1268,9 +1275,9 @@ public class ConcurrentMapManager extends BaseManager {
             setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, permits, 0, 0);
             request.longValue = value;
             request.caller = thisAddress;
-            request.operation = SEMAPHORE_REDUCE_PERIMITS;
+            request.operation = SEMAPHORE_REDUCE_PERMITS;
             doOp();
-            backup(SEMAPHORE_REDUCE_PERIMITS);
+            backup(SEMAPHORE_REDUCE_PERMITS);
         }
 
         void backup(Long value) {
@@ -1296,6 +1303,11 @@ public class ConcurrentMapManager extends BaseManager {
 
         public Object put(String name, Object key, Object value, long timeout, long ttl) {
             return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl);
+        }
+
+        public Object putForSync(String name, Object key, Object value) {
+            Object result = txnalPut(CONCURRENT_MAP_SET, name, key, value, -1, -1, Long.MIN_VALUE);
+            return (result == Boolean.TRUE);
         }
 
         public Object putTransient(String name, Object key, Object value, long timeout, long ttl) {
@@ -1389,8 +1401,12 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout, long ttl) {
+            return txnalPut(operation, name, key, value, timeout, ttl, -1);
+        }
+
+        Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout, long ttl, long txnId) {
             ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getTransaction();
+            TransactionImpl txn = threadContext.getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (!txn.has(name, key)) {
                     MLock mlock = new MLock();
@@ -1420,6 +1436,7 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             } else {
                 setLocal(operation, name, key, value, timeout, ttl);
+                request.txnId = txnId;
                 request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
                 setIndexValues(request, value);
                 if (operation == CONCURRENT_MAP_TRY_PUT
@@ -1572,8 +1589,8 @@ public class ConcurrentMapManager extends BaseManager {
                     (operation == CONCURRENT_MAP_LOCK || operation == CONCURRENT_MAP_UNLOCK ||
                             operation == ClusterOperation.SEMAPHORE_ACQUIRE ||
                             operation == ClusterOperation.SEMAPHORE_RELEASE ||
-                            operation == SEMAPHORE_DRAIN_PERIMITS ||
-                            operation == ClusterOperation.SEMAPHORE_REDUCE_PERIMITS)) {
+                            operation == SEMAPHORE_DRAIN_PERMITS ||
+                            operation == ClusterOperation.SEMAPHORE_REDUCE_PERMITS)) {
                 return;
             }
             if (backupCount > 0) {
@@ -2036,6 +2053,38 @@ public class ConcurrentMapManager extends BaseManager {
             Object value = cmap.backup(request);
             request.clearForResponse();
             request.response = value;
+        }
+    }
+
+    class AsyncMergePacketProcessor implements PacketProcessor {
+        final ParallelExecutor parallelExecutor = node.executorManager.newParallelExecutor(20);
+
+        public void process(final Packet packet) {
+            final String name = packet.name;
+            final DataRecordEntry mergingEntry = (DataRecordEntry) toObject(packet.getValueData());
+            final int blockId = packet.blockId;
+            final CMap cmap = getOrCreateMap(name);
+            releasePacket(packet);
+            parallelExecutor.execute(new Runnable() {
+                public void run() {
+                    Record recordExisting = cmap.getRecord(mergingEntry.getKeyData());
+                    DataRecordEntry existingEntry = recordExisting == null ? null : new DataRecordEntry(recordExisting);
+                    MProxy mproxy = (MProxy) node.factory.getOrCreateProxyByName(name);
+                    MergePolicy mergePolicy = cmap.wanMergePolicy;
+                    if (mergePolicy == null) {
+                        logger.log(Level.SEVERE, "Received wan merge but no merge policy defined!");
+                    } else {
+                        Object winner = mergePolicy.merge(cmap.getName(), mergingEntry, existingEntry);
+                        if (winner != null) {
+                            if (winner == MergePolicy.REMOVE_EXISTING) {
+                                mproxy.removeForSync(mergingEntry.getKey());
+                            } else {
+                                mproxy.putForSync(mergingEntry.getKeyData(), winner);
+                            }
+                        }
+                    }
+                }
+            }, blockId);
         }
     }
 

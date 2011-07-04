@@ -117,6 +117,7 @@ class TransactionImpl implements Transaction {
             throw new IllegalStateException("Transaction is not active");
         status = TXN_STATUS_COMMITTING;
         try {
+            ThreadContext.get().setCurrentFactory(factory);
             for (TransactionRecord transactionRecord : transactionRecords) {
                 transactionRecord.commit();
             }
@@ -127,6 +128,25 @@ class TransactionImpl implements Transaction {
         } finally {
             finalizeTxn();
             status = TXN_STATUS_COMMITTED;
+        }
+    }
+
+    public void rollback() throws IllegalStateException {
+        if (status == TXN_STATUS_NO_TXN || status == TXN_STATUS_UNKNOWN
+                || status == TXN_STATUS_COMMITTED || status == TXN_STATUS_ROLLED_BACK)
+            throw new IllegalStateException("Transaction is not ready to rollback. Status= "
+                    + status);
+        status = TXN_STATUS_ROLLING_BACK;
+        try {
+            ThreadContext.get().setCurrentFactory(factory);
+            for (TransactionRecord transactionRecord : transactionRecords) {
+                transactionRecord.rollback();
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, e.getMessage(), e);
+        } finally {
+            finalizeTxn();
+            status = TXN_STATUS_ROLLED_BACK;
         }
     }
 
@@ -197,24 +217,6 @@ class TransactionImpl implements Transaction {
         return (rec != null && rec.removed);
     }
 
-    public void rollback() throws IllegalStateException {
-        if (status == TXN_STATUS_NO_TXN || status == TXN_STATUS_UNKNOWN
-                || status == TXN_STATUS_COMMITTED || status == TXN_STATUS_ROLLED_BACK)
-            throw new IllegalStateException("Transaction is not ready to rollback. Status= "
-                    + status);
-        status = TXN_STATUS_ROLLING_BACK;
-        try {
-            for (TransactionRecord transactionRecord : transactionRecords) {
-                transactionRecord.rollback();
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-        } finally {
-            finalizeTxn();
-            status = TXN_STATUS_ROLLED_BACK;
-        }
-    }
-
     public int size(String name) {
         int size = 0;
         for (TransactionRecord transactionRecord : transactionRecords) {
@@ -237,25 +239,6 @@ class TransactionImpl implements Transaction {
             }
         }
         return size;
-    }
-
-    public List newValues(String name) {
-        List lsValues = null;
-        for (TransactionRecord transactionRecord : transactionRecords) {
-            if (transactionRecord.name.equals(name)) {
-                if (!transactionRecord.removed) {
-                    if (transactionRecord.value != null) {
-                        if (transactionRecord.newRecord) {
-                            if (lsValues == null) {
-                                lsValues = new ArrayList(2);
-                            }
-                            lsValues.add(transactionRecord.value);
-                        }
-                    }
-                }
-            }
-        }
-        return lsValues;
     }
 
     public List<Map.Entry> newEntries(String name) {

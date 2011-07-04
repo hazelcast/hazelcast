@@ -71,7 +71,7 @@ public class SemaphoreClientProxy implements ISemaphore {
     }
 
     public boolean tryRelease(int permits, long timeout, TimeUnit timeUnit) {
-        Integer remaining = (Integer) proxyHelper.doOp(ClusterOperation.SEMAPHORE_RELEASE, null, permits);
+        proxyHelper.doOp(ClusterOperation.SEMAPHORE_RELEASE, null, permits);
         return true;
     }
 
@@ -104,15 +104,15 @@ public class SemaphoreClientProxy implements ISemaphore {
     }
 
     public int availablePermits() {
-        return (Integer) proxyHelper.doOp(ClusterOperation.SEMAPHORE_AVAILABLE_PERIMITS, null, null);
+        return (Integer) proxyHelper.doOp(ClusterOperation.SEMAPHORE_AVAILABLE_PERMITS, null, null);
     }
 
     public int drainPermits() {
-        return (Integer) proxyHelper.doOp(ClusterOperation.SEMAPHORE_DRAIN_PERIMITS, null, null);
+        return (Integer) proxyHelper.doOp(ClusterOperation.SEMAPHORE_DRAIN_PERMITS, null, null);
     }
 
     public void reducePermits(int permits) {
-        proxyHelper.doOp(ClusterOperation.SEMAPHORE_REDUCE_PERIMITS, null, permits);
+        proxyHelper.doOp(ClusterOperation.SEMAPHORE_REDUCE_PERMITS, null, permits);
     }
 
     public InstanceType getInstanceType() {
