@@ -125,6 +125,8 @@ public class Node {
 
     final WanReplicationService wanReplicationService;
 
+    final Joiner joiner;
+
     public Node(FactoryImpl factory, Config config) {
         this.id = counter.incrementAndGet();
         this.threadGroup = new ThreadGroup(factory.getName());
@@ -246,6 +248,7 @@ public class Node {
         }
         this.multicastService = mcService;
         wanReplicationService = null; //new WanReplicationService(this);
+        joiner = createJoiner();
     }
 
     public void failedConnection(Address address) {
@@ -507,7 +510,6 @@ public class Node {
 
     void join() {
         try {
-            Joiner joiner = getJoiner();
             if (joiner == null) {
                 logger.log(Level.WARNING, "No join method is enabled! Starting standalone.");
                 setAsMaster();
@@ -521,6 +523,10 @@ public class Node {
     }
 
     Joiner getJoiner() {
+        return joiner;
+    }
+
+    Joiner createJoiner() {
         Join join = config.getNetworkConfig().getJoin();
         if (join.getMulticastConfig().isEnabled() && multicastService != null) {
             return new MulticastJoiner(this);

@@ -24,7 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public abstract class AbstractRemotelyProcessable extends AbstractNodeAware implements RemotelyProcessable {
-    volatile Connection conn;
+    protected volatile Connection conn;
 
     public Connection getConnection() {
         return conn;

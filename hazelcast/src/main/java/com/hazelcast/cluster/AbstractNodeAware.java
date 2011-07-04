@@ -21,7 +21,7 @@ import com.hazelcast.impl.Node;
 import com.hazelcast.nio.SerializationHelper;
 
 public class AbstractNodeAware extends SerializationHelper {
-    volatile Node node;
+    protected volatile Node node;
 
     public Node getNode() {
         return node;

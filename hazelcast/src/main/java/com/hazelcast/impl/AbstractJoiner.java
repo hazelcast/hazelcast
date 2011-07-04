@@ -151,16 +151,12 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected void connectAndSendJoinRequest(Collection<Address> colPossibleAddresses) {
-        int numberOfJoinReq = 0;
         colPossibleAddresses.removeAll(node.getFailedConnections());
         for (Address possibleAddress : colPossibleAddresses) {
             final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
-            if (conn != null && numberOfJoinReq < 5) {
+            if (conn != null) {
                 logger.log(Level.FINEST, "sending join request for " + possibleAddress);
                 node.clusterManager.sendJoinRequest(possibleAddress);
-                numberOfJoinReq++;
-            } else {
-                logger.log(Level.FINEST, "number of join request is greater than 5, no join request will be sent for " + possibleAddress + " the second time");
             }
         }
     }
