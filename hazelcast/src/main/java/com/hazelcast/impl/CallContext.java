@@ -42,7 +42,7 @@ public class CallContext {
     }
 
     public long getTxnId() {
-        return (getTransaction() == null) ? -1L : getTransaction().getId();
+        return (txn == null) ? -1L : txn.getId();
     }
 
     public int getThreadId() {
@@ -55,5 +55,13 @@ public class CallContext {
 
     public void reset() {
         this.txn = null;
+    }
+
+    @Override
+    public String toString() {
+        return "CallContext{" +
+                "threadId=" + threadId +
+                ", client=" + client +
+                '}';
     }
 }

@@ -153,6 +153,7 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void run() {
+        ThreadContext.get().setCurrentFactory(node.factory);
         boolean readPackets = false;
         boolean readProcessables = false;
         while (running) {

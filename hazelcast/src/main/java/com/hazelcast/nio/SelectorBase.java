@@ -18,6 +18,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ThreadWatcher;
 
@@ -108,6 +109,7 @@ public abstract class SelectorBase implements Runnable {
 
     public final void run() {
         try {
+            ThreadContext.get().setCurrentFactory(node.factory);
             while (live) {
 //                 if (threadWatcher.incrementRunCount() % 10000 == 0) {
 //                    publishUtilization();

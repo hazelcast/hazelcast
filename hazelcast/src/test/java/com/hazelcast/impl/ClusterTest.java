@@ -2814,6 +2814,7 @@ public class ClusterTest {
     }
 
     @Test
+    @Ignore
     public void recoverFromNodeCrashesAndNetworkOutages() throws InterruptedException {
         int nodeCount = 5;
         final Config config = new Config();

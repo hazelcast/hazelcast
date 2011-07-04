@@ -76,12 +76,12 @@ public class ExecutorManager extends BaseManager {
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 ThreadContext threadContext = ThreadContext.get();
+                threadContext.setCurrentFactory(node.factory);
                 CallContext callContext = mapThreadCallContexts.get(t);
                 if (callContext == null) {
                     callContext = new CallContext(threadContext.createNewThreadId(), false);
                     mapThreadCallContexts.put(t, callContext);
                 }
-                threadContext.setCurrentFactory(node.factory);
                 threadContext.setCallContext(callContext);
             }
         };

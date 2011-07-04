@@ -48,13 +48,13 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         this.groupName = groupName;
         this.password = password;
         addressQueue.addAll(Arrays.asList(targets));
+        node.executorManager.executeNow(this);
     }
 
     /**
      * Only ServiceThread will call this
      */
     public void recordUpdated(Record record) {
-        System.out.println("OFFFFFFFFFER " + q.size());
         DataRecordEntry dataRecordEntry = new DataRecordEntry(record);
         RecordUpdate ru = (new RecordUpdate(dataRecordEntry, record.getName()));
         if (!q.offer(ru)) {
@@ -71,7 +71,6 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                 if (conn == null) {
                     conn = getConnection();
                 }
-                System.out.println(node.getClusterImpl().getLocalMember() + " UUWriting...");
                 conn.getWriteHandler().enqueueSocketWritable(ru.toNewPacket());
                 if (!conn.live()) {
                     failureQ.addFirst(ru);

@@ -21,7 +21,9 @@ import com.hazelcast.impl.ConcurrentMapManager.MEvict;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Serializer;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,7 +36,7 @@ public final class ThreadContext {
 
     private final Serializer serializer = new Serializer();
 
-    private final ConcurrentMap<FactoryImpl, HazelcastInstanceContext> mapHazelcastInstanceContexts = new ConcurrentHashMap<FactoryImpl, HazelcastInstanceContext>(2);
+    private final Map<FactoryImpl, HazelcastInstanceThreadContext> mapHazelcastInstanceContexts = new HashMap<FactoryImpl, HazelcastInstanceThreadContext>(2);
 
     private volatile FactoryImpl currentFactory = null;
 
@@ -101,16 +103,16 @@ public final class ThreadContext {
         return serializer.readObject(data);
     }
 
-    public HazelcastInstanceContext getHazelcastInstanceContext(FactoryImpl factory) {
-        HazelcastInstanceContext hic = mapHazelcastInstanceContexts.get(factory);
+    public HazelcastInstanceThreadContext getHazelcastInstanceThreadContext(FactoryImpl factory) {
+        HazelcastInstanceThreadContext hic = mapHazelcastInstanceContexts.get(factory);
         if (hic != null) return hic;
-        hic = new HazelcastInstanceContext(factory);
+        hic = new HazelcastInstanceThreadContext(factory);
         mapHazelcastInstanceContexts.put(factory, hic);
         return hic;
     }
 
     public CallCache getCallCache(FactoryImpl factory) {
-        return getHazelcastInstanceContext(factory).getCallCache();
+        return getHazelcastInstanceThreadContext(factory).getCallCache();
     }
 
     /**
@@ -127,21 +129,23 @@ public final class ThreadContext {
     }
 
     public CallContext getCallContext() {
-        return getHazelcastInstanceContext(currentFactory).getCallContext();
+        return getHazelcastInstanceThreadContext(currentFactory).getCallContext();
     }
 
-    class HazelcastInstanceContext {
+    class HazelcastInstanceThreadContext {
         FactoryImpl factory;
         CallCache callCache;
         volatile CallContext callContext = null;
 
-        HazelcastInstanceContext(FactoryImpl factory) {
+        HazelcastInstanceThreadContext(FactoryImpl factory) {
             this.factory = factory;
-            callCache = new CallCache(factory);
-            setCallContext(new CallContext(createNewThreadId(), false));
+            callContext = (new CallContext(createNewThreadId(), false));
         }
 
         public CallCache getCallCache() {
+            if (callCache == null) {
+                callCache = new CallCache(factory);
+            }
             return callCache;
         }
 
@@ -199,7 +203,7 @@ public final class ThreadContext {
     }
 
     public void setCallContext(CallContext callContext) {
-        getHazelcastInstanceContext(currentFactory).setCallContext(callContext);
+        getHazelcastInstanceThreadContext(currentFactory).setCallContext(callContext);
     }
 
     @Override

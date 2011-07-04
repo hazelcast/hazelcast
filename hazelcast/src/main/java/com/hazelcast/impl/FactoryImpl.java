@@ -103,18 +103,16 @@ public class FactoryImpl implements HazelcastInstance {
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         FactoryImpl factory = null;
         try {
-            synchronized (factoryLock) {
-                if (config == null) {
-                    config = new XmlConfigBuilder().build();
-                }
-                String name = "_hzInstance_" + nextFactoryId++ + "_" + config.getGroupConfig().getName();
-                factory = new FactoryImpl(name, config);
-                FactoryImpl old = factories.put(name, factory);
-                if (old != null) {
-                    factory.logger.log(Level.SEVERE, "HazelcastInstance with [" + name + "] already exist!");
-                    throw new RuntimeException();
-                } else {
-                }
+            if (config == null) {
+                config = new XmlConfigBuilder().build();
+            }
+            String name = "_hzInstance_" + nextFactoryId++ + "_" + config.getGroupConfig().getName();
+            factory = new FactoryImpl(name, config);
+            FactoryImpl old = factories.put(name, factory);
+            if (old != null) {
+                factory.logger.log(Level.SEVERE, "HazelcastInstance with [" + name + "] already exist!");
+                throw new RuntimeException();
+            } else {
             }
             boolean firstMember = (factory.node.getClusterImpl().getMembers().iterator().next().localMember());
             int initialWaitSeconds = factory.node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
@@ -163,6 +161,15 @@ public class FactoryImpl implements HazelcastInstance {
             }
             throw new RuntimeException(t);
         }
+    }
+
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        return o == this || name.equals(((FactoryImpl) o).name);
     }
 
     public HazelcastInstanceProxy getHazelcastInstanceProxy() {
@@ -395,26 +402,6 @@ public class FactoryImpl implements HazelcastInstance {
 
     public Set<String> getLongInstanceNames() {
         return proxiesByName.keySet();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        FactoryImpl factory = (FactoryImpl) o;
-        if (!name.equals(factory.name)) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return name.hashCode();
     }
 
     @Override
