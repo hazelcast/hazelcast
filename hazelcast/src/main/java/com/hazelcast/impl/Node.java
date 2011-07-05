@@ -247,7 +247,7 @@ public class Node {
             logger.log(Level.SEVERE, e.getMessage(), e);
         }
         this.multicastService = mcService;
-        wanReplicationService = null; //new WanReplicationService(this);
+        wanReplicationService = new WanReplicationService(this);
         joiner = createJoiner();
     }
 

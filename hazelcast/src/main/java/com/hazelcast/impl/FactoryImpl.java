@@ -49,6 +49,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.logging.Level;
@@ -61,12 +62,10 @@ public class FactoryImpl implements HazelcastInstance {
 
     final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
 
-    final static Object factoryLock = new Object();
-
     final static String ATOMIC_NUMBER_MAP_NAME = "c:hz_AtomicNumber";
     final static String SEMAPHORE_MAP_NAME = "c:hz_SEMAPHORE";
 
-    private static int nextFactoryId = 0;
+    private static AtomicInteger factoryIdGen = new AtomicInteger();
 
     final ConcurrentMap<String, HazelcastInstanceAwareInstance> proxiesByName = new ConcurrentHashMap<String, HazelcastInstanceAwareInstance>(1000);
 
@@ -106,14 +105,9 @@ public class FactoryImpl implements HazelcastInstance {
             if (config == null) {
                 config = new XmlConfigBuilder().build();
             }
-            String name = "_hzInstance_" + nextFactoryId++ + "_" + config.getGroupConfig().getName();
+            String name = "_hzInstance_" + factoryIdGen.incrementAndGet() + "_" + config.getGroupConfig().getName();
             factory = new FactoryImpl(name, config);
-            FactoryImpl old = factories.put(name, factory);
-            if (old != null) {
-                factory.logger.log(Level.SEVERE, "HazelcastInstance with [" + name + "] already exist!");
-                throw new RuntimeException();
-            } else {
-            }
+            factories.put(name, factory);
             boolean firstMember = (factory.node.getClusterImpl().getMembers().iterator().next().localMember());
             int initialWaitSeconds = factory.node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
             if (initialWaitSeconds > 0) {
@@ -291,33 +285,29 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static void shutdownAll() {
-        synchronized (factoryLock) {
-            Collection<FactoryImpl> colFactories = factories.values();
-            for (FactoryImpl factory : colFactories) {
-                factory.shutdown();
-            }
-            factories.clear();
-            shutdownManagementService();
-            ThreadContext.shutdownAll();
+        Collection<FactoryImpl> colFactories = factories.values();
+        for (FactoryImpl factory : colFactories) {
+            factory.shutdown();
         }
+        factories.clear();
+        shutdownManagementService();
+        ThreadContext.shutdownAll();
     }
 
     public static void shutdown(HazelcastInstanceProxy hazelcastInstanceProxy) {
-        synchronized (factoryLock) {
-            FactoryImpl factory = hazelcastInstanceProxy.getFactory();
-            factory.managementService.unregister();
-            factory.proxies.clear();
-            if (factory.managementCenterService != null) {
-                factory.managementCenterService.shutdown();
-            }
-            for (ExecutorServiceProxy esp : factory.executorServiceProxies.values()) {
-                esp.shutdown();
-            }
-            factory.node.shutdown();
-            factories.remove(factory.getName());
-            if (factories.size() == 0) {
-                shutdownManagementService();
-            }
+        FactoryImpl factory = hazelcastInstanceProxy.getFactory();
+        factory.managementService.unregister();
+        factory.proxies.clear();
+        if (factory.managementCenterService != null) {
+            factory.managementCenterService.shutdown();
+        }
+        for (ExecutorServiceProxy esp : factory.executorServiceProxies.values()) {
+            esp.shutdown();
+        }
+        factory.node.shutdown();
+        factories.remove(factory.getName());
+        if (factories.size() == 0) {
+            shutdownManagementService();
         }
     }
 
