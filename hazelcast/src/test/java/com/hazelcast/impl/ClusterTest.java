@@ -2861,4 +2861,99 @@ public class ClusterTest {
         if (connection == null) return;
         connection.close();
     }
+
+    @Test
+    public void testMapPutAndGetUseBackupData() throws Exception {
+        Config config = new XmlConfigBuilder().build();
+        String mapName1 = "testMapPutAndGetUseBackupData";
+        String mapName2 = "testMapPutAndGetUseBackupData2";
+        MapConfig mapConfig1 = new MapConfig();
+        mapConfig1.setName(mapName1);
+        mapConfig1.setReadBackupData(true);
+        MapConfig mapConfig2 = new MapConfig();
+        mapConfig2.setName(mapName2);
+        mapConfig2.setReadBackupData(false);
+        config.addMapConfig(mapConfig1);
+        config.addMapConfig(mapConfig2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap<Object, Object> m1 = h1.getMap(mapName1);
+        IMap<Object, Object> m2 = h1.getMap(mapName2);
+        m1.put(1, 1);
+        m2.put(1, 1);
+        assertEquals(1, m1.get(1));
+        assertEquals(1, m1.get(1));
+        assertEquals(1, m1.get(1));
+        assertEquals(1, m2.get(1));
+        assertEquals(1, m2.get(1));
+        assertEquals(1, m2.get(1));
+        assertEquals(3, m1.getLocalMapStats().getHits());
+        assertEquals(3, m2.getLocalMapStats().getHits());
+    }
+
+    @Test
+    public void testLockKeyWithUseBackupData() {
+        Config config = new XmlConfigBuilder().build();
+        String mapName1 = "testLockKeyWithUseBackupData";
+        MapConfig mapConfig1 = new MapConfig();
+        mapConfig1.setName(mapName1);
+        mapConfig1.setReadBackupData(true);
+        config.addMapConfig(mapConfig1);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap<String, String> map = h1.getMap(mapName1);
+        map.lock("Hello");
+        try {
+            junit.framework.Assert.assertFalse(map.containsKey("Hello"));
+        } finally {
+            map.unlock("Hello");
+        }
+        map.put("Hello", "World");
+        map.lock("Hello");
+        try {
+            assertTrue(map.containsKey("Hello"));
+        } finally {
+            map.unlock("Hello");
+        }
+        map.remove("Hello");
+        map.lock("Hello");
+        try {
+            junit.framework.Assert.assertFalse(map.containsKey("Hello"));
+        } finally {
+            map.unlock("Hello");
+        }
+    }
+
+    @Test
+    public void testIssue290() throws Exception {
+        String mapName = "testIssue290";
+        Config config = new XmlConfigBuilder().build();
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setName(mapName);
+        mapConfig.setTimeToLiveSeconds(1);
+        config.addMapConfig(mapConfig);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap<Object, Object> m1 = h1.getMap(mapName);
+        m1.put(1, 1);
+        assertEquals(1, m1.get(1));
+        assertEquals(1, m1.get(1));
+        Thread.sleep(1050);
+        assertEquals(null, m1.get(1));
+        m1.put(1, 1);
+        assertEquals(1, m1.get(1));
+    }
+
+    @Test
+    public void testMultiMapTransactions() throws Exception {
+        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(new Config());
+        Hazelcast.newHazelcastInstance(new Config());
+        MultiMap<String, String> multimap = hazelcast.getMultiMap("def");
+        final Transaction transaction = hazelcast.getTransaction();
+        transaction.begin();
+        for (int i = 0; (i < 1000); ++i) {
+            final String element = Integer.toString(i);
+            multimap.put(element, element);
+        }
+        transaction.commit();
+        Thread.sleep(2000);
+        assertEquals(1000, multimap.size());
+    }
 }

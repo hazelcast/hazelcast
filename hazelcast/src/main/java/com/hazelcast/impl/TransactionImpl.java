@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
-class TransactionImpl implements Transaction {
+public class TransactionImpl implements Transaction {
 
     public static final long DEFAULT_TXN_TIMEOUT = 30 * 1000;
 

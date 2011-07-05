@@ -80,8 +80,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     public static class MasterQuestion extends AbstractRemotelyProcessable {
         public void process() {
             TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) getNode().getJoiner();
-            boolean shouldApprove = (tcpIpJoiner.askingForApproval) ? false : true;
-            System.out.println(node.getThisAddress() + " Sending answer " + shouldApprove);
+            boolean shouldApprove = (tcpIpJoiner.askingForApproval || node.isMaster()) ? false : true;
             getNode().clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove), getConnection());
         }
     }
@@ -103,7 +102,6 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (!approved) {
                 tcpIpJoiner.approved = false;
             }
-            System.out.println(node.getThisAddress() + " Received answer " + approved + " from " + respondingAddress);
             tcpIpJoiner.responseCounter.decrementAndGet();
         }
 
@@ -162,38 +160,49 @@ public class TcpIpJoiner extends AbstractJoiner {
                 node.setAsMaster();
             } else {
                 if (!node.joined()) {
-                    boolean masterCandidate = true;
-                    for (Address address : colPossibleAddresses) {
-                        if (node.address.hashCode() > address.hashCode()) {
-                            masterCandidate = false;
-                        }
+                    if (connectionTimeoutSeconds - numberOfSeconds > 0) {
+                        Thread.sleep((connectionTimeoutSeconds - numberOfSeconds) * 1000L);
                     }
-                    if (masterCandidate) {
-                        // ask others...
-                        askingForApproval = true;
+                    colPossibleAddresses.removeAll(node.getFailedConnections());
+                    if (colPossibleAddresses.size() == 0) {
+                        logger.log(Level.FINEST, "This node will assume master role since all possible members didn't accept join request");
+                        node.setAsMaster();
+                    } else {
+                        boolean masterCandidate = true;
                         for (Address address : colPossibleAddresses) {
-                            Connection conn = node.getConnectionManager().getConnection(address);
-                            if (conn != null) {
-                                responseCounter.incrementAndGet();
-                                node.clusterManager.sendProcessableTo(new MasterQuestion(), conn);
-                            }
-                        }
-                        int waitCount = 0;
-                        while (waitCount++ < 10) {
-                            Thread.sleep(1000L);
-                            System.out.println(node.getThisAddress() + " resCoun  " + responseCounter.get() + " ... " + approved);
-                            if (responseCounter.get() == 0) {
-                                if (approved) {
-                                    node.setAsMaster();
-                                    return;
-                                } else {
-                                    lookForMaster(colPossibleAddresses);
-                                    break;
+                            if (node.connectionManager.getConnection(address) != null) {
+                                if (node.address.hashCode() > address.hashCode()) {
+                                    masterCandidate = false;
                                 }
                             }
                         }
-                    } else {
-                        lookForMaster(colPossibleAddresses);
+                        if (masterCandidate) {
+                            // ask others...
+                            askingForApproval = true;
+                            for (Address address : colPossibleAddresses) {
+                                Connection conn = node.getConnectionManager().getConnection(address);
+                                if (conn != null) {
+                                    responseCounter.incrementAndGet();
+                                    node.clusterManager.sendProcessableTo(new MasterQuestion(), conn);
+                                }
+                            }
+                            int waitCount = 0;
+                            while (waitCount++ < 10) {
+                                Thread.sleep(1000L);
+                                if (responseCounter.get() == 0) {
+                                    if (approved) {
+                                        logger.log(Level.FINEST, node.getThisAddress() + " Setting myself as master! group " + node.getConfig().getGroupConfig().getName() + " possible addresses " + colPossibleAddresses.size() + "" + colPossibleAddresses);
+                                        node.setAsMaster();
+                                        return;
+                                    } else {
+                                        lookForMaster(colPossibleAddresses);
+                                        break;
+                                    }
+                                }
+                            }
+                        } else {
+                            lookForMaster(colPossibleAddresses);
+                        }
                     }
                 }
             }
@@ -206,21 +215,30 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     private void lookForMaster(Collection<Address> colPossibleAddresses) throws InterruptedException {
         int tryCount = 0;
-        while (!node.joined() && tryCount++ < 100 && (node.getMasterAddress() == null)) {
+        while (!node.joined() && tryCount++ < 20 && (node.getMasterAddress() == null)) {
             connectAndSendJoinRequest(colPossibleAddresses);
             Thread.sleep(1000L);
-            System.out.println(node.getThisAddress() + " looking for master " + colPossibleAddresses);
         }
         int requestCount = 0;
+        colPossibleAddresses.removeAll(node.getFailedConnections());
+        if (colPossibleAddresses.size() == 0) {
+            node.setAsMaster();
+            logger.log(Level.FINEST, node.getThisAddress() + " Setting myself as master! group " + node.getConfig().getGroupConfig().getName() + " no possible addresses without failed connection");
+            return;
+        }
+        logger.log(Level.FINEST, node.getThisAddress() + " joining to master " + node.getMasterAddress() + ", group " + node.getConfig().getGroupConfig().getName());
         while (!node.joined()) {
             Thread.sleep(1000L);
             final Address master = node.getMasterAddress();
             if (master != null) {
-                System.out.println(node.getThisAddress() + " joining to master " + master);
                 node.clusterManager.sendJoinRequest(master);
                 if (requestCount++ > node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) {
                     logger.log(Level.WARNING, "Couldn't join to the master : " + master);
+                    return;
                 }
+            } else {
+                logger.log(Level.FINEST, node.getThisAddress() + " couldn't find a master! but there was connections available: " + colPossibleAddresses);
+                return;
             }
         }
     }

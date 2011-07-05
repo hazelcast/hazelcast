@@ -53,22 +53,24 @@ public abstract class AbstractJoiner implements Joiner {
         if (!node.isMaster()) {
             boolean allConnected = false;
             int checkCount = 0;
-            while (checkCount++ < 100 && !allConnected) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
-                Set<Member> members = node.getClusterImpl().getMembers();
-                allConnected = true;
-                for (Member member : members) {
-                    MemberImpl memberImpl = (MemberImpl) member;
-                    if (!memberImpl.localMember() && node.connectionManager.getConnection(memberImpl.getAddress()) == null) {
-                        allConnected = false;
+            if (node.joined()) {
+                while (checkCount++ < 100 && !allConnected) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ignored) {
+                    }
+                    Set<Member> members = node.getClusterImpl().getMembers();
+                    allConnected = true;
+                    for (Member member : members) {
+                        MemberImpl memberImpl = (MemberImpl) member;
+                        if (!memberImpl.localMember() && node.connectionManager.getConnection(memberImpl.getAddress()) == null) {
+                            allConnected = false;
+                        }
                     }
                 }
             }
-            if (!allConnected) {
-                logger.log(Level.WARNING, "Failed to connect to all other members after " + checkCount + " seconds.");
+            if (!node.joined() || !allConnected) {
+                logger.log(Level.WARNING, "Failed to connect, node joined " + node.joined() + ", allconnected " + allConnected + " to all other members after " + checkCount + " seconds.");
                 logger.log(Level.WARNING, "Rebooting after 10 seconds.");
                 try {
                     Thread.sleep(10000);
@@ -151,13 +153,13 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected void connectAndSendJoinRequest(Collection<Address> colPossibleAddresses) {
-        colPossibleAddresses.removeAll(node.getFailedConnections());
-        for (Address possibleAddress : colPossibleAddresses) {
-            final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
-            if (conn != null) {
-                logger.log(Level.FINEST, "sending join request for " + possibleAddress);
-                node.clusterManager.sendJoinRequest(possibleAddress);
+        if (node.getFailedConnections().size() > 0)
+            for (Address possibleAddress : colPossibleAddresses) {
+                final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
+                if (conn != null) {
+                    logger.log(Level.FINEST, "sending join request for " + possibleAddress);
+                    node.clusterManager.sendJoinRequest(possibleAddress);
+                }
             }
-        }
     }
 }
