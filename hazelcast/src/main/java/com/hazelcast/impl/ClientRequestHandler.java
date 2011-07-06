@@ -41,6 +41,7 @@ public class ClientRequestHandler extends FallThroughRunnable {
 
     @Override
     public void doRun() {
+        ThreadContext.get().setCurrentFactory(node.factory);
         runningThread = Thread.currentThread();
         ThreadContext.get().setCallContext(callContext);
         if (clientOperationHandler != null) {

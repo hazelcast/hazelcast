@@ -206,6 +206,7 @@ public class MapConfig implements DataSerializable {
 
     /**
      * @return the evictionDelaySeconds
+     * @deprecated
      */
     public int getEvictionDelaySeconds() {
         return evictionDelaySeconds;
@@ -213,6 +214,7 @@ public class MapConfig implements DataSerializable {
 
     /**
      * @param evictionDelaySeconds the evictionPercentage to set
+     * @deprecated
      */
     public MapConfig setEvictionDelaySeconds(int evictionDelaySeconds) {
         this.evictionDelaySeconds = evictionDelaySeconds;

@@ -111,8 +111,6 @@ public class CMap {
 
     final long removeDelayMillis;
 
-    long evictionDelayMillis;
-
     final MapIndexService mapIndexService;
 
     final NearCache nearCache;
@@ -256,7 +254,6 @@ public class CMap {
     public void setRuntimeConfig(MapConfig mapConfig) {
         backupCount = mapConfig.getBackupCount();
         ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
-        evictionDelayMillis = mapConfig.getEvictionDelaySeconds() * 1000L;
         maxIdle = mapConfig.getMaxIdleSeconds() * 1000L;
         evictionPolicy = EvictionPolicy.valueOf(mapConfig.getEvictionPolicy());
         readBackupData = mapConfig.isReadBackupData();
@@ -291,7 +288,6 @@ public class CMap {
         MapConfig mapConfig = new MapConfig(name);
         mapConfig.setBackupCount(backupCount);
         mapConfig.setTimeToLiveSeconds((int) (ttl / 1000));
-        mapConfig.setEvictionDelaySeconds((int) (evictionDelayMillis / 1000));
         mapConfig.setMaxIdleSeconds((int) (maxIdle / 1000));
         mapConfig.setEvictionPolicy(evictionPolicy.toString());
         mapConfig.setReadBackupData(readBackupData);
