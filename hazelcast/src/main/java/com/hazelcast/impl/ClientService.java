@@ -174,6 +174,7 @@ public class ClientService implements ConnectionListener {
         private volatile boolean active = true;
 
         public void run() {
+            ThreadContext.get().setCurrentFactory(node.factory);
             while (active) {
                 try {
                     q.take().run();
