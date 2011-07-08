@@ -22,6 +22,7 @@ public class AwsConfig {
 
     private String accessKey;
     private String secretKey;
+    private String region;
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
@@ -45,12 +46,21 @@ public class AwsConfig {
         return this;
     }
 
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
     @Override
     public String toString() {
         return "AwsConfig{" +
                 "enabled=" + enabled +
                 ", accessKey='" + accessKey + '\'' +
                 ", secretKey='" + secretKey + '\'' +
+                ", region='" + region + '\'' +
                 '}';
     }
 

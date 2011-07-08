@@ -22,6 +22,7 @@ import java.util.List;
 public class AWSClient {
     private String accessKey;
     private String secretKey;
+    private String endpoint = Constants.HOST_HEADER;
 
     public AWSClient(String accessKey, String secretKey) {
         this.accessKey = accessKey;
@@ -29,7 +30,11 @@ public class AWSClient {
     }
 
     public List<String> getPrivateDnsNames() throws Exception {
-        List<String> list = new DescribeInstances(accessKey, secretKey).execute();
+        List<String> list = new DescribeInstances(accessKey, secretKey).execute(endpoint);
         return list;
+    }
+
+    public void setEndpoint(String s) {
+        this.endpoint = s;
     }
 }

@@ -35,6 +35,7 @@
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
                 <secret-key>my-secret-key</secret-key>
+                <region>us-east-1</region>
             </aws>
         </join>
         <interfaces enabled="false">

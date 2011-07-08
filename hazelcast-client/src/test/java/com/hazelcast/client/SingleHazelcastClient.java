@@ -31,6 +31,7 @@ public class SingleHazelcastClient {
         if (client == null) {
             Config config = new Config();
             config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+            config.setProperty(GroupProperties.PROP_EXECUTOR_CLIENT_THREAD_COUNT, "1000");
             hz = Hazelcast.newHazelcastInstance(config);
             client = TestUtility.newHazelcastClient(hz);
         }

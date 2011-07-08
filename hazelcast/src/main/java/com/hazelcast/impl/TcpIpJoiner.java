@@ -144,7 +144,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 }
                 Thread.sleep(1000L);
                 numberOfSeconds++;
-                logger.log(Level.FINEST, "we are going to try to connect to each address, but no more than five times");
+                logger.log(Level.FINEST, "we are going to try to connect to each address");
                 for (Address possibleAddress : colPossibleAddresses) {
                     final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
                     if (conn != null) {
@@ -161,6 +161,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             } else {
                 if (!node.joined()) {
                     if (connectionTimeoutSeconds - numberOfSeconds > 0) {
+                        logger.log(Level.FINEST, "Sleeping for " + (connectionTimeoutSeconds - numberOfSeconds) + " seconds.");
                         Thread.sleep((connectionTimeoutSeconds - numberOfSeconds) * 1000L);
                     }
                     colPossibleAddresses.removeAll(node.getFailedConnections());
@@ -337,7 +338,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 // check if host is hostname of ip address
                 final boolean ip = isIP(host);
                 if (ip) {
-                    for (final Address addrs : getPossibleIpAddresses(host, port, indexColon >= 0)) {
+                    for (final Address addrs : getPossibleIpAddresses(host, port, indexColon >= 0 || !config.isPortAutoIncrement())) {
                         if (!addrs.equals(thisAddress)) {
                             setPossibleAddresses.add(addrs);
                         }
@@ -361,8 +362,15 @@ public class TcpIpJoiner extends AbstractJoiner {
                         if (indexColon < 0) {
                             // port is not set
                             if (shouldCheck) {
-                                for (int i = -2; i < 3; i++) {
-                                    final Address addressProper = new Address(inetAddress.getAddress(), port + i);
+                                if (config.isPortAutoIncrement()) {
+                                    for (int i = -2; i < 3; i++) {
+                                        final Address addressProper = new Address(inetAddress.getAddress(), port + i);
+                                        if (!addressProper.equals(thisAddress)) {
+                                            setPossibleAddresses.add(addressProper);
+                                        }
+                                    }
+                                } else {
+                                    final Address addressProper = new Address(inetAddress.getAddress(), port);
                                     if (!addressProper.equals(thisAddress)) {
                                         setPossibleAddresses.add(addressProper);
                                     }

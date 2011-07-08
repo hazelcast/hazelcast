@@ -59,21 +59,22 @@ public class DescribeInstances {
         attributes.put("Signature", value);
     }
 
-    public <T> T execute() throws Exception {
-        rs.sign(this);
-        Object result = callService();
+    public <T> T execute(String endpoint) throws Exception {
+        rs.sign(this, endpoint);
+        Object result = callService(endpoint);
         return (T) result;
     }
 
-    public Object callService() throws Exception {
+    public Object callService(String endpoint) throws Exception {
         String query = getQueryString();
-        URL url = new URL("https", HOST_HEADER, -1, "/" + query);
+        URL url = new URL("https", endpoint, -1, "/" + query);
+        System.out.println("URL is : " + url);
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
         httpConnection.setRequestMethod(GET);
         httpConnection.setDoOutput(true);
         httpConnection.connect();
-        if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK)
-            throw new Exception("Https response code is: " + httpConnection.getResponseCode());
+//        if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK)
+//            throw new Exception("Https response code is: " + httpConnection.getResponseCode());
         Object response = unmarshalTheResponse(httpConnection.getInputStream());
         return response;
     }
