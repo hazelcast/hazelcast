@@ -96,8 +96,10 @@ public class ConcurrentMapManager extends BaseManager {
         });
         node.clusterService.registerPeriodicRunnable(partitionManager);
         registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEntryOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_GET_DATA_RECORD_ENTRY, new GetDataRecordEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET, new GetOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ASYNC_MERGE, new AsyncMergePacketProcessor());
+        registerPacketProcessor(CONCURRENT_MAP_WAN_MERGE, new WanMergePacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_MERGE, new MergeOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_TRY_PUT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_SET, new PutOperationHandler());
@@ -281,6 +283,31 @@ public class ConcurrentMapManager extends BaseManager {
         } else {
             MBackupOp backupOp = new MBackupOp();
             backupOp.backup(rec);
+        }
+    }
+
+    /**
+     * Should be called from ExecutorService threads.
+     *
+     * @param mergingEntry
+     */
+    public void mergeWanRecord(DataRecordEntry mergingEntry) {
+        String name = mergingEntry.getName();
+        DataRecordEntry existingEntry = new MGetDataRecordEntry().get(name, mergingEntry.getKeyData());
+        final CMap cmap = node.concurrentMapManager.getMap(name);
+        MergePolicy mergePolicy = cmap.wanMergePolicy;
+        if (mergePolicy == null) {
+            logger.log(Level.SEVERE, "Received wan merge but no merge policy defined!");
+        } else {
+            Object winner = mergePolicy.merge(cmap.getName(), mergingEntry, existingEntry);
+            if (winner != null) {
+                ThreadContext.CallCache callCache = ThreadContext.get().getCallCache(node.factory);
+                if (winner == MergePolicy.REMOVE_EXISTING) {
+                    callCache.getMRemove().removeForSync(name, mergingEntry.getKey());
+                } else {
+                    callCache.getMPut().putForSync(name, mergingEntry.getKeyData(), winner);
+                }
+            }
         }
     }
 
@@ -519,6 +546,16 @@ public class ConcurrentMapManager extends BaseManager {
                 mapEntry.set(name, key);
             }
             return mapEntry;
+        }
+    }
+
+    class MGetDataRecordEntry extends MTargetAwareOp {
+        public DataRecordEntry get(String name, Object key) {
+            Object result = objectCall(CONCURRENT_MAP_GET_DATA_RECORD_ENTRY, name, key, null, 0, -1);
+            if (result instanceof Data) {
+                result = toObject((Data) result);
+            }
+            return (DataRecordEntry) result;
         }
     }
 
@@ -2057,34 +2094,30 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class AsyncMergePacketProcessor implements PacketProcessor {
+        public void process(final Packet packet) {
+            packet.operation = ClusterOperation.CONCURRENT_MAP_WAN_MERGE;
+            final Data key = packet.getKeyData();
+            Address address = getKeyOwner(key);
+            if (thisAddress.equals(address)) {
+                WanMergePacketProcessor p = (WanMergePacketProcessor) getPacketProcessor(CONCURRENT_MAP_WAN_MERGE);
+                p.process(packet);
+            } else {
+                send(packet, address);
+            }
+        }
+    }
+
+    class WanMergePacketProcessor implements PacketProcessor {
         final ParallelExecutor parallelExecutor = node.executorManager.newParallelExecutor(20);
 
         public void process(final Packet packet) {
-            final String name = packet.name;
-            final DataRecordEntry mergingEntry = (DataRecordEntry) toObject(packet.getValueData());
-            final int blockId = packet.blockId;
-            final CMap cmap = getOrCreateMap(name);
-            releasePacket(packet);
+            final DataRecordEntry dataRecordEntry = (DataRecordEntry) toObject(packet.getValueData());
+            final CMap cmap = node.concurrentMapManager.getOrCreateMap(packet.name);
             parallelExecutor.execute(new Runnable() {
                 public void run() {
-                    Record recordExisting = cmap.getRecord(mergingEntry.getKeyData());
-                    DataRecordEntry existingEntry = recordExisting == null ? null : new DataRecordEntry(recordExisting);
-                    MProxy mproxy = (MProxy) node.factory.getOrCreateProxyByName(name);
-                    MergePolicy mergePolicy = cmap.wanMergePolicy;
-                    if (mergePolicy == null) {
-                        logger.log(Level.SEVERE, "Received wan merge but no merge policy defined!");
-                    } else {
-                        Object winner = mergePolicy.merge(cmap.getName(), mergingEntry, existingEntry);
-                        if (winner != null) {
-                            if (winner == MergePolicy.REMOVE_EXISTING) {
-                                mproxy.removeForSync(mergingEntry.getKey());
-                            } else {
-                                mproxy.putForSync(mergingEntry.getKeyData(), winner);
-                            }
-                        }
-                    }
+                    mergeWanRecord(dataRecordEntry);
                 }
-            }, blockId);
+            });
         }
     }
 
@@ -2197,6 +2230,14 @@ public class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.getMapEntry(request);
+        }
+    }
+
+    class GetDataRecordEntryOperationHandler extends MTargetAwareOperationHandler {
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            Record record = cmap.getRecord(request.key);
+            request.response = (record == null) ? null : new DataRecordEntry(record);
         }
     }
 

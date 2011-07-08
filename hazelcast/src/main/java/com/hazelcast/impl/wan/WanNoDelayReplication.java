@@ -124,6 +124,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
             Packet packet = new Packet();
             packet.name = name;
             packet.operation = ClusterOperation.CONCURRENT_MAP_ASYNC_MERGE;
+            packet.setKey(dataRecordEntry.getKeyData());
             packet.setValue(toData(dataRecordEntry));
             packet.blockId = dataRecordEntry.getKeyData().hashCode();
             return packet;
