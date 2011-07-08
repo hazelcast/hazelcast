@@ -20,6 +20,13 @@
             <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+
     </dependencies>
 
 </project>
