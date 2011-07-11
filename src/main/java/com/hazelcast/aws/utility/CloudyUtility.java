@@ -72,7 +72,11 @@ public class CloudyUtility {
             System.out.println("XML is : " + Util.inputStreamToString(bais));
             Element element = doc.getDocumentElement();
             NodeHolder elementNodeHolder = new NodeHolder(element);
-            List<String> names = elementNodeHolder.getSub("reservationset").getSub("item").getSub("instancesset").getList("privateipaddress");
+            List<String> names = new ArrayList<String>();
+            List<NodeHolder> reservationset = elementNodeHolder.getSubNodes("reservationset");
+            for (NodeHolder reservation : reservationset) {
+                names.addAll(reservation.getSub("item").getSub("instancesset").getList("privateipaddress"));
+            }
             return names;
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
@@ -97,6 +101,19 @@ public class CloudyUtility {
                 }
             }
             return new NodeHolder(null);
+        }
+
+        public List<NodeHolder> getSubNodes(String name) {
+            List<NodeHolder> list = new ArrayList<NodeHolder>();
+            if (node != null) {
+                for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
+                    String nodeName = cleanNodeName(node.getNodeName());
+                    if (name.equals(nodeName)) {
+                        list.add(new NodeHolder(node));
+                    }
+                }
+            }
+            return list;
         }
 
         public List<String> getList(String name) {
