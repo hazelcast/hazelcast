@@ -281,7 +281,7 @@ public class TransactionImpl implements Transaction {
 
     @Override
     public String toString() {
-        return "TransactionImpl [" + id + "]";
+        return "TransactionImpl [" + id + "] status: " + status;
     }
 
     private void finalizeTxn() {
@@ -349,7 +349,7 @@ public class TransactionImpl implements Transaction {
                 } else if (instanceType.isMultiMap()) {
                     factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
                 } else {
-                    factory.node.concurrentMapManager.new MPut().put(name, key, value, -1, ttl);
+                    factory.node.concurrentMapManager.new MPut().put(name, key, value, -1, ttl, id);
                 }
             }
         }

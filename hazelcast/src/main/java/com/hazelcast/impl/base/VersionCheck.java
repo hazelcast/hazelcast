@@ -92,8 +92,7 @@ public class VersionCheck {
             in = new BufferedInputStream(conn.getInputStream());
             final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             return builder.parse(in);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ignored) {
         } finally {
             if (in != null) {
                 try {

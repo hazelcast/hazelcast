@@ -1342,6 +1342,10 @@ public class ConcurrentMapManager extends BaseManager {
             return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl);
         }
 
+        public Object put(String name, Object key, Object value, long timeout, long ttl, long txnId) {
+            return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl, txnId);
+        }
+
         public Object putForSync(String name, Object key, Object value) {
             Object result = txnalPut(CONCURRENT_MAP_SET, name, key, value, -1, -1, Long.MIN_VALUE);
             return (result == Boolean.TRUE);

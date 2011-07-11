@@ -42,6 +42,7 @@ public class CMapTest extends TestUtil {
     @BeforeClass
     public static void init() throws Exception {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
@@ -236,7 +237,7 @@ public class CMapTest extends TestUtil {
         record = cmap.getRecord(dKey);
         assertNotNull(record);
         assertFalse(record.isActive());
-        assertTrue(record.isValid());
+        assertFalse(record.isValid());
         assertEquals(0, cmap.size());
         cmap.put(newPutRequest(dKey, dValue, 1000));
         assertEquals(0, record.getRemoveTime());
