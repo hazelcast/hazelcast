@@ -17,62 +17,40 @@
 
 package com.hazelcast.impl;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.Reservation;
 import com.hazelcast.aws.impl.AWSClient;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 
 public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 
     final AWSClient aws;
     final ILogger logger = Logger.getLogger(this.getClass().getName());
-    final AmazonEC2Client ec2;
 
     public TcpIpJoinerOverAWS(Node node) {
         super(node);
         AwsConfig awsConfig = node.getConfig().getNetworkConfig().getJoin().getAwsConfig();
         aws = new AWSClient(awsConfig.getAccessKey(), awsConfig.getSecretKey());
-        AWSCredentials credentials = new BasicAWSCredentials(awsConfig.getAccessKey(), awsConfig.getSecretKey());
-        ec2 = new AmazonEC2Client(credentials);
         if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
-            ec2.setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
             aws.setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
         }
     }
-//    @Override
-//    protected List<String> getMembers(Config config) {
-//        try {
-//            return aws.getPrivateDnsNames();
-//        } catch (Exception e) {
-//            logger.log(Level.WARNING, e.getMessage(), e);
-//            return new ArrayList<String>();
-//        }
-//    }
 
     @Override
     protected List<String> getMembers(Config config) {
-        List<String> possibleMembers = new ArrayList<String>();
-        DescribeInstancesResult result = ec2.describeInstances(new DescribeInstancesRequest());
-        for (Reservation reservation : result.getReservations()) {
-            for (Instance instance : reservation.getInstances()) {
-                if ("running".equalsIgnoreCase(instance.getState().getName())) {
-                    String ip = instance.getPrivateIpAddress();
-                    possibleMembers.add(ip);
-                    System.out.println("IP is " + ip);
-                }
-            }
+        try {
+            List<String> list = aws.getPrivateDnsNames();
+            logger.log(Level.FINEST, "The list of possible members are: " + list);
+            System.out.println("BDUADADADASKDNASDKASDNASKDNAS " + list);
+            return list;
+        } catch (Exception e) {
+            logger.log(Level.WARNING, e.getMessage(), e);
+            return Collections.EMPTY_LIST;
         }
-        return possibleMembers;
     }
 }

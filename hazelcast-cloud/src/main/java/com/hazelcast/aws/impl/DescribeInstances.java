@@ -24,9 +24,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 
 import static com.hazelcast.aws.impl.Constants.*;
 import static com.hazelcast.aws.utility.CloudyUtility.unmarshalTheResponse;
@@ -42,7 +42,17 @@ public class DescribeInstances {
         attributes.put("SignatureVersion", SIGNATURE_VERSION);
         attributes.put("SignatureMethod", SIGNATURE_METHOD);
         attributes.put("AWSAccessKeyId", accessKey);
-        attributes.put("Expires", new SimpleDateFormat(DATE_FORMAT).format(new Date(GregorianCalendar.getInstance().getTimeInMillis() + FIVE_MINUTES)));
+        attributes.put("Timestamp", getFormattedTimestamp());
+    }
+
+    /**
+     * Formats date as ISO 8601 timestamp
+     */
+    private String getFormattedTimestamp() {
+        SimpleDateFormat df = new SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return df.format(new Date());
     }
 
     private Map<String, String> attributes = new HashMap<String, String>();
@@ -68,13 +78,10 @@ public class DescribeInstances {
     public Object callService(String endpoint) throws Exception {
         String query = getQueryString();
         URL url = new URL("https", endpoint, -1, "/" + query);
-        System.out.println("URL is : " + url);
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
         httpConnection.setRequestMethod(GET);
         httpConnection.setDoOutput(true);
         httpConnection.connect();
-//        if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK)
-//            throw new Exception("Https response code is: " + httpConnection.getResponseCode());
         Object response = unmarshalTheResponse(httpConnection.getInputStream());
         return response;
     }
