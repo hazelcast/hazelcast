@@ -2988,17 +2988,14 @@ public class FactoryImpl implements HazelcastInstance {
     public static class IdGeneratorProxy extends FactoryAwareNamedProxy implements IdGenerator, DataSerializable {
 
         private transient IdGenerator base = null;
-        private transient final ILogger logger;
 
         public IdGeneratorProxy() {
-            logger = factory.getLoggingService().getLogger(this.getClass().getName());
         }
 
         public IdGeneratorProxy(String name, FactoryImpl factory) {
             setName(name);
             setHazelcastInstance(factory);
             base = new IdGeneratorBase();
-            logger = factory.getLoggingService().getLogger(this.getClass().getName());
         }
 
         private void ensure() {
@@ -3067,18 +3064,14 @@ public class FactoryImpl implements HazelcastInstance {
                 long idAddition = currentId.incrementAndGet();
                 if (idAddition >= MILLION) {
                     synchronized (IdGeneratorBase.this) {
-                        try {
-                            idAddition = currentId.get();
-                            if (idAddition >= MILLION) {
-                                Long idMillion = getNewMillion();
-                                long newMillion = idMillion * MILLION;
-                                million.set(newMillion);
-                                currentId.set(0L);
-                            }
-                            return newId();
-                        } catch (Throwable t) {
-                            logger.log(Level.WARNING, t.getMessage(), t);
+                        idAddition = currentId.get();
+                        if (idAddition >= MILLION) {
+                            Long idMillion = getNewMillion();
+                            long newMillion = idMillion * MILLION;
+                            million.set(newMillion);
+                            currentId.set(0L);
                         }
+                        return newId();
                     }
                 }
                 long millionNow = million.get();

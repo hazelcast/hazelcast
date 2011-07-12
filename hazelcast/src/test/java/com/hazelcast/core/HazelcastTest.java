@@ -1071,8 +1071,8 @@ public class HazelcastTest {
             public void run() {
                 try {
                     q.take();
+                    fail();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                 }
             }
         });

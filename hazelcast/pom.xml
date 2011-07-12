@@ -62,7 +62,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M</argLine>
+                    <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -Dhazelcast.version.check.enabled=false</argLine>
                     <excludes>
                         <exclude>**/ClusterTest.java</exclude>
                         <exclude>**/QueryTest.java</exclude>
@@ -122,7 +122,8 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M</argLine>
+                            <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -Dhazelcast.version.check.enabled=false
+                            </argLine>
                             <excludes>
                                 <exclude>**/PerformanceTest.java</exclude>
                             </excludes>

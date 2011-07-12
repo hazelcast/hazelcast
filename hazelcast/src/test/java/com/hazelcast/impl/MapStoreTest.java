@@ -437,7 +437,7 @@ public class MapStoreTest extends TestUtil {
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 20);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         testMapStore.insert("1", "value1");
         IMap map = h1.getMap("default");
         assertEquals(0, map.size());

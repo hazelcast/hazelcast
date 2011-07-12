@@ -175,33 +175,31 @@ public class ClusterTest {
         h2.shutdown();
         assertEquals(0, a3.get());
     }
-
-    @Test
-    public void testFirstNodeNoWait() throws Exception {
-        final Config config = new Config();
-        final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
-        for (int j = 0; j < 2; j++) {
-            new Thread(new Runnable() {
-                public void run() {
-                    final HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-                    for (int i = 0; i < 3000; i++) {
-                        h.getMap("default").put(i, "value");
-                    }
-                    counts.offer(getLocalPartitions(h).size());
-                }
-            }).start();
-        }
-        int first = counts.take();
-        int second = counts.take();
-        assertTrue(first == 0 || first == 271);
-        assertTrue(second == 0 || second == 271);
-        assertEquals(271, Math.abs(second - first));
-    }
+//    @Test
+//    public void testFirstNodeNoWait() throws Exception {
+//        final Config config = new Config();
+//        final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
+//        for (int j = 0; j < 2; j++) {
+//            new Thread(new Runnable() {
+//                public void run() {
+//                    final HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+//                    for (int i = 0; i < 3000; i++) {
+//                        h.getMap("default").put(i, "value");
+//                    }
+//                    counts.offer(getLocalPartitions(h).size());
+//                }
+//            }).start();
+//        }
+//        int first = counts.take();
+//        int second = counts.take();
+//        assertTrue(first == 0 || first == 271);
+//        assertTrue(second == 0 || second == 271);
+//        assertEquals(271, Math.abs(second - first));
+//    }
 
     @Test
     public void testFirstNodeWait() throws Exception {
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_INITIAL_WAIT_SECONDS, "7");
         final CountDownLatch latch = new CountDownLatch(2);
         for (int j = 0; j < 2; j++) {
             new Thread(new Runnable() {
@@ -2776,8 +2774,8 @@ public class ClusterTest {
 
     @Test
     public void testTxn() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         IMap<Object, Object> h1map = h1.getMap("TestMap");
         MultiMap<Object, Object> h1multimap = h1.getMultiMap("multiMap");
         IMap<Object, Object> h2map = h2.getMap("TestMap");
@@ -2794,62 +2792,22 @@ public class ClusterTest {
     public void testSplitBrain() throws InterruptedException {
         Config config = new Config();
         config.getGroupConfig().setName("split");
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
+        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
+        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "5");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        Thread.sleep(1000);
         closeConnectionBetween(h1, h3);
         closeConnectionBetween(h2, h3);
-        Thread.sleep(200000);
+        Thread.sleep(1000);
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
         assertEquals(1, h3.getCluster().getMembers().size());
-        Thread.sleep(40000);
+        Thread.sleep(10000);
         assertEquals(3, h1.getCluster().getMembers().size());
         assertEquals(3, h2.getCluster().getMembers().size());
         assertEquals(3, h3.getCluster().getMembers().size());
         Hazelcast.shutdownAll();
-    }
-
-    @Test
-    @Ignore
-    public void recoverFromNodeCrashesAndNetworkOutages() throws InterruptedException {
-        int nodeCount = 5;
-        final Config config = new Config();
-        config.getGroupConfig().setName("split");
-        int port = 7801;
-        config.setPort(port);
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
-        for (int i = 0; i < nodeCount; i++) {
-            config.getNetworkConfig().getJoin().getTcpIpConfig().addMember("localhost:" + (port + i));
-        }
-        final ConcurrentMap<Integer, HazelcastInstance> nodes = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        for (int j = 0; j < nodeCount; j++) {
-            final int i = j;
-            new Thread(new Runnable() {
-                public void run() {
-                    HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-                    nodes.put(i, h);
-                }
-            }).start();
-        }
-        Random random = new Random(System.currentTimeMillis());
-        for (; ;) {
-            Thread.sleep(random.nextInt(10000));
-            for (int i : nodes.keySet()) {
-                if (i != nodeCount - 1) {
-                    HazelcastInstance h = nodes.get(i);
-                    HazelcastInstance last = nodes.get(nodeCount - 1);
-                    closeConnectionBetween(nodes.get(i), nodes.get(nodeCount - 1));
-                    Thread.sleep(10000);
-                }
-            }
-        }
     }
 
     private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
