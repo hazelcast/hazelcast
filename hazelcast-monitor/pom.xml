@@ -21,6 +21,17 @@
             <name>JBoss Repository</name>
             <url>http://repository.jboss.org/maven2/</url>
         </repository>
+        <repository>
+            <id>geotools</id>
+            <name>geotools</name>
+            <url>http://download.osgeo.org/webdav/geotools</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
 
