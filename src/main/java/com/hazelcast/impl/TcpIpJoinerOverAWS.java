@@ -46,7 +46,6 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         try {
             List<String> list = aws.getPrivateDnsNames();
             logger.log(Level.FINEST, "The list of possible members are: " + list);
-            System.out.println("BDUADADADASKDNASDKASDNASKDNAS " + list);
             return list;
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
