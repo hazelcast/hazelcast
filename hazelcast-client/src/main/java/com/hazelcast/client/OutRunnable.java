@@ -98,6 +98,9 @@ public class OutRunnable extends IORunnable {
             if (restoredConnection(oldConnection, connection)) {
                 queue.offer(call);
                 resubscribe(oldConnection);
+                if (reconnectionCalls.size() == 0) {
+                    client.getConnectionManager().notifyConnectionIsOpened();
+                }
             } else if (connection != null) {
                 if (call != RECONNECT_CALL) {
                     callMap.put(call.getId(), call);
@@ -118,73 +121,6 @@ public class OutRunnable extends IORunnable {
         }
     }
 
-    protected void customRun3() throws InterruptedException {
-        if (reconnection.get()) {
-            Thread.sleep(50L);
-            return;
-        }
-        long now = System.nanoTime();
-        Call call = queue.poll(10, TimeUnit.MILLISECONDS);
-        try {
-            if (call == null) {
-                writer.flush(connection);
-                if (reconnectionCalls.size() > 0) {
-                    checkOnReconnect(call);
-                }
-                return;
-            }
-            count++;
-            long a0 = System.nanoTime();
-            poll += (a0 - now);
-            if (call != RECONNECT_CALL) {
-                callMap.put(call.getId(), call);
-            }
-            long a1 = System.nanoTime();
-            put += (a1 - a0);
-            Connection oldConnection = connection;
-            connection = client.getConnectionManager().getConnection();
-            boolean wrote = false;
-            long a3 = 0;
-            if (restoredConnection(oldConnection, connection)) {
-                resubscribe(oldConnection);
-            } else if (connection != null) {
-                if (call != RECONNECT_CALL) {
-                    logger.log(Level.FINEST, "Sending: " + call);
-                    long a2 = System.nanoTime();
-                    beforeWrite += (a2 - a1);
-                    writer.write(connection, call.getRequest());
-                    a3 = System.nanoTime();
-                    afterWrite += (a3 - a2);
-                    call.written = a3;
-                    wrote = true;
-                }
-            } else {
-                enQueue(call);
-                clusterIsDown(oldConnection);
-                return;
-            }
-            if (connection != null && wrote) {
-                writer.flush(connection);
-            }
-            if (reconnectionCalls.size() > 0) {
-                checkOnReconnect(call);
-            }
-            closing += (System.nanoTime() - a3);
-            if (count % period == 0) {
-                System.out.println("poll " + (poll / count / 1000));
-                System.out.println("put " + (put / count / 1000));
-                System.out.println("before " + (beforeWrite / count / 1000));
-                System.out.println("after " + (afterWrite / count / 1000));
-                System.out.println("closing " + (closing / count / 1000));
-                count = poll = put = beforeWrite = afterWrite = closing = 0;
-            }
-        } catch (Throwable io) {
-            logger.log(Level.WARNING,
-                    "OutRunnable [" + connection + "] got exception:" + io.getMessage(), io);
-            clusterIsDown(connection);
-        }
-    }
-
     private void checkOnReconnect(Call call) {
         try {
             Object response = reconnectionCalls.contains(call) ?
@@ -201,7 +137,7 @@ public class OutRunnable extends IORunnable {
                     }
                 }
             }
-        } catch (Throwable e) {
+        } catch (Throwable ignored) {
             // nothing to do
         }
         if (reconnectionCalls.size() == 0) {

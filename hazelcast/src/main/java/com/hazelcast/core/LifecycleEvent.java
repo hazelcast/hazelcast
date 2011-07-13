@@ -29,9 +29,9 @@ public final class LifecycleEvent {
         RESUMED,
         SHUTTING_DOWN,
         SHUTDOWN,
-        CLIENT_CONNECTION_LOST,
-        CLIENT_CONNECTION_OPENING,
-        CLIENT_CONNECTION_OPENED;
+        CLIENT_CONNECTION_LOST, // The connection to the server is lost by the client
+        CLIENT_CONNECTION_OPENING, //The physical connection to the server is restored but the whole process is not finished yet.
+        CLIENT_CONNECTION_OPENED;  //Client successfully finished all pre operations and is fully operable.
     }
 
     final LifecycleState state;
