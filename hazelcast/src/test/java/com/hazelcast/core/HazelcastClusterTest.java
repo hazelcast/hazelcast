@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -281,6 +282,46 @@ public class HazelcastClusterTest {
             }).start();
         }
         assertTrue(latch.await(200000, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    @Ignore
+    public void testMulticastJoinAtTheSameTime() throws InterruptedException {
+        multicastJoin(10, false);
+    }
+
+    @Test
+    @Ignore
+    public void testMulticastJoinWithRandomStartTime() throws InterruptedException {
+        multicastJoin(10, true);
+    }
+
+    public void multicastJoin(int count, final boolean sleep) throws InterruptedException {
+        final Config config = new Config();
+        config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(25);
+        final ConcurrentMap<Integer, HazelcastInstance> map = new ConcurrentHashMap<Integer, HazelcastInstance>();
+        final CountDownLatch latch = new CountDownLatch(count);
+        for (int i = 0; i < count; i++) {
+            final int index = i;
+            new Thread(new Runnable() {
+                public void run() {
+                    if (sleep) {
+                        try {
+                            Thread.sleep((int) (1000 * Math.random()));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        }
+                    }
+                    HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+                    map.put(index, h);
+                    latch.countDown();
+                }
+            }).start();
+        }
+        org.junit.Assert.assertTrue(latch.await(count * 10000, TimeUnit.MILLISECONDS));
+        for (HazelcastInstance h : map.values()) {
+            Assert.assertEquals(count, h.getCluster().getMembers().size());
+        }
     }
 
     @Test

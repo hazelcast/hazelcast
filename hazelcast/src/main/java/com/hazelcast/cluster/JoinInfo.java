@@ -20,6 +20,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.NodeType;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
@@ -32,9 +33,10 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
     private boolean request = true;
     private int memberCount = 0;
     private int tryCount = 0;
-    ILogger logger;
+    final ILogger logger;
 
     public JoinInfo() {
+        this.logger = Logger.getLogger(JoinInfo.class.getName());
     }
 
     public JoinInfo(ILogger logger, boolean request, Address address, Config config,
