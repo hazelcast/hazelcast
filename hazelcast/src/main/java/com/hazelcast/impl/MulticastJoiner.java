@@ -26,12 +26,17 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class MulticastJoiner extends AbstractJoiner {
 
+    final AtomicInteger currentTryCount = new AtomicInteger(0);
+    final AtomicInteger tryCount;
+
     public MulticastJoiner(Node node) {
         super(node);
+        tryCount = new AtomicInteger(calculateTryCount());
     }
 
     public void doJoin(AtomicBoolean joined) {
@@ -123,8 +128,8 @@ public class MulticastJoiner extends AbstractJoiner {
             final String ip = System.getProperty("join.ip");
             if (ip == null) {
                 JoinInfo joinInfo = node.createJoinInfo();
-                int tryCount = config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds() * 100;
-                for (int i = 0; i < tryCount; i++) {
+                for (; currentTryCount.incrementAndGet() <= tryCount.get();) {
+                    joinInfo.setTryCount(currentTryCount.get());
                     node.multicastService.send(joinInfo);
                     if (node.getMasterAddress() == null) {
                         Thread.sleep(10);
@@ -140,7 +145,31 @@ public class MulticastJoiner extends AbstractJoiner {
             if (logger != null) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
+        } finally {
+            this.currentTryCount.set(0);
         }
         return null;
+    }
+
+    private int calculateTryCount() {
+        int timeoutSeconds = config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds();
+        int tryCount = timeoutSeconds * 100;
+        String host = node.address.getHost();
+        int lastDigits = 0;
+        try {
+            lastDigits = Integer.valueOf(host.substring(host.lastIndexOf(".") + 1));
+        } catch (NumberFormatException e) {
+            lastDigits = (int) (512 * Math.random());
+        }
+        lastDigits = lastDigits % 100;
+        tryCount += lastDigits + (node.address.getPort() - node.config.getPort()) * timeoutSeconds * 3;
+        return tryCount;
+    }
+
+    public void onReceivedJoinInfo(JoinInfo joinInfo) {
+        if (joinInfo.getTryCount() > this.currentTryCount.get() + 20) {
+            int timeoutSeconds = (config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds() + 4) * 100;
+            this.tryCount.set(timeoutSeconds);
+        }
     }
 }

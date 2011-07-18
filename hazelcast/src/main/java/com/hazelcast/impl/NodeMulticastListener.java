@@ -47,6 +47,12 @@ public class NodeMulticastListener implements MulticastListener {
                             if (node.masterAddress == null) {
                                 node.masterAddress = new Address(joinInfo.address);
                             }
+                        } else if (joinInfo.isRequest()) {
+                            Joiner joiner = node.getJoiner();
+                            if (joiner instanceof MulticastJoiner) {
+                                MulticastJoiner mjoiner = (MulticastJoiner) joiner;
+                                mjoiner.onReceivedJoinInfo(joinInfo);
+                            }
                         }
                     }
                 }

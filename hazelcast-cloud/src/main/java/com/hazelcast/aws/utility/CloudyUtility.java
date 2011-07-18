@@ -75,7 +75,11 @@ public class CloudyUtility {
             List<String> names = new ArrayList<String>();
             List<NodeHolder> reservationset = elementNodeHolder.getSubNodes("reservationset");
             for (NodeHolder reservation : reservationset) {
-                names.addAll(reservation.getSub("item").getSub("instancesset").getList("privateipaddress"));
+                List<NodeHolder> items = reservation.getSubNodes("item");
+                for (NodeHolder item : items) {
+                    NodeHolder instancesset = item.getSub("instancesset");
+                    names.addAll(instancesset.getList("privateipaddress"));
+                }
             }
             return names;
         } catch (Exception e) {

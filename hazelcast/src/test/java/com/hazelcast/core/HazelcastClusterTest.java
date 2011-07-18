@@ -23,6 +23,7 @@ import com.hazelcast.nio.Address;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -107,6 +108,7 @@ public class HazelcastClusterTest {
     }
 
     @Test
+    @Ignore
     public void testTCPIPJoinWithManyNodesTimes() throws UnknownHostException, InterruptedException {
         Random random = new Random();
         for (int i = 0; i < 1; i++) {
@@ -156,6 +158,7 @@ public class HazelcastClusterTest {
     }
 
     @Test
+    @Ignore
     public void testTCPIPJoinWithManyNodes3DifferentGroups() throws UnknownHostException, InterruptedException {
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         final int count = 35;
@@ -205,6 +208,7 @@ public class HazelcastClusterTest {
     }
 
     @Test
+    @Ignore
     public void testTCPIPJoinWithManyNodesAllDifferentGroups() throws UnknownHostException, InterruptedException {
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         final int count = 35;
@@ -246,6 +250,7 @@ public class HazelcastClusterTest {
     }
 
     @Test
+    @Ignore
     public void testTCPIPJoinWithManyNodesWith4secIntervals() throws UnknownHostException, InterruptedException {
         final int count = 10;
         System.setProperty("hazelcast.mancenter.enabled", "false");

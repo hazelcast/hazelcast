@@ -31,22 +31,24 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
 
     private boolean request = true;
     private int memberCount = 0;
+    private int tryCount = 0;
     ILogger logger;
 
     public JoinInfo() {
     }
 
     public JoinInfo(ILogger logger, boolean request, Address address, Config config,
-                    NodeType type, byte packetVersion, int buildNumber, int memberCount) {
+                    NodeType type, byte packetVersion, int buildNumber, int memberCount, int tryCount) {
         super(address, config, type, packetVersion, buildNumber);
         this.request = request;
         this.memberCount = memberCount;
+        this.tryCount = tryCount;
         this.logger = logger;
     }
 
     public JoinInfo copy(boolean newRequest, Address newAddress, int memberCount) {
         return new JoinInfo(logger, newRequest, newAddress, config,
-                nodeType, packetVersion, buildNumber, memberCount);
+                nodeType, packetVersion, buildNumber, memberCount, tryCount);
     }
 
     @Override
@@ -54,6 +56,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
         super.readData(dis);
         this.request = dis.readBoolean();
         memberCount = dis.readInt();
+        tryCount = dis.readInt();
     }
 
     @Override
@@ -62,6 +65,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
             super.writeData(out);
             out.writeBoolean(isRequest());
             out.writeInt(memberCount);
+            out.writeInt(tryCount);
         } catch (IOException e) {
             logger.log(Level.FINEST, e.getMessage(), e);
         }
@@ -106,6 +110,14 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
 
     public int getMemberCount() {
         return memberCount;
+    }
+
+    public int getTryCount() {
+        return tryCount;
+    }
+
+    public void setTryCount(int tryCount) {
+        this.tryCount = tryCount;
     }
 
     @Override

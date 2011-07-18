@@ -483,7 +483,7 @@ public class Node {
 
     public JoinInfo createJoinInfo() {
         return new JoinInfo(this.getLogger(JoinInfo.class.getName()), true, address, config, getLocalNodeType(),
-                Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size());
+                Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size(), 0);
     }
 
     public boolean validateJoinRequest(JoinRequest joinRequest) throws Exception {
