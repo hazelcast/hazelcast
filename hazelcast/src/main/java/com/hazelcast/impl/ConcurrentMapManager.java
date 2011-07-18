@@ -57,11 +57,13 @@ public class ConcurrentMapManager extends BaseManager {
     long newRecordId = 0;
     volatile long nextCleanup = 0;
     final ParallelExecutor storeExecutor;
+    final ParallelExecutor evictionExecutor;
     private static final String BATCH_OPS_EXECUTOR_NAME = "hz_batch";
 
     ConcurrentMapManager(Node node) {
         super(node);
         storeExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
+        evictionExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
         CLEANUP_DELAY_MILLIS = node.groupProperties.CLEANUP_DELAY_SECONDS.getLong() * 1000L;
@@ -913,7 +915,8 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            Object value = objectCall(CONCURRENT_MAP_GET, name, key, null, timeout, -1);
+            setLocal(CONCURRENT_MAP_GET, name, key, null, timeout, -1);
+            Object value = objectCall();
             if (value instanceof AddressAwareException) {
                 rethrowException(request.operation, (AddressAwareException) value);
             }
@@ -1993,7 +1996,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public int getBlockId(Data key) {
-        int hash = key.hashCode();
+        int hash = key.getPartitionHash();
         return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % PARTITION_COUNT;
     }
 
@@ -2005,12 +2008,16 @@ public class ConcurrentMapManager extends BaseManager {
         return partitionManager.getOrCreateBlock(getBlockId(req));
     }
 
+    void evict(final String name, final Data key) {
+        MEvict mEvict = new MEvict();
+        mEvict.evict(name, key);
+    }
+
     void evictAsync(final String name, final Data key) {
-        executeLocally(new FallThroughRunnable() {
+        evictionExecutor.execute(new FallThroughRunnable() {
             public void doRun() {
                 try {
-                    MEvict mEvict = new MEvict();
-                    mEvict.evict(name, key);
+                    evict(name, key);
                 } catch (Exception ignored) {
                 }
             }

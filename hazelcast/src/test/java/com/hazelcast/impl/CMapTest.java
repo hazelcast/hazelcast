@@ -73,7 +73,7 @@ public class CMapTest extends TestUtil {
         imap1.put(key, value, 5, TimeUnit.SECONDS);
         assertEquals(1, cmap1.mapRecords.size());
         assertEquals(1, cmap2.mapRecords.size());
-        assertEquals(1, cmap2.getMapIndexService().getOwnedRecords().size() + cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size() + cmap2.getMapIndexService().getOwnedRecords().size());
         Record record1 = cmap1.getRecord(dKey);
         Record record2 = cmap2.getRecord(dKey);
         long now = System.currentTimeMillis();
@@ -99,8 +99,7 @@ public class CMapTest extends TestUtil {
         imap1.put(key, value, 10, TimeUnit.SECONDS);
         assertEquals(1, cmap1.mapRecords.size());
         assertEquals(1, cmap2.mapRecords.size());
-        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
+        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size() + cmap2.getMapIndexService().getOwnedRecords().size());
         record1 = cmap1.getRecord(dKey);
         record2 = cmap2.getRecord(dKey);
         now = System.currentTimeMillis();
@@ -161,6 +160,8 @@ public class CMapTest extends TestUtil {
         Thread.sleep(20000);
         assertEquals(0, cmap1.mapRecords.size());
         assertEquals(0, cmap2.mapRecords.size());
+        assertEquals(0, cmap1.mapIndexService.size());
+        assertEquals(0, cmap2.mapIndexService.size());
     }
 
     @Test
@@ -207,6 +208,8 @@ public class CMapTest extends TestUtil {
         assertTrue(cmap.shouldPurgeRecord(record, System.currentTimeMillis() + 10000));
         cmap.removeAndPurgeRecord(record);
         assertEquals(0, cmap.mapRecords.size());
+        assertEquals(0, cmap.size());
+        assertEquals(0, cmap.mapIndexService.size());
     }
 
     @Test

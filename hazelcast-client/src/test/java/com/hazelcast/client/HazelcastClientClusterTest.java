@@ -24,8 +24,10 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
+import com.hazelcast.impl.GroupProperties;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -35,9 +37,18 @@ import java.util.concurrent.*;
 
 import static com.hazelcast.client.TestUtility.destroyClients;
 import static com.hazelcast.client.TestUtility.newHazelcastClient;
+import static com.hazelcast.impl.TestUtil.OrderKey;
+import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.*;
 
 public class HazelcastClientClusterTest {
+
+    @BeforeClass
+    public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+        Hazelcast.shutdownAll();
+    }
 
     @After
     @Before
@@ -48,6 +59,31 @@ public class HazelcastClientClusterTest {
     @After
     public void after() throws Exception {
         destroyClients();
+    }
+
+    @Test
+    public void testAffinity() throws Exception {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastClient client = newHazelcastClient(h2);
+        final IMap c1 = client.getMap("default");
+        final IMap m1 = h4.getMap("default");
+        int count = 1000;
+        OrderKey[] keys = new OrderKey[count];
+        for (int i = 0; i < count; i++) {
+            OrderKey key = new OrderKey(i, i % 119);
+            keys[i] = key;
+            m1.put(key, i);
+        }
+        for (OrderKey key : keys) {
+            Member member1 = h1.getPartitionService().getPartition(key).getOwner();
+            Member member2 = h1.getPartitionService().getPartition(key.getPartitionKey()).getOwner();
+            assertEquals(member1, member2);
+            assertEquals(key.getOrderId(), c1.get(key));
+            assertEquals(key.getOrderId(), m1.get(key));
+        }
     }
 
     @Test

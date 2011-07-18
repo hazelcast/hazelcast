@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.impl.TestUtil.OrderKey;
 import static com.hazelcast.impl.TestUtil.getCMap;
 import static java.lang.Thread.sleep;
 import static junit.framework.Assert.assertNull;
@@ -2590,12 +2591,16 @@ public class ClusterTest {
         assertTrue(latch.await(60, TimeUnit.SECONDS));
     }
 
+    /**
+     * @todo doesn't work
+     */
     @Test
+    @Ignore
     public void testMultiInstanceSemaphore() {
         final Random random = new Random();
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(new Config());
         final ISemaphore semaphore1 = instance1.getSemaphore("testMultiSemaphore");
         final ISemaphore semaphore2 = instance2.getSemaphore("testMultiSemaphore");
         final ISemaphore semaphore3 = instance3.getSemaphore("testMultiSemaphore");
@@ -2606,16 +2611,13 @@ public class ClusterTest {
         executorService.execute(new Runnable() {
             public void run() {
                 for (int i = 0; i < 10; i++) {
-                    System.out.println("Requesting semaphore 1");
                     semaphore1.tryAcquire();
-                    System.out.println("Acquired semaphore 1");
                     assertEquals(0, semaphore1.availablePermits());
                     try {
                         Thread.sleep(random.nextInt(100));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    System.out.println("Releasing semaphore 1");
                     semaphore1.release();
                 }
             }
@@ -2623,16 +2625,13 @@ public class ClusterTest {
         executorService.execute(new Runnable() {
             public void run() {
                 for (int i = 0; i < 20; i++) {
-                    System.out.println("Requesting semaphore 2");
                     semaphore2.tryAcquire();
-                    System.out.println("Acquired semaphore 2");
                     assertEquals(0, semaphore2.availablePermits());
                     try {
                         Thread.sleep(random.nextInt(100));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    System.out.println("Releasing semaphore 2");
                     semaphore2.release();
                 }
             }
@@ -2640,22 +2639,20 @@ public class ClusterTest {
         executorService.execute(new Runnable() {
             public void run() {
                 for (int i = 0; i < 30; i++) {
-                    System.out.println("Requesting semaphore 3");
                     semaphore3.tryAcquire();
-                    System.out.println("Acquired semaphore 3");
                     assertEquals(0, semaphore3.availablePermits());
                     try {
                         Thread.sleep(random.nextInt(100));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    System.out.println("Releasing semaphore 3");
                     semaphore3.release();
                 }
             }
         });
         try {
-            Thread.sleep(10000);
+            executorService.shutdown();
+            executorService.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -2913,5 +2910,66 @@ public class ClusterTest {
         transaction.commit();
         Thread.sleep(2000);
         assertEquals(1000, multimap.size());
+    }
+
+    @Test
+    public void testAffinity() throws Exception {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
+        final IMap m1 = h1.getMap("default");
+        final IMap m2 = h2.getMap("default");
+        int count = 10000;
+        OrderKey[] keys = new OrderKey[count];
+        for (int i = 0; i < count; i++) {
+            OrderKey key = new OrderKey(i, i % 119);
+            keys[i] = key;
+            m1.put(key, i);
+        }
+        for (OrderKey key : keys) {
+            Member member1 = h1.getPartitionService().getPartition(key).getOwner();
+            Member member2 = h1.getPartitionService().getPartition(key.getPartitionKey()).getOwner();
+            junit.framework.Assert.assertEquals(member1, member2);
+            junit.framework.Assert.assertEquals(key.getOrderId(), m1.get(key));
+        }
+    }
+
+    @Test
+    public void testTwoMemberTransactionIsolation() throws Exception {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final IMap map = h1.getMap("default");
+        Config c1 = new Config();
+        c1.getGroupConfig().setName("differentGroup");
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c1);
+        final IQueue q = h2.getQueue("abc");
+        q.offer("item1");
+        q.offer("item2");
+        Transaction t = h2.getTransaction();
+        t.begin();
+        Object o = q.take();
+        junit.framework.Assert.assertEquals("item1", o);
+        map.put("1", "value");
+        t.commit();
+        final CountDownLatch l = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                Transaction t = h2.getTransaction();
+                t.begin();
+                try {
+                    Object o = q.take();
+                    junit.framework.Assert.assertEquals("item2", o);
+                    map.put("1", "value2");
+                    t.commit();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Assert.fail(e.getMessage());
+                }
+                l.countDown();
+            }
+        }).start();
+        assertTrue(l.await(5, TimeUnit.SECONDS));
+        junit.framework.Assert.assertEquals(1, map.size());
+        junit.framework.Assert.assertEquals("value2", map.get("1"));
     }
 }

@@ -51,6 +51,8 @@ public class HazelcastClusterTest {
     @Before
     @After
     public void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
@@ -114,12 +116,12 @@ public class HazelcastClusterTest {
         Random random = new Random();
         for (int i = 0; i < 1; i++) {
             int x = random.nextInt(50);
-            System.out.println("========================RUNNING " + i + " with " + x + " =====================================");
             testTCPIPJoinWithManyNodes(x);
             Hazelcast.shutdownAll();
         }
     }
 
+    @Ignore
     public void testTCPIPJoinWithManyNodes(final int sleepTime) throws UnknownHostException, InterruptedException {
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         final int count = 35;
@@ -309,7 +311,7 @@ public class HazelcastClusterTest {
                         try {
                             Thread.sleep((int) (1000 * Math.random()));
                         } catch (InterruptedException e) {
-                            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                            e.printStackTrace();
                         }
                     }
                     HazelcastInstance h = Hazelcast.newHazelcastInstance(config);

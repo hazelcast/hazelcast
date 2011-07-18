@@ -22,9 +22,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-public final class Data implements DataSerializable {
+public class Data implements DataSerializable {
 
     public byte[] buffer = null;
+    public int partitionHash = -1;
 
     public Data() {
     }
@@ -43,6 +44,7 @@ public final class Data implements DataSerializable {
             buffer = new byte[size];
             in.readFully(buffer);
         }
+        partitionHash = in.readInt();
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -50,12 +52,27 @@ public final class Data implements DataSerializable {
         if (size() > 0) {
             out.write(buffer);
         }
+        out.writeInt(partitionHash);
     }
 
     @Override
     public int hashCode() {
         if (buffer == null) return Integer.MIN_VALUE;
         return Arrays.hashCode(buffer);
+    }
+
+    public int getPartitionHash() {
+        if (partitionHash == -1) {
+            if (buffer == null) {
+                throw new IllegalStateException("Cannot hash null buffer");
+            }
+            partitionHash = hashCode();
+        }
+        return partitionHash;
+    }
+
+    public void setPartitionHash(int partitionHash) {
+        this.partitionHash = partitionHash;
     }
 
     @Override
@@ -70,6 +87,8 @@ public final class Data implements DataSerializable {
 
     @Override
     public String toString() {
-        return "Data size = " + size();
+        return "Data{" +
+                "partitionHash=" + partitionHash +
+                "} size= " + size();
     }
 }

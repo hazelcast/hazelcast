@@ -19,12 +19,14 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.impl.CollectionWrapper;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.impl.ClientServiceException;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.query.Predicate;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.concurrent.Future;
@@ -169,7 +171,18 @@ public class ProxyHelper {
         if (value != null) {
             v = toByte(value);
         }
-        return createRequestPacket(operation, k, v, ttl, timeunit);
+        Packet packet = createRequestPacket(operation, k, v, ttl, timeunit);
+        if (key instanceof PartitionAware) {
+            Object partitionKey = ((PartitionAware) key).getPartitionKey();
+            if (partitionKey == null) throw new IllegalArgumentException("PartitionKey cannot be null!");
+            packet.setKeyHash(Arrays.hashCode(toByte(partitionKey)));
+        }
+        if (value instanceof PartitionAware) {
+            Object partitionKey = ((PartitionAware) value).getPartitionKey();
+            if (partitionKey == null) throw new IllegalArgumentException("PartitionKey cannot be null!");
+            packet.setValueHash(Arrays.hashCode(toByte(partitionKey)));
+        }
+        return packet;
     }
 
     protected Packet prepareRequest(ClusterOperation operation, Object key,

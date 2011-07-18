@@ -51,6 +51,10 @@ public class Packet {
 
     private static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
 
+    private int keyHash = -1;
+
+    private int valueHash = -1;
+
     public Packet() {
     }
 
@@ -65,6 +69,8 @@ public class Packet {
         longValue = 0;
         responseType = Constants.ResponseTypes.RESPONSE_NONE;
         callId = -1;
+        keyHash = -1;
+        valueHash = -1;
     }
 
     public void writeTo(PacketWriter packetWriter, DataOutputStream outputStream) throws IOException {
@@ -124,6 +130,8 @@ public class Packet {
             this.name = new String(b);
         }
         int indexCount = readHeaderBuffer.get();
+        keyHash = readHeaderBuffer.getInt();
+        valueHash = readHeaderBuffer.getInt();
         key = new byte[keySize];
         dis.readFully(key);
         value = new byte[valueSize];
@@ -181,6 +189,8 @@ public class Packet {
             writeHeaderBuffer.put(nameInBytes);
         }
         writeHeaderBuffer.put((byte) 0);
+        writeHeaderBuffer.putInt(keyHash);
+        writeHeaderBuffer.putInt(valueHash);
     }
 
     public void set(String name, ClusterOperation operation,
@@ -261,6 +271,30 @@ public class Packet {
 
     public void setResponseType(byte responseType) {
         this.responseType = responseType;
+    }
+
+    public int getKeyHash() {
+        return keyHash;
+    }
+
+    public void setKeyHash(int keyHash) {
+        this.keyHash = keyHash;
+    }
+
+    public long getTtl() {
+        return ttl;
+    }
+
+    public void setTtl(long ttl) {
+        this.ttl = ttl;
+    }
+
+    public int getValueHash() {
+        return valueHash;
+    }
+
+    public void setValueHash(int valueHash) {
+        this.valueHash = valueHash;
     }
 
     @Override

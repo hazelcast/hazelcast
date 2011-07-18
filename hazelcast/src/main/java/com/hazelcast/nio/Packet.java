@@ -186,6 +186,8 @@ public final class Packet implements SocketWritable {
             bbHeader.putLong(indexes[i]);
             bbHeader.put(indexTypes[i]);
         }
+        bbHeader.putInt(key == null ? -1 : key.partitionHash);
+        bbHeader.putInt(value == null ? -1 : value.partitionHash);
         bbHeader.flip();
         bbSizes.putInt(bbHeader.limit());
         bbSizes.putInt(key == null ? 0 : key.size);
@@ -240,6 +242,10 @@ public final class Packet implements SocketWritable {
                 indexTypes[i] = bbHeader.get();
             }
         }
+        int keyPartitionHash = bbHeader.getInt();
+        int valuePartitionHash = bbHeader.getInt();
+        if (key != null) key.setPartitionHash(keyPartitionHash);
+        if (value != null) value.setPartitionHash(valuePartitionHash);
     }
 
     public void clearForResponse() {
@@ -323,8 +329,12 @@ public final class Packet implements SocketWritable {
         }
         if (sizeRead && !bbHeader.hasRemaining() && (key == null || !key.shouldRead()) && (value == null || !value.shouldRead())) {
             sizeRead = false;
-            if (key != null) key.postRead();
-            if (value != null) value.postRead();
+            if (key != null) {
+                key.postRead();
+            }
+            if (value != null) {
+                value.postRead();
+            }
             return true;
         }
         return false;

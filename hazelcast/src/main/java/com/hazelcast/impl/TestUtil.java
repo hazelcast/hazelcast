@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -131,7 +132,7 @@ public class TestUtil {
         final MemberImpl currentOwnerMember = (MemberImpl) oldest.getPartitionService().getPartition(key).getOwner();
         final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
         if (currentOwnerMember.equals(toMember)) {
-            return false;
+            return true;
         }
         final ConcurrentMapManager concurrentMapManagerOldest = getConcurrentMapManager(oldest);
         final Address addressCurrentOwner = currentOwnerMember.getAddress();
@@ -440,6 +441,37 @@ public class TestUtil {
                     ", creationTime=" + creationTime +
                     ", cost=" + cost +
                     ", version=" + version +
+                    '}';
+        }
+    }
+
+    @Ignore
+    public static class OrderKey implements Serializable, PartitionAware {
+        int customerId;
+        int orderId;
+
+        public OrderKey(int orderId, int customerId) {
+            this.customerId = customerId;
+            this.orderId = orderId;
+        }
+
+        public int getCustomerId() {
+            return customerId;
+        }
+
+        public int getOrderId() {
+            return orderId;
+        }
+
+        public Object getPartitionKey() {
+            return customerId;
+        }
+
+        @Override
+        public String toString() {
+            return "OrderKey{" +
+                    "customerId=" + customerId +
+                    ", orderId=" + orderId +
                     '}';
         }
     }

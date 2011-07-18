@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 public final class DataHolder {
     final ByteBuffer buffer;
     final int size;
+    int partitionHash;
 
     public DataHolder(int size) {
         this.size = size;
@@ -31,6 +32,7 @@ public final class DataHolder {
     public DataHolder(Data data) {
         this.size = data.size();
         this.buffer = ByteBuffer.wrap(data.buffer);
+        this.partitionHash = data.getPartitionHash();
     }
 
     public boolean shouldRead() {
@@ -39,6 +41,10 @@ public final class DataHolder {
 
     public void read(ByteBuffer src) {
         IOUtil.copyToHeapBuffer(src, buffer);
+    }
+
+    public void setPartitionHash(int partitionHash) {
+        this.partitionHash = partitionHash;
     }
 
     public int size() {
@@ -52,7 +58,9 @@ public final class DataHolder {
     }
 
     public Data toData() {
-        return new Data(buffer.array());
+        Data data = new Data(buffer.array());
+        data.setPartitionHash(partitionHash);
+        return data;
     }
 
     @Override

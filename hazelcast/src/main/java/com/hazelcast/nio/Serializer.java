@@ -18,6 +18,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.impl.ThreadContext;
 
 import java.io.IOException;
@@ -43,6 +44,9 @@ public final class Serializer extends AbstractSerializer {
     }
 
     public Data writeObject(final Object obj) {
+        if (obj == null) {
+            return null;
+        }
         if (obj instanceof Data) {
             return (Data) obj;
         }
@@ -50,7 +54,13 @@ public final class Serializer extends AbstractSerializer {
         if (bytes == null) {
             return null;
         } else {
-            return new Data(bytes);
+            Data data = new Data(bytes);
+            if (obj instanceof PartitionAware) {
+                Data partitionKey = writeObject(((PartitionAware) obj).getPartitionKey());
+                int partitionHash = (partitionKey == null) ? -1 : partitionKey.getPartitionHash();
+                data.setPartitionHash(partitionHash);
+            }
+            return data;
         }
     }
 
