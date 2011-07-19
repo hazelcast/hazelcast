@@ -129,7 +129,8 @@ public class Values<V> implements Collection, DataSerializable {
         for (int i = 0; i < size; i++) {
             int length = in.readInt();
             byte[] data = new byte[length];
-            in.readFully(data);
+            in.readFully(data);  // buffer of Data
+            in.readInt(); // partitionHash of Data
             lsValuesInByte.add(data);
         }
         for (int i = 0; i < size; i++) {
