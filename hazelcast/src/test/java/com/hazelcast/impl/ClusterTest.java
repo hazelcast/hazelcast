@@ -176,45 +176,58 @@ public class ClusterTest {
         h2.shutdown();
         assertEquals(0, a3.get());
     }
-//    @Test
-//    public void testFirstNodeNoWait() throws Exception {
-//        final Config config = new Config();
-//        final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
-//        for (int j = 0; j < 2; j++) {
-//            new Thread(new Runnable() {
-//                public void run() {
-//                    final HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-//                    for (int i = 0; i < 3000; i++) {
-//                        h.getMap("default").put(i, "value");
-//                    }
-//                    counts.offer(getLocalPartitions(h).size());
-//                }
-//            }).start();
-//        }
-//        int first = counts.take();
-//        int second = counts.take();
-//        assertTrue(first == 0 || first == 271);
-//        assertTrue(second == 0 || second == 271);
-//        assertEquals(271, Math.abs(second - first));
-//    }
 
     @Test
-    public void testFirstNodeWait() throws Exception {
+    public void testFirstNodeNoWait() throws Exception {
         final Config config = new Config();
+        final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
         final CountDownLatch latch = new CountDownLatch(2);
         for (int j = 0; j < 2; j++) {
             new Thread(new Runnable() {
                 public void run() {
                     final HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+                    latch.countDown();
                     for (int i = 0; i < 3000; i++) {
                         h.getMap("default").put(i, "value");
                     }
-                    assertTrue(getLocalPartitions(h).size() > 134);
-                    latch.countDown();
+                    counts.offer(getLocalPartitions(h).size());
                 }
             }).start();
         }
-        latch.await(100, TimeUnit.SECONDS);
+        int first = counts.take();
+        int second = counts.take();
+        assertTrue(first == 0 || first == 271);
+        assertTrue(second == 0 || second == 271);
+        assertEquals(271, Math.abs(second - first));
+    }
+
+    @Test
+    public void testFirstNodeWait() throws Exception {
+        final Config config = new Config();
+        final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
+        final CountDownLatch latch = new CountDownLatch(2);
+        final HazelcastInstance[] instances = new HazelcastInstance[2];
+        for (int i = 0; i < 2; i++) {
+            instances[i] = Hazelcast.newHazelcastInstance(config);
+        }
+        for (int j = 0; j < 2; j++) {
+            final int instanceIndex = j;
+            new Thread(new Runnable() {
+                public void run() {
+                    final HazelcastInstance h = instances[instanceIndex];
+                    latch.countDown();
+                    for (int i = 0; i < 3000; i++) {
+                        h.getMap("default").put(i, "value");
+                    }
+                    counts.offer(getLocalPartitions(h).size());
+                }
+            }).start();
+        }
+        int first = counts.take();
+        int second = counts.take();
+        assertTrue("Found " + first, first > 134);
+        assertTrue("Found " + second, second > 134);
+        assertEquals(271, second + first);
     }
 
     private Set<Partition> getLocalPartitions(HazelcastInstance h) {

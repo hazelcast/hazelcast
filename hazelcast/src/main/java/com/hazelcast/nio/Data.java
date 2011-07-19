@@ -48,8 +48,9 @@ public class Data implements DataSerializable {
     }
 
     public void writeData(DataOutput out) throws IOException {
-        out.writeInt(size());
-        if (size() > 0) {
+        int size = size();
+        out.writeInt(size);
+        if (size > 0) {
             out.write(buffer);
         }
         out.writeInt(partitionHash);

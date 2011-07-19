@@ -45,15 +45,16 @@ public class CollectionWrapper<K> implements DataSerializable {
     public void readData(DataInput in) throws IOException {
         int size = in.readInt();
         keys = new ArrayList<K>(size);
-        List<byte[]> datas = new ArrayList<byte[]>(size);
+        List<byte[]> arrays = new ArrayList<byte[]>(size);
         for (int i = 0; i < size; i++) {
             int length = in.readInt();
-            byte[] data = new byte[length];
-            in.readFully(data);
-            datas.add(data);
+            byte[] bytes = new byte[length];
+            in.readFully(bytes); // buffer of Data
+            in.readInt();       // partitionHash of Data
+            arrays.add(bytes);
         }
         for (int i = 0; i < size; i++) {
-            K k = (K) toObject(datas.get(i));
+            K k = (K) toObject(arrays.get(i));
             keys.add(k);
         }
     }
