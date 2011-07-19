@@ -20,7 +20,6 @@
         <module>hazelcast-client</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-all</module>
-        <module>hazelcast-monitor</module>
         <module>hazelcast-cloud</module>
     </modules>
     <properties>

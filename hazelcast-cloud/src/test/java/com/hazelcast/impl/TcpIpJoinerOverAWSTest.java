@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import junit.framework.TestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -31,6 +32,7 @@ import java.util.Properties;
 public class TcpIpJoinerOverAWSTest extends TestCase {
 
     @Test
+    @Ignore
     public void testAWSConfig() throws IOException {
         Config config = new Config();
         config.setPortAutoIncrement(false);
