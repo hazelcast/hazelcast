@@ -94,7 +94,7 @@
             <xs:complexContent>
                 <xs:extension base="beans:identifiedType">
                     <xs:sequence>
-                        <xs:element name="client-properties" type="client-properties"/>
+                        <xs:element name="client-properties" type="client-properties" minOccurs="0"/>
                         <xs:element name="members" type="members" default="127.0.0.1" minOccurs="1"
                                     maxOccurs="unbounded"/>
                     </xs:sequence>
@@ -269,6 +269,7 @@
             <xs:enumeration value="hazelcast.mc.map.excludes"/>
             <xs:enumeration value="hazelcast.mc.queue.excludes"/>
             <xs:enumeration value="hazelcast.mc.topic.excludes"/>
+            <xs:enumeration value="hazelcast.version.check.enabled"/>
         </xs:restriction>
     </xs:simpleType>
 
