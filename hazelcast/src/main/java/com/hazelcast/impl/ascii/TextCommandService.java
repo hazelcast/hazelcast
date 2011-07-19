@@ -26,6 +26,8 @@ public interface TextCommandService {
 
     Object poll(String queueName, int seconds);
 
+    Object poll(String queueName);
+
     void processRequest(TextCommand command);
 
     void sendResponse(TextCommand textCommand);

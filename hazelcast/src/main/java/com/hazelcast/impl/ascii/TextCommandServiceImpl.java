@@ -176,6 +176,10 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         }
     }
 
+    public Object poll(String queueName) {
+        return hazelcast.getQueue(queueName).poll();
+    }
+
     class CommandExecutor implements Runnable {
         final TextCommand command;
 

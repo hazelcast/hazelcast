@@ -35,20 +35,16 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             String mapName = uri.substring(URI_MAPS.length(), indexEnd);
             String key = uri.substring(indexEnd + 1);
             Object value = textCommandService.get(mapName, key);
-            if (value == null) {
-                command.send204();
+            prepareResponse(command, value);
+        } else if (uri.startsWith(URI_QUEUES)) {
+            String queueName;
+            if (uri.endsWith("/")) {
+                queueName = uri.substring(URI_QUEUES.length(), uri.length() - 1);
             } else {
-                if (value instanceof byte[]) {
-                    command.setResponse(null, (byte[]) value);
-                } else if (value instanceof RestValue) {
-                    RestValue restValue = (RestValue) value;
-                    command.setResponse(restValue.getContentType(), restValue.getValue());
-                } else if (value instanceof String) {
-                    command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, ((String) value).getBytes());
-                } else {
-                    command.setResponse(ThreadContext.get().toByteArray(value));
-                }
+                queueName = uri.substring(URI_QUEUES.length());
             }
+            Object value = textCommandService.poll(queueName);
+            prepareResponse(command, value);
         } else if (uri.startsWith(URI_CLUSTER)) {
             Node node = textCommandService.getNode();
             StringBuilder res = new StringBuilder(node.getClusterImpl().toString());
@@ -67,5 +63,22 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
     public void handleRejection(HttpGetCommand command) {
         handle(command);
+    }
+
+    private void prepareResponse(HttpGetCommand command, Object value) {
+        if (value == null) {
+            command.send204();
+        } else {
+            if (value instanceof byte[]) {
+                command.setResponse(null, (byte[]) value);
+            } else if (value instanceof RestValue) {
+                RestValue restValue = (RestValue) value;
+                command.setResponse(restValue.getContentType(), restValue.getValue());
+            } else if (value instanceof String) {
+                command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, ((String) value).getBytes());
+            } else {
+                command.setResponse(ThreadContext.get().toByteArray(value));
+            }
+        }
     }
 }

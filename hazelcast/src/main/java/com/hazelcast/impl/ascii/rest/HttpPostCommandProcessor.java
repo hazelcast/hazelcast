@@ -38,9 +38,21 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), 0);
                 command.setResponse(HttpCommand.RES_204);
             } else if (uri.startsWith(URI_QUEUES)) {
-                int indexEnd = uri.indexOf('/', URI_QUEUES.length());
-                String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
-                String simpleValue = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
+                String queueName = null;
+                String simpleValue = null;
+                String suffix;
+                if (uri.endsWith("/")) {
+                    suffix = uri.substring(URI_QUEUES.length(), uri.length() - 1);
+                } else {
+                    suffix = uri.substring(URI_QUEUES.length(), uri.length());
+                }
+                int indexSlash = suffix.lastIndexOf("/");
+                if (indexSlash == -1) {
+                    queueName = suffix;
+                } else {
+                    queueName = suffix.substring(0, indexSlash);
+                    simpleValue = suffix.substring(indexSlash + 1, suffix.length());
+                }
                 byte[] data;
                 byte[] contentType;
                 if (simpleValue == null) {
