@@ -101,7 +101,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         map = null;
         list = null;
         set = null;
-
         queue = null;
         topic = null;
     }
@@ -1174,6 +1173,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("m.iterator [remove]                  //iterates the keys of the map, remove if specified");
         println("m.size                               //size of the map");
         println("m.clear                              //clears the map");
+        println("m.destroy                            //destroys the map");
         println("m.lock <key>                         //locks the key");
         println("m.tryLock <key>                      //tries to lock the key and returns immediately");
         println("m.tryLock <key> <time>               //tries to lock the key within given seconds");
