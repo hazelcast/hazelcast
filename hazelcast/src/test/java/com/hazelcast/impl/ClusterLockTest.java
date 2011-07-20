@@ -20,8 +20,8 @@ package com.hazelcast.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.Transaction;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.impl.TestUtil.getCMap;
 import static junit.framework.Assert.*;
@@ -149,5 +150,103 @@ public class ClusterLockTest {
         Thread.sleep(15000);
         assertEquals(0, cmap1.mapRecords.size());
         assertEquals(0, cmap2.mapRecords.size());
+    }
+
+    @Test(timeout = 100000)
+    public void testTransactionCommitRespectLockCount() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final IMap map1 = h1.getMap("default");
+        Transaction tx = h1.getTransaction();
+        map1.lock(1);
+        tx.begin();
+        map1.put(1, 1);
+        tx.commit();
+        final AtomicBoolean locked = new AtomicBoolean(false);
+        new Thread(new Runnable() {
+
+            public void run() {
+                try {
+                    map1.lock(1);
+                    locked.set(true);
+                } catch (Throwable e) {
+                }
+            }
+        }).start();
+        Thread.sleep(2000);
+        Assert.assertFalse("should not acquire lock", locked.get());
+        map1.unlock(1);
+    }
+
+    @Test(timeout = 100000)
+    public void testTransactionRollbackRespectLockCount() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final IMap map1 = h1.getMap("default");
+        Transaction tx = h1.getTransaction();
+        map1.lock(1);
+        tx.begin();
+        map1.put(1, 1);
+        tx.rollback();
+        final AtomicBoolean locked = new AtomicBoolean(false);
+        new Thread(new Runnable() {
+
+            public void run() {
+                try {
+                    map1.lock(1);
+                    locked.set(true);
+                } catch (Throwable e) {
+                }
+            }
+        }).start();
+        Thread.sleep(2000);
+        Assert.assertFalse("should not acquire lock", locked.get());
+        map1.unlock(1);
+    }
+
+    @Test(timeout = 100000)
+    public void testPutAndUnlockRespectLockCount() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final IMap map1 = h1.getMap("default");
+        map1.lock(1);
+        map1.lock(1);
+        map1.putAndUnlock(1, 1);
+        final AtomicBoolean locked = new AtomicBoolean(false);
+        new Thread(new Runnable() {
+
+            public void run() {
+                try {
+                    map1.lock(1);
+                    locked.set(true);
+                } catch (Throwable e) {
+                }
+            }
+        }).start();
+        Thread.sleep(2000);
+        Assert.assertFalse("should not acquire lock", locked.get());
+        map1.unlock(1);
+    }
+
+    @Test(timeout = 100000)
+    public void testUnlockInsideTransaction() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final IMap map1 = h1.getMap("default");
+        Transaction tx = h1.getTransaction();
+        tx.begin();
+        map1.put(1, 1);
+        map1.lock(1);
+        map1.unlock(1);
+        final AtomicBoolean locked = new AtomicBoolean(false);
+        new Thread(new Runnable() {
+
+            public void run() {
+                try {
+                    map1.lock(1);
+                    locked.set(true);
+                } catch (Throwable e) {
+                }
+            }
+        }).start();
+        Thread.sleep(2000);
+        Assert.assertFalse("should not acquire lock", locked.get());
+        tx.commit();
     }
 }

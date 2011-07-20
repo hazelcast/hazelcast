@@ -744,7 +744,12 @@ public class CMap {
         request.response = Boolean.TRUE;
     }
 
-    void unlock(Record record) {
+    void unlock(Record record, Request request) {
+        record.unlock(request.lockThreadId, request.lockAddress);
+        fireScheduledActions(record);
+    }
+
+    void clearLock(Record record) {
         record.clearLock();
         fireScheduledActions(record);
     }
@@ -814,7 +819,7 @@ public class CMap {
         }
         if (record.getLockCount() > 0) {
             if (deadAddress.equals(record.getLockAddress())) {
-                unlock(record);
+                clearLock(record);
             }
         }
         if (record.getValue() instanceof DistributedSemaphore) {
@@ -840,7 +845,7 @@ public class CMap {
             }
         }
         if (req.txnId != -1) {
-            unlock(record);
+            unlock(record, req);
         }
         if (removed) {
             record.incrementVersion();
@@ -874,7 +879,7 @@ public class CMap {
             concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKeyData(), null, value, record.getListeners(), req.caller);
         }
         if (req.txnId != -1) {
-            unlock(record);
+            unlock(record, req);
         }
         req.clearForResponse();
         req.version = record.getVersion();
@@ -1031,7 +1036,7 @@ public class CMap {
             concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_UPDATED, oldValue, record, req.caller);
         }
         if (req.txnId != -1 || req.operation == ClusterOperation.CONCURRENT_MAP_PUT_AND_UNLOCK) {
-            unlock(record);
+            unlock(record, req);
         }
         record.setIndexes(req.indexes, req.indexTypes);
         updateIndexes(record);
@@ -1517,7 +1522,7 @@ public class CMap {
             return false;
         }
         if (req.txnId != -1) {
-            unlock(record);
+            unlock(record, req);
         }
         boolean removed = false;
         if (record.getCopyCount() > 0) {
@@ -1563,7 +1568,7 @@ public class CMap {
             return;
         }
         if (req.txnId != -1) {
-            unlock(record);
+            unlock(record, req);
         }
         if (!record.isActive()) {
             return;
