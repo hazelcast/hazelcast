@@ -665,7 +665,8 @@ public class ClusterTest {
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(c2);
         hNormal.getMap("default").put("1", "first");
-        assert hSuper.getMap("default").get("1").equals("first");
+        assert hSuper.getMap("default").
+                get("1").equals("first");
         hNormal.shutdown();
         hSuper.shutdown();
     }
@@ -2984,5 +2985,78 @@ public class ClusterTest {
         assertTrue(l.await(5, TimeUnit.SECONDS));
         junit.framework.Assert.assertEquals(1, map.size());
         junit.framework.Assert.assertEquals("value2", map.get("1"));
+    }
+
+    @Test
+    public void testLoadFromStore() {
+        final String MAP_NAME = "testMap";
+        final ConcurrentMap<Integer, String> STORE =
+                new ConcurrentHashMap<Integer, String>();
+        STORE.put(1, "one");
+        STORE.put(102, "two");
+        STORE.put(3, "three");
+        STORE.put(104, "four");
+        STORE.put(5, "five");
+        STORE.put(106, "six");
+        STORE.put(7, "seven");
+        STORE.put(108, "eight");
+        STORE.put(9, "nine");
+        STORE.put(110, "ten");
+        STORE.put(11, "eleven");
+        STORE.put(112, "twelve");
+        Config config = new Config();
+        config
+                .getMapConfig(MAP_NAME)
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setWriteDelaySeconds(1)
+                        .setImplementation(new MapStore<Integer, String>() {
+                            public String load(Integer key) {
+                                String value = STORE.get(key);
+                                return value;
+                            }
+
+                            public Map<Integer, String> loadAll(Collection<Integer> keys) {
+                                Map<Integer, String> result = new HashMap<Integer, String>();
+                                for (Integer key : keys) {
+                                    String value = load(key);
+                                    if (value != null) {
+                                        result.put(key, value);
+                                    }
+                                }
+                                return result;
+                            }
+
+                            public Set<Integer> loadAllKeys() {
+                                return STORE.keySet();
+                            }
+
+                            public void store(Integer key, String value) {
+                                STORE.put(key, value);
+                            }
+
+                            public void storeAll(Map<Integer, String> map) {
+                                for (Map.Entry<Integer, String> entry : map.entrySet()) {
+                                    store(entry.getKey(), entry.getValue());
+                                }
+                            }
+
+                            public void delete(Integer key) {
+                                STORE.remove(key);
+                            }
+
+                            public void deleteAll(Collection<Integer> keys) {
+                                for (Integer key : STORE.keySet()) {
+                                    delete(key);
+                                }
+                            }
+                        }));
+        HazelcastInstance hc1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hc2 = Hazelcast.newHazelcastInstance(config);
+        IMap<Integer, String> m1 = hc1.getMap(MAP_NAME);
+        IMap<Integer, String> m2 = hc2.getMap(MAP_NAME);
+        junit.framework.Assert.assertEquals(STORE.size(), m1.keySet().size());
+        junit.framework.Assert.assertEquals(STORE.size(), m2.keySet().size());
+        hc1.getLifecycleService().shutdown();
+        junit.framework.Assert.assertEquals(STORE.size(), m2.keySet().size());
     }
 }

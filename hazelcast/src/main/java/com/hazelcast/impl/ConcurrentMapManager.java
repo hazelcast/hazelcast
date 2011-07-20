@@ -1488,12 +1488,14 @@ public class ConcurrentMapManager extends BaseManager {
                         || operation == CONCURRENT_MAP_PUT_AND_UNLOCK
                         || operation == CONCURRENT_MAP_PUT_TRANSIENT) {
                     request.setBooleanRequest();
+                    Data valueData = request.value;
                     doOp();
-                    Boolean returnObject = getResultAsBoolean();
-                    if (returnObject) {
+                    Boolean successful = getResultAsBoolean();
+                    if (successful) {
+                        request.value = valueData;
                         backup(CONCURRENT_MAP_BACKUP_PUT);
                     }
-                    return returnObject;
+                    return successful;
                 } else {
                     request.setObjectRequest();
                     doOp();
