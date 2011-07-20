@@ -602,11 +602,52 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     Map getAll(String name, Set keys) {
-        Pairs results = getAllPairs(name, keys);
-        List<KeyValue> lsKeyValues = results.getKeyValues();
-        Map map = new HashMap(lsKeyValues.size());
-        for (KeyValue keyValue : lsKeyValues) {
-            map.put(toObject(keyValue.getKeyData()), toObject(keyValue.getValueData()));
+        Set theKeys = keys;
+        Map map = new HashMap(keys.size());
+        CMap cmap = getMap(name);
+        if (cmap != null && cmap.nearCache != null) {
+            theKeys = new HashSet(keys);
+            for (Iterator iterator = theKeys.iterator(); iterator.hasNext();) {
+                Object key = iterator.next();
+                Object value = cmap.nearCache.get(key);
+                if (value != null) {
+                    map.put(key, value);
+                    iterator.remove();
+                }
+            }
+        }
+        if (theKeys.size() > 1) {
+            Pairs results = getAllPairs(name, theKeys);
+            final List<KeyValue> lsKeyValues = results.getKeyValues();
+            cmap = getMap(name);
+            if (lsKeyValues.size() > 0 && cmap != null) {
+                final NearCache nearCache = cmap.nearCache;
+                if (nearCache != null) {
+                    final Map<Data, Object> keyObjects = new HashMap<Data, Object>(lsKeyValues.size());
+                    for (KeyValue keyValue : lsKeyValues) {
+                        keyObjects.put(keyValue.getKeyData(), keyValue.getKey());
+                    }
+                    enqueueAndReturn(new Processable() {
+                        public void process() {
+                            for (KeyValue keyValue : lsKeyValues) {
+                                final Object key = keyObjects.get(keyValue.getKeyData());
+                                if (key != null) {
+                                    nearCache.put(key, keyValue.getKeyData(), keyValue.getValueData());
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            for (KeyValue keyValue : lsKeyValues) {
+                map.put(keyValue.getKey(), keyValue.getValue());
+            }
+        } else if (theKeys.size() == 1) {
+            Object key = theKeys.iterator().next();
+            Object value = new MGet().get(name, key, -1);
+            if (value != null) {
+                map.put(key, value);
+            }
         }
         return map;
     }
