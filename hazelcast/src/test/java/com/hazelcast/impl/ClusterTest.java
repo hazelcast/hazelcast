@@ -2941,11 +2941,22 @@ public class ClusterTest {
             keys[i] = key;
             m1.put(key, i);
         }
+        Collection<Future<Boolean>> callableFutures = new LinkedList<Future<Boolean>>();
+        Collection<Future> runnableFutures = new LinkedList<Future>();
+        ExecutorService es3 = h3.getExecutorService();
         for (OrderKey key : keys) {
             Member member1 = h1.getPartitionService().getPartition(key).getOwner();
             Member member2 = h1.getPartitionService().getPartition(key.getPartitionKey()).getOwner();
             junit.framework.Assert.assertEquals(member1, member2);
             junit.framework.Assert.assertEquals(key.getOrderId(), m1.get(key));
+            callableFutures.add(es3.submit(new TestUtil.OrderUpdateCallable(key.getOrderId(), key.getCustomerId())));
+            runnableFutures.add(es3.submit(new TestUtil.OrderUpdateRunnable(key.getOrderId(), key.getCustomerId())));
+        }
+        for (Future future : callableFutures) {
+            assertTrue((Boolean) future.get(10, TimeUnit.SECONDS));
+        }
+        for (Future future : runnableFutures) {
+            future.get(10, TimeUnit.SECONDS);
         }
     }
 

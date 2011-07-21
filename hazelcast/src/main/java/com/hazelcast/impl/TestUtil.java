@@ -18,10 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.core.PartitionAware;
-import com.hazelcast.core.Prefix;
+import com.hazelcast.core.*;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.MigrationEvent;
@@ -31,6 +28,7 @@ import com.hazelcast.partition.PartitionService;
 import org.junit.Ignore;
 
 import java.io.Serializable;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -441,6 +439,88 @@ public class TestUtil {
                     ", creationTime=" + creationTime +
                     ", cost=" + cost +
                     ", version=" + version +
+                    '}';
+        }
+    }
+
+    @Ignore
+    public static class OrderUpdateRunnable implements Serializable, Runnable, PartitionAware, HazelcastInstanceAware {
+        int customerId;
+        int orderId;
+        transient HazelcastInstance hazelcastInstance;
+
+        public OrderUpdateRunnable(int orderId, int customerId) {
+            this.customerId = customerId;
+            this.orderId = orderId;
+        }
+
+        public void run() {
+            if (!hazelcastInstance.getPartitionService().getPartition(customerId).getOwner().localMember()) {
+                throw new RuntimeException("Not local member");
+            }
+        }
+
+        public int getCustomerId() {
+            return customerId;
+        }
+
+        public int getOrderId() {
+            return orderId;
+        }
+
+        public Object getPartitionKey() {
+            return customerId;
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcastInstance = hazelcastInstance;
+        }
+
+        @Override
+        public String toString() {
+            return "OrderUpdateRunnable{" +
+                    "customerId=" + customerId +
+                    ", orderId=" + orderId +
+                    '}';
+        }
+    }
+
+    @Ignore
+    public static class OrderUpdateCallable implements Serializable, Callable<Boolean>, PartitionAware, HazelcastInstanceAware {
+        int customerId;
+        int orderId;
+        transient HazelcastInstance hazelcastInstance;
+
+        public OrderUpdateCallable(int orderId, int customerId) {
+            this.customerId = customerId;
+            this.orderId = orderId;
+        }
+
+        public Boolean call() throws Exception {
+            return hazelcastInstance.getPartitionService().getPartition(customerId).getOwner().localMember();
+        }
+
+        public int getCustomerId() {
+            return customerId;
+        }
+
+        public int getOrderId() {
+            return orderId;
+        }
+
+        public Object getPartitionKey() {
+            return customerId;
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcastInstance = hazelcastInstance;
+        }
+
+        @Override
+        public String toString() {
+            return "OrderUpdateCallable{" +
+                    "customerId=" + customerId +
+                    ", orderId=" + orderId +
                     '}';
         }
     }
