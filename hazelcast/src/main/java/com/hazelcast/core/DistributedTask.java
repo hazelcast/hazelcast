@@ -51,17 +51,15 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     private DistributedTask(Callable<V> callable, Member member, Set<Member> members, Object key) {
         super(callable);
-        if (callable instanceof DistributedRunnableAdapter) {
-            DistributedRunnableAdapter<V> dra = (DistributedRunnableAdapter) callable;
-            Runnable runnable = dra.getRunnable();
-            check(runnable);
-            if (key == null && member == null && members == null && runnable instanceof PartitionAware) {
-                key = ((PartitionAware) runnable).getPartitionKey();
-            }
-            this.result = dra.getResult();
-        } else {
-            check(callable);
-            if (key == null && member == null && members == null && callable instanceof PartitionAware) {
+        if (key == null && member == null && members == null) {
+            if (callable instanceof DistributedRunnableAdapter) {
+                DistributedRunnableAdapter<V> dra = (DistributedRunnableAdapter) callable;
+                Runnable runnable = dra.getRunnable();
+                if (runnable instanceof PartitionAware) {
+                    key = ((PartitionAware) runnable).getPartitionKey();
+                }
+                this.result = dra.getResult();
+            } else if (callable instanceof PartitionAware) {
                 key = ((PartitionAware) callable).getPartitionKey();
             }
         }
