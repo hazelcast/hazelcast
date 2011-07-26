@@ -19,6 +19,13 @@ package com.hazelcast.core;
 
 import java.util.Set;
 
+/**
+ * Concurrent, Distributed Set
+ * <p/>
+ * <b>This class is not a general-purpose Set implementation! While this class implements the Set interface,
+ * it intentionally violates Set's general contract, which mandates the use of the equals method when comparing objects.
+ * Instead of the equals method this implementation compares the serialized byte version of the objects.<b>
+ */
 public interface ISet<E> extends ICollection<E>, Set<E>, Instance {
 
 }
