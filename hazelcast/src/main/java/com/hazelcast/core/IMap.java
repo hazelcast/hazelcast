@@ -32,9 +32,14 @@ import java.util.concurrent.TimeoutException;
 /**
  * Concurrent, distributed, observable and queryable map.
  * <p/>
- * <b>This class is not a general-purpose ConcurrentMap implementation! While this class implements the ConcurrentMap interface,
- * it intentionally violates Map's general contract, which mandates the use of the equals method when comparing objects.
- * Instead of the equals method this implementation compares the serialized byte version of the objects.<b>
+ * <p><b>This class is <i>not</i> a general-purpose <tt>ConcurrentMap</tt> implementation! While this class implements
+ * the <tt>Map</tt> interface, it intentionally violates <tt>Map's</tt> general contract, which mandates the
+ * use of the <tt>equals</tt> method when comparing objects. Instead of the equals method this implementation
+ * compares the serialized byte version of the objects.</b>
+ * <p/>
+ * <p/>
+ * <p/>
+ * Read more: http://kickjava.com/src/java/util/IdentityHashMap.java.htm#ixzz1TCesQMzr
  *
  * @param <K> key
  * @param <V> value
