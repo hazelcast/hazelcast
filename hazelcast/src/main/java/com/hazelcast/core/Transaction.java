@@ -19,6 +19,8 @@ package com.hazelcast.core;
 
 /**
  * Hazelcast transaction interface.
+ * <p/>
+ * <b>Note that Hazelcast doesn't support two phase commit (XA) transactions. </b>
  *
  * @see Hazelcast#getTransaction()
  */
