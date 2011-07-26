@@ -2929,9 +2929,9 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public class Entries implements Set {
-        final String name;
+    public class Entries extends AbstractSet {
         final List<Map.Entry> lsKeyValues = new ArrayList<Map.Entry>();
+        final String name;
         final ClusterOperation operation;
         final boolean checkValue;
         final Predicate predicate;
@@ -2958,10 +2958,6 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-        }
-
-        public boolean isEmpty() {
-            return (size() == 0);
         }
 
         public int size() {
@@ -3072,14 +3068,6 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void clear() {
             throw new UnsupportedOperationException();
-        }
-
-        public boolean contains(Object o) {
-            Iterator it = iterator();
-            while (it.hasNext()) {
-                if (o.equals(it.next())) return true;
-            }
-            return false;
         }
 
         public boolean containsAll(Collection c) {
