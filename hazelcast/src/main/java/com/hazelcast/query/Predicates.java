@@ -854,35 +854,39 @@ public final class Predicates {
                         final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
                         possibleMethodNames.add("get" + camelName);
                         possibleMethodNames.add("is" + camelName);
-                        for (String methodName : possibleMethodNames) {
-                            try {
-                                final Method method = clazz.getMethod(methodName, null);
-                                method.setAccessible(true);
-                                localGetter = new MethodGetter(parent, method);
-                                clazz = method.getReturnType();
-                                break;
-                            } catch (NoSuchMethodException ignored) {
-                            }
-                        }
-                        if (localGetter == null) {
-                            try {
-                                final Field field = clazz.getField(name);
-                                localGetter = new FieldGetter(parent, field);
-                                clazz = field.getType();
-                            } catch (NoSuchFieldException ignored) {
-                            }
-                        }
-                        if (localGetter == null) {
-                            Class c = clazz;
-                            while (!Object.class.equals(c)) {
+                        if (name.equals("this")) {
+                            localGetter = new ThisGetter(parent, obj);
+                        } else {
+                            for (String methodName : possibleMethodNames) {
                                 try {
-                                    final Field field = c.getDeclaredField(name);
-                                    field.setAccessible(true);
+                                    final Method method = clazz.getMethod(methodName, null);
+                                    method.setAccessible(true);
+                                    localGetter = new MethodGetter(parent, method);
+                                    clazz = method.getReturnType();
+                                    break;
+                                } catch (NoSuchMethodException ignored) {
+                                }
+                            }
+                            if (localGetter == null) {
+                                try {
+                                    final Field field = clazz.getField(name);
                                     localGetter = new FieldGetter(parent, field);
                                     clazz = field.getType();
-                                    break;
                                 } catch (NoSuchFieldException ignored) {
-                                    c = c.getSuperclass();
+                                }
+                            }
+                            if (localGetter == null) {
+                                Class c = clazz;
+                                while (!Object.class.equals(c)) {
+                                    try {
+                                        final Field field = c.getDeclaredField(name);
+                                        field.setAccessible(true);
+                                        localGetter = new FieldGetter(parent, field);
+                                        clazz = field.getType();
+                                        break;
+                                    } catch (NoSuchFieldException ignored) {
+                                        c = c.getSuperclass();
+                                    }
                                 }
                             }
                         }
@@ -954,6 +958,25 @@ public final class Predicates {
             @Override
             public String toString() {
                 return "FieldGetter [parent=" + parent + ", field=" + field + "]";
+            }
+        }
+
+        class ThisGetter extends Getter {
+            final Object object;
+
+            public ThisGetter(final Getter parent, Object object) {
+                super(parent);
+                this.object = object;
+            }
+
+            @Override
+            Object getValue(Object obj) throws Exception {
+                return obj;
+            }
+
+            @Override
+            Class getReturnType() {
+                return this.object.getClass();
             }
         }
 
