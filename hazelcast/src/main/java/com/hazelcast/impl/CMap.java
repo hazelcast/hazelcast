@@ -1567,42 +1567,45 @@ public class CMap {
             req.clearForResponse();
             return;
         }
-        if (req.txnId != -1) {
-            unlock(record, req);
-        }
-        if (!record.isActive()) {
-            return;
-        }
-        if (!record.isValid()) {
-            if (record.isEvictable()) {
+        try {
+            if (!record.isActive()) {
                 return;
             }
-        }
-        if (req.value != null) {
-            if (record.getValueData() != null) {
-                if (!record.getValueData().equals(req.value)) {
+            if (!record.isValid()) {
+                if (record.isEvictable()) {
                     return;
                 }
             }
+            if (req.value != null) {
+                if (record.getValueData() != null) {
+                    if (!record.getValueData().equals(req.value)) {
+                        return;
+                    }
+                }
+            }
+            Data oldValue = record.getValueData();
+            if (oldValue == null && record.getMultiValues() != null && record.getMultiValues().size() > 0) {
+                Values values = new Values(record.getMultiValues());
+                oldValue = toData(values);
+            }
+            if (oldValue != null) {
+                fireInvalidation(record);
+                concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKeyData(), null, oldValue, record.getListeners(), req.caller);
+                record.incrementVersion();
+            }
+            markAsRemoved(record);
+            if (localUpdateListener != null && req.txnId != Long.MIN_VALUE) {
+                localUpdateListener.recordUpdated(record);
+            }
+            req.clearForResponse();
+            req.version = record.getVersion();
+            req.longValue = record.getCopyCount();
+            req.response = oldValue;
+        } finally {
+            if (req.txnId != -1) {
+                unlock(record, req);
+            }
         }
-        Data oldValue = record.getValueData();
-        if (oldValue == null && record.getMultiValues() != null && record.getMultiValues().size() > 0) {
-            Values values = new Values(record.getMultiValues());
-            oldValue = toData(values);
-        }
-        if (oldValue != null) {
-            fireInvalidation(record);
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKeyData(), null, oldValue, record.getListeners(), req.caller);
-            record.incrementVersion();
-        }
-        markAsRemoved(record);
-        if (localUpdateListener != null && req.txnId != Long.MIN_VALUE) {
-            localUpdateListener.recordUpdated(record);
-        }
-        req.clearForResponse();
-        req.version = record.getVersion();
-        req.longValue = record.getCopyCount();
-        req.response = oldValue;
     }
 
     void reset() {

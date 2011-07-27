@@ -21,10 +21,7 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.util.ResponseQueueFactory;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -33,6 +30,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 
@@ -809,6 +807,48 @@ public class TransactionTest {
         assertEquals(1, txnMap.values(predicate).size());
         txnMap.commit();
         assertEquals(3, txnMap.size());
+    }
+
+    @Test
+    public void issue581testRemoveInTwoTransactionOneShouldReturnNull() throws InterruptedException {
+        final IMap m = Hazelcast.getMap("test");
+        final AtomicReference<Object> t1Return = new AtomicReference<Object>();
+        final AtomicReference<Object> t2Return = new AtomicReference<Object>();
+//        final CountDownLatch latch = new CountDownLatch(1);
+        m.put("a", "b");
+        //Start the first thread, acquire the lock and call remove
+        new Thread("1. thread") {
+            @Override
+            public void run() {
+                try {
+                    Transaction tx = Hazelcast.getTransaction();
+                    tx.begin();
+                    t1Return.set(m.remove("a"));
+                    Thread.sleep(1000);
+                    tx.commit();
+                } catch (InterruptedException ex) {
+                }
+            }
+        }.start();
+        //Start the second thread, ensure it call remove after tx in thread1 is committed
+        Thread t2 = new Thread("2. thread") {
+            @Override
+            public void run() {
+                try {
+                    Transaction tx = Hazelcast.getTransaction();
+                    tx.begin();
+                    Thread.sleep(1000);//Make sure the first thread acquires the lock
+                    t2Return.set(m.remove("a"));
+                    tx.commit();
+                } catch (InterruptedException ex) {
+                }
+            }
+        };
+        t2.start();
+        t2.join();
+        Assert.assertEquals("b", t1Return.get());
+        Assert.assertNull("The remove in the second thread should return null", t2Return.get());
+        Hazelcast.shutdownAll();
     }
 
     List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();
