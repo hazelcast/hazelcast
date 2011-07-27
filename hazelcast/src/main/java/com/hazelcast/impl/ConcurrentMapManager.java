@@ -2593,7 +2593,8 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             } else if (request.operation == CONCURRENT_MAP_REMOVE) {
                 Object key = toObject(request.key);
-                if (cmap.loader != null && request.value == null) {
+                Record record = cmap.getRecord(request);
+                if (cmap.loader != null && request.value == null && (record == null || record.getValueData() == null)) {
                     Object removedObject = cmap.loader.load(key);
                     if (removedObject == null) {
                         return;

@@ -35,6 +35,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.nio.IOUtil.toData;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.*;
 
 public class MapStoreTest extends TestUtil {
@@ -528,6 +530,103 @@ public class MapStoreTest extends TestUtil {
         assertEquals(0, map.size());
         cmap.startCleanup(true);
         assertEquals(null, testMapStore.waitForEvent(10));
+    }
+
+    @Test
+    public void issue587CallMapLoaderDuringRemoval() {
+        final AtomicInteger loadCount = new AtomicInteger(0);
+        final AtomicInteger storeCount = new AtomicInteger(0);
+        final AtomicInteger deleteCount = new AtomicInteger(0);
+        class SimpleMapStore<K, V> implements MapStore<K, V> {
+
+            SimpleMapStore(ConcurrentMap<K, V> store) {
+                this.store = store;
+            }
+
+            public V load(K key) {
+                V value = store.get(key);
+                loadCount.incrementAndGet();
+                return value;
+            }
+
+            public Map<K, V> loadAll(Collection<K> keys) {
+                Map<K, V> result = new HashMap<K, V>();
+                for (K key : keys) {
+                    V value = load(key);
+                    if (value != null) {
+                        result.put(key, value);
+                    }
+                }
+                return result;
+            }
+
+            public Set<K> loadAllKeys() {
+                Set<K> keys = store.keySet();
+                return keys;
+            }
+            //
+            // MapStore methods
+            //
+
+            public void store(K key, V value) {
+                storeCount.incrementAndGet();
+                store.put(key, value);
+            }
+
+            public void delete(K key) {
+                deleteCount.incrementAndGet();
+                store.remove(key);
+            }
+
+            public void storeAll(Map<K, V> map) {
+                store.putAll(map);
+            }
+
+            public void deleteAll(Collection<K> keys) {
+                for (K key : keys) {
+                    store.remove(key);
+                }
+            }
+
+            private final ConcurrentMap<K, V> store;
+        }
+        final ConcurrentMap<String, Long> store = new ConcurrentHashMap<String, Long>();
+        final MapStore<String, Long> myMapStore = new SimpleMapStore<String, Long>(store);
+        Config config = new Config();
+        config
+                .getMapConfig("myMap")
+                .setMapStoreConfig(new MapStoreConfig()
+                        //.setWriteDelaySeconds(1)
+                        .setImplementation(myMapStore));
+        HazelcastInstance hc = Hazelcast.newHazelcastInstance(config);
+        try {
+            store.put("one", 1l);
+            store.put("two", 2l);
+            assertEquals(0, loadCount.get());
+            assertEquals(0, storeCount.get());
+            assertEquals(0, deleteCount.get());
+            IMap<String, Long> myMap = hc.getMap("myMap");
+            assertEquals(1l, myMap.get("one").longValue());
+            assertEquals(2l, myMap.get("two").longValue());
+            assertEquals(2, loadCount.get());
+            assertEquals(0, storeCount.get());
+            assertEquals(0, deleteCount.get());
+            assertNull(myMap.remove("ten"));
+            assertEquals(3, loadCount.get());
+            assertEquals(0, storeCount.get());
+            assertEquals(0, deleteCount.get());
+            myMap.put("three", 3L);
+            myMap.put("four", 4L);
+            assertEquals(3, loadCount.get());
+            assertEquals(2, storeCount.get());
+            assertEquals(0, deleteCount.get());
+            myMap.remove("one");
+            assertEquals(2, storeCount.get());
+            assertEquals(1, deleteCount.get());
+            assertEquals(3, loadCount.get());
+        } finally {
+            Hazelcast.shutdownAll();
+        }
     }
 
     protected Config newConfig(Object storeImpl, int writeDelaySeconds) {
