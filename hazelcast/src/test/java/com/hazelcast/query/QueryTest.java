@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.util.*;
 
+import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
@@ -737,6 +738,19 @@ public class QueryTest extends TestUtil {
             System.out.println(e);
             assertEquals(e, toto2);
         }
+    }
+
+    @Test
+    public void queryWithThis() {
+        IMap<String, String> map = Hazelcast.getMap("map");
+        map.addIndex("this", false);
+        for (int i = 0; i < 1000; i++) {
+            map.put("" + i, "" + i);
+        }
+        final Predicate predicate = new PredicateBuilder().getEntryObject().get("this").equal("10");
+        Collection<String> set = map.values(predicate);
+        assertEquals(1, set.size());
+        assertEquals(1, map.values(new SqlPredicate("this=15")).size());
     }
 
     public void doFunctionalSQLQueryTest(IMap imap) {
