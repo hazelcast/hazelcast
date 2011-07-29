@@ -28,6 +28,8 @@ public class InRunnable extends IORunnable implements Runnable {
     Connection connection = null;
     private final OutRunnable outRunnable;
 
+    volatile long lastReceived;
+
     public InRunnable(HazelcastClient client, OutRunnable outRunnable, Map<Long, Call> calls, PacketReader reader) {
         super(client, calls);
         this.outRunnable = outRunnable;
@@ -58,6 +60,7 @@ public class InRunnable extends IORunnable implements Runnable {
             } else {
                 packet = reader.readPacket(connection);
                 //logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
+                this.lastReceived = System.currentTimeMillis();
                 Call call = callMap.remove(packet.getCallId());
                 if (call != null) {
                     call.received = System.nanoTime();

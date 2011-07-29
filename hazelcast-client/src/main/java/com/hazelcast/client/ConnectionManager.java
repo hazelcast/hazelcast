@@ -75,9 +75,7 @@ public class ConnectionManager implements MembershipListener {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                long lastSend = client.getOutRunnable().lastSend;
-                long now = System.currentTimeMillis();
-                long diff = now - lastSend;
+                long diff = client.getInRunnable().lastReceived - System.currentTimeMillis();
                 try {
                     if (diff >= TIMEOUT / 5 && diff < TIMEOUT) {
                         logger.log(Level.FINEST, "Being idle for some time, Doing a getMembers() call to ping the server!");
@@ -93,7 +91,6 @@ public class ConnectionManager implements MembershipListener {
                         }).start();
                         if (!latch.await(10000, TimeUnit.MILLISECONDS)) {
                             logger.log(Level.WARNING, "The server didn't respond on client's ping call within 10 seconds!");
-                            client.getOutRunnable().lastSend = lastSend;
                         }
                     } else if (diff >= TIMEOUT) {
                         logger.log(Level.WARNING, "The server didn't respond on client's requests for " + TIMEOUT / 1000 + " seconds. Assuming it is dead, closing the connection!");
