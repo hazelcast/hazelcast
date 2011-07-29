@@ -72,13 +72,13 @@ public class HazelcastClient implements HazelcastInstance {
     private HazelcastClient(ClientProperties properties, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
         this.properties = properties;
         this.id = clientIdCounter.incrementAndGet();
-        final String groupName = properties.getProperty(ClientPropertyName.GROUP_NAME);
+        final long timeout = Long.valueOf(properties.getProperty(ClientPropertyName.CONNECTION_TIMEOUT));
         final String prefix = "hz.client." + this.id + ".";
         lifecycleService = new LifecycleServiceClientImpl(this);
         lifecycleService.fireLifecycleEvent(STARTING);
         connectionManager = automatic ?
-                new ConnectionManager(this, lifecycleService, clusterMembers[0]) :
-                new ConnectionManager(this, lifecycleService, clusterMembers, shuffle);
+                new ConnectionManager(this, lifecycleService, clusterMembers[0], timeout) :
+                new ConnectionManager(this, lifecycleService, clusterMembers, shuffle, timeout);
         connectionManager.setBinder(new DefaultClientBinder(this));
         out = new OutRunnable(this, calls, new PacketWriter());
         in = new InRunnable(this, out, calls, new PacketReader());

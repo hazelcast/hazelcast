@@ -26,11 +26,10 @@ import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -38,6 +37,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 import static java.text.MessageFormat.format;
 
 public class ConnectionManager implements MembershipListener {
+    private final long TIMEOUT;
     private volatile Connection currentConnection;
     private final AtomicInteger connectionIdGenerator = new AtomicInteger(-1);
     private final List<InetSocketAddress> clusterMembers = new CopyOnWriteArrayList<InetSocketAddress>();
@@ -51,19 +51,60 @@ public class ConnectionManager implements MembershipListener {
 
     private final LifecycleServiceClientImpl lifecycleService;
 
-    public ConnectionManager(HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress[] clusterMembers, boolean shuffle) {
+    public ConnectionManager(HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress[] clusterMembers, boolean shuffle, long timeout) {
+        this.TIMEOUT = timeout;
         this.client = client;
         this.lifecycleService = lifecycleService;
         this.clusterMembers.addAll(Arrays.asList(clusterMembers));
         if (shuffle) {
             Collections.shuffle(this.clusterMembers);
         }
+        scheduleAHeartBeatThread();
     }
 
-    public ConnectionManager(final HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress address) {
+    public ConnectionManager(final HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress address, long timeout) {
+        this.TIMEOUT = timeout;
         this.client = client;
         this.lifecycleService = lifecycleService;
         this.clusterMembers.add(address);
+        scheduleAHeartBeatThread();
+    }
+
+    private void scheduleAHeartBeatThread() {
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                long lastSend = client.getOutRunnable().lastSend;
+                long now = System.currentTimeMillis();
+                long diff = now - lastSend;
+                try {
+                    if (diff >= TIMEOUT / 5 && diff < TIMEOUT) {
+                        logger.log(Level.FINEST, "Being idle for some time, Doing a getMembers() call to ping the server!");
+                        final CountDownLatch latch = new CountDownLatch(1);
+                        new Thread(new Runnable() {
+                            public void run() {
+                                Set<Member> members = client.getCluster().getMembers();
+                                if (members != null && members.size() >= 1) {
+                                    System.out.println(members);
+                                    latch.countDown();
+                                }
+                            }
+                        }).start();
+                        if (!latch.await(10000, TimeUnit.MILLISECONDS)) {
+                            logger.log(Level.WARNING, "The server didn't respond on client's ping call within 10 seconds!");
+                            client.getOutRunnable().lastSend = lastSend;
+                        }
+                    } else if (diff >= TIMEOUT) {
+                        logger.log(Level.WARNING, "The server didn't respond on client's requests for " + TIMEOUT / 1000 + " seconds. Assuming it is dead, closing the connection!");
+                        currentConnection.close();
+                    }
+                } catch (InterruptedException e) {
+                    return;
+                } catch (IOException ignored) {
+                }
+            }
+        }, TIMEOUT / 10, TIMEOUT / 10);
     }
 
     public Connection getInitConnection() throws IOException {

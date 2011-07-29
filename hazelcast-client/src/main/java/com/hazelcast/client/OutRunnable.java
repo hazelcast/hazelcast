@@ -42,14 +42,13 @@ public class OutRunnable extends IORunnable {
 
     private Connection connection = null;
 
+    volatile long lastSend;
+
     public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
         super(client, calls);
         this.writer = writer;
         this.reconnection = new AtomicBoolean(false);
     }
-
-    long count, poll, put, beforeWrite, afterWrite, closing = 0;
-    long period = 30000;
 
     protected void customRun() throws InterruptedException {
         if (reconnection.get()) {
@@ -77,6 +76,8 @@ public class OutRunnable extends IORunnable {
             Call call = queue.poll(12, TimeUnit.MILLISECONDS);
             if (call != null) {
                 writeCall(call);
+                System.out.println("Writing call " + call);
+                lastSend = System.currentTimeMillis();
                 try {
                     writer.flush(connection);
                 } catch (IOException e) {
