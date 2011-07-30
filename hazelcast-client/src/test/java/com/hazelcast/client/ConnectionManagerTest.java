@@ -17,13 +17,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.ListenerManager;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
-import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -32,8 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -59,7 +52,7 @@ public class ConnectionManagerTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -81,7 +74,7 @@ public class ConnectionManagerTest {
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 return null;
             }
@@ -102,7 +95,7 @@ public class ConnectionManagerTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -128,7 +121,7 @@ public class ConnectionManagerTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -153,7 +146,7 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -178,7 +171,7 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -217,7 +210,7 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -240,7 +233,7 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress) {
+        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 return connection;
             }
