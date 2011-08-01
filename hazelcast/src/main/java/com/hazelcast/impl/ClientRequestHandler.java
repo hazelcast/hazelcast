@@ -54,8 +54,10 @@ public class ClientRequestHandler extends FallThroughRunnable {
                 }
             }
         } else {
+        	final String error = "Unknown Client Operation, can not handle " + packet.operation;
+        	logger.log(Level.WARNING, error);
             if (node.isActive()) {
-                throw new RuntimeException("Unknown Client Operation, can not handle " + packet.operation);
+                throw new RuntimeException(error);
             }
         }
     }

@@ -48,6 +48,7 @@ public class ClientService implements ConnectionListener {
     private final Node node;
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
     private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[300];
+    private final ClientOperationHandler unknownOperationHandler = new UnknownClientOperationHandler();
     private final ILogger logger;
     private final int THREAD_COUNT;
     final Worker[] workers;
@@ -140,6 +141,9 @@ public class ClientService implements ConnectionListener {
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
+        if(clientOperationHandler == null) {
+        	clientOperationHandler = unknownOperationHandler;
+        }
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandler);
         clientEndpoint.addRequest(clientRequestHandler);
         if (packet.operation == CONCURRENT_MAP_UNLOCK) {
@@ -1187,7 +1191,7 @@ public class ClientService implements ConnectionListener {
             packet.setValue(value);
         }
     }
-
+    
     public abstract class ClientOperationHandler {
         public abstract void processCall(Node node, Packet packet);
 
@@ -1213,6 +1217,18 @@ public class ClientService implements ConnectionListener {
                 logger.log(Level.WARNING, "unable to send response " + request);
             }
         }
+    }
+    
+    private final class UnknownClientOperationHandler extends ClientOperationHandler {
+		public void processCall(Node node, Packet packet) {
+			final String error = "Unknown Client Operation, can not handle " + packet.operation; 
+			if(node.isActive()) {
+				throw new RuntimeException(error);
+			}
+			else {
+				logger.log(Level.WARNING, error);
+			}
+		}
     }
 
     private abstract class ClientMapOperationHandler extends ClientOperationHandler {
