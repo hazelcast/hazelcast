@@ -19,7 +19,6 @@ package com.hazelcast.logging;
 
 import com.hazelcast.core.Member;
 
-import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -60,13 +59,7 @@ public class LoggingServiceImpl implements LoggingService {
     }
 
     public void removeLogListener(LogListener logListener) {
-        Iterator<LogListenerRegistration> it = lsListeners.iterator();
-        while (it.hasNext()) {
-            LogListenerRegistration logListenerRegistration = it.next();
-            if (logListenerRegistration.getLogListener() == logListener) {
-                it.remove();
-            }
-        }
+    	lsListeners.remove(new LogListenerRegistration(Level.ALL, logListener));
     }
 
     void handleLogEvent(LogEvent logEvent) {
@@ -93,6 +86,25 @@ public class LoggingServiceImpl implements LoggingService {
         public LogListener getLogListener() {
             return logListener;
         }
+
+        /**
+         * True if LogListeners are equal.
+         */
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			LogListenerRegistration other = (LogListenerRegistration) obj;
+			if (logListener == null) {
+				if (other.logListener != null)
+					return false;
+			} else if (!logListener.equals(other.logListener))
+				return false;
+			return true;
+		}
     }
 
     class DefaultLogger implements ILogger {
