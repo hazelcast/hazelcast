@@ -196,6 +196,7 @@ public class ConcurrentMapManager extends BaseManager {
         for (CMap cmap : maps.values()) {
             try {
                 flush(cmap.name);
+                cmap.reset();
             } catch (Throwable e) {
                 if (node.isActive()) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
@@ -1674,10 +1675,10 @@ public class ConcurrentMapManager extends BaseManager {
         protected void backup(ClusterOperation operation) {
             if (thisAddress.equals(target) &&
                     (operation == CONCURRENT_MAP_LOCK || operation == CONCURRENT_MAP_UNLOCK ||
-                            operation == ClusterOperation.SEMAPHORE_ACQUIRE ||
-                            operation == ClusterOperation.SEMAPHORE_RELEASE ||
+                            operation == SEMAPHORE_ACQUIRE ||
+                            operation == SEMAPHORE_RELEASE ||
                             operation == SEMAPHORE_DRAIN_PERMITS ||
-                            operation == ClusterOperation.SEMAPHORE_REDUCE_PERMITS)) {
+                            operation == SEMAPHORE_REDUCE_PERMITS)) {
                 return;
             }
             if (backupCount > 0) {

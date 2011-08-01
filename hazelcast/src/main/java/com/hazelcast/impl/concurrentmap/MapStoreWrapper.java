@@ -80,8 +80,13 @@ public class MapStoreWrapper implements MapStore {
 	}
 
 	public void destroy() {
-		if (impl instanceof MapLoaderLifecycleSupport) {
-			((MapLoaderLifecycleSupport) impl).destroy();
+		if (shouldInitialize && initialized) {
+			synchronized (initLock) {
+				if (initialized) {
+					((MapLoaderLifecycleSupport) impl).destroy();
+					initialized = false;
+				}
+			}
 		}
 	}
 

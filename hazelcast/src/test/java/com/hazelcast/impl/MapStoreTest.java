@@ -35,8 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.nio.IOUtil.toData;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.*;
 
 public class MapStoreTest extends TestUtil {
@@ -384,6 +382,7 @@ public class MapStoreTest extends TestUtil {
         assertEquals(0, testMapStore.getStore().size());
         h1.getLifecycleService().shutdown();
         assertEquals(100, testMapStore.getStore().size());
+        assertEquals(1, testMapStore.getDestroyCount());
     }
 
     @Test
@@ -656,6 +655,7 @@ public class MapStoreTest extends TestUtil {
         final CountDownLatch latchLoadAll;
         final AtomicInteger callCount = new AtomicInteger();
         final AtomicInteger initCount = new AtomicInteger();
+        final AtomicInteger destroyCount = new AtomicInteger();
         private HazelcastInstance hazelcastInstance;
         private Properties properties;
         private String mapName;
@@ -699,10 +699,15 @@ public class MapStoreTest extends TestUtil {
         }
 
         public void destroy() {
+        	destroyCount.incrementAndGet();
         }
 
         public int getInitCount() {
             return initCount.get();
+        }
+        
+        public int getDestroyCount() {
+        	return destroyCount.get();
         }
 
         public HazelcastInstance getHazelcastInstance() {
