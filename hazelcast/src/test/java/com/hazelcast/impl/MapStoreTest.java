@@ -42,6 +42,7 @@ public class MapStoreTest extends TestUtil {
     @BeforeClass
     public static void init() throws Exception {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
@@ -269,7 +270,7 @@ public class MapStoreTest extends TestUtil {
         assertEquals(1, testMapStore.getStore().size());
         assertEquals(1, map.size());
         testMapStore.assertAwait(10);
-        assertEquals(6, testMapStore.callCount.get());
+        assertEquals(5, testMapStore.callCount.get());
     }
 
     @Test
@@ -283,6 +284,7 @@ public class MapStoreTest extends TestUtil {
         IMap map = h1.getMap("default");
         map.addIndex("name", false);
         assertEquals(0, map.size());
+        assertTrue(map.tryLock("1"));
         assertEquals(employee, map.get("1"));
         assertEquals(employee, testMapStore.getStore().get("1"));
         assertEquals(1, map.size());
@@ -699,15 +701,15 @@ public class MapStoreTest extends TestUtil {
         }
 
         public void destroy() {
-        	destroyCount.incrementAndGet();
+            destroyCount.incrementAndGet();
         }
 
         public int getInitCount() {
             return initCount.get();
         }
-        
+
         public int getDestroyCount() {
-        	return destroyCount.get();
+            return destroyCount.get();
         }
 
         public HazelcastInstance getHazelcastInstance() {

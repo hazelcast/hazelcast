@@ -598,8 +598,10 @@ public class ConcurrentMapManager extends BaseManager {
         mput.request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
         request.setBooleanRequest();
         mput.doOp();
-        mput.getResultAsBoolean();
-        mput.backup(CONCURRENT_MAP_BACKUP_PUT);
+        boolean success = mput.getResultAsBoolean();
+        if (success) {
+            mput.backup(CONCURRENT_MAP_BACKUP_PUT);
+        }
     }
 
     Map getAll(String name, Set keys) {
@@ -2204,10 +2206,108 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class RemoveOperationHandler extends StoreAwareOperationHandler {
+    class RemoveOperationHandler2 extends StoreAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             cmap.remove(request);
+        }
+    }
+
+    class RemoveOperationHandler extends SchedulableOperationHandler {
+
+        @Override
+        protected void onNoTimeToSchedule(Request request) {
+            if (request.local) {
+                request.response = distributedTimeoutException;
+            } else {
+                request.response = dataTimeoutException;
+            }
+            returnResponse(request);
+        }
+
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            cmap.remove(request);
+        }
+
+        public void handle(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request)) {
+                if (shouldSchedule(request)) {
+                    if (request.hasEnoughTimeToSchedule()) {
+                        schedule(request);
+                    } else {
+                        onNoTimeToSchedule(request);
+                    }
+                    return;
+                }
+                Record record = cmap.getRecord(request);
+                if (record == null && cmap.loader != null) {
+                    storeExecutor.execute(new RemoveLoader(cmap, request), request.key.hashCode());
+                    return;
+                }
+                storeProceed(cmap, request);
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
+        }
+
+        class RemoveLoader extends AbstractMapStoreOperation {
+            Data valueData = null;
+
+            RemoveLoader(CMap cmap, Request request) {
+                super(cmap, request);
+            }
+
+            @Override
+            void doMapStoreOperation() {
+                Object key = toObject(request.key);
+                if (cmap.loader != null && request.value == null) {
+                    Object value = cmap.loader.load(key);
+                    valueData = toData(value);
+                }
+            }
+
+            public void process() {
+                if (valueData != null) {
+                    Record record = cmap.getRecord(request);
+                    if (record == null) {
+                        record = cmap.createNewRecord(request.key, valueData);
+                        cmap.mapRecords.put(request.key, record);
+                    }
+                    storeProceed(cmap, request);
+                } else {
+                    returnResponse(request);
+                }
+            }
+        }
+
+        void storeProceed(CMap cmap, Request request) {
+            if (cmap.store != null && cmap.writeDelayMillis == 0) {
+                storeExecutor.execute(new RemoveStorer(cmap, request), request.key.hashCode());
+            } else {
+                doOperation(request);
+                returnResponse(request);
+            }
+        }
+
+        class RemoveStorer extends AbstractMapStoreOperation {
+
+            RemoveStorer(CMap cmap, Request request) {
+                super(cmap, request);
+            }
+
+            @Override
+            void doMapStoreOperation() {
+                Object key = toObject(request.key);
+                cmap.store.delete(key);
+            }
+
+            public void process() {
+                if (success) doOperation(request);
+                returnResponse(request);
+            }
         }
     }
 
@@ -2226,6 +2326,13 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class PutTransientOperationHandler extends SchedulableOperationHandler {
+
+        @Override
+        protected void onNoTimeToSchedule(Request request) {
+            request.response = Boolean.FALSE;
+            returnResponse(request);
+        }
+
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             Record record = ensureRecord(request);
@@ -2239,7 +2346,117 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class PutOperationHandler extends StoreAwareOperationHandler {
+    class PutOperationHandler extends SchedulableOperationHandler {
+
+        @Override
+        protected void onNoTimeToSchedule(Request request) {
+            request.response = null;
+            if (request.operation == CONCURRENT_MAP_TRY_PUT
+                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
+                request.response = Boolean.FALSE;
+            }
+            returnResponse(request);
+        }
+
+        @Override
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            cmap.put(request);
+            if (request.operation == CONCURRENT_MAP_TRY_PUT
+                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
+                request.response = Boolean.TRUE;
+            }
+        }
+
+        public void handle(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            boolean checkCapacity = (request.operation == CONCURRENT_MAP_PUT
+                    || request.operation == CONCURRENT_MAP_TRY_PUT
+                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK);
+            boolean overCapacity = checkCapacity && cmap.overCapacity(request);
+            if (cmap.isNotLocked(request) && !overCapacity) {
+                if (shouldSchedule(request)) {
+                    if (request.hasEnoughTimeToSchedule()) {
+                        schedule(request);
+                    } else {
+                        onNoTimeToSchedule(request);
+                    }
+                    return;
+                }
+                Record record = cmap.getRecord(request);
+                if (record == null && cmap.loader != null) {
+                    storeExecutor.execute(new PutLoader(cmap, request), request.key.hashCode());
+                    return;
+                }
+                storeProceed(cmap, request);
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
+        }
+
+        class PutLoader extends AbstractMapStoreOperation {
+            Data valueData = null;
+
+            PutLoader(CMap cmap, Request request) {
+                super(cmap, request);
+            }
+
+            @Override
+            void doMapStoreOperation() {
+                Object key = toObject(request.key);
+                if (cmap.loader != null && request.value == null) {
+                    Object value = cmap.loader.load(key);
+                    valueData = toData(value);
+                }
+            }
+
+            public void process() {
+                if (valueData != null) {
+                    Record record = cmap.getRecord(request);
+                    if (record == null) {
+                        record = cmap.createNewRecord(request.key, valueData);
+                        cmap.mapRecords.put(request.key, record);
+                    }
+                }
+                storeProceed(cmap, request);
+            }
+        }
+
+        void storeProceed(CMap cmap, Request request) {
+            if (cmap.store != null && cmap.writeDelayMillis == 0) {
+                storeExecutor.execute(new PutStorer(cmap, request), request.key.hashCode());
+            } else {
+                doOperation(request);
+                returnResponse(request);
+            }
+        }
+
+        class PutStorer extends AbstractMapStoreOperation {
+
+            PutStorer(CMap cmap, Request request) {
+                super(cmap, request);
+            }
+
+            @Override
+            void doMapStoreOperation() {
+                Object key = toObject(request.key);
+                Object value = toObject(request.value);
+                cmap.store.store(key, value);
+                Record storedRecord = cmap.getRecord(request);
+                if (storedRecord != null) {
+                    storedRecord.setLastStoredTime(System.currentTimeMillis());
+                }
+            }
+
+            public void process() {
+                if (success) doOperation(request);
+                returnResponse(request);
+            }
+        }
+    }
+
+    class PutOperationHandler2 extends StoreAwareOperationHandler {
         @Override
         protected void onNoTimeToSchedule(Request request) {
             request.response = null;
@@ -2361,7 +2578,90 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class GetOperationHandler extends StoreAwareOperationHandler {
+    class GetOperationHandler extends SchedulableOperationHandler {
+        public void handle(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request)) {
+                Record record = cmap.getRecord(request);
+                if (cmap.loader != null
+                        && (record == null
+                        || !record.isActive()
+                        || !record.isValid()
+                        || record.getValueData() == null
+                )) {
+                    storeExecutor.execute(new GetLoader(cmap, request), request.key.hashCode());
+                } else {
+                    doOperation(request);
+                    returnResponse(request);
+                }
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
+        }
+
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            Data value = cmap.get(request);
+            request.clearForResponse();
+            request.response = value;
+        }
+
+        class GetLoader extends AbstractMapStoreOperation {
+
+            GetLoader(CMap cmap, Request request) {
+                super(cmap, request);
+            }
+
+            @Override
+            void doMapStoreOperation() {
+                Object value = cmap.loader.load(toObject(request.key));
+                if (value != null) {
+                    setIndexValues(request, value);
+                    request.value = toData(value);
+                }
+                putTransient(request);
+            }
+
+            public void process() {
+                if (success) request.response = request.value;
+                returnResponse(request);
+            }
+        }
+    }
+
+    abstract class AbstractMapStoreOperation implements Runnable, Processable {
+        final protected CMap cmap;
+        final protected Request request;
+        protected boolean success = true;
+
+        protected AbstractMapStoreOperation(CMap cmap, Request request) {
+            this.cmap = cmap;
+            this.request = request;
+        }
+
+        public void run() {
+            try {
+                doMapStoreOperation();
+            } catch (Exception e) {
+                success = false;
+                if (e instanceof ClassCastException) {
+                    CMap cmap = getMap(request.name);
+                    if (cmap.isMapForQueue() && e.getMessage().contains("java.lang.Long cannot be")) {
+                        logger.log(Level.SEVERE, "This is MapStore for Queue. Make sure you treat the key as Long");
+                    }
+                }
+                logger.log(Level.WARNING, "Store thrown exception for " + request.operation, e);
+                request.response = toData(new AddressAwareException(e, thisAddress));
+            } finally {
+                enqueueAndReturn(AbstractMapStoreOperation.this);
+            }
+        }
+
+        abstract void doMapStoreOperation();
+    }
+
+    class GetOperationHandler2 extends StoreAwareOperationHandler {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
@@ -2518,15 +2818,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         protected void onNoTimeToSchedule(Request request) {
-            if (request.operation == CONCURRENT_MAP_REMOVE) {
-                if (request.local) {
-                    request.response = distributedTimeoutException;
-                } else {
-                    request.response = dataTimeoutException;
-                }
-            } else {
-                request.response = null;
-            }
+            request.response = null;
             returnResponse(request);
         }
 

@@ -184,7 +184,13 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
 
     private Object toValue(final Object key, final Map<String, String> phrases) {
         final String value = phrases.get(key);
-        return value != null ? value : key;
+        if (value != null) {
+            return value;
+        } else if (key instanceof String && ("null".equalsIgnoreCase((String) key))) {
+            return null;
+        } else {
+            return key;
+        }
     }
 
     private String[] toValue(final String[] keys, final Map<String, String> phrases) {

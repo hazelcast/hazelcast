@@ -26,6 +26,12 @@ public class PredicatesTest {
     @Test
     public void testEqual() {
         Object value = new QueryTest.Employee("abc-123-xvz", 34, true, 10D);
+        Object nullNameValue = new QueryTest.Employee(null, 34, true, 10D);
+        assertFalse(new SqlPredicate("name = 'null'").apply(createEntry("1", nullNameValue)));
+        assertTrue(new SqlPredicate("name = null").apply(createEntry("1", nullNameValue)));
+        assertTrue(new SqlPredicate("name = NULL").apply(createEntry("1", nullNameValue)));
+        assertTrue(new SqlPredicate("name != null").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("name != NULL").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("(age >= " + 20 + ") AND (age <= " + 40 + ")").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("(age >= " + 20 + ") AND (age <= " + 34 + ")").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("(age >= " + 34 + ") AND (age <= " + 35 + ")").apply(createEntry("1", value)));
