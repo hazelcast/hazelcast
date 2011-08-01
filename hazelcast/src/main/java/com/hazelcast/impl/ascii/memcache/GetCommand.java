@@ -56,14 +56,15 @@ public class GetCommand extends AbstractTextCommand {
         if (lastOne != null) {
             IOUtil.copyToHeapBuffer(lastOne, bb);
         }
-        return !(value != null && value.hasRemaining())
-                || (lastOne != null && lastOne.hasRemaining());
+        return !((value != null && value.hasRemaining())
+                || (lastOne != null && lastOne.hasRemaining()));
     }
 
     @Override
     public String toString() {
         return "GetCommand{" +
-                "key='" + key + '\'' +
-                '}' + super.toString();
+                "key='" + key +
+                ", value=" + value + '\'' +
+                "} " + super.toString();
     }
 }
