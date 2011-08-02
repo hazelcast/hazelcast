@@ -2341,6 +2341,9 @@ public class ConcurrentMapManager extends BaseManager {
             if (record != null) {
                 record.setDirty(dirty);
             }
+            if (!dirty) {
+                record.setLastStoredTime(System.currentTimeMillis());
+            }
             request.value = null;
             request.response = Boolean.TRUE;
         }
@@ -2424,7 +2427,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         void storeProceed(CMap cmap, Request request) {
-            if (cmap.store != null && cmap.writeDelayMillis == 0) {
+            if (cmap.store != null && cmap.writeDelayMillis == 0 && cmap.isApplicable(request.operation, request, System.currentTimeMillis())) {
                 storeExecutor.execute(new PutStorer(cmap, request), request.key.hashCode());
             } else {
                 doOperation(request);
@@ -2440,8 +2443,14 @@ public class ConcurrentMapManager extends BaseManager {
 
             @Override
             void doMapStoreOperation() {
+                Object value;
+                if (request.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
+                    MultiData multiData = (MultiData) toObject(request.value);
+                    value = toObject(multiData.getData(1));
+                } else {
+                    value = toObject(request.value);
+                }
                 Object key = toObject(request.key);
-                Object value = toObject(request.value);
                 cmap.store.store(key, value);
                 Record storedRecord = cmap.getRecord(request);
                 if (storedRecord != null) {

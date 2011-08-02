@@ -967,6 +967,27 @@ public class CMap {
         }
     }
 
+    boolean isApplicable(ClusterOperation operation, Request req, long now) {
+        Record record = getRecord(req);
+        if (ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT.equals(operation)) {
+            return record == null || !record.isActive() || !record.isValid(now) || record.getValueData() == null;
+        } else if (ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL.equals(operation)) {
+            return record != null && record.isActive() && record.isValid(now) && record.getValueData() != null;
+        } else if (ClusterOperation.CONCURRENT_MAP_REPLACE_IF_SAME.equals(operation)) {
+            if (record != null && record.isActive() && record.isValid(now)) {
+                MultiData multiData = (MultiData) toObject(req.value);
+                if (multiData == null || multiData.size() != 2) {
+                    throw new RuntimeException("Illegal replaceIfSame argument: " + multiData);
+                }
+                Data expectedOldValue = multiData.getData(0);
+                return expectedOldValue.equals(record.getValueData());
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void put(Request req) {
         long now = System.currentTimeMillis();
         boolean sendEvictEvent = false;
@@ -984,32 +1005,24 @@ public class CMap {
             record.setMultiValues(null);
         }
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
-            if (record != null && record.isActive() && record.isValid(now) && record.getValueData() != null) {
+            if (!isApplicable(CONCURRENT_MAP_PUT_IF_ABSENT, req, now)) {
                 req.clearForResponse();
                 req.response = record.getValueData();
                 return;
             }
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_NOT_NULL) {
-            if (record == null || !record.isActive() || !record.isValid(now) || record.getValueData() == null) {
+            if (!isApplicable(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, req, now)) {
                 // When request is remote, its value is used as response, so req.value should be cleared.
                 req.value = null;
                 return;
             }
         } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
-            if (record == null || !record.isActive() || !record.isValid(now)) {
+            if (!isApplicable(CONCURRENT_MAP_REPLACE_IF_SAME, req, now)) {
                 req.response = Boolean.FALSE;
                 return;
             }
             MultiData multiData = (MultiData) toObject(req.value);
-            if (multiData == null || multiData.size() != 2) {
-                throw new RuntimeException("Illegal replaceIfSame argument: " + multiData);
-            }
-            Data expectedOldValue = multiData.getData(0);
             req.value = multiData.getData(1);
-            if (!expectedOldValue.equals(record.getValueData())) {
-                req.response = Boolean.FALSE;
-                return;
-            }
         }
         Data oldValue = null;
         if (record == null) {

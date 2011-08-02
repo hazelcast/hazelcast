@@ -37,7 +37,6 @@ public class SocketTextWriter implements SocketWriter<TextCommand> {
     public void enqueue(TextCommand response) {
         long requestId = response.getRequestId();
         if (requestId == -1) {
-//            System.out.println("Writing " + response);
             connection.getWriteHandler().enqueueSocketWritable(response);
         } else {
             if (currentRequestId == requestId) {

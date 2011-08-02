@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.SqlPredicate;
 import org.junit.After;
@@ -35,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.nio.IOUtil.toData;
+import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.*;
 
 public class MapStoreTest extends TestUtil {
@@ -628,6 +630,214 @@ public class MapStoreTest extends TestUtil {
         } finally {
             Hazelcast.shutdownAll();
         }
+    }
+
+    @Test
+    public void storedQueueWithDelaySecondsActionPollAndTake() throws InterruptedException {
+        final ConcurrentMap<Long, String> STORE =
+                new ConcurrentHashMap<Long, String>();
+        STORE.put(1l, "Event1");
+        STORE.put(2l, "Event2");
+        STORE.put(3l, "Event3");
+        STORE.put(4l, "Event4");
+        STORE.put(5l, "Event5");
+        STORE.put(6l, "Event6");
+        Config config = new Config();
+        config
+                .getMapConfig("queue-map")
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setWriteDelaySeconds(1)
+                        .setImplementation(new MapStore<Long, String>() {
+                            public String load(Long key) {
+                                String value = STORE.get(key);
+                                return value;
+                            }
+
+                            public Map<Long, String> loadAll(Collection<Long> keys) {
+                                Map<Long, String> result = new HashMap<Long, String>();
+                                for (Long key : keys) {
+                                    String value = load(key);
+                                    if (value != null) {
+                                        result.put(key, value);
+                                    }
+                                }
+                                return result;
+                            }
+
+                            public Set<Long> loadAllKeys() {
+                                return STORE.keySet();
+                            }
+
+                            public void store(Long key, String value) {
+                                STORE.put(key, value);
+                            }
+
+                            public void storeAll(Map<Long, String> map) {
+                                for (Map.Entry<Long, String> entry : map.entrySet()) {
+                                    store(entry.getKey(), entry.getValue());
+                                }
+                            }
+
+                            public void delete(Long key) {
+                                STORE.remove(key);
+                            }
+
+                            public void deleteAll(Collection<Long> keys) {
+                                for (Long key : STORE.keySet()) {
+                                    delete(key);
+                                }
+                            }
+                        }));
+        config.getQueueConfig("tasks").setBackingMapRef("queue-map");
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        IQueue q = h.getQueue("tasks");
+        assertEquals(STORE.size(), q.size());
+//        assertEquals(STORE.get(1l), q.poll());
+        assertEquals(STORE.get(1l), q.take());
+        assertEquals(STORE.get(2l), q.take());
+    }
+
+    @Test
+    public void testIssue583MapReplaceShouldTriggerMapStore() {
+        class SimpleMapStore<K, V> implements MapStore<K, V> {
+
+            SimpleMapStore(ConcurrentMap<K, V> store) {
+                this.store = store;
+            }
+
+            public V load(K key) {
+                V value = store.get(key);
+                return value;
+            }
+
+            public Map<K, V> loadAll(Collection<K> keys) {
+                Map<K, V> result = new HashMap<K, V>();
+                for (K key : keys) {
+                    V value = store.get(key);
+                    if (value != null) {
+                        result.put(key, value);
+                    }
+                }
+                return result;
+            }
+
+            public Set<K> loadAllKeys() {
+                Set<K> keys = store.keySet();
+                return keys;
+            }
+            //
+            // MapStore methods
+            //
+
+            public void store(K key, V value) {
+                store.put(key, value);
+            }
+
+            public void delete(K key) {
+                store.remove(key);
+            }
+
+            public void storeAll(Map<K, V> map) {
+                store.putAll(map);
+            }
+
+            public void deleteAll(Collection<K> keys) {
+                for (K key : keys) {
+                    store.remove(key);
+                }
+            }
+
+            private final ConcurrentMap<K, V> store;
+        }
+        final ConcurrentMap<String, Long> store = new ConcurrentHashMap<String, Long>();
+        final MapStore<String, Long> myMapStore = new SimpleMapStore<String, Long>(store);
+        Config config = new Config();
+        config
+                .getMapConfig("myMap")
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setImplementation(myMapStore));
+        HazelcastInstance hc = Hazelcast.newHazelcastInstance(config);
+        IMap<String, Long> myMap = hc.getMap("myMap");
+        myMap.put("one", 1L);
+        assertEquals(1L, myMap.get("one").longValue());
+        assertEquals(1L, store.get("one").longValue());
+        myMap.putIfAbsent("two", 2L);
+        assertEquals(2L, myMap.get("two").longValue());
+        assertEquals(2L, store.get("two").longValue());
+        myMap.putIfAbsent("one", 5L);
+        assertEquals(1L, myMap.get("one").longValue());
+        assertEquals(1L, store.get("one").longValue());
+        myMap.replace("one", 1L, 111L);
+        assertEquals(111L, myMap.get("one").longValue());
+        assertEquals(111L, store.get("one").longValue());
+        myMap.replace("one", 1L);
+        assertEquals(1L, myMap.get("one").longValue());
+        assertEquals(1L, store.get("one").longValue());
+    }
+
+    @Test
+    public void issue614() {
+        final ConcurrentMap<Long, String> STORE =
+                new ConcurrentHashMap<Long, String>();
+        STORE.put(1l, "Event1");
+        STORE.put(2l, "Event2");
+        STORE.put(3l, "Event3");
+        STORE.put(4l, "Event4");
+        STORE.put(5l, "Event5");
+        STORE.put(6l, "Event6");
+        Config config = new Config();
+        config
+                .getMapConfig("map")
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setWriteDelaySeconds(1)
+                        .setImplementation(new MapStore<Long, String>() {
+                            public String load(Long key) {
+                                String value = STORE.get(key);
+                                return value;
+                            }
+
+                            public Map<Long, String> loadAll(Collection<Long> keys) {
+                                Map<Long, String> result = new HashMap<Long, String>();
+                                for (Long key : keys) {
+                                    String value = load(key);
+                                    if (value != null) {
+                                        result.put(key, value);
+                                    }
+                                }
+                                return result;
+                            }
+
+                            public Set<Long> loadAllKeys() {
+                                return STORE.keySet();
+                            }
+
+                            public void store(Long key, String value) {
+                                STORE.put(key, value);
+                            }
+
+                            public void storeAll(Map<Long, String> map) {
+                                for (Map.Entry<Long, String> entry : map.entrySet()) {
+                                    store(entry.getKey(), entry.getValue());
+                                }
+                            }
+
+                            public void delete(Long key) {
+                                STORE.remove(key);
+                            }
+
+                            public void deleteAll(Collection<Long> keys) {
+                                for (Long key : STORE.keySet()) {
+                                    delete(key);
+                                }
+                            }
+                        }));
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        IMap map = h.getMap("map");
+        Collection collection = map.values();
+        for (Object o : collection) {
+        }
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        assertEquals(0, localMapStats.getDirtyEntryCount());
     }
 
     protected Config newConfig(Object storeImpl, int writeDelaySeconds) {
