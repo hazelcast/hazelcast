@@ -17,6 +17,7 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.impl.GroupProperties;
 import org.junit.internal.runners.model.EachTestNotifier;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
@@ -30,6 +31,10 @@ import java.util.List;
  * Run the tests randomly and log the running test.
  */
 public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
+
+    static {
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+    }
 
     public RandomBlockJUnit4ClassRunner(Class<?> klass) throws InitializationError {
         super(klass);

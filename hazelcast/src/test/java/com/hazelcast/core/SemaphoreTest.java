@@ -102,6 +102,7 @@ public class SemaphoreTest {
     }
 
     @Test
+    @Ignore
     public void testSemaphoreDisconnect() {
         SemaphoreConfig semaphoreConfig = new SemaphoreConfig("default", 10);
         Config config = new Config();

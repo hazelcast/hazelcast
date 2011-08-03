@@ -21,38 +21,36 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
 import com.hazelcast.util.SortedHashMap;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class NearCache {
     private final ILogger logger;
-    private final SortedHashMap<Data, Object> sortedMap;
+    private final Map<Data, Object> sortedMap;
     private final ConcurrentMap<Object, CacheEntry> cache;
     private final CMap cmap;
+    private final SortedHashMap.OrderingType orderingType;
     private final int maxSize;        // 0 means infinite
     private final long ttl;           // 0 means never expires
     private final long maxIdleTime;   // 0 means never idle 
     private final boolean invalidateOnChange;
-    private final int LOCAL_INVALIDATION_COUNTER = 10000;
-    private final AtomicInteger counter = new AtomicInteger();
-    private long lastEvictionTime = 0;
 
     public NearCache(CMap cmap, SortedHashMap.OrderingType orderingType, int maxSize, long ttl, long maxIdleTime, boolean invalidateOnChange) {
         this.cmap = cmap;
+        this.orderingType = orderingType;
         this.logger = cmap.concurrentMapManager.node.getLogger(NearCache.class.getName());
-        this.maxSize = maxSize;
+        this.maxSize = (maxSize == 0) ? Integer.MAX_VALUE : maxSize;
         this.ttl = ttl;
         this.maxIdleTime = maxIdleTime;
         this.invalidateOnChange = invalidateOnChange;
         int size = (maxSize == 0 || maxSize > 50000) ? 10000 : maxSize;
-        this.sortedMap = new SortedHashMap<Data, Object>(size, orderingType);
-        this.cache = new ConcurrentHashMap<Object, CacheEntry>(size);
+        this.sortedMap = (orderingType == SortedHashMap.OrderingType.NONE)
+                ? new HashMap<Data, Object>()
+                : new SortedHashMap<Data, Object>(size, orderingType);
+        this.cache = new ConcurrentHashMap<Object, CacheEntry>(size, 0.75f, 1);
     }
 
     boolean shouldInvalidateOnChange() {
@@ -61,10 +59,6 @@ public class NearCache {
 
     public boolean containsKey(Object key) {
         long now = System.currentTimeMillis();
-        if (counter.incrementAndGet() == LOCAL_INVALIDATION_COUNTER) {
-            counter.addAndGet(-(LOCAL_INVALIDATION_COUNTER));
-            evict(now, false);
-        }
         CacheEntry entry = cache.get(key);
         return !(entry == null || entry.isValid(now));
     }
@@ -78,10 +72,6 @@ public class NearCache {
 
     public Object get(Object key) {
         long now = System.currentTimeMillis();
-        if (counter.incrementAndGet() == LOCAL_INVALIDATION_COUNTER) {
-            counter.addAndGet(-(LOCAL_INVALIDATION_COUNTER));
-            evict(now, false);
-        }
         CacheEntry entry = cache.get(key);
         if (entry == null) {
             return null;
@@ -93,7 +83,9 @@ public class NearCache {
                 } else {
                     value = entry.getValue();
                 }
-                cmap.concurrentMapManager.enqueueAndReturn(entry);
+                if (orderingType != SortedHashMap.OrderingType.NONE) {
+                    cmap.concurrentMapManager.enqueueAndReturn(entry);
+                }
                 entry.touch(now);
                 return value;
             } else {
@@ -104,17 +96,14 @@ public class NearCache {
 
     private List<Data> getInvalidEntries(long now) {
         List<Data> lsKeysToInvalidate = null;
-        if (now - lastEvictionTime > 10000) {
-            if (ttl != 0 || maxIdleTime != 0) {
-                lsKeysToInvalidate = new ArrayList<Data>();
-                Collection<CacheEntry> entries = cache.values();
-                for (CacheEntry entry : entries) {
-                    if (!entry.isValid(now)) {
-                        lsKeysToInvalidate.add(entry.keyData);
-                    }
+        if (ttl != 0 || maxIdleTime != 0) {
+            lsKeysToInvalidate = new ArrayList<Data>();
+            Collection<CacheEntry> entries = cache.values();
+            for (CacheEntry entry : entries) {
+                if (!entry.isValid(now)) {
+                    lsKeysToInvalidate.add(entry.keyData);
                 }
             }
-            lastEvictionTime = now;
         }
         return lsKeysToInvalidate;
     }
@@ -123,7 +112,7 @@ public class NearCache {
         if (serviceThread) {
             checkThread();
         }
-        if (maxSize == Integer.MAX_VALUE) return;
+        if (maxSize == Integer.MAX_VALUE && maxIdleTime == 0 && ttl == 0) return;
         final List<Data> lsKeysToInvalidate = getInvalidEntries(now);
         if (lsKeysToInvalidate != null && lsKeysToInvalidate.size() > 0) {
             if (serviceThread) {

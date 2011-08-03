@@ -105,6 +105,10 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         return OrderingType.valueOf(orderingType.toUpperCase());
     }
 
+    public boolean containsKey(Object key) {
+        return getEntry(key) != null;
+    }
+
     public V get(Object key) {
         Entry<K, V> e = getEntry(key);
         if (e == null)
