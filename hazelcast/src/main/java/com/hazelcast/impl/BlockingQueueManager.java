@@ -232,7 +232,12 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     public void rollbackPoll(String name, Object key, Object obj) {
-        storeQueueItem(name, key, obj, 0);
+        final Data dataKey = toData(key);
+        if (addKeyAsync) {
+            sendKeyToMaster(name, dataKey, 0);
+        } else {
+            addKey(name, dataKey, 0);
+        }
     }
 
     private void storeQueueItem(String name, Object key, Object obj, int index) {

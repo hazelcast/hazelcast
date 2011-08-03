@@ -120,21 +120,21 @@ public class SemaphoreTest {
     }
 
     @Test
-    public void testSemaphorePeerDisconect() {
+    public void testSemaphorePeerDisconnect() {
         SemaphoreConfig semaphoreConfig = new SemaphoreConfig("default", 10);
         Config config = new Config();
         config.addSemaphoreConfig(semaphoreConfig);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        ISemaphore seamaphore1 = instance1.getSemaphore("testDisconnectSemaphore");
-        ISemaphore seamaphore2 = instance2.getSemaphore("testDisconnectSemaphore");
-        seamaphore2.tryAcquire(5);
-        int result = seamaphore1.availablePermits();
+        ISemaphore semaphore1 = instance1.getSemaphore("testDisconnectSemaphore");
+        ISemaphore semaphore2 = instance2.getSemaphore("testDisconnectSemaphore");
+        semaphore2.tryAcquire(5);
+        int result = semaphore1.availablePermits();
         int expectedResult = 5;
         assertEquals(expectedResult, result);
         instance2.shutdown();
         expectedResult = 10;
-        result = seamaphore1.availablePermits();
+        result = semaphore1.availablePermits();
         assertEquals(expectedResult, result);
     }
 }

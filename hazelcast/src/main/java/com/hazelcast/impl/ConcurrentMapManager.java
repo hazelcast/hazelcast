@@ -2242,11 +2242,11 @@ public class ConcurrentMapManager extends BaseManager {
                     return;
                 }
                 Record record = cmap.getRecord(request);
-                if (record == null && cmap.loader != null) {
+                if ((record == null || record.getValueData() == null) && cmap.loader != null) {
                     storeExecutor.execute(new RemoveLoader(cmap, request), request.key.hashCode());
-                    return;
+                } else {
+                    storeProceed(cmap, request);
                 }
-                storeProceed(cmap, request);
             } else {
                 request.response = OBJECT_REDO;
                 returnResponse(request);
@@ -2263,10 +2263,8 @@ public class ConcurrentMapManager extends BaseManager {
             @Override
             void doMapStoreOperation() {
                 Object key = toObject(request.key);
-                if (cmap.loader != null && request.value == null) {
-                    Object value = cmap.loader.load(key);
-                    valueData = toData(value);
-                }
+                Object value = cmap.loader.load(key);
+                valueData = toData(value);
             }
 
             public void process() {
@@ -2275,6 +2273,8 @@ public class ConcurrentMapManager extends BaseManager {
                     if (record == null) {
                         record = cmap.createNewRecord(request.key, valueData);
                         cmap.mapRecords.put(request.key, record);
+                    } else {
+                        record.setValue(valueData);
                     }
                     storeProceed(cmap, request);
                 } else {
@@ -2387,11 +2387,11 @@ public class ConcurrentMapManager extends BaseManager {
                     return;
                 }
                 Record record = cmap.getRecord(request);
-                if (record == null && cmap.loader != null) {
+                if ((record == null || record.getValueData() == null) && cmap.loader != null) {
                     storeExecutor.execute(new PutLoader(cmap, request), request.key.hashCode());
-                    return;
+                } else {
+                    storeProceed(cmap, request);
                 }
-                storeProceed(cmap, request);
             } else {
                 request.response = OBJECT_REDO;
                 returnResponse(request);
@@ -2408,10 +2408,8 @@ public class ConcurrentMapManager extends BaseManager {
             @Override
             void doMapStoreOperation() {
                 Object key = toObject(request.key);
-                if (cmap.loader != null && request.value == null) {
-                    Object value = cmap.loader.load(key);
-                    valueData = toData(value);
-                }
+                Object value = cmap.loader.load(key);
+                valueData = toData(value);
             }
 
             public void process() {
@@ -2420,6 +2418,8 @@ public class ConcurrentMapManager extends BaseManager {
                     if (record == null) {
                         record = cmap.createNewRecord(request.key, valueData);
                         cmap.mapRecords.put(request.key, record);
+                    } else {
+                        record.setValue(valueData);
                     }
                 }
                 storeProceed(cmap, request);
@@ -2522,7 +2522,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class EvictOperationHandler extends StoreAwareOperationHandler {
+    class EvictOperationHandler extends SchedulableOperationHandler {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
@@ -2534,7 +2534,7 @@ public class ConcurrentMapManager extends BaseManager {
                     // before we can evict it.
                     record.setDirty(false);
                     request.value = record.getValueData();
-                    executeAsync(request);
+                    storeExecutor.execute(new EvictStorer(cmap, request), request.key.hashCode());
                 } else {
                     doOperation(request);
                     returnResponse(request);
@@ -2550,16 +2550,27 @@ public class ConcurrentMapManager extends BaseManager {
             request.response = cmap.evict(request);
         }
 
-        public void afterExecute(Request request) {
-            if (request.response == Boolean.TRUE) {
-                doOperation(request);
-            } else {
-                CMap cmap = getOrCreateMap(request.name);
-                Record record = cmap.getRecord(request);
-                cmap.markAsDirty(record);
-                request.response = Boolean.FALSE;
+        class EvictStorer extends AbstractMapStoreOperation {
+
+            EvictStorer(CMap cmap, Request request) {
+                super(cmap, request);
             }
-            returnResponse(request);
+
+            @Override
+            void doMapStoreOperation() {
+                Object key = toObject(request.key);
+                Object value = toObject(request.value);
+                cmap.store.store(key, value);
+                Record storedRecord = cmap.getRecord(request);
+                if (storedRecord != null) {
+                    storedRecord.setLastStoredTime(System.currentTimeMillis());
+                }
+            }
+
+            public void process() {
+                if (success) doOperation(request);
+                returnResponse(request);
+            }
         }
     }
 
@@ -2596,8 +2607,7 @@ public class ConcurrentMapManager extends BaseManager {
                         && (record == null
                         || !record.isActive()
                         || !record.isValid()
-                        || record.getValueData() == null
-                )) {
+                        || record.getValueData() == null)) {
                     storeExecutor.execute(new GetLoader(cmap, request), request.key.hashCode());
                 } else {
                     doOperation(request);
@@ -2784,6 +2794,47 @@ public class ConcurrentMapManager extends BaseManager {
         protected void onNoTimeToSchedule(Request request) {
             request.response = Boolean.FALSE;
             returnResponse(request);
+        }
+
+        public void handle(Request request) {
+            if (shouldSchedule(request)) {
+                if (request.hasEnoughTimeToSchedule()) {
+                    schedule(request);
+                } else {
+                    onNoTimeToSchedule(request);
+                }
+            } else {
+                CMap cmap = getOrCreateMap(request.name);
+                Record record = cmap.getRecord(request.key);
+                if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET
+                        && cmap.loader != null
+                        && (record == null || record.getValueData() == null)) {
+                    storeExecutor.execute(new LockLoader(cmap, request), request.key.hashCode());
+                } else {
+                    doOperation(request);
+                    returnResponse(request);
+                }
+            }
+        }
+
+        class LockLoader extends AbstractMapStoreOperation {
+            Data valueData = null;
+
+            LockLoader(CMap cmap, Request request) {
+                super(cmap, request);
+            }
+
+            @Override
+            void doMapStoreOperation() {
+                Object value = cmap.loader.load(toObject(request.key));
+                valueData = toData(value);
+            }
+
+            public void process() {
+                doOperation(request);
+                request.value = valueData;
+                returnResponse(request);
+            }
         }
 
         void doOperation(Request request) {

@@ -241,8 +241,8 @@ public class MapStoreTest extends TestUtil {
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
         testMapStore.assertAwait(10);
-        // 1000 store call and 2 loadAllKeys
-        assertEquals(1002, testMapStore.callCount.get());
+        // 1000 put-load 1000 put-store call and 2 loadAllKeys
+        assertEquals(2002, testMapStore.callCount.get());
     }
 
     @Test
@@ -272,7 +272,7 @@ public class MapStoreTest extends TestUtil {
         assertEquals(1, testMapStore.getStore().size());
         assertEquals(1, map.size());
         testMapStore.assertAwait(10);
-        assertEquals(5, testMapStore.callCount.get());
+        assertEquals(6, testMapStore.callCount.get());
     }
 
     @Test
@@ -282,7 +282,12 @@ public class MapStoreTest extends TestUtil {
         Config config = newConfig(testMapStore, 0);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         Employee employee = new Employee("joe", 25, true, 100.00);
+        Employee newEmployee = new Employee("ali", 26, true, 1000);
         testMapStore.insert("1", employee);
+        testMapStore.insert("2", employee);
+        testMapStore.insert("3", employee);
+        testMapStore.insert("4", employee);
+        testMapStore.insert("5", employee);
         IMap map = h1.getMap("default");
         map.addIndex("name", false);
         assertEquals(0, map.size());
@@ -290,6 +295,9 @@ public class MapStoreTest extends TestUtil {
         assertEquals(employee, map.get("1"));
         assertEquals(employee, testMapStore.getStore().get("1"));
         assertEquals(1, map.size());
+        assertEquals(employee, map.put("2", newEmployee));
+        assertEquals(newEmployee, testMapStore.getStore().get("2"));
+        assertEquals(2, map.size());
         Collection values = map.values(new SqlPredicate("name = 'joe'"));
         assertEquals(1, values.size());
         assertEquals(employee, values.iterator().next());
@@ -298,6 +306,14 @@ public class MapStoreTest extends TestUtil {
         Thread.sleep(2000);
         assertEquals(employee, testMapStore.getStore().get("1"));
         assertEquals(employee, map.get("1"));
+        map.evict("2");
+        assertEquals(newEmployee, map.get("2"));
+        assertEquals(employee, map.tryLockAndGet("3", 1, TimeUnit.SECONDS));
+        assertEquals(employee, map.put("3", newEmployee));
+        assertEquals(newEmployee, map.get("3"));
+        assertEquals(employee, map.remove("4"));
+        assertEquals(employee, map.tryLockAndGet("5", 1, TimeUnit.SECONDS));
+        assertEquals(employee, map.remove("5"));
     }
 
     @Test
@@ -311,7 +327,6 @@ public class MapStoreTest extends TestUtil {
         for (int i = 0; i < 20; i++) {
             map.put(i, new Employee("joe", i, true, 100.00));
         }
-        System.out.println("Map size is " + map.size());
         assertTrue(map.size() > 5);
         assertTrue(map.size() <= 10);
     }
@@ -479,6 +494,7 @@ public class MapStoreTest extends TestUtil {
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(20));
         for (int i = 0; i < 100; i++) {
             map.put(i, "value" + i);
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(10));
         }
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE_ALL, testMapStore.waitForEvent(20));
         assertEquals(100, testMapStore.getStore().size());
@@ -490,6 +506,7 @@ public class MapStoreTest extends TestUtil {
         assertEquals(100, testMapStore.getStore().size());
         for (int i = 0; i < 100; i++) {
             map.put(i, "value" + i);
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(10));
         }
         for (int i = 0; i < 100; i++) {
             map.evict(i);
@@ -502,6 +519,7 @@ public class MapStoreTest extends TestUtil {
         assertEquals(0, map.size());
         for (int i = 0; i < 100; i++) {
             map.put(i, "value" + i);
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(10));
         }
         for (int i = 0; i < 100; i++) {
             map.remove(i);
@@ -522,6 +540,7 @@ public class MapStoreTest extends TestUtil {
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(20));
         for (int i = 0; i < 10; i++) {
             map.put(i, "value" + i);
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(10));
         }
         CMap cmap = getCMap(h1, "default");
         cmap.startCleanup(true);
@@ -620,13 +639,13 @@ public class MapStoreTest extends TestUtil {
             assertEquals(0, deleteCount.get());
             myMap.put("three", 3L);
             myMap.put("four", 4L);
-            assertEquals(3, loadCount.get());
+            assertEquals(5, loadCount.get());
             assertEquals(2, storeCount.get());
             assertEquals(0, deleteCount.get());
             myMap.remove("one");
             assertEquals(2, storeCount.get());
             assertEquals(1, deleteCount.get());
-            assertEquals(3, loadCount.get());
+            assertEquals(5, loadCount.get());
         } finally {
             Hazelcast.shutdownAll();
         }
