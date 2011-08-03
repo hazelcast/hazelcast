@@ -20,20 +20,18 @@ package com.hazelcast.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import junit.framework.TestCase;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Properties;
 
-public class TcpIpJoinerOverAWSTest extends TestCase {
+public class TcpIpJoinerOverAWSTest {
 
-    @Test
     @Ignore
-    public void testAWSConfig() throws IOException {
+    @Test
+    public void testAWSConfig() throws Exception {
         Config config = new Config();
         config.setPortAutoIncrement(false);
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
