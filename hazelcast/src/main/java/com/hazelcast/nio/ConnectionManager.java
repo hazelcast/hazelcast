@@ -83,8 +83,13 @@ public class ConnectionManager {
             final String msg = "Two connections from the same endpoint " + endPoint
                     + ", acceptTypeConnection=" + acceptTypeConnection + ",  now accept="
                     + accept;
-            logger.log(Level.FINEST, msg);
-            return true;
+            if (node.joined() && node.isMaster()) {
+                logger.log(Level.WARNING, msg);
+                connExisting.closeSilently();
+            } else {
+                logger.log(Level.FINEST, msg);
+                return true;
+            }
         }
         if (!endPoint.equals(node.getThisAddress())) {
             acceptTypeConnection = accept;

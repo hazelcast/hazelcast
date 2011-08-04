@@ -132,6 +132,19 @@ public final class Connection {
         return connectionId;
     }
 
+    public void closeSilently() {
+        if (!live)
+            return;
+        live = false;
+        try {
+            if (socketChannel != null && socketChannel.isOpen())
+                socketChannel.close();
+            writeHandler.shutdown();
+        } catch (Throwable ignored) {
+        }
+        logger.log(Level.FINE, "Connection silently closed " + this.socketChannel.socket().getRemoteSocketAddress());
+    }
+
     public void close() {
         if (!live)
             return;
