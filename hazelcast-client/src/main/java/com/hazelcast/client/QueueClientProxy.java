@@ -141,7 +141,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         }
         E e;
         int counter = 0;
-        while ((e = poll()) != null && counter < i) {
+        while (counter < i && (e = poll()) != null) {
             objects.add(e);
             counter++;
         }
