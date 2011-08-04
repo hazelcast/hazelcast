@@ -7,6 +7,7 @@
             <xs:sequence>
                 <xs:element ref="group" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="network" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="executor-service" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="queue" minOccurs="0" maxOccurs="unbounded"/>
@@ -25,6 +26,7 @@
                 <xs:element ref="max-size" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="eviction-percentage" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="merge-policy" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" use="required">
                 <xs:simpleType>
@@ -82,18 +84,21 @@
         </xs:simpleType>
     </xs:element>
     <xs:element name="tcp-ip">
-        <xs:complexType>
-            <xs:choice>
-                <xs:element ref="members"/>
-                <xs:sequence>
-                    <xs:element ref="member" minOccurs="0" maxOccurs="unbounded"/>
-                </xs:sequence>
-                <xs:sequence>
-                    <xs:element ref="interface" minOccurs="0" maxOccurs="unbounded"/>
-                </xs:sequence>
-            </xs:choice>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
-        </xs:complexType>
+    	<xs:complexType>
+    	<xs:sequence>
+	        <xs:element name="required-member" type="xs:string" minOccurs="0" maxOccurs="1"/>
+	        <xs:choice>
+	            <xs:element ref="members" />
+	            <xs:sequence>
+	                <xs:element ref="member" minOccurs="0" maxOccurs="unbounded"/>
+	            </xs:sequence>
+	            <xs:sequence>
+	                <xs:element ref="interface" minOccurs="0" maxOccurs="unbounded"/>
+	            </xs:sequence>
+	        </xs:choice>
+    	</xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+    </xs:complexType>
     </xs:element>
     <xs:element name="storeType">
         <xs:annotation>
@@ -170,7 +175,6 @@
         </xs:simpleType>
     </xs:element>
 
-
     <xs:element name="access-key">
         <xs:simpleType>
             <xs:restriction base="xs:string"/>
@@ -227,10 +231,10 @@
         </xs:annotation>
         <xs:simpleType>
             <xs:restriction base="xs:string">
-                <xs:enumeration value="hz.NO_MERGE"/>
-                <xs:enumeration value="hz.ADD_NEW_ENTRY"/>
-                <xs:enumeration value="hz.HIGHER_HITS"/>
-                <xs:enumeration value="hz.LATEST_UPDATE"/>
+<!--                 <xs:enumeration value="hz.NO_MERGE"/> -->
+<!--                 <xs:enumeration value="hz.ADD_NEW_ENTRY"/> -->
+<!--                 <xs:enumeration value="hz.HIGHER_HITS"/> -->
+<!--                 <xs:enumeration value="hz.LATEST_UPDATE"/> -->
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
@@ -433,7 +437,7 @@
             <xs:enumeration value="hazelcast.mc.map.excludes"/>
             <xs:enumeration value="hazelcast.mc.queue.excludes"/>
             <xs:enumeration value="hazelcast.mc.topic.excludes"/>
-
+			<xs:enumeration value="hazelcast.version.check.enabled"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:element name="property">
@@ -563,6 +567,66 @@
             <xs:restriction base="xs:integer"/>
         </xs:simpleType>
     </xs:element>
+    <xs:element name="wan-replication">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="target-cluster" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute name="name" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string"/>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+     <xs:element name="target-cluster">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="replication-impl" minOccurs="1" maxOccurs="1"/>
+                <xs:element ref="end-points" minOccurs="1" maxOccurs="1"/>
+            </xs:sequence>
+            <xs:attribute name="group-name" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string"/>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="group-password" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string"/>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="replication-impl">
+    	<xs:simpleType>
+    		<xs:restriction base="xs:string"/>
+    	</xs:simpleType>
+    </xs:element>
+    <xs:element name="end-points">
+    	<xs:complexType>
+    		<xs:sequence>
+                <xs:element ref="address" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+    	</xs:complexType>
+    </xs:element>
+    <xs:element name="address" default="127.0.0.1">
+        <xs:simpleType>
+            <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="wan-replication-ref">
+        <xs:complexType>
+        	<xs:sequence>
+				<xs:element ref="merge-policy" minOccurs="1" maxOccurs="1"/>
+        	</xs:sequence>
+			<xs:attribute name="name" use="required">
+		        <xs:simpleType>
+		            <xs:restriction base="xs:string"/>
+		        </xs:simpleType>
+        	</xs:attribute>        
+        </xs:complexType>
+    </xs:element>
+    
     <xs:simpleType name="ST_port">
         <xs:restriction base="xs:short"/>
     </xs:simpleType>

@@ -15,6 +15,7 @@
                     <xs:sequence>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="executor-service" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
@@ -39,7 +40,7 @@
                                     <xs:element name="map-store" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
                                             <xs:sequence/>
-                                            <xs:attribute name="enabled" use="required" type="xs:string"/>
+                                            <xs:attribute name="enabled" use="required" type="xs:boolean"/>
                                             <xs:attribute name="class-name" use="optional" type="xs:string"/>
                                             <xs:attribute name="implementation" use="optional" type="xs:string"/>
                                             <xs:attribute name="write-delay-seconds" use="required" type="xs:string"/>
@@ -55,6 +56,13 @@
                                             <xs:attribute name="invalidate-on-change" use="required" type="xs:string"/>
                                         </xs:complexType>
                                     </xs:element>
+                                    
+                                    <xs:element name="wan-replication-ref" minOccurs="0" maxOccurs="1">
+								        <xs:complexType>
+								        	<xs:attribute name="name" use="required" type="xs:string"/>
+								        	<xs:attribute name="merge-policy" use="required" type="xs:string"/>
+								        </xs:complexType>
+								    </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
@@ -141,41 +149,39 @@
     </xs:complexType>
 
     <xs:complexType name="tcp-ip">
-        <xs:choice>
-            <xs:element name="members" type="members" default="127.0.0.1"/>
-            <xs:sequence>
-                <xs:element name="member" type="member" default="127.0.0.1" minOccurs="0" maxOccurs="unbounded"/>
-            </xs:sequence>
-            <xs:sequence>
-                <xs:element name="interface" type="interface" minOccurs="0" maxOccurs="unbounded"/>
-            </xs:sequence>
-        </xs:choice>
-        <xs:attribute name="enabled" type="xs:string" use="optional" default="false"/>
+    	<xs:sequence>
+	        <xs:element name="required-member" type="xs:string" minOccurs="0" maxOccurs="1"/>
+	        <xs:choice>
+	            <xs:element name="members" type="members" default="127.0.0.1"/>
+	            <xs:sequence>
+	                <xs:element name="member" type="member" default="127.0.0.1" minOccurs="0" maxOccurs="unbounded"/>
+	            </xs:sequence>
+	            <xs:sequence>
+	                <xs:element name="interface" type="interface" minOccurs="0" maxOccurs="unbounded"/>
+	            </xs:sequence>
+	        </xs:choice>
+    	</xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
     </xs:complexType>
 
     <xs:complexType name="multicast">
         <xs:sequence/>
-        <xs:attribute name="enabled" type="xs:string" use="optional" default="true"/>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
         <xs:attribute name="multicast-group" type="xs:string" use="optional" default="224.2.2.3"/>
         <xs:attribute name="multicast-port" type="xs:string" use="optional" default="54327"/>
     </xs:complexType>
 
     <xs:complexType name="merge-policies">
         <xs:sequence>
-            <xs:element name="map-merge-policy" type="map-merge-policy"/>
+            <xs:element name="map-merge-policy" type="map-merge-policy" minOccurs="1" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="map-merge-policy">
-        <xs:sequence>
-            <xs:element name="class-name" type="class-name" minOccurs="1" maxOccurs="1"/>
-        </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="class-name" type="xs:string" use="optional"/>
+		<xs:attribute name="implementation" type="xs:string" use="optional"/>
     </xs:complexType>
-
-    <xs:simpleType name="class-name">
-        <xs:restriction base="xs:string"/>
-    </xs:simpleType>
 
     <xs:complexType name="join">
         <xs:sequence>
@@ -188,7 +194,7 @@
         <xs:sequence>
             <xs:element name="interface" type="interface" default="127.0.0.1"/>
         </xs:sequence>
-        <xs:attribute name="enabled" type="xs:string" use="optional" default="false"/>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
     </xs:complexType>
 
     <xs:simpleType name="interface">
@@ -295,7 +301,7 @@
 
     <xs:complexType name="symmetric-encryption">
         <xs:sequence/>
-        <xs:attribute name="enabled" type="xs:string" use="optional" default="false"/>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
         <xs:attribute name="algorithm" use="optional" type="xs:string"/>
         <xs:attribute name="salt" use="optional" type="xs:string"/>
         <xs:attribute name="password" use="optional" type="xs:string"/>
@@ -304,7 +310,7 @@
 
     <xs:complexType name="asymmetric-encryption">
         <xs:sequence/>
-        <xs:attribute name="enabled" type="xs:string" use="optional" default="false"/>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
         <xs:attribute name="algorithm" use="optional" type="xs:string"/>
         <xs:attribute name="key-password" use="optional" type="xs:string"/>
         <xs:attribute name="key-alias" use="optional" type="xs:string"/>
@@ -320,5 +326,58 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-
+    
+    <xs:complexType name="wan-replication">
+        <xs:sequence>
+            <xs:element name="target-cluster" minOccurs="1" maxOccurs="unbounded">
+	        <xs:complexType>
+	            <xs:sequence>
+		            <xs:choice minOccurs="1" maxOccurs="1">
+		            	<xs:element name="replication-impl">
+					    	<xs:simpleType>
+					    		<xs:restriction base="xs:string"/>
+					    	</xs:simpleType>
+	                	</xs:element>
+	                	<xs:element name="replication-impl-object">
+	                		<xs:complexType>
+						        <xs:complexContent>
+						            <xs:extension base="beans:identifiedType">
+						                <xs:attribute name="ref" type="xs:string" use="required"/>
+						            </xs:extension>
+						        </xs:complexContent>
+						    </xs:complexType>
+	                	</xs:element>
+			        </xs:choice>
+	                <xs:element name="end-points" minOccurs="1" maxOccurs="1">
+				    	<xs:complexType>
+				    		<xs:sequence>
+				                <xs:element name="address" minOccurs="1" maxOccurs="unbounded">
+							        <xs:simpleType>
+							            <xs:restriction base="xs:string"/>
+							        </xs:simpleType>
+				                </xs:element>
+				            </xs:sequence>
+				    	</xs:complexType>
+	                </xs:element>
+	            </xs:sequence>
+	            <xs:attribute name="group-name" use="required">
+	                <xs:simpleType>
+	                    <xs:restriction base="xs:string"/>
+	                </xs:simpleType>
+	            </xs:attribute>
+	            <xs:attribute name="group-password" use="required">
+	                <xs:simpleType>
+	                    <xs:restriction base="xs:string"/>
+	                </xs:simpleType>
+	            </xs:attribute>
+	        </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+	
 </xs:schema>
