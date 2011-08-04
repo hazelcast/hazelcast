@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sect1 id="ConfigFullTcpIp" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xlink='http://www.w3.org/1999/xlink'
+       xmlns:xi='http://www.w3.org/2001/XInclude'
+       xmlns:ns5='http://www.w3.org/2000/svg'
+       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+       xmlns:ns3='http://www.w3.org/1999/xhtml'
+       xmlns:db='http://docbook.org/ns/docbook'>
+    <title>Configuring Hazelcast for full TCP/IP cluster</title>
+    <para>If multicast is not prefered way of discovery for your environment, then you can configure Hazelcast for full
+        TCP/IP cluster. As configuration below shows, while
+        <literal>enable</literal>
+        attribute of
+        <literal>multicast</literal>
+        is set to false,
+        <literal>tcp-ip</literal>
+        has to be set to true. For the none-multicast option, all or subset of cluster members' hostnames and/or ip
+        addreses must be listed. Note that all of the cluster members don't have to be listed there but at least one of
+        them has to be active in cluster when a new member joins.
+
+        <programlisting language="xml"><![CDATA[<hazelcast>
+	...
+	<network>
+		<port auto-increment="true">5701</port>
+		<join>
+			<multicast enabled="false">
+				<multicast-group>224.2.2.3</multicast-group>
+				<multicast-port>54327</multicast-port>
+			</multicast>
+			<tcp-ip enabled="true">
+				<hostname>machine1</hostname>
+				<hostname>machine2</hostname>
+				<hostname>machine3:5799</hostname>
+				<interface>192.168.1.0-7</interface> 	
+				<interface>192.168.1.21</interface> 
+			</tcp-ip>
+		</join>
+		...
+	</network>
+	...
+</hazelcast>
+]]></programlisting>
+
+    </para>
+</sect1>

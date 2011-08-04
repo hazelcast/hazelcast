@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<para version='5.0' xmlns='http://docbook.org/ns/docbook'
+      xmlns:xlink='http://www.w3.org/1999/xlink'
+      xmlns:xi='http://www.w3.org/2001/XInclude'
+      xmlns:ns5='http://www.w3.org/2000/svg'
+      xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+      xmlns:ns3='http://www.w3.org/1999/xhtml'
+      xmlns:db='http://docbook.org/ns/docbook'>
+    Common Features of all Hazelcast Data Structures:
+    <itemizedlist>
+        <listitem>
+            <para>Data in the cluster is almost evenly distributed (partitioned) across all nodes. So each node carries
+                ~ (1/n
+                <literal>*</literal>
+                total-data) + backups , n being the number of nodes in the cluster.
+            </para>
+        </listitem>
+        <listitem>
+            <para>If a member goes down, its backup replica that also holds the same data, will dynamically redistribute
+                the data including the ownership and locks on them to remaining live nodes. As a result, no data will
+                get lost.
+            </para>
+        </listitem>
+        <listitem>
+            <para>When a new node joins the cluster, new node takes ownership(responsibility) and load of -some- of the
+                entire data in the cluster. Eventually the new node will carry almost (1/n
+                <literal>*</literal>
+                total-data) + backups and becomes the new partition reducing the load on others.
+            </para>
+        </listitem>
+        <listitem>
+            <para>There is no single cluster master or something that can cause single point of failure. Every node in
+                the cluster has equal rights and responsibilities. No-one is superior. And no dependency on external
+                'server' or 'master' kind of concept.
+            </para>
+        </listitem>
+    </itemizedlist>
+    Here is how you can retrieve existing data structure instances (map, queue, set, lock, topic, etc.)
+    and how you can listen for instance events to get notified when an instance is created or destroyed.
+    <programlisting language="java"><![CDATA[import java.util.Collection;
+
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.Instance;
+import com.hazelcast.core.InstanceEvent;
+import com.hazelcast.core.InstanceListener;
+
+public class Sample implements InstanceListener {
+
+	public static void main(String[] args) {
+		Sample sample = new Sample();
+
+		Hazelcast.addInstanceListener(sample);
+
+		Collection<Instance> instances = Hazelcast.getInstances();
+		for (Instance instance : instances) {
+                     System.out.println(instance.getInstanceType() + "," + instance.getId());
+                }
+	}
+
+	public void instanceCreated(InstanceEvent event) {
+	       Instance instance = event.getInstance();
+	       System.out.println("Created " + instance.getInstanceType() + "," + instance.getId());
+	}
+
+	public void instanceDestroyed(InstanceEvent event) {
+	      Instance instance = event.getInstance();
+	      System.out.println("Destroyed " + instance.getInstanceType() + "," + instance.getId());
+       }
+}
+
+]]></programlisting>
+
+</para>

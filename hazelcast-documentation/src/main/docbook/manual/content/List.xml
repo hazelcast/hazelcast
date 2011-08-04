@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sect1 id="List" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xlink='http://www.w3.org/1999/xlink'
+       xmlns:xi='http://www.w3.org/2001/XInclude'
+       xmlns:ns5='http://www.w3.org/2000/svg'
+       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+       xmlns:ns3='http://www.w3.org/1999/xhtml'
+       xmlns:db='http://docbook.org/ns/docbook'>
+    <title>Distributed List</title>
+    <para>
+        Distributed List is very similar to distributed set, but it allows duplicate elements.
+
+        <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
+import java.util.List;
+import java.util.Iterator;
+
+java.util.List list = Hazelcast.getList("IBM-Quote-Frequency");
+list.add(new Price(10));
+list.add(new Price(11));
+list.add(new Price(12));
+list.add(new Price(11));
+list.add(new Price(12));
+        
+//....
+Iterator it = list.iterator();
+while (it.hasNext()) { 
+	Price price = (Price) it.next(); 
+	//analyze
+}
+]]></programlisting>
+
+
+    </para>
+</sect1>

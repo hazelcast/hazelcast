@@ -1,0 +1,115 @@
+<?xml version='1.0' encoding='utf-8'?>
+<book xmlns='http://docbook.org/ns/docbook' xmlns:xlink='http://www.w3.org/1999/xlink'
+      xmlns:xi='http://www.w3.org/2001/XInclude' version='5.0'>
+    <bookinfo>
+        <title>Hazelcast Documentation</title>
+    </bookinfo>
+    <chapter id="Introduction">
+        <title>Introduction</title>
+
+        <xi:include href="Introduction.xml"/>
+    </chapter>
+    <chapter id="DDS">
+        <title>Distributed Data Structures</title>
+
+        <xi:include href="DDS.xml"/>
+        <xi:include href="Queue.xml"/>
+        <xi:include href="Topic.xml"/>
+        <xi:include href="Map.xml"/>
+        <xi:include href="MultiMap.xml"/>
+        <xi:include href="Set.xml"/>
+        <xi:include href="List.xml"/>
+        <xi:include href="Lock.xml"/>
+        <xi:include href="Events.xml"/>
+    </chapter>
+    <chapter id="Monitoring">
+        <title>Cluster Monitoring Tool</title>
+
+        <xi:include href="Monitoring.xml"/>
+    </chapter>
+    <chapter id="JMX">
+        <title>Monitoring with JMX</title>
+
+        <xi:include href="JMX.xml"/>
+    </chapter>
+    <chapter id="Cluster Utilities">
+        <title>Cluster Utilities</title>
+
+        <xi:include href="ClusterInterface.xml"/>
+        <xi:include href="IdGenerator.xml"/>
+        <xi:include href="SuperClient.xml"/>
+    </chapter>
+    <chapter id="Transactions">
+        <title>Transactions</title>
+
+        <xi:include href="TransactionInterface.xml"/>
+        <xi:include href="JEEIntegration.xml"/>
+    </chapter>
+    <chapter id="ExecutorService">
+        <title>Distributed Executor Service</title>
+
+        <xi:include href="ExecutorService.xml"/>
+        <xi:include href="DistributedExecution.xml"/>
+        <xi:include href="KeyBasedDistributedExecution.xml"/>
+        <xi:include href="ExecutionCancellation.xml"/>
+        <xi:include href="ExecutionCallback.xml"/>
+    </chapter>
+    <chapter id="HttpSessionClustering">
+        <title>Http Session Clustering with HazelcastWM</title>
+
+        <xi:include href="HttpSessionClustering.xml"/>
+        <xi:include href="HazelcastWMHowItWorks.xml"/>
+        <xi:include href="HazelcastWMSnapshotEvents.xml"/>
+        <xi:include href="HazelcastWMTestedWebContainers.xml"/>
+    </chapter>
+    <chapter id="Encryption">
+        <title>Encryption</title>
+
+        <xi:include href="Encryption.xml"/>
+    </chapter>
+    <chapter id="Config">
+        <title>Configuration</title>
+
+        <xi:include href="Config.xml"/>
+        <xi:include href="ConfigFullTcpIp.xml"/>
+        <xi:include href="EC2AutoDiscovery.xml"/>
+        <xi:include href="ConfigGroup.xml"/>
+        <xi:include href="ConfigSpecifyInterfaces.xml"/>
+        <xi:include href="NetworkPartitioning.xml"/>
+        <xi:include href="ConfigurationProperties.xml"/>
+    </chapter>
+    <chapter id="HibernateSecondLevelCache">
+        <title>Hibernate Second Level Cache</title>
+
+        <xi:include href="HibernateSecondLevelCache.xml"/>
+    </chapter>
+    <chapter id="SpringIntegration">
+        <title>Spring Integration</title>
+
+        <xi:include href="SpringIntegration.xml"/>
+    </chapter>
+    <chapter id="Clients">
+        <title>Clients</title>
+
+        <xi:include href="Clients.xml"/>
+        <xi:include href="NativeClient.xml"/>
+        <xi:include href="MemcacheClient.xml"/>
+        <xi:include href="RestClient.xml"/>
+    </chapter>
+    <chapter id="Internals">
+        <title>Internals</title>
+
+        <xi:include href="InternalsThreads.xml"/>
+        <xi:include href="InternalsSerialization.xml"/>
+        <xi:include href="InternalsClusterMembership.xml"/>
+        <xi:include href="InternalsDistributedMap.xml"/>
+    </chapter>
+    <chapter id="Miscellaneous">
+        <title>Miscellaneous</title>
+
+        <xi:include href="CommonGotchas.xml"/>
+        <xi:include href="ClusterTestHowTo.xml"/>
+        <xi:include href="Todo.xml"/>
+        <xi:include href="ReleaseNotes.xml"/>
+    </chapter>
+</book>

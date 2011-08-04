@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sect1 id="IdGenerator" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xlink='http://www.w3.org/1999/xlink'
+       xmlns:xi='http://www.w3.org/2001/XInclude'
+       xmlns:ns5='http://www.w3.org/2000/svg'
+       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+       xmlns:ns3='http://www.w3.org/1999/xhtml'
+       xmlns:db='http://docbook.org/ns/docbook'>
+    <title>Cluster-wide Id Generator</title>
+    <para>
+        Hazelcast IdGenerator creates cluster-wide unique IDs. Generated IDs are long type primitive values between 0
+        and
+        <literal>Long.MAX_VALUE</literal>
+        . Id generation occurs almost at the speed of
+        <literal>AtomicLong.incrementAndGet()</literal>
+        . Generated IDs are unique during the life cycle of the cluster. If the entire cluster is restarted, IDs start
+        from 0 again.
+
+        <programlisting language="java"><![CDATA[import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.Hazelcast;
+
+IdGenerator idGenerator = Hazelcast.getIdGenerator("customer-ids");
+long id = idGenerator.newId();
+]]></programlisting>
+
+
+    </para>
+</sect1>

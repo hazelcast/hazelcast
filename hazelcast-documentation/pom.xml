@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
+        <version>1.9.4-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <groupId>hazelcast-documentation</groupId>
+    <artifactId>hazelcast-documentation</artifactId>
+    <packaging>pom</packaging>
+
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.agilejava.docbkx</groupId>
+                <artifactId>docbkx-maven-plugin</artifactId>
+                <version>2.0.13</version>
+                <executions>
+
+                    <execution>
+                        <id>docbook-pdf</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>generate-pdf</goal>
+                        </goals>
+
+                        <configuration>
+                            <!-- per execution configuration -->
+                            <includes>index.xml</includes>
+                            <sourceDirectory>${basedir}/src/main/docbook/manual/content</sourceDirectory>
+                            <targetDirectory>${project.build.directory}/docbook/pdf</targetDirectory>
+                            <postProcess>
+                                <copy file="${project.build.directory}/docbook/pdf/index.pdf"
+                                      tofile="${project.build.directory}/docbook/pdf/hazelcast-documentation.pdf"/>
+                            </postProcess>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>docbook-single</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>generate-html</goal>
+                        </goals>
+
+                        <configuration>
+                            <!-- per execution configuration -->
+                            <includes>index.xml</includes>
+                            <sourceDirectory>${basedir}/src/main/docbook/manual/content</sourceDirectory>
+                            <targetDirectory>${project.build.directory}/docbook/single_html</targetDirectory>
+                            <postProcess>
+                                <copy todir="${project.build.directory}/docbook/single_html/">
+                                    <fileset dir="${basedir}/src/main/docbook/manual/stylesheet/">
+                                        <include name="**/*.css"/>
+                                    </fileset>
+                                </copy>
+                            </postProcess>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>docbook-multi</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>generate-html</goal>
+                        </goals>
+
+                        <configuration>
+                            <!-- per execution configuration -->
+                            <includes>index.xml</includes>
+                            <sourceDirectory>${basedir}/src/main/docbook/manual/content</sourceDirectory>
+                            <targetDirectory>${project.build.directory}/docbook</targetDirectory>
+                            <chunkedOutput>true</chunkedOutput>
+                            <postProcess>
+                                <copy todir="${project.build.directory}/docbook/index/">
+                                    <fileset dir="${basedir}/src/main/docbook/manual/stylesheet/">
+                                        <include name="**/*.css"/>
+                                    </fileset>
+                                </copy>
+                                <move file="${project.build.directory}/docbook/index"
+                                      tofile="${project.build.directory}/docbook/multi_html"/>
+
+                            </postProcess>
+                        </configuration>
+                    </execution>
+
+                </executions>
+
+                <configuration>
+                    <!-- shared configurastion -->
+                    <generatedSourceDirectory>${project.build.directory}/docbook/generated
+                    </generatedSourceDirectory>
+                    <xincludeSupported>true</xincludeSupported>
+                    <paperType>A4</paperType>
+                    <fop1Extensions>1</fop1Extensions>
+                    <highlightSource>1</highlightSource>
+                    <!-- for pdf outputs -->
+                    <foCustomization>${basedir}/src/main/docbook/manual/stylesheet/docbook-fo.xsl</foCustomization>
+                    <!-- for html outputs -->
+                    <htmlStylesheet>./docbook.css</htmlStylesheet>
+                    <htmlCustomization>${basedir}/src/main/docbook/manual/stylesheet/docbook-html.xsl
+                    </htmlCustomization>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <dependencies>
+        <dependency>
+            <groupId>net.sf.xslthl</groupId>
+            <artifactId>xslthl</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.docbook</groupId>
+            <artifactId>docbook-xsl</artifactId>
+            <version>1.76.1</version>
+            <type>zip</type>
+            <classifier>ns-resources</classifier>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.docbook</groupId>
+            <artifactId>docbook-xsl-saxon</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
+    <modules>
+    </modules>
+</project>
