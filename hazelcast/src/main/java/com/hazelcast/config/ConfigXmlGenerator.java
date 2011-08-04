@@ -39,6 +39,25 @@ public class ConfigXmlGenerator {
         xml.append("<password>").append(config.getGroupConfig().getPassword()).append("</password>");
         xml.append("</group>");
         appendProperties(xml, config.getProperties());
+        
+        final Collection<WanReplicationConfig> wanRepConfigs = config.getWanReplicationConfigs().values();
+        for (WanReplicationConfig wan : wanRepConfigs) {
+			xml.append("<wan-replication name=\"").append(wan.getName()).append("\">");
+			final List<WanTargetClusterConfig> targets = wan.getTargetClusterConfigs();
+			for (WanTargetClusterConfig t : targets) {
+				xml.append("<target-cluster group-name=\"").append(t.getGroupName())
+					.append("\" group-password=\"").append(t.getGroupPassword()).append("\">");
+				xml.append("<replication-impl>").append(t.getReplicationImpl()).append("</replication-impl>");
+				xml.append("<end-points>");
+				final List<String> eps = t.getEndpoints();
+				for (String ep : eps) {
+					xml.append("<address>").append(ep).append("</address>");
+				}
+				xml.append("</end-points>");
+			}
+			xml.append("</wan-replication>");
+		}
+        
         final NetworkConfig netCfg = config.getNetworkConfig();
         xml.append("<network>");
         xml.append("<port auto-increment=\"").append(config.isPortAutoIncrement()).append("\">")
@@ -121,7 +140,7 @@ public class ConfigXmlGenerator {
             xml.append("<backup-count>").append(m.getBackupCount()).append("</backup-count>");
             xml.append("<eviction-policy>").append(m.getEvictionPolicy()).append("</eviction-policy>");
             xml.append("<eviction-percentage>").append(m.getEvictionPercentage()).append("</eviction-percentage>");
-            xml.append("<eviction-delay-seconds>").append(m.getEvictionDelaySeconds()).append("</eviction-delay-seconds>");
+//            xml.append("<eviction-delay-seconds>").append(m.getEvictionDelaySeconds()).append("</eviction-delay-seconds>");
             xml.append("<max-size policy=\"").append(m.getMaxSizeConfig().getMaxSizePolicy()).append("\">").append(m.getMaxSizeConfig().getSize()).append("</max-size>");
             xml.append("<time-to-live-seconds>").append(m.getTimeToLiveSeconds()).append("</time-to-live-seconds>");
             xml.append("<max-idle-seconds>").append(m.getMaxIdleSeconds()).append("</max-idle-seconds>");
@@ -145,6 +164,12 @@ public class ConfigXmlGenerator {
                 xml.append("<eviction-policy>").append(n.getEvictionPolicy()).append("</eviction-policy>");
                 xml.append("<invalidate-on-change>").append(n.isInvalidateOnChange()).append("</invalidate-on-change>");
                 xml.append("</near-cache>");
+            }
+            if(m.getWanReplicationRef() != null) {
+            	final WanReplicationRef wan = m.getWanReplicationRef();
+            	xml.append("<wan-replication-ref name=\"").append(wan.getName()).append("\"");
+            	xml.append("<merge-policy>").append(wan.getMergePolicy()).append("</merge-policy>");
+            	xml.append("</wan-replication-ref>");
             }
             xml.append("</map>");
         }

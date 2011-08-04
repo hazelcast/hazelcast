@@ -22,15 +22,22 @@ import java.util.List;
 
 public class WanReplicationConfig {
     String name;
-    List<WanTargetClusterConfig> lsTargetClusterConfigs = new ArrayList<WanTargetClusterConfig>(2);
+    List<WanTargetClusterConfig> lsTargetClusterConfigs ;
 
     public List<WanTargetClusterConfig> getTargetClusterConfigs() {
         return lsTargetClusterConfigs;
     }
 
     public WanReplicationConfig addTargetClusterConfig(WanTargetClusterConfig wanTargetClusterConfig) {
+    	if(lsTargetClusterConfigs == null) {
+    		lsTargetClusterConfigs = new ArrayList<WanTargetClusterConfig>(2);
+    	}
         lsTargetClusterConfigs.add(wanTargetClusterConfig);
         return this;
+    }
+    
+    public void setTargetClusterConfigs(List<WanTargetClusterConfig> list) {
+    	lsTargetClusterConfigs = list;
     }
 
     public String getName() {

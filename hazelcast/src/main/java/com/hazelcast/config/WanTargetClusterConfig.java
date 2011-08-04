@@ -25,7 +25,7 @@ public class WanTargetClusterConfig {
     String groupPassword = "dev-pass";
     String replicationImpl;
     Object replicationImplObject;
-    List<String> lsEndpoints = new ArrayList<String>(2); // ip:port
+    List<String> lsEndpoints ; // ip:port
 
     public String getGroupName() {
         return groupName;
@@ -48,9 +48,16 @@ public class WanTargetClusterConfig {
     public List<String> getEndpoints() {
         return lsEndpoints;
     }
+    
+    public void setEndpoints(List<String> list) {
+    	lsEndpoints = list;
+    }
 
     public WanTargetClusterConfig addEndpoint(String address) {
-        this.lsEndpoints.add(address);
+    	if(lsEndpoints == null) {
+    		lsEndpoints = new ArrayList<String>(2);
+    	}
+        lsEndpoints.add(address);
         return this;
     }
 

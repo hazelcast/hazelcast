@@ -27,13 +27,32 @@
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
             </hz:properties>
+            <hz:wan-replication name="testWan">
+            	<hz:target-cluster group-name="tokyo" group-password="tokyo-pass">
+		            <hz:replication-impl>com.hazelcast.impl.wan.WanNoDelayReplication</hz:replication-impl>
+		            <hz:end-points>
+		                <hz:address>10.2.1.1:5701</hz:address>
+		                <hz:address>10.2.1.2:5701</hz:address>
+		            </hz:end-points>
+		        </hz:target-cluster>
+		        <hz:target-cluster group-name="london" group-password="london-pass">
+		            <hz:replication-impl-object ref="dummyWanReplication"/>
+		            <hz:end-points>
+		                <hz:address>10.3.5.1:5701</hz:address>
+		                <hz:address>10.3.5.2:5701</hz:address>
+		            </hz:end-points>
+		        </hz:target-cluster>
+            </hz:wan-replication>
             <hz:network port="${cluster.port}" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"
                                   multicast-group="224.2.2.3"
                                   multicast-port="54327"/>
                     <hz:tcp-ip enabled="true">
-                        <hz:members>${cluster.members}</hz:members>
+                    	<hz:required-member>127.0.0.1:5800</hz:required-member>
+<!--                         <hz:members>${cluster.members}</hz:members> -->
+                        <hz:interface>127.0.0.1:5800</hz:interface>
+                        <hz:interface>127.0.0.1:5801</hz:interface>
                     </hz:tcp-ip>
                 </hz:join>
                 <hz:interfaces enabled="false">
@@ -86,6 +105,7 @@
                     eviction-policy="NONE"
                     merge-policy="hz.ADD_NEW_ENTRY">
                 <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0"/>
+                <hz:wan-replication-ref name="testWan" merge-policy="hz.ADD_NEW_ENTRY"/>
             </hz:map>
             <hz:map name="simpleMap"
                     backup-count="3"
@@ -94,6 +114,12 @@
                     eviction-percentage="50"
                     eviction-policy="LRU"
                     merge-policy="hz.LATEST_UPDATE"/>
+                    
+         	<hz:merge-policies>
+         		<hz:map-merge-policy name="hz.MERGE_POLICY_TEST" 
+         		class-name="com.hazelcast.spring.TestMapMergePolicy" 
+         		implementation="dummyMergePolicy"/>
+         	</hz:merge-policies>           
         </hz:config>
     </hz:hazelcast>
 
@@ -109,4 +135,6 @@
     <hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
 
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
+    <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
+    <bean id="dummyMergePolicy" class="com.hazelcast.spring.DummyMergePolicy"/>
 </beans>

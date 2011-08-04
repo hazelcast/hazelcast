@@ -103,6 +103,10 @@ public class Config implements DataSerializable {
     public Map<String, MergePolicyConfig> getMergePolicyConfigs() {
         return mapMergePolicyConfigs;
     }
+    
+    public void setMergePolicyConfigs(Map<String, MergePolicyConfig> mapMergePolicyConfigs) {
+        this.mapMergePolicyConfigs = mapMergePolicyConfigs;
+    }
 
     public WanReplicationConfig getWanReplicationConfig(String name) {
         return mapWanReplicationConfigs.get(name);
@@ -114,6 +118,14 @@ public class Config implements DataSerializable {
 
     public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
         return mapWanReplicationConfigs;
+    }
+    
+    public Config setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
+        this.mapWanReplicationConfigs = wanReplicationConfigs;
+        for (final Entry<String, WanReplicationConfig> entry : this.mapWanReplicationConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
     }
 
     public ClassLoader getClassLoader() {

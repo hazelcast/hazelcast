@@ -20,17 +20,22 @@ package com.hazelcast.spring;
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.impl.wan.WanReplicationEndpoint;
+import com.hazelcast.merge.MergePolicy;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -78,6 +83,12 @@ public class TestFullApplicationContext {
 
     @Resource(name = "dummyMapStore")
     private MapStore dummyMapStore;
+    
+    @Autowired
+    private WanReplicationEndpoint wanReplication;
+    
+    @Autowired
+    private MergePolicy dummyMergePolicy;
 
     @BeforeClass
     @AfterClass
@@ -123,6 +134,8 @@ public class TestFullApplicationContext {
         MapConfig testMapConfig2 = config.getMapConfig("testMap2");
         assertNotNull(testMapConfig2.getMapStoreConfig().getImplementation());
         assertEquals(dummyMapStore, testMapConfig2.getMapStoreConfig().getImplementation());
+        assertEquals("testWan", testMapConfig2.getWanReplicationRef().getName());
+        assertEquals("hz.ADD_NEW_ENTRY", testMapConfig2.getWanReplicationRef().getMergePolicy());
         MapConfig simpleMapConfig = config.getMapConfig("simpleMap");
         assertNotNull(simpleMapConfig);
         assertEquals("simpleMap", simpleMapConfig.getName());
@@ -192,6 +205,7 @@ public class TestFullApplicationContext {
         assertEquals(members.toString(), 2, members.size());
         assertEquals("127.0.0.1:5800", members.get(0));
         assertEquals("127.0.0.1:5801", members.get(1));
+        assertEquals("127.0.0.1:5800", tcp.getRequiredMember());
     }
 
     @Test
@@ -238,5 +252,33 @@ public class TestFullApplicationContext {
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
         assertEquals("atomicNumber", atomicNumber.getName());
+    }
+    
+    @Test
+    public void testWanReplicationConfig() {
+    	WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan");
+    	assertNotNull(wcfg);
+    	assertEquals(2, wcfg.getTargetClusterConfigs().size());
+    	
+    	WanTargetClusterConfig targetCfg = wcfg.getTargetClusterConfigs().get(0);
+    	assertNotNull(targetCfg);
+    	assertEquals("tokyo", targetCfg.getGroupName());
+    	assertEquals("tokyo-pass", targetCfg.getGroupPassword());
+    	assertEquals("com.hazelcast.impl.wan.WanNoDelayReplication", targetCfg.getReplicationImpl());
+    	assertEquals(2, targetCfg.getEndpoints().size());
+    	assertEquals("10.2.1.1:5701", targetCfg.getEndpoints().get(0));
+    	assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
+    	
+    	assertEquals(wanReplication, wcfg.getTargetClusterConfigs().get(1).getReplicationImplObject());
+    }
+    
+    @Test
+    public void testMapMergePolicyConfig() {
+    	Map<String, MergePolicyConfig> merges = config.getMergePolicyConfigs();
+    	assertEquals(1, merges.size());
+    	MergePolicyConfig cfg = merges.values().iterator().next();
+    	assertEquals("hz.MERGE_POLICY_TEST", cfg.getName());
+    	assertEquals("com.hazelcast.spring.TestMapMergePolicy", cfg.getClassName());
+    	assertEquals(dummyMergePolicy, cfg.getImplementation());
     }
 }
