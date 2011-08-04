@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sect1 id="ExecutionCallback" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xlink='http://www.w3.org/1999/xlink'
+       xmlns:xi='http://www.w3.org/2001/XInclude'
+       xmlns:ns5='http://www.w3.org/2000/svg'
+       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+       xmlns:ns3='http://www.w3.org/1999/xhtml'
+       xmlns:db='http://docbook.org/ns/docbook'>
+    <title>Execution Callback</title>
+    <para>
+        `ExecutionCallback` allows you to asynchronously get notified when the execution is done. When implementing
+        `ExecutionCallback.done(Future)` method, you can check if the task is already cancelled.
+
+        <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.DistributedTask;
+import java.util.concurrent.ExecutorService;    
+import java.util.concurrent.Future; 
+		
+ExecutorService es = Hazelcast.getExecutorService();
+DistributedTask<String> task = new DistributedTask<String>(new Fibonacci<Long>(10));
+task.setExecutionCallback(new ExecutionCallback<Long> () {
+	public void done (Future<Long> future) { 
+		try {
+			if (! future.isCancelled()) {
+				System.out.println("Fibonacci calculation result = " + future.get());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+});
+es.execute(task);
+]]></programlisting>
+
+        You could have achieved the same results by extending
+        <literal>DistributedTask</literal>
+        and overriding the
+        <literal>DistributedTask.done()</literal>
+        method.
+
+        <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.DistributedTask;
+import java.util.concurrent.ExecutorService;    
+import java.util.concurrent.Future; 
+		
+ExecutorService es = Hazelcast.getExecutorService();
+es.execute(new DistributedTask<String>(new Fibonacci<Long>(10)) {
+	public void done () { 
+		try {
+			if (! isCancelled()) {
+				System.out.println("Fibonacci calculation result = " + get());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+}); 
+]]></programlisting>
+
+    </para>
+</sect1>

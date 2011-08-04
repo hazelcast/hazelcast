@@ -1,0 +1,105 @@
+<para version='5.0' xmlns='http://docbook.org/ns/docbook'
+      xmlns:xlink='http://www.w3.org/1999/xlink'
+      xmlns:xi='http://www.w3.org/2001/XInclude'
+      xmlns:ns5='http://www.w3.org/2000/svg'
+      xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+      xmlns:ns3='http://www.w3.org/1999/xhtml'
+      xmlns:db='http://docbook.org/ns/docbook'>
+    Hazelcast is a clustering and highly scalable data distribution platform for Java. Hazelcast helps architects and
+    developers to easily design and develop faster, highly scalable and reliable applications for their businesses.
+    <itemizedlist>
+        <listitem>
+            <para>Distributed implementations of
+                <literal>java.util.{Queue, Set, List, Map}</literal>
+            </para>
+        </listitem>
+        <listitem>
+            <para>Distributed implementation of
+                <literal>java.util.concurrent.ExecutorService</literal>
+            </para>
+        </listitem>
+        <listitem>
+            <para>Distributed implementation of
+                <literal>java.util.concurrency.locks.Lock</literal>
+            </para>
+        </listitem>
+        <listitem>
+            <para>Distributed
+                <literal>Topic</literal>
+                for publish/subscribe messaging
+            </para>
+        </listitem>
+        <listitem>
+            <para>Transaction support and J2EE container integration via JCA
+            </para>
+        </listitem>
+        <listitem>
+            <para>Distributed listeners and events
+            </para>
+        </listitem>
+        <listitem>
+            <para>Support for cluster info and membership events
+            </para>
+        </listitem>
+        <listitem>
+            <para>Dynamic HTTP session clustering
+            </para>
+        </listitem>
+        <listitem>
+            <para>Dynamic clustering
+            </para>
+        </listitem>
+        <listitem>
+            <para>Dynamic scaling to hundreds of servers
+            </para>
+        </listitem>
+        <listitem>
+            <para>Dynamic partitioning with backups
+            </para>
+        </listitem>
+        <listitem>
+            <para>Dynamic fail-over
+            </para>
+        </listitem>
+    </itemizedlist>
+    <itemizedlist>
+        <listitem>
+            <para>Super simple to use; include a single jar
+            </para>
+        </listitem>
+        <listitem>
+            <para>Super fast; thousands of operations per sec.
+            </para>
+        </listitem>
+        <listitem>
+            <para>Super small; less than a MB
+            </para>
+        </listitem>
+        <listitem>
+            <para>Super efficient; very nice to CPU and RAM
+            </para>
+        </listitem>
+    </itemizedlist>
+    To install Hazelcast:
+    <itemizedlist>
+        <listitem>
+            <para>Download hazelcast-_version_.zip from www.hazelcast.com
+            </para>
+        </listitem>
+        <listitem>
+            <para>Unzip hazelcast-_version_.zip file
+            </para>
+        </listitem>
+        <listitem>
+            <para>Add hazelcast.jar file into your classpath
+            </para>
+        </listitem>
+    </itemizedlist>
+    Hazelcast is pure Java. JVMs that are running Hazelcast will dynamically cluster. Although by default Hazelcast will
+    use multicast for discovery, it can also be configured to only use TCP/IP for environments where multicast is not
+    available or preferred ([ConfigFullTcpIp Click here for more info]). Communication among cluster members is always
+    TCP/IP with Java NIO beauty. Default configuration comes with 1 backup so if one node fails, no data will be lost.
+    It is as simple as using<literal>java.util.{Queue, Set, List, Map}</literal>. Just add the hazelcast.jar into your
+    classpath and start coding.
+
+</para>

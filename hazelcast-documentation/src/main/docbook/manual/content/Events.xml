@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sect1 id="Events" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xlink='http://www.w3.org/1999/xlink'
+       xmlns:xi='http://www.w3.org/2001/XInclude'
+       xmlns:ns5='http://www.w3.org/2000/svg'
+       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+       xmlns:ns3='http://www.w3.org/1999/xhtml'
+       xmlns:db='http://docbook.org/ns/docbook'>
+    <title>Distributed Events</title>
+    <para>
+        Hazelcast allows you to register for entry events to get notified when entries added, updated or removed.
+        Listeners are cluster-wide. When a member adds a listener, it is actually registering for events originated in
+        any member in the cluster. When a new member joins, events originated at the new member will also be delivered.
+
+        All events are ordered, meaning, listeners will receive and process the events in the order they are actually
+        occurred.
+
+        <programlisting language="java"><![CDATA[import java.util.Queue;
+import java.util.Map; 
+import java.util.Set; 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryEvent; 
+
+public class Sample implements ItemListener, EntryListener {
+
+	public static void main(String[] args) { 
+		Sample sample = new Sample();
+		Queue queue = Hazelcast.getQueue ("default"); 
+		Map   map   = Hazelcast.getMap   ("default"); 
+		Set   set   = Hazelcast.getSet   ("default"); 
+		//listen for all added/updated/removed entries
+		queue.addItemListener(sample, true);
+		set.addItemListener  (sample, true); 
+		map.addEntryListener (sample, true);		
+		//listen for an entry with specific key 
+		map.addEntryListener (sample, "keyobj");		
+	} 
+
+	public void entryAdded(EntryEvent event) {
+		System.out.println("Entry added key=" + event.getKey() + ", value=" + event.getValue());
+	}
+
+	public void entryRemoved(EntryEvent event) {
+		System.out.println("Entry removed key=" + event.getKey() + ", value=" + event.getValue());
+	}
+
+	public void entryUpdated(EntryEvent event) {
+		System.out.println("Entry update key=" + event.getKey() + ", value=" + event.getValue());
+	} 
+
+	public void entryEvicted(EntryEvent event) {
+		System.out.println("Entry evicted key=" + event.getKey() + ", value=" + event.getValue());
+	} 
+	
+	public void itemAdded(Object item) {
+		System.out.println("Item added = " + item);
+	}
+
+	public void itemRemoved(Object item) {
+		System.out.println("Item removed = " + item);
+	}	 
+}
+       
+]]></programlisting>
+
+    </para>
+</sect1>

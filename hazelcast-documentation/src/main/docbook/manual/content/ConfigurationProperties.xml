@@ -1,0 +1,102 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sect1 id="ConfigurationProperties" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xlink='http://www.w3.org/1999/xlink'
+       xmlns:xi='http://www.w3.org/2001/XInclude'
+       xmlns:ns5='http://www.w3.org/2000/svg'
+       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+       xmlns:ns3='http://www.w3.org/1999/xhtml'
+       xmlns:db='http://docbook.org/ns/docbook'>
+    <title>Advanced Configuration Properties</title>
+    <para>There are some advanced configuration properties to tune some aspects of Hazelcast. These can be set as
+        property name and value pairs through configuration xml, configuration API or JVM system property.
+        <itemizedlist>
+            <listitem>
+                <para>*Configuration xml*
+                </para>
+            </listitem>
+        </itemizedlist>
+        <programlisting language="java"><![CDATA[<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-basic.xsd"
+           xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+ 
+   ....
+
+   <properties>
+       <property name="hazelcast.property.foo">value</property>
+       ....
+   </properties>
+</hazelcast>
+]]></programlisting>
+        <itemizedlist>
+            <listitem>
+                <para>*Configuration API*
+                </para>
+            </listitem>
+        </itemizedlist>
+        <programlisting language="java"><![CDATA[Config cfg = ... ;
+cfg.setProperty("hazelcast.property.foo", "value");
+]]></programlisting>
+        <itemizedlist>
+            <listitem>
+                <para>*System Property*
+                    # Using JVM parameter:
+                    <literal>java -Dhazelcast.property.foo=value</literal>
+                    # Using System class:
+                    <literal>System.setProperty("hazelcast.property.foo", "value");</literal>
+                </para>
+            </listitem>
+        </itemizedlist>
+        ----
+        || *Property Name* ||
+        <emphasis role="bold">Description</emphasis>
+        || *Value Type* || *Default Value* ||
+        ||hazelcast.mancenter.enabled||Enable [http://www.hazelcast.com/mancenter.jsp Hazelcast Management Center]
+        service||boolean||true||
+        ||hazelcast.memcache.enabled||Enable [MemcacheClient Memcache] client request listener service||boolean||true||
+        ||hazelcast.rest.enabled||Enable [RestClient REST] client request listener service||boolean||true||
+        ||hazelcast.map.load.chunk.size||Chunk size for [MapPersistence MapLoader]'s map initialization process
+        (MapLoder.loadAllKeys())||integer||1000||
+        ||hazelcast.in.thread.priority||Hazelcast [InternalsThreads Input Thread] priority||integer||7||
+        ||hazelcast.out.thread.priority||Hazelcast [InternalsThreads Output Thread] priority||integer||7||
+        ||hazelcast.service.thread.priority||Hazelcast [InternalsThreads Service Thread] priority||integer||8||
+        ||hazelcast.merge.first.run.delay.seconds||Inital run delay of [NetworkPartitioning split brain/merge process]
+        in seconds||integer||300||
+        ||hazelcast.merge.next.run.delay.seconds||Run interval of [NetworkPartitioning split brain/merge process] in
+        seconds||integer||120||
+        ||hazelcast.redo.wait.millis||Wait time before a redo operation in milliseconds||integer||500||
+        ||hazelcast.socket.bind.any||Bind node socket address to any local address||boolean||true||
+        ||hazelcast.socket.receive.buffer.size||Socket receive buffer size in KB||integer||32||
+        ||hazelcast.socket.send.buffer.size||Socket send buffer size in KB||integer||32||
+        ||hazelcast.socket.keep.alive||Socket set keep alive||boolean||true||
+        ||hazelcast.socket.no.delay||Socket set TCP no delay||boolean||true||
+        ||hazelcast.shutdownhook.enabled||Enable Hazelcast shutdownhook thread||boolean||true||
+        ||hazelcast.wait.seconds.before.join||Wait time before join operation||integer||5||
+        ||hazelcast.heartbeat.interval.seconds||Heartbeat send interval in seconds||integer||1||
+        ||hazelcast.max.no.heartbeat.seconds||Max timeout of heartbeat in seconds for a node to assume it is
+        dead||integer||300||
+        ||hazelcast.icmp.enabled||Enable ICMP ping||boolean||false||
+        ||hazelcast.initial.min.cluster.size||Initial expected cluster size to wait before node to start
+        completely||integer||0||
+        ||hazelcast.initial.wait.seconds||Inital time in seconds to wait before node to start completely||integer||0||
+        ||hazelcast.restart.on.max.idle||Restart node if service thread blocked for<literal>
+            hazelcast.max.no.heartbeat.seconds</literal>||boolean||false||
+        ||hazelcast.map.partition.count||Distributed map partition count||integer||271||
+        ||hazelcast.map.remove.delay.seconds||Remove delay time in seconds for dirty records||integer||5||
+        ||hazelcast.map.cleanup.delay.seconds||Cleanup process delay time in seconds||integer||10||
+        ||hazelcast.executor.query.thread.count||Query executor service max thread count||integer||8||
+        ||hazelcast.executor.event.thread.count||Event executor service max thread count||integer||16||
+        ||hazelcast.executor.migration.thread.count||Migration executor service max thread count||integer||20||
+        ||hazelcast.executor.client.thread.count||Client executor service max thread count||integer||40||
+        ||hazelcast.executor.store.thread.count||Map store executor service max thread count||integer||16||
+        ||hazelcast.log.state||Log cluster debug state periodically||boolean||false||
+        ||hazelcast.jmx||Enable [JMX JMX] agent||boolean||false||
+        ||hazelcast.jmx.detailed||Enable detailed views on [JMX JMX]||boolean||false||
+        ||hazelcast.mc.map.excludes||Comma seperated map names to exclude from [http://www.hazelcast.com/mancenter.jsp
+        Hazelcast Management Center]||CSV||null||
+        ||hazelcast.mc.queue.excludes||Comma seperated queue names to exclude from
+        [http://www.hazelcast.com/mancenter.jsp Hazelcast Management Center]||CSV||null||
+        ||hazelcast.mc.topic.excludes||Comma seperated topic names to exclude from
+        [http://www.hazelcast.com/mancenter.jsp Hazelcast Management Center]||CSV||null||
+
+    </para>
+</sect1>

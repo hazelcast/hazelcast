@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<para version='5.0' xmlns='http://docbook.org/ns/docbook'
+      xmlns:xlink='http://www.w3.org/1999/xlink'
+      xmlns:xi='http://www.w3.org/2001/XInclude'
+      xmlns:ns5='http://www.w3.org/2000/svg'
+      xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+      xmlns:ns3='http://www.w3.org/1999/xhtml'
+      xmlns:db='http://docbook.org/ns/docbook'>
+    <itemizedlist>
+        <listitem>
+            <para>Target application or web server should support Java 1.5+
+            </para>
+        </listitem>
+        <listitem>
+            <para>Target application or web server should support Servlet 2.3+ spec
+            </para>
+        </listitem>
+        <listitem>
+            <para>Session objects that needs to be clustered have to be Serializable
+            </para>
+        </listitem>
+    </itemizedlist>
+    To cluster your web application, all you have to do is to use
+    <literal>clusterWebapp.bat</literal>
+    or
+    <literal>clusterWebapp.sh</literal>
+    scripts that comes with the Hazelcast distribution.
+    <programlisting language="java"><![CDATA[> clusterWebapp.bat war-file-path|ear-file-path
+]]></programlisting>
+    e.g
+    <programlisting language="java"><![CDATA[> clusterWebapp.bat myapp.ear
+> Done. New clustered application at C:\hazelcast-1.1\clustered-myapp.ear
+]]></programlisting>
+    `clusterWebapp.bat|sh` will not modify the war/ear files passed in. Instead, it will create a new war/ear file and
+    name it as `clustered-&lt;app-file-name/&gt;`.
+    You can pass multiple war and ear files. Besides if you pass
+    <literal>-apps-sharing-sessions</literal>
+    as an argument then your applications will be able to share the same sessions. If
+    <literal>-apps-sharing-sessions</literal>
+    argument is used,
+    <literal>hazelcast.jar</literal>
+    file will not be placed into the war/ear files so you need to add
+    <literal>hazelcast.jar</literal>
+    into your application server's classpath.
+    <programlisting language="java"><![CDATA[> clusterWebapp.bat myapp.ear app1.war app2.war app3.war -apps-sharing-session
+]]></programlisting>
+
+</para>

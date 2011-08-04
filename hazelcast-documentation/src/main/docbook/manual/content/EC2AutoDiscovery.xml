@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sect1 id="EC2AutoDiscovery" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xlink='http://www.w3.org/1999/xlink'
+       xmlns:xi='http://www.w3.org/2001/XInclude'
+       xmlns:ns5='http://www.w3.org/2000/svg'
+       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+       xmlns:ns3='http://www.w3.org/1999/xhtml'
+       xmlns:db='http://docbook.org/ns/docbook'>
+    <title>Configuring Hazelcast for EC2 Auto Discovery</title>
+    <para>
+
+        Hazelcast supports EC2 Auto Discovery as of 1.9.4. It is useful when you don't want or can't provide the list of
+        possible IP addresses.
+        Here is a sample configuration:
+
+        Disable join over multicast and tcp/ip and enable aws. Also provide the credentials.
+
+        <programlisting language="xml"><![CDATA[        <join>
+		<multicast enabled="false">
+			<multicast-group>224.2.2.3</multicast-group>
+			<multicast-port>54327</multicast-port>
+		</multicast>
+		<tcp-ip enabled="false">
+			<interface>192.168.1.2</interface>
+		</tcp-ip>
+                <aws enabled="true">
+                        <access-key>my-access-key</access-key>
+                        <secret-key>my-secret-key</secret-key>
+                </aws>
+	</join>
+]]></programlisting>
+
+        First you need to add hazelcast-cloud.jar into your classpath. Note that it is also bundled inside
+        hazelcast-all.jar.
+        hazelcast-cloud module depends on Amazon AWS SDK so you will need to have aws-java-sdk and the libraries that it
+        depends on. AWS SDK 1.0.0 and above should work just fine. For the
+        libraries that sdk depends on please check out
+        [http://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk/1.2.1 aws-java-sdk maven repository details] .
+
+    </para>
+</sect1>
