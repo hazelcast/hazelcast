@@ -90,10 +90,10 @@ public class ConnectionManager implements MembershipListener {
                             }
                         }).start();
                         if (!latch.await(10000, TimeUnit.MILLISECONDS)) {
-                            logger.log(Level.WARNING, "The server didn't respond on client's ping call within 10 seconds!");
+                            logger.log(Level.WARNING, "Server didn't respond to client's ping call within 10 seconds!");
                         }
                     } else if (diff >= TIMEOUT) {
-                        logger.log(Level.WARNING, "The server didn't respond on client's requests for " + TIMEOUT / 1000 + " seconds. Assuming it is dead, closing the connection!");
+                        logger.log(Level.WARNING, "Server didn't respond to client's requests for " + TIMEOUT / 1000 + " seconds. Assuming it is dead, closing the connection!");
                         currentConnection.close();
                     }
                 } catch (InterruptedException e) {

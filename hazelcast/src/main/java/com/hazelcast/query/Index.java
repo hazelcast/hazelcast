@@ -20,7 +20,6 @@ package com.hazelcast.query;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -86,7 +85,7 @@ public class Index {
     public Long extractLongValue(Object value) {
         Object extractedValue = expression.getValue(value);
         if (extractedValue == null) {
-            return Long.MAX_VALUE;
+            return Long.MIN_VALUE;
         } else {
             if (!checkedStrength) {
                 if (extractedValue instanceof Boolean || extractedValue instanceof Number) {
@@ -170,7 +169,7 @@ public class Index {
     }
 
     private static long getLongValueByType(Object value) {
-        if (value == null) return Long.MAX_VALUE;
+        if (value == null) return Long.MIN_VALUE;
         if (value instanceof Double) {
             return Double.doubleToLongBits((Double) value);
         } else if (value instanceof Float) {
@@ -205,7 +204,7 @@ public class Index {
                 } else if (returnType == TYPE_BYTE) {
                     value = Byte.valueOf(str);
                 } else if (returnType == TYPE_CLASS) {
-                    value =str.hashCode();
+                    value = str.hashCode();
                 }
             }
         }

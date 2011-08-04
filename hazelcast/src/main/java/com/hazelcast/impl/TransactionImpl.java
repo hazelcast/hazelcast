@@ -21,10 +21,7 @@ import com.hazelcast.core.Instance;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.logging.ILogger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
@@ -139,6 +136,9 @@ public class TransactionImpl implements Transaction {
         status = TXN_STATUS_ROLLING_BACK;
         try {
             ThreadContext.get().setCurrentFactory(factory);
+            if (transactionRecords.size() > 1) {
+                Collections.reverse(transactionRecords);
+            }
             for (TransactionRecord transactionRecord : transactionRecords) {
                 transactionRecord.rollback();
             }

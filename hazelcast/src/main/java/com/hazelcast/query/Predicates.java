@@ -539,14 +539,14 @@ public final class Predicates {
                 result = "true".equalsIgnoreCase(value) ? true : false;
             } else if (type instanceof Integer) {
                 result = Integer.valueOf(value);
+            } else if (type instanceof Long) {
+                result = Long.valueOf(value);
             } else if (type instanceof Double) {
                 result = Double.valueOf(value);
             } else if (type instanceof Float) {
                 result = Float.valueOf(value);
             } else if (type instanceof Byte) {
                 result = Byte.valueOf(value);
-            } else if (type instanceof Long) {
-                result = Long.valueOf(value);
             } else {
                 throw new RuntimeException("Unknown type " + type + " value=" + value);
             }

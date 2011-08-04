@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.*;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
@@ -583,6 +584,47 @@ public class QueryTest extends TestUtil {
             Employee c = (Employee) entry.getValue();
             assertEquals(c.getAge(), 23);
             assertTrue(c.isActive());
+        }
+        assertTrue(tookWithIndex < (tookWithout / 2));
+    }
+
+    @Test
+    public void testNullIndexing() {
+        HazelcastInstance h1 = newInstance();
+        HazelcastInstance h2 = newInstance();
+        IMap imap1 = h1.getMap("employees");
+        IMap imap2 = h2.getMap("employees");
+        for (int i = 0; i < 5000; i++) {
+            imap1.put(String.valueOf(i), new Employee((i % 2 == 0) ? null : "name" + i, i % 60, true, Double.valueOf(i)));
+        }
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate predicate = e.is("active").and(e.get("name").equal(null));
+        long start = System.currentTimeMillis();
+        Set<Map.Entry> entries = imap2.entrySet(predicate);
+        long tookWithout = (System.currentTimeMillis() - start);
+        assertEquals(2500, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertNull(c.getName());
+        }
+        imap1.destroy();
+        imap1 = h1.getMap("employees2");
+        imap2 = h2.getMap("employees2");
+        imap1.addIndex("name", false);
+        imap1.addIndex("age", true);
+        imap1.addIndex("active", false);
+        for (int i = 0; i < 5000; i++) {
+            imap1.put(String.valueOf(i), new Employee((i % 2 == 0) ? null : "name" + i, i % 60, true, Double.valueOf(i)));
+        }
+        e = new PredicateBuilder().getEntryObject();
+        predicate = e.is("active").and(e.get("name").equal(null));
+        start = System.currentTimeMillis();
+        entries = imap2.entrySet(predicate);
+        long tookWithIndex = (System.currentTimeMillis() - start);
+        assertEquals(2500, entries.size());
+        for (Map.Entry entry : entries) {
+            Employee c = (Employee) entry.getValue();
+            assertNull(c.getName());
         }
         assertTrue(tookWithIndex < (tookWithout / 2));
     }

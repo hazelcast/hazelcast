@@ -43,6 +43,18 @@ public class EntryObject {
         return addPredicate(Predicates.equal(qb.exp, value));
     }
 
+    public PredicateBuilder notEqual(Object value) {
+        return addPredicate(Predicates.notEqual(qb.exp, value));
+    }
+
+    public PredicateBuilder isNull() {
+        return addPredicate(Predicates.equal(qb.exp, null));
+    }
+
+    public PredicateBuilder isNotNull() {
+        return addPredicate(Predicates.notEqual(qb.exp, null));
+    }
+
     public PredicateBuilder greaterThan(Comparable value) {
         return addPredicate(Predicates.greaterThan(qb.exp, value));
     }

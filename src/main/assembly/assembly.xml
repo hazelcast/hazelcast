@@ -65,10 +65,19 @@
 
         <fileSet>
             <directory>javadoc</directory>
-            <outputDirectory>/javadoc</outputDirectory>
+            <outputDirectory>docs/javadoc</outputDirectory>
             <excludes>
                 <exclude>**/.svn/**</exclude>
             </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast-documentation/target/docbook</directory>
+            <outputDirectory>docs/manual</outputDirectory>
+            <includes>
+                <include>pdf/hazelcast-documentation.pdf</include>
+                <include>single_html/**</include>
+                <include>multi_html/**</include>
+            </includes>
         </fileSet>
         <fileSet>
             <directory>src/main/resources/</directory>

@@ -18,19 +18,14 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.Transaction;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.*;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Queue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
@@ -404,6 +399,79 @@ public class ClusterQueueTest {
             String item = "item" + i;
             qNormal.offer(item);
             assertEquals(item, qSuper.poll());
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void storedQueueWithExistingItemsAndTransactionRollback() throws InterruptedException {
+        final ConcurrentMap<Long, String> STORE =
+                new ConcurrentHashMap<Long, String>();
+        STORE.put(1l, "Event1");
+        STORE.put(2l, "Event2");
+        STORE.put(3l, "Event3");
+        STORE.put(4l, "Event4");
+        STORE.put(5l, "Event5");
+        STORE.put(6l, "Event6");
+        final CountDownLatch latch = new CountDownLatch(1);
+        Config config = new Config();
+        config
+                .getMapConfig("queue-map")
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setWriteDelaySeconds(1)
+                        .setImplementation(new MapStore<Long, String>() {
+                            public String load(Long key) {
+                                return STORE.get(key);
+                            }
+
+                            public Map<Long, String> loadAll(Collection<Long> keys) {
+                                Map<Long, String> result = new HashMap<Long, String>();
+                                for (Long key : keys) {
+                                    String value = load(key);
+                                    if (value != null) {
+                                        result.put(key, value);
+                                    }
+                                }
+                                return result;
+                            }
+
+                            public Set<Long> loadAllKeys() {
+                                return STORE.keySet();
+                            }
+
+                            public void store(Long key, String value) {
+                                latch.countDown();
+                            }
+
+                            public void storeAll(Map<Long, String> map) {
+                                for (Map.Entry<Long, String> entry : map.entrySet()) {
+                                    store(entry.getKey(), entry.getValue());
+                                }
+                            }
+
+                            public void delete(Long key) {
+                                STORE.remove(key);
+                            }
+
+                            public void deleteAll(Collection<Long> keys) {
+                                for (Long key : STORE.keySet()) {
+                                    delete(key);
+                                }
+                            }
+                        }));
+        config.getQueueConfig("tasks").setBackingMapRef("queue-map");
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        IQueue q = h.getQueue("tasks");
+        assertEquals(STORE.size(), q.size());
+        Transaction t = h.getTransaction();
+        t.begin();
+        assertEquals(STORE.get(1l), q.poll());
+        assertEquals(STORE.get(2l), q.take());
+        t.rollback();
+        assertFalse(latch.await(10, TimeUnit.SECONDS));
+        assertEquals(6, STORE.size());
+        assertEquals(6, q.size());
+        for (int i = 1; i < 7; i++) {
+            assertEquals("Event" + i, q.poll());
         }
     }
 }
