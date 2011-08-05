@@ -20,7 +20,6 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.UnboundedBlockingQueue;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -31,12 +30,13 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 
 public class MulticastService implements Runnable {
 
     private final ILogger logger;
-    private final BlockingQueue<Runnable> queue = new UnboundedBlockingQueue<Runnable>();
+    private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
     private final MulticastSocket multicastSocket;
     private final DatagramPacket datagramPacketSend;
     private final DatagramPacket datagramPacketReceive;

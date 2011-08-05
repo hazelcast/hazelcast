@@ -29,8 +29,11 @@ import static com.hazelcast.nio.IOUtil.toData;
 
 public class TopicManager extends BaseManager {
 
+    final boolean FLOW_CONTROL_ENABLED;
+
     TopicManager(Node node) {
         super(node);
+        FLOW_CONTROL_ENABLED = node.getGroupProperties().TOPIC_FLOW_CONTROL_ENABLED.getBoolean();
     }
 
     Map<String, TopicInstance> mapTopics = new HashMap<String, TopicInstance>();
@@ -79,10 +82,17 @@ public class TopicManager extends BaseManager {
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
-        while (node.outSelector.getWriteQueueSize() > 100) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException ignored) {
+        if (FLOW_CONTROL_ENABLED) {
+            int loopCount = 0;
+            while (node.outSelector.getWriteQueueSize() > 10000) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException ignored) {
+                }
+                if (loopCount++ > 100) {
+                    node.outSelector.resetWriteQueueSize();
+                    loopCount = 0;
+                }
             }
         }
         enqueueAndReturn(new TopicPublishProcess(name, dataMsg));

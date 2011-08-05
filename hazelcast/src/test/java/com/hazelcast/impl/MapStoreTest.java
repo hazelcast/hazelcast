@@ -38,7 +38,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.nio.IOUtil.toData;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
-import static org.junit.Assert.*;
+import static junit.framework.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class MapStoreTest extends TestUtil {
 
@@ -289,6 +292,7 @@ public class MapStoreTest extends TestUtil {
         testMapStore.insert("3", employee);
         testMapStore.insert("4", employee);
         testMapStore.insert("5", employee);
+        testMapStore.insert("6", employee);
         IMap map = h1.getMap("default");
         map.addIndex("name", false);
         assertEquals(0, map.size());
@@ -315,8 +319,14 @@ public class MapStoreTest extends TestUtil {
         assertEquals(employee, map.remove("4"));
         assertEquals(employee, map.tryLockAndGet("5", 1, TimeUnit.SECONDS));
         assertEquals(employee, map.remove("5"));
-        assertNull(map.get("6"));
-        assertFalse(map.containsKey("6"));
+        assertEquals(employee, map.putIfAbsent("6", newEmployee));
+        assertEquals(employee, map.get("6"));
+        assertEquals(employee, testMapStore.getStore().get("6"));
+        assertNull(map.get("7"));
+        assertFalse(map.containsKey("7"));
+        assertNull(map.putIfAbsent("7", employee));
+        assertEquals(employee, map.get("7"));
+        assertEquals(employee, testMapStore.getStore().get("7"));
     }
 
     @Test

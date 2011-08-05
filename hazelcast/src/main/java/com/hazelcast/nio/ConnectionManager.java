@@ -188,6 +188,16 @@ public class ConnectionManager {
         start();
     }
 
+    public int getTotalWriteQueueSize() {
+        int count = 0;
+        for (Connection conn : mapConnections.values()) {
+            if (conn.live()) {
+                count += conn.getWriteHandler().size();
+            }
+        }
+        return count;
+    }
+
     public void shutdown() {
         live = false;
         for (Connection conn : mapConnections.values()) {

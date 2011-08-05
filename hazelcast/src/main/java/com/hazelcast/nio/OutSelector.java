@@ -49,6 +49,10 @@ public final class OutSelector extends SelectorBase {
         return writeQueueSize.get();
     }
 
+    public void resetWriteQueueSize() {
+        writeQueueSize.set(node.connectionManager.getTotalWriteQueueSize());
+    }
+
     private class Connector implements Runnable, SelectionHandler {
         final Address address;
 

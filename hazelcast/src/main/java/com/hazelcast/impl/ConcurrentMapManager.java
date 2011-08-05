@@ -586,8 +586,8 @@ public class ConcurrentMapManager extends BaseManager {
         mput.putTransient(name, key, value, timeout, ttl);
     }
 
-    void putTransient(Request request) {
-        MPut mput = new MPut();
+    void putTransientAsync(Request request) {
+        final MPut mput = new MPut();
         mput.request.key = request.key;
         mput.request.value = request.value;
         mput.request.timeout = 0;
@@ -599,11 +599,15 @@ public class ConcurrentMapManager extends BaseManager {
         mput.request.operation = CONCURRENT_MAP_PUT_TRANSIENT;
         mput.request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
         request.setBooleanRequest();
-        mput.doOp();
-        boolean success = mput.getResultAsBoolean();
-        if (success) {
-            mput.backup(CONCURRENT_MAP_BACKUP_PUT);
-        }
+        node.executorManager.executeNow(new Runnable() {
+            public void run() {
+                mput.doOp();
+                boolean success = mput.getResultAsBoolean();
+                if (success) {
+                    mput.backup(CONCURRENT_MAP_BACKUP_PUT);
+                }
+            }
+        });
     }
 
     Map getAll(String name, Set keys) {
@@ -2206,7 +2210,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class RemoveItemOperationHandler extends StoreAwareOperationHandler {
+    class RemoveItemOperationHandler extends RemoveOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.removeItem(request);
@@ -2645,9 +2649,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (value != null) {
                     setIndexValues(request, value);
                     request.value = toData(value);
-                }
-                if (request.value != null) {
-                    putTransient(request);
+                    putTransientAsync(request);
                 } else {
                     success = false;
                 }
@@ -2945,7 +2947,7 @@ public class ConcurrentMapManager extends BaseManager {
                     setIndexValues(request, value);
                     request.value = toData(value);
                 }
-                putTransient(request);
+                putTransientAsync(request);
             } else if (request.operation == CONCURRENT_MAP_PUT || request.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
                 //store the entry
                 Object key = toObject(request.key);
