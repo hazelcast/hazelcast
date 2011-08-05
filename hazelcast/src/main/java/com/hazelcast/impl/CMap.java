@@ -1150,7 +1150,7 @@ public class CMap {
                 if (owner != null && !partition.isMigrating()) {
                     boolean owned = owner.localMember();
                     if (owned) {
-                        if (record.getLastStoredTime() < Math.max(record.getLastUpdateTime(), record.getCreationTime())) {
+                        if (store != null && record.getLastStoredTime() < Math.max(record.getLastUpdateTime(), record.getCreationTime())) {
                             dirtyCount++;
                         }
                         ownedEntryCount += record.valueCount();
