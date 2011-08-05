@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static org.junit.Assert.*;
 
 public class MapStoreTest extends TestUtil {
@@ -314,6 +315,8 @@ public class MapStoreTest extends TestUtil {
         assertEquals(employee, map.remove("4"));
         assertEquals(employee, map.tryLockAndGet("5", 1, TimeUnit.SECONDS));
         assertEquals(employee, map.remove("5"));
+        assertNull(map.get("6"));
+        assertFalse(map.containsKey("6"));
     }
 
     @Test

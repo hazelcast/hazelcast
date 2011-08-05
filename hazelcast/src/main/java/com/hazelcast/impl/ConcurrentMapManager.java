@@ -2646,7 +2646,11 @@ public class ConcurrentMapManager extends BaseManager {
                     setIndexValues(request, value);
                     request.value = toData(value);
                 }
-                putTransient(request);
+                if (request.value != null) {
+                    putTransient(request);
+                } else {
+                    success = false;
+                }
             }
 
             public void process() {

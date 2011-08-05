@@ -67,14 +67,6 @@ public class MapConfigTest {
     }
 
     /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setBackupCount(int)}.
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetBackupCountUpperLimit() {
-        new MapConfig().setBackupCount(MapConfig.MAX_BACKUP_COUNT + 1);
-    }
-
-    /**
      * Test method for {@link com.hazelcast.config.MapConfig#getEvictionPercentage()}.
      */
     @Test
