@@ -141,8 +141,8 @@ public class ClientService implements ConnectionListener {
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
-        if(clientOperationHandler == null) {
-        	clientOperationHandler = unknownOperationHandler;
+        if (clientOperationHandler == null) {
+            clientOperationHandler = unknownOperationHandler;
         }
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandler);
         clientEndpoint.addRequest(clientRequestHandler);
@@ -218,7 +218,7 @@ public class ClientService implements ConnectionListener {
     }
 
     public void connectionRemoved(final Connection connection) {
-        final ClientEndpoint clientEndpoint = mapClientEndpoints.remove(connection);
+        final ClientEndpoint clientEndpoint = removeClientEndpoint(connection);
         if (clientEndpoint != null) {
             node.executorManager.executeNow(new FallThroughRunnable() {
                 public void doRun() {
@@ -226,6 +226,10 @@ public class ClientService implements ConnectionListener {
                 }
             });
         }
+    }
+
+    ClientEndpoint removeClientEndpoint(final Connection connection) {
+        return mapClientEndpoints.remove(connection);
     }
 
     private class QueueOfferHandler extends ClientQueueOperationHandler {
@@ -588,7 +592,7 @@ public class ClientService implements ConnectionListener {
         }
     }
 
-    private class ClientAuthenticateHandler extends ClientOperationHandler {
+    class ClientAuthenticateHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             String nodeGroupName = node.factory.getConfig().getGroupConfig().getName();
             String nodeGroupPassword = node.factory.getConfig().getGroupConfig().getPassword();
@@ -601,6 +605,14 @@ public class ClientService implements ConnectionListener {
                     "successfully authenticated" : "authentication failed"));
             packet.clearForResponse();
             packet.setValue(toData(authenticated));
+        }
+
+        @Override
+        public void postHandle(Packet packet) {
+            boolean authenticated = (Boolean) toObject(packet.getValueData());
+            if (!authenticated) {
+                node.clientService.removeClientEndpoint(packet.conn);
+            }
         }
     }
 
@@ -1191,7 +1203,7 @@ public class ClientService implements ConnectionListener {
             packet.setValue(value);
         }
     }
-    
+
     public abstract class ClientOperationHandler {
         public abstract void processCall(Node node, Packet packet);
 
@@ -1217,18 +1229,20 @@ public class ClientService implements ConnectionListener {
                 logger.log(Level.WARNING, "unable to send response " + request);
             }
         }
+
+        public void postHandle(Packet packet) {
+        }
     }
-    
+
     private final class UnknownClientOperationHandler extends ClientOperationHandler {
-		public void processCall(Node node, Packet packet) {
-			final String error = "Unknown Client Operation, can not handle " + packet.operation; 
-			if(node.isActive()) {
-				throw new RuntimeException(error);
-			}
-			else {
-				logger.log(Level.WARNING, error);
-			}
-		}
+        public void processCall(Node node, Packet packet) {
+            final String error = "Unknown Client Operation, can not handle " + packet.operation;
+            if (node.isActive()) {
+                throw new RuntimeException(error);
+            } else {
+                logger.log(Level.WARNING, error);
+            }
+        }
     }
 
     private abstract class ClientMapOperationHandler extends ClientOperationHandler {

@@ -43,21 +43,14 @@ public class ClientRequestHandler extends FallThroughRunnable {
     public void doRun() {
         runningThread = Thread.currentThread();
         ThreadContext.get().setCallContext(callContext);
-        if (clientOperationHandler != null) {
-            try {
-                clientOperationHandler.handle(node, packet);
-                node.clientService.getClientEndpoint(packet.conn).removeRequest(this);
-            } catch (Throwable e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-                if (node.isActive()) {
-                    throw (RuntimeException) e;
-                }
-            }
-        } else {
-        	final String error = "Unknown Client Operation, can not handle " + packet.operation;
-        	logger.log(Level.WARNING, error);
+        try {
+            clientOperationHandler.handle(node, packet);
+            node.clientService.getClientEndpoint(packet.conn).removeRequest(this);
+            clientOperationHandler.postHandle(packet);
+        } catch (Throwable e) {
+            logger.log(Level.WARNING, e.getMessage(), e);
             if (node.isActive()) {
-                throw new RuntimeException(error);
+                throw (RuntimeException) e;
             }
         }
     }
