@@ -1,220 +1,150 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 id="InternalsThreads" version='5.0' xmlns='http://docbook.org/ns/docbook'
-       xmlns:xlink='http://www.w3.org/1999/xlink'
-       xmlns:xi='http://www.w3.org/2001/XInclude'
-       xmlns:ns5='http://www.w3.org/2000/svg'
-       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
-       xmlns:ns3='http://www.w3.org/1999/xhtml'
-       xmlns:db='http://docbook.org/ns/docbook'>
+<sect1 id="InternalsThreads" version="5.0" xmlns="http://docbook.org/ns/docbook"
+    xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:ns5="http://www.w3.org/2000/svg" xmlns:ns4="http://www.w3.org/1998/Math/MathML"
+    xmlns:ns3="http://www.w3.org/1999/xhtml" xmlns:db="http://docbook.org/ns/docbook">
     <title>Internals 1: Threads</title>
-    <para>In this section, we will go over the Hazelcast's internal threads, the client threads executing Hazelcast API
-        and how these threads work together in Hazelcast. When developing Hazelcast, you should know which thread will
-        execute your code, which variables are local to that thread, and how you should interact with other threads.
-
-        1. Client Threads:
-
-        Client threads are your threads, user's application threads, and or user's application/web server's threads that
-        are executing Hazelcast API. User's threads that are client to Hazelcast.
-        For example,
-        <literal>Hazelcast.getQueue("myqueue"), map.put(key, value), set.size()</literal>
-        calls are initiated and
-        finalized in the client threads. Serialization of the objects also happens in the client threads.
-        This also eliminates the problems associated with classloaders. Client threads initiate the calls,
-        serialize the objects into Hazelcast
-        <literal>com.hazelcast.nio.Data</literal>
-        object which holds a<literal>java.nio.ByteBuffer</literal>.
-        `Data` object is the binary representation of the application objects (key, value, item, callable objects).
-        All Hazelcast threads such as<literal>ServiceThread</literal>,
-        <literal>InThread</literal>
-        and
-        <literal>OutThread</literal>
-        work with
-        <literal>Data</literal>
-        objects; they don't
-        know anything about the actual application objects. When the calls are finalized, if the return type is an
-        object,
-        `Data` object is returned to the client thread and client thread then will deserialize the `Data` (binary
-        representation)
-        back to the application objects.
-
-        For each client thread, there is a
-        <literal>com.hazelcast.impl.ThreadContext</literal>
-        thread-local instance attached which contains thread context information such as transaction.
-
-        2.<literal>ServiceThread</literal>:
-
-        `ServiceThread`, implemented at `com.hazelcast.impl.ClusterService`, is the most significant thread in
-        Hazelcast. Almost all none-IO operations happens in this thread. `ServiceThread` serves to local client calls
-        and the calls from other members.
-
-        If you look at the
-        <literal>ClusterService</literal>
-        class you will see it is constantly dequeueing its queue and processing local and remote events.
-        <literal>ClusterService</literal>
-        queue receives local events in the form of
-        <literal>com.hazelcast.impl.BaseManager.Processable</literal>
-        instances and remote events in the form of
-        <literal>com.hazelcast.nio.PacketQueue.Packet</literal>
-        instances from<literal>InThread</literal>.
-
-        All distributed data structures (queue, map, set) are eventually modified in this thread so there is -no-
-        synchronization needed when data structures are accessed/modified.
-
-        It is important to understand that client threads initiates/finalizes the calls, in/out threads handles the
-        socket read/writes and
-        <literal>ServiceThread</literal>
-        does the actually manipulation of the data structures. There is no other threads allowed to touch the data
-        structures (maps, queues) so that there is no need to protect the data structures from multithread access: no
-        synchronization when accessing data structures.
-        It may sound inefficient to allow only one thread to do all data structure updates but here is the logic behind
-        it (Please note that numbers given here are not exact but should give you an idea.): If there is only one member
-        (no IO),
-        <literal>ServiceThread</literal>
-        utilization will be about 95% and it will process between 30K and 120K operations per second, depending on the
-        server. As the number of members in the cluster increases, IO Threads will be using more CPU and eventually
-        <literal>ServiceThread</literal>
-        will go down to 35% CPU utilization so
-        <literal>ServiceThread</literal>
-        will process between 10K and 40K operations per second.
-        <literal>ServiceThread</literal>
-        CPU utilization will be at about 35% regardless of the size of the cluster. (The only thing that can affect that
-        would be the network utilization.) This also means that total number of operations processed by the entire
-        cluster will be between N*10K and N*40K; N being the number of nodes in the cluster. About half of these
-        operations will be backup operations (assuming one backup) so client threads will realize between N*5K and N*20K
-        operations per second in total. Since there is only one thread accessing the data structures, increase in the
-        number of nodes doesn't create any contention so access to the data structures will be always at the same speed.
-        This is very important for Hazelcast's scalability.
-
-        This also makes writing code super easy because significant portion of the code is actually single-threaded so
-        it is less error-prone and easily maintainable.
-
-        No synchronization or long running jobs are allowed in this thread. All operations running in this thread have
-        to complete in microseconds.
-
-        3.
-        <literal>InThread</literal>
-        and<literal>OutThread</literal>:
-
-        Hazelcast separates reads and writes by having two separate threads; one for reading, and the other for writing.
-        Eache IO thread uses its own
-        <literal>NIO</literal>
-        selector instance.
-        <literal>InThread</literal>
-        handles
-        <literal>OP_ACCEPT</literal>
-        and
-        <literal>OP_READ</literal>
-        socket operations while
-        <literal>OutThread</literal>
-        handles
-        <literal>OP_CONNECT</literal>
-        and
-        <literal>OP_WRITE</literal>
-        operations.
-
-        Each thread has its queue that they dequeue to register these operations with their selectors so operation
-        registrations and operation processing happens in the same threads.
-
-        `InThread`'s runnable is the `com.hazelcast.nio.InSelector` and `OutThread`'s runnable is the
-        `com.hazelcast.nio.OutSelector`. They both extends `SelectorBase` which constantly processes its registration
-        queue ('selectorQueue') and the selectedKeys.
-
-        Members are connected to each other via<literal>TCP/IP</literal>. If there are N number of members in the
-        cluster then there will be
-        <literal>N*(N-1)</literal>
-        connection end point and
-        <literal>(N*(N-1))/2</literal>
-        connections. There can be only one connection between two members, meaning, if m2 creates a connection to m1, m1
-        doesn't create another connection to m2 and the rule here is that new members connect to the older members.
-
-        If you look at the<literal>com.hazelcast.nio.Connection</literal>, you will see that each connection is
-        representing a socket channel and has
-        <literal>com.hazelcast.nio.ReadHandler</literal>
-        and
-        <literal>WriteHandler</literal>
-        instances which are attached to the socket channel's
-        <literal>OP_READ</literal>
-        and
-        <literal>OP_WRITE</literal>
-        operation selectionKeys respectively. When
-        <literal>InSelector</literal>
-        selects
-        <literal>OP_READ</literal>
-        selection key (when this operation is ready for the selector),
-        <literal>InSelector</literal>
-        will get the attached
-        <literal>ReadHandler</literal>
-        instance from the selectionKey and call its
-        <literal>ReadHandler.handle()</literal>
-        method. Same for the<literal>OutSelector</literal>. When
-        <literal>OutSelector</literal>
-        selects
-        <literal>OP_WRITE</literal>
-        selection key (when this operation is ready for the selector),
-        <literal>OutSelector</literal>
-        will get the attached
-        <literal>WriteHandler</literal>
-        instance from the selectionKey and call its
-        <literal>WriteHandler.handle()</literal>
-        method.
-
-        When
-        <literal>ServiceThread</literal>
-        wants to send an Invocation instance to a member, it will
-
-        # get the Connection for this member by calling
-        <literal>com.hazelcast.nio.ConnectionManager.get().getConnection(address)</literal>
-        # check if the connection is live; Connection.live()
-        # if live, it will get the
-        <literal>WriteHandler</literal>
-        instance of the Connection
-        # enqueue the invocation into the<literal>WriteHandler</literal>'s queue
-        # and add registration task into<literal>OutSelector</literal>'s queue, if necessary
-        #
-        <literal>OutSelector</literal>
-        processes the
-        <literal>OP_WRITE</literal>
-        operation registration with its selector
-        # when the selector is ready for the
-        <literal>OP_WRITE</literal>
-        operation,
-        <literal>OutSelector</literal>
-        will
-        get the
-        <literal>WriteHandler</literal>
-        instance from selectionKey and call its<literal>WriteHandler.handle()</literal>.
-
-        see<literal>com.hazelcast.impl.BaseManager.send(Packet, Address)</literal>.
-        see<literal>com.hazelcast.nio.SelectorBase.run()</literal>.
-
-        Connections are always registered/interested for
-        <literal>OP_READ</literal>
-        operations. When
-        <literal>InSelector</literal>
-        is ready for
-        reading from a socket channel, it will get the
-        <literal>ReadHandler</literal>
-        instance from the selectionKey and call its handle() method. handle() method will read Invocation instances from
-        the underlying socket and when an Invocation instance is fully read,
-        it will enqueue it into<literal>ServiceThread</literal>'s (`ClusterService` class) queue to be processed.
-
-        4.<literal>MulticastThread</literal>:
-
-        If multicast discovery is enabled (this is the default), and node is the master (oldest member) in the cluster
-        then
-        <literal>MulticastThread</literal>
-        is started to listen for join requests from the new members. When it receives join request
-        (`com.hazelcast.nio.MulticastService.JoinInfo` class), it will check if the node is allowed to join, if so, it
-        will send its address to the sender so that the sender node can create a
-        <literal>TCP/IP</literal>
-        connection to the master and send a<literal>JoinRequest</literal>.
-
-        5. Executor Threads:
-
-        Each node employs a local
-        <literal>ExecutorService</literal>
-        threads which handle the event listener calls and distributed executions. Number of core and max threads can be
-        configured.
-
+    <para>In this section, we will go over the Hazelcast's internal threads, the client threads
+        executing Hazelcast API and how these threads work together in Hazelcast. When developing
+        Hazelcast, you should know which thread will execute your code, which variables are local to
+        that thread, and how you should interact with other threads. </para>
+    <para><emphasis role="bold">1. Client Threads:</emphasis>
     </para>
+    <para>Client threads are your threads, user's application threads, and or user's application/web
+        server's threads that are executing Hazelcast API. User's threads that are client to
+        Hazelcast. For example, <literal>Hazelcast.getQueue("myqueue"), map.put(key, value),
+            set.size()</literal> calls are initiated and finalized in the client threads.
+        Serialization of the objects also happens in the client threads. This also eliminates the
+        problems associated with classloaders. Client threads initiate the calls, serialize the
+        objects into Hazelcast <literal>com.hazelcast.nio.Data</literal> object which holds
+            a<literal>java.nio.ByteBuffer</literal>. `Data` object is the binary representation of
+        the application objects (key, value, item, callable objects). All Hazelcast threads such
+            as<literal>ServiceThread</literal>, <literal>InThread</literal> and
+            <literal>OutThread</literal> work with <literal>Data</literal> objects; they don't know
+        anything about the actual application objects. When the calls are finalized, if the return
+        type is an object, `Data` object is returned to the client thread and client thread then
+        will deserialize the `Data` (binary representation) back to the application objects. </para>
+    <para>For each client thread, there is a <literal>com.hazelcast.impl.ThreadContext</literal>
+        thread-local instance attached which contains thread context information such as
+        transaction. </para>
+    <para><emphasis role="bold">2. <literal>ServiceThread</literal>:</emphasis></para>
+    <para>`ServiceThread`, implemented at `com.hazelcast.impl.ClusterService`, is the most
+        significant thread in Hazelcast. Almost all none-IO operations happens in this thread.
+        `ServiceThread` serves to local client calls and the calls from other members. </para>
+    <para>If you look at the <literal>ClusterService</literal> class you will see it is constantly
+        dequeueing its queue and processing local and remote events.
+            <literal>ClusterService</literal> queue receives local events in the form of
+            <literal>com.hazelcast.impl.BaseManager.Processable</literal> instances and remote
+        events in the form of <literal>com.hazelcast.nio.PacketQueue.Packet</literal> instances
+            from<literal>InThread</literal>. </para>
+    <para>All distributed data structures (queue, map, set) are eventually modified in this thread
+        so there is -no- synchronization needed when data structures are accessed/modified. </para>
+    <para>It is important to understand that client threads initiates/finalizes the calls, in/out
+        threads handles the socket read/writes and <literal>ServiceThread</literal> does the
+        actually manipulation of the data structures. There is no other threads allowed to touch the
+        data structures (maps, queues) so that there is no need to protect the data structures from
+        multithread access: no synchronization when accessing data structures. It may sound
+        inefficient to allow only one thread to do all data structure updates but here is the logic
+        behind it (Please note that numbers given here are not exact but should give you an idea.):
+        If there is only one member (no IO), <literal>ServiceThread</literal> utilization will be
+        about 95% and it will process between 30K and 120K operations per second, depending on the
+        server. As the number of members in the cluster increases, IO Threads will be using more CPU
+        and eventually <literal>ServiceThread</literal> will go down to 35% CPU utilization so
+            <literal>ServiceThread</literal> will process between 10K and 40K operations per second.
+            <literal>ServiceThread</literal> CPU utilization will be at about 35% regardless of the
+        size of the cluster. (The only thing that can affect that would be the network utilization.)
+        This also means that total number of operations processed by the entire cluster will be
+        between N*10K and N*40K; N being the number of nodes in the cluster. About half of these
+        operations will be backup operations (assuming one backup) so client threads will realize
+        between N*5K and N*20K operations per second in total. Since there is only one thread
+        accessing the data structures, increase in the number of nodes doesn't create any contention
+        so access to the data structures will be always at the same speed. This is very important
+        for Hazelcast's scalability. </para>
+    <para>This also makes writing code super easy because significant portion of the code is
+        actually single-threaded so it is less error-prone and easily maintainable. </para>
+    <para>No synchronization or long running jobs are allowed in this thread. All operations running
+        in this thread have to complete in microseconds. </para>
+    <para><emphasis role="bold">3. <literal>InThread</literal> and<literal>OutThread</literal>:
+        </emphasis></para>
+    <para>Hazelcast separates reads and writes by having two separate threads; one for reading, and
+        the other for writing. Eache IO thread uses its own <literal>NIO</literal> selector
+        instance. <literal>InThread</literal> handles <literal>OP_ACCEPT</literal> and
+            <literal>OP_READ</literal> socket operations while <literal>OutThread</literal> handles
+            <literal>OP_CONNECT</literal> and <literal>OP_WRITE</literal> operations. </para>
+    <para>Each thread has its queue that they dequeue to register these operations with their
+        selectors so operation registrations and operation processing happens in the same threads. </para>
+    <para>`InThread`'s runnable is the `com.hazelcast.nio.InSelector` and `OutThread`'s runnable is
+        the `com.hazelcast.nio.OutSelector`. They both extends `SelectorBase` which constantly
+        processes its registration queue ('selectorQueue') and the selectedKeys. </para>
+    <para>Members are connected to each other via<literal>TCP/IP</literal>. If there are N number of
+        members in the cluster then there will be <literal>N*(N-1)</literal> connection end point
+        and <literal>(N*(N-1))/2</literal> connections. There can be only one connection between two
+        members, meaning, if m2 creates a connection to m1, m1 doesn't create another connection to
+        m2 and the rule here is that new members connect to the older members. </para>
+    <para>If you look at the<literal>com.hazelcast.nio.Connection</literal>, you will see that each
+        connection is representing a socket channel and has
+            <literal>com.hazelcast.nio.ReadHandler</literal> and <literal>WriteHandler</literal>
+        instances which are attached to the socket channel's <literal>OP_READ</literal> and
+            <literal>OP_WRITE</literal> operation selectionKeys respectively. When
+            <literal>InSelector</literal> selects <literal>OP_READ</literal> selection key (when
+        this operation is ready for the selector), <literal>InSelector</literal> will get the
+        attached <literal>ReadHandler</literal> instance from the selectionKey and call its
+            <literal>ReadHandler.handle()</literal> method. Same for
+            the<literal>OutSelector</literal>. When <literal>OutSelector</literal> selects
+            <literal>OP_WRITE</literal> selection key (when this operation is ready for the
+        selector), <literal>OutSelector</literal> will get the attached
+            <literal>WriteHandler</literal> instance from the selectionKey and call its
+            <literal>WriteHandler.handle()</literal> method. </para>
+    <para>When <literal>ServiceThread</literal> wants to send an Invocation instance to a member, it
+        will <orderedlist>
+            <listitem>
+                <para>get the Connection for this member by calling
+                        <literal>com.hazelcast.nio.ConnectionManager.get().getConnection(address)</literal></para>
+            </listitem>
+            <listitem>
+                <para>check if the connection is live; Connection.live()</para>
+            </listitem>
+            <listitem>
+                <para>if live, it will get the <literal>WriteHandler</literal> instance of the
+                    Connection</para>
+            </listitem>
+            <listitem>
+                <para>enqueue the invocation into the<literal>WriteHandler</literal>'s queue</para>
+            </listitem>
+            <listitem>
+                <para>and add registration task into<literal>OutSelector</literal>'s queue, if
+                    necessary</para>
+            </listitem>
+            <listitem>
+                <para><literal>OutSelector</literal> processes the <literal>OP_WRITE</literal>
+                    operation registration with its selector </para>
+            </listitem>
+            <listitem>
+                <para>when the selector is ready for the <literal>OP_WRITE</literal> operation,
+                        <literal>OutSelector</literal> will get the <literal>WriteHandler</literal>
+                    instance from selectionKey and call
+                    its<literal>WriteHandler.handle()</literal></para>
+            </listitem>
+        </orderedlist>see<literal>com.hazelcast.impl.BaseManager.send(Packet, Address)</literal>. </para>
+    <para>see<literal>com.hazelcast.nio.SelectorBase.run()</literal>. </para>
+    <para>Connections are always registered/interested for <literal>OP_READ</literal> operations.
+        When <literal>InSelector</literal> is ready for reading from a socket channel, it will get
+        the <literal>ReadHandler</literal> instance from the selectionKey and call its handle()
+        method. handle() method will read Invocation instances from the underlying socket and when
+        an Invocation instance is fully read, it will enqueue it
+            into<literal>ServiceThread</literal>'s (`ClusterService` class) queue to be processed. </para>
+    <para><emphasis role="bold">4.<literal>MulticastThread</literal>: </emphasis></para>
+    <para>If multicast discovery is enabled (this is the default), and node is the master (oldest
+        member) in the cluster then <literal>MulticastThread</literal> is started to listen for join
+        requests from the new members. When it receives join request
+        (`com.hazelcast.nio.MulticastService.JoinInfo` class), it will check if the node is allowed
+        to join, if so, it will send its address to the sender so that the sender node can create a
+            <literal>TCP/IP</literal> connection to the master and send
+            a<literal>JoinRequest</literal>. </para>
+  
+    <para><emphasis role="bold">5. Executor Threads:</emphasis></para>
+    
+    <para>Each node employs a local <literal>ExecutorService</literal> threads which handle the
+        event listener calls and distributed executions. Number of core and max threads can be
+        configured. </para>
 </sect1>
