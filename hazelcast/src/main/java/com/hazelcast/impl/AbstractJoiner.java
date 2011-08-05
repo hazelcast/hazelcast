@@ -27,12 +27,14 @@ import com.hazelcast.nio.Connection;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public abstract class AbstractJoiner implements Joiner {
     protected final Config config;
     protected final Node node;
     protected volatile ILogger logger;
+    private final AtomicInteger tryCount = new AtomicInteger(0);
 
     public AbstractJoiner(Node node) {
         this.node = node;
@@ -50,6 +52,9 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private void postJoin() {
+        if (tryCount.incrementAndGet() == 5) {
+            node.setAsMaster();
+        }
         if (!node.isMaster()) {
             boolean allConnected = false;
             int checkCount = 0;
@@ -70,7 +75,7 @@ public abstract class AbstractJoiner implements Joiner {
                 }
             }
             if (!node.joined() || !allConnected) {
-                logger.log(Level.WARNING, "Failed to connect, node joined " + node.joined() + ", allconnected " + allConnected + " to all other members after " + checkCount + " seconds.");
+                logger.log(Level.WARNING, "Failed to connect, node joined= " + node.joined() + ", allConnected= " + allConnected + " to all other members after " + checkCount + " seconds.");
                 logger.log(Level.WARNING, "Rebooting after 10 seconds.");
                 try {
                     Thread.sleep(10000);
