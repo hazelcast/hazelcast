@@ -83,7 +83,7 @@
     To install Hazelcast:
     <itemizedlist>
         <listitem>
-            <para>Download hazelcast-_version_.zip from www.hazelcast.com
+            <para>Download hazelcast-_version_.zip from <ulink url="www.hazelcast.com">www.hazelcast.com</ulink>
             </para>
         </listitem>
         <listitem>

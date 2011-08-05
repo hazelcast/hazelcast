@@ -7,67 +7,48 @@
        xmlns:ns3='http://www.w3.org/1999/xhtml'
        xmlns:db='http://docbook.org/ns/docbook'>
     <title>Planned Features</title>
-    <para>*Planned Features*
-        Random order of planned features.
-        <itemizedlist>
+    <para>Random order of planned features. <itemizedlist>
             <listitem>
-                <para>Native C# Client
+                <para>Native C# Client </para>
+            </listitem>
+            <listitem>
+                <para>Native C++ Client </para>
+            </listitem>
+            <listitem>
+                <para>Ready-to-go Hazelcast Cache Server Image for Amazon EC2 </para>
+            </listitem>
+            <listitem>
+                <para>Symmetric Encryption support for Java Client </para>
+            </listitem>
+            <listitem>
+                <para>Continuous query (events based on given criteria) </para>
+            </listitem>
+            <listitem>
+                <para>Distributed <literal>java.util.concurrent.DelayQueue</literal> implementation.
                 </para>
             </listitem>
             <listitem>
-                <para>Native C++ Client
-                </para>
+                <para>Distributed <literal>java.util.concurrent.CountDownLatch</literal>
+                    implementation. </para>
             </listitem>
             <listitem>
-                <para>Ready-to-go Hazelcast Cache Server Image for Amazon EC2
-                </para>
+                <para>Cluster-wide receive ordering for topics. </para>
             </listitem>
             <listitem>
-                <para>Symmetric Encryption support for Java Client
-                </para>
+                <para>Security (JAAS). </para>
             </listitem>
             <listitem>
-                <para>Continuous query (events based on given criteria)
-                </para>
+                <para>Distributed Tree implementation. </para>
             </listitem>
             <listitem>
-                <para>Distributed
-                    <literal>java.util.concurrent.DelayQueue</literal>
-                    implementation.
-                </para>
+                <para>Distributed Tuple implementation. </para>
             </listitem>
             <listitem>
-                <para>Distributed
-                    <literal>java.util.concurrent.CountDownLatch</literal>
-                    implementation.
-                </para>
+                <para>Call interceptors for modifying the request or the response. </para>
             </listitem>
             <listitem>
-                <para>Cluster-wide receive ordering for topics.
-                </para>
+                <para>Built-in file based storage. </para>
             </listitem>
-            <listitem>
-                <para>Security (JAAS).
-                </para>
-            </listitem>
-            <listitem>
-                <para>Distributed Tree implementation.
-                </para>
-            </listitem>
-            <listitem>
-                <para>Distributed Tuple implementation.
-                </para>
-            </listitem>
-            <listitem>
-                <para>Call interceptors for modifying the request or the response.
-                </para>
-            </listitem>
-            <listitem>
-                <para>Built-in file based storage.
-                </para>
-            </listitem>
-        </itemizedlist>
-        History of existing features is available at <link linkend="ReleaseNotes">Release Notes</link>.
-
-    </para>
+        </itemizedlist> History of existing features is available at <link linkend="ReleaseNotes"
+            >Release Notes</link>. </para>
 </sect1>

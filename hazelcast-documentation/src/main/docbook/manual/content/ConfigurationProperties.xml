@@ -41,390 +41,395 @@ cfg.setProperty("hazelcast.property.foo", "value");
 				<para>
 					<orderedlist>
 						<listitem>
-							Using JVM parameter:
-							<literal>java -Dhazelcast.property.foo=value</literal>
+							<para>Using JVM parameter:
+							<literal>java -Dhazelcast.property.foo=value</literal></para>
 						</listitem>
 						<listitem>
-							Using System class:
+							<para>Using System class:
 							<literal>System.setProperty("hazelcast.property.foo", "value");
-							</literal>
+							</literal></para>
 						</listitem>
 					</orderedlist>
 				</para>
 			</listitem>
 		</itemizedlist>
-		<table>
-			<tgroup cols="4">
-				<colspec align="left" />
-				<thead>
-					<row>
-						<entry>Property Name</entry>
-						<entry>Description</entry>
-						<entry>Value Type</entry>
-						<entry>Default</entry>
-					</row>
-				</thead>
-				<tbody>
-					<row>
-						<entry>
+	</para>
+	
+		<table border="1">
+			<caption>Properties Table</caption>
+			<col width="45%"/>
+			<col width="40%"/>
+			<col width="10%"/>
+			<col width="5%"/>
+			<thead>
+				<tr>
+					<th>Property Name</th>
+					<th>Description</th>
+					<th>Value Type</th>
+					<th>Default</th>
+				</tr>
+			</thead>
+			<tbody>
+				
+					<tr>
+						<td>
 							<literal>hazelcast.mancenter.enabled</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Enable
 							<ulink url="http://www.hazelcast.com/mancenter.jsp">Hazelcast Management Center</ulink>
 							service
-						</entry>
-						<entry>boolean</entry>
-						<entry>true</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>boolean</td>
+						<td>true</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.memcache.enabled</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Enable
 							<ulink url="http://code.google.com/p/hazelcast/wiki/MemcacheClient">Memcache</ulink>
 							client request listener service
-						</entry>
-						<entry>boolean</entry>
-						<entry>true</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>boolean</td>
+						<td>true</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.rest.enabled</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Enable
 							<ulink url="http://code.google.com/p/hazelcast/wiki/RestClient">REST</ulink>
 							client request listener service
-						</entry>
-						<entry>boolean</entry>
-						<entry>true</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>boolean</td>
+						<td>true</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.map.load.chunk.size</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Chunk size for
 							<ulink url="http://code.google.com/p/hazelcast/wiki/MapPersistence">MapLoader</ulink>
 							's map initialization process (MapLoder
 							<ulink url="http://code.google.com/p/hazelcast/w/edit/MapLoder">?</ulink>
 							.loadAllKeys())
-						</entry>
-						<entry>integer</entry>
-						<entry>1000</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>integer</td>
+						<td>1000</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.in.thread.priority</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Hazelcast
 							<ulink url="http://code.google.com/p/hazelcast/wiki/InternalsThreads">Input Thread</ulink>
 							priority
-						</entry>
-						<entry>integer</entry>
-						<entry>7</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>integer</td>
+						<td>7</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.out.thread.priority</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Hazelcast
 							<ulink url="http://code.google.com/p/hazelcast/wiki/InternalsThreads">Output Thread</ulink>
 							priority
-						</entry>
-						<entry>integer</entry>
-						<entry>7</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>integer</td>
+						<td>7</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.service.thread.priority</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Hazelcast
 							<ulink url="http://code.google.com/p/hazelcast/wiki/InternalsThreads">Service Thread</ulink>
 							priority
-						</entry>
-						<entry>integer</entry>
-						<entry>8</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>integer</td>
+						<td>8</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.merge.first.run.delay.seconds</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Inital run delay of
 							<ulink
 								url="http://code.google.com/p/hazelcast/wiki/NetworkPartitioning">split brain/merge process</ulink>
 							in seconds
-						</entry>
-						<entry>integer</entry>
-						<entry>300</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>integer</td>
+						<td>300</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.merge.next.run.delay.seconds</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Run interval of
 							<ulink
 								url="http://code.google.com/p/hazelcast/wiki/NetworkPartitioning">split brain/merge process</ulink>
 							in seconds
-						</entry>
-						<entry>integer</entry>
-						<entry>120</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>integer</td>
+						<td>120</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.redo.wait.millis</literal>
-						</entry>
-						<entry>Wait time before a redo operation in milliseconds</entry>
-						<entry>integer</entry>
-						<entry>500</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Wait time before a redo operation in milliseconds</td>
+						<td>integer</td>
+						<td>500</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.socket.bind.any</literal>
-						</entry>
-						<entry>Bind node socket address to any local address</entry>
-						<entry>boolean</entry>
-						<entry>true</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Bind node socket address to any local address</td>
+						<td>boolean</td>
+						<td>true</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.socket.receive.buffer.size</literal>
-						</entry>
-						<entry>Socket receive buffer size in KB</entry>
-						<entry>integer</entry>
-						<entry>32</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Socket receive buffer size in KB</td>
+						<td>integer</td>
+						<td>32</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.socket.send.buffer.size</literal>
-						</entry>
-						<entry>Socket send buffer size in KB</entry>
-						<entry>integer</entry>
-						<entry>32</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Socket send buffer size in KB</td>
+						<td>integer</td>
+						<td>32</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.socket.keep.alive</literal>
-						</entry>
-						<entry>Socket set keep alive</entry>
-						<entry>boolean</entry>
-						<entry>true</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Socket set keep alive</td>
+						<td>boolean</td>
+						<td>true</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.socket.no.delay</literal>
-						</entry>
-						<entry>Socket set TCP no delay</entry>
-						<entry>boolean</entry>
-						<entry>true</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Socket set TCP no delay</td>
+						<td>boolean</td>
+						<td>true</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.shutdownhook.enabled</literal>
-						</entry>
-						<entry>Enable Hazelcast shutdownhook thread</entry>
-						<entry>boolean</entry>
-						<entry>true</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Enable Hazelcast shutdownhook thread</td>
+						<td>boolean</td>
+						<td>true</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.wait.seconds.before.join</literal>
-						</entry>
-						<entry>Wait time before join operation</entry>
-						<entry>integer</entry>
-						<entry>5</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Wait time before join operation</td>
+						<td>integer</td>
+						<td>5</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.heartbeat.interval.seconds</literal>
-						</entry>
-						<entry>Heartbeat send interval in seconds</entry>
-						<entry>integer</entry>
-						<entry>1</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Heartbeat send interval in seconds</td>
+						<td>integer</td>
+						<td>1</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.max.no.heartbeat.seconds</literal>
-						</entry>
-						<entry>Max timeout of heartbeat in seconds for a node to assume it
-							is dead</entry>
-						<entry>integer</entry>
-						<entry>300</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Max timeout of heartbeat in seconds for a node to assume it
+							is dead</td>
+						<td>integer</td>
+						<td>300</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.icmp.enabled</literal>
-						</entry>
-						<entry>Enable ICMP ping</entry>
-						<entry>boolean</entry>
-						<entry>false</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Enable ICMP ping</td>
+						<td>boolean</td>
+						<td>false</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.initial.min.cluster.size</literal>
-						</entry>
-						<entry>Initial expected cluster size to wait before node to start
-							completely</entry>
-						<entry>integer</entry>
-						<entry>0</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Initial expected cluster size to wait before node to start
+							completely</td>
+						<td>integer</td>
+						<td>0</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.initial.wait.seconds</literal>
-						</entry>
-						<entry>Inital time in seconds to wait before node to start
-							completely</entry>
-						<entry>integer</entry>
-						<entry>0</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Inital time in seconds to wait before node to start
+							completely</td>
+						<td>integer</td>
+						<td>0</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.restart.on.max.idle</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Restart node if service thread blocked for
 							<literal>hazelcast.max.no.heartbeat.seconds</literal>
-						</entry>
-						<entry>boolean</entry>
-						<entry>false</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>boolean</td>
+						<td>false</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.map.partition.count</literal>
-						</entry>
-						<entry>Distributed map partition count</entry>
-						<entry>integer</entry>
-						<entry>271</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Distributed map partition count</td>
+						<td>integer</td>
+						<td>271</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.map.remove.delay.seconds</literal>
-						</entry>
-						<entry>Remove delay time in seconds for dirty records</entry>
-						<entry>integer</entry>
-						<entry>5</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Remove delay time in seconds for dirty records</td>
+						<td>integer</td>
+						<td>5</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.map.cleanup.delay.seconds</literal>
-						</entry>
-						<entry>Cleanup process delay time in seconds</entry>
-						<entry>integer</entry>
-						<entry>10</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Cleanup process delay time in seconds</td>
+						<td>integer</td>
+						<td>10</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.executor.query.thread.count</literal>
-						</entry>
-						<entry>Query executor service max thread count</entry>
-						<entry>integer</entry>
-						<entry>8</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Query executor service max thread count</td>
+						<td>integer</td>
+						<td>8</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.executor.event.thread.count</literal>
-						</entry>
-						<entry>Event executor service max thread count</entry>
-						<entry>integer</entry>
-						<entry>16</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Event executor service max thread count</td>
+						<td>integer</td>
+						<td>16</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.executor.migration.thread.count</literal>
-						</entry>
-						<entry>Migration executor service max thread count</entry>
-						<entry>integer</entry>
-						<entry>20</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Migration executor service max thread count</td>
+						<td>integer</td>
+						<td>20</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.executor.client.thread.count</literal>
-						</entry>
-						<entry>Client executor service max thread count</entry>
-						<entry>integer</entry>
-						<entry>40</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Client executor service max thread count</td>
+						<td>integer</td>
+						<td>40</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.executor.store.thread.count</literal>
-						</entry>
-						<entry>Map store executor service max thread count</entry>
-						<entry>integer</entry>
-						<entry>16</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Map store executor service max thread count</td>
+						<td>integer</td>
+						<td>16</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.log.state</literal>
-						</entry>
-						<entry>Log cluster debug state periodically</entry>
-						<entry>boolean</entry>
-						<entry>false</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>Log cluster debug state periodically</td>
+						<td>boolean</td>
+						<td>false</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.jmx</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Enable
 							<ulink url="http://code.google.com/p/hazelcast/wiki/JMX">JMX</ulink>
 							agent
-						</entry>
-						<entry>boolean</entry>
-						<entry>false</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>boolean</td>
+						<td>false</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.jmx.detailed</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Enable detailed views on
 							<ulink url="http://code.google.com/p/hazelcast/wiki/JMX">JMX</ulink>
-						</entry>
-						<entry>boolean</entry>
-						<entry>false</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>boolean</td>
+						<td>false</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.mc.map.excludes</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Comma seperated map names to exclude from
 							<ulink url="http://www.hazelcast.com/mancenter.jsp">Hazelcast Management Center</ulink>
-						</entry>
-						<entry>CSV</entry>
-						<entry>null</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>CSV</td>
+						<td>null</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.mc.queue.excludes</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Comma seperated queue names to exclude from
 							<ulink url="http://www.hazelcast.com/mancenter.jsp">Hazelcast Management Center</ulink>
-						</entry>
-						<entry>CSV</entry>
-						<entry>null</entry>
-					</row>
-					<row>
-						<entry>
+						</td>
+						<td>CSV</td>
+						<td>null</td>
+					</tr>
+					<tr>
+						<td>
 							<literal>hazelcast.mc.topic.excludes</literal>
-						</entry>
-						<entry>
+						</td>
+						<td>
 							Comma seperated topic names to exclude from
 							<ulink url="http://www.hazelcast.com/mancenter.jsp">Hazelcast Management Center</ulink>
-						</entry>
-						<entry>CSV</entry>
-						<entry>null</entry>
-					</row>
-				</tbody>
-			</tgroup>
+						</td>
+						<td>CSV</td>
+						<td>null</td>
+					</tr>
+			</tbody>
 		</table>
-	</para>
+	
 </sect1>

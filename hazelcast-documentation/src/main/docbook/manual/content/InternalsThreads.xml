@@ -81,7 +81,7 @@
         and <literal>(N*(N-1))/2</literal> connections. There can be only one connection between two
         members, meaning, if m2 creates a connection to m1, m1 doesn't create another connection to
         m2 and the rule here is that new members connect to the older members. </para>
-    <para>If you look at the<literal>com.hazelcast.nio.Connection</literal>, you will see that each
+    <para>If you look at the <literal>com.hazelcast.nio.Connection</literal>, you will see that each
         connection is representing a socket channel and has
             <literal>com.hazelcast.nio.ReadHandler</literal> and <literal>WriteHandler</literal>
         instances which are attached to the socket channel's <literal>OP_READ</literal> and
@@ -125,15 +125,17 @@
                     instance from selectionKey and call
                     its<literal>WriteHandler.handle()</literal></para>
             </listitem>
-        </orderedlist>see<literal>com.hazelcast.impl.BaseManager.send(Packet, Address)</literal>. </para>
-    <para>see<literal>com.hazelcast.nio.SelectorBase.run()</literal>. </para>
+        </orderedlist><emphasis role="italic">see</emphasis>
+        <literal>com.hazelcast.impl.BaseManager.send(Packet, Address)</literal>. </para>
+    <para><emphasis role="italic">see</emphasis>
+        <literal>com.hazelcast.nio.SelectorBase.run()</literal>. </para>
     <para>Connections are always registered/interested for <literal>OP_READ</literal> operations.
         When <literal>InSelector</literal> is ready for reading from a socket channel, it will get
         the <literal>ReadHandler</literal> instance from the selectionKey and call its handle()
         method. handle() method will read Invocation instances from the underlying socket and when
         an Invocation instance is fully read, it will enqueue it
             into<literal>ServiceThread</literal>'s (`ClusterService` class) queue to be processed. </para>
-    <para><emphasis role="bold">4.<literal>MulticastThread</literal>: </emphasis></para>
+    <para><emphasis role="bold">4. <literal>MulticastThread</literal>: </emphasis></para>
     <para>If multicast discovery is enabled (this is the default), and node is the master (oldest
         member) in the cluster then <literal>MulticastThread</literal> is started to listen for join
         requests from the new members. When it receives join request
