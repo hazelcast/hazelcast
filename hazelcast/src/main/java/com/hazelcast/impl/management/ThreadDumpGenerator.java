@@ -65,14 +65,14 @@ public abstract class ThreadDumpGenerator {
     }
 
     public final String dumpAllThreads() {
-        logger.log(Level.INFO, "Generating full thread dump...");
+        logger.log(Level.FINEST, "Generating full thread dump...");
         StringBuilder s = new StringBuilder();
         s.append("Full thread dump ");
         return dump(getAllThreads(), s);
     }
 
     public final String dumpDeadlocks() {
-        logger.log(Level.INFO, "Generating dead-locked threads dump...");
+        logger.log(Level.FINEST, "Generating dead-locked threads dump...");
         StringBuilder s = new StringBuilder();
         s.append("Deadlocked thread dump ");
         return dump(findDeadlockedThreads(), s);
