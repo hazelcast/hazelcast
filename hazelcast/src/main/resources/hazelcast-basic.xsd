@@ -438,6 +438,7 @@
             <xs:enumeration value="hazelcast.mc.queue.excludes"/>
             <xs:enumeration value="hazelcast.mc.topic.excludes"/>
 			<xs:enumeration value="hazelcast.version.check.enabled"/>
+			<xs:enumeration value="hazelcast.map.max.backup.count"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:element name="property">
