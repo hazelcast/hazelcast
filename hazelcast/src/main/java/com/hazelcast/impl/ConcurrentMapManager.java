@@ -45,6 +45,7 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ConcurrentMapManager extends BaseManager {
     final int PARTITION_COUNT;
+    final int MAX_BACKUP_COUNT;
     final long GLOBAL_REMOVE_DELAY_MILLIS;
     final long CLEANUP_DELAY_MILLIS;
     final boolean LOG_STATE;
@@ -65,6 +66,7 @@ public class ConcurrentMapManager extends BaseManager {
         storeExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         evictionExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
+        MAX_BACKUP_COUNT = node.groupProperties.CONCURRENT_MAP_MAX_BACKUP_COUNT.getInteger();
         GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
         CLEANUP_DELAY_MILLIS = node.groupProperties.CLEANUP_DELAY_SECONDS.getLong() * 1000L;
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
@@ -1671,7 +1673,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     abstract class MBackupAwareOp extends MTargetAwareOp {
-        protected final MBackup[] backupOps = new MBackup[3];
+        protected final MBackup[] backupOps = new MBackup[MAX_BACKUP_COUNT];
         protected volatile int backupCount = 0;
 
         protected void backup(ClusterOperation operation) {
@@ -1684,6 +1686,11 @@ public class ConcurrentMapManager extends BaseManager {
                 return;
             }
             if (backupCount > 0) {
+                if (backupCount > backupOps.length) {
+                    String msg = "Max backup is " + backupOps.length + " but backupCount is " + backupCount;
+                    logger.log(Level.SEVERE, msg);
+                    throw new RuntimeException(msg);
+                }
                 for (int i = 0; i < backupCount; i++) {
                     int distance = i + 1;
                     MBackup backupOp = backupOps[i];

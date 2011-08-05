@@ -29,7 +29,6 @@ public class MapConfig implements DataSerializable {
 
     public final static int MIN_BACKUP_COUNT = 0;
     public final static int DEFAULT_BACKUP_COUNT = 1;
-    public final static int MAX_BACKUP_COUNT = 3;
 
     public final static int MIN_EVICTION_PERCENTAGE = 0;
     public final static int DEFAULT_EVICTION_PERCENTAGE = 25;
@@ -166,14 +165,11 @@ public class MapConfig implements DataSerializable {
     /**
      * Number of backups. If 1 is set as the backup-count for example,
      * then all entries of the map will be copied to another JVM for
-     * fail-safety. Valid numbers are 0 (no backup), 1, 2, 3.
+     * fail-safety. 0 means no backup.
      *
      * @param backupCount the backupCount to set
      */
     public MapConfig setBackupCount(final int backupCount) {
-        if ((backupCount < MIN_BACKUP_COUNT) || (backupCount > MAX_BACKUP_COUNT)) {
-            throw new IllegalArgumentException("map backup count must be 0, 1, 2 or 3");
-        }
         this.backupCount = backupCount;
         return this;
     }
