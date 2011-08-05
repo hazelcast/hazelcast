@@ -293,6 +293,7 @@ public class MapStoreTest extends TestUtil {
         testMapStore.insert("4", employee);
         testMapStore.insert("5", employee);
         testMapStore.insert("6", employee);
+        testMapStore.insert("8", employee);
         IMap map = h1.getMap("default");
         map.addIndex("name", false);
         assertEquals(0, map.size());
@@ -327,6 +328,8 @@ public class MapStoreTest extends TestUtil {
         assertNull(map.putIfAbsent("7", employee));
         assertEquals(employee, map.get("7"));
         assertEquals(employee, testMapStore.getStore().get("7"));
+        assertTrue(map.containsKey("8"));
+        assertEquals(employee, map.get("8"));
     }
 
     @Test

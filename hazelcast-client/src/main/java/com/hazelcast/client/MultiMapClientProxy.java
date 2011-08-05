@@ -45,7 +45,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     public String getName() {
         return name.substring(Prefix.MULTIMAP.length());
     }
-    
+
     public void addLocalEntryListener(EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("client doesn't support local entry listener");
     }
@@ -166,7 +166,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     public boolean containsKey(Object key) {
         check(key);
-        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, key, null);
+        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_KEY, key, null);
     }
 
     public boolean containsValue(Object value) {

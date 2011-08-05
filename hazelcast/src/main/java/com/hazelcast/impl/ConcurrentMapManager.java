@@ -137,7 +137,8 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_ADD_TO_LIST, new AddOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_ADD_TO_SET, new AddOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_SIZE, new SizeOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_CONTAINS, new ContainsOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_CONTAINS_KEY, new ContainsKeyOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_CONTAINS_ENTRY, new ContainsOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_CONTAINS_VALUE, new ContainsValueOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_BLOCK_INFO, new BlockInfoOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_BLOCKS, new BlocksOperationHandler());
@@ -422,7 +423,7 @@ public class ConcurrentMapManager extends BaseManager {
         NearCache nearCache = null;
 
         public boolean containsEntry(String name, Object key, Object value) {
-            return booleanCall(CONCURRENT_MAP_CONTAINS, name, key, value, 0, -1);
+            return booleanCall(CONCURRENT_MAP_CONTAINS_ENTRY, name, key, value, 0, -1);
         }
 
         public boolean containsKey(String name, Object key) {
@@ -450,7 +451,7 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            return booleanCall(CONCURRENT_MAP_CONTAINS, name, dataKey, null, 0, -1);
+            return booleanCall(CONCURRENT_MAP_CONTAINS_KEY, name, dataKey, null, 0, -1);
         }
 
         @Override
@@ -2609,6 +2610,53 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    class MergeOperationHandler2 extends SchedulableOperationHandler {
+        public void handle(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request)) {
+                Record record = cmap.getRecord(request);
+                node.executorManager.executeNow(new MergeLoader(cmap, request, record));
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
+        }
+
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            Data value = cmap.get(request);
+            request.clearForResponse();
+            request.response = value;
+        }
+
+        class MergeLoader extends AbstractMapStoreOperation {
+
+            private final Record record;
+
+            MergeLoader(CMap cmap, Request request, Record record) {
+                super(cmap, request);
+                this.record = record;
+            }
+
+            @Override
+            void doMapStoreOperation() {
+                Object value = cmap.loader.load(toObject(request.key));
+                if (value != null) {
+                    setIndexValues(request, value);
+                    request.value = toData(value);
+                    putTransientAsync(request);
+                } else {
+                    success = false;
+                }
+            }
+
+            public void process() {
+                if (success) request.response = request.value;
+                returnResponse(request);
+            }
+        }
+    }
+
     class GetOperationHandler extends SchedulableOperationHandler {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
@@ -2657,6 +2705,59 @@ public class ConcurrentMapManager extends BaseManager {
 
             public void process() {
                 if (success) request.response = request.value;
+                returnResponse(request);
+            }
+        }
+    }
+
+    class ContainsKeyOperationHandler extends SchedulableOperationHandler {
+        public void handle(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request)) {
+                Record record = cmap.getRecord(request);
+                if (cmap.loader != null
+                        && (record == null
+                        || !record.isActive()
+                        || !record.isValid()
+                        || record.getValueData() == null)) {
+                    storeExecutor.execute(new ContainsKeyLoader(cmap, request), request.key.hashCode());
+                } else {
+                    doOperation(request);
+                    returnResponse(request);
+                }
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
+        }
+
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            Data value = cmap.get(request);
+            request.clearForResponse();
+            request.response = value;
+        }
+
+        class ContainsKeyLoader extends AbstractMapStoreOperation {
+
+            ContainsKeyLoader(CMap cmap, Request request) {
+                super(cmap, request);
+            }
+
+            @Override
+            void doMapStoreOperation() {
+                Object value = cmap.loader.load(toObject(request.key));
+                if (value != null) {
+                    setIndexValues(request, value);
+                    request.value = toData(value);
+                    putTransientAsync(request);
+                } else {
+                    success = false;
+                }
+            }
+
+            public void process() {
+                request.response = (success) ? Boolean.TRUE : Boolean.FALSE;
                 returnResponse(request);
             }
         }

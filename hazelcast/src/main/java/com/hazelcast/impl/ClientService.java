@@ -80,7 +80,7 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnlockHandler();
         clientOperationHandlers[CONCURRENT_MAP_LOCK_MAP.getValue()] = new MapLockMapHandler();
         clientOperationHandlers[CONCURRENT_MAP_UNLOCK_MAP.getValue()] = new MapUnlockMapHandler();
-        clientOperationHandlers[CONCURRENT_MAP_CONTAINS.getValue()] = new MapContainsHandler();
+        clientOperationHandlers[CONCURRENT_MAP_CONTAINS_KEY.getValue()] = new MapContainsHandler();
         clientOperationHandlers[CONCURRENT_MAP_CONTAINS_VALUE.getValue()] = new MapContainsValueHandler();
         clientOperationHandlers[CONCURRENT_MAP_ADD_TO_LIST.getValue()] = new ListAddHandler();
         clientOperationHandlers[CONCURRENT_MAP_ADD_TO_SET.getValue()] = new SetAddHandler();

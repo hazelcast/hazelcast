@@ -45,7 +45,7 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
     @Override
     public boolean contains(Object o) {
         check(o);
-        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, o, null);
+        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_KEY, o, null);
     }
 
     @Override

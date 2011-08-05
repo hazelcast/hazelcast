@@ -243,7 +243,11 @@ public class TestUtil {
     }
 
     public static Request newContainsRequest(Data key, Data value) {
-        return newRequest(ClusterOperation.CONCURRENT_MAP_CONTAINS, key, value, -1);
+        if (value == null) {
+            return newRequest(ClusterOperation.CONCURRENT_MAP_CONTAINS_KEY, key, value, -1);
+        } else {
+            return newRequest(ClusterOperation.CONCURRENT_MAP_CONTAINS_ENTRY, key, value, -1);
+        }
     }
 
     @Ignore

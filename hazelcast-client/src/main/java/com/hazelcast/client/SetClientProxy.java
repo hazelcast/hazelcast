@@ -50,7 +50,7 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
     @Override
     public boolean contains(Object o) {
         check(o);
-        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, o, null);
+        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_KEY, o, null);
     }
 
     @Override

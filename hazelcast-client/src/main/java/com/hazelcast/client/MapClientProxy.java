@@ -208,7 +208,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public boolean containsKey(Object arg0) {
         check(arg0);
-        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS, arg0, null);
+        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_KEY, arg0, null);
     }
 
     public boolean containsValue(Object arg0) {
