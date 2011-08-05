@@ -1,19 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<para version='5.0' xmlns='http://docbook.org/ns/docbook'
-      xmlns:xlink='http://www.w3.org/1999/xlink'
-      xmlns:xi='http://www.w3.org/2001/XInclude'
-      xmlns:ns5='http://www.w3.org/2000/svg'
-      xmlns:ns4='http://www.w3.org/1998/Math/MathML'
-      xmlns:ns3='http://www.w3.org/1999/xhtml'
-      xmlns:db='http://docbook.org/ns/docbook'>
-    #summary Hazelcast Spring integration
-    You can declare Hazelcast beans for Spring context using
-    <emphasis>beans</emphasis>
-    namespace (default spring
-    <emphasis>beans</emphasis>
-    namespace) as well to declare hazelcast maps, queues and others.
-    *Hazelcast-Spring integration requires either hazelcast-spring jar or hazelcast-all jar in the classpath.*
+<para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg"
+    xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml"
+    xmlns:db="http://docbook.org/ns/docbook">You can declare Hazelcast beans for Spring context
+    using <emphasis>beans</emphasis> namespace (default spring <emphasis>beans</emphasis> namespace)
+    as well to declare hazelcast maps, queues and others.<emphasis role="bold"> Hazelcast-Spring
+        integration requires either hazelcast-spring jar or hazelcast-all jar in the
+        classpath.</emphasis>
     <programlisting language="xml"><![CDATA[<bean id="instance" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance">
     <constructor-arg>
         <bean class="com.hazelcast.config.Config">
@@ -31,33 +25,24 @@
 <bean id="map" factory-bean="instance" factory-method="getMap">
     <constructor-arg value="map"/>
 </bean>
-]]></programlisting>
-    Hazelcast has Spring integration (requires version 2.5 or greater) since 1.9.1 using
-    <emphasis>hazelcast</emphasis>
-    namespace.
-    <itemizedlist>
+]]></programlisting> Hazelcast has Spring integration (requires version 2.5 or greater) since 1.9.1
+    using <emphasis>hazelcast</emphasis> namespace. <itemizedlist>
         <listitem>
             <para>Add namespace
-                <emphasis>xmlns:hz="http://www.hazelcast.com/schema/config"</emphasis>
-                to beans tag in context file:
-                <programlisting language="java"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans"
+                    <emphasis>xmlns:hz="http://www.hazelcast.com/schema/config"</emphasis> to beans
+                tag in context file: <programlisting language="java"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:hz="http://www.hazelcast.com/schema/config"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                 http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                 http://www.hazelcast.com/schema/config
                 http://www.hazelcast.com/schema/config/hazelcast-spring.xsd">
-]]></programlisting>
-            </para>
+]]></programlisting></para>
         </listitem>
         <listitem>
-            <para>Use
-                <emphasis>hz</emphasis>
-                namespace shortcuts to declare cluster, its items and so on.
-            </para>
+            <para>Use <emphasis>hz</emphasis> namespace shortcuts to declare cluster, its items and
+                so on. </para>
         </listitem>
-    </itemizedlist>
-    After that you can configure Hazelcast instance (node):
-    <programlisting language="xml"><![CDATA[<hz:hazelcast id="instance">
+    </itemizedlist> After that you can configure Hazelcast instance (node): <programlisting language="xml"><![CDATA[<hz:hazelcast id="instance">
         <hz:config>
             <hz:group name="dev" password="password"/>
             <hz:properties>
@@ -84,14 +69,9 @@
                     merge-policy="hz.ADD_NEW_ENTRY"/>
         </hz:config>
     </hz:hazelcast>
-]]></programlisting>
-    *As of version hazelcast 1.9.3*, you can easily configure map-store and near-cache too. (For map-store you should
-    set either
-    <emphasis>class-name</emphasis>
-    or
-    <emphasis>implementation</emphasis>
-    attribute.)
-    <programlisting language="xml"><![CDATA[ <hz:config>
+]]></programlisting><emphasis role="bold">As of version hazelcast 1.9.3</emphasis>, you can easily
+    configure map-store and near-cache too. (For map-store you should set either
+        <emphasis>class-name</emphasis> or <emphasis>implementation</emphasis> attribute.) <programlisting language="xml"><![CDATA[ <hz:config>
            <hz:map name="map1">          
                     <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
                        eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/>
@@ -107,12 +87,8 @@
   
           <bean id="dummyMapStore" class="com.foo.DummyStore" />
 </hz:config>
-]]></programlisting>
-    It's possible to use placeholders instead of concrete values.
-    For instance, use property file
-    <emphasis>app-default.properties</emphasis>
-    for group configuration:
-    <programlisting language="xml"><![CDATA[<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+]]></programlisting> It's possible to use placeholders instead of concrete values. For instance, use
+    property file <emphasis>app-default.properties</emphasis> for group configuration: <programlisting language="xml"><![CDATA[<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <property name="locations">
         <list>
             <value>classpath:/app-default.properties</value>
@@ -128,54 +104,39 @@
         <!-- ... -->
     </hz:config>
 </hz:hazelcast>
-]]></programlisting>
-    Similar for client
-    <programlisting language="java"><![CDATA[<hz:client id="client"
+]]></programlisting> Similar for client <programlisting language="java"><![CDATA[<hz:client id="client"
     group-name="${cluster.group.name}" group-password="${cluster.group.password}">
     <hz:members>10.10.1.2:5701, 10.10.1.3:5701</hz:members>
 </hz:client>
-]]></programlisting>
-    You can declare beans for the following Hazelcast objects:
-    <itemizedlist>
+]]></programlisting> You can declare beans for the following Hazelcast objects: <itemizedlist>
         <listitem>
-            <para>map
-            </para>
+            <para>map </para>
         </listitem>
         <listitem>
-            <para>multiMap
-            </para>
+            <para>multiMap </para>
         </listitem>
         <listitem>
-            <para>queue
-            </para>
+            <para>queue </para>
         </listitem>
         <listitem>
-            <para>topic
-            </para>
+            <para>topic </para>
         </listitem>
         <listitem>
-            <para>set
-            </para>
+            <para>set </para>
         </listitem>
         <listitem>
-            <para>list
-            </para>
+            <para>list </para>
         </listitem>
         <listitem>
-            <para>executorService
-            </para>
+            <para>executorService </para>
         </listitem>
         <listitem>
-            <para>idGenerator
-            </para>
+            <para>idGenerator </para>
         </listitem>
         <listitem>
-            <para>atomicNumber
-            </para>
+            <para>atomicNumber </para>
         </listitem>
-    </itemizedlist>
-    Example:
-    <programlisting language="xml"><![CDATA[    <hz:map id="map" instance-ref="instance" name="map"/>
+    </itemizedlist> Example: <programlisting language="xml"><![CDATA[   <hz:map id="map" instance-ref="instance" name="map"/>
     <hz:multiMap id="multiMap" instance-ref="instance" name="multiMap"/>
     <hz:queue id="queue" instance-ref="instance" name="queue"/>
     <hz:topic id="topic" instance-ref="instance" name="topic"/>
@@ -185,5 +146,4 @@
     <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
     <hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
 ]]></programlisting>
-
 </para>

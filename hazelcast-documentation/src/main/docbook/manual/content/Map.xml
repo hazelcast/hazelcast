@@ -92,30 +92,19 @@ public boolean removeCustomer (Customer customer) {
            xmlns:ns3='http://www.w3.org/1999/xhtml'
            xmlns:db='http://docbook.org/ns/docbook'>
         <title>Backups</title>
-        <para>
-            Hazelcast will distribute map entries onto multiple JVMs (cluster members). Each JVM holds some portion of
-            the
-            data but we don't want to lose data when a member JVM crashes. To provide data-safety, Hazelcast allows you
-            to
-            specify the number of backup copies you want to have. That way data on a JVM will be synchronously copied
-            onto
-            other JVM(s). By default, Hazelcast will have one backup copy.
-
-            Backup operations are<emphasis>synchronous</emphasis>. When a
-            <literal>map.put(key,value)</literal>
-            call returns, it means entry is updated on the
-            both owner and backup JVMs.
-
-            If backup count &gt;= 1, then each member will carry both owned entries and backup copies of other
-            member(s).
-            So for the
-            <literal>map.get(key)</literal>
-            call, it is possible that calling member has backup copy of that key but by default,
-            `map.get(key)` will always read the value from the actual owner of the key for consistency. It is possible
-            to
-            enable backup reads by changing the configuration. Enabling backup reads will give you greater performance.
-
-            <programlisting language="xml"><![CDATA[<hazelcast>
+        <para> Hazelcast will distribute map entries onto multiple JVMs (cluster members). Each JVM
+            holds some portion of the data but we don't want to lose data when a member JVM crashes.
+            To provide data-safety, Hazelcast allows you to specify the number of backup copies you
+            want to have. That way data on a JVM will be synchronously copied onto other JVM(s). By
+            default, Hazelcast will have one backup copy. Backup operations
+                are<emphasis>synchronous</emphasis>. When a <literal>map.put(key,value)</literal>
+            call returns, it means entry is updated on the both owner and backup JVMs. If backup
+            count &gt;= 1, then each member will carry both owned entries and backup copies of other
+            member(s). So for the <literal>map.get(key)</literal> call, it is possible that calling
+            member has backup copy of that key but by default, `map.get(key)` will always read the
+            value from the actual owner of the key for consistency. It is possible to enable backup
+            reads by changing the configuration. Enabling backup reads will give you greater
+            performance. <programlisting language="xml"><![CDATA[<hazelcast>
     ...
     <map name="default">
         <!--
@@ -136,20 +125,16 @@ public boolean removeCustomer (Customer customer) {
 
     </map>
 </hazelcast>
-]]></programlisting>
-
-            _*Q. If I have only one backup-copy then, will I always lose data if two JVMs crash at the same time?*_
-
-            Not always. Cluster member list is the same on each member. Hazelcast will backup each member's data onto
-            next members in the member list. Let say you have a cluster with members A, B, C, D, E, F, G and the
-            backup-count is
-            1, then Hazelcast will copy A's data onto B, B's data onto C... and G's data onto A.
-            If A and B crashes at the same time then you will lose data because B was the backup of A. But A and C
-            crashes at the same time, you won't lose any data
-            because B was the backup of A and D was the backup of C. So you will only lose that if
-            `sequential-JVM-crash-count &gt; backup-count`.
-
-        </para>
+]]></programlisting><emphasis role="italic"><emphasis role="bold"> Q. If I have only one backup-copy
+                    then, will I always lose data if two JVMs crash at the same
+                time?</emphasis></emphasis></para>
+        <para>Not always. Cluster member list is the same on each member. Hazelcast will backup each
+            member's data onto next members in the member list. Let say you have a cluster with
+            members A, B, C, D, E, F, G and the backup-count is 1, then Hazelcast will copy A's data
+            onto B, B's data onto C... and G's data onto A. If A and B crashes at the same time then
+            you will lose data because B was the backup of A. But A and C crashes at the same time,
+            you won't lose any data because B was the backup of A and D was the backup of C. So you
+            will only lose that if `sequential-JVM-crash-count &gt; backup-count`. </para>
     </sect2>
     <sect2 id="MapEviction" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'

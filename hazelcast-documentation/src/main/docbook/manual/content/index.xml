@@ -22,11 +22,11 @@
         <xi:include href="Lock.xml"/>
         <xi:include href="Events.xml"/>
     </chapter>
-    <chapter id="Monitoring">
+    <!--<chapter id="Monitoring">
         <title>Cluster Monitoring Tool</title>
 
         <xi:include href="Monitoring.xml"/>
-    </chapter>
+    </chapter>-->
     <chapter id="JMX">
         <title>Monitoring with JMX</title>
 

@@ -11,7 +11,7 @@
 		through configuration xml, configuration API or JVM system property.
 		<itemizedlist>
 			<listitem>
-				<emphasis role="bold">Configuration xml</emphasis>
+				<para><emphasis role="bold">Configuration xml</emphasis></para>
 				<para>
 					<programlisting language="java">
 &lt;hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-basic.xsd"
@@ -28,7 +28,7 @@
 				</para>
 			</listitem>
 			<listitem>
-				<emphasis role="bold">Configuration API</emphasis>
+				<para><emphasis role="bold">Configuration API</emphasis></para>
 				<para>
 					<programlisting language="java">
 Config cfg = ... ;
@@ -37,7 +37,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
 				</para>
 			</listitem>
 			<listitem>
-				<emphasis role="bold">System Property</emphasis>
+				<para><emphasis role="bold">System Property</emphasis></para>
 				<para>
 					<orderedlist>
 						<listitem>
