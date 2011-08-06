@@ -2733,9 +2733,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            Data value = cmap.get(request);
-            request.clearForResponse();
-            request.response = value;
+            request.response = cmap.contains(request);
         }
 
         class ContainsKeyLoader extends AbstractMapStoreOperation {
