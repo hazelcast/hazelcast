@@ -669,8 +669,7 @@ public class CMap {
         if (record == null || !record.isActive() || !record.isValid()) {
             return null;
         }
-        return new CMapEntry(record.getCost(), record.getExpirationTime(), record.getLastAccessTime(), record.getLastUpdateTime(),
-                record.getCreationTime(), record.getLastStoredTime(), record.getVersion(), record.getHits(), true);
+        return new CMapEntry(record);
     }
 
     public Data get(Request req) {
@@ -1908,16 +1907,16 @@ public class CMap {
         public CMapEntry() {
         }
 
-        public CMapEntry(long cost, long expirationTime, long lastAccessTime, long lastUpdateTime, long creationTime, long lastStoredTime, long version, int hits, boolean valid) {
-            this.cost = cost;
-            this.expirationTime = expirationTime;
-            this.lastAccessTime = lastAccessTime;
-            this.lastUpdateTime = lastUpdateTime;
-            this.creationTime = creationTime;
-            this.lastStoredTime = lastStoredTime;
-            this.version = version;
-            this.hits = hits;
-            this.valid = valid;
+        public CMapEntry(Record record) {
+            this.cost = record.getCost();
+            this.expirationTime = record.getExpirationTime();
+            this.lastAccessTime = record.getLastAccessTime();
+            this.lastUpdateTime = record.getLastUpdateTime();
+            this.creationTime = record.getCreationTime();
+            this.lastStoredTime = record.getLastStoredTime();
+            this.version = record.getVersion();
+            this.hits = record.getHits();
+            this.valid = record.isValid();
         }
 
         public void writeData(DataOutput out) throws IOException {
@@ -2057,9 +2056,4 @@ public class CMap {
     public MapIndexService getMapIndexService() {
         return mapIndexService;
     }
-//    public void setMapStoreEnabled(boolean enable) {
-//    	if(mapStoreWrapper != null) {
-//    		mapStoreWrapper.setEnabled(enable);
-//    	}
-//    }
 }

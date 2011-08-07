@@ -19,7 +19,6 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
-import com.hazelcast.impl.ConcurrentMapManager.Entries;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl.CollectionProxyReal;
 import com.hazelcast.impl.base.KeyValue;
@@ -985,7 +984,7 @@ public class ClientService implements ConnectionListener {
 
     private class MapIterateEntriesHandler extends ClientCollectionOperationHandler {
         public Data getMapKeys(final IMap<Object, Object> map, final Data key, final Data value) {
-            ConcurrentMapManager.Entries entries = null;
+            Entries entries = null;
             if (value == null) {
                 entries = (Entries) map.entrySet();
             } else {
@@ -1037,7 +1036,7 @@ public class ClientService implements ConnectionListener {
 
     private class MapIterateKeysHandler extends ClientCollectionOperationHandler {
         public Data getMapKeys(IMap<Object, Object> map, Data key, Data value, Collection<Data> collection) {
-            ConcurrentMapManager.Entries entries = null;
+            Entries entries = null;
             if (value == null) {
                 entries = (Entries) map.keySet();
             } else {

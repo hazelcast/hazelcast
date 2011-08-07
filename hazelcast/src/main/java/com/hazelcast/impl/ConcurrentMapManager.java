@@ -33,10 +33,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.TransactionImpl.DEFAULT_TXN_TIMEOUT;
@@ -53,7 +51,6 @@ public class ConcurrentMapManager extends BaseManager {
     final Block[] blocks;
     final ConcurrentMap<String, CMap> maps;
     final ConcurrentMap<String, NearCache> mapCaches;
-    final OrderedExecutionTask[] orderedExecutionTasks;
     final PartitionManager partitionManager;
     long newRecordId = 0;
     volatile long nextCleanup = 0;
@@ -73,11 +70,7 @@ public class ConcurrentMapManager extends BaseManager {
         blocks = new Block[PARTITION_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
-        orderedExecutionTasks = new OrderedExecutionTask[PARTITION_COUNT];
         partitionManager = new PartitionManager(this);
-        for (int i = 0; i < PARTITION_COUNT; i++) {
-            orderedExecutionTasks[i] = new OrderedExecutionTask();
-        }
         node.clusterService.registerPeriodicRunnable(new FallThroughRunnable() {
             public void doRun() {
                 logState();
@@ -807,105 +800,6 @@ public class ConcurrentMapManager extends BaseManager {
         public void writeData(DataOutput out) throws IOException {
             out.writeUTF(mapName);
             pairs.writeData(out);
-        }
-
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.factory = (FactoryImpl) hazelcastInstance;
-        }
-    }
-
-    public static class GetAllCallable implements Callable<Pairs>, HazelcastInstanceAware, DataSerializable {
-
-        private String mapName;
-        private Keys keys;
-        private FactoryImpl factory = null;
-
-        public GetAllCallable() {
-        }
-
-        public GetAllCallable(String mapName, Keys keys) {
-            this.mapName = mapName;
-            this.keys = keys;
-        }
-
-        public Pairs call() throws Exception {
-            final ConcurrentMapManager c = factory.node.concurrentMapManager;
-            Pairs pairs = new Pairs();
-            CMap cmap = c.getMap(mapName);
-            if (cmap == null) {
-                c.enqueueAndWait(new Processable() {
-                    public void process() {
-                        c.getOrCreateMap(mapName);
-                    }
-                }, 100);
-                cmap = c.getMap(mapName);
-            }
-            if (cmap != null) {
-                Collection<Object> keysToLoad = (cmap.loader != null) ? new HashSet<Object>() : null;
-                Set<Data> missingKeys = new HashSet<Data>(1);
-                for (Data key : keys.getKeys()) {
-                    boolean exist = false;
-                    Record record = cmap.getRecord(key);
-                    if (record != null && record.isActive() && record.isValid()) {
-                        Data value = record.getValueData();
-                        if (value != null) {
-                            pairs.addKeyValue(new KeyValue(key, value));
-                            record.setLastAccessed();
-                            exist = true;
-                        }
-                    }
-                    if (!exist) {
-                        missingKeys.add(key);
-                        if (keysToLoad != null) {
-                            keysToLoad.add(toObject(key));
-                        }
-                    }
-                }
-                if (keysToLoad != null && keysToLoad.size() > 0 && cmap.loader != null) {
-                    final Map<Object, Object> mapLoadedEntries = cmap.loader.loadAll(keysToLoad);
-                    if (mapLoadedEntries != null) {
-                        for (Object key : mapLoadedEntries.keySet()) {
-                            Data dKey = toData(key);
-                            Object value = mapLoadedEntries.get(key);
-                            Data dValue = toData(value);
-                            if (dKey != null && dValue != null) {
-                                pairs.addKeyValue(new KeyValue(dKey, dValue));
-                                c.putTransient(mapName, key, value, 0, -1);
-                            } else {
-                                missingKeys.add(dKey);
-                            }
-                        }
-                    }
-                }
-                if (cmap.loader == null && !missingKeys.isEmpty()) {
-                    ThreadContext threadContext = ThreadContext.get();
-                    CallContext realCallContext = threadContext.getCallContext();
-                    try {
-                        threadContext.setCallContext(CallContext.DUMMY_CLIENT);
-                        MProxy mproxy = (MProxy) factory.getOrCreateProxyByName(mapName);
-                        for (Data key : missingKeys) {
-                            Data value = (Data) mproxy.get(key);
-                            if (value != null) {
-                                pairs.addKeyValue(new KeyValue(key, value));
-                            }
-                        }
-                    } finally {
-                        threadContext.setCallContext(realCallContext);
-                    }
-                }
-            }
-            return pairs;
-        }
-
-        public void readData(DataInput in) throws IOException {
-            mapName = in.readUTF();
-            keys = new Keys();
-            keys.readData(in);
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(mapName);
-            keys.writeData(out);
         }
 
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
@@ -1946,7 +1840,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public Set iterate() {
-            Entries entries = new Entries(name, CONCURRENT_MAP_ITERATE_KEYS, predicate);
+            Entries entries = new Entries(ConcurrentMapManager.this, name, CONCURRENT_MAP_ITERATE_KEYS, predicate);
             Pairs pairs = (Pairs) getResultAsObject();
             entries.addEntries(pairs);
             return entries;
@@ -1976,7 +1870,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         void onCall() {
-            entries = new Entries(name, operation, predicate);
+            entries = new Entries(ConcurrentMapManager.this, name, operation, predicate);
         }
 
         boolean onResponse(Object response) {
@@ -2215,13 +2109,6 @@ public class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.removeItem(request);
-        }
-    }
-
-    class RemoveOperationHandler2 extends StoreAwareOperationHandler {
-        void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            cmap.remove(request);
         }
     }
 
@@ -2477,27 +2364,6 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class PutOperationHandler2 extends StoreAwareOperationHandler {
-        @Override
-        protected void onNoTimeToSchedule(Request request) {
-            request.response = null;
-            if (request.operation == CONCURRENT_MAP_TRY_PUT
-                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
-                request.response = Boolean.FALSE;
-            }
-            returnResponse(request);
-        }
-
-        void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            cmap.put(request);
-            if (request.operation == CONCURRENT_MAP_TRY_PUT
-                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
-                request.response = Boolean.TRUE;
-            }
-        }
-    }
-
     class AtomicOperationHandler extends MTargetAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
@@ -2516,21 +2382,6 @@ public class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.add(request, false);
-        }
-    }
-
-    class GetMapEntryOperationHandler extends MTargetAwareOperationHandler {
-        void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            request.response = cmap.getMapEntry(request);
-        }
-    }
-
-    class GetDataRecordEntryOperationHandler extends MTargetAwareOperationHandler {
-        void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            Record record = cmap.getRecord(request.key);
-            request.response = (record == null) ? null : new DataRecordEntry(record);
         }
     }
 
@@ -2586,36 +2437,84 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MergeOperationHandler extends StoreAwareOperationHandler {
-
-        void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            if (cmap.isMultiMap()) {
-                cmap.putMulti(request);
-            } else {
-                cmap.put(request);
-            }
-            request.response = Boolean.TRUE;
-        }
-
-        protected boolean shouldExecuteAsync(Request request) {
-            return true;
-        }
-
-        public void afterExecute(Request request) {
-            if (request.response != Boolean.FALSE) {
-                doOperation(request);
-            }
-            returnResponse(request);
-        }
-    }
-
-    class MergeOperationHandler2 extends SchedulableOperationHandler {
+    class MergeOperationHandler extends MTargetAwareOperationHandler {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
                 Record record = cmap.getRecord(request);
-                node.executorManager.executeNow(new MergeLoader(cmap, request, record));
+                boolean doesNotExist = (
+                        record == null
+                                || !record.isActive()
+                                || !record.isValid()
+                                || record.getValueData() == null);
+                DataRecordEntry existing = (doesNotExist) ? null : new DataRecordEntry(record);
+                node.executorManager.executeNow(new MergeLoader(cmap, request, existing));
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
+        }
+
+        void doOperation(Request request) {
+        }
+
+        class MergeLoader extends AbstractMapStoreOperation {
+
+            private DataRecordEntry existingRecord;
+
+            MergeLoader(CMap cmap, Request request, DataRecordEntry existingRecord) {
+                super(cmap, request);
+                this.existingRecord = existingRecord;
+            }
+
+            @Override
+            void doMapStoreOperation() {
+                Object winner = null;
+                success = false;
+                if (cmap.mergePolicy != null) {
+                    if (existingRecord == null && cmap.loader != null) {
+                        existingRecord = new MGetDataRecordEntry().get(request.name, request.key);
+                    }
+                    DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
+                    Object key = newEntry.getKey();
+                    if (key != null && newEntry.hasValue()) {
+                        winner = cmap.mergePolicy.merge(cmap.getName(), newEntry, existingRecord);
+                        if (winner != null) {
+                            if (cmap.isMultiMap()) {
+                                MPutMulti mput = node.concurrentMapManager.new MPutMulti();
+                                mput.put(request.name, request.key, winner);
+                            } else {
+                                ConcurrentMapManager.MPut mput = node.concurrentMapManager.new MPut();
+                                mput.put(request.name, request.key, winner, -1, -1);
+                            }
+                            success = true;
+                        }
+                    }
+                }
+            }
+
+            public void process() {
+                request.response = (success) ? Boolean.TRUE : Boolean.FALSE;
+                returnResponse(request);
+            }
+        }
+    }
+
+    class GetMapEntryOperationHandler extends MTargetAwareOperationHandler {
+        public void handle(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request)) {
+                Record record = cmap.getRecord(request);
+                if (cmap.loader != null
+                        && (record == null
+                        || !record.isActive()
+                        || !record.isValid()
+                        || record.getValueData() == null)) {
+                    storeExecutor.execute(new GetMapEntryLoader(cmap, request), request.key.hashCode());
+                } else {
+                    doOperation(request);
+                    returnResponse(request);
+                }
             } else {
                 request.response = OBJECT_REDO;
                 returnResponse(request);
@@ -2624,18 +2523,13 @@ public class ConcurrentMapManager extends BaseManager {
 
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            Data value = cmap.get(request);
-            request.clearForResponse();
-            request.response = value;
+            request.response = cmap.getMapEntry(request);
         }
 
-        class MergeLoader extends AbstractMapStoreOperation {
+        class GetMapEntryLoader extends AbstractMapStoreOperation {
 
-            private final Record record;
-
-            MergeLoader(CMap cmap, Request request, Record record) {
+            GetMapEntryLoader(CMap cmap, Request request) {
                 super(cmap, request);
-                this.record = record;
             }
 
             @Override
@@ -2651,13 +2545,75 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void process() {
-                if (success) request.response = request.value;
+                if (success) {
+                    Record record = cmap.createNewRecord(request.key, request.value);
+                    request.response = new CMap.CMapEntry(record);
+                } else {
+                    request.response = null;
+                }
                 returnResponse(request);
             }
         }
     }
 
-    class GetOperationHandler extends SchedulableOperationHandler {
+    class GetDataRecordEntryOperationHandler extends MTargetAwareOperationHandler {
+        public void handle(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request)) {
+                Record record = cmap.getRecord(request);
+                if (cmap.loader != null
+                        && (record == null
+                        || !record.isActive()
+                        || !record.isValid()
+                        || record.getValueData() == null)) {
+                    storeExecutor.execute(new GetDataRecordEntryLoader(cmap, request), request.key.hashCode());
+                } else {
+                    doOperation(request);
+                    returnResponse(request);
+                }
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
+        }
+
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            Record record = cmap.getRecord(request.key);
+            request.response = (record == null) ? null : new DataRecordEntry(record);
+        }
+
+        class GetDataRecordEntryLoader extends AbstractMapStoreOperation {
+
+            GetDataRecordEntryLoader(CMap cmap, Request request) {
+                super(cmap, request);
+            }
+
+            @Override
+            void doMapStoreOperation() {
+                Object value = cmap.loader.load(toObject(request.key));
+                if (value != null) {
+                    setIndexValues(request, value);
+                    request.value = toData(value);
+                } else {
+                    success = false;
+                }
+            }
+
+            public void process() {
+                if (success) {
+                    Record record = cmap.createNewRecord(request.key, request.value);
+                    record.setIndexes(request.indexes, request.indexTypes);
+                    request.response = new DataRecordEntry(record);
+                } else {
+                    request.response = null;
+                }
+                returnResponse(request);
+            }
+        }
+    }
+
+    class GetOperationHandler extends MTargetAwareOperationHandler {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
@@ -2710,7 +2666,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class ContainsKeyOperationHandler extends SchedulableOperationHandler {
+    class ContainsKeyOperationHandler extends MTargetAwareOperationHandler {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
@@ -2792,54 +2748,6 @@ public class ConcurrentMapManager extends BaseManager {
         abstract void doMapStoreOperation();
     }
 
-    class GetOperationHandler2 extends StoreAwareOperationHandler {
-        public void handle(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            if (cmap.isNotLocked(request)) {
-                Record record = cmap.getRecord(request);
-                if (cmap.loader != null
-                        && (record == null
-                        || !record.isActive()
-                        || !record.isValid()
-                        || record.getValueData() == null)) {
-                    executeAsync(request);
-                } else {
-                    doOperation(request);
-                    returnResponse(request);
-                }
-            } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
-            }
-        }
-
-        void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            Data value = cmap.get(request);
-            request.clearForResponse();
-            request.response = value;
-        }
-
-        public void afterExecute(Request request) {
-            if (request.response == Boolean.FALSE) {
-                request.response = OBJECT_REDO;
-            } else {
-                if (request.value != null) {
-                    Record record = ensureRecord(request);
-                    if (record.getValueData() == null) {
-                        record.setValue(request.value);
-                    }
-                    CMap cmap = getOrCreateMap(request.name);
-                    record.setIndexes(request.indexes, request.indexTypes);
-                    cmap.markAsActive(record);
-                    cmap.updateIndexes(record);
-                    request.response = record.getValueData();
-                }
-            }
-            returnResponse(request);
-        }
-    }
-
     class ValueCountOperationHandler extends MTargetAwareOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
@@ -2877,7 +2785,6 @@ public class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             boolean unlocked = true;
             Record record = recordExist(request);
-            logger.log(Level.FINEST, request.operation + " unlocking " + record);
             if (record != null) {
                 unlocked = record.unlock(request.lockThreadId, request.lockAddress);
                 if (unlocked) {
@@ -2892,7 +2799,6 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                     cmap.fireScheduledActions(record);
                 }
-                logger.log(Level.FINEST, unlocked + " [" + record.getName() + "] now lock " + record.getLock());
             }
             if (unlocked) {
                 request.response = Boolean.TRUE;
@@ -3009,151 +2915,6 @@ public class ConcurrentMapManager extends BaseManager {
                 doOperation(request);
                 returnResponse(request);
             }
-        }
-    }
-
-    interface AsynchronousExecution {
-        /**
-         * executorThread
-         */
-        void execute(Request request);
-
-        /**
-         * serviceThread
-         */
-        void afterExecute(Request request);
-    }
-
-    void executeAsync(Request request) {
-        OrderedExecutionTask orderedExecutionTask = orderedExecutionTasks[getBlockId(request)];
-        int size = orderedExecutionTask.offer(request);
-        if (size == 1) {
-            storeExecutor.execute(orderedExecutionTask);
-        }
-    }
-
-    abstract class StoreAwareOperationHandler extends SchedulableOperationHandler implements AsynchronousExecution {
-
-        /**
-         * executorThread
-         */
-        public void execute(Request request) {
-            CMap cmap = maps.get(request.name);
-            if (request.operation == CONCURRENT_MAP_GET) {
-                // load the entry
-                Object value = cmap.loader.load(toObject(request.key));
-                if (value != null) {
-                    setIndexValues(request, value);
-                    request.value = toData(value);
-                }
-                putTransientAsync(request);
-            } else if (request.operation == CONCURRENT_MAP_PUT || request.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
-                //store the entry
-                Object key = toObject(request.key);
-                Object value = toObject(request.value);
-                cmap.store.store(key, value);
-                Record storedRecord = cmap.getRecord(request);
-                if (storedRecord != null) {
-                    storedRecord.setLastStoredTime(System.currentTimeMillis());
-                }
-            } else if (request.operation == CONCURRENT_MAP_REMOVE) {
-                Object key = toObject(request.key);
-                Record record = cmap.getRecord(request);
-                if (cmap.loader != null && request.value == null && (record == null || record.getValueData() == null)) {
-                    Object removedObject = cmap.loader.load(key);
-                    if (removedObject == null) {
-                        return;
-                    } else {
-                        request.response = toData(removedObject);
-                    }
-                }
-                // remove the entry
-                cmap.store.delete(key);
-            } else if (request.operation == CONCURRENT_MAP_EVICT) {
-                //store the entry
-                cmap.store.store(toObject(request.key), toObject(request.value));
-                Record storedRecord = cmap.getRecord(request);
-                storedRecord.setLastStoredTime(System.currentTimeMillis());
-                request.response = Boolean.TRUE;
-            } else if (request.operation == CONCURRENT_MAP_MERGE) {
-                boolean success = false;
-                Object winner = null;
-                if (cmap.mergePolicy != null) {
-                    Record existingRecord = cmap.getRecord(request);
-                    DataRecordEntry existing = (existingRecord == null) ? null : new DataRecordEntry(existingRecord);
-                    DataRecordEntry newEntry = (DataRecordEntry) toObject(request.value);
-                    Object key = newEntry.getKey();
-                    if (key != null && newEntry.hasValue()) {
-                        winner = cmap.mergePolicy.merge(cmap.getName(), newEntry, existing);
-                        if (winner != null) {
-                            success = true;
-                            if (cmap.writeDelayMillis == 0 && cmap.store != null) {
-                                Object winnerObject = (winner instanceof Data) ? toObject((Data) winner) : winner;
-                                cmap.store.store(key, winnerObject);
-                                existingRecord.setLastStoredTime(System.currentTimeMillis());
-                                success = (request.response == null);
-                            }
-                        }
-                    }
-                }
-                if (success) {
-                    request.value = toData(winner);
-                    request.response = Boolean.TRUE;
-                } else {
-                    request.value = null;
-                    request.response = Boolean.FALSE;
-                }
-            }
-        }
-
-        protected boolean shouldExecuteAsync(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            if (request.operation == CONCURRENT_MAP_GET) {
-                return cmap.loader != null;
-            } else return cmap.writeDelayMillis == 0 && cmap.store != null;
-        }
-
-        public void handle(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            boolean checkCapacity = (request.operation == CONCURRENT_MAP_PUT
-                    || request.operation == CONCURRENT_MAP_TRY_PUT
-                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK);
-            boolean overCapacity = checkCapacity && cmap.overCapacity(request);
-            if (cmap.isNotLocked(request) && !overCapacity) {
-                if (shouldSchedule(request)) {
-                    if (request.hasEnoughTimeToSchedule()) {
-                        schedule(request);
-                    } else {
-                        onNoTimeToSchedule(request);
-                    }
-                    return;
-                }
-                if (shouldExecuteAsync(request)) {
-                    executeAsync(request);
-                    return;
-                }
-                doOperation(request);
-                returnResponse(request);
-            } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
-            }
-        }
-
-        /**
-         * serviceThread
-         */
-        public void afterExecute(Request request) {
-            if (request.response == null) {
-                doOperation(request);
-            } else {
-                Data response = (Data) request.response;
-                if (request.operation == CONCURRENT_MAP_REMOVE) {
-                    doOperation(request);
-                }
-                request.value = response;
-            }
-            returnResponse(request);
         }
     }
 
@@ -3347,229 +3108,5 @@ public class ConcurrentMapManager extends BaseManager {
     final boolean testLock(Request req) {
         Record record = recordExist(req);
         return record == null || record.testLock(req.lockThreadId, req.lockAddress);
-    }
-
-    class OrderedExecutionTask implements Runnable, Processable {
-        Queue<Request> qResponses = new ConcurrentLinkedQueue();
-        Queue<Request> qRequests = new ConcurrentLinkedQueue();
-        AtomicInteger offerSize = new AtomicInteger();
-
-        int offer(Request request) {
-            qRequests.offer(request);
-            return offerSize.incrementAndGet();
-        }
-
-        public void run() {
-            while (true) {
-                final Request request = qRequests.poll();
-                if (request != null) {
-                    try {
-                        AsynchronousExecution ae = (AsynchronousExecution) getPacketProcessor(request.operation);
-                        ae.execute(request);
-                    } catch (Exception e) {
-                        if (e instanceof ClassCastException) {
-                            CMap cmap = getMap(request.name);
-                            if (cmap.isMapForQueue() && e.getMessage().contains("java.lang.Long cannot be")) {
-                                logger.log(Level.SEVERE, "This is MapStore for Queue. Make sure you treat the key as Long");
-                            }
-                        }
-                        logger.log(Level.WARNING, "Store thrown exception for " + request.operation, e);
-                        request.response = toData(new AddressAwareException(e, thisAddress));
-                    }
-                    offerSize.decrementAndGet();
-                    qResponses.offer(request);
-                    enqueueAndReturn(OrderedExecutionTask.this);
-                } else {
-                    return;
-                }
-            }
-        }
-
-        public void process() {
-            final Request request = qResponses.poll();
-            if (request != null) {
-                //store the entry
-                AsynchronousExecution ae = (AsynchronousExecution) getPacketProcessor(request.operation);
-                ae.afterExecute(request);
-            }
-        }
-    }
-
-    public class Entries extends AbstractSet {
-        final List<Map.Entry> lsKeyValues = new ArrayList<Map.Entry>();
-        final String name;
-        final ClusterOperation operation;
-        final boolean checkValue;
-        final Predicate predicate;
-
-        public Entries(String name, ClusterOperation operation, Predicate predicate) {
-            this.name = name;
-            this.operation = operation;
-            this.predicate = predicate;
-            TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
-            this.checkValue = (InstanceType.MAP == getInstanceType(name)) &&
-                    (operation == CONCURRENT_MAP_ITERATE_VALUES
-                            || operation == CONCURRENT_MAP_ITERATE_ENTRIES);
-            if (txn != null) {
-                List<Map.Entry> entriesUnderTxn = txn.newEntries(name);
-                if (entriesUnderTxn != null) {
-                    if (predicate != null) {
-                        for (Map.Entry entry : entriesUnderTxn) {
-                            if (predicate.apply((MapEntry) entry)) {
-                                lsKeyValues.add(entry);
-                            }
-                        }
-                    } else {
-                        lsKeyValues.addAll(entriesUnderTxn);
-                    }
-                }
-            }
-        }
-
-        public int size() {
-            return lsKeyValues.size();
-        }
-
-        public Iterator iterator() {
-            return new EntryIterator(lsKeyValues.iterator());
-        }
-
-        public void addEntries(Pairs pairs) {
-            if (pairs == null) return;
-            if (pairs.getKeyValues() == null) return;
-            TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
-            for (KeyValue entry : pairs.getKeyValues()) {
-                if (txn != null) {
-                    Object key = entry.getKey();
-                    if (txn.has(name, key)) {
-                        Object value = txn.get(name, key);
-                        if (value != null) {
-                            lsKeyValues.add(createSimpleMapEntry(node.factory, name, key, value));
-                        }
-                    } else {
-                        entry.setName(node.factory, name);
-                        lsKeyValues.add(entry);
-                    }
-                } else {
-                    entry.setName(node.factory, name);
-                    lsKeyValues.add(entry);
-                }
-            }
-        }
-
-        public List<Map.Entry> getKeyValues() {
-            return lsKeyValues;
-        }
-
-        class EntryIterator implements Iterator {
-            final Iterator<Map.Entry> it;
-            Map.Entry entry = null;
-            boolean calledHasNext = false;
-            boolean calledNext = false;
-            boolean hasNext = false;
-
-            public EntryIterator(Iterator<Map.Entry> it) {
-                super();
-                this.it = it;
-            }
-
-            public boolean hasNext() {
-                if (calledHasNext && !calledNext) {
-                    return hasNext;
-                }
-                calledNext = false;
-                calledHasNext = true;
-                hasNext = setHasNext();
-                return hasNext;
-            }
-
-            public boolean setHasNext() {
-                if (!it.hasNext()) {
-                    return false;
-                }
-                entry = it.next();
-                if (checkValue && entry.getValue() == null) {
-                    return hasNext();
-                }
-                return true;
-            }
-
-            public Object next() {
-                if (!calledHasNext) {
-                    hasNext();
-                }
-                calledHasNext = false;
-                calledNext = true;
-                if (operation == CONCURRENT_MAP_ITERATE_KEYS
-                        || operation == CONCURRENT_MAP_ITERATE_KEYS_ALL) {
-                    return entry.getKey();
-                } else if (operation == CONCURRENT_MAP_ITERATE_VALUES) {
-                    return entry.getValue();
-                } else if (operation == CONCURRENT_MAP_ITERATE_ENTRIES) {
-                    return entry;
-                } else throw new RuntimeException("Unknown iteration type " + operation);
-            }
-
-            public void remove() {
-                if (getInstanceType(name) == InstanceType.MULTIMAP) {
-                    if (operation == CONCURRENT_MAP_ITERATE_KEYS) {
-                        ((MultiMap) node.factory.getOrCreateProxyByName(name)).remove(entry.getKey(), null);
-                    } else {
-                        ((MultiMap) node.factory.getOrCreateProxyByName(name)).remove(entry.getKey(), entry.getValue());
-                    }
-                } else {
-                    ((IRemoveAwareProxy) node.factory.getOrCreateProxyByName(name)).removeKey(entry.getKey());
-                }
-                it.remove();
-            }
-        }
-
-        public boolean add(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean addAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public void clear() {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean containsAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean remove(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean removeAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean retainAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public Object[] toArray() {
-            return toArray(null);
-        }
-
-        public Object[] toArray(Object[] a) {
-            List values = new ArrayList();
-            Iterator it = iterator();
-            while (it.hasNext()) {
-                Object obj = it.next();
-                if (obj != null) {
-                    values.add(obj);
-                }
-            }
-            if (a == null) {
-                return values.toArray();
-            } else {
-                return values.toArray(a);
-            }
-        }
     }
 }
