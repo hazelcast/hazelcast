@@ -1,15 +1,62 @@
 <?xml version='1.0' encoding='utf-8'?>
 <book xmlns='http://docbook.org/ns/docbook' xmlns:xlink='http://www.w3.org/1999/xlink'
       xmlns:xi='http://www.w3.org/2001/XInclude' version='5.0'>
-    <bookinfo>
+    
+    <info>
         <title>Hazelcast Documentation</title>
-    </bookinfo>
-    <chapter id="Introduction">
+        <subtitle>Hazelcast In-Memory Data Grid User Guide</subtitle>
+        <authorgroup>
+            <author>
+                <personname>Talip Ozturk</personname>
+                <email>talip@hazelcast.com</email>
+            </author>
+            <author>
+                <personname>Fuad Malikov</personname>
+                <email>fuad@hazelcast.com</email>
+            </author>
+            <author>
+                <personname>Mehmet Dogan</personname>
+                <email>mehmet@hazelcast.com</email>
+            </author>
+        </authorgroup>
+        <edition>Hazelcast User's Guide 1.9.4</edition>
+        <pubdate>8 August 2011</pubdate>
+        <copyright>
+            <year>2011</year>
+            <holder>Hazel Bilisim, Ltd. Sti.</holder>
+        </copyright>
+<!--        <publisher>
+            <publishername>Hazel Bilisim, Ltd. Sti.</publishername>
+            <address>
+                <city>Istanbul</city>
+                <country>Turkey</country>
+                <phone>+902164444444</phone>
+                <email>info@hazelcast.com</email>
+                <link xlink:href="http://www.hazelcast.com">www.hazelcast.com</link>
+            </address>
+        </publisher>
+-->        
+        <legalnotice>
+            <para>Permission to use, copy, modify and distribute
+                the User Guide and its accompanying documentation for any purpose and
+                without fee is hereby granted in perpetuity, provided that the above
+                copyright notice and this paragraph appear in all copies.</para>
+        </legalnotice>
+        
+        <keywordset>
+            <keyword>hazelcast</keyword>
+            <keyword>distributed</keyword>
+            <keyword>cache</keyword>
+            <keyword>cluster</keyword>
+        </keywordset>        
+    </info>
+    
+    <chapter xml:id="Introduction">
         <title>Introduction</title>
 
         <xi:include href="Introduction.xml"/>
     </chapter>
-    <chapter id="DDS">
+    <chapter xml:id="DDS">
         <title>Distributed Data Structures</title>
 
         <xi:include href="DDS.xml"/>
@@ -22,30 +69,25 @@
         <xi:include href="Lock.xml"/>
         <xi:include href="Events.xml"/>
     </chapter>
-    <!--<chapter id="Monitoring">
-        <title>Cluster Monitoring Tool</title>
-
-        <xi:include href="Monitoring.xml"/>
-    </chapter>-->
-    <chapter id="JMX">
+    <chapter xml:id="JMX">
         <title>Monitoring with JMX</title>
 
         <xi:include href="JMX.xml"/>
     </chapter>
-    <chapter id="Cluster Utilities">
+    <chapter xml:id="ClusterUtilities">
         <title>Cluster Utilities</title>
-
+        
         <xi:include href="ClusterInterface.xml"/>
         <xi:include href="IdGenerator.xml"/>
         <xi:include href="SuperClient.xml"/>
     </chapter>
-    <chapter id="Transactions">
+    <chapter xml:id="Transactions">
         <title>Transactions</title>
 
         <xi:include href="TransactionInterface.xml"/>
         <xi:include href="JEEIntegration.xml"/>
     </chapter>
-    <chapter id="ExecutorService">
+    <chapter xml:id="ExecutorService">
         <title>Distributed Executor Service</title>
 
         <xi:include href="ExecutorService.xml"/>
@@ -54,7 +96,7 @@
         <xi:include href="ExecutionCancellation.xml"/>
         <xi:include href="ExecutionCallback.xml"/>
     </chapter>
-    <chapter id="HttpSessionClustering">
+    <chapter xml:id="HttpSessionClustering">
         <title>Http Session Clustering with HazelcastWM</title>
 
         <xi:include href="HttpSessionClustering.xml"/>
@@ -62,12 +104,12 @@
         <xi:include href="HazelcastWMSnapshotEvents.xml"/>
         <xi:include href="HazelcastWMTestedWebContainers.xml"/>
     </chapter>
-    <chapter id="Encryption">
+    <chapter xml:id="Encryption">
         <title>Encryption</title>
 
         <xi:include href="Encryption.xml"/>
     </chapter>
-    <chapter id="Config">
+    <chapter xml:id="Config">
         <title>Configuration</title>
 
         <xi:include href="Config.xml"/>
@@ -79,17 +121,17 @@
         <xi:include href="WildcardConfiguration.xml"/>
         <xi:include href="ConfigurationProperties.xml"/>
     </chapter>
-    <chapter id="HibernateSecondLevelCache">
+    <chapter xml:id="HibernateSecondLevelCache">
         <title>Hibernate Second Level Cache</title>
 
         <xi:include href="HibernateSecondLevelCache.xml"/>
     </chapter>
-    <chapter id="SpringIntegration">
+    <chapter xml:id="SpringIntegration">
         <title>Spring Integration</title>
 
         <xi:include href="SpringIntegration.xml"/>
     </chapter>
-    <chapter id="Clients">
+    <chapter xml:id="Clients">
         <title>Clients</title>
 
         <xi:include href="Clients.xml"/>
@@ -97,7 +139,7 @@
         <xi:include href="MemcacheClient.xml"/>
         <xi:include href="RestClient.xml"/>
     </chapter>
-    <chapter id="Internals">
+    <chapter xml:id="Internals">
         <title>Internals</title>
 
         <xi:include href="InternalsThreads.xml"/>
@@ -105,7 +147,7 @@
         <xi:include href="InternalsClusterMembership.xml"/>
         <xi:include href="InternalsDistributedMap.xml"/>
     </chapter>
-    <chapter id="Miscellaneous">
+    <chapter xml:id="Miscellaneous">
         <title>Miscellaneous</title>
 
         <xi:include href="CommonGotchas.xml"/>
