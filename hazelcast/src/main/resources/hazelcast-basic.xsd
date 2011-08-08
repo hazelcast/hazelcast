@@ -439,6 +439,7 @@
             <xs:enumeration value="hazelcast.mc.topic.excludes"/>
 			<xs:enumeration value="hazelcast.version.check.enabled"/>
 			<xs:enumeration value="hazelcast.map.max.backup.count"/>
+			<xs:enumeration value="hazelcast.topic.flow.control.enabled"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:element name="property">
