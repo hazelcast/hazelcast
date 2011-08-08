@@ -7,11 +7,9 @@
        xmlns:ns3='http://www.w3.org/1999/xhtml'
        xmlns:db='http://docbook.org/ns/docbook'>
     <title>Distributed Set</title>
-    <para>
-        Distributed Set is distributed and concurrent implementation of<literal>java.util.Set</literal>. Set doesn't
-        allow duplicate elements, so elements in the set should have proper hashCode and equals methods.
-
-        <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
+    <para> Distributed Set is distributed and concurrent implementation
+            of<literal>java.util.Set</literal>. Set doesn't allow duplicate elements, so elements in
+        the set should have proper hashCode and equals methods. <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
 import java.util.Set;
 import java.util.Iterator;
 
@@ -23,11 +21,10 @@ set.add(new Price(11, time4));
 //....
 Iterator it = set.iterator();
 while (it.hasNext()) { 
-	Price price = (Price) it.next(); 
-	//analyze
+    Price price = (Price) it.next(); 
+    //analyze
 }
 
 ]]></programlisting>
-
     </para>
 </sect1>

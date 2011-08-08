@@ -91,19 +91,19 @@
                     <emphasis>cache</emphasis> element into your configuration with
                     <emphasis>usage</emphasis> attribute with one
                     of<emphasis>read-only</emphasis>,<emphasis>read-write</emphasis>,<emphasis>
-                    nonstrict-read-write</emphasis>. <programlisting language="xml"><![CDATA[  <class name="eg.Immutable" mutable="false">
+                    nonstrict-read-write</emphasis>. <programlisting language="xml"><![CDATA[<class name="eg.Immutable" mutable="false">
     <cache usage="read-only"/>
     .... 
-  </class>
+</class>
 
-  <class name="eg.Cat" .... >
+<class name="eg.Cat" .... >
     <cache usage="read-write"/>
     ....
     <set name="kittens" ... >
         <cache usage="read-write"/>
         ....
     </set>
-  </class>
+</class>
 ]]></programlisting></para>
         </listitem>
         <listitem>
@@ -111,18 +111,18 @@
                     <emphasis>class-cache</emphasis> or <emphasis>collection-cache</emphasis>
                 element into your Hibernate configuration file with <emphasis>usage</emphasis>
                 attribute with one of _read only_,<emphasis>read/write</emphasis>, _nonstrict
-                read/write_. <programlisting language="xml"><![CDATA[ <class-cache usage="read-only" class="eg.Immutable"/>
-  <class-cache usage="read-write" class="eg.Cat"/>
-  <collection-cache collection="eg.Cat.kittens" usage="read-write"/>
+                read/write_. <programlisting language="xml"><![CDATA[<class-cache usage="read-only" class="eg.Immutable"/>
+ <class-cache usage="read-write" class="eg.Cat"/>
+ <collection-cache collection="eg.Cat.kittens" usage="read-write"/>
 ]]></programlisting></para>
         </listitem>
     </itemizedlist> OR <itemizedlist>
         <listitem>
             <para>Alternatively, you can put Hibernate Annotation's <emphasis>@Cache</emphasis>
                 annotation on your entities and collections. <programlisting language="java"><![CDATA[@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-  public class Cat implements Serializable {
-  ...
-  }
+public class Cat implements Serializable {
+     ...
+}
 ]]></programlisting></para>
         </listitem>
     </itemizedlist> And now last thing you should be aware of is to drop

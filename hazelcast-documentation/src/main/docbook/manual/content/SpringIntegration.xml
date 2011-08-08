@@ -30,7 +30,7 @@
         <listitem>
             <para>Add namespace
                     <emphasis>xmlns:hz="http://www.hazelcast.com/schema/config"</emphasis> to beans
-                tag in context file: <programlisting language="java"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans"
+                tag in context file: <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:hz="http://www.hazelcast.com/schema/config"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                 http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
@@ -68,10 +68,10 @@
                     eviction-policy="NONE"
                     merge-policy="hz.ADD_NEW_ENTRY"/>
         </hz:config>
-    </hz:hazelcast>
+</hz:hazelcast>
 ]]></programlisting><emphasis role="bold">As of version hazelcast 1.9.3</emphasis>, you can easily
     configure map-store and near-cache too. (For map-store you should set either
-        <emphasis>class-name</emphasis> or <emphasis>implementation</emphasis> attribute.) <programlisting language="xml"><![CDATA[ <hz:config>
+        <emphasis>class-name</emphasis> or <emphasis>implementation</emphasis> attribute.) <programlisting language="xml"><![CDATA[<hz:config>
            <hz:map name="map1">          
                     <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
                        eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/>
@@ -104,7 +104,7 @@
         <!-- ... -->
     </hz:config>
 </hz:hazelcast>
-]]></programlisting> Similar for client <programlisting language="java"><![CDATA[<hz:client id="client"
+]]></programlisting> Similar for client <programlisting language="xml"><![CDATA[<hz:client id="client"
     group-name="${cluster.group.name}" group-password="${cluster.group.password}">
     <hz:members>10.10.1.2:5701, 10.10.1.3:5701</hz:members>
 </hz:client>

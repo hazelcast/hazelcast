@@ -7,10 +7,7 @@
        xmlns:ns3='http://www.w3.org/1999/xhtml'
        xmlns:db='http://docbook.org/ns/docbook'>
     <title>Distributed List</title>
-    <para>
-        Distributed List is very similar to distributed set, but it allows duplicate elements.
-
-        <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
+    <para> Distributed List is very similar to distributed set, but it allows duplicate elements. <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
 import java.util.List;
 import java.util.Iterator;
 
@@ -24,11 +21,9 @@ list.add(new Price(12));
 //....
 Iterator it = list.iterator();
 while (it.hasNext()) { 
-	Price price = (Price) it.next(); 
-	//analyze
+    Price price = (Price) it.next(); 
+    //analyze
 }
 ]]></programlisting>
-
-
     </para>
 </sect1>

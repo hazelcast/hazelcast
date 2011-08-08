@@ -34,7 +34,7 @@
                 response of your <literal>HTTP GET</literal> request for that entry. </para>
         <para>Let's say you also have a task queue named 'tasks'. You can offer a new item into the
                 queue via HTTP POST and take and item from the queue via HTTP DELETE. </para>
-        <para><code>HTTP POST http://10.20.17.1:5701/hazelcast/rest/queues/tasks &lt;CONTENT&gt;</code> means <programlisting language="xml"><![CDATA[Hazelcast.getQueue("tasks").offer(<CONTENT>);
+        <para><code>HTTP POST http://10.20.17.1:5701/hazelcast/rest/queues/tasks &lt;CONTENT&gt;</code> means <programlisting language="java"><![CDATA[Hazelcast.getQueue("tasks").offer(<CONTENT>);
 ]]></programlisting> and <code>HTTP DELETE http://10.20.17.1:5701/hazelcast/rest/queues/tasks/3</code> means <programlisting language="java"><![CDATA[Hazelcast.getQueue("tasks").poll(3, SECONDS);
 ]]></programlisting> Note that you will have to handle the failures on REST polls as there is no
                 transactional guarantee. </para>

@@ -26,9 +26,9 @@
         </emphasis></emphasis></para>
     <para>Yes. Use Partition API to get the partition that your key falls into and then get the
         owner of that partition. Note that owner of the partition can change over time as new
-        members join or existing members leave the cluster. <programlisting language="java"><![CDATA[  PartitionService partitionService = Hazelcast.getPartitionService();
-   Partition partition = partitionService.getPartition(key);
-   Member ownerMember = partition.getOwner();
+        members join or existing members leave the cluster. <programlisting language="java"><![CDATA[PartitionService partitionService = Hazelcast.getPartitionService();
+Partition partition = partitionService.getPartition(key);
+Member ownerMember = partition.getOwner();
 ]]></programlisting>Locally owned entries can be obtained by
             calling<literal>map.localKeySet()</literal>.</para>
     <para><emphasis role="bold"><emphasis role="italic">
@@ -50,17 +50,17 @@
         eventually every member will know the owner of each partition (and each key). </para>
     <para>You can listen for migration events. <literal>MigrationEvent</literal> contains
             the<literal>partitionId</literal>,<literal>oldOwner</literal>, and
-            <literal>newOwner</literal> information. <programlisting language="java"><![CDATA[   PartitionService partitionService = Hazelcast.getPartitionService();
-   partitionService.addMigrationListener(new MigrationListener () {
+            <literal>newOwner</literal> information. <programlisting language="java"><![CDATA[PartitionService partitionService = Hazelcast.getPartitionService();
+partitionService.addMigrationListener(new MigrationListener () {
 
-        public void migrationStarted(MigrationEvent migrationEvent) {
-            System.out.println(migrationEvent);
-        }
+   public void migrationStarted(MigrationEvent migrationEvent) {
+      System.out.println(migrationEvent);
+   }
 
-        public void migrationCompleted(MigrationEvent migrationEvent) {
-            System.out.println(migrationEvent);
-        }
-   });
+   public void migrationCompleted(MigrationEvent migrationEvent) {
+      System.out.println(migrationEvent);
+   }
+});
 ]]></programlisting><emphasis role="bold"><emphasis role="italic"> Q. How about distributed set and
                 list?</emphasis></emphasis></para>
     <para>Both distributed set and list are implemented on top of distributed map. The underlying

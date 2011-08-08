@@ -28,13 +28,13 @@ Hazelcast.getExecutorService().execute(new DistributedTask(runnable, "key1"));
                 object is the value. and customer object contains the customer's orders. and let say
                 you want to remove one of the orders of a customer and return the number of
                 remaining orders. Here is how you would normally do it: <programlisting language="java"><![CDATA[public static int removeOrder(long customerId, long orderId) throws Exception {
-		IMap<Long, Customer> mapCustomers = Hazelcast.getMap("customers");
-		mapCustomers.lock (customerId);
-		Customer customer = mapCustomers. get(customerId);
-		customer.removeOrder (orderId);
-		mapCustomers.put(customerId, customer);
-		mapCustomers.unlock(customerId);
-		return customer.getOrderCount();
+    IMap<Long, Customer> mapCustomers = Hazelcast.getMap("customers");
+    mapCustomers.lock (customerId);
+    Customer customer = mapCustomers. get(customerId);
+    customer.removeOrder (orderId);
+    mapCustomers.put(customerId, customer);
+    mapCustomers.unlock(customerId);
+    return customer.getOrderCount();
 }
 ]]></programlisting> There are couple of things we should consider: <orderedlist>
                         <listitem>
