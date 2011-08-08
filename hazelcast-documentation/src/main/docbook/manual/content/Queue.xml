@@ -121,4 +121,7 @@ if (task != null) {
 
 
     </para>
+    
+    
+    <xi:include href="WildcardConfigurationLink.xml"/>
 </sect1>

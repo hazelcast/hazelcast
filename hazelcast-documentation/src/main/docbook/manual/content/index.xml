@@ -76,6 +76,7 @@
         <xi:include href="ConfigGroup.xml"/>
         <xi:include href="ConfigSpecifyInterfaces.xml"/>
         <xi:include href="NetworkPartitioning.xml"/>
+        <xi:include href="WildcardConfiguration.xml"/>
         <xi:include href="ConfigurationProperties.xml"/>
     </chapter>
     <chapter id="HibernateSecondLevelCache">

@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sect1 id="WildcardConfiguration" version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg" xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml" xmlns:db="http://docbook.org/ns/docbook">
+    <title>Wildcard Configuration</title>
+    <para>Hazelcast supports wildcard configuration of Maps, Queues and Topics. Using an asterisk
+        (*) character in the name, different instances of  Maps, Queues and Topics can be configured
+        by a single configuration. </para>
+    <db:para>Note that, with a limitation of a single usage, asterisk (*) can be placed anywhere
+        inside the configuration name. </db:para>
+    <db:para>For instance a map named '<code>com.hazelcast.test.mymap</code>' can be configured using one of
+        these configurations;</db:para>
+    <para><programlisting language="xml">
+<![CDATA[<map name="com.hazelcast.test.*">
+...
+</map>]]>
+        </programlisting><programlisting language="xml">
+<![CDATA[<map name="com.hazel*">
+...
+</map>]]>
+        </programlisting><programlisting language="xml">
+<![CDATA[<map name="*.test.mymap">
+...
+</map>]]>
+        </programlisting><programlisting language="xml">
+<![CDATA[<map name="com.*test.mymap">
+...
+</map>]]>
+        </programlisting> Or a queue '<code>com.hazelcast.test.myqueue</code>' <programlisting language="xml">
+<![CDATA[<queue name="*hazelcast.test.myqueue">
+...
+</queue>]]>
+        </programlisting><programlisting language="xml">
+<![CDATA[<queue name="com.hazelcast.*.myqueue">
+...
+</queue>]]>
+        </programlisting>
+    </para>
+</sect1>
