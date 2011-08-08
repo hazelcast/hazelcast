@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 id="EC2AutoDiscovery" version='5.0' xmlns='http://docbook.org/ns/docbook'
+<sect1 xml:id="EC2AutoDiscovery" version='5.0' xmlns='http://docbook.org/ns/docbook'
        xmlns:xlink='http://www.w3.org/1999/xlink'
        xmlns:xi='http://www.w3.org/2001/XInclude'
        xmlns:ns5='http://www.w3.org/2000/svg'
@@ -27,5 +27,5 @@
                 SDK so you will need to have aws-java-sdk and the libraries that it depends on. AWS
                 SDK 1.0.0 and above should work just fine. For the libraries that sdk depends on
                 please check out
-            <ulink url="http://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk/1.2.1">aws-java-sdk maven repository</ulink> details. </para>
+            <link xlink:href="http://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk/1.2.1">aws-java-sdk maven repository</link> details. </para>
 </sect1>

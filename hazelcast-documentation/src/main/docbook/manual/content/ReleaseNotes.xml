@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 id="ReleaseNotes" version='5.0' xmlns='http://docbook.org/ns/docbook'
+<sect1 xml:id="ReleaseNotes" version='5.0' xmlns='http://docbook.org/ns/docbook'
        xmlns:xlink='http://www.w3.org/1999/xlink'
        xmlns:xi='http://www.w3.org/2001/XInclude'
        xmlns:ns5='http://www.w3.org/2000/svg'
@@ -7,7 +7,7 @@
        xmlns:ns3='http://www.w3.org/1999/xhtml'
        xmlns:db='http://docbook.org/ns/docbook'>
     <title>Release Notes</title>
-    <para>Please see, <link linkend="Todo">Todo</link> page for planned features. </para>
+    <para>Please see, <link xlink:href="#Todo">Todo</link> page for planned features. </para>
     <para><emphasis role="bold">1.9.3</emphasis><itemizedlist>
             <listitem>
                 <para>Re-implementation of distributed queue. </para>
@@ -307,7 +307,7 @@
                     share the same sessions. </para>
             </listitem>
             <listitem>
-                <para>Ability to separate clusters by creating groups. <link linkend="ConfigGroup">ConfigGroup</link> </para>
+                <para>Ability to separate clusters by creating groups. <link xlink:href="#ConfigGroup">ConfigGroup</link> </para>
             </listitem>
             <listitem>
                 <para>
@@ -325,7 +325,7 @@
                 <para>Integration with J2EE transactions via JCA complaint resource adapter </para>
             </listitem>
             <listitem>
-                <para><link linkend="ExecutionCallback">ExecutionCallback</link> interface for distributed tasks </para>
+                <para><link xlink:href="#ExecutionCallback">ExecutionCallback</link> interface for distributed tasks </para>
             </listitem>
             <listitem>
                 <para>Cluster-wide unique id generator </para>

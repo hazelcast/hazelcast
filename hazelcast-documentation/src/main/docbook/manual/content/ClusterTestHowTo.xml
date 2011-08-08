@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 id="ClusterTestHowTo" version='5.0' xmlns='http://docbook.org/ns/docbook'
+<sect1 xml:id="ClusterTestHowTo" version='5.0' xmlns='http://docbook.org/ns/docbook'
        xmlns:xlink='http://www.w3.org/1999/xlink'
        xmlns:xi='http://www.w3.org/2001/XInclude'
        xmlns:ns5='http://www.w3.org/2000/svg'
@@ -102,5 +102,5 @@
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll(); 
     }
-]]></programlisting>Need more info? <ulink url="http://code.google.com/p/hazelcast/source/browse/trunk/hazelcast/src/test/java/com/hazelcast/impl/ClusterTest.java">Check out existing tests.</ulink></para>
+]]></programlisting>Need more info? <link xlink:href="http://code.google.com/p/hazelcast/source/browse/trunk/hazelcast/src/test/java/com/hazelcast/impl/ClusterTest.java">Check out existing tests.</link></para>
 </sect1>

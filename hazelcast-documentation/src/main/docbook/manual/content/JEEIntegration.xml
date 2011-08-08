@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 id="JEEIntegration" version='5.0' xmlns='http://docbook.org/ns/docbook'
+<sect1 xml:id="JEEIntegration" version='5.0' xmlns='http://docbook.org/ns/docbook'
        xmlns:xlink='http://www.w3.org/1999/xlink'
        xmlns:xi='http://www.w3.org/2001/XInclude'
        xmlns:ns5='http://www.w3.org/2000/svg'
@@ -57,7 +57,7 @@ try {
 ]]></programlisting>
 
     </para>
-    <sect2 id="JEEIntegrationConfig" version='5.0' xmlns='http://docbook.org/ns/docbook'
+    <sect2 xml:id="JEEIntegrationConfig" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
            xmlns:xi='http://www.w3.org/2001/XInclude'
            xmlns:ns5='http://www.w3.org/2000/svg'
@@ -97,7 +97,7 @@ try {
                 </listitem>
             </orderedlist></para>
     </sect2>
-    <sect2 id="JEEIntegrationGlassfishSample" version='5.0' xmlns='http://docbook.org/ns/docbook'
+    <sect2 xml:id="JEEIntegrationGlassfishSample" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
            xmlns:xi='http://www.w3.org/2001/XInclude'
            xmlns:ns5='http://www.w3.org/2000/svg'
@@ -131,7 +131,7 @@ try {
                 <literal>ejb-jar.xml</literal> for resource reference and <literal>JNDI</literal>
             definitions, just like we did for<literal>web.xml</literal>. </para>
     </sect2>
-    <sect2 id="JEEIntegrationJBossSample" version='5.0' xmlns='http://docbook.org/ns/docbook'
+    <sect2 xml:id="JEEIntegrationJBossSample" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
            xmlns:xi='http://www.w3.org/2001/XInclude'
            xmlns:ns5='http://www.w3.org/2000/svg'

@@ -6,13 +6,13 @@
     xmlns:db="http://docbook.org/ns/docbook">There are currently three ways to connect to a running
     Hazelcast cluster: <orderedlist>
         <listitem>
-            <link linkend="NativeClient">Native Clients</link>
+            <para><link xlink:href="#NativeClient">Native Clients</link></para>
         </listitem>
         <listitem>
-            <link linkend="MemcacheClient">Memcache Clients</link>
+            <para><link xlink:href="#MemcacheClient">Memcache Clients</link></para>
         </listitem>
         <listitem>
-            <link linkend="RestClient">REST Client</link>
+            <para><link xlink:href="#RestClient">REST Client</link></para>
         </listitem>
     </orderedlist>
 </para>

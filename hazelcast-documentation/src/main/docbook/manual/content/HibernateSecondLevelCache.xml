@@ -52,10 +52,8 @@
 <property name="hibernate.cache.hazelcast.native_client_password">dev-pass</property>
 ]]></programlisting><emphasis role="italic"> To use Native Client you should add
                         <literal>hazelcast-client-&lt;version&gt;.jar</literal> into your
-                    classpath.</emphasis>
-            </para>
-            <link linkend="NativeClient">Read more about NativeClient &amp; SuperClient 
-            </link>
+                        classpath.</emphasis></para>
+            <para><link xlink:href="#NativeClient">Read more about NativeClient &amp; SuperClient</link></para>
         </listitem>
         <listitem>
             <para>If you are using one of Hibernate pre-3.3 version, add following property. <programlisting language="xml"><![CDATA[<property name="hibernate.cache.provider_class">com.hazelcast.hibernate.provider.HazelcastCacheProvider</property>
@@ -73,13 +71,13 @@
         role="bold"> backup</emphasis>,<emphasis role="bold">eviction</emphasis>, <emphasis
         role="bold">TTL</emphasis> and <emphasis role="bold">Near Cache</emphasis> properties. <itemizedlist>
         <listitem>
-            <link linkend="MapBackup">Backup Configuration</link>
+            <para><link xlink:href="#MapBackup">Backup Configuration</link></para>
         </listitem>
         <listitem>
-            <link linkend="MapEviction">Eviction And TTL Configuration</link>
+            <para><link xlink:href="#MapEviction">Eviction And TTL Configuration</link></para>
         </listitem>
         <listitem>
-            <link linkend="MapNearCache">Near Cache Configuration</link>
+            <para><link xlink:href="#MapNearCache">Near Cache Configuration</link></para>
         </listitem>
     </itemizedlist>Hibernate has 4 cache concurrency
         strategies:<emphasis>read-only</emphasis>,<emphasis>read-write</emphasis>,

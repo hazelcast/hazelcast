@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 id="Map" version='5.0' xmlns='http://docbook.org/ns/docbook'
+<sect1 xml:id="Map" version='5.0' xmlns='http://docbook.org/ns/docbook'
        xmlns:xlink='http://www.w3.org/1999/xlink'
        xmlns:xi='http://www.w3.org/2001/XInclude'
        xmlns:ns5='http://www.w3.org/2000/svg'
@@ -58,8 +58,8 @@ public boolean removeCustomer (Customer customer) {
         or remote JVM, but they will eventually return with success.
             <literal>ConcurrentMap</literal> operations never
             throw<literal>java.util.ConcurrentModificationException</literal>. Also see
-        <link linkend="InternalsDistributedMap">distributed map internals</link>.</para>
-    <sect2 id="MapBackup" version='5.0' xmlns='http://docbook.org/ns/docbook'
+        <link xlink:href="#InternalsDistributedMap">distributed map internals</link>.</para>
+    <sect2 xml:id="MapBackup" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
            xmlns:xi='http://www.w3.org/2001/XInclude'
            xmlns:ns5='http://www.w3.org/2000/svg'
@@ -111,7 +111,7 @@ public boolean removeCustomer (Customer customer) {
             you won't lose any data because B was the backup of A and D was the backup of C. So you
             will only lose that if `sequential-JVM-crash-count &gt; backup-count`. </para>
     </sect2>
-    <sect2 id="MapEviction" version='5.0' xmlns='http://docbook.org/ns/docbook'
+    <sect2 xml:id="MapEviction" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
            xmlns:xi='http://www.w3.org/2001/XInclude'
            xmlns:ns5='http://www.w3.org/2000/svg'
@@ -189,7 +189,7 @@ public boolean removeCustomer (Customer customer) {
 ]]></programlisting>
         </para>
     </sect2>
-    <sect2 id="MapPersistence" version='5.0' xmlns='http://docbook.org/ns/docbook'
+    <sect2 xml:id="MapPersistence" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
            xmlns:xi='http://www.w3.org/2001/XInclude'
            xmlns:ns5='http://www.w3.org/2000/svg'
@@ -301,7 +301,7 @@ public boolean removeCustomer (Customer customer) {
                 </listitem>
             </db:orderedlist></para>
     </sect2>
-    <sect2 id="MapQuery" version="5.0" xmlns="http://docbook.org/ns/docbook"
+    <sect2 xml:id="MapQuery" version="5.0" xmlns="http://docbook.org/ns/docbook"
         xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude"
         xmlns:ns5="http://www.w3.org/2000/svg" xmlns:ns4="http://www.w3.org/1998/Math/MathML"
         xmlns:ns3="http://www.w3.org/1999/xhtml" xmlns:db="http://docbook.org/ns/docbook">
@@ -526,7 +526,7 @@ imap.addIndex("active", false);    // not ordered, because boolean field cannot 
                 <literal>ordered</literal> parameter should be<literal>true</literal>, otherwise set
             it to<literal>false</literal>. </para>
     </sect2>
-    <sect2 id="MapNearCache" version='5.0' xmlns='http://docbook.org/ns/docbook'
+    <sect2 xml:id="MapNearCache" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
            xmlns:xi='http://www.w3.org/2001/XInclude'
            xmlns:ns5='http://www.w3.org/2000/svg'
@@ -616,7 +616,7 @@ imap.addIndex("active", false);    // not ordered, because boolean field cannot 
 
         </para>
     </sect2>
-    <sect2 id="MapEntry" version='5.0' xmlns='http://docbook.org/ns/docbook'
+    <sect2 xml:id="MapEntry" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
            xmlns:xi='http://www.w3.org/2001/XInclude'
            xmlns:ns5='http://www.w3.org/2000/svg'

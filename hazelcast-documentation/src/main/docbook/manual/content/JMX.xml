@@ -7,7 +7,7 @@
     <itemizedlist>
         <listitem>
             <para>Add the following system properties to enable 
-                <ulink url="http://download.oracle.com/javase/1.5.0/docs/guide/management/agent.html">jmx agent</ulink></para>
+                <link xlink:href="http://download.oracle.com/javase/1.5.0/docs/guide/management/agent.html">jmx agent</link></para>
             <db:itemizedlist>
                 <listitem>
                     <para>-Dcom.sun.management.jmxremote</para>
