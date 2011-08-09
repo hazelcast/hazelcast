@@ -64,15 +64,7 @@ public abstract class IORunnable extends ClientRunnable {
         for (Iterator<Call> it = values.iterator(); it.hasNext();) {
             Call call = it.next();
             if (call == RECONNECT_CALL) continue;
-            //*/
-            logger.log(Level.INFO, "cancel call " + call);
-            /*/
-            try {
-                throw new Exception("cancel call " + call);
-            } catch (Exception e) {
-                logger.log(Level.INFO, e.getMessage(), e);
-            }
-            //*/
+            logger.log(Level.INFO, "Cancel " + call);
             call.setResponse(new NoMemberAvailableException());
             it.remove();
         }

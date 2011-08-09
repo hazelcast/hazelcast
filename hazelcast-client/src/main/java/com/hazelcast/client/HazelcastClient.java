@@ -69,6 +69,8 @@ public class HazelcastClient implements HazelcastInstance {
 
     private final ClientProperties properties;
 
+    volatile boolean active;
+
     private HazelcastClient(ClientProperties properties, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
         this.properties = properties;
         this.id = clientIdCounter.incrementAndGet();
@@ -431,6 +433,11 @@ public class HazelcastClient implements HazelcastInstance {
         in.shutdown();
         listenerManager.shutdown();
         ClientThreadContext.shutdown();
+        active = false;
+    }
+
+    public boolean isActive() {
+        return active;
     }
 
     protected void destroy(String proxyName) {

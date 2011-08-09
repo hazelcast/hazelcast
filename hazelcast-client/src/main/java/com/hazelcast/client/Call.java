@@ -19,10 +19,8 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.util.ResponseQueueFactory;
-import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class Call {
@@ -83,12 +81,8 @@ public class Call {
             Object res = (response != null) ? response : responseQueue.poll(timeout, unit);
             return handleResponse(res);
         } catch (InterruptedException e) {
-            //*/
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
-            /*/
-            return null;
-            //*/
         }
     }
 

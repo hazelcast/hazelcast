@@ -360,6 +360,21 @@ public class ConcurrentMapManager extends BaseManager {
         mput.txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, -1, -1);
     }
 
+    public void destroyEndpointThreads(Address endpoint, Set<Integer> threadIds) {
+        node.clusterManager.invalidateScheduledActionsFor(endpoint, threadIds);
+        for (CMap cmap : maps.values()) {
+            for (Record record : cmap.mapRecords.values()) {
+                DistributedLock lock = record.getLock();
+                if (lock != null && lock.isLocked()) {
+                    if (endpoint.equals(record.getLockAddress()) && threadIds.contains(record.getLock().getLockThreadId())) {
+                        record.setLock(null);
+                        cmap.fireScheduledActions(record);
+                    }
+                }
+            }
+        }
+    }
+
     class MLock extends MBackupAndMigrationAwareOp {
         volatile Data oldValue = null;
 

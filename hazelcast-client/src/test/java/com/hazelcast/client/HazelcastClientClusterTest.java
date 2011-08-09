@@ -39,7 +39,9 @@ import static com.hazelcast.client.TestUtility.destroyClients;
 import static com.hazelcast.client.TestUtility.newHazelcastClient;
 import static com.hazelcast.impl.TestUtil.OrderKey;
 import static junit.framework.Assert.assertEquals;
-import static org.junit.Assert.*;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.fail;
 
 public class HazelcastClientClusterTest {
 
@@ -59,6 +61,48 @@ public class HazelcastClientClusterTest {
     @After
     public void after() throws Exception {
         destroyClients();
+    }
+
+    @Test
+    public void testLockOwnerClientDies() throws Exception {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastClient client1 = newHazelcastClient(h1);
+        HazelcastClient client2 = newHazelcastClient(h1);
+        final IMap c1 = client1.getMap("default");
+        final IMap c2 = client2.getMap("default");
+        final IMap m1 = h1.getMap("default");
+        c1.lock("key");
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                c2.lock("key");
+                latch.countDown();
+            }
+        }).start();
+        Thread.sleep(1000); // make sure c1.lock("key") is called and blocked
+        client1.shutdown();
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testLockWaitingClientDies() throws Exception {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastClient client1 = newHazelcastClient(h1);
+        HazelcastClient client2 = newHazelcastClient(h1);
+        final IMap c1 = client1.getMap("default");
+        final IMap c2 = client2.getMap("default");
+        final IMap m1 = h1.getMap("default");
+        m1.lock("key");
+        new Thread(new Runnable() {
+            public void run() {
+                c1.lock("key");
+            }
+        }).start();
+        Thread.sleep(1000); // make sure c1.lock("key") is called and blocked
+        client1.shutdown();
+        Thread.sleep(1000);
+        m1.unlock("key");
+        assertTrue(c2.tryLock("key"));
     }
 
     @Test

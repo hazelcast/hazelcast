@@ -29,6 +29,7 @@ public class ClientRequestHandler extends FallThroughRunnable {
     private final Node node;
     private final ClientService.ClientOperationHandler clientOperationHandler;
     private volatile Thread runningThread = null;
+    private volatile boolean valid = true;
     private final ILogger logger;
 
     public ClientRequestHandler(Node node, Packet packet, CallContext callContext, ClientOperationHandler clientOperationHandler) {
@@ -44,6 +45,7 @@ public class ClientRequestHandler extends FallThroughRunnable {
         runningThread = Thread.currentThread();
         ThreadContext.get().setCallContext(callContext);
         try {
+            if (!valid) return;
             clientOperationHandler.handle(node, packet);
             node.clientService.getClientEndpoint(packet.conn).removeRequest(this);
             clientOperationHandler.postHandle(packet);
@@ -52,10 +54,15 @@ public class ClientRequestHandler extends FallThroughRunnable {
             if (node.isActive()) {
                 throw (RuntimeException) e;
             }
+        } finally {
+            runningThread = null;
         }
     }
 
-    public void interrupt() {
-        runningThread.interrupt();
+    public void cancel() {
+        valid = false;
+        if (runningThread != null) {
+            runningThread.interrupt();
+        }
     }
 }

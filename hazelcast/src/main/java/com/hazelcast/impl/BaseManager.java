@@ -485,6 +485,9 @@ public abstract class BaseManager {
                         logger.log(Level.FINEST, "Still no response! " + request);
                     }
                     node.checkNodeState();
+                    if (Thread.interrupted()) {
+                        handleInterruptedException();
+                    }
                 } catch (InterruptedException e) {
                     handleInterruptedException();
                 }
@@ -495,8 +498,7 @@ public abstract class BaseManager {
             if (node.factory.restarted) {
                 throw new RuntimeException();
             } else {
-                //Thread.currentThread().interrupt();
-                throw new RuntimeInterruptedException();
+                throw new RuntimeInterruptedException(Thread.currentThread().toString() + " is interrupted.");
             }
         }
 

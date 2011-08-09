@@ -24,26 +24,21 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.ConcurrentHashSet;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener, ConnectionListener, ClientService.ClientListener {
-    private final Connection conn;
-    private final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
+    final Connection conn;
+    final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
     final Map<ITopic, MessageListener<Object>> messageListeners = new HashMap<ITopic, MessageListener<Object>>();
-    private final Map<Integer, Map<IMap, List<Data>>> locks = new ConcurrentHashMap<Integer, Map<IMap, List<Data>>>();
-    private final List<IMap> listeningMaps = new ArrayList<IMap>();
-    private final List<Map.Entry<IMap, Object>> listeningKeysOfMaps = new ArrayList<Map.Entry<IMap, Object>>();
-    public Map<IQueue, ItemListener<Object>> queueItemListeners = new ConcurrentHashMap<IQueue, ItemListener<Object>>();
-    private Map<Long, DistributedTask> runningExecutorTasks = new ConcurrentHashMap<Long, DistributedTask>();
-    private ConcurrentHashSet<ClientRequestHandler> currentRequests = new ConcurrentHashSet<ClientRequestHandler>();
-    private final Node node;
+    final List<IMap> listeningMaps = new ArrayList<IMap>();
+    final List<Map.Entry<IMap, Object>> listeningKeysOfMaps = new ArrayList<Map.Entry<IMap, Object>>();
+    final Map<IQueue, ItemListener<Object>> queueItemListeners = new ConcurrentHashMap<IQueue, ItemListener<Object>>();
+    final Map<Long, DistributedTask> runningExecutorTasks = new ConcurrentHashMap<Long, DistributedTask>();
+    final ConcurrentHashSet<ClientRequestHandler> currentRequests = new ConcurrentHashSet<ClientRequestHandler>();
+    final Node node;
 
     ClientEndpoint(Node node, Connection conn) {
         this.node = node;
@@ -204,18 +199,28 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     public void connectionRemoved(Connection connection) {
         LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) node.factory.getLifecycleService();
         if (connection.equals(this.conn) && !lifecycleService.paused.get()) {
-            removeLocks();
+            destroyEndpointThreads();
             rollbackTransactions();
             removeEntryListeners();
             removeEntryListenersWithKey();
             removeMessageListeners();
-            interruptRunningOperations();
+            cancelRunningOperations();
         }
     }
 
-    private void interruptRunningOperations() {
+    private void destroyEndpointThreads() {
+        Set<Integer> threadIds = new HashSet<Integer>(callContexts.size());
+        for (CallContext callContext : callContexts.values()) {
+            threadIds.add(callContext.getThreadId());
+        }
+        Set<Member> allMembers = node.getClusterImpl().getMembers();
+        MultiTask task = new MultiTask(new DestroyEndpointThreadsCallable(node.getThisAddress(), threadIds), allMembers);
+        node.factory.getExecutorService().execute(task);
+    }
+
+    private void cancelRunningOperations() {
         for (ClientRequestHandler clientRequestHandler : currentRequests) {
-            clientRequestHandler.interrupt();
+            clientRequestHandler.cancel();
         }
         currentRequests.clear();
     }
@@ -225,19 +230,6 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
             ThreadContext.get().setCallContext(callContext);
             if (callContext.getTransaction() != null && callContext.getTransaction().getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 callContext.getTransaction().rollback();
-            }
-        }
-    }
-
-    private void removeLocks() {
-        for (Integer threadId : locks.keySet()) {
-            ThreadContext.get().setCallContext(getCallContext(threadId));
-            Map<IMap, List<Data>> mapOfLocks = locks.get(threadId);
-            for (IMap map : mapOfLocks.keySet()) {
-                List<Data> list = mapOfLocks.get(map);
-                for (Data key : list) {
-                    map.unlock(key);
-                }
             }
         }
     }
@@ -258,43 +250,6 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     private void removeEntryListeners() {
         for (IMap map : listeningMaps) {
             map.removeEntryListener(this);
-        }
-    }
-
-    public void locked(IMap<Object, Object> map, Data keyData, int threadId) {
-        if (!locks.containsKey(threadId)) {
-            synchronized (locks) {
-                if (!locks.containsKey(threadId)) {
-                    Map<IMap, List<Data>> mapOfLocks = new ConcurrentHashMap<IMap, List<Data>>();
-                    locks.put(threadId, mapOfLocks);
-                }
-            }
-        }
-        Map<IMap, List<Data>> mapOfLocks = locks.get(threadId);
-        if (!mapOfLocks.containsKey(map)) {
-            synchronized (locks.get(threadId)) {
-                if (!mapOfLocks.containsKey(map)) {
-                    List<Data> list = new CopyOnWriteArrayList<Data>();
-                    mapOfLocks.put(map, list);
-                }
-            }
-        }
-        mapOfLocks.get(map).add(keyData);
-    }
-
-    public void unlocked(IMap<Object, Object> map, Data keyData, int threadId) {
-        if (locks.containsKey(threadId)) {
-            Map<IMap, List<Data>> mapOfLocks = locks.get(threadId);
-            if (mapOfLocks.containsKey(map)) {
-                List list = mapOfLocks.get(map);
-                list.remove(keyData);
-                if (list.size() == 0) {
-                    mapOfLocks.remove(map);
-                }
-                if (locks.keySet().size() == 0) {
-                    locks.remove(threadId);
-                }
-            }
         }
     }
 

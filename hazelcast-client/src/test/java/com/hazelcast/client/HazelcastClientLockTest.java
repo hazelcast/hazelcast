@@ -18,7 +18,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.ILock;
-import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;

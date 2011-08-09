@@ -878,6 +878,22 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
+    public void invalidateScheduledActionsFor(Address endpoint, Set<Integer> threadIds) {
+        if (!node.joined() || !node.isActive()) return;
+        if (setScheduledActions.size() > 0) {
+            Iterator<ScheduledAction> it = setScheduledActions.iterator();
+            while (it.hasNext()) {
+                ScheduledAction sa = it.next();
+                Request request = sa.getRequest();
+                if (endpoint.equals(request.caller) && threadIds.contains(request.lockThreadId)) {
+                    System.out.println("invalided scheduled action ");
+                    sa.setValid(false);
+                    it.remove();
+                }
+            }
+        }
+    }
+
     public void connectionAdded(final Connection connection) {
         enqueueAndReturn(new Processable() {
             public void process() {

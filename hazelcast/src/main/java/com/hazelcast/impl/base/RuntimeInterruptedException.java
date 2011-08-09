@@ -18,4 +18,10 @@
 package com.hazelcast.impl.base;
 
 public class RuntimeInterruptedException extends RuntimeException {
+    public RuntimeInterruptedException() {
+    }
+
+    public RuntimeInterruptedException(String message) {
+        super(message);
+    }
 }

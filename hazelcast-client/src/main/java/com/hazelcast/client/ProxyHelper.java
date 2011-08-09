@@ -53,29 +53,9 @@ public class ProxyHelper {
         return name;
     }
 
-    final AtomicLong count = new AtomicLong();
-    final AtomicLong sent = new AtomicLong();
-    final AtomicLong written = new AtomicLong();
-    final AtomicLong received = new AtomicLong();
-    final AtomicLong replied = new AtomicLong();
-
     protected Packet callAndGetResult(Packet request) {
-        long theCount = count.incrementAndGet();
-        long now = System.nanoTime();
         Call c = createCall(request);
-        Packet response = doCall(c);
-        sent.addAndGet(c.sent - now);
-        written.addAndGet(c.written - c.sent);
-        received.addAndGet(c.received - c.written);
-        replied.addAndGet(c.replied - c.received);
-//        if (theCount == 30000) {
-//            count.addAndGet(-30000);
-//            System.out.println("sent " + (sent.getAndSet(0) / theCount / 1000));
-//            System.out.println("written " + (written.getAndSet(0) / theCount / 1000));
-//            System.out.println("received " + (received.getAndSet(0) / theCount / 1000));
-//            System.out.println("replied " + (replied.getAndSet(0) / theCount / 1000));
-//        }
-        return response;
+        return doCall(c);
     }
 
     protected Packet doCall(Call c) {
@@ -91,6 +71,9 @@ public class ProxyHelper {
             if (i > 0) {
                 logger.log(Level.INFO, "There is no response for " + c
                         + " in " + (timeout * i) + " seconds.");
+            }
+            if (!client.isActive()) {
+                throw new RuntimeException("HazelcastClient is no longer active.");
             }
         }
     }

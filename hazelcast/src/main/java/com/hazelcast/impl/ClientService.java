@@ -179,10 +179,15 @@ public class ClientService implements ConnectionListener {
         public void run() {
             ThreadContext.get().setCurrentFactory(node.factory);
             while (active) {
+                Runnable r = null;
                 try {
-                    q.take().run();
+                    r = q.take();
                 } catch (InterruptedException e) {
                     return;
+                }
+                try {
+                    r.run();
+                } catch (Throwable ignored) {
                 }
             }
         }
@@ -902,8 +907,6 @@ public class ClientService implements ConnectionListener {
                 value = toData(map.tryLock(packet.getKeyData(), timeout, (TimeUnit) toObject(packet.getValueData())));
             }
             packet.setValue(value);
-            ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
-            clientEndpoint.locked(map, packet.getKeyData(), packet.threadId);
         }
     }
 
@@ -924,8 +927,6 @@ public class ClientService implements ConnectionListener {
                 map = multiMapProxy.getMProxy();
             }
             Data value = processMapOp(map, packet.getKeyData(), packet.getValueData());
-            ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
-            clientEndpoint.unlocked(map, packet.getKeyData(), packet.threadId);
             packet.clearForResponse();
             packet.setValue(value);
         }
@@ -942,8 +943,6 @@ public class ClientService implements ConnectionListener {
             long timeout = packet.timeout;
             Data value = toData(map.lockMap(timeout, (TimeUnit) toObject(packet.getValueData())));
             packet.setValue(value);
-            ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
-            clientEndpoint.locked(map, packet.getKeyData(), packet.threadId);
         }
     }
 
@@ -957,8 +956,6 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
             Data value = processMapOp(map, packet.getKeyData(), packet.getValueData());
-            ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
-            clientEndpoint.unlocked(map, packet.getKeyData(), packet.threadId);
             packet.clearForResponse();
             packet.setValue(value);
         }
