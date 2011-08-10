@@ -8,9 +8,9 @@
        xmlns:db='http://docbook.org/ns/docbook'>
     <title>Distributed MultiMap</title>
     <para>
-        `MultiMap` is a specialized map where you can associate a key with multiple values.
+        <literal>MultiMap</literal> is a specialized map where you can associate a key with multiple values.
         Just like any other distributed data structure implementation in Hazelcast,
-        `MultiMap` is distributed/partitioned and thread-safe.
+        <literal>MultiMap</literal> is distributed/partitioned and thread-safe.
 
         <programlisting language="java"><![CDATA[import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Hazelcast;

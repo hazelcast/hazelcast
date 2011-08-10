@@ -86,7 +86,7 @@ if (task != null) {
             <literal>map-store</literal> defined then Hazelcast will call your
             <literal>MapStore</literal> implementation to persist queue elements. Even if you reboot
         your cluster Hazelcast will rebuild the queue with its content. When implementing a
-            <literal>MapStore</literal> for the backing map, note that type of the`key` is always
+            <literal>MapStore</literal> for the backing map, note that type of the <literal>key</literal> is always
             <literal>Long</literal> and values are the elements you place into the queue. So make
         sure <literal>MapStore.loadAllKeys</literal> returns <literal>Set&lt;Long&gt;</literal> for
         instance. </para>

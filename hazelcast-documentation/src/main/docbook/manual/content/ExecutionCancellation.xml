@@ -46,10 +46,10 @@
     }
     return -1;
 }
-]]></programlisting> `fib(20)` will probably will take less than 3 seconds but `fib(50)` will take
+]]></programlisting> <literal>fib(20)</literal> will probably will take less than 3 seconds but <literal>fib(50)</literal> will take
         way longer. (This is not the example for writing better fibonacci calculation code but for
-        showing how to cancel a running execution that takes too long.) `future.cancel(false)` can
-        only cancel execution before it is running (executing) but `future.cancel(true)` can
+        showing how to cancel a running execution that takes too long.) <literal>future.cancel(false)</literal> can
+        only cancel execution before it is running (executing) but <literal>future.cancel(true)</literal> can
         interrupt running executions if your code is able to handle the interruption. So if you are
         willing to be able to cancel already running task then your task has to be designed to
         handle interruption. If <literal>calculate (int n)</literal> method didn't have if

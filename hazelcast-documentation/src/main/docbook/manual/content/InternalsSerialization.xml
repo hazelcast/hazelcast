@@ -11,11 +11,11 @@
                 distributed queue and your distributed callable/runnable objects have to
                         be<literal>Serializable</literal>. </para>
         <para>Hazelcast serializes all your objects into an instance
-                        of<literal>com.hazelcast.nio.Data</literal>. `Data` is the binary
-                representation of an object and it holds list of `java.nio.ByteBuffer` instances
+                        of<literal>com.hazelcast.nio.Data</literal>. <literal>Data</literal> is the binary
+                representation of an object and it holds list of <literal>java.nio.ByteBuffer</literal> instances
                 which are reused. When Hazelcast serializes an object into<literal>Data</literal>,
                 it first checks whether the object is an instance of well-known, optimizable object
-                such as `String, Long, Integer, byte[], ByteBuffer, Date`. If not, it then checks
+                such as <literal>String, Long, Integer, byte[], ByteBuffer, Date</literal>. If not, it then checks
                 whether the object is an instance
                         of<literal>com.hazelcast.nio.DataSerializable</literal>. If not, Hazelcast
                 uses standard java serialization to convert the object into binary format. See

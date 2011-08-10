@@ -13,7 +13,7 @@
         Please note that Echo class is
         <literal>Serializable</literal>
         .
-        You can ask Hazelcast to execute your code (`Runnable, Callable`):
+        You can ask Hazelcast to execute your code (<literal>Runnable, Callable</literal>):
         <itemizedlist>
             <listitem>
                 <para>on a specific cluster member you choose.

@@ -17,20 +17,20 @@
         Serialization of the objects also happens in the client threads. This also eliminates the
         problems associated with classloaders. Client threads initiate the calls, serialize the
         objects into Hazelcast <literal>com.hazelcast.nio.Data</literal> object which holds
-            a<literal>java.nio.ByteBuffer</literal>. `Data` object is the binary representation of
+            a<literal>java.nio.ByteBuffer</literal>. <literal>Data</literal> object is the binary representation of
         the application objects (key, value, item, callable objects). All Hazelcast threads such
             as<literal>ServiceThread</literal>, <literal>InThread</literal> and
             <literal>OutThread</literal> work with <literal>Data</literal> objects; they don't know
         anything about the actual application objects. When the calls are finalized, if the return
-        type is an object, `Data` object is returned to the client thread and client thread then
-        will deserialize the `Data` (binary representation) back to the application objects. </para>
+        type is an object, <literal>Data</literal> object is returned to the client thread and client thread then
+        will deserialize the <literal>Data</literal> (binary representation) back to the application objects. </para>
     <para>For each client thread, there is a <literal>com.hazelcast.impl.ThreadContext</literal>
         thread-local instance attached which contains thread context information such as
         transaction. </para>
     <para><emphasis role="bold">2. <literal>ServiceThread</literal>:</emphasis></para>
-    <para>`ServiceThread`, implemented at `com.hazelcast.impl.ClusterService`, is the most
+    <para><literal>ServiceThread</literal>, implemented at <literal>com.hazelcast.impl.ClusterService</literal>, is the most
         significant thread in Hazelcast. Almost all none-IO operations happens in this thread.
-        `ServiceThread` serves to local client calls and the calls from other members. </para>
+        <literal>ServiceThread</literal> serves to local client calls and the calls from other members. </para>
     <para>If you look at the <literal>ClusterService</literal> class you will see it is constantly
         dequeueing its queue and processing local and remote events.
             <literal>ClusterService</literal> queue receives local events in the form of
@@ -73,8 +73,8 @@
             <literal>OP_CONNECT</literal> and <literal>OP_WRITE</literal> operations. </para>
     <para>Each thread has its queue that they dequeue to register these operations with their
         selectors so operation registrations and operation processing happens in the same threads. </para>
-    <para>`InThread`'s runnable is the `com.hazelcast.nio.InSelector` and `OutThread`'s runnable is
-        the `com.hazelcast.nio.OutSelector`. They both extends `SelectorBase` which constantly
+    <para><literal>InThread</literal>'s runnable is the <literal>com.hazelcast.nio.InSelector</literal> and <literal>OutThread</literal>'s runnable is
+        the <literal>com.hazelcast.nio.OutSelector</literal>. They both extends <literal>SelectorBase</literal> which constantly
         processes its registration queue ('selectorQueue') and the selectedKeys. </para>
     <para>Members are connected to each other via<literal>TCP/IP</literal>. If there are N number of
         members in the cluster then there will be <literal>N*(N-1)</literal> connection end point
@@ -134,12 +134,12 @@
         the <literal>ReadHandler</literal> instance from the selectionKey and call its handle()
         method. handle() method will read Invocation instances from the underlying socket and when
         an Invocation instance is fully read, it will enqueue it
-            into<literal>ServiceThread</literal>'s (`ClusterService` class) queue to be processed. </para>
+            into<literal>ServiceThread</literal>'s (<literal>ClusterService</literal> class) queue to be processed. </para>
     <para><emphasis role="bold">4. <literal>MulticastThread</literal>: </emphasis></para>
     <para>If multicast discovery is enabled (this is the default), and node is the master (oldest
         member) in the cluster then <literal>MulticastThread</literal> is started to listen for join
         requests from the new members. When it receives join request
-        (`com.hazelcast.nio.MulticastService.JoinInfo` class), it will check if the node is allowed
+        (<literal>com.hazelcast.nio.MulticastService.JoinInfo</literal> class), it will check if the node is allowed
         to join, if so, it will send its address to the sender so that the sender node can create a
             <literal>TCP/IP</literal> connection to the master and send
             a<literal>JoinRequest</literal>. </para>

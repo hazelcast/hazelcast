@@ -7,8 +7,8 @@
        xmlns:ns3='http://www.w3.org/1999/xhtml'
        xmlns:db='http://docbook.org/ns/docbook'>
     <title>Execution Callback</title>
-    <para> `ExecutionCallback` allows you to asynchronously get notified when the execution is done.
-        When implementing `ExecutionCallback.done(Future)` method, you can check if the task is
+    <para> <literal>ExecutionCallback</literal> allows you to asynchronously get notified when the execution is done.
+        When implementing <literal>ExecutionCallback.done(Future)</literal> method, you can check if the task is
         already cancelled. <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.DistributedTask;

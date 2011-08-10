@@ -32,8 +32,8 @@
     <programlisting language="java"><![CDATA[> clusterWebapp.bat myapp.ear
 > Done. New clustered application at C:\hazelcast-1.1\clustered-myapp.ear
 ]]></programlisting>
-    `clusterWebapp.bat|sh` will not modify the war/ear files passed in. Instead, it will create a new war/ear file and
-    name it as `clustered-&lt;app-file-name/&gt;`.
+    <literal>clusterWebapp.bat|sh</literal> will not modify the war/ear files passed in. Instead, it will create a new war/ear file and
+    name it as <literal>clustered-&lt;app-file-name/&gt;</literal>.
     You can pass multiple war and ear files. Besides if you pass
     <literal>-apps-sharing-sessions</literal>
     as an argument then your applications will be able to share the same sessions. If

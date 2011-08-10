@@ -26,8 +26,8 @@ Collection<Customer> colCustomers = mapCustomers.values();
 for (Customer customer : colCustomers) {
 	// process customer
 }
-]]></programlisting> `Hazelcast.getMap()` actually returns `com.hazelcast.core.IMap` which extends
-        `java.util.concurrent.ConcurrentMap` interface. So methods like
+]]></programlisting> <literal>Hazelcast.getMap()</literal> actually returns <literal>com.hazelcast.core.IMap</literal> which extends
+        <literal>java.util.concurrent.ConcurrentMap</literal> interface. So methods like
             <literal>ConcurrentMap.putIfAbsent(key,value)</literal> and
             <literal>ConcurrentMap.replace(key,value)</literal> can be used on distributed map as
         shown in the example below. <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
@@ -76,7 +76,7 @@ public boolean removeCustomer (Customer customer) {
             call returns, it means entry is updated on the both owner and backup JVMs. If backup
             count &gt;= 1, then each member will carry both owned entries and backup copies of other
             member(s). So for the <literal>map.get(key)</literal> call, it is possible that calling
-            member has backup copy of that key but by default, `map.get(key)` will always read the
+            member has backup copy of that key but by default, <literal>map.get(key)</literal> will always read the
             value from the actual owner of the key for consistency. It is possible to enable backup
             reads by changing the configuration. Enabling backup reads will give you greater
             performance. <programlisting language="xml"><![CDATA[<hazelcast>
@@ -109,7 +109,7 @@ public boolean removeCustomer (Customer customer) {
             onto B, B's data onto C... and G's data onto A. If A and B crashes at the same time then
             you will lose data because B was the backup of A. But A and C crashes at the same time,
             you won't lose any data because B was the backup of A and D was the backup of C. So you
-            will only lose that if `sequential-JVM-crash-count &gt; backup-count`. </para>
+            will only lose that if <literal>sequential-JVM-crash-count &gt; backup-count</literal>. </para>
     </sect2>
     <sect2 xml:id="MapEviction" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
@@ -276,7 +276,7 @@ public boolean removeCustomer (Customer customer) {
                 <literal>MapLoader.loadAllKeys</literal> API. It is used for pre-populating the
             in-memory map when the map is first touched/used. If
                 <literal>MapLoader.loadAllKeys</literal> returns NULL then nothing will be loaded.
-            Your `MapLoader.loadAllKeys` implementation can return all or some of the keys. You may
+            Your <literal>MapLoader.loadAllKeys</literal> implementation can return all or some of the keys. You may
             select and return only the <literal>hot</literal> keys, for instance. Also note that
             this is the fastest way of pre-populating the map as Hazelcast will optimize the loading
             process by having each node loading owned portion of the entries. </para>
@@ -348,7 +348,7 @@ public class Employee implements Serializable {
 ]]></programlisting>Now you are looking for the employees who are active and with age less than 30.
             Hazelcast allows you to find these entries in two different ways: </para>
         <para><emphasis role="bold"> Distributed SQL Query </emphasis></para>
-        <para>`SqlPredicate` takes regular SQL where clause. Here is an example: <programlisting language="java"><![CDATA[import com.hazelcast.core.IMap;
+        <para><literal>SqlPredicate</literal> takes regular SQL where clause. Here is an example: <programlisting language="java"><![CDATA[import com.hazelcast.core.IMap;
 import com.hazelcast.query.SqlPredicate;
 
 IMap map = Hazelcast.getMap("employee");

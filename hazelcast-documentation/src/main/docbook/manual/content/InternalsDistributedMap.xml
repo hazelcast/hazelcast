@@ -67,7 +67,7 @@ partitionService.addMigrationListener(new MigrationListener () {
         distributed map doesn't hold value; it only knows the key. Items added to both list and set
         are treated as keys. Unlike distributed set, since distributed list can have duplicate
         items, if an existing item is added again, <literal>copyCount</literal> of the entry
-        (`com.hazelcast.impl.ConcurrentMapManager.Record`) is incremented. Also note that index
+        (<literal>com.hazelcast.impl.ConcurrentMapManager.Record</literal>) is incremented. Also note that index
         based methods of distributed list, such as <literal>List.get(index)</literal>
             and<literal>List.indexOf(Object)</literal>, are not supported because it is too costly
         to keep distributed indexes of list items so it is not worth implementing. </para>

@@ -100,7 +100,7 @@ public static class OrderDeletionTask implements Callable<Integer>, Serializable
                                                   based on the key are: <itemizedlist>
                                                   <listitem>
                                                   <para>Only one distributed execution
-                                                  (`es.execute(task)`), instead of four.</para>
+                                                  (<literal>es.execute(task)</literal>), instead of four.</para>
                                                   </listitem>
                                                   <listitem>
                                                   <para>Less data sent over the wire. </para>

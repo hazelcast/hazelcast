@@ -21,9 +21,9 @@ try {
  
 ]]></programlisting>
 
-        `java.util.concurrent.locks.Lock.tryLock()` with timeout is also supported. All operations on the Lock that
-        `Hazelcast.getLock(Object obj)` returns are cluster-wide and Lock behaves just like
-        `java.util.concurrent.lock.ReentrantLock`.
+        <literal>java.util.concurrent.locks.Lock.tryLock()</literal> with timeout is also supported. All operations on the Lock that
+        <literal>Hazelcast.getLock(Object obj)</literal> returns are cluster-wide and Lock behaves just like
+        <literal>java.util.concurrent.lock.ReentrantLock</literal>.
 
         <programlisting language="java"><![CDATA[if (lock.tryLock (5000, TimeUnit.MILLISECONDS)) {
     try {  
