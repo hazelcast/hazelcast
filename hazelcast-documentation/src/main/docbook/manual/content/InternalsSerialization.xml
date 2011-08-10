@@ -9,15 +9,15 @@
     <title>Internals 2: Serialization</title>
     <para>All your distributed objects such as your key and value objects, objects you offer into
                 distributed queue and your distributed callable/runnable objects have to
-                        be<literal>Serializable</literal>. </para>
+                        be <literal>Serializable</literal>. </para>
         <para>Hazelcast serializes all your objects into an instance
-                        of<literal>com.hazelcast.nio.Data</literal>. <literal>Data</literal> is the binary
+                        of <literal>com.hazelcast.nio.Data</literal>. <literal>Data</literal> is the binary
                 representation of an object and it holds list of <literal>java.nio.ByteBuffer</literal> instances
-                which are reused. When Hazelcast serializes an object into<literal>Data</literal>,
+                which are reused. When Hazelcast serializes an object into <literal>Data</literal>,
                 it first checks whether the object is an instance of well-known, optimizable object
                 such as <literal>String, Long, Integer, byte[], ByteBuffer, Date</literal>. If not, it then checks
                 whether the object is an instance
-                        of<literal>com.hazelcast.nio.DataSerializable</literal>. If not, Hazelcast
+                        of <literal>com.hazelcast.nio.DataSerializable</literal>. If not, Hazelcast
                 uses standard java serialization to convert the object into binary format. See
                         <literal>com.hazelcast.nio.Serializer</literal> for details. </para>
         <para>So for faster serialization, Hazelcast recommends to use of <literal>String, Long,
@@ -79,7 +79,7 @@
 	}
 }
 ]]></programlisting>As you can see, since <literal>address</literal> field itself
-                        is<literal>DataSerializable</literal>, it is calling
+                        is <literal>DataSerializable</literal>, it is calling
                         <literal>address.writeData(out)</literal> when writing and
                         <literal>address.readData(in)</literal> when reading. </para>
         <para><emphasis role="bold">Caution:</emphasis> Hazelcast serialization is done on the user

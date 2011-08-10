@@ -8,7 +8,7 @@
        xmlns:db='http://docbook.org/ns/docbook'>
     <title>Distributed Queue</title>
     <para> Hazelcast distributed queue is an implementation
-            of<literal>java.util.concurrent.BlockingQueue</literal>. <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
+            of <literal>java.util.concurrent.BlockingQueue</literal>. <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 

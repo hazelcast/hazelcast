@@ -284,7 +284,7 @@
             </listitem>
             <listitem>
                 <para>Get the list of all data structure instances
-                        via<literal>Hazelcast.getInstances()</literal>. </para>
+                        via <literal>Hazelcast.getInstances()</literal>. </para>
             </listitem>
         </itemizedlist>
         <emphasis role="bold">1.5</emphasis><itemizedlist>
@@ -292,7 +292,7 @@
                 <para>Major internal refactoring </para>
             </listitem>
             <listitem>
-                <para>Full implementation of<literal>java.util.concurrent.BlockingQueue</literal>.
+                <para>Full implementation of <literal>java.util.concurrent.BlockingQueue</literal>.
                     Now queues can have configurable capacity limits. </para>
             </listitem>
             <listitem>

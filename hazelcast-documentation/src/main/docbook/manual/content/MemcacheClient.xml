@@ -27,7 +27,7 @@
     var_dump($get_result); //show it
 ?>
 ]]></programlisting>Notice that memcache client is connecting to <literal>10.20.17.1</literal> and
-        using port<literal>5701</literal>. Java client code sample with SpyMemcached client: <programlisting language="java"><![CDATA[MemcachedClient client = new MemcachedClient(AddrUtil.getAddresses("10.20.17.1:5701 10.20.17.2:5701"));
+        using port <literal>5701</literal>. Java client code sample with SpyMemcached client: <programlisting language="java"><![CDATA[MemcachedClient client = new MemcachedClient(AddrUtil.getAddresses("10.20.17.1:5701 10.20.17.2:5701"));
 client.set("key1", 3600, "value1");
 System.out.println(client.get("key1"));
 ]]></programlisting>An entry written with a memcache client can be read by another memcache client

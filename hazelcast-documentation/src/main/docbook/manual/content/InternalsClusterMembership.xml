@@ -27,7 +27,7 @@
         </itemizedlist>If there is no existing node, then the node will be the first member of the
         cluster. If multicast is enabled then it will start a multicast listener so that it can
         respond to incoming join requests. Otherwise it will listen for join request coming
-            via<literal>TCP/IP</literal>. </para>
+            via <literal>TCP/IP</literal>. </para>
     <para>If there is an existing cluster already, then the oldest member in the cluster will
         receive the join request and check if the request is for the right group. If so, the oldest
         member in the cluster will start the join process. </para>

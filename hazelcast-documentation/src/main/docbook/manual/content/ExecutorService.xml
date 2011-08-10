@@ -14,7 +14,7 @@
     the result and move on. If execution of the task takes longer than expected, you may consider canceling the task
     execution. In Java Executor framework, tasks are implemented as
     <literal>java.util.concurrent.Callable</literal>
-    and<literal>java.util.Runnable</literal>.
+    and <literal>java.util.Runnable</literal>.
 
     <programlisting language="java"><![CDATA[import java.util.concurrent.Callable;
 import java.io.Serializable;
@@ -51,7 +51,7 @@ public class Echo implements Callable<String>, Serializable {
     <literal>ExecutorService</literal>
     instance, generally via
     <literal>Executors</literal>
-    and submit the task which returns a<literal>Future</literal>. After executing task, you don't have to wait for
+    and submit the task which returns a <literal>Future</literal>. After executing task, you don't have to wait for
     execution to complete, you can process other things and when ready use the future object to retrieve the result as
     show in code below.
 

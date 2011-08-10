@@ -57,7 +57,7 @@ public boolean removeCustomer (Customer customer) {
         and <literal>remove</literal> might wait if the key is locked by another thread in the local
         or remote JVM, but they will eventually return with success.
             <literal>ConcurrentMap</literal> operations never
-            throw<literal>java.util.ConcurrentModificationException</literal>. Also see <link
+            throw <literal>java.util.ConcurrentModificationException</literal>. Also see <link
             xlink:href="#InternalsDistributedMap">distributed map internals</link>.</para>
     <sect2 xml:id="MapBackup" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
@@ -231,17 +231,17 @@ public boolean removeCustomer (Customer customer) {
                 </listitem>
                 <listitem>
                     <para>The entry is marked as <literal>dirty</literal> so that
-                            after<literal>write-delay-seconds</literal>, it can be persisted.
+                            after <literal>write-delay-seconds</literal>, it can be persisted.
                     </para>
                 </listitem>
             </itemizedlist> Same behavior goes for the <literal>remove(key</literal>
-                and<literal>MapStore.delete(key)</literal>. If <literal>MapStore</literal> throws an
+                and <literal>MapStore.delete(key)</literal>. If <literal>MapStore</literal> throws an
             exception then the exception will be propagated back to the original
                 <literal>put</literal> or <literal>remove</literal> call in the form
-                of<literal>RuntimeException</literal>. When write-through is used, Hazelcast will
+                of <literal>RuntimeException</literal>. When write-through is used, Hazelcast will
             call <literal>MapStore.store(key,value)</literal> and
                 <literal>MapStore.delete(key)</literal> for each entry update. When write-behind is
-            used, Hazelcast will call<literal>MapStore.store(map)</literal>, and
+            used, Hazelcast will call <literal>MapStore.store(map)</literal>, and
                 <literal>MapStore.delete(collection)</literal> to do all writes in a single call.
             Also note that your MapStore or MapLoader implementation should not use Hazelcast
             Map/Queue/MultiMap/List/Set operations. Your implementation should only work with your
@@ -522,9 +522,9 @@ imap.addIndex("age", true);        // ordered, since we have ranged queries for 
 imap.addIndex("active", false);    // not ordered, because boolean field cannot have range
 ]]></programlisting> API <literal>IMap.addIndex(fieldName, ordered)</literal> is used for adding
             index. For a each indexed field, if you have -ranged- queries such
-                as<literal>age&gt;30</literal>, <literal>age BETWEEN 40 AND 60</literal> then
-                <literal>ordered</literal> parameter should be<literal>true</literal>, otherwise set
-            it to<literal>false</literal>. </para>
+                as <literal>age&gt;30</literal>, <literal>age BETWEEN 40 AND 60</literal> then
+                <literal>ordered</literal> parameter should be <literal>true</literal>, otherwise set
+            it to <literal>false</literal>. </para>
     </sect2>
     <sect2 xml:id="MapNearCache" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'

@@ -45,7 +45,7 @@
         will first find out if the request is already associated with a valid session. Then it wraps the request and
         response objects and fires
         <literal>ServletRequestEvent</literal>
-        if necessary and pass the wrapped request/response through the filter chain by invoking<literal>
+        if necessary and pass the wrapped request/response through the filter chain by invoking <literal>
             chain.doFilter(wrappedRequest, wrappedResponse)</literal>.
         Throughout the chain, request might go through servlets, jsps, other filters. During the processing of the
         request, as attributes are added/removed to/from the request, HazelcastWM will fire corresponding events. When
@@ -57,7 +57,7 @@
         instance created by HazelcastWM. Servlet container never creates or know anything about the sessions.
         HazelcastWM will manage the sessions instead.As attributes added/removed to/from the session, HazelcastWM will
         fire corresponding events, dictated by the Servlet spec.
-        When request is forwarded to resource or include a response from another resource via<literal>
+        When request is forwarded to resource or include a response from another resource via <literal>
             RequestDispatcher</literal>, HazelcastWM will wrap the dispatcher and when the wrapped dispatcher calls
         forward or include, it will hand container's original request/response objects over to the container's original
         dispatcher. That way container can work with its own request/response object, not with the wrapped ones.
@@ -78,7 +78,7 @@
         <literal>&lt;dispatcher&gt;INCLUDE&lt;/dispatcher&gt;</literal>
         elements when configuring filters.
         During that life-cycle of the application, HazelcastWM will collect statistics like response times, session
-        count etc. and pass these metrics onto<literal>SnapshotListener</literal>s in the form of<literal>
+        count etc. and pass these metrics onto <literal>SnapshotListener</literal>s in the form of <literal>
             SnapshotEvent</literal>. Also note that regardless of the number of jsps and/or servlets a request goes
         through via
         <literal>RequestDispatcher.forward</literal>

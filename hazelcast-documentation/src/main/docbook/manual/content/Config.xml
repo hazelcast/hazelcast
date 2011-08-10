@@ -24,7 +24,7 @@
                 <literal>hazelcast.xml</literal>
                 that
                 <literal>hazelcast.jar</literal>
-                contains. You may prefer to update the hazelcast.xml file located inside the<literal>
+                contains. You may prefer to update the hazelcast.xml file located inside the <literal>
                     hazelcast.jar</literal>.
             </para>
         </listitem>

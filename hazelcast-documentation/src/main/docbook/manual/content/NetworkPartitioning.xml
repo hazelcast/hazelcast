@@ -62,7 +62,7 @@
     <para>A. Destination cluster will decide how to handle merging entry based on the
             <literal>MergePolicy</literal> set for that map. There are built-in merge policies such
         as <literal>hz.NO_MERGE, hz.ADD_NEW_ENTRY and hz.LATEST_UPDATE</literal> but you can develop
-        your own merge policy by implementing<literal>com.hazelcast.merge.MergePolicy</literal>. You
+        your own merge policy by implementing <literal>com.hazelcast.merge.MergePolicy</literal>. You
         should register your custom merge policy in the configuration so that Hazelcast can find it
         by name. <programlisting language="java"><![CDATA[   public interface MergePolicy {
        /**

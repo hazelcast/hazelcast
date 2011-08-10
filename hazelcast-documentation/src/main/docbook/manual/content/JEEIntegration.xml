@@ -73,12 +73,12 @@ try {
                         startup.</para>
                 </listitem>
                 <listitem>
-                    <para>Deploy<literal>hazelcast-ra.rar</literal>. Usually there is a some kind of
+                    <para>Deploy <literal>hazelcast-ra.rar</literal>. Usually there is a some kind of
                         deploy directory. Name of the directory varies by container.</para>
                 </listitem>
                 <listitem>
                     <para>Make container specific configurations when/after
-                            deploying<literal>hazelcast-ra.rar</literal>. Besides container specific
+                            deploying <literal>hazelcast-ra.rar</literal>. Besides container specific
                         configurations, <literal>JNDI</literal> name for Hazelcast resource is
                         set.</para>
                 </listitem>
@@ -127,7 +127,7 @@ try {
             file already. </para>
         <para>If Hazelcast resource is used from EJBs, you should configure
                 <literal>ejb-jar.xml</literal> for resource reference and <literal>JNDI</literal>
-            definitions, just like we did for<literal>web.xml</literal>. </para>
+            definitions, just like we did for <literal>web.xml</literal>. </para>
     </sect2>
     <sect2 xml:id="JEEIntegrationJBossSample" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
@@ -153,7 +153,7 @@ try {
                             <literal>JBOSS_HOME/server/deploy/default/deploy</literal> directory
                         containing the following content. Make sure to set the
                             <literal>rar-name</literal> element
-                            to<literal>hazelcast-ra-&lt;version&gt;.rar</literal>. <programlisting language="xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+                            to <literal>hazelcast-ra-&lt;version&gt;.rar</literal>. <programlisting language="xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE connection-factories
   PUBLIC "-//JBoss//DTD JBOSS JCA Config 1.5//EN"
   "http://www.jboss.org/j2ee/dtd/jboss-ds_1_5.dtd">

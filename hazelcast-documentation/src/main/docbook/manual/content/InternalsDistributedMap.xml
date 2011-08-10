@@ -18,7 +18,7 @@
         ownerships of the partitions and let every member know who owns which partitions. So at any
         given time, each member knows the owner member of a each partition. Hazelcast will convert
         your key object to <literal>com.hazelcast.nio.Data</literal> then calculate the partition of
-        the owner:<literal>partition-of-the-key = hash(keyData) % PARTITION_COUNT</literal>. Since
+        the owner: <literal>partition-of-the-key = hash(keyData) % PARTITION_COUNT</literal>. Since
         each member(JVM) knows the owner of each partition, each member can find out which member
         owns the key. </para>
     <para><emphasis role="bold"><emphasis role="italic">
@@ -30,7 +30,7 @@
 Partition partition = partitionService.getPartition(key);
 Member ownerMember = partition.getOwner();
 ]]></programlisting>Locally owned entries can be obtained by
-            calling<literal>map.localKeySet()</literal>.</para>
+            calling <literal>map.localKeySet()</literal>.</para>
     <para><emphasis role="bold"><emphasis role="italic">
             Q. What happens when a new member joins?
         </emphasis></emphasis></para>
@@ -49,7 +49,7 @@ Member ownerMember = partition.getOwner();
         cluster will own almost same number of partitions, and almost same number of entries. Also
         eventually every member will know the owner of each partition (and each key). </para>
     <para>You can listen for migration events. <literal>MigrationEvent</literal> contains
-            the<literal>partitionId</literal>,<literal>oldOwner</literal>, and
+            the <literal>partitionId</literal>, <literal>oldOwner</literal>, and
             <literal>newOwner</literal> information. <programlisting language="java"><![CDATA[PartitionService partitionService = Hazelcast.getPartitionService();
 partitionService.addMigrationListener(new MigrationListener () {
 
@@ -69,10 +69,10 @@ partitionService.addMigrationListener(new MigrationListener () {
         items, if an existing item is added again, <literal>copyCount</literal> of the entry
         (<literal>com.hazelcast.impl.ConcurrentMapManager.Record</literal>) is incremented. Also note that index
         based methods of distributed list, such as <literal>List.get(index)</literal>
-            and<literal>List.indexOf(Object)</literal>, are not supported because it is too costly
+            and <literal>List.indexOf(Object)</literal>, are not supported because it is too costly
         to keep distributed indexes of list items so it is not worth implementing. </para>
     <para>Check out the <literal>com.hazelcast.impl.ConcurrentMapManager</literal> class for the
         implementation. As you will see, the implementation is lock-free because
             <literal>ConcurrentMapManager</literal> is a singleton and processed by only one thread,
-            the<literal>ServiceThread</literal>. </para>
+            the <literal>ServiceThread</literal>. </para>
 </sect1>

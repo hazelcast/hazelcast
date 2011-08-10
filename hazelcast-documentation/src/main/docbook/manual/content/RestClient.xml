@@ -22,7 +22,7 @@
                 retrieve this entry via <literal>HTTP GET</literal> call to
                 <literal>http://10.20.17.1:5701/hazelcast/rest/maps/stocks/key1</literal>. You can also retrieve this
                 entry from another member such
-                        as<literal>http://10.20.17.3:5701/hazelcast/rest/maps/stocks/key1</literal>. </para>
+                        as <literal>http://10.20.17.3:5701/hazelcast/rest/maps/stocks/key1</literal>. </para>
         <para>RESTful access is provided through any member of your cluster. So you can even put an
                 HTTP load-balancer in-front of your cluster members for load-balancing and
                 fault-tolerance. </para>
