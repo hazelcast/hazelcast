@@ -18,7 +18,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.Values;
-import com.hazelcast.core.Instance;
 import com.hazelcast.core.MultiMap;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -238,8 +237,7 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, String> map = hClient.getMultiMap("testMultiMapGetNameAndType");
         assertEquals("testMultiMapGetNameAndType", map.getName());
-        Instance.InstanceType type = map.getInstanceType();
-        assertEquals(Instance.InstanceType.MULTIMAP, type);
+        assertTrue(map.getInstanceType().isMultiMap());
     }
 
     @Test

@@ -31,7 +31,7 @@ public class AtomicNumberClientProxy implements AtomicNumber {
     }
 
     public String getName() {
-        return name.substring(Prefix.ATOMIC_NUMBER.length());
+        return name.substring(Prefix.ATOMIC_LONG.length());
     }
 
     public long addAndGet(long delta) {
@@ -84,7 +84,7 @@ public class AtomicNumberClientProxy implements AtomicNumber {
     }
 
     public InstanceType getInstanceType() {
-        return InstanceType.ATOMIC_NUMBER;
+        return InstanceType.ATOMIC_LONG;
     }
 
     public void destroy() {

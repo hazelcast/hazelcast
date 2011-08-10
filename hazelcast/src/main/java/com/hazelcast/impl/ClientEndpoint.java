@@ -173,7 +173,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         }
         String name = event.getName();
         if (name.startsWith(Prefix.MAP_OF_LIST)) {
-            name = name.substring(Prefix.MAP.length() + Prefix.QUEUE.length());
+            name = name.substring(Prefix.MAP_FOR_QUEUE.length());
             valueEvent = ((DataAwareEntryEvent) event).getNewValueData();
         }
         packet.set(name, ClusterOperation.EVENT, dataAwareEntryEvent.getKeyData(), valueEvent);

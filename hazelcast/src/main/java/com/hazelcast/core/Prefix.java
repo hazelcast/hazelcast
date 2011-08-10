@@ -63,9 +63,9 @@ public final class Prefix {
     public static final String IDGEN = "i:";
 
     /**
-     * The Constant ATOMIC_NUMBER: "a:"
+     * The Constant ATOMIC_LONG: "a:"
      */
-    public static final String ATOMIC_NUMBER = "a:";
+    public static final String ATOMIC_LONG = "a:";
 
     /**
      * The Constant AS_MULTIMAP: "u:"
@@ -78,9 +78,14 @@ public final class Prefix {
     public static final String MULTIMAP = MAP_BASED + AS_MULTIMAP;
 
     /**
-     * The Constant MAP, BACKING LIST: "c:q:l:"
+     * The Constant MAP_FOR_QUEUE: "c:q:"
      */
-    public static final String MAP_OF_LIST = MAP + QUEUE + AS_LIST;
+    public static final String MAP_FOR_QUEUE = MAP + QUEUE;
+
+    /**
+     * The Constant MAP_OF_LIST: "c:q:l:"
+     */
+    public static final String MAP_OF_LIST = MAP_FOR_QUEUE + AS_LIST;
 
     /**
      * The Constant EXECUTOR_SERVICE: "x:"
@@ -88,9 +93,34 @@ public final class Prefix {
     public static final String EXECUTOR_SERVICE = "x:";
 
     /**
-     * The Constant SEMAPHORE: "smp:"
+     * The Constant SEMAPHORE: "4:"
      */
-    public static final String SEMAPHORE = "smp:";
+    public static final String SEMAPHORE = "4:";
+
+    /**
+     * The Constant COUNT_DOWN_LATCH: "d:"
+     */
+    public static final String COUNT_DOWN_LATCH = "d:";
+
+    /**
+     * The Constant HAZELCAST: "__hz_"
+     */
+    public static final String HAZELCAST = "__hz_";
+
+    /**
+     * The Constant MAP_HAZELCAST: "c:__hz_"
+     */
+    public static final String MAP_HAZELCAST = MAP + HAZELCAST;
+
+    /**
+     * The Constant QUEUE_HAZELCAST: "q:__hz_"
+     */
+    public static final String QUEUE_HAZELCAST = QUEUE + HAZELCAST;
+
+    /**
+     * The Constant TOPIC_HAZELCAST: "t:__hz_"
+     */
+    public static final String TOPIC_HAZELCAST = TOPIC + HAZELCAST;
 
     /**
      * Private constructor to avoid instances of the class.

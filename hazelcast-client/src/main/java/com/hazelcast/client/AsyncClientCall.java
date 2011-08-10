@@ -23,19 +23,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class AsyncClientCall<V> implements Future<V> {
-    private Object result = null;
-    private static final Object NULL = new Object();
-    private final Call remoteCall;
+    protected static final Object NULL = new Object();
+    protected Object result = null;
+    protected final Call remoteCall;
+    protected boolean cancelled = false;
 
     public AsyncClientCall(Call remoteCall) {
         this.remoteCall = remoteCall;
     }
 
     public void setResult(Object obj) {
-        if (obj == null) {
-            obj = NULL;
-        }
-        result = obj;
+        result = (obj == null) ? NULL : obj;
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -43,30 +41,32 @@ public class AsyncClientCall<V> implements Future<V> {
     }
 
     public boolean isCancelled() {
-        return false;
+        return cancelled;
     }
 
     public boolean isDone() {
-        return false;
+        return cancelled || result != null;
     }
 
     public V get() throws InterruptedException, ExecutionException {
-        if (result != null) {
-            return getResult();
-        }
         try {
-            processResult(remoteCall.getResponse());
+            return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             throw new ExecutionException(e);
         }
-        return getResult();
     }
 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        if (result != null) {
+        if (isDone()) {
             return getResult();
         }
-        processResult(remoteCall.getResponse(timeout, unit));
+        Object response;
+        try {
+            response = remoteCall.getResponse(timeout, unit);
+        } catch (RuntimeException e){
+            response = e.getCause();
+        }
+        processResult(response);
         return getResult();
     }
 

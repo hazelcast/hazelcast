@@ -20,31 +20,57 @@ package com.hazelcast.core;
 public interface Instance {
 
     enum InstanceType {
-        QUEUE(1), MAP(2), SET(3), LIST(4), LOCK(5), TOPIC(6), MULTIMAP(7), ID_GENERATOR(8), ATOMIC_NUMBER(9), SEMAPHORE(10);
+        QUEUE(1), MAP(2), SET(3), LIST(4), LOCK(5), TOPIC(6), MULTIMAP(7), 
+        ID_GENERATOR(8), ATOMIC_LONG(9), SEMAPHORE(10), COUNT_DOWN_LATCH(11);
+        
         private final int typeId;
 
         InstanceType(int typeId) {
             this.typeId = typeId;
         }
 
-        public boolean isMap() {
-            return typeId == 2;
+        public boolean isAtomicLong() {
+            return typeId == ATOMIC_LONG.typeId;
         }
 
-        public boolean isMultiMap() {
-            return typeId == 7;
+        public boolean isCountDownLatch() {
+            return typeId == COUNT_DOWN_LATCH.typeId;
         }
 
-        public boolean isQueue() {
-            return typeId == 1;
-        }
-
-        public boolean isSet() {
-            return typeId == 3;
+        public boolean isIdGenerator() {
+            return typeId == ID_GENERATOR.typeId;
         }
 
         public boolean isList() {
-            return typeId == 4;
+            return typeId == LIST.typeId;
+        }
+
+        public boolean isLock() {
+            return typeId == LOCK.typeId;
+        }
+
+        public boolean isMap() {
+            return typeId == MAP.typeId;
+        }
+
+        public boolean isMultiMap() {
+            return typeId == MULTIMAP.typeId;
+        }
+
+        public boolean isQueue() {
+            return typeId == QUEUE.typeId;
+        }
+
+        public boolean isSemaphore() {
+            return typeId == SEMAPHORE.typeId;
+        }
+
+        public boolean isSet() {
+            return typeId == SET.typeId;
+        }
+
+        public boolean isTopic() {
+            return typeId == TOPIC.typeId;
         }
     }
 

@@ -23,7 +23,7 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class HazelcastClientTestBase {
+abstract public class HazelcastClientTestBase {
 
     final static SingleHazelcastClient single = new SingleHazelcastClient();
 

@@ -542,7 +542,7 @@ public class ClusterTest {
         Collection<Instance> instances = Hazelcast.getInstances();
         boolean found = false;
         for (Instance instance : instances) {
-            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
+            if (instance.getInstanceType().isLock()) {
                 ILock lockInstance = (ILock) instance;
                 if (lockInstance.getLockObject().equals("testLock")) {
                     found = true;
@@ -553,7 +553,7 @@ public class ClusterTest {
         instances = Hazelcast.getInstances();
         found = false;
         for (Instance instance : instances) {
-            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
+            if (instance.getInstanceType().isLock()) {
                 ILock lockInstance = (ILock) instance;
                 if (lockInstance.getLockObject().equals("testLock2")) {
                     found = true;
@@ -565,7 +565,7 @@ public class ClusterTest {
         instances = Hazelcast.getInstances();
         found = false;
         for (Instance instance : instances) {
-            if (instance.getInstanceType() == Instance.InstanceType.LOCK) {
+            if (instance.getInstanceType().isLock()) {
                 ILock lockInstance = (ILock) instance;
                 if (lockInstance.getLockObject().equals("testLock2")) {
                     found = true;

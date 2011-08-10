@@ -142,7 +142,7 @@ public class TopicManager extends BaseManager {
             topicManager.fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, msg, thisAddress);
         }
 
-        public LocalTopicStatsImpl getTopicSats() {
+        public LocalTopicStatsImpl getTopicStats() {
             return new LocalTopicStatsImpl();
         }
     }

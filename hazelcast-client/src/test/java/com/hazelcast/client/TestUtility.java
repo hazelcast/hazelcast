@@ -17,6 +17,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.net.InetSocketAddress;
@@ -37,7 +38,7 @@ public class TestUtility {
     public synchronized static HazelcastClient newHazelcastClient(HazelcastInstance... h) {
         String name = h[0].getConfig().getGroupConfig().getName();
         String pass = h[0].getConfig().getGroupConfig().getPassword();
-        return newHazelcastClient(ClientProperties.crateBaseClientProperties(name, pass), h);
+        return newHazelcastClient(ClientProperties.createBaseClientProperties(name, pass), h);
     }
     
     public synchronized static HazelcastClient newHazelcastClient(ClientProperties properties, HazelcastInstance... h) {
@@ -49,4 +50,12 @@ public class TestUtility {
         clients.add(client);
         return client;
     }
+
+	public synchronized static HazelcastClient getAutoUpdatingClient(HazelcastInstance h1) {
+		String address = h1.getCluster().getLocalMember().getInetSocketAddress().toString().substring(1);
+		GroupConfig gc = h1.getConfig().getGroupConfig();
+		HazelcastClient client = HazelcastClient.newHazelcastClient(gc.getName(), gc.getPassword(), address);
+		clients.add(client);
+		return client;
+	}    
 }

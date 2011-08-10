@@ -966,24 +966,26 @@ public abstract class BaseManager {
     }
 
     public static InstanceType getInstanceType(final String name) {
-        if (name.startsWith(Prefix.QUEUE)) {
-            return InstanceType.QUEUE;
-        } else if (name.startsWith(Prefix.TOPIC)) {
-            return InstanceType.TOPIC;
-        } else if (name.startsWith(Prefix.MAP)) {
-            return InstanceType.MAP;
+        if (name.startsWith(Prefix.ATOMIC_LONG)) {
+            return InstanceType.ATOMIC_LONG;
+        } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
+            return InstanceType.COUNT_DOWN_LATCH;
+        } else if (name.startsWith(Prefix.IDGEN)) {
+            return InstanceType.ID_GENERATOR;
         } else if (name.startsWith(Prefix.AS_LIST)) {
             return InstanceType.LIST;
-        } else if (name.startsWith(Prefix.MAP_BASED)) {
-            if (name.length() > 3) {
-                final String typeStr = name.substring(2, 4);
-                if (Prefix.AS_SET.equals(typeStr)) {
-                    return InstanceType.SET;
-                } else if (Prefix.AS_MULTIMAP.equals(typeStr)) {
-                    return InstanceType.MULTIMAP;
-                }
-            }
+        } else if (name.startsWith(Prefix.MAP)) {
             return InstanceType.MAP;
+        } else if (name.startsWith(Prefix.MULTIMAP)) {
+            return InstanceType.MULTIMAP;
+        } else if (name.startsWith(Prefix.QUEUE)) {
+            return InstanceType.QUEUE;
+        } else if (name.startsWith(Prefix.SEMAPHORE)) {
+            return InstanceType.SEMAPHORE;
+        } else if (name.startsWith(Prefix.SET)) {
+            return InstanceType.SET;
+        } else if (name.startsWith(Prefix.TOPIC)) {
+            return InstanceType.TOPIC;
         } else {
             throw new RuntimeException("Unknown InstanceType " + name);
         }

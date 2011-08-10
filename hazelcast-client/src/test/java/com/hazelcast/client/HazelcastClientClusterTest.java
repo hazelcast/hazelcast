@@ -191,7 +191,7 @@ public class HazelcastClientClusterTest {
     @Test(expected = IllegalStateException.class, timeout = 50000L)
     public void testNoClusterOnStart() throws Exception {
         final ClientProperties clientProperties =
-                ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
+                ClientProperties.createBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
         clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
         clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "500");
         HazelcastClient.newHazelcastClient(clientProperties, "localhost:5701");
@@ -201,7 +201,7 @@ public class HazelcastClientClusterTest {
     public void testNoClusterAfterStart() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final ClientProperties clientProperties =
-                ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
+                ClientProperties.createBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
         clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
         clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "100");
         HazelcastClient client = newHazelcastClient(clientProperties, h1);
@@ -215,7 +215,7 @@ public class HazelcastClientClusterTest {
     public void testRestartCluster() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final ClientProperties clientProperties =
-                ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
+                ClientProperties.createBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
         clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
         clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT, "2");
         clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "500");
@@ -268,7 +268,7 @@ public class HazelcastClientClusterTest {
     public void testRestartClusterTwice() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final ClientProperties clientProperties =
-                ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
+                ClientProperties.createBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
         clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
         clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT, "5");
         clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "1000");
@@ -322,7 +322,7 @@ public class HazelcastClientClusterTest {
     public void testNoClusterAfterStartIssue328() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final ClientProperties clientProperties =
-                ClientProperties.crateBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
+                ClientProperties.createBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
         clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
         clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "500");
         HazelcastClient client = newHazelcastClient(clientProperties, h1);

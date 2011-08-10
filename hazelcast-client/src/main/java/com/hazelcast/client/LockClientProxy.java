@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.ILock;
+import com.hazelcast.impl.FactoryImpl;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -71,12 +72,12 @@ public class LockClientProxy implements ILock {
     }
 
     public Object getId() {
-        return lockObject;  //To change body of implemented methods use File | Settings | File Templates.
+        return new FactoryImpl.ProxyKey("lock", lockObject);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof ILock && o != null) {
+        if (o != null && o instanceof ILock) {
             return getId().equals(((ILock) o).getId());
         } else {
             return false;

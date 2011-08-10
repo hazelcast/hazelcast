@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.MultiData;
@@ -1166,7 +1167,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         boolean doBooleanAtomic() {
             Data expectedData = (ignoreExpected) ? null : toData(expected);
-            setLocal(op, FactoryImpl.ATOMIC_NUMBER_MAP_NAME, nameAsKey, expectedData, 0, 0);
+            setLocal(op, MapConfig.ATOMIC_NUMBER_MAP_NAME, nameAsKey, expectedData, 0, 0);
             request.longValue = value;
             request.setBooleanRequest();
             doOp();
@@ -1178,7 +1179,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         long doLongAtomic() {
-            setLocal(op, FactoryImpl.ATOMIC_NUMBER_MAP_NAME, nameAsKey, null, 0, 0);
+            setLocal(op, MapConfig.ATOMIC_NUMBER_MAP_NAME, nameAsKey, null, 0, 0);
             request.longValue = value;
             doOp();
             Object returnObject = getResultAsObject(false);
@@ -1220,7 +1221,7 @@ public class ConcurrentMapManager extends BaseManager {
             long elapsed = 0;
             do {
                 long start = System.currentTimeMillis();
-                setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, remaining, timeUnit.convert(timeout - elapsed, TimeUnit.MILLISECONDS), 0);
+                setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, nameAsKey, remaining, timeUnit.convert(timeout - elapsed, TimeUnit.MILLISECONDS), 0);
                 request.longValue = value;
                 request.caller = thisAddress;
                 request.operation = SEMAPHORE_ACQUIRE;
@@ -1241,7 +1242,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         void tryRelease(int permits, long timeout, TimeUnit timeUnit) {
-            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, permits, timeUnit.convert(timeout, TimeUnit.MILLISECONDS), 0);
+            setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, nameAsKey, permits, timeUnit.convert(timeout, TimeUnit.MILLISECONDS), 0);
             request.longValue = value;
             request.caller = thisAddress;
             request.operation = SEMAPHORE_RELEASE;
@@ -1251,7 +1252,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         int availablePermits() {
-            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0, 0);
+            setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0, 0);
             request.longValue = value;
             request.caller = thisAddress;
             request.operation = SEMAPHORE_AVAILABLE_PERMITS;
@@ -1261,7 +1262,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         int drainPermits() {
-            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0, 0);
+            setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0, 0);
             request.longValue = value;
             request.caller = thisAddress;
             request.operation = SEMAPHORE_DRAIN_PERMITS;
@@ -1272,7 +1273,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         void reducePermits(int permits) {
-            setLocal(op, FactoryImpl.SEMAPHORE_MAP_NAME, nameAsKey, permits, 0, 0);
+            setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, nameAsKey, permits, 0, 0);
             request.longValue = value;
             request.caller = thisAddress;
             request.operation = SEMAPHORE_REDUCE_PERMITS;

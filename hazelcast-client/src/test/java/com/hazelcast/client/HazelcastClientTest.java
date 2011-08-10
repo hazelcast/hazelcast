@@ -602,7 +602,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         Collection<Instance> instances = getHazelcastClient().getInstances();
         boolean found = false;
         for (Instance instance : instances) {
-            if (instance.getInstanceType() == Instance.InstanceType.MAP) {
+            if (instance.getInstanceType().isMap()) {
                 IMap imap = (IMap) instance;
                 if (imap.getName().equals("testMapDestroy")) {
                     found = true;
@@ -615,7 +615,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         found = false;
         instances = getHazelcastClient().getInstances();
         for (Instance instance : instances) {
-            if (instance.getInstanceType() == Instance.InstanceType.MAP) {
+            if (instance.getInstanceType().isMap()) {
                 IMap imap = (IMap) instance;
                 if (imap.getName().equals("testMapDestroy")) {
                     found = true;

@@ -164,6 +164,7 @@ public class OutRunnable extends IORunnable {
 
     void clusterIsDown(Connection oldConnection) {
         if (!running) {
+            interruptWaitingCalls();
             return;
         }
         client.getConnectionManager().destroyConnection(oldConnection);

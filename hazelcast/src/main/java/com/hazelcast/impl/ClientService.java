@@ -434,20 +434,20 @@ public class ClientService implements ConnectionListener {
     private class GetInstancesHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             Collection<Instance> instances = node.factory.getInstances();
-            Object[] instanceIds = new Object[instances.size()];
-            int counter = 0;
-            for (Iterator<Instance> instanceIterator = instances.iterator(); instanceIterator.hasNext();) {
-                Instance instance = instanceIterator.next();
+            ArrayList<Object> instanceIds = new ArrayList<Object>();
+             for (Instance instance : instances) {
                 Object id = instance.getId();
                 if (id instanceof FactoryImpl.ProxyKey) {
                     Object key = ((FactoryImpl.ProxyKey) id).getKey();
                     if (key instanceof Instance)
                         id = key.toString();
                 }
-                instanceIds[counter] = id;
-                counter++;
+                String idStr = id.toString();
+                if (!idStr.startsWith(Prefix.MAP_OF_LIST) && !idStr.startsWith(Prefix.MAP_FOR_QUEUE)) {
+                    instanceIds.add(id);
+                }
             }
-            packet.setValue(toData(instanceIds));
+            packet.setValue(toData(instanceIds.toArray()));
         }
     }
 

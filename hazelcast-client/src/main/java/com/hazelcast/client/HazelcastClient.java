@@ -96,7 +96,7 @@ public class HazelcastClient implements HazelcastInstance {
         new Thread(out, prefix + "OutThread").start();
         new Thread(in, prefix + "InThread").start();
         new Thread(listenerManager, prefix + "Listener").start();
-        mapLockProxy = getMap("__hz_Locks");
+        mapLockProxy = getMap(Prefix.HAZELCAST + "Locks");
         clusterClientProxy = new ClusterClientProxy(this);
         partitionClientProxy = new PartitionClientProxy(this);
         if (automatic) {
@@ -141,7 +141,7 @@ public class HazelcastClient implements HazelcastInstance {
      * @return Returns a new Hazelcast Client instance.
      */
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String... addresses) {
-        return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), addresses);
+        return newHazelcastClient(ClientProperties.createBaseClientProperties(groupName, groupPassword), addresses);
     }
 
     /**
@@ -189,7 +189,7 @@ public class HazelcastClient implements HazelcastInstance {
      * @return Returns a new Hazelcast Client instance.
      */
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, boolean shuffle, String... addresses) {
-        return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), shuffle, addresses);
+        return newHazelcastClient(ClientProperties.createBaseClientProperties(groupName, groupPassword), shuffle, addresses);
     }
 
     /**
@@ -232,7 +232,7 @@ public class HazelcastClient implements HazelcastInstance {
      * @return Returns a new Hazelcast Client instance.
      */
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, boolean shuffle, InetSocketAddress... addresses) {
-        return newHazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), shuffle, addresses);
+        return newHazelcastClient(ClientProperties.createBaseClientProperties(groupName, groupPassword), shuffle, addresses);
     }
 
     /**
@@ -261,7 +261,7 @@ public class HazelcastClient implements HazelcastInstance {
      */
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String address) {
         InetSocketAddress inetSocketAddress = parse(address);
-        return new HazelcastClient(ClientProperties.crateBaseClientProperties(groupName, groupPassword), inetSocketAddress);
+        return new HazelcastClient(ClientProperties.createBaseClientProperties(groupName, groupPassword), inetSocketAddress);
     }
 
     /**
@@ -312,8 +312,10 @@ public class HazelcastClient implements HazelcastInstance {
                             proxy = new QueueClientProxy<E>(this, name);
                         } else if (name.startsWith(Prefix.TOPIC)) {
                             proxy = new TopicClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
+                        } else if (name.startsWith(Prefix.ATOMIC_LONG)) {
                             proxy = new AtomicNumberClientProxy(this, name);
+                        } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
+                            //proxy = new CountDownLatchClientProxy(this, name);
                         } else if (name.startsWith(Prefix.IDGEN)) {
                             proxy = new IdGeneratorClientProxy(this, name);
                         } else if (name.startsWith(Prefix.MULTIMAP)) {
@@ -378,7 +380,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public AtomicNumber getAtomicNumber(String name) {
-        return (AtomicNumber) getClientProxy(Prefix.ATOMIC_NUMBER + name);
+        return (AtomicNumber) getClientProxy(Prefix.ATOMIC_LONG + name);
     }
 
     public ISemaphore getSemaphore(String name) {

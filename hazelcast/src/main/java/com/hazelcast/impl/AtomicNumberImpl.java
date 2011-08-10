@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.Prefix;
@@ -147,7 +148,7 @@ public class AtomicNumberImpl extends FactoryAwareNamedProxy implements AtomicNu
         }
 
         public String getName() {
-            return name.substring(Prefix.ATOMIC_NUMBER.length());
+            return name.substring(Prefix.ATOMIC_LONG.length());
         }
 
         ConcurrentMapManager.MAtomic newMAtomic(ClusterOperation op, long value, long expected) {
@@ -213,11 +214,11 @@ public class AtomicNumberImpl extends FactoryAwareNamedProxy implements AtomicNu
         }
 
         public InstanceType getInstanceType() {
-            return InstanceType.ATOMIC_NUMBER;
+            return InstanceType.ATOMIC_LONG;
         }
 
         public void destroy() {
-            factory.node.concurrentMapManager.new MRemove().remove(FactoryImpl.ATOMIC_NUMBER_MAP_NAME, nameAsData, 0);
+            factory.node.concurrentMapManager.new MRemove().remove(MapConfig.ATOMIC_NUMBER_MAP_NAME, nameAsData, 0);
         }
 
         public Object getId() {

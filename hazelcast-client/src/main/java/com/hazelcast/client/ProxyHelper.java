@@ -145,7 +145,7 @@ public class ProxyHelper {
         return getValue(response);
     }
 
-    private Packet prepareRequest(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit timeunit) {
+    Packet prepareRequest(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit timeunit) {
         byte[] k = null;
         byte[] v = null;
         if (key != null) {
@@ -168,7 +168,7 @@ public class ProxyHelper {
         return packet;
     }
 
-    protected Packet prepareRequest(ClusterOperation operation, Object key,
+    Packet prepareRequest(ClusterOperation operation, Object key,
                                     Object value) {
         return prepareRequest(operation, key, value, 0, null);
     }

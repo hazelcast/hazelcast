@@ -24,7 +24,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.partition.Partition;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -305,7 +304,7 @@ public class ListenerManager extends BaseManager {
         final Object listener = listenerItem.listener;
         final EntryEventType entryEventType = event.getEventType();
         if (listenerItem.instanceType == Instance.InstanceType.MAP) {
-            if (!listenerItem.name.startsWith("c:__hz_")) {
+            if (!listenerItem.name.startsWith(Prefix.MAP_HAZELCAST)) {
                 Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
                 if (proxy instanceof MProxy) {
                     MProxy mProxy = (MProxy) proxy;
@@ -313,7 +312,7 @@ public class ListenerManager extends BaseManager {
                 }
             }
         } else if (listenerItem.instanceType == Instance.InstanceType.QUEUE) {
-            if (!listenerItem.name.startsWith("q:__hz_")) {
+            if (!listenerItem.name.startsWith(Prefix.QUEUE_HAZELCAST)) {
                 Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
                 if (proxy instanceof QProxy) {
                     QProxy qProxy = (QProxy) proxy;
@@ -321,7 +320,7 @@ public class ListenerManager extends BaseManager {
                 }
             }
         } else if (listenerItem.instanceType == Instance.InstanceType.TOPIC) {
-            if (!listenerItem.name.startsWith("t:__hz_")) {
+            if (!listenerItem.name.startsWith(Prefix.TOPIC_HAZELCAST)) {
                 Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
                 if (proxy instanceof TopicProxy) {
                     TopicProxy tProxy = (TopicProxy) proxy;

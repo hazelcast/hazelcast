@@ -62,9 +62,6 @@ public class FactoryImpl implements HazelcastInstance {
 
     final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
 
-    final static String ATOMIC_NUMBER_MAP_NAME = "c:hz_AtomicNumber";
-    final static String SEMAPHORE_MAP_NAME = "c:hz_SEMAPHORE";
-
     private static AtomicInteger factoryIdGen = new AtomicInteger();
 
     final ConcurrentMap<String, HazelcastInstanceAwareInstance> proxiesByName = new ConcurrentHashMap<String, HazelcastInstanceAwareInstance>(1000);
@@ -442,7 +439,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public AtomicNumber getAtomicNumber(String name) {
-        return (AtomicNumber) getOrCreateProxyByName(Prefix.ATOMIC_NUMBER + name);
+        return (AtomicNumber) getOrCreateProxyByName(Prefix.ATOMIC_LONG + name);
     }
 
     public ISemaphore getSemaphore(String name) {
@@ -665,20 +662,18 @@ public class FactoryImpl implements HazelcastInstance {
                 node.concurrentMapManager.getOrCreateMap(name);
             } else if (name.startsWith(Prefix.AS_LIST)) {
                 proxy = new ListProxyImpl(name, this);
-            } else if (name.startsWith(Prefix.MAP_BASED)) {
-                if (BaseManager.getInstanceType(name) == Instance.InstanceType.MULTIMAP) {
-                    proxy = new MultiMapProxyImpl(name, this);
-                } else {
-                    proxy = new CollectionProxyImpl(name, this);
-                }
-            } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
+            } else if (name.startsWith(Prefix.MULTIMAP)) {
+                proxy = new MultiMapProxyImpl(name, this);
+            } else if (name.startsWith(Prefix.SET)) {
+                proxy = new CollectionProxyImpl(name, this);
+            } else if (name.startsWith(Prefix.ATOMIC_LONG)) {
                 proxy = new AtomicNumberImpl(name, this);
             } else if (name.startsWith(Prefix.IDGEN)) {
                 proxy = new IdGeneratorProxy(name, this);
-            } else if (name.equals("lock")) {
-                proxy = new LockProxy(this, proxyKey.key);
             } else if (name.startsWith(Prefix.SEMAPHORE)) {
                 proxy = new SemaphoreImpl(name, this);
+            } else if (name.equals("lock")) {
+                proxy = new LockProxy(this, proxyKey.key);
             }
             final HazelcastInstanceAwareInstance anotherProxy = proxies.putIfAbsent(proxyKey, proxy);
             if (anotherProxy != null) {
@@ -1116,7 +1111,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public LocalTopicStats getLocalTopicStats() {
-                LocalTopicStatsImpl localTopicStats = topicManager.getTopicInstance(name).getTopicSats();
+                LocalTopicStatsImpl localTopicStats = topicManager.getTopicInstance(name).getTopicStats();
                 localTopicStats.setOperationsStats(topicOperationsCounter.getPublishedStats());
                 return localTopicStats;
             }
@@ -1168,7 +1163,7 @@ public class FactoryImpl implements HazelcastInstance {
         @Override
         public String toString() {
             ensure();
-            if (getInstanceType() == InstanceType.SET) {
+            if (getInstanceType().isSet()) {
                 return "Set [" + getName() + "]";
             } else {
                 return "List [" + getName() + "]";

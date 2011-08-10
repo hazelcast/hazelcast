@@ -17,6 +17,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.core.Prefix;
 import com.hazelcast.merge.LatestUpdateMergePolicy;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.util.ByteUtil;
@@ -38,6 +39,9 @@ public class MapConfig implements DataSerializable {
     public final static int DEFAULT_TTL_SECONDS = 0;
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+    public final static String ATOMIC_NUMBER_MAP_NAME = Prefix.MAP_HAZELCAST + "AtomicNumberMap";
+    public final static String COUNT_DOWN_LATCH_MAP_NAME = Prefix.MAP_HAZELCAST + "CountDownLatcheMap";
+    public final static String SEMAPHORE_MAP_NAME = Prefix.MAP_HAZELCAST + "SemaphoreMap";
     public final static String DEFAULT_EVICTION_POLICY = "NONE";
     public final static String DEFAULT_MERGE_POLICY = LatestUpdateMergePolicy.NAME;
     public final static boolean DEFAULT_CACHE_VALUE = true;

@@ -42,8 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
-import static com.hazelcast.core.Prefix.AS_LIST;
-import static com.hazelcast.core.Prefix.AS_SET;
+import static com.hazelcast.core.Prefix.*;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -147,12 +146,12 @@ public class CMap {
         this.node = concurrentMapManager.node;
         this.thisAddress = concurrentMapManager.thisAddress;
         this.name = name;
-        mapForQueue = name.startsWith("c:q:");
+        mapForQueue = name.startsWith(MAP_FOR_QUEUE);
         instanceType = ConcurrentMapManager.getInstanceType(name);
         MapConfig mapConfig = null;
         String mapConfigName = name.substring(2);
         if (isMultiMap()
-                || mapConfigName.startsWith("__hz_")
+                || mapConfigName.startsWith(HAZELCAST)
                 || mapConfigName.startsWith(AS_LIST)
                 || mapConfigName.startsWith(AS_SET)) {
             mapConfig = new MapConfig();
@@ -305,7 +304,7 @@ public class CMap {
     }
 
     boolean isUserMap() {
-        return !name.startsWith("c:__hz_");
+        return !name.startsWith(MAP_HAZELCAST);
     }
 
     final boolean isNotLocked(Request request) {

@@ -109,7 +109,7 @@ public final class ClientProperties {
         return Long.parseLong(getProperty(name));
     }
 
-    public static ClientProperties crateBaseClientProperties(final String groupName, final String groupPassword) {
+    public static ClientProperties createBaseClientProperties(final String groupName, final String groupPassword) {
         ClientProperties clientProperties = new ClientProperties();
         clientProperties.setPropertyValue(ClientPropertyName.GROUP_NAME, groupName);
         clientProperties.setPropertyValue(ClientPropertyName.GROUP_PASSWORD, groupPassword);

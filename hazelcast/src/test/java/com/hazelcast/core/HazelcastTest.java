@@ -64,13 +64,13 @@ public class HazelcastTest {
         final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryAdded(EntryEvent event) {
+            public void entryAdded(EntryEvent<Integer, Integer> event) {
                 events2.add(event);
             }
         }, false);
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryAdded(EntryEvent event) {
+            public void entryAdded(EntryEvent<Integer, Integer> event) {
                 events1.add(event);
             }
         }, true);
@@ -88,16 +88,16 @@ public class HazelcastTest {
         final IMap<Integer, Integer> imap = Hazelcast.getMap("testIssue321_2");
         final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
         final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
-        imap.addEntryListener(new EntryAdapter() {
+        imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryAdded(EntryEvent event) {
+            public void entryAdded(EntryEvent<Integer, Integer> event) {
                 events1.add(event);
             }
         }, true);
         Thread.sleep(50L);
-        imap.addEntryListener(new EntryAdapter() {
+        imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryAdded(EntryEvent event) {
+            public void entryAdded(EntryEvent<Integer, Integer> event) {
                 events2.add(event);
             }
         }, false);
@@ -114,9 +114,9 @@ public class HazelcastTest {
     public void testIssue321_3() throws Exception {
         final IMap<Integer, Integer> imap = Hazelcast.getMap("testIssue321_3");
         final BlockingQueue<EntryEvent<Integer, Integer>> events = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
-        final EntryAdapter listener = new EntryAdapter() {
+        final EntryAdapter<Integer, Integer> listener = new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryAdded(EntryEvent event) {
+            public void entryAdded(EntryEvent<Integer, Integer> event) {
                 events.add(event);
             }
         };
@@ -158,6 +158,7 @@ public class HazelcastTest {
     public void testProxySerialization() {
         IMap mapProxy = Hazelcast.getMap("proxySerialization");
         ILock mapLock = Hazelcast.getLock(mapProxy);
+        assertNotNull(mapLock);
     }
 
     @Test
@@ -175,7 +176,7 @@ public class HazelcastTest {
 
     @Test
     public void testIssue304() {
-        IMap map = Hazelcast.getMap("testIssue304");
+        IMap<String, String> map = Hazelcast.getMap("testIssue304");
         map.lock("1");
         assertEquals(0, map.size());
         assertEquals(0, map.entrySet().size());
@@ -224,8 +225,10 @@ public class HazelcastTest {
         assertEquals(28, an.get());
         assertEquals(28, an.getAndAdd(-3));
         assertEquals(24, an.decrementAndGet());
-        Assert.assertFalse(an.compareAndSet(23, 50));
+        assertFalse(an.compareAndSet(23, 50));
         assertTrue(an.compareAndSet(24, 50));
+        assertFalse(an.compareAndSet(51, 0));
+        assertTrue(an.compareAndSet(50, 0));
     }
 
     @Test
@@ -378,7 +381,7 @@ public class HazelcastTest {
         map.remove("Hello");
         Set<IMap.Entry<String, String>> set = map.entrySet();
         for (IMap.Entry<String, String> e : set) {
-            fail("Iterator should not contain removed entry");
+            fail("Iterator should not contain removed entry, found "+e.getKey());
         }
     }
 
@@ -437,8 +440,8 @@ public class HazelcastTest {
         map.addEntryListener(new EntryListener<String, String>() {
 
             public void entryAdded(EntryEvent event) {
-                Object key = event.getKey();
-                Object value = event.getValue();
+                String key = (String) event.getKey();
+                String value = (String) event.getValue();
                 if ("2".equals(key)) {
                     assertEquals("again", value);
                 } else {
@@ -537,7 +540,7 @@ public class HazelcastTest {
      */
     @Test
     public void testMapPutWithTTL() throws Exception {
-        IMap map = Hazelcast.getMap("testMapPutWithTTL");
+        IMap<Integer, String> map = Hazelcast.getMap("testMapPutWithTTL");
         map.put(1, "value0", 100, TimeUnit.MILLISECONDS);
         assertEquals(true, map.containsKey(1));
         Thread.sleep(500);
@@ -1041,7 +1044,7 @@ public class HazelcastTest {
         Collection<Instance> instances = Hazelcast.getInstances();
         boolean found = false;
         for (Instance instance : instances) {
-            if (instance.getInstanceType() == Instance.InstanceType.MAP) {
+            if (instance.getInstanceType().isMap()) {
                 IMap imap = (IMap) instance;
                 if (imap.getName().equals("testMapDestroy")) {
                     found = true;
@@ -1054,7 +1057,7 @@ public class HazelcastTest {
         found = false;
         instances = Hazelcast.getInstances();
         for (Instance instance : instances) {
-            if (instance.getInstanceType() == Instance.InstanceType.MAP) {
+            if (instance.getInstanceType().isMap()) {
                 IMap imap = (IMap) instance;
                 if (imap.getName().equals("testMapDestroy")) {
                     found = true;
@@ -1066,19 +1069,21 @@ public class HazelcastTest {
 
     @Test
     public void testInterruption() throws InterruptedException {
-        final IQueue q = Hazelcast.getQueue("testInterruption");
+        final IQueue<String> q = Hazelcast.getQueue("testInterruption");
         Thread t = new Thread(new Runnable() {
             public void run() {
                 try {
                     q.take();
                     fail();
                 } catch (InterruptedException e) {
+                    // expected
                 }
             }
         });
         t.start();
         Thread.sleep(2000);
         t.interrupt();
+        Thread.sleep(10);
         q.offer("message");
         assertEquals(1, q.size());
     }
