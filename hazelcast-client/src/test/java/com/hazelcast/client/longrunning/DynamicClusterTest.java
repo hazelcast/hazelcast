@@ -243,9 +243,9 @@ public class DynamicClusterTest {
         Map<Integer, HazelcastInstance> memberMap = getMapOfClusterMembers(h1, h2);
         client = newHazelcastClient(h1, h2);
         IMap<String, String> map = client.getMap("default");
-        final CountDownLatch entryAddLatch = new CountDownLatch(4);
-        final CountDownLatch entryUpdatedLatch = new CountDownLatch(4);
-        final CountDownLatch entryRemovedLatch = new CountDownLatch(4);
+        final CountDownLatch entryAddLatch = new CountDownLatch(3);
+        final CountDownLatch entryUpdatedLatch = new CountDownLatch(3);
+        final CountDownLatch entryRemovedLatch = new CountDownLatch(3);
         CountDownLatchEntryListener<String, String> listener = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
         CountDownLatchEntryListener<String, String> listener2 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
         map.addEntryListener(listener, true);
@@ -258,13 +258,9 @@ public class DynamicClusterTest {
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
-        Thread.sleep(1000);
-        assertEquals(1, entryAddLatch.getCount());
-        assertEquals(1, entryUpdatedLatch.getCount());
-        assertEquals(1, entryRemovedLatch.getCount());
-//        assertTrue(entryAddLatch.await(10, TimeUnit.MILLISECONDS));
-//        assertTrue(entryUpdatedLatch.await(10, TimeUnit.MILLISECONDS));
-//        assertTrue(entryRemovedLatch.await(10, TimeUnit.MILLISECONDS));
+        assertTrue(entryAddLatch.await(5000, TimeUnit.MILLISECONDS));
+        assertTrue(entryUpdatedLatch.await(5000, TimeUnit.MILLISECONDS));
+        assertTrue(entryRemovedLatch.await(5000, TimeUnit.MILLISECONDS));
     }
 
     @Test
@@ -347,7 +343,7 @@ public class DynamicClusterTest {
 
     @Test
     public void testGetInstancesCreatedFromCluster
-    () {
+            () {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
         IList list = h.getList("List");
         IMap map = h.getMap("IMap");
@@ -620,7 +616,7 @@ public class DynamicClusterTest {
                 h.shutdown();
             }
         }).start();
-        for (int i = 0; i<10; i++) {
+        for (int i = 0; i < 10; i++) {
             client.getCluster().getMembers();
             Thread.sleep(2);
         }

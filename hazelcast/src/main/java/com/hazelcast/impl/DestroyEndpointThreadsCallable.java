@@ -52,7 +52,6 @@ public class DestroyEndpointThreadsCallable implements Callable<Boolean>, Hazelc
     }
 
     public Boolean call() throws Exception {
-        System.out.println("destroy");
         final ConcurrentMapManager c = getConcurrentMapManager(hazelcastInstance);
         c.enqueueAndWait(new Processable() {
             public void process() {

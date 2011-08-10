@@ -35,20 +35,14 @@ public class CountDownLatchEntryListener<K, V> implements EntryListener<K, V> {
 
     public void entryAdded(EntryEvent<K, V> event) {
         entryAddLatch.countDown();
-//        assertEquals("hello", event.getKey());
     }
 
     public void entryRemoved(EntryEvent<K, V> event) {
         entryRemovedLatch.countDown();
-//        assertEquals("hello", event.getKey());
-//        assertEquals("new world", event.getValueData());
     }
 
     public void entryUpdated(EntryEvent<K, V> event) {
-//    	System.out.println(event);
         entryUpdatedLatch.countDown();
-//        assertEquals("new world", event.getValueData());
-//        assertEquals("hello", event.getKey());
     }
 
     public void entryEvicted(EntryEvent<K, V> event) {
