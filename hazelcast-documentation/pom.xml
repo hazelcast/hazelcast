@@ -5,11 +5,11 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>1.9.4-SNAPSHOT</version>
+        <version>1.9.4-RC</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>hazelcast-documentation</groupId>
+    <name>hazelcast-documentation</name>
     <artifactId>hazelcast-documentation</artifactId>
     <packaging>pom</packaging>
 

@@ -3,7 +3,7 @@ Main-Class: com.hazelcast.examples.SimpleMapTest
 Bundle-ManifestVersion: 2
 Bundle-Name: hazelcast
 Bundle-SymbolicName: hazelcast
-Bundle-Version: 1.9.4.SNAPSHOT
+Bundle-Version: 1.9.4.RC
 Import-Package: javax.xml.parsers, javax.xml.transform, org.w3c.dom, javax.xml.transform.dom, javax.xml.transform.stream, javax.crypto, javax.crypto.spec, javax.crypto.interfaces, javax.management;resolution:=optional, org.slf4j;resolution:=optional
 Export-Package: com.hazelcast.cluster;
  uses:="com.hazelcast.impl.base,
