@@ -942,7 +942,7 @@ public class DynamicClusterTest {
     }
 
     @Test
-    public void perfomanceWithLotsOfExecutingTasks() throws InterruptedException, ExecutionException {
+    public void performanceWithLotsOfExecutingTasks() throws InterruptedException, ExecutionException {
         Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig("esname", 128, 512, 60));
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);

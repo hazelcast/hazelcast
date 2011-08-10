@@ -69,7 +69,7 @@ public class HazelcastClient implements HazelcastInstance {
 
     private final ClientProperties properties;
 
-    volatile boolean active;
+    volatile boolean active = true;
 
     private HazelcastClient(ClientProperties properties, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
         this.properties = properties;
