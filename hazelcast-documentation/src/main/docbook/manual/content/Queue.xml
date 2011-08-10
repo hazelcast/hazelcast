@@ -25,7 +25,7 @@ if (task != null) {
         code over 10 JVMs (or servers), then each server carries 1 million task objects (plus
         backups). FIFO ordering will apply to all queue operations cluster-wide. User objects (such
         as <literal>MyTask</literal> in the example above), that are (en/de)queued have to
-            be<literal>Serializable</literal>. Maximum capacity per JVM and the TTL (Time to Live)
+            be <literal>Serializable</literal>. Maximum capacity per JVM and the TTL (Time to Live)
         for a queue can be configured as shown in the example below. <programlisting language="xml"><![CDATA[<hazelcast>
 	...
     <queue name="tasks">

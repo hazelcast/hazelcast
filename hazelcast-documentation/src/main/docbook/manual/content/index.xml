@@ -4,50 +4,26 @@
     
     <info>
         <title>Hazelcast Documentation</title>
-        <subtitle>Hazelcast In-Memory Data Grid User Guide</subtitle>
-        <authorgroup>
-            <author>
-                <personname>Talip Ozturk</personname>
-                <email>talip@hazelcast.com</email>
-            </author>
-            <author>
-                <personname>Fuad Malikov</personname>
-                <email>fuad@hazelcast.com</email>
-            </author>
-            <author>
-                <personname>Mehmet Dogan</personname>
-                <email>mehmet@hazelcast.com</email>
-            </author>
-        </authorgroup>
-        <edition>Hazelcast User's Guide 1.9.4</edition>
-        <pubdate>8 August 2011</pubdate>
+        <subtitle>version 1.9.4</subtitle>
+        <pubdate>10 August 2011</pubdate>
         <copyright>
             <year>2011</year>
             <holder>Hazel Bilisim, Ltd. Sti.</holder>
         </copyright>
-<!--        <publisher>
-            <publishername>Hazel Bilisim, Ltd. Sti.</publishername>
-            <address>
-                <city>Istanbul</city>
-                <country>Turkey</country>
-                <phone>+902164444444</phone>
-                <email>info@hazelcast.com</email>
-                <link xlink:href="http://www.hazelcast.com">www.hazelcast.com</link>
-            </address>
-        </publisher>
--->        
         <legalnotice>
             <para>Permission to use, copy, modify and distribute
-                the User Guide and its accompanying documentation for any purpose and
+                this document for any purpose and
                 without fee is hereby granted in perpetuity, provided that the above
                 copyright notice and this paragraph appear in all copies.</para>
         </legalnotice>
-        
         <keywordset>
             <keyword>hazelcast</keyword>
             <keyword>distributed</keyword>
             <keyword>cache</keyword>
+            <keyword>distributed cache</keyword>
             <keyword>cluster</keyword>
+            <keyword>data grid</keyword>
+            <keyword>in-memory data grid</keyword>
         </keywordset>        
     </info>
     
