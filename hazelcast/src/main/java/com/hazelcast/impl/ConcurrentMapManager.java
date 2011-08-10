@@ -2518,20 +2518,15 @@ public class ConcurrentMapManager extends BaseManager {
     class GetMapEntryOperationHandler extends MTargetAwareOperationHandler {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            if (cmap.isNotLocked(request)) {
-                Record record = cmap.getRecord(request);
-                if (cmap.loader != null
-                        && (record == null
-                        || !record.isActive()
-                        || !record.isValid()
-                        || record.getValueData() == null)) {
-                    storeExecutor.execute(new GetMapEntryLoader(cmap, request), request.key.hashCode());
-                } else {
-                    doOperation(request);
-                    returnResponse(request);
-                }
+            Record record = cmap.getRecord(request);
+            if (cmap.loader != null
+                    && (record == null
+                    || !record.isActive()
+                    || !record.isValid()
+                    || record.getValueData() == null)) {
+                storeExecutor.execute(new GetMapEntryLoader(cmap, request), request.key.hashCode());
             } else {
-                request.response = OBJECT_REDO;
+                doOperation(request);
                 returnResponse(request);
             }
         }
@@ -2631,20 +2626,15 @@ public class ConcurrentMapManager extends BaseManager {
     class GetOperationHandler extends MTargetAwareOperationHandler {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            if (cmap.isNotLocked(request)) {
-                Record record = cmap.getRecord(request);
-                if (cmap.loader != null
-                        && (record == null
-                        || !record.isActive()
-                        || !record.isValid()
-                        || record.getValueData() == null)) {
-                    storeExecutor.execute(new GetLoader(cmap, request), request.key.hashCode());
-                } else {
-                    doOperation(request);
-                    returnResponse(request);
-                }
+            Record record = cmap.getRecord(request);
+            if (cmap.loader != null
+                    && (record == null
+                    || !record.isActive()
+                    || !record.isValid()
+                    || record.getValueData() == null)) {
+                storeExecutor.execute(new GetLoader(cmap, request), request.key.hashCode());
             } else {
-                request.response = OBJECT_REDO;
+                doOperation(request);
                 returnResponse(request);
             }
         }

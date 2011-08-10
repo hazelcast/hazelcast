@@ -309,14 +309,9 @@ public class CMap {
     }
 
     final boolean isNotLocked(Request request) {
-        boolean result = (lockEntireMap == null
+        return (lockEntireMap == null
                 || !lockEntireMap.isLocked()
                 || lockEntireMap.isLockedBy(request.lockAddress, request.lockThreadId));
-        if (!result) {
-            System.out.println(thisAddress + " and caller is " + request.caller);
-            System.out.println(lockEntireMap + " LOCKED !! " + request.operation);
-        }
-        return result;
     }
 
     final boolean overCapacity(Request request) {

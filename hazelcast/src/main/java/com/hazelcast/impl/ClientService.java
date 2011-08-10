@@ -750,6 +750,12 @@ public class ClientService implements ConnectionListener {
         }
     }
 
+    private class GetMapEntryHandler extends ClientMapOperationHandler {
+        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+            return toData(map.getMapEntry(key));
+        }
+    }
+
     private class MapGetHandler extends ClientOperationHandler {
 
         public void processCall(Node node, Packet packet) {
@@ -872,12 +878,6 @@ public class ClientService implements ConnectionListener {
         @Override
         public void doQueueOp(Node node, Packet packet) {
             //ignore
-        }
-    }
-
-    private class GetMapEntryHandler extends ClientMapOperationHandler {
-        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
-            return toData(map.getMapEntry(key));
         }
     }
 
