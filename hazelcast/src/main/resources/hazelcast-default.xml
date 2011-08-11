@@ -149,15 +149,17 @@
             <merge-policy>hz.MERGING_WINS</merge-policy>
         </wan-replication-ref>
     </map>
-    
-    <semaphore name="default">
-        <!--
-         The number of permits available to the Semaphore
-        -->
-        <size>1</size>
-    </semaphore>
-    
-    <!-- Add your own map merge policy implementations here:     
+
+    <!-- Add your own semaphore configurations here:
+        <semaphore name="default">
+            <initial-permits>10</initial-permits>
+            <semaphore-factory enabled="true">
+                <class-name>com.acme.MySemaphoreFactory</class-name>
+            </semaphore-factory>
+        </semaphore>
+    -->
+
+    <!-- Add your own map merge policy implementations here:
     	<merge-policies>
            	<map-merge-policy name="MY_MERGE_POLICY">
             	<class-name>com.acme.MyOwnMergePolicy</class-name>

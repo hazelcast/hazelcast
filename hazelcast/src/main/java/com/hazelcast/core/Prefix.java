@@ -63,9 +63,9 @@ public final class Prefix {
     public static final String IDGEN = "i:";
 
     /**
-     * The Constant ATOMIC_LONG: "a:"
+     * The Constant ATOMIC_NUMBER: "a:"
      */
-    public static final String ATOMIC_LONG = "a:";
+    public static final String ATOMIC_NUMBER = "a:";
 
     /**
      * The Constant AS_MULTIMAP: "u:"

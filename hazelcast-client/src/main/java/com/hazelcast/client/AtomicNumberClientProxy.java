@@ -19,7 +19,9 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.Prefix;
-import com.hazelcast.impl.ClusterOperation;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
+import static com.hazelcast.impl.ClusterOperation.*;
 
 public class AtomicNumberClientProxy implements AtomicNumber {
     private final String name;
@@ -30,33 +32,16 @@ public class AtomicNumberClientProxy implements AtomicNumber {
         this.proxyHelper = new ProxyHelper(getName(), hazelcastClient);
     }
 
-    public String getName() {
-        return name.substring(Prefix.ATOMIC_LONG.length());
-    }
-
     public long addAndGet(long delta) {
-        return setLongGetLong(ClusterOperation.ATOMIC_NUMBER_ADD_AND_GET, delta);
-    }
-
-    private long setLongGetLong(ClusterOperation operation, long value) {
-        Packet request = proxyHelper.prepareRequest(operation, null, null);
-        request.setLongValue(value);
-        Packet response = proxyHelper.callAndGetResult(request);
-        return (Long) proxyHelper.getValue(response);
+        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_ADD_AND_GET, 0L, delta);
     }
 
     public boolean compareAndSet(long expect, long update) {
-        Packet request = proxyHelper.prepareRequest(ClusterOperation.ATOMIC_NUMBER_COMPARE_AND_SET, expect, update);
-        Packet response = proxyHelper.callAndGetResult(request);
-        return (Boolean) proxyHelper.getValue(response);
-    }
-
-    public boolean weakCompareAndSet(long expect, long update) {
-        return compareAndSet(expect, update);
+        return (Boolean) proxyHelper.doOp(ATOMIC_NUMBER_COMPARE_AND_SET, expect, update);
     }
 
     public long decrementAndGet() {
-        return setLongGetLong(ClusterOperation.ATOMIC_NUMBER_ADD_AND_GET, -1L);
+        return addAndGet(-1L);
     }
 
     public long get() {
@@ -64,27 +49,19 @@ public class AtomicNumberClientProxy implements AtomicNumber {
     }
 
     public long getAndAdd(long delta) {
-        return setLongGetLong(ClusterOperation.ATOMIC_NUMBER_GET_AND_ADD, delta);
+        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_GET_AND_ADD, 0L, delta);
     }
 
     public long getAndSet(long newValue) {
-        return setLongGetLong(ClusterOperation.ATOMIC_NUMBER_GET_AND_SET, newValue);
+        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_GET_AND_SET, 0L, newValue);
     }
 
     public long incrementAndGet() {
-        return setLongGetLong(ClusterOperation.ATOMIC_NUMBER_ADD_AND_GET, 1L);
-    }
-
-    public void lazySet(long newValue) {
-        set(newValue);
+        return addAndGet(1L);
     }
 
     public void set(long newValue) {
         getAndSet(newValue);
-    }
-
-    public InstanceType getInstanceType() {
-        return InstanceType.ATOMIC_LONG;
     }
 
     public void destroy() {
@@ -93,5 +70,23 @@ public class AtomicNumberClientProxy implements AtomicNumber {
 
     public Object getId() {
         return name;
+    }
+
+    public InstanceType getInstanceType() {
+        return InstanceType.ATOMIC_LONG;
+    }
+
+    public String getName() {
+        return name.substring(Prefix.ATOMIC_NUMBER.length());
+    }
+
+    @Deprecated
+    public boolean weakCompareAndSet(long expect, long update) {
+        throw new NotImplementedException();
+    }
+
+    @Deprecated
+    public void lazySet(long newValue) {
+        throw new NotImplementedException();
     }
 }

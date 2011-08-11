@@ -16,22 +16,20 @@
  */
 package com.hazelcast.config;
 
+import com.hazelcast.core.SemaphoreFactory;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-/**
- * @author: iocanel
- */
 public class SemaphoreConfig implements DataSerializable {
 
-    public final static int DEFAULT_SIZE = 1;
-
-    private String name = "default";
-
-    private int size = DEFAULT_SIZE;
+    private String name;
+    private int initialPermits;
+    private boolean factoryEnabled;
+    private String factoryClassName;
+    private SemaphoreFactory factoryImplementation;
 
     public SemaphoreConfig() {
     }
@@ -40,39 +38,82 @@ public class SemaphoreConfig implements DataSerializable {
         this.name = name;
     }
 
-    public SemaphoreConfig(String name, int size) {
+    public SemaphoreConfig(String name, int initialPermits) {
         this.name = name;
-        this.size = size;
+        this.initialPermits = initialPermits;
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeInt(size);
+    public SemaphoreConfig(String name, SemaphoreConfig sc) {
+        this.name = name;
+        this.factoryClassName = sc.factoryClassName;
+        this.initialPermits = sc.initialPermits;
     }
 
     public void readData(DataInput in) throws IOException {
         name = in.readUTF();
-        size = in.readInt();
+        initialPermits = in.readInt();
+        factoryClassName = in.readUTF();
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(initialPermits);
+        out.writeUTF(factoryClassName);
     }
 
     public String getName() {
         return name;
     }
 
-    public SemaphoreConfig setName(String name) {
+    /**
+     * @param name the name to set
+     */
+    SemaphoreConfig setName(String name) {
         this.name = name;
         return this;
     }
 
-    public int getSize() {
-        return size;
+    public String getFactoryClassName() {
+        return factoryClassName;
     }
 
-    public SemaphoreConfig setSize(int size) {
-        if (size <= 0) {
-            throw new IllegalArgumentException("corePoolSize must be positive");
-        }
-        this.size = size;
+    public SemaphoreConfig setFactoryClassName(String factoryClassName) {
+        this.factoryClassName = factoryClassName;
         return this;
+    }
+
+    public boolean isFactoryEnabled() {
+        return factoryEnabled;
+    }
+
+    public SemaphoreConfig setFactoryEnabled(boolean factoryEnabled) {
+        this.factoryEnabled = factoryEnabled;
+        return this;
+    }
+
+    public SemaphoreFactory getFactoryImplementation() {
+        return factoryImplementation;
+    }
+
+    public SemaphoreConfig setFactoryImplementation(SemaphoreFactory factoryImplementation) {
+        this.factoryImplementation = factoryImplementation;
+        return this;
+    }
+
+    public int getInitialPermits() {
+        return initialPermits;
+    }
+
+    public SemaphoreConfig setInitialPermits(int initialPermits) {
+        this.initialPermits = initialPermits;
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return "SemaphoreConfig [name=" + this.name
+                + ", factoryEnabled="+Boolean.valueOf(factoryEnabled)
+                + ", factoryClassName=" + this.factoryClassName
+                + ", factoryImplementation=" + this.factoryImplementation + "]";
     }
 }

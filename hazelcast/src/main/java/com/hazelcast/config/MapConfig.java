@@ -39,7 +39,7 @@ public class MapConfig implements DataSerializable {
     public final static int DEFAULT_TTL_SECONDS = 0;
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
-    public final static String ATOMIC_NUMBER_MAP_NAME = Prefix.MAP_HAZELCAST + "AtomicNumberMap";
+    public final static String ATOMIC_LONG_MAP_NAME = Prefix.MAP_HAZELCAST + "AtomicLongMap";
     public final static String COUNT_DOWN_LATCH_MAP_NAME = Prefix.MAP_HAZELCAST + "CountDownLatcheMap";
     public final static String SEMAPHORE_MAP_NAME = Prefix.MAP_HAZELCAST + "SemaphoreMap";
     public final static String DEFAULT_EVICTION_POLICY = "NONE";

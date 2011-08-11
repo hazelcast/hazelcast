@@ -44,50 +44,39 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
      * See http://java.sun.com/javase/technologies/core/mntr-mgmt/javamanagement/best-practices.jsp
      *
      * @param instance
-     * @return dynamicmbean for the hazelcast instance
+     * @return dynamic mbean for the hazelcast instance
      * @throws Exception
      */
-    @SuppressWarnings("unchecked")
     private AbstractMBean buildMBean(Instance instance) throws Exception {
-        if (instance instanceof ITopic) {
-            // Topic
-            TopicMBean mbean = new TopicMBean((ITopic) instance, managementService);
-            return mbean;
+        if (instance.getInstanceType().isTopic()) {
+            return new TopicMBean((ITopic) instance, managementService);
         }
-        if (instance instanceof IQueue) {
-            // Queue
-            QueueMBean mbean = new QueueMBean((IQueue) instance, managementService);
-            return mbean;
+        if (instance.getInstanceType().isQueue()) {
+            return new QueueMBean((IQueue) instance, managementService);
         }
-        if (instance instanceof IList) {
-            // List
-            ListMBean mbean = new ListMBean((IList) instance, managementService);
-            return mbean;
+        if (instance.getInstanceType().isList()) {
+            return new ListMBean((IList) instance, managementService);
         }
-        if (instance instanceof ISet) {
-            // Set
-            SetMBean mbean = new SetMBean((ISet) instance, managementService);
-            return mbean;
+        if (instance.getInstanceType().isSet()) {
+            return new SetMBean((ISet) instance, managementService);
         }
-        if (instance instanceof MultiMap) {
-            // Map
-            MultiMapMBean mbean = new MultiMapMBean((MultiMap) instance, managementService);
-            return mbean;
+        if (instance.getInstanceType().isMultiMap()) {
+            return new MultiMapMBean((MultiMap) instance, managementService);
         }
-        if (instance instanceof IMap) {
-            // Map
-            MapMBean mbean = new MapMBean((IMap) instance, managementService);
-            return mbean;
+        if (instance.getInstanceType().isMap()) {
+            return new MapMBean((IMap) instance, managementService);
         }
-        if (instance instanceof ILock) {
-            // Lock
-            LockMBean mbean = new LockMBean((ILock) instance, managementService);
-            return mbean;
+        if (instance.getInstanceType().isLock()) {
+            return new LockMBean((ILock) instance, managementService);
         }
-        if (instance instanceof AtomicNumber) {
-            // AtomicNumber
-            AtomicNumberMBean mbean = new AtomicNumberMBean((AtomicNumber) instance, managementService);
-            return mbean;
+        if (instance.getInstanceType().isAtomicNumber()) {
+            return new AtomicNumberMBean((AtomicNumber) instance, managementService);
+        }
+        if (instance.getInstanceType().isCountDownLatch()) {
+            return new CountDownLatchMBean((ICountDownLatch) instance, managementService);
+        }
+        if (instance.getInstanceType().isSemaphore()) {
+            return new SemaphoreMBean((ISemaphore) instance, managementService);
         }
         return null;
     }

@@ -254,22 +254,33 @@ public final class Hazelcast {
     }
 
     /**
-     * Creates cluster-wide atomic number. AtomicNumber is a distributed
+     * Creates cluster-wide atomic long. Hazelcast AtomicNumber is a distributed
      * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
      *
-     * @param name name of the AtomicNumber
-     * @return AtomicNumber for the given name
+     * @param name of the AtomicNumber proxy
+     * @return AtomicNumber proxy instance
      */
     public static AtomicNumber getAtomicNumber(String name) {
         return getDefaultInstance().getAtomicNumber(name);
     }
 
     /**
-     * Creates a cluster-wide semaphore. ISemaphore is a distributed
-     * implementation of <tt>java.util.concurrent.ISemaphore</tt>.
+     * Creates a cluster-wide CountDownLatch. Hazelcast ICountDownLatch is a distributed
+     * implementation of <tt>java.util.concurrent.CountDownLatch</tt>.
      *
-     * @param name
-     * @return
+     * @param name of the distributed CountDownLatch
+     * @return ICountDownLatch proxy instance
+     */
+    public static ICountDownLatch getCountDownLatch(String name) {
+        return getDefaultInstance().getCountDownLatch(name);
+    }
+
+    /**
+     * Creates a cluster-wide semaphore. Hazelcast ISemaphore is a distributed
+     * implementation of <tt>java.util.concurrent.Semaphore</tt>.
+     *
+     * @param name of the distributed Semaphore
+     * @return ISemaphore proxy instance
      */
     public static ISemaphore getSemaphore(String name) {
         return getDefaultInstance().getSemaphore(name);
@@ -282,7 +293,7 @@ public final class Hazelcast {
      * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
      *
      * @param name
-     * @return
+     * @return IdGenerator proxy instance
      */
     public static IdGenerator getIdGenerator(String name) {
         return getDefaultInstance().getIdGenerator(name);

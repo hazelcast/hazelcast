@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,32 +18,89 @@
 package com.hazelcast.core;
 
 /**
- * Cluster-wide atomic number. AtomicNumber is distributed
- * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
- *
- * @since 1.9
+ * IAtomicLong is a backed-up distributed implementation of
+ * {@link java.util.concurrent.atomic.AtomicLong java.util.concurrent.atomic.AtomicLong}.
  */
 public interface AtomicNumber extends Instance {
+    /**
+     * Returns the name of this IAtomicLong instance.
+     *
+     * @return name of this instance
+     */
+    public String getName();
 
-    boolean compareAndSet(long expect, long update);
+    /**
+     * Atomically adds the given value to the current value.
+     *
+     * @param delta the value to add
+     * @return the updated value
+     */
+    public long addAndGet(long delta);
 
-    boolean weakCompareAndSet(long expect, long update);
+    /**
+     * Atomically sets the value to the given updated value
+     * only if the current value {@code ==} the expected value.
+     *
+     * @param expect the expected value
+     * @param update the new value
+     * @return true if successful; or false if the actual value
+     * was not equal to the expected value.
+     */
+    public boolean compareAndSet(long expect, long update);
 
-    long addAndGet(long delta);
+    /**
+     * Atomically decrements the current value by one.
+     *
+     * @return the updated value
+     */
+    public long decrementAndGet();
 
-    long decrementAndGet();
+    /**
+     * Gets the current value.
+     *
+     * @return the current value
+     */
+    public long get();
 
-    long get();
+    /**
+     * Atomically adds the given value to the current value.
+     *
+     * @param delta the value to add
+     * @return the old value before the add
+     */
+    public long getAndAdd(long delta);
 
-    long getAndAdd(long delta);
+    /**
+     * Atomically sets the given value and returns the old value.
+     *
+     * @param newValue the new value
+     * @return the old value
+     */
+    public long getAndSet(long newValue);
 
-    long getAndSet(long newValue);
+    /**
+     * Atomically increments the current value by one.
+     *
+     * @return the updated value
+     */
+    public long incrementAndGet();
 
-    long incrementAndGet();
-
-    void lazySet(long newValue);
-
-    void set(long newValue);
+    /**
+     * Atomically sets the given value.
+     *
+     * @param newValue the new value
+     */
+    public void set(long newValue);
     
-    String getName();
+    /**
+     * Not implemented. Use compareAndSet().
+     */
+    @Deprecated
+    boolean weakCompareAndSet(long expect, long update);
+ 
+    @Deprecated
+    /**
+     * Not implemented. Use set().
+     */
+    void lazySet(long newValue);
 }

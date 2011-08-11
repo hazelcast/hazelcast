@@ -38,9 +38,16 @@ public interface ClusterStateView extends DataSerializable {
 
     Set<String> getTopics();
 
-    Set<String> getAtomicNumbers();
-
     Set<String> getIdGenerators();
 
+    @Deprecated
+    Set<String> getAtomicNumbers();
+
+    Set<String> getAtomicLongs();
+
+    Set<String> getCountDownLatches();
+
+    Set<String> getSemaphores();
+    
     int[] getPartitions(Member member);
 }

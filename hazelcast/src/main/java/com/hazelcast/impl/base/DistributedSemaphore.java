@@ -18,122 +18,108 @@
 package com.hazelcast.impl.base;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.DataSerializable;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DistributedSemaphore {
+public class DistributedSemaphore implements DataSerializable{
 
-    Map<Address, Integer> lockAddresses = new HashMap<Address, Integer>();
-    int permits = 1;
+    Map<Address, Integer> attachedPermits = new HashMap<Address, Integer>();
+    int available;
 
-    /**
-     * Constructor
-     */
     public DistributedSemaphore() {
     }
 
-    /**
-     * Constructor
-     *
-     * @param permits
-     */
-    public DistributedSemaphore(int permits) {
-        this.permits = permits;
+    public DistributedSemaphore(int initialPermits) {
+        available = initialPermits;
     }
 
-    /**
-     * Constructor
-     *
-     * @param copy
-     */
-    public DistributedSemaphore(DistributedSemaphore copy) {
-        this.lockAddresses = copy.lockAddresses;
-        this.permits = copy.permits;
+    public void readData(DataInput in) throws IOException {
+        Address address;
+        attachedPermits.clear();
+        available = in.readInt();
+        int entries = in.readInt();
+        while(entries-- > 0){
+            (address = new Address()).readData(in);
+            attachedPermits.put(address, in.readInt());
+        }
     }
 
-    public boolean isLocked() {
-        return permits > 0;
+    public void writeData(DataOutput out) throws IOException {
+        out.writeInt(available);
+        out.writeInt(attachedPermits.size());
+        for(Map.Entry<Address, Integer> entry : attachedPermits.entrySet()){
+            entry.getKey().writeData(out);
+            out.writeInt(entry.getValue());
+        }
     }
 
-    public boolean hasPermits(Address address) {
-        return this.lockAddresses.containsKey(address);
+    public void attachDetach(Integer permitsDelta, Address address) {
+        if(permitsDelta != 0 && address != null){
+            int newValue = permitsDelta + getAttached(address);
+            if (newValue != 0) {
+                attachedPermits.put(address, newValue);
+            } else {
+                attachedPermits.remove(address);
+            }
+        }
     }
 
-    public boolean acquire(Address address) {
-        if (this.permits > 0) {
-            int acquiredPermits = addressPermits(address);
-            this.lockAddresses.put(address, acquiredPermits + 1);
-            this.permits--;
+    public int drain() {
+        int drained = available;
+        available = 0;
+        return drained;
+    }
+
+    public int getAttached() {
+        int total = 0;
+        for(Integer permits : attachedPermits.values()){
+            total += permits;
+        }
+        return total;
+    }
+
+    public int getAttached(Address address) {
+        return attachedPermits.containsKey(address) ? attachedPermits.get(address) : 0;
+    }
+
+    public int getAvailable() {
+        return available;
+    }
+
+    public void reduce(int permits) {
+        available -= permits;
+    }
+
+    public void release(int permits, Address address) {
+        available += permits;
+        attachDetach(permits, address);
+    }
+
+    public boolean tryAcquire(int permits, Address address) {
+        if (available  >= permits){
+            available -= permits;
+            attachDetach(permits, address);
             return true;
         }
         return false;
     }
 
-    public boolean release(Address address) {
-        if (hasPermits(address)) {
-            this.permits++;
-            int addressPermits = addressPermits(address);
-            addressPermits--;
-            if (addressPermits > 0)
-                this.lockAddresses.put(address, addressPermits);
-            else this.lockAddresses.remove(address);
+    public boolean onDisconnect(Address deadAddress) {
+        Integer attached = attachedPermits.remove(deadAddress);
+        if (attached != null && attached != 0) {
+            available += attached;
             return true;
         }
         return false;
-    }
-
-    public void reducePermits(int permits) {
-        this.permits -= permits;
-    }
-
-    public boolean releaseAll(Address address) {
-        if (hasPermits(address)) {
-            int addressPermits = addressPermits(address);
-            this.permits += addressPermits;
-            this.lockAddresses.remove(address);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Returns the number of permits an address has acquired.
-     *
-     * @param address
-     * @return
-     */
-    protected int addressPermits(Address address) {
-        int result = 0;
-        Integer acquiredPermits = this.lockAddresses.get(address);
-        if (acquiredPermits != null) {
-            result = acquiredPermits;
-        }
-        return result;
-    }
-
-    public boolean testAcquire(Address address) {
-        return permits > 0;
-    }
-
-    public void clear() {
-        permits = 0;
-        lockAddresses = null;
-    }
-
-    public Map<Address, Integer> getLockAddresses() {
-        return lockAddresses;
-    }
-
-    public int getPermits() {
-        return permits;
     }
 
     @Override
     public String toString() {
-        return "Semahpore{" +
-                "lockAddresses=" + lockAddresses +
-                ", permits=" + permits +
-                '}';
+        return String.format("Semahpore{available=%d, global attached=%d}", available, getAttached());
     }
 }

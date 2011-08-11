@@ -966,7 +966,7 @@ public abstract class BaseManager {
     }
 
     public static InstanceType getInstanceType(final String name) {
-        if (name.startsWith(Prefix.ATOMIC_LONG)) {
+        if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
             return InstanceType.ATOMIC_LONG;
         } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
             return InstanceType.COUNT_DOWN_LATCH;

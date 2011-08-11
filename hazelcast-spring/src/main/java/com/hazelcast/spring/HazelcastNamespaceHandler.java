@@ -34,11 +34,12 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
         
         final String[] types = {"map", "multiMap",
             "queue", "topic", "set", "list",
-            "executorService", "idGenerator", "atomicNumber"};
+            "executorService", "idGenerator", "atomicNumber",
+            "countDownLatch", "semaphore"};
         
         for (final String type : types){
             registerBeanDefinitionParser(type, new HazelcastInstanceBeanDefinitionParser(type));
         }
-    }  
+    }
 
 }

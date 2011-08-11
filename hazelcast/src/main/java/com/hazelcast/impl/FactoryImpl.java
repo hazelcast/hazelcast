@@ -29,12 +29,10 @@ import com.hazelcast.impl.management.ManagementCenterService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.*;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.SerializationHelper;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Expression;
@@ -57,6 +55,7 @@ import java.util.logging.Level;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 import static com.hazelcast.impl.Util.toMillis;
+import static com.hazelcast.nio.IOUtil.toData;
 
 public class FactoryImpl implements HazelcastInstance {
 
@@ -248,6 +247,10 @@ public class FactoryImpl implements HazelcastInstance {
             return hazelcastInstance.getLock(key);
         }
 
+        public ICountDownLatch getCountDownLatch(String name) {
+            return hazelcastInstance.getCountDownLatch(name);
+        }
+
         public ISemaphore getSemaphore(String name) {
             return hazelcastInstance.getSemaphore(name);
         }
@@ -315,13 +318,13 @@ public class FactoryImpl implements HazelcastInstance {
     public FactoryImpl(String name, Config config) {
         this.name = name;
         node = new Node(this, config);
-        globalProxies = new MProxyImpl(Prefix.MAP + "__hz_Proxies", this);
+        globalProxies = new MProxyImpl(Prefix.MAP_HAZELCAST + "Proxies", this);
         logger = node.getLogger(FactoryImpl.class.getName());
         lifecycleService = new LifecycleServiceImpl(FactoryImpl.this);
         transactionFactory = new TransactionFactory(this);
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
-        locksMapProxy = new MProxyImpl(Prefix.MAP + "__hz_Locks", this);
-        idGeneratorMapProxy = new MProxyImpl(Prefix.MAP + "__hz_IdGenerator", this);
+        locksMapProxy = new MProxyImpl(Prefix.MAP_HAZELCAST + "Locks", this);
+        idGeneratorMapProxy = new MProxyImpl(Prefix.MAP_HAZELCAST + "IdGenerator", this);
         lifecycleService.fireLifecycleEvent(STARTING);
         node.start();
         globalProxies.addEntryListener(new EntryListener() {
@@ -439,17 +442,15 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public AtomicNumber getAtomicNumber(String name) {
-        return (AtomicNumber) getOrCreateProxyByName(Prefix.ATOMIC_LONG + name);
+        return (AtomicNumber) getOrCreateProxyByName(Prefix.ATOMIC_NUMBER + name);
+    }
+
+    public ICountDownLatch getCountDownLatch(String name) {
+        return (ICountDownLatch) getOrCreateProxyByName(Prefix.COUNT_DOWN_LATCH + name);
     }
 
     public ISemaphore getSemaphore(String name) {
-        ISemaphore semaphore = (ISemaphore) getOrCreateProxyByName(Prefix.SEMAPHORE + name);
-        return semaphore;
-    }
-
-    public ISemaphore getSemaphore(String name, int initalPermits) {
-        ISemaphore semaphore = (ISemaphore) getOrCreateProxyByName(Prefix.SEMAPHORE + name);
-        return semaphore;
+        return (ISemaphore) getOrCreateProxyByName(Prefix.SEMAPHORE + name);
     }
 
     public Transaction getTransaction() {
@@ -493,15 +494,15 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public <E> ITopic<E> getTopic(String name) {
-        return (ITopic) getOrCreateProxyByName(Prefix.TOPIC + name);
+        return (ITopic<E>) getOrCreateProxyByName(Prefix.TOPIC + name);
     }
 
     public <E> ISet<E> getSet(String name) {
-        return (ISet) getOrCreateProxyByName(Prefix.SET + name);
+        return (ISet<E>) getOrCreateProxyByName(Prefix.SET + name);
     }
 
     public <E> IList<E> getList(String name) {
-        return (IList) getOrCreateProxyByName(Prefix.AS_LIST + name);
+        return (IList<E>) getOrCreateProxyByName(Prefix.AS_LIST + name);
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
@@ -666,12 +667,14 @@ public class FactoryImpl implements HazelcastInstance {
                 proxy = new MultiMapProxyImpl(name, this);
             } else if (name.startsWith(Prefix.SET)) {
                 proxy = new CollectionProxyImpl(name, this);
-            } else if (name.startsWith(Prefix.ATOMIC_LONG)) {
-                proxy = new AtomicNumberImpl(name, this);
+            } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
+                proxy = new AtomicNumberProxyImpl(name, this);
             } else if (name.startsWith(Prefix.IDGEN)) {
                 proxy = new IdGeneratorProxy(name, this);
             } else if (name.startsWith(Prefix.SEMAPHORE)) {
-                proxy = new SemaphoreImpl(name, this);
+                proxy = new SemaphoreProxyImpl(name, this);
+            } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
+                proxy = new CountDownLatchProxyImpl(name, this);
             } else if (name.equals("lock")) {
                 proxy = new LockProxy(this, proxyKey.key);
             }
@@ -948,9 +951,9 @@ public class FactoryImpl implements HazelcastInstance {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            ProxyKey proxyKey = (ProxyKey) o;
-            if (name != null ? !name.equals(proxyKey.name) : proxyKey.name != null) return false;
-            return !(key != null ? !key.equals(proxyKey.key) : proxyKey.key != null);
+            ProxyKey pk = (ProxyKey) o;
+            return (name != null ? name.equals(pk.name) : pk.name == null)
+                    && (key != null ? key.equals(pk.key) : pk.key == null);
         }
 
         @Override
@@ -1094,8 +1097,8 @@ public class FactoryImpl implements HazelcastInstance {
                 factory.destroyInstanceClusterWide(name, null);
             }
 
-            public Instance.InstanceType getInstanceType() {
-                return Instance.InstanceType.TOPIC;
+            public InstanceType getInstanceType() {
+                return InstanceType.TOPIC;
             }
 
             public String getName() {
@@ -1118,6 +1121,885 @@ public class FactoryImpl implements HazelcastInstance {
 
             public TopicOperationsCounter getTopicOperationCounter() {
                 return topicOperationsCounter;
+            }
+        }
+    }
+
+    public static class AtomicNumberProxyImpl extends FactoryAwareNamedProxy implements AtomicNumberProxy {
+        private transient AtomicNumberProxy base = null;
+        Data nameAsData = null;
+
+        public AtomicNumberProxyImpl() {
+        }
+
+        public AtomicNumberProxyImpl(String name, FactoryImpl factory) {
+            setName(name);
+            setHazelcastInstance(factory);
+             base = new AtomicNumberProxyReal();
+        }
+
+        Data getNameAsData() {
+            if (nameAsData == null) {
+                nameAsData = toData(name);
+            }
+            return nameAsData;
+        }
+
+        private void ensure() {
+            factory.initialChecks();
+            if (base == null) {
+                base = (AtomicNumberProxy) factory.getOrCreateProxyByName(name);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "AtomicLong [" + getName() + "]";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            AtomicNumberProxyImpl that = (AtomicNumberProxyImpl) o;
+            return !(name != null ? !name.equals(that.name) : that.name != null);
+        }
+
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
+        }
+
+        public void destroy() {
+            ensure();
+            base.destroy();
+        }
+
+        public InstanceType getInstanceType() {
+            ensure();
+            return base.getInstanceType();
+        }
+
+        public Object getId() {
+            ensure();
+            return base.getId();
+        }
+
+        public String getName() {
+            ensure();
+            return base.getName();
+        }
+
+        public String getLongName() {
+            return name;
+        }
+
+        public long addAndGet(long delta) {
+            ensure();
+            return base.addAndGet(delta);
+        }
+
+        public boolean compareAndSet(long expect, long update) {
+            ensure();
+            return base.compareAndSet(expect, update);
+        }
+
+        public long decrementAndGet() {
+            ensure();
+            return base.decrementAndGet();
+        }
+
+        public long get() {
+            ensure();
+            return base.get();
+        }
+
+        public long getAndAdd(long delta) {
+            ensure();
+            return base.getAndAdd(delta);
+        }
+
+        public long getAndSet(long newValue) {
+            ensure();
+            return base.getAndSet(newValue);
+        }
+
+        public long incrementAndGet() {
+            ensure();
+            return base.incrementAndGet();
+        }
+
+        public void set(long newValue) {
+            ensure();
+            base.set(newValue);
+        }
+
+        public AtomicNumberOperationsCounter getOperationsCounter() {
+            ensure();
+            return base.getOperationsCounter();
+        }
+
+        public LocalAtomicNumberStats getLocalAtomicLongStats() {
+            ensure();
+            return base.getLocalAtomicLongStats();
+        }
+
+        @Deprecated
+        public void lazySet(long newValue) {
+            set(newValue);
+        }
+
+        @Deprecated
+        public boolean weakCompareAndSet(long expect, long update) {
+            return compareAndSet(expect, update);
+        }
+
+        private class AtomicNumberProxyReal implements AtomicNumberProxy {
+            AtomicNumberOperationsCounter operationsCounter = new AtomicNumberOperationsCounter();
+
+            public AtomicNumberProxyReal() {
+            }
+
+            public String getName() {
+                return name.substring(Prefix.ATOMIC_NUMBER.length());
+            }
+
+            public String getLongName() {
+                return name;
+            }
+
+            public Object getId() {
+                return name;
+            }
+
+            public long addAndGet(long delta) {
+                return newMAtomicNumber().addAndGet(getNameAsData(), delta);
+            }
+
+            public boolean compareAndSet(long expect, long update) {
+                return newMAtomicNumber().compareAndSet(getNameAsData(), expect, update);
+            }
+
+            public long decrementAndGet() {
+                return addAndGet(-1L);
+            }
+
+            public long get() {
+                return addAndGet(0L);
+            }
+
+            public long getAndAdd(long delta) {
+                return newMAtomicNumber().getAndAdd(getNameAsData(), delta);
+            }
+
+            public long getAndSet(long newValue) {
+                return newMAtomicNumber().getAndSet(getNameAsData(), newValue);
+            }
+
+            public long incrementAndGet() {
+                return addAndGet(1L);
+            }
+
+            public void set(long newValue) {
+                getAndSet(newValue);
+            }
+
+            public InstanceType getInstanceType() {
+                return InstanceType.ATOMIC_LONG;
+            }
+
+            public void destroy() {
+                newMAtomicNumber().destroy(getNameAsData());
+                factory.destroyInstanceClusterWide(name, null);
+            }
+
+            public AtomicNumberOperationsCounter getOperationsCounter() {
+                return operationsCounter;
+            }
+
+            public LocalAtomicNumberStats getLocalAtomicLongStats() {
+                LocalAtomicNumberStatsImpl localAtomicStats = new LocalAtomicNumberStatsImpl();
+                localAtomicStats.setOperationsStats(operationsCounter.getPublishedStats());
+                return localAtomicStats;
+            }
+
+            @Deprecated
+            public void lazySet(long newValue) {
+                set(newValue);
+            }
+
+            @Deprecated
+            public boolean weakCompareAndSet(long expect, long update) {
+                return compareAndSet(expect, update);
+            }
+
+            MAtomicNumber newMAtomicNumber() {
+                MAtomicNumber mAtomicNumber = factory.node.concurrentMapManager.new MAtomicNumber();
+                mAtomicNumber.setOperationsCounter(operationsCounter);
+                return mAtomicNumber;
+            }
+        }
+    }
+
+    public class CountDownLatchProxyImpl extends FactoryAwareNamedProxy implements CountDownLatchProxy {
+        private transient CountDownLatchProxy base = null;
+        Data nameAsData = null;
+
+        public CountDownLatchProxyImpl(String name, FactoryImpl factory) {
+            set(name, factory);
+            base = new CountDownLatchProxyReal();
+        }
+
+        public void set(String name, FactoryImpl factory) {
+            setName(name);
+            setHazelcastInstance(factory);
+        }
+
+        public InstanceType getInstanceType() {
+            ensure();
+            return base.getInstanceType();
+        }
+
+        public void destroy() {
+            ensure();
+            base.destroy();
+        }
+
+        public Object getId() {
+            ensure();
+            return base.getId();
+        }
+
+        public String getName() {
+            ensure();
+            return base.getName();
+        }
+
+        public String getLongName() {
+            return name;
+        }
+
+        @Override
+        public String toString() {
+            return "CountDownLatch [" + getName() + "]";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            CountDownLatchProxyImpl that = (CountDownLatchProxyImpl) o;
+            return !(name != null ? !name.equals(that.name) : that.name != null);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = base != null ? base.hashCode() : 0;
+            result = 31 * result + (nameAsData != null ? nameAsData.hashCode() : 0);
+            return result;
+        }
+
+        public void await() throws InstanceDestroyedException, MemberLeftException, InterruptedException {
+            ensure();
+            base.await();
+        }
+
+        public boolean await(long timeout, TimeUnit unit) throws InstanceDestroyedException, MemberLeftException, InterruptedException {
+            ensure();
+            return base.await(timeout, unit);
+        }
+
+        public void countDown() {
+            ensure();
+            base.countDown();
+        }
+
+        public int getCount() {
+            ensure();
+            return base.getCount();
+        }
+
+        public Address getOwnerAddress() {
+            ensure();
+            return base.getOwnerAddress();
+        }
+
+        public boolean hasCount() {
+            ensure();
+            return base.hasCount();
+        }
+
+        public boolean setCount(int count) {
+            ensure();
+            return base.setCount(count);
+        }
+
+        public boolean setCount(int count, Address ownerAddress) {
+            ensure();
+            return base.setCount(count, ownerAddress);
+        }
+
+        public LocalCountDownLatchStats getLocalCountDownLatchStats() {
+            ensure();
+            return base.getLocalCountDownLatchStats();
+        }
+
+        public CountDownLatchOperationsCounter getCountDownLatchOperationsCounter() {
+            ensure();
+            return base.getCountDownLatchOperationsCounter();
+        }
+
+        private Data getNameAsData() {
+            if (nameAsData == null) {
+                nameAsData = toData(name);
+            }
+            return nameAsData;
+        }
+
+        private void ensure() {
+            factory.initialChecks();
+            if (base == null) {
+                base = (CountDownLatchProxy) factory.getOrCreateProxyByName(name);
+            }
+        }
+
+        private class CountDownLatchProxyReal implements CountDownLatchProxy {
+            CountDownLatchOperationsCounter operationsCounter = new CountDownLatchOperationsCounter();
+
+            public CountDownLatchProxyReal() {
+            }
+
+            public String getName() {
+                return name.substring(Prefix.COUNT_DOWN_LATCH.length());
+            }
+
+            public String getLongName() {
+                return name;
+            }
+
+            public Object getId() {
+                return name;
+            }
+
+            public void await() throws InstanceDestroyedException, MemberLeftException, InterruptedException {
+                await(-1, TimeUnit.MILLISECONDS);
+            }
+
+            public boolean await(long timeout, TimeUnit unit) throws InstanceDestroyedException, MemberLeftException, InterruptedException {
+                if (Thread.interrupted())
+                    throw new InterruptedException();
+                return newMCountDownLatch().await(getNameAsData(), timeout, unit);
+            }
+
+            public void countDown() {
+                newMCountDownLatch().countDown(getNameAsData());
+            }
+
+            public void destroy() {
+                newMCountDownLatch().destroy(getNameAsData());
+                factory.destroyInstanceClusterWide(name, null);
+            }
+
+            public int getCount() {
+                return newMCountDownLatch().getCount(getNameAsData());
+            }
+
+            public Address getOwnerAddress() {
+                return newMCountDownLatch().getOwnerAddress(getNameAsData());
+            }
+
+            public boolean hasCount() {
+                return newMCountDownLatch().getCount(getNameAsData()) > 0;
+            }
+
+            public boolean setCount(int count) {
+                return setCount(count, node.getThisAddress());
+            }
+
+            public boolean setCount(int count, Address ownerAddress) {
+                return newMCountDownLatch().setCount(getNameAsData(), count, ownerAddress);
+            }
+
+            public InstanceType getInstanceType() {
+                return InstanceType.COUNT_DOWN_LATCH;
+            }
+
+            public CountDownLatchOperationsCounter getCountDownLatchOperationsCounter() {
+                return operationsCounter;
+            }
+
+            public LocalCountDownLatchStats getLocalCountDownLatchStats() {
+                LocalCountDownLatchStatsImpl localCountDownLatchStats = new LocalCountDownLatchStatsImpl();
+                localCountDownLatchStats.setOperationsStats(operationsCounter.getPublishedStats());
+                return localCountDownLatchStats;
+            }
+
+            ConcurrentMapManager.MCountDownLatch newMCountDownLatch() {
+                ConcurrentMapManager.MCountDownLatch mcdl = factory.node.concurrentMapManager.new MCountDownLatch();
+                mcdl.setOperationsCounter(operationsCounter);
+                return mcdl;
+            }
+        }
+    }
+
+    public class SemaphoreProxyImpl extends FactoryAwareNamedProxy implements SemaphoreProxy {
+        private transient SemaphoreProxy base = null;
+        Data nameAsData = null;
+
+        public SemaphoreProxyImpl(String name, FactoryImpl factory) {
+            setName(name);
+            setHazelcastInstance(factory);
+            base = new SemaphoreProxyReal();
+        }
+
+        private void ensure() {
+            factory.initialChecks();
+            if (base == null) {
+                base = (SemaphoreProxy) factory.getOrCreateProxyByName(name);
+            }
+        }
+
+        public String getLongName() {
+            return name;
+        }
+
+        public String getName() {
+            return name.substring(Prefix.SEMAPHORE.length());
+        }
+
+        Data getNameAsData() {
+            if (nameAsData == null) {
+                nameAsData = toData(getName());
+            }
+            return nameAsData;
+        }
+
+        public Object getId() {
+            ensure();
+            return base.getId();
+        }
+
+        @Override
+        public String toString() {
+            return "Semaphore [" + getName() + "]";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            SemaphoreProxyImpl that = (SemaphoreProxyImpl) o;
+            return !(name != null ? !name.equals(that.name) : that.name != null);
+        }
+
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
+        }
+
+        public InstanceType getInstanceType() {
+            ensure();
+            return base.getInstanceType();
+        }
+
+        public LocalSemaphoreStats getLocalSemaphoreStats() {
+            ensure();
+            return base.getLocalSemaphoreStats();
+        }
+
+        public SemaphoreOperationsCounter getOperationsCounter() {
+            ensure();
+            return base.getOperationsCounter();
+        }
+
+        public void acquire() throws InstanceDestroyedException, InterruptedException {
+            ensure();
+            base.acquire();
+        }
+
+        public void acquire(int permits) throws InstanceDestroyedException, InterruptedException {
+            check(permits);
+            ensure();
+            base.acquire(permits);
+        }
+
+        public Future acquireAsync() {
+            return doAsyncAcquire(1, false);
+        }
+
+        public Future acquireAsync(int permits) {
+            check(permits);
+            return doAsyncAcquire(permits, false);
+        }
+
+        public void acquireAttach() throws InstanceDestroyedException, InterruptedException {
+            ensure();
+            base.acquireAttach();
+        }
+
+        public void acquireAttach(int permits) throws InstanceDestroyedException, InterruptedException {
+            check(permits);
+            ensure();
+            base.acquireAttach(permits);
+        }
+
+        public Future acquireAttachAsync() {
+            return doAsyncAcquire(1, true);
+        }
+
+        public Future acquireAttachAsync(int permits) {
+            check(permits);
+            return doAsyncAcquire(permits, true);
+        }
+
+        public void attach() {
+            ensure();
+            base.attach();
+        }
+
+        public void attach(int permits) {
+            check(permits);
+            ensure();
+            base.attach(permits);
+        }
+
+        public int attachedPermits() {
+            ensure();
+            return base.attachedPermits();
+        }
+
+        public int availablePermits() {
+            ensure();
+            return base.availablePermits();
+        }
+
+        public void detach() {
+            ensure();
+            base.detach();
+        }
+
+        public void detach(int permits) {
+            check(permits);
+            ensure();
+            base.detach(permits);
+        }
+
+        public void destroy() {
+            ensure();
+            base.destroy();
+        }
+
+        public int drainPermits() {
+            ensure();
+            return base.drainPermits();
+        }
+
+        public void reducePermits(int permits) {
+            check(permits);
+            ensure();
+            base.reducePermits(permits);
+        }
+
+        public void release() {
+            ensure();
+            base.release();
+        }
+
+        public void release(int permits) {
+            check(permits);
+            ensure();
+            base.release(permits);
+        }
+
+        public void releaseDetach() {
+            ensure();
+            base.releaseDetach();
+        }
+
+        public void releaseDetach(int permits) {
+            check(permits);
+            ensure();
+            base.releaseDetach(permits);
+        }
+
+        public boolean tryAcquire() {
+            ensure();
+            return base.tryAcquire();
+        }
+
+        public boolean tryAcquire(int permits) {
+            check(permits);
+            ensure();
+            return base.tryAcquire(permits);
+        }
+
+        public boolean tryAcquire(long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+            ensure();
+            return base.tryAcquire(timeout, unit);
+        }
+
+        public boolean tryAcquire(int permits, long timeout, TimeUnit timeunit) throws InstanceDestroyedException, InterruptedException {
+            check(permits, timeout, timeunit);
+            ensure();
+            return base.tryAcquire(permits, timeout, timeunit);
+        }
+
+        public boolean tryAcquireAttach() {
+            ensure();
+            return base.tryAcquireAttach();
+        }
+
+        public boolean tryAcquireAttach(int permits) {
+            check(permits);
+            ensure();
+            return base.tryAcquireAttach(permits);
+        }
+
+        public boolean tryAcquireAttach(long timeout, TimeUnit timeunit) throws InstanceDestroyedException, InterruptedException {
+            ensure();
+            return base.tryAcquireAttach(timeout, timeunit);
+        }
+
+        public boolean tryAcquireAttach(int permits, long timeout, TimeUnit timeunit) throws InstanceDestroyedException, InterruptedException {
+            check(permits, timeout, timeunit);
+            ensure();
+            return base.tryAcquireAttach(permits, timeout, timeunit);
+        }
+
+        private void check(int permits) {
+            if (permits < 0)
+                throw new IllegalArgumentException("Number of permits can not be negative: " + permits);
+        }
+
+        private void check(int permits, long timeout, TimeUnit timeunit) {
+            check(permits);
+            if (timeout < -1)
+                throw new IllegalArgumentException("Invalid timeout value: " + timeout);
+            if (timeunit == null) {
+                throw new NullPointerException("TimeUnit can not be null.");
+            }
+        }
+
+        private Future doAsyncAcquire(final Integer permits, final Boolean attach){
+            final SemaphoreProxyImpl semaphoreProxy = SemaphoreProxyImpl.this;
+            AsyncCall call = new AsyncCall() {
+                @Override
+                protected void call() {
+                    try {
+                        if(attach)
+                            semaphoreProxy.acquireAttach(permits);
+                        else
+                            semaphoreProxy.acquire(permits);
+                        setResult(null);
+                    } catch (InterruptedException e) {
+                        setResult(e);
+                    } catch (InstanceDestroyedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public boolean cancel(boolean mayInterruptIfRunning) {
+                    ConcurrentMapManager.MSemaphore msemaphore = factory.node.concurrentMapManager.new MSemaphore();
+                    return msemaphore.cancelAcquire(getNameAsData());
+                }
+            };
+            factory.node.executorManager.executeAsync(call);
+            return call;
+        }
+
+        private class SemaphoreProxyReal implements SemaphoreProxy {
+            SemaphoreOperationsCounter operationsCounter = new SemaphoreOperationsCounter();
+
+            public Object getId() {
+                return name;
+            }
+
+            public InstanceType getInstanceType() {
+                return InstanceType.SEMAPHORE;
+            }
+
+            public String getLongName() {
+                return name;
+            }
+
+            public String getName() {
+                return name.substring(Prefix.SEMAPHORE.length());
+            }
+
+            public void destroy() {
+                newMSemaphore().destroy(getNameAsData());
+                factory.destroyInstanceClusterWide(name, null);
+            }
+
+            public void acquire() throws InstanceDestroyedException, InterruptedException {
+                acquire(1);
+            }
+
+            public void acquire(int permits) throws InstanceDestroyedException, InterruptedException {
+                if (Thread.interrupted())
+                    throw new InterruptedException();
+                try {
+                    doTryAcquire(permits, false, -1);
+                } catch (RuntimeInterruptedException e) {
+                    throw new InterruptedException();
+                }
+            }
+
+            public Future acquireAsync() {
+                throw new UnsupportedOperationException();
+            }
+
+            public Future acquireAsync(int permits) {
+                throw new UnsupportedOperationException();
+            }
+
+            public void acquireAttach() throws InstanceDestroyedException, InterruptedException {
+                acquireAttach(1);
+            }
+
+            public void acquireAttach(int permits) throws InstanceDestroyedException, InterruptedException {
+                if (Thread.interrupted())
+                    throw new InterruptedException();
+                try {
+                    doTryAcquire(permits, true, -1);
+                } catch (RuntimeInterruptedException e) {
+                    throw new InterruptedException();
+                }
+            }
+
+            public Future acquireAttachAsync() {
+                throw new UnsupportedOperationException();
+            }
+
+            public Future acquireAttachAsync(int permits) {
+                throw new UnsupportedOperationException();
+            }
+
+            public void attach() {
+                attach(1);
+            }
+
+            public void attach(int permits) {
+                newMSemaphore().attachDetach(getNameAsData(), permits);
+            }
+
+            public int attachedPermits() {
+                return newMSemaphore().getAttached(getNameAsData());
+            }
+
+            public int availablePermits() {
+                return newMSemaphore().getAvailable(getNameAsData());
+            }
+
+            public void detach() {
+                detach(1);
+            }
+
+            public void detach(int permits) {
+                newMSemaphore().attachDetach(getNameAsData(), -permits);
+            }
+
+            public int drainPermits() {
+                return newMSemaphore().drainPermits(getNameAsData());
+            }
+
+            public void release() {
+                release(1);
+            }
+
+            public void release(int permits) {
+                newMSemaphore().release(getNameAsData(), permits, false);
+            }
+
+            public void releaseDetach() {
+                releaseDetach(1);
+            }
+
+            public void releaseDetach(int permits) {
+                newMSemaphore().release(getNameAsData(), permits, true);
+            }
+
+            public boolean tryAcquire() {
+                return tryAcquire(1);
+            }
+
+            public boolean tryAcquire(int permits) {
+                try {
+                    return doTryAcquire(permits, false, -1);
+                } catch (Throwable e) {
+                    return false;
+                }
+            }
+
+            public boolean tryAcquire(long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+                return tryAcquire(1, timeout, unit);
+            }
+
+            public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+                if (Thread.interrupted())
+                    throw new InterruptedException();
+                try {
+                    return doTryAcquire(permits, false, unit.toMillis(timeout));
+                } catch (RuntimeInterruptedException e) {
+                    throw new InterruptedException();
+                }
+            }
+
+            public boolean tryAcquireAttach() {
+                return tryAcquireAttach(1);
+            }
+
+            public boolean tryAcquireAttach(int permits) {
+                try {
+                    return doTryAcquire(permits, true, -1);
+                } catch (Throwable e) {
+                    return false;
+                }
+            }
+
+            public boolean tryAcquireAttach(long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+                return tryAcquireAttach(1, timeout, unit);
+            }
+
+            public boolean tryAcquireAttach(int permits, long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+                if (Thread.interrupted())
+                    throw new InterruptedException();
+                try {
+                    return doTryAcquire(permits, true, unit.toMillis(timeout));
+                } catch (RuntimeInterruptedException e) {
+                    throw new InterruptedException();
+                }
+            }
+
+            public void reducePermits(int permits) {
+                newMSemaphore().reduce(getNameAsData(), permits);
+            }
+
+            public LocalSemaphoreStats getLocalSemaphoreStats() {
+                LocalSemaphoreStatsImpl localSemaphoreStats = new LocalSemaphoreStatsImpl();
+                localSemaphoreStats.setOperationsStats(operationsCounter.getPublishedStats());
+                return localSemaphoreStats;
+            }
+
+            public SemaphoreOperationsCounter getOperationsCounter() {
+                return operationsCounter;
+            }
+
+            private ConcurrentMapManager.MSemaphore newMSemaphore() {
+                ConcurrentMapManager.MSemaphore msemaphore = factory.node.concurrentMapManager.new MSemaphore();
+                msemaphore.setOperationsCounter(operationsCounter);
+                return msemaphore;
+            }
+
+            private boolean doTryAcquire(int permits, boolean attach, long timeout) throws InstanceDestroyedException {
+                return newMSemaphore().tryAcquire(getNameAsData(), permits, attach, timeout);
             }
         }
     }
@@ -1666,8 +2548,8 @@ public class FactoryImpl implements HazelcastInstance {
                 factory.destroyInstanceClusterWide(Prefix.MAP + name, null);
             }
 
-            public Instance.InstanceType getInstanceType() {
-                return Instance.InstanceType.QUEUE;
+            public InstanceType getInstanceType() {
+                return InstanceType.QUEUE;
             }
 
             public Object getId() {
@@ -2095,7 +2977,7 @@ public class FactoryImpl implements HazelcastInstance {
 
         public Future getAsync(Object key) {
             final MProxyImpl mProxy = MProxyImpl.this;
-            final Data dataKey = IOUtil.toData(key);
+            final Data dataKey = toData(key);
             AsyncCall call = new AsyncCall() {
                 @Override
                 protected void call() {
@@ -2108,8 +2990,8 @@ public class FactoryImpl implements HazelcastInstance {
 
         public Future putAsync(Object key, Object value) {
             final MProxyImpl mProxy = MProxyImpl.this;
-            final Data dataKey = IOUtil.toData(key);
-            final Data dataValue = IOUtil.toData(value);
+            final Data dataKey = toData(key);
+            final Data dataValue = toData(value);
             AsyncCall call = new AsyncCall() {
                 @Override
                 protected void call() {
@@ -2122,7 +3004,7 @@ public class FactoryImpl implements HazelcastInstance {
 
         public Future removeAsync(Object key) {
             final MProxyImpl mProxy = MProxyImpl.this;
-            final Data dataKey = IOUtil.toData(key);
+            final Data dataKey = toData(key);
             AsyncCall call = new AsyncCall() {
                 @Override
                 protected void call() {
@@ -2262,7 +3144,7 @@ public class FactoryImpl implements HazelcastInstance {
             dynamicProxy.destroy();
         }
 
-        public Instance.InstanceType getInstanceType() {
+        public InstanceType getInstanceType() {
             return dynamicProxy.getInstanceType();
         }
 
@@ -3023,7 +3905,7 @@ public class FactoryImpl implements HazelcastInstance {
             return name != null ? name.hashCode() : 0;
         }
 
-        public Instance.InstanceType getInstanceType() {
+        public InstanceType getInstanceType() {
             ensure();
             return base.getInstanceType();
         }

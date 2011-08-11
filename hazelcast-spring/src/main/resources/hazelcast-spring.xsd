@@ -122,6 +122,8 @@
     <xs:element name="executorService" type="hazelcast-instance"/>
     <xs:element name="idGenerator" type="hazelcast-instance"/>
     <xs:element name="atomicNumber" type="hazelcast-instance"/>
+    <xs:element name="countDownLatch" type="hazelcast-instance"/>
+    <xs:element name="semaphore" type="hazelcast-instance"/>
 
     <xs:element name="hibernate-cache-provider" type="hibernate-cache"/>
     <xs:element name="hibernate-region-factory" type="hibernate-cache"/>
@@ -272,8 +274,11 @@
             <xs:enumeration value="hazelcast.heartbeat.interval.seconds"/>
             <xs:enumeration value="hazelcast.icmp.enabled"/>
             <xs:enumeration value="hazelcast.initial.min.cluster.size"/>
+            <xs:enumeration value="hazelcast.mc.atomicnumber.excludes"/>
+            <xs:enumeration value="hazelcast.mc.countdownlatch.excludes"/>
             <xs:enumeration value="hazelcast.mc.map.excludes"/>
             <xs:enumeration value="hazelcast.mc.queue.excludes"/>
+            <xs:enumeration value="hazelcast.mc.semaphore.excludes"/>
             <xs:enumeration value="hazelcast.mc.topic.excludes"/>
             <xs:enumeration value="hazelcast.version.check.enabled"/>
             <xs:enumeration value="hazelcast.map.max.backup.count"/>

@@ -20,19 +20,23 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author: iocanel
- */
 public class SemaphoreConfigTest {
 
     @Test
-    public void testSetSize() {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig().setSize(1234);
-        assertTrue(semaphoreConfig.getSize() == 1234);
+    public void testSetInitialPermits() {
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig().setInitialPermits(1234);
+        assertTrue(semaphoreConfig.getInitialPermits() == 1234);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldNotAcceptZeroSize() {
-        new SemaphoreConfig().setSize(0);
+    @Test
+    public void shouldAcceptZeroInitialPermits() {
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig().setInitialPermits(0);
+        assertTrue(semaphoreConfig.getInitialPermits() == 0);
+    }
+
+    @Test
+    public void shouldAcceptNegativeInitialPermits() {
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig().setInitialPermits(-1234);
+        assertTrue(semaphoreConfig.getInitialPermits() == -1234);
     }
 }

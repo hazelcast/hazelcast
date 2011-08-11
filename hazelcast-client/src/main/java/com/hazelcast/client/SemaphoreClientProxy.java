@@ -19,100 +19,144 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.Instance;
+import com.hazelcast.core.InstanceDestroyedException;
 import com.hazelcast.core.Prefix;
-import com.hazelcast.impl.ClusterOperation;
 
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.impl.ClusterOperation.*;
 
 public class SemaphoreClientProxy implements ISemaphore {
 
     private final String name;
     private final ProxyHelper proxyHelper;
-    private final HazelcastClient client;
 
     public SemaphoreClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        this.client = hazelcastClient;
-        proxyHelper = new ProxyHelper(name, hazelcastClient);
+        proxyHelper = new ProxyHelper(getName(), hazelcastClient);
+    }
+
+    public void acquire() throws InstanceDestroyedException, InterruptedException {
+        acquire(1);
+    }
+
+    public void acquire(int permits) throws InstanceDestroyedException, InterruptedException {
+        if (Thread.currentThread().isInterrupted())
+            throw new InterruptedException();
+        proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, false, permits, -1, TimeUnit.MILLISECONDS);
+    }
+
+    public Future acquireAsync() {
+        return acquireAsync(1);
+    }
+
+    public Future acquireAsync(int permits) {
+        return doAcquireAsync(permits, false);
+    }
+
+    public void acquireAttach() throws InstanceDestroyedException, InterruptedException {
+        acquireAttach(1);
+    }
+
+    public void acquireAttach(int permits) throws InstanceDestroyedException, InterruptedException {
+        proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, true, permits, -1, TimeUnit.MILLISECONDS);
+    }
+
+    public Future acquireAttachAsync() {
+        return acquireAttachAsync(1);
+    }
+
+    public Future acquireAttachAsync(int permits) {
+        return doAcquireAsync(permits, true);
+    }
+
+    public void attach() {
+        attach(1);
+    }
+
+    public void attach(int permits) {
+        proxyHelper.doOp(SEMAPHORE_ATTACH_DETACH_PERMITS, true, permits);
+    }
+
+    public int attachedPermits() {
+        return (Integer) proxyHelper.doOp(SEMAPHORE_GET_ATTACHED_PERMITS, false, 0);
+    }
+
+    public int availablePermits() {
+        return (Integer) proxyHelper.doOp(SEMAPHORE_GET_AVAILABLE_PERMITS, false, 0);
+    }
+
+    public void detach() {
+        detach(1);
+    }
+
+    public void detach(int permits) {
+        proxyHelper.doOp(SEMAPHORE_ATTACH_DETACH_PERMITS, false, permits);
+    }
+
+    public int drainPermits() {
+        return (Integer) proxyHelper.doOp(SEMAPHORE_DRAIN_PERMITS, false, 0);
+    }
+
+    public void reducePermits(int permits) {
+        proxyHelper.doOp(SEMAPHORE_REDUCE_PERMITS, false, permits);
+    }
+
+    public void release() {
+        release(1);
+    }
+
+    public void release(int permits) {
+        proxyHelper.doOp(SEMAPHORE_RELEASE, false, permits);
+    }
+
+    public void releaseDetach() {
+        releaseDetach(1);
+    }
+
+    public void releaseDetach(int permits) {
+        proxyHelper.doOp(SEMAPHORE_RELEASE, true, permits);
     }
 
     public boolean tryAcquire() {
         return tryAcquire(1);
     }
 
-    public boolean tryAcquire(long timeout, TimeUnit unit) {
+    public boolean tryAcquire(int permits) {
+        try {
+            return tryAcquire(permits, 0, TimeUnit.MILLISECONDS);
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
+    public boolean tryAcquire(long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
         return tryAcquire(1, timeout, unit);
     }
 
-    public boolean tryAcquire(int permits) {
-        return tryAcquire(permits, -1, TimeUnit.NANOSECONDS);
+    public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+        return (Boolean) proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, false, permits, timeout, unit);
     }
 
-    public boolean tryAcquire(int permits, long timeout, TimeUnit timeUnit) {
-        Boolean result = false;
-        long start = System.currentTimeMillis();
-        Integer remaining = (Integer) proxyHelper.doOp(ClusterOperation.SEMAPHORE_ACQUIRE, null, permits);
-        long end = System.currentTimeMillis();
-        //Estimate the invocation time, so that it can be deducted from the timeout.
-        long diff = end - start;
-        if (remaining > 0) {
-            if (timeout > 0 && timeout > diff) {
-                result = tryAcquire(remaining, timeout - diff, timeUnit);
-            } else if (timeout < 0) {
-                result = tryAcquire(remaining, timeout, timeUnit);
-            } else {
-                result = false;
-            }
-        } else result = true;
-        if (!result) {
-            tryRelease(permits - remaining, -1, TimeUnit.MILLISECONDS);
+    public boolean tryAcquireAttach() {
+        return tryAcquireAttach(1);
+    }
+
+    public boolean tryAcquireAttach(int permits) {
+        try {
+            return tryAcquireAttach(permits, 0, TimeUnit.MILLISECONDS);
+        } catch (Throwable e) {
+            return false;
         }
-        return result;
     }
 
-    public boolean tryRelease(int permits, long timeout, TimeUnit timeUnit) {
-        proxyHelper.doOp(ClusterOperation.SEMAPHORE_RELEASE, null, permits);
-        return true;
+    public boolean tryAcquireAttach(long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+        return tryAcquireAttach(1, timeout, unit);
     }
 
-    public void acquireUninterruptibly() {
-        tryAcquire();
-    }
-
-    public void acquireUninterruptibly(int permits) {
-        tryAcquire(permits);
-    }
-
-    public String getName() {
-        return name.substring(Prefix.SEMAPHORE.length());
-    }
-
-    public void acquire() throws InterruptedException {
-        tryAcquire();
-    }
-
-    public void acquire(int permits) throws InterruptedException {
-        tryAcquire(permits);
-    }
-
-    public void release() {
-        tryRelease(1, -1, TimeUnit.NANOSECONDS);
-    }
-
-    public void release(int permits) {
-        tryRelease(permits, -1, TimeUnit.NANOSECONDS);
-    }
-
-    public int availablePermits() {
-        return (Integer) proxyHelper.doOp(ClusterOperation.SEMAPHORE_AVAILABLE_PERMITS, null, null);
-    }
-
-    public int drainPermits() {
-        return (Integer) proxyHelper.doOp(ClusterOperation.SEMAPHORE_DRAIN_PERMITS, null, null);
-    }
-
-    public void reducePermits(int permits) {
-        proxyHelper.doOp(ClusterOperation.SEMAPHORE_REDUCE_PERMITS, null, permits);
+    public boolean tryAcquireAttach(int permits, long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+        return (Boolean) proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, true, permits, timeout, unit);
     }
 
     public InstanceType getInstanceType() {
@@ -125,5 +169,20 @@ public class SemaphoreClientProxy implements ISemaphore {
 
     public Object getId() {
         return name;
+    }
+
+    public String getName() {
+        return name.substring(Prefix.SEMAPHORE.length());
+    }
+
+    private Future doAcquireAsync(final int permits, final boolean attach) {
+        Packet request = proxyHelper.prepareRequest(SEMAPHORE_TRY_ACQUIRE, attach, permits, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        Call remoteCall = proxyHelper.createCall(request);
+        proxyHelper.sendCall(remoteCall);
+        return new AsyncClientCall(remoteCall) {
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return !isDone() && (cancelled = (Boolean) proxyHelper.doOp(SEMAPHORE_CANCEL_ACQUIRE, false, 0));
+            }
+        };
     }
 }

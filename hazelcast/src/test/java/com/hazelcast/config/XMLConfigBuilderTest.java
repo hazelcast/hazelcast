@@ -68,10 +68,13 @@ public class XMLConfigBuilderTest {
         String xml =
                 "<hazelcast>\n" +
                         "    <semaphore name=\"default\">\n" +
-                        "        <size>1</size>\n" +
+                        "        <initial-permits>1</initial-permits>\n" +
                         "    </semaphore>" +
                         "    <semaphore name=\"custom\">\n" +
-                        "        <size>10</size>\n" +
+                        "        <initial-permits>10</initial-permits>\n" +
+                        "        <semaphore-factory enabled=\"true\">" +
+                        "             <class-name>com.acme.MySemaphore</class-name>\n" +
+                        "        </semaphore-factory>" +
                         "    </semaphore>" +
                         "</hazelcast>";
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
@@ -79,8 +82,12 @@ public class XMLConfigBuilderTest {
         Config config = configBuilder.build();
         SemaphoreConfig defaultConfig = config.getSemaphoreConfig("default");
         SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
-        assertEquals(1, defaultConfig.getSize());
-        assertEquals(10, customConfig.getSize());
+        assertEquals(1, defaultConfig.getInitialPermits());
+        assertFalse(defaultConfig.isFactoryEnabled());
+        assertNull(defaultConfig.getFactoryClassName());
+        assertEquals(10, customConfig.getInitialPermits());
+        assertTrue(customConfig.isFactoryEnabled());
+        assertEquals("com.acme.MySemaphore", customConfig.getFactoryClassName());
     }
 
     @Test

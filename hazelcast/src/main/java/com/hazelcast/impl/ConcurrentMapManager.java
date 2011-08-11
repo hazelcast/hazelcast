@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.MultiData;
@@ -36,11 +37,13 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
+import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.TransactionImpl.DEFAULT_TXN_TIMEOUT;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
+import static java.lang.System.currentTimeMillis;
 
 public class ConcurrentMapManager extends BaseManager {
     final int PARTITION_COUNT;
@@ -48,7 +51,7 @@ public class ConcurrentMapManager extends BaseManager {
     final long GLOBAL_REMOVE_DELAY_MILLIS;
     final long CLEANUP_DELAY_MILLIS;
     final boolean LOG_STATE;
-    long lastLogStateTime = System.currentTimeMillis();
+    long lastLogStateTime = currentTimeMillis();
     final Block[] blocks;
     final ConcurrentMap<String, CMap> maps;
     final ConcurrentMap<String, NearCache> mapCaches;
@@ -75,7 +78,7 @@ public class ConcurrentMapManager extends BaseManager {
         node.clusterService.registerPeriodicRunnable(new FallThroughRunnable() {
             public void doRun() {
                 logState();
-                long now = System.currentTimeMillis();
+                long now = currentTimeMillis();
                 Collection<CMap> cmaps = maps.values();
                 for (final CMap cmap : cmaps) {
                     if (cmap.cleanupState == CMap.CleanupState.SHOULD_CLEAN) {
@@ -139,15 +142,25 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_BLOCK_MIGRATION_CHECK, new BlockMigrationCheckHandler());
         registerPacketProcessor(CONCURRENT_MAP_VALUE_COUNT, new ValueCountOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_INVALIDATE, new InvalidateOperationHandler());
-        registerPacketProcessor(ATOMIC_NUMBER_GET_AND_SET, new AtomicOperationHandler());
-        registerPacketProcessor(ATOMIC_NUMBER_GET_AND_ADD, new AtomicOperationHandler());
-        registerPacketProcessor(ATOMIC_NUMBER_COMPARE_AND_SET, new AtomicOperationHandler());
-        registerPacketProcessor(ATOMIC_NUMBER_ADD_AND_GET, new AtomicOperationHandler());
-        registerPacketProcessor(SEMAPHORE_ACQUIRE, new SemaphoreOperationHandler());
-        registerPacketProcessor(SEMAPHORE_RELEASE, new SemaphoreOperationHandler());
-        registerPacketProcessor(SEMAPHORE_AVAILABLE_PERMITS, new SemaphoreOperationHandler());
-        registerPacketProcessor(SEMAPHORE_DRAIN_PERMITS, new SemaphoreOperationHandler());
-        registerPacketProcessor(SEMAPHORE_REDUCE_PERMITS, new SemaphoreOperationHandler());
+        registerPacketProcessor(ATOMIC_NUMBER_ADD_AND_GET, new AtomicNumberAddAndGetOperationHandler());
+        registerPacketProcessor(ATOMIC_NUMBER_COMPARE_AND_SET, new AtomicNumberCompareAndSetOperationHandler());
+        registerPacketProcessor(ATOMIC_NUMBER_GET_AND_ADD, new AtomicNumberGetAndAddOperationHandler());
+        registerPacketProcessor(ATOMIC_NUMBER_GET_AND_SET, new AtomicNumberGetAndSetOperationHandler());
+        registerPacketProcessor(COUNT_DOWN_LATCH_AWAIT, new CountDownLatchAwaitOperationHandler());
+        registerPacketProcessor(COUNT_DOWN_LATCH_COUNT_DOWN, new CountDownLatchCountDownOperationHandler());
+        registerPacketProcessor(COUNT_DOWN_LATCH_DESTROY, new CountDownLatchDestroyOperationHandler());
+        registerPacketProcessor(COUNT_DOWN_LATCH_GET_COUNT, new CountDownLatchGetCountOperationHandler());
+        registerPacketProcessor(COUNT_DOWN_LATCH_GET_OWNER, new CountDownLatchGetOwnerOperationHandler());
+        registerPacketProcessor(COUNT_DOWN_LATCH_SET_COUNT, new CountDownLatchSetCountOperationHandler());
+        registerPacketProcessor(SEMAPHORE_ATTACH_DETACH_PERMITS, new SemaphoreAttachDetachOperationHandler());
+        registerPacketProcessor(SEMAPHORE_CANCEL_ACQUIRE, new SemaphoreCancelAcquireOperationHandler());
+        registerPacketProcessor(SEMAPHORE_DESTROY, new SemaphoreDestroyOperationHandler());
+        registerPacketProcessor(SEMAPHORE_DRAIN_PERMITS, new SemaphoreDrainOperationHandler());
+        registerPacketProcessor(SEMAPHORE_GET_ATTACHED_PERMITS, new SemaphoreGetAttachedOperationHandler());
+        registerPacketProcessor(SEMAPHORE_GET_AVAILABLE_PERMITS, new SemaphoreGetAvailableOperationHandler());
+        registerPacketProcessor(SEMAPHORE_REDUCE_PERMITS, new SemaphoreReduceOperationHandler());
+        registerPacketProcessor(SEMAPHORE_RELEASE, new SemaphoreReleaseOperationHandler());
+        registerPacketProcessor(SEMAPHORE_TRY_ACQUIRE, new SemaphoreTryAcquireOperationHandler());
     }
 
     private void executeCleanup(final CMap cmap, final boolean forced) {
@@ -223,6 +236,46 @@ public class ConcurrentMapManager extends BaseManager {
 
     public void syncForDead(MemberImpl deadMember) {
         partitionManager.syncForDead(deadMember);
+        syncForDeadSemaphores(deadMember.getAddress());
+        syncForDeadCountDownLatches(deadMember.getAddress());
+    }
+
+    void syncForDeadSemaphores(Address deadAddress) {
+        CMap cmap = maps.get(MapConfig.SEMAPHORE_MAP_NAME);
+        if (cmap != null){
+            for (Record record :  cmap.mapRecords.values()) {
+                DistributedSemaphore semaphore = (DistributedSemaphore) record.getValue();
+                if (semaphore.onDisconnect(deadAddress)){
+                    record.setValue(toData(semaphore));
+                    record.incrementVersion();
+                }
+            }
+        }
+    }
+
+    void syncForDeadCountDownLatches(Address deadAddress) {
+        final CMap cmap = maps.get(MapConfig.COUNT_DOWN_LATCH_MAP_NAME);
+        if (deadAddress != null && cmap != null){
+            for (Iterator<Record> iterator = cmap.mapRecords.values().iterator(); iterator.hasNext();) {
+                Record record = iterator.next();
+                DistributedCountDownLatch cdl = (DistributedCountDownLatch) record.getValue();
+                if (cdl != null && cdl.isOwnerOrMemberAddress(deadAddress)) {
+                    List<ScheduledAction> scheduledActions = record.getScheduledActions();
+                    if (scheduledActions != null) {
+                        for (ScheduledAction sa : scheduledActions) {
+                            node.clusterManager.deregisterScheduledAction(sa);
+                            final Request sr = sa.getRequest();
+                            sr.clearForResponse();
+                            sr.lockAddress = deadAddress;
+                            sr.longValue = CountDownLatchProxy.OWNER_LEFT;
+                            returnResponse(sr);
+                        }
+                        scheduledActions.clear();
+                    }
+                    iterator.remove();
+                }
+            }
+        }
     }
 
     public void syncForAdd() {
@@ -230,7 +283,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     void logState() {
-        long now = System.currentTimeMillis();
+        long now = currentTimeMillis();
         if (LOG_STATE && ((now - lastLogStateTime) > 15000)) {
             StringBuffer sbState = new StringBuffer(thisAddress + " State[" + new Date(now));
             sbState.append("]");
@@ -876,8 +929,7 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            setLocal(CONCURRENT_MAP_GET, name, key, null, timeout, -1);
-            Object value = objectCall();
+            Object value = objectCall(CONCURRENT_MAP_GET, name, key, null, timeout, -1);
             if (value instanceof AddressAwareException) {
                 rethrowException(request.operation, (AddressAwareException) value);
             }
@@ -1142,148 +1194,222 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MAtomic extends MBackupAndMigrationAwareOp {
-        final Data nameAsKey;
-        final ClusterOperation op;
-        final long expected;
-        final long value;
-        final boolean ignoreExpected;
+    class MAtomicNumber extends MDefaultBackupAndMigrationAwareOp {
+        AtomicNumberOperationsCounter operationsCounter;
 
-        MAtomic(Data nameAsKey, ClusterOperation op, long value, long expected, boolean ignoreExpected) {
-            this.nameAsKey = nameAsKey;
-            this.op = op;
-            this.value = value;
-            this.expected = expected;
-            this.ignoreExpected = ignoreExpected;
+        public long addAndGet(Data name, long delta) {
+            return doAtomicOp(ATOMIC_NUMBER_ADD_AND_GET, name, delta, null);
         }
 
-        MAtomic(Data nameAsKey, ClusterOperation op, long value, long expected) {
-            this(nameAsKey, op, value, expected, false);
+        public boolean compareAndSet(Data name, long expectedValue, long newValue) {
+            return doAtomicOp(ATOMIC_NUMBER_COMPARE_AND_SET, name, newValue, toData(expectedValue)) == 1;
         }
 
-        MAtomic(Data nameAsKey, ClusterOperation op, long value) {
-            this(nameAsKey, op, value, 0, true);
+        public long getAndAdd(Data name, long delta) {
+            return doAtomicOp(ATOMIC_NUMBER_GET_AND_ADD, name, delta, null);
         }
 
-        boolean doBooleanAtomic() {
-            Data expectedData = (ignoreExpected) ? null : toData(expected);
-            setLocal(op, MapConfig.ATOMIC_NUMBER_MAP_NAME, nameAsKey, expectedData, 0, 0);
+        public long getAndSet(Data name, long newValue) {
+            return doAtomicOp(ATOMIC_NUMBER_GET_AND_SET, name, newValue, null);
+        }
+
+        public void destroy(Data name) {
+            new MRemove().remove(MapConfig.ATOMIC_LONG_MAP_NAME, name, -1);
+        }
+
+        void setOperationsCounter(AtomicNumberOperationsCounter operationsCounter) {
+            this.operationsCounter = operationsCounter;
+        }
+
+        private long doAtomicOp(ClusterOperation op, Data name, long value, Data expected){
+            long begin = currentTimeMillis();
+            setLocal(op, MapConfig.ATOMIC_LONG_MAP_NAME, name, expected, 0, 0);
             request.longValue = value;
-            request.setBooleanRequest();
             doOp();
-            Object returnObject = getResultAsBoolean();
-            if (returnObject instanceof AddressAwareException) {
-                rethrowException(op, (AddressAwareException) returnObject);
+            Data backup = (Data) getResultAsIs();
+            long responseValue = request.longValue;
+            if (backup != null) {
+                request.value = backup;
+                request.longValue = 0L;
+                backup(CONCURRENT_MAP_BACKUP_PUT);
+                operationsCounter.incrementModified(currentTimeMillis() - begin);
+            } else {
+                operationsCounter.incrementNonModified(currentTimeMillis() - begin);
             }
-            return !Boolean.FALSE.equals(returnObject);
-        }
-
-        long doLongAtomic() {
-            setLocal(op, MapConfig.ATOMIC_NUMBER_MAP_NAME, nameAsKey, null, 0, 0);
-            request.longValue = value;
-            doOp();
-            Object returnObject = getResultAsObject(false);
-            return (Long) returnObject;
-        }
-
-        void backup(Long value) {
-            request.value = toData(value);
-            backup(CONCURRENT_MAP_BACKUP_PUT);
+            return responseValue;
         }
     }
 
-    class MSemaphore extends MBackupAndMigrationAwareOp {
-        final Data nameAsKey;
-        final ClusterOperation op;
-        final int expected;
-        final int value;
-        final boolean ignoreExpected;
+    class MCountDownLatch extends MDefaultBackupAndMigrationAwareOp {
+        CountDownLatchOperationsCounter operationsCounter;
+        long begin;
 
-        MSemaphore(Data nameAsKey, ClusterOperation op, int value, int expected, boolean ignoreExpected) {
-            this.nameAsKey = nameAsKey;
-            this.op = op;
-            this.value = value;
-            this.expected = expected;
-            this.ignoreExpected = ignoreExpected;
-        }
-
-        MSemaphore(Data nameAsKey, ClusterOperation op, int value, int expected) {
-            this(nameAsKey, op, value, expected, false);
-        }
-
-        MSemaphore(Data nameAsKey, ClusterOperation op, int value) {
-            this(nameAsKey, op, value, 0, true);
-        }
-
-        boolean tryAcquire(int permits, long timeout, TimeUnit timeUnit) {
-            Boolean result = false;
-            int remaining = permits;
-            long elapsed = 0;
-            do {
-                long start = System.currentTimeMillis();
-                setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, nameAsKey, remaining, timeUnit.convert(timeout - elapsed, TimeUnit.MILLISECONDS), 0);
-                request.longValue = value;
-                request.caller = thisAddress;
-                request.operation = SEMAPHORE_ACQUIRE;
-                doOp();
-                remaining = (Integer) getResultAsObject(false);
-                long end = System.currentTimeMillis();
-                //Estimate the invocation time, so that it can be deducted from the timeout.
-                elapsed += end - start;
-                if (remaining == 0) {
-                    result = true;
+        public boolean await(Data name, long timeout, TimeUnit unit) throws InstanceDestroyedException, MemberLeftException {
+            try {
+                int awaitResult = doCountDownLatchOp(COUNT_DOWN_LATCH_AWAIT, name, 0, unit.toMillis(timeout));
+                switch (awaitResult){
+                    case CountDownLatchProxy.INSTANCE_DESTROYED:
+                        throw new InstanceDestroyedException(InstanceType.COUNT_DOWN_LATCH, (String) toObject(name));
+                    case CountDownLatchProxy.OWNER_LEFT:
+                        Member owner = node.clusterManager.getMember(request.lockAddress);
+                        throw new MemberLeftException(owner);
+                    case CountDownLatchProxy.AWAIT_DONE:
+                        return true;
+                    case CountDownLatchProxy.AWAIT_FAILED: default:
+                        return false;
                 }
-            } while (remaining > 0 && (timeout > 0 && timeout > elapsed));
-            if (!result) {
-                tryRelease(permits - remaining, -1, TimeUnit.MILLISECONDS);
+            } finally {
+                operationsCounter.incrementAwait(currentTimeMillis() - begin);
             }
-            backup(SEMAPHORE_ACQUIRE);
-            return result;
         }
 
-        void tryRelease(int permits, long timeout, TimeUnit timeUnit) {
-            setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, nameAsKey, permits, timeUnit.convert(timeout, TimeUnit.MILLISECONDS), 0);
-            request.longValue = value;
-            request.caller = thisAddress;
-            request.operation = SEMAPHORE_RELEASE;
+        public boolean countDown(Data name) {
+            final int threadsReleased = doCountDownLatchOp(COUNT_DOWN_LATCH_COUNT_DOWN, name, 0, -1);
+            operationsCounter.incrementCountDown(currentTimeMillis() - begin, threadsReleased);
+            return threadsReleased > 0;
+        }
+
+        public int getCount(Data name) {
+            final int count = doCountDownLatchOp(COUNT_DOWN_LATCH_GET_COUNT, name, 0, -1);
+            operationsCounter.incrementOther(currentTimeMillis() - begin);
+            return count;
+        }
+
+        public Address getOwnerAddress(Data name) {
+            begin = currentTimeMillis();
+            setLocal(COUNT_DOWN_LATCH_GET_OWNER, MapConfig.COUNT_DOWN_LATCH_MAP_NAME, name, null, 0, -1);
             doOp();
-            Integer result = (Integer) getResultAsObject(false);
-            backup(SEMAPHORE_RELEASE);
+            return (Address) getResultAsObject(false);
         }
 
-        int availablePermits() {
-            setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0, 0);
+        public boolean setCount(Data name, int count, Address ownerAddress) {
+            int countSet = doCountDownLatchOp(COUNT_DOWN_LATCH_SET_COUNT, name, count, -1, ownerAddress);
+            operationsCounter.incrementOther(currentTimeMillis() - begin);
+            return countSet == 1;
+        }
+
+        public void destroy(Data name) {
+            doCountDownLatchOp(COUNT_DOWN_LATCH_DESTROY, name, 0, -1);
+            //new MRemove().remove(MapConfig.COUNT_DOWN_LATCH_MAP_NAME, name, -1);
+        }
+
+        void setOperationsCounter(CountDownLatchOperationsCounter operationsCounter) {
+            this.operationsCounter = operationsCounter;
+        }
+
+        private int doCountDownLatchOp(ClusterOperation op, Data name, int value, long timeout){
+            return doCountDownLatchOp(op, name, value, timeout, thisAddress);
+        }
+
+        private int doCountDownLatchOp(ClusterOperation op, Data name, int value, long timeout, Address endPoint){
+            begin = currentTimeMillis();
+            setLocal(op, MapConfig.COUNT_DOWN_LATCH_MAP_NAME, name, null, timeout, -1);
             request.longValue = value;
-            request.caller = thisAddress;
-            request.operation = SEMAPHORE_AVAILABLE_PERMITS;
+            request.lockAddress = endPoint;
             doOp();
-            Object returnObject = getResultAsObject(false);
-            return (Integer) returnObject;
+            Data backup = (Data) getResultAsIs();
+            int responseValue = (int)request.longValue;
+            if (backup != null) {
+                request.value = backup;
+                request.longValue = 0L;
+                backup(CONCURRENT_MAP_BACKUP_PUT);
+            }
+            return responseValue;
+        }
+    }
+
+    class MSemaphore extends MDefaultBackupAndMigrationAwareOp {
+        SemaphoreOperationsCounter operationsCounter;
+        long begin;
+
+        public void attachDetach(Data name, int permitsDelta) {
+            doSemaphoreOp(SEMAPHORE_ATTACH_DETACH_PERMITS, name, permitsDelta, null, -1);
+            operationsCounter.incrementNonAcquires(currentTimeMillis() - begin, permitsDelta);
         }
 
-        int drainPermits() {
-            setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, nameAsKey, 0, 0, 0);
-            request.longValue = value;
-            request.caller = thisAddress;
-            request.operation = SEMAPHORE_DRAIN_PERMITS;
+        public boolean cancelAcquire(Data name) {
+            setLocal(SEMAPHORE_CANCEL_ACQUIRE, MapConfig.SEMAPHORE_MAP_NAME, name, null, -1, -1);
             doOp();
-            Object returnObject = getResultAsObject(false);
-            backup(SEMAPHORE_DRAIN_PERMITS);
-            return (Integer) returnObject;
+            getResult();
+            return request.longValue == 1;
         }
 
-        void reducePermits(int permits) {
-            setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, nameAsKey, permits, 0, 0);
-            request.longValue = value;
-            request.caller = thisAddress;
-            request.operation = SEMAPHORE_REDUCE_PERMITS;
-            doOp();
-            backup(SEMAPHORE_REDUCE_PERMITS);
+        public int drainPermits(Data name) {
+            int drainedPermits = doSemaphoreOp(SEMAPHORE_DRAIN_PERMITS, name, -1, null, -1);
+            operationsCounter.incrementNonAcquires(currentTimeMillis() - begin, 0);
+            return drainedPermits;
         }
 
-        void backup(Long value) {
-            request.value = toData(value);
-            backup(CONCURRENT_MAP_BACKUP_PUT);
+        public int getAvailable(Data name) {
+            int availablePermits = doSemaphoreOp(SEMAPHORE_GET_AVAILABLE_PERMITS, name, -1, null, -1);
+            operationsCounter.incrementNonAcquires(currentTimeMillis() - begin, 0);
+            return availablePermits;
+        }
+
+        public int getAttached(Data name) {
+            int attachedPermits = doSemaphoreOp(SEMAPHORE_GET_ATTACHED_PERMITS, name, -1, false, -1);
+            operationsCounter.incrementNonAcquires(currentTimeMillis() - begin, 0);
+            return attachedPermits;
+        }
+
+        public void reduce(Data name, int permits) {
+            doSemaphoreOp(SEMAPHORE_REDUCE_PERMITS, name, permits, null, -1);
+            operationsCounter.incrementPermitsReduced(currentTimeMillis() - begin, 0);
+        }
+
+        public void release(Data name, int permits, Boolean detach) {
+            doSemaphoreOp(SEMAPHORE_RELEASE, name, permits, detach, -1);
+            operationsCounter.incrementReleases(currentTimeMillis() - begin, permits, detach);
+        }
+
+        public boolean tryAcquire(Data name, int permits, boolean attach, long timeout) throws InstanceDestroyedException {
+            try {
+                int acquireResult = doSemaphoreOp(SEMAPHORE_TRY_ACQUIRE, name, permits, attach, timeout);
+                switch (acquireResult){
+                    case SemaphoreProxy.INSTANCE_DESTROYED:
+                        operationsCounter.incrementRejectedAcquires(currentTimeMillis() - begin);
+                        throw new InstanceDestroyedException(InstanceType.SEMAPHORE, (String) toObject(name));
+                    case SemaphoreProxy.ACQUIRED:
+                        operationsCounter.incrementAcquires(currentTimeMillis() - begin, permits, attach);
+                        return true;
+                    case SemaphoreProxy.ACQUIRE_FAILED: default:
+                        operationsCounter.incrementRejectedAcquires(currentTimeMillis() - begin);
+                        return false;
+                }
+            } catch (RuntimeInterruptedException e) {
+                operationsCounter.incrementRejectedAcquires(currentTimeMillis() - begin);
+                throw e;
+            }
+        }
+
+        public void destroy(Data name) {
+            doSemaphoreOp(SEMAPHORE_DESTROY, name, -1, null, -1);
+            new MRemove().remove(MapConfig.SEMAPHORE_MAP_NAME, name, -1);
+        }
+
+        void setOperationsCounter(SemaphoreOperationsCounter operationsCounter) {
+            this.operationsCounter = operationsCounter;
+        }
+
+        private int doSemaphoreOp(ClusterOperation op, Data name, long longValue, Object value, long timeout){
+            begin = currentTimeMillis();
+            int responseValue = 1;
+            if (longValue != 0L){
+                setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, name, value, timeout, -1);
+                request.longValue = longValue;
+                doOp();
+                Data backup = (Data) getResultAsIs();
+                responseValue = (int)request.longValue;
+                if (backup != null) {
+                    request.value = backup;
+                    request.longValue = 0L;
+                    backup(CONCURRENT_MAP_BACKUP_PUT);
+                    operationsCounter.incrementModified(currentTimeMillis() - begin);
+                } else {
+                    operationsCounter.incrementNonModified(currentTimeMillis() - begin);
+                }
+            }
+            return responseValue;
         }
     }
 
@@ -1424,7 +1550,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (oldValue != null) {
                         oldObject = threadContext.isClient() ? oldValue : threadContext.toObject(oldValue);
                     }
-                    if (operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT && oldObject != null) {
+                    if (operation == CONCURRENT_MAP_PUT_IF_ABSENT && oldObject != null) {
                         txn.attachPutOp(name, key, oldObject, 0, ttl, false);
                     } else {
                         txn.attachPutOp(name, key, value, 0, ttl, (oldObject == null));
@@ -1512,6 +1638,13 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    abstract class MDefaultBackupAndMigrationAwareOp extends MBackupAndMigrationAwareOp {
+        @Override
+        void prepareForBackup() {
+            backupCount = Math.min(MapConfig.DEFAULT_BACKUP_COUNT, lsMembers.size() - 1);
+        }
+    }
+
     abstract class MTargetAwareOp extends TargetAwareOp {
 
         @Override
@@ -1593,11 +1726,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         protected void backup(ClusterOperation operation) {
             if (thisAddress.equals(target) &&
-                    (operation == CONCURRENT_MAP_LOCK || operation == CONCURRENT_MAP_UNLOCK ||
-                            operation == SEMAPHORE_ACQUIRE ||
-                            operation == SEMAPHORE_RELEASE ||
-                            operation == SEMAPHORE_DRAIN_PERMITS ||
-                            operation == SEMAPHORE_REDUCE_PERMITS)) {
+                    (operation == CONCURRENT_MAP_LOCK || operation == CONCURRENT_MAP_UNLOCK)) {
                 return;
             }
             if (backupCount > 0) {
@@ -1817,7 +1946,7 @@ public class ConcurrentMapManager extends BaseManager {
             }
             final CMap cMap = maps.get(name);
             if (cMap != null) {
-                long now = System.currentTimeMillis();
+                long now = currentTimeMillis();
                 for (Record record : cMap.mapRecords.values()) {
                     if (record.isActive() && record.isValid(now) && record.getValueData() != null) {
                         if (cMap.readBackupData) {
@@ -2074,7 +2203,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     class AsyncMergePacketProcessor implements PacketProcessor {
         public void process(final Packet packet) {
-            packet.operation = ClusterOperation.CONCURRENT_MAP_WAN_MERGE;
+            packet.operation = CONCURRENT_MAP_WAN_MERGE;
             final Data key = packet.getKeyData();
             Address address = getKeyOwner(key);
             if (thisAddress.equals(address)) {
@@ -2380,17 +2509,353 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class AtomicOperationHandler extends MTargetAwareOperationHandler {
+    abstract class AtomicNumberOperationHandler extends MTargetAwareOperationHandler {
+        abstract long getNewValue(long oldValue, long value);
+
+        abstract long getResponseValue(long oldValue, long value);
+
+        @Override
         void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            cmap.doAtomic(request);
+            final Record record = ensureRecord(request, AtomicNumberProxy.DATA_LONG_ZERO);
+            final Data oldValueData = record.getValueData();
+            final Data expectedValue = request.value;
+            final long value = request.longValue;
+            request.clearForResponse();
+            if (expectedValue == null || expectedValue.equals(oldValueData)) {
+                final long oldValue = (Long) toObject(oldValueData);
+                final long newValue = getNewValue(oldValue, value);
+                request.longValue = getResponseValue(oldValue, value);
+                if (oldValue != newValue) {
+                    record.setValue(toData(newValue));
+                    record.incrementVersion();
+                    request.version = record.getVersion();
+                    request.response = record.getValueData();
+                }
+            } else {
+                request.longValue = 0L;
+            }
         }
     }
 
-    class SemaphoreOperationHandler extends MTargetAwareOperationHandler {
+    class AtomicNumberAddAndGetOperationHandler extends AtomicNumberOperationHandler {
+        long getNewValue(long oldValue, long value) {
+            return oldValue + value;
+        }
+
+        long getResponseValue(long oldValue, long value) {
+            return oldValue + value;
+        }
+    }
+
+    class AtomicNumberGetAndAddOperationHandler extends AtomicNumberOperationHandler {
+        long getNewValue(long oldValue, long value) {
+            return oldValue + value;
+        }
+
+        long getResponseValue(long oldValue, long value) {
+            return oldValue;
+        }
+    }
+
+    class AtomicNumberGetAndSetOperationHandler extends AtomicNumberOperationHandler {
+        long getNewValue(long oldValue, long value) {
+            return value;
+        }
+
+        long getResponseValue(long oldValue, long value) {
+            return oldValue;
+        }
+    }
+
+    class AtomicNumberCompareAndSetOperationHandler extends AtomicNumberOperationHandler {
+        long getNewValue(long oldValue, long value) {
+            return value;
+        }
+
+        long getResponseValue(long oldValue, long value) {
+            return 1L;
+        }
+    }
+
+    abstract class CountDownLatchOperationHandler extends SchedulableOperationHandler {
+        abstract void doCountDownLatchOperation(Request request, DistributedCountDownLatch cdl);
+
+        @Override
+        public void handle(Request request) {
+            request.record = ensureRecord(request, DistributedCountDownLatch.newInstanceData);
+            doOperation(request);
+        }
+
+        @Override
         void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            cmap.doSemaphore(request);
+            doCountDownLatchOperation(request, (DistributedCountDownLatch) request.record.getValue());
+        }
+
+        @Override
+        protected void onNoTimeToSchedule(Request request) {
+            doResponse(request, null, CountDownLatchProxy.AWAIT_FAILED, false);
+        }
+
+        protected void doResponse(Request request, DistributedCountDownLatch cdl, long retValue, boolean changed) {
+            final Record record = request.record;
+            request.clearForResponse();
+            if (changed) {
+                record.setValue(toData(cdl));
+                record.incrementVersion();
+                request.version = record.getVersion();
+                request.response = record.getValueData();
+            }
+            request.longValue = retValue;
+            if(changed && request.operation == COUNT_DOWN_LATCH_COUNT_DOWN && cdl.getCount() == 0){
+                request.longValue = releaseThreads(record);
+            }
+            returnResponse(request);
+        }
+
+        private int releaseThreads(Record record){
+            int threadsReleased = 0;
+            final List<ScheduledAction> scheduledActions = record.getScheduledActions();
+            if (scheduledActions != null) {
+                for (ScheduledAction sa : scheduledActions){
+                    node.clusterManager.deregisterScheduledAction(sa);
+                    if (!sa.expired()) {
+                        sa.consume();
+                        ++threadsReleased;
+                    } else {
+                        sa.onExpire();
+                    }
+                }
+                scheduledActions.clear();
+            }
+            return threadsReleased;
+        }
+    }
+
+    class CountDownLatchAwaitOperationHandler extends CountDownLatchOperationHandler {
+        void doCountDownLatchOperation(Request request, DistributedCountDownLatch cdl) {
+            if (cdl.getCount() == 0) {
+                request.clearForResponse();
+                doResponse(request, null, CountDownLatchProxy.AWAIT_DONE, false);
+            } else {
+                request.lockThreadId = ThreadContext.get().getThreadId();
+                schedule(request);
+            }
+        }
+    }
+
+    class CountDownLatchCountDownOperationHandler extends CountDownLatchOperationHandler {
+        void doCountDownLatchOperation(Request request, DistributedCountDownLatch cdl) {
+            doResponse(request, cdl, 0, cdl.countDown());
+        }
+    }
+
+    class CountDownLatchDestroyOperationHandler extends CountDownLatchOperationHandler {
+        void doCountDownLatchOperation(Request request, DistributedCountDownLatch cdl) {
+            final List<ScheduledAction> scheduledActions = request.record.getScheduledActions();
+            if (scheduledActions != null) {
+                for (ScheduledAction sa : scheduledActions){
+                    node.clusterManager.deregisterScheduledAction(sa);
+                    doResponse(sa.getRequest(), null, CountDownLatchProxy.INSTANCE_DESTROYED, false);
+                }
+            }
+            request.clearForResponse();
+            returnResponse(request);
+        }
+    }
+
+    class CountDownLatchGetCountOperationHandler extends CountDownLatchOperationHandler {
+        void doCountDownLatchOperation(Request request, DistributedCountDownLatch cdl) {
+            doResponse(request, cdl, cdl.getCount(), false);
+        }
+    }
+
+    class CountDownLatchGetOwnerOperationHandler extends CountDownLatchOperationHandler {
+        void doCountDownLatchOperation(Request request, DistributedCountDownLatch cdl) {
+            request.clearForResponse();
+            request.response = cdl.getOwnerAddress();
+            returnResponse(request);
+        }
+    }
+
+    class CountDownLatchSetCountOperationHandler extends CountDownLatchOperationHandler {
+        void doCountDownLatchOperation(Request request, DistributedCountDownLatch cdl) {
+            boolean countSet = cdl.setCount((int) request.longValue, request.caller, request.lockAddress);
+            doResponse(request, cdl, (countSet ? 1 : 0), countSet);
+        }
+    }
+
+    abstract class SemaphoreOperationHandler extends SchedulableOperationHandler {
+        abstract void doSemaphoreOperation(Request request, DistributedSemaphore semaphore);
+        private Request request;
+
+        @Override
+        public void handle(Request request) {
+            request.record = ensureRecord(request, null);
+            if (request.record.getValue() != null) {
+            } else {
+                final String name = (String) toObject(request.key);
+                final SemaphoreConfig sc = node.getConfig().getSemaphoreConfig(name);
+                int initialPermits = sc.getInitialPermits();
+                if (sc.isFactoryEnabled()) {
+                    try {
+                        SemaphoreFactory factory = sc.getFactoryImplementation();
+                        if (factory == null) {
+                            String factoryClassName = sc.getFactoryClassName();
+                            if (factoryClassName != null && !factoryClassName.isEmpty()) {
+                                ClassLoader cl = node.getConfig().getClassLoader();
+                                Class factoryClass = Serializer.classForName(cl, factoryClassName);
+                                factory = (SemaphoreFactory) factoryClass.newInstance();
+                            }
+                        }
+                        if (factory != null) {
+                            initialPermits = factory.getInitialPermits(name, initialPermits);
+                        }
+                    } catch (Exception e) {
+                        logger.log(Level.SEVERE, e.getMessage(), e);
+                    }
+                }
+                request.record.setValue(new DistributedSemaphore(initialPermits));
+            }
+            doOperation(request);
+        }
+
+        @Override
+        void doOperation(Request request) {
+            doSemaphoreOperation(request, (DistributedSemaphore) request.record.getValue());
+        }
+
+        @Override
+        protected void onNoTimeToSchedule(Request request) {
+            doResponse(request, null, SemaphoreProxy.ACQUIRE_FAILED, false);
+            returnResponse(request);
+        }
+
+        protected void doResponse(Request request, DistributedSemaphore semaphore, long retValue, boolean changed) {
+            final boolean wasScheduled = request.scheduled;
+            final Record record = request.record;
+            final List<ScheduledAction> scheduledActions = record.getScheduledActions();
+            request.clearForResponse();
+            if (changed) {
+                record.setValue(toData(semaphore));
+                record.incrementVersion();
+                request.version = record.getVersion();
+                request.response = record.getValueData();
+            }
+            request.longValue = retValue;
+            returnResponse(request);
+            if (!wasScheduled && scheduledActions != null) {
+                int remaining = scheduledActions.size();
+                while (remaining-- > 0 && semaphore.getAvailable() > 0) {
+                    ScheduledAction sa = scheduledActions.remove(0);
+                    node.clusterManager.deregisterScheduledAction(sa);
+                    if (!sa.expired()) {
+                        sa.consume();
+                    } else {
+                        sa.onExpire();
+                    }
+                }
+            }
+        }
+    }
+
+    class SemaphoreAttachDetachOperationHandler extends SemaphoreOperationHandler {
+        void doSemaphoreOperation(Request request, DistributedSemaphore semaphore) {
+            final int permitsDelta = (int) request.longValue;
+            semaphore.attachDetach(permitsDelta, request.caller);
+            doResponse(request, semaphore, 0L, true);
+        }
+    }
+
+    class SemaphoreCancelAcquireOperationHandler extends SemaphoreOperationHandler {
+        void doSemaphoreOperation(Request request, DistributedSemaphore semaphore) {
+            long retValue = 0L;
+            final List<ScheduledAction> scheduledActions = request.record.getScheduledActions();
+            if (scheduledActions != null) {
+                final int threadId = ThreadContext.get().getThreadId();
+                final Iterator<ScheduledAction> i = scheduledActions.iterator();
+                while (i.hasNext()){
+                    final ScheduledAction sa = i.next();
+                    final Request sr = sa.getRequest();
+                    if (sr.lockThreadId == threadId && sr.caller.equals(request.caller)){
+                        node.clusterManager.deregisterScheduledAction(sa);
+                        doResponse(sr, null, SemaphoreProxy.ACQUIRE_FAILED, false);
+                        i.remove();
+                        retValue = 1L;
+                        break;
+                    }
+                }
+            }
+            request.clearForResponse();
+            request.longValue = retValue;
+            returnResponse(request);
+        }
+    }
+
+    class SemaphoreDestroyOperationHandler extends SemaphoreOperationHandler {
+        void doSemaphoreOperation(Request request, DistributedSemaphore semaphore) {
+            final List<ScheduledAction> scheduledActions = request.record.getScheduledActions();
+            if (scheduledActions != null) {
+                for (ScheduledAction sa : scheduledActions){
+                    final Request sr = sa.getRequest();
+                    if (sr.caller.equals(request.caller) && sr.lockThreadId == ThreadContext.get().getThreadId()){
+                        node.clusterManager.deregisterScheduledAction(sa);
+                        doResponse(sr, null, SemaphoreProxy.INSTANCE_DESTROYED, false);
+                    }
+                }
+            }
+            request.clearForResponse();
+            returnResponse(request);
+        }
+    }
+
+    class SemaphoreDrainOperationHandler extends SemaphoreOperationHandler {
+        void doSemaphoreOperation(Request request, DistributedSemaphore semaphore) {
+            final int drainedPermits = semaphore.drain();
+            doResponse(request, semaphore, drainedPermits, drainedPermits > 0);
+        }
+    }
+
+    class SemaphoreGetAttachedOperationHandler extends SemaphoreOperationHandler {
+        void doSemaphoreOperation(Request request, DistributedSemaphore semaphore) {
+            doResponse(request, semaphore, semaphore.getAttached(request.caller), false);
+        }
+    }
+
+    class SemaphoreGetAvailableOperationHandler extends SemaphoreOperationHandler {
+        void doSemaphoreOperation(Request request, DistributedSemaphore semaphore) {
+            doResponse(request, semaphore, semaphore.getAvailable(), false);
+        }
+    }
+
+    class SemaphoreReduceOperationHandler extends SemaphoreOperationHandler {
+        void doSemaphoreOperation(Request request, DistributedSemaphore semaphore) {
+            final int permits = (int) request.longValue;
+            semaphore.reduce(permits);
+            doResponse(request, semaphore, 0L, permits > 0);
+        }
+    }
+
+    class SemaphoreReleaseOperationHandler extends SemaphoreOperationHandler {
+        void doSemaphoreOperation(Request request, DistributedSemaphore semaphore) {
+            final int permits = (int) request.longValue;
+            final boolean detach = SemaphoreProxy.DATA_TRUE.equals(request.value);
+            final Address detachAddress = detach ? request.caller : null;
+            semaphore.release(permits, detachAddress);
+            doResponse(request, semaphore, 0L, true);
+        }
+    }
+
+    class SemaphoreTryAcquireOperationHandler extends SemaphoreOperationHandler {
+        void doSemaphoreOperation(Request request, DistributedSemaphore semaphore) {
+            final int permits = (int) request.longValue;
+            final Boolean attach = SemaphoreProxy.DATA_TRUE.equals(request.value);
+            final Address attachAddress = attach ? request.caller : null;
+            if (semaphore.tryAcquire(permits, attachAddress)) {
+                doResponse(request, semaphore, SemaphoreProxy.ACQUIRED, true);
+            } else {
+                request.lockThreadId = ThreadContext.get().getThreadId();
+                schedule(request);
+            }
         }
     }
 
@@ -3050,7 +3515,7 @@ public class ConcurrentMapManager extends BaseManager {
         void createResultPairs(Request request, Collection<MapEntry> colRecords, boolean evaluateEntries, Predicate predicate) {
             Pairs pairs = new Pairs();
             if (colRecords != null) {
-                long now = System.currentTimeMillis();
+                long now = currentTimeMillis();
                 for (MapEntry mapEntry : colRecords) {
                     Record record = (Record) mapEntry;
                     if (record.isActive() && record.isValid(now)) {
@@ -3101,11 +3566,15 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     Record ensureRecord(Request req) {
+        return ensureRecord(req, req.value);
+    }
+
+    Record ensureRecord(Request req, Data defaultValue) {
         checkServiceThread();
         CMap cmap = getOrCreateMap(req.name);
         Record record = cmap.getRecord(req);
         if (record == null) {
-            record = cmap.createNewRecord(req.key, req.value);
+            record = cmap.createNewRecord(req.key, defaultValue);
             cmap.mapRecords.put(req.key, record);
         }
         return record;

@@ -18,17 +18,21 @@
 package com.hazelcast.client;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
-
+import com.hazelcast.core.AtomicNumber;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-import static com.hazelcast.client.TestUtility.*;
+import static com.hazelcast.client.TestUtility.destroyClients;
+import static com.hazelcast.client.TestUtility.newHazelcastClient;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class HazelcastClientAtomicNumberTest {
-    
+
     @Before
     @After
     public void after() throws Exception{
@@ -37,44 +41,64 @@ public class HazelcastClientAtomicNumberTest {
         destroyClients();
         Hazelcast.shutdownAll();
     }
-    
+
+    @Test
+    public void testAtomicLong() {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastClient client = newHazelcastClient(h1);
+        AtomicNumber an = client.getAtomicNumber("testAtomicLong");
+        assertEquals(0, an.get());
+        assertEquals(-1, an.decrementAndGet());
+        assertEquals(0, an.incrementAndGet());
+        assertEquals(1, an.incrementAndGet());
+        assertEquals(2, an.incrementAndGet());
+        assertEquals(1, an.decrementAndGet());
+        assertEquals(1, an.getAndSet(23));
+        assertEquals(28, an.addAndGet(5));
+        assertEquals(28, an.get());
+        assertEquals(28, an.getAndAdd(-3));
+        assertEquals(24, an.decrementAndGet());
+        assertFalse(an.compareAndSet(23, 50));
+        assertTrue(an.compareAndSet(24, 50));
+        assertTrue(an.compareAndSet(50, 0));
+    }
+
     @Test
     public void testSimple() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         HazelcastClient client = newHazelcastClient(h1);
-        
-        final String name = "simple";
-        final AtomicNumber nodeAtomicNumber = h1.getAtomicNumber(name);
-        final AtomicNumber clientAtomicNumber = client.getAtomicNumber(name);
 
-        check(nodeAtomicNumber, clientAtomicNumber, 0L);
-        
-        assertEquals(1L, clientAtomicNumber.incrementAndGet());
-        check(nodeAtomicNumber, clientAtomicNumber, 1L);
-        
-        assertEquals(1L, clientAtomicNumber.getAndAdd(1));
-        check(nodeAtomicNumber, clientAtomicNumber, 2L);
-        
-        assertEquals(1L, clientAtomicNumber.decrementAndGet());
-        check(nodeAtomicNumber, clientAtomicNumber, 1L);
-        
-        assertEquals(2L, clientAtomicNumber.addAndGet(1L));
-        check(nodeAtomicNumber, clientAtomicNumber, 2L);
-        
-        clientAtomicNumber.set(3L);
-        check(nodeAtomicNumber, clientAtomicNumber, 3L);
-        
-        assertFalse(clientAtomicNumber.compareAndSet(4L, 1L));
-        check(nodeAtomicNumber, clientAtomicNumber, 3L);
-        
-        assertTrue(clientAtomicNumber.compareAndSet(3L, 1L));
-        check(nodeAtomicNumber, clientAtomicNumber, 1L);
+        final String name = "simple";
+        final AtomicNumber nodeAtomicLong = h1.getAtomicNumber(name);
+        final AtomicNumber clientAtomicLong = client.getAtomicNumber(name);
+        check(nodeAtomicLong, clientAtomicLong, 0L);
+
+        assertEquals(1L, clientAtomicLong.incrementAndGet());
+        check(nodeAtomicLong, clientAtomicLong, 1L);
+
+        assertEquals(1L, clientAtomicLong.getAndAdd(1));
+        check(nodeAtomicLong, clientAtomicLong, 2L);
+
+        assertEquals(1L, nodeAtomicLong.decrementAndGet());
+        check(nodeAtomicLong, clientAtomicLong, 1L);
+
+        assertEquals(2L, clientAtomicLong.addAndGet(1L));
+        check(nodeAtomicLong, clientAtomicLong, 2L);
+
+        clientAtomicLong.set(3L);
+        check(nodeAtomicLong, clientAtomicLong, 3L);
+
+        assertFalse(nodeAtomicLong.compareAndSet(4L, 1L));
+        check(nodeAtomicLong, clientAtomicLong, 3L);
+
+        assertTrue(clientAtomicLong.compareAndSet(3L, 1L));
+        check(nodeAtomicLong, clientAtomicLong, 1L);
     }
 
-    private void check(final AtomicNumber nodeAtomicNumber,
-            final AtomicNumber clientAtomicNumber, final long expectedValue) {
-        assertEquals(expectedValue, nodeAtomicNumber.get());
-        assertEquals(expectedValue, clientAtomicNumber.get());
+    private void check(final AtomicNumber nodeAtomicLong,
+            final AtomicNumber clientAtomicLong, final long expectedValue) {
+        assertEquals(expectedValue, nodeAtomicLong.get());
+        assertEquals(expectedValue, clientAtomicLong.get());
     }
 
 }

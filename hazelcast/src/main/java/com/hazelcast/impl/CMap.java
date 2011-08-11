@@ -21,7 +21,6 @@ import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.DistributedLock;
-import com.hazelcast.impl.base.DistributedSemaphore;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.LFUMapEntryComparator;
 import com.hazelcast.impl.concurrentmap.LRUMapEntryComparator;
@@ -815,12 +814,6 @@ public class CMap {
                 clearLock(record);
             }
         }
-        if (record.getValue() instanceof DistributedSemaphore) {
-            DistributedSemaphore semaphore = (DistributedSemaphore) record.getValue();
-            if (semaphore.hasPermits(deadAddress)) {
-                semaphore.releaseAll(deadAddress);
-            }
-        }
     }
 
     public boolean removeMulti(Request req) {
@@ -877,87 +870,6 @@ public class CMap {
         req.clearForResponse();
         req.version = record.getVersion();
         return added;
-    }
-
-    public void doAtomic(Request req) {
-        Record record = getRecord(req);
-        if (record == null) {
-            record = createNewRecord(req.key, toData(0L));
-            mapRecords.put(req.key, record);
-        } else if (record.getValue() == null) {
-            record.setValue(toData(0L));
-        }
-        if (req.operation == ATOMIC_NUMBER_GET_AND_SET) {
-            req.response = record.getValueData();
-            record.setValue(toData(req.longValue));
-        } else if (req.operation == ATOMIC_NUMBER_ADD_AND_GET) {
-            record.setValue(IOUtil.addDelta(record.getValueData(), req.longValue));
-            req.response = record.getValueData();
-        } else if (req.operation == ATOMIC_NUMBER_GET_AND_ADD) {
-            req.response = record.getValueData();
-            record.setValue(IOUtil.addDelta(record.getValueData(), req.longValue));
-        } else if (req.operation == ATOMIC_NUMBER_COMPARE_AND_SET) {
-            if (record.getValueData().equals(req.value)) {
-                record.setValue(toData(req.longValue));
-                req.response = Boolean.TRUE;
-            } else {
-                req.response = Boolean.FALSE;
-            }
-            req.value = null;
-        }
-        // Update request's version to record's. 
-        // It is required on backupOneValue version check.
-        req.version = record.getVersion();
-    }
-
-    public void doSemaphore(Request request) {
-        Record record = getRecord(request);
-        if (record == null) {
-            SemaphoreConfig semaphoreConfig = node.getConfig().getSemaphoreConfig(request.name);
-            record = createNewRecord(request.key, null);
-            record.setValue(new DistributedSemaphore(semaphoreConfig.getSize()));
-            mapRecords.put(request.key, record);
-        }
-        Integer total = (Integer) toObject(request.value);
-        DistributedSemaphore semaphore = (DistributedSemaphore) record.getValue();
-        Integer available = semaphore.getPermits();
-        if (request.operation == SEMAPHORE_ACQUIRE) {
-            while (total > 0) {
-                available = semaphore.getPermits();
-                while (available <= 0) {
-                    available = semaphore.getPermits();
-                    if (total > 0 && available == 0) {
-                        request.response = total;
-                        return;
-                    }
-                }
-                if (semaphore.acquire(request.lockAddress)) {
-                    total--;
-                    request.response = 0;
-                } else {
-                }
-            }
-        } else if (request.operation == SEMAPHORE_RELEASE) {
-            while (total > 0) {
-                if (semaphore.release(request.lockAddress)) {
-                    available = semaphore.getPermits();
-                    total--;
-                }
-            }
-            request.response = available;
-        } else if (request.operation == SEMAPHORE_AVAILABLE_PERMITS) {
-            request.response = available;
-        } else if (request.operation == SEMAPHORE_DRAIN_PERMITS) {
-            while (available > 0) {
-                if (semaphore.acquire(request.lockAddress)) {
-                    available = semaphore.getPermits();
-                }
-            }
-            request.response = Boolean.TRUE;
-        } else if (request.operation == SEMAPHORE_REDUCE_PERMITS) {
-            semaphore.reducePermits(total);
-            request.response = Boolean.TRUE;
-        }
     }
 
     boolean isApplicable(ClusterOperation operation, Request req, long now) {

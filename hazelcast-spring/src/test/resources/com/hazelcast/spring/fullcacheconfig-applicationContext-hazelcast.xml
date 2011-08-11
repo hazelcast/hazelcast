@@ -133,6 +133,8 @@
     <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
     <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
     <hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
+    <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
+    <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
 
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>

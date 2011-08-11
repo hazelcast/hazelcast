@@ -312,10 +312,10 @@ public class HazelcastClient implements HazelcastInstance {
                             proxy = new QueueClientProxy<E>(this, name);
                         } else if (name.startsWith(Prefix.TOPIC)) {
                             proxy = new TopicClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.ATOMIC_LONG)) {
+                        } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
                             proxy = new AtomicNumberClientProxy(this, name);
                         } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
-                            //proxy = new CountDownLatchClientProxy(this, name);
+                            proxy = new CountDownLatchClientProxy(this, name);
                         } else if (name.startsWith(Prefix.IDGEN)) {
                             proxy = new IdGeneratorClientProxy(this, name);
                         } else if (name.startsWith(Prefix.MULTIMAP)) {
@@ -380,12 +380,15 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public AtomicNumber getAtomicNumber(String name) {
-        return (AtomicNumber) getClientProxy(Prefix.ATOMIC_LONG + name);
+        return (AtomicNumber) getClientProxy(Prefix.ATOMIC_NUMBER + name);
+    }
+
+    public ICountDownLatch getCountDownLatch(String name) {
+        return (ICountDownLatch) getClientProxy(Prefix.COUNT_DOWN_LATCH + name);
     }
 
     public ISemaphore getSemaphore(String name) {
-        ISemaphore semaphore = (ISemaphore) getClientProxy(Prefix.SEMAPHORE + name);
-        return semaphore;
+        return (ISemaphore) getClientProxy(Prefix.SEMAPHORE + name);
     }
 
     public Collection<Instance> getInstances() {

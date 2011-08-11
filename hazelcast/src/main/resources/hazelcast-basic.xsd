@@ -51,13 +51,27 @@
     <xs:element name="semaphore">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="size" minOccurs="1" maxOccurs="1"/>
+                <xs:element ref="initial-permits" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="semaphore-factory" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" use="required">
                 <xs:simpleType>
                     <xs:restriction base="xs:string"/>
                 </xs:simpleType>
             </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="initial-permits" default="0">
+        <xs:simpleType>
+            <xs:restriction base="xs:integer"/>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="semaphore-factory">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="class-name" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
+            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="network">
@@ -434,8 +448,11 @@
             <xs:enumeration value="hazelcast.heartbeat.interval.seconds"/>
             <xs:enumeration value="hazelcast.icmp.enabled"/>
             <xs:enumeration value="hazelcast.initial.min.cluster.size"/>
+            <xs:enumeration value="hazelcast.mc.atomicnumber.excludes"/>
+            <xs:enumeration value="hazelcast.mc.countdownlatch.excludes"/>
             <xs:enumeration value="hazelcast.mc.map.excludes"/>
             <xs:enumeration value="hazelcast.mc.queue.excludes"/>
+            <xs:enumeration value="hazelcast.mc.semaphore.excludes"/>
             <xs:enumeration value="hazelcast.mc.topic.excludes"/>
 			<xs:enumeration value="hazelcast.version.check.enabled"/>
 			<xs:enumeration value="hazelcast.map.max.backup.count"/>
@@ -562,11 +579,6 @@
     <xs:element name="algorithm">
         <xs:simpleType>
             <xs:restriction base="xs:string"/>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="size" default="1">
-        <xs:simpleType>
-            <xs:restriction base="xs:integer"/>
         </xs:simpleType>
     </xs:element>
     <xs:element name="wan-replication">

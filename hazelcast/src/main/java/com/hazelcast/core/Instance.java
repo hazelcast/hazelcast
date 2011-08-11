@@ -29,7 +29,7 @@ public interface Instance {
             this.typeId = typeId;
         }
 
-        public boolean isAtomicLong() {
+        public boolean isAtomicNumber() {
             return typeId == ATOMIC_LONG.typeId;
         }
 

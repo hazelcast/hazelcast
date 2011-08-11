@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl;
@@ -113,10 +114,23 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[CLIENT_AUTHENTICATE.getValue()] = new ClientAuthenticateHandler();
         clientOperationHandlers[CLIENT_ADD_INSTANCE_LISTENER.getValue()] = new ClientAddInstanceListenerHandler();
         clientOperationHandlers[CLIENT_GET_PARTITIONS.getValue()] = new GetPartitionsHandler();
-        clientOperationHandlers[ATOMIC_NUMBER_GET_AND_SET.getValue()] = new AtomicOperationHandler();
-        clientOperationHandlers[ATOMIC_NUMBER_GET_AND_ADD.getValue()] = new AtomicOperationHandler();
-        clientOperationHandlers[ATOMIC_NUMBER_COMPARE_AND_SET.getValue()] = new AtomicOperationHandler();
-        clientOperationHandlers[ATOMIC_NUMBER_ADD_AND_GET.getValue()] = new AtomicOperationHandler();
+        clientOperationHandlers[ATOMIC_NUMBER_ADD_AND_GET.getValue()] = new AtomicLongAddAndGetHandler();
+        clientOperationHandlers[ATOMIC_NUMBER_COMPARE_AND_SET.getValue()] = new AtomicLongCompareAndSetHandler();
+        clientOperationHandlers[ATOMIC_NUMBER_GET_AND_SET.getValue()] = new AtomicLongGetAndSetHandler();
+        clientOperationHandlers[ATOMIC_NUMBER_GET_AND_ADD.getValue()] = new AtomicLongGetAndAddHandler();
+        clientOperationHandlers[COUNT_DOWN_LATCH_AWAIT.getValue()] = new CountDownLatchAwaitHandler();
+        clientOperationHandlers[COUNT_DOWN_LATCH_COUNT_DOWN.getValue()] = new CountDownLatchCountDownHandler();
+        clientOperationHandlers[COUNT_DOWN_LATCH_GET_COUNT.getValue()] = new CountDownLatchGetCountHandler();
+        clientOperationHandlers[COUNT_DOWN_LATCH_GET_OWNER.getValue()] = new CountDownLatchGetOwnerHandler();
+        clientOperationHandlers[COUNT_DOWN_LATCH_SET_COUNT.getValue()] = new CountDownLatchSetCountHandler();
+        clientOperationHandlers[SEMAPHORE_ATTACH_DETACH_PERMITS.getValue()] = new SemaphoreAttachDetachHandler();
+        clientOperationHandlers[SEMAPHORE_CANCEL_ACQUIRE.getValue()] = new SemaphoreCancelAcquireHandler();
+        clientOperationHandlers[SEMAPHORE_DRAIN_PERMITS.getValue()] = new SemaphoreDrainHandler();
+        clientOperationHandlers[SEMAPHORE_GET_ATTACHED_PERMITS.getValue()] = new SemaphoreGetAttachedHandler();
+        clientOperationHandlers[SEMAPHORE_GET_AVAILABLE_PERMITS.getValue()] = new SemaphoreGetAvailableHandler();
+        clientOperationHandlers[SEMAPHORE_REDUCE_PERMITS.getValue()] = new SemaphoreReduceHandler();
+        clientOperationHandlers[SEMAPHORE_RELEASE.getValue()] = new SemaphoreReleaseHandler();
+        clientOperationHandlers[SEMAPHORE_TRY_ACQUIRE.getValue()] = new SemaphoreTryAcquireHandler();
         node.connectionManager.addConnectionListener(this);
         this.THREAD_COUNT = node.getGroupProperties().EXECUTOR_CLIENT_THREAD_COUNT.getInteger();
         workers = new Worker[THREAD_COUNT];
@@ -488,32 +502,205 @@ public class ClientService implements ConnectionListener {
         }
     }
 
-    private class AtomicOperationHandler extends ClientOperationHandler {
+    abstract private class AtomicLongClientHandler extends ClientOperationHandler {
+        abstract Object processCall(AtomicNumberProxy atomicLongProxy, Long value, Long expected);
+
         public void processCall(Node node, Packet packet) {
-            final String name = packet.name;
-            AtomicNumber atomicNumber = node.factory.getAtomicNumber(name);
-            final Object result;
-            switch (packet.operation) {
-                case ATOMIC_NUMBER_GET_AND_SET:
-                    result = atomicNumber.getAndSet(packet.longValue);
-                    break;
-                case ATOMIC_NUMBER_GET_AND_ADD:
-                    result = atomicNumber.getAndAdd(packet.longValue);
-                    break;
-                case ATOMIC_NUMBER_COMPARE_AND_SET:
-                    final Long expected = (Long) toObject(packet.getKey());
-                    final Long update = (Long) toObject(packet.getValue());
-                    result = atomicNumber.compareAndSet(expected, update);
-                    break;
-                case ATOMIC_NUMBER_ADD_AND_GET:
-                    result = atomicNumber.addAndGet(packet.longValue);
-                    break;
-                default:
-                    logger.log(Level.WARNING, "operation " + packet.operation + " is unsupported.");
-                    result = new UnsupportedOperationException("operation " + packet.operation + " is unsupported.");
-                    break;
+            final AtomicNumberProxy atomicLong = (AtomicNumberProxy) node.factory.getAtomicNumber(packet.name);
+            final Long value = (Long) toObject(packet.getValueData());
+            final Long expectedValue = (Long) toObject(packet.getKeyData());
+            packet.setValue(toData(processCall(atomicLong, value, expectedValue)));
+        }
+    }
+
+    private class AtomicLongAddAndGetHandler extends AtomicLongClientHandler {
+        public Long processCall(AtomicNumberProxy atomicLongProxy, Long value, Long expected) {
+            return atomicLongProxy.addAndGet(value);
+        }
+    }
+
+    private class AtomicLongCompareAndSetHandler extends AtomicLongClientHandler {
+        public Boolean processCall(AtomicNumberProxy atomicLongProxy, Long value, Long expected) {
+            return atomicLongProxy.compareAndSet(expected, value);
+        }
+    }
+
+    private class AtomicLongGetAndAddHandler extends AtomicLongClientHandler {
+        public Long processCall(AtomicNumberProxy atomicLongProxy, Long value, Long expected) {
+            return atomicLongProxy.getAndAdd(value);
+        }
+    }
+
+    private class AtomicLongGetAndSetHandler extends AtomicLongClientHandler {
+        public Long processCall(AtomicNumberProxy atomicLongProxy, Long value, Long expected) {
+            return atomicLongProxy.getAndSet(value);
+        }
+    }
+
+    abstract private class CountDownLatchClientHandler extends ClientOperationHandler {
+        abstract void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value);
+
+        public void processCall(Node node, Packet packet) {
+            final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
+            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) node.factory.getCountDownLatch(name);
+            final Integer value = (Integer) toObject(packet.getValueData());
+            processCall(packet, cdlProxy, value);
+        }
+    }
+
+    private class CountDownLatchAwaitHandler extends CountDownLatchClientHandler {
+        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
+            try {
+                packet.setValue(toData(cdlProxy.await(packet.timeout, TimeUnit.MILLISECONDS)));
+            } catch (Throwable e) {
+                packet.setValue(toData(new ClientServiceException(e)));
             }
-            packet.setValue(toData(result));
+        }
+    }
+
+    private class CountDownLatchCountDownHandler extends CountDownLatchClientHandler {
+        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
+            cdlProxy.countDown();
+        }
+    }
+
+    private class CountDownLatchGetCountHandler extends CountDownLatchClientHandler {
+        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
+            packet.setValue(toData(cdlProxy.getCount()));
+        }
+    }
+
+    private class CountDownLatchGetOwnerHandler extends CountDownLatchClientHandler {
+        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
+            packet.setValue(toData(cdlProxy.getOwnerAddress()));
+        }
+    }
+
+    private class CountDownLatchSetCountHandler extends CountDownLatchClientHandler {
+        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer count) {
+            Address ownerAddress = packet.conn.getEndPoint();
+            packet.setValue(toData(cdlProxy.setCount(count, ownerAddress)));
+        }
+    }
+
+
+    public static class CountDownLatchLeave implements RemotelyProcessable {
+        Address deadAddress;
+        transient Node node;
+
+        public CountDownLatchLeave(Address deadAddress) {
+            this.deadAddress = deadAddress;
+        }
+
+        public CountDownLatchLeave() {
+        }
+
+        public void setConnection(Connection conn) {
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            deadAddress.writeData(out);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            (deadAddress = new Address()).readData(in);
+        }
+
+        public Node getNode() {
+            return node;
+        }
+
+        public void setNode(Node node) {
+            this.node = node;
+        }
+
+        public void process() {
+            node.concurrentMapManager.syncForDeadCountDownLatches(deadAddress);
+        }
+    }
+
+    abstract private class SemaphoreClientOperationHandler extends ClientOperationHandler {
+        abstract void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag);
+
+        public void processCall(Node node, Packet packet) {
+            final SemaphoreProxy semaphoreProxy = (SemaphoreProxy) node.factory.getSemaphore(packet.name);
+            final Integer value = (Integer) toObject(packet.getValueData());
+            final boolean flag = (Boolean) toObject(packet.getKeyData());
+            processCall(packet, semaphoreProxy, value, flag);
+        }
+    }
+
+    private class SemaphoreAttachDetachHandler extends SemaphoreClientOperationHandler {
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean attach){
+            ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
+            if (attach) {
+                semaphoreProxy.attach(permits);
+                clientEndpoint.attachDetachPermits(semaphoreProxy.getName(), permits);
+            } else {
+                semaphoreProxy.detach(permits);
+                clientEndpoint.attachDetachPermits(semaphoreProxy.getName(), -permits);
+            }
+        }
+    }
+
+    private class SemaphoreCancelAcquireHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+            ConcurrentMapManager.MSemaphore msemaphore = node.concurrentMapManager.new MSemaphore();
+            packet.setValue(toData(msemaphore.cancelAcquire(toData(packet.name))));
+        }
+    }
+
+    private class SemaphoreGetAttachedHandler extends SemaphoreClientOperationHandler {
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag){
+            packet.setValue(toData(semaphoreProxy.attachedPermits()));
+        }
+    }
+
+    private class SemaphoreGetAvailableHandler extends SemaphoreClientOperationHandler {
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag){
+            packet.setValue(toData(semaphoreProxy.availablePermits()));
+        }
+    }
+
+    private class SemaphoreDrainHandler extends SemaphoreClientOperationHandler {
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag){
+            packet.setValue(toData(semaphoreProxy.drainPermits()));
+        }
+    }
+
+    private class SemaphoreReduceHandler extends SemaphoreClientOperationHandler {
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean flag){
+            semaphoreProxy.reducePermits(permits);
+        }
+    }
+
+    private class SemaphoreReleaseHandler extends SemaphoreClientOperationHandler {
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean detach){
+            if (detach) {
+                semaphoreProxy.releaseDetach(permits);
+                getClientEndpoint(packet.conn).attachDetachPermits(packet.name, -permits);
+            } else {
+                semaphoreProxy.release(permits);
+            }
+        }
+    }
+
+    private class SemaphoreTryAcquireHandler extends SemaphoreClientOperationHandler {
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean attach){
+            try {
+                boolean acquired;
+                if (attach) {
+                    acquired = semaphoreProxy.tryAcquireAttach(permits, packet.timeout, TimeUnit.MILLISECONDS);
+                    if(acquired){
+                        getClientEndpoint(packet.conn).attachDetachPermits(packet.name, permits);
+                    }
+                } else {
+                    acquired = semaphoreProxy.tryAcquire(permits, packet.timeout, TimeUnit.MILLISECONDS);
+                }
+                packet.setValue(toData(acquired));
+            } catch (Throwable e) {
+                packet.setValue(toData(new ClientServiceException(e)));
+            }
         }
     }
 
@@ -1083,7 +1270,7 @@ public class ClientService implements ConnectionListener {
 
     private class AddListenerHandler extends ClientOperationHandler {
         public void processCall(Node node, final Packet packet) {
-            final ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
+            final ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
             boolean includeValue = (int) packet.longValue == 1;
             if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
                 IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
@@ -1157,7 +1344,7 @@ public class ClientService implements ConnectionListener {
 
     private class RemoveListenerHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            ClientEndpoint clientEndpoint = node.clientService.getClientEndpoint(packet.conn);
+            ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
             if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
                 IMap map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
                 clientEndpoint.removeThisListener(map, packet.getKeyData());

@@ -57,5 +57,5 @@ public class TestUtility {
 		HazelcastClient client = HazelcastClient.newHazelcastClient(gc.getName(), gc.getPassword(), address);
 		clients.add(client);
 		return client;
-	}    
+	}
 }

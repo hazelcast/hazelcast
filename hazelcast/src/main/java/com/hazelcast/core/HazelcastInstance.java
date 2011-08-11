@@ -194,20 +194,29 @@ public interface HazelcastInstance {
     IdGenerator getIdGenerator(String name);
 
     /**
-     * Creates cluster-wide atomic number. AtomicNumber is distributed
+     * Creates cluster-wide atomic long. Hazelcast AtomicNumber is distributed
      * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
      *
-     * @param name name of the AtomicNumber
-     * @return AtomicNumber for the given name
+     * @param name name of the AtomicNumber proxy
+     * @return AtomicNumber proxy for the given name
      */
     AtomicNumber getAtomicNumber(String name);
 
     /**
-     * Creates cluster-wide semaphore. ISemaphore is distributed
-     * implementation of <tt>java.util.concurrent.ISemaphore</tt>.
+     * Creates cluster-wide CountDownLatch. Hazelcast ICountDownLatch is distributed
+     * implementation of <tt>java.util.concurrent.CountDownLatch</tt>.
      *
-     * @param name
-     * @return Semaphore for the given name
+     * @param name name of the ICountDownLatch proxy
+     * @return ICountDownLatch proxy for the given name
+     */
+    ICountDownLatch getCountDownLatch(String name);
+
+    /**
+     * Creates cluster-wide semaphore. Hazelcast ISemaphore is distributed
+     * implementation of <tt>java.util.concurrent.Semaphore</tt>.
+     *
+     * @param name name of the ISemaphore proxy
+     * @return ISemaphore proxy for the given name
      */
     ISemaphore getSemaphore(String name);
 

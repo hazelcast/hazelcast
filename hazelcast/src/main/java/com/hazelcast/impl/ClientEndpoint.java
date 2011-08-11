@@ -25,7 +25,8 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
@@ -39,6 +40,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     final Map<Long, DistributedTask> runningExecutorTasks = new ConcurrentHashMap<Long, DistributedTask>();
     final ConcurrentHashSet<ClientRequestHandler> currentRequests = new ConcurrentHashSet<ClientRequestHandler>();
     final Node node;
+    final Map<String, AtomicInteger> attachedSemaphorePermits = new ConcurrentHashMap<String, AtomicInteger>();
 
     ClientEndpoint(Node node, Connection conn) {
         this.node = node;
@@ -205,6 +207,8 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
             removeEntryListenersWithKey();
             removeMessageListeners();
             cancelRunningOperations();
+            releaseAttachedSemaphorePermits();
+            node.clusterManager.sendProcessableToAll(new ClientService.CountDownLatchLeave(conn.getEndPoint()), true);
         }
     }
 
@@ -250,6 +254,27 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     private void removeEntryListeners() {
         for (IMap map : listeningMaps) {
             map.removeEntryListener(this);
+        }
+    }
+
+    private void releaseAttachedSemaphorePermits() {
+        for (Map.Entry<String, AtomicInteger> entry : attachedSemaphorePermits.entrySet()){
+            final ISemaphore semaphore = node.factory.getSemaphore(entry.getKey());
+            final int permits = entry.getValue().get();
+            if(permits>0){
+                semaphore.releaseDetach(permits);
+            } else {
+                semaphore.reducePermits(permits);
+                semaphore.attach(permits);
+            }
+        }
+    }
+
+    public void attachDetachPermits(String name, int permits) {
+        if (attachedSemaphorePermits.containsKey(name)){
+            attachedSemaphorePermits.get(name).addAndGet(permits);
+        } else {
+            attachedSemaphorePermits.put(name, new AtomicInteger(permits));
         }
     }
 

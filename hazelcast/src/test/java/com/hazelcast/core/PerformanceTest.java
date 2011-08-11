@@ -17,8 +17,7 @@
 
 package com.hazelcast.core;
 
-import org.junit.After;
-import org.junit.AfterClass;
+import org.junit.*;
 
 import java.io.*;
 import java.util.Map;
@@ -27,12 +26,19 @@ public class PerformanceTest {
     private static final boolean createBaseline = true;
     private static final String outputFile = "C:\\Temp\\hazelcast_out.csv";
     private static final String inputFileName = "C:\\Temp\\hazelcast_in.csv";
-    private static final IMap<String, PerformanceTimer> baselinePerformance = Hazelcast.getMap("baselinePerformance");
-    private static final IMap<String, PerformanceTimer> performance = Hazelcast.getMap("performance");
+    private static IMap<String, PerformanceTimer> baselinePerformance;
+    private static IMap<String, PerformanceTimer> performance;
     protected static long ops = 10000;
     protected static PerformanceTimer t;
 
     public PerformanceTest() {
+    }
+
+    @BeforeClass
+    public static void init() throws Exception {
+        Hazelcast.shutdownAll();
+        baselinePerformance = Hazelcast.getMap("baselinePerformance");
+        performance = Hazelcast.getMap("performance");
     }
 
     @AfterClass

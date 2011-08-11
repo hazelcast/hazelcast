@@ -174,9 +174,12 @@ public class ConfigXmlGenerator {
             xml.append("</map>");
         }
         final Collection<SemaphoreConfig> semaphoreCfgs = config.getSemaphoreConfigs();
-        for (SemaphoreConfig semaphoreConfig : semaphoreCfgs) {
-            xml.append("<semaphore name=\"").append(semaphoreConfig.getName()).append("\">");
-            xml.append("<size>").append(semaphoreConfig.getSize()).append("</size>");
+        for (SemaphoreConfig sc : semaphoreCfgs) {
+            xml.append("<semaphore name=\"").append(sc.getName()).append("\">");
+            xml.append("<initial-permits>").append(sc.getInitialPermits()).append("</initial-permits>");
+            xml.append("<semaphore-factory enabled=\"").append(sc.isFactoryEnabled()).append("\">");
+            xml.append("<class-name>").append(sc.getFactoryClassName()).append("</class-name>");
+            xml.append("</semaphore-factory>");
             xml.append("</semaphore>");
         }
         final Collection<MergePolicyConfig> merges = config.getMergePolicyConfigs().values();

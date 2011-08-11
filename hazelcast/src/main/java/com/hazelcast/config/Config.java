@@ -61,7 +61,7 @@ public class Config implements DataSerializable {
 
     private Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
-    private Map<String, SemaphoreConfig> mapSemaphores = new ConcurrentHashMap<String, SemaphoreConfig>();
+    private Map<String, SemaphoreConfig> mapSemaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
 
     private URL configurationUrl;
 
@@ -480,22 +480,13 @@ public class Config implements DataSerializable {
     }
 
     /**
-     * @param semaphoreConfig the semaphoreConfig to set
-     * @deprecated use addSemaphoreConfig instead
-     */
-    public Config setSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
-        addSemaphoreConfig(semaphoreConfig);
-        return this;
-    }
-
-    /**
      * Adds a new SemaphoreConfig by name
      *
      * @param semaphoreConfig semaphore config to add
      * @return this config instance
      */
     public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
-        this.mapSemaphores.put(semaphoreConfig.getName(), semaphoreConfig);
+        this.mapSemaphoreConfigs.put(semaphoreConfig.getName(), semaphoreConfig);
         return this;
     }
 
@@ -506,18 +497,18 @@ public class Config implements DataSerializable {
      * @return SemaphoreConfig
      */
     public SemaphoreConfig getSemaphoreConfig(String name) {
-        SemaphoreConfig ec = this.mapSemaphores.get(name);
-        if (ec == null) {
-            SemaphoreConfig defaultConfig = mapSemaphores.get("default");
+        SemaphoreConfig sc = this.mapSemaphoreConfigs.get(name);
+        if (sc == null) {
+            SemaphoreConfig defaultConfig = mapSemaphoreConfigs.get("default");
             if (defaultConfig != null) {
-                ec = new SemaphoreConfig(name, defaultConfig.getSize());
+                sc = new SemaphoreConfig(name, defaultConfig);
             }
         }
-        if (ec == null) {
-            ec = new SemaphoreConfig(name);
-            mapSemaphores.put(name, ec);
+        if (sc == null) {
+            sc = new SemaphoreConfig(name);
+            mapSemaphoreConfigs.put(name, sc);
         }
-        return ec;
+        return sc;
     }
 
     /**
@@ -526,16 +517,16 @@ public class Config implements DataSerializable {
      * @return collection of semaphore configs.
      */
     public Collection<SemaphoreConfig> getSemaphoreConfigs() {
-        return mapSemaphores.values();
+        return mapSemaphoreConfigs.values();
     }
 
     public Map<String, SemaphoreConfig> getSemaphoreConfigMap() {
-        return Collections.unmodifiableMap(mapSemaphores);
+        return Collections.unmodifiableMap(mapSemaphoreConfigs);
     }
 
     public void setSemaphoreConfigMap(Map<String, SemaphoreConfig> mapSemaphores) {
-        this.mapSemaphores = mapSemaphores;
-        for (final Entry<String, SemaphoreConfig> entry : this.mapSemaphores.entrySet()) {
+        this.mapSemaphoreConfigs = mapSemaphores;
+        for (final Entry<String, SemaphoreConfig> entry : this.mapSemaphoreConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
     }
@@ -660,7 +651,8 @@ public class Config implements DataSerializable {
         boolean hasMapTopicConfigs = b2[2];
         boolean hasMapQueueConfigs = b2[3];
         boolean hasMapMergePolicyConfigs = b2[4];
-        boolean hasProperties = b2[5];
+        boolean hasMapSemaphoreConfigs = b2[5];
+        boolean hasProperties = b2[6];
         networkConfig = new NetworkConfig();
         networkConfig.readData(in);
         executorConfig = new ExecutorConfig();
@@ -681,6 +673,15 @@ public class Config implements DataSerializable {
                 final ExecutorConfig executorConfig = new ExecutorConfig();
                 executorConfig.readData(in);
                 mapExecutors.put(executorConfig.getName(), executorConfig);
+            }
+        }
+        if (hasMapSemaphoreConfigs) {
+            int size = in.readInt();
+            mapSemaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>(size);
+            for (int i = 0; i < size; i++) {
+                final SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
+                semaphoreConfig.readData(in);
+                mapSemaphoreConfigs.put(semaphoreConfig.getName(), semaphoreConfig);
             }
         }
         if (hasMapTopicConfigs) {
@@ -723,6 +724,7 @@ public class Config implements DataSerializable {
         boolean hasMapTopicConfigs = mapTopicConfigs != null && !mapTopicConfigs.isEmpty();
         boolean hasMapQueueConfigs = mapQueueConfigs != null && !mapQueueConfigs.isEmpty();
         boolean hasMapMergePolicyConfigs = mapMergePolicyConfigs != null && !mapMergePolicyConfigs.isEmpty();
+        boolean hasMapSemaphoreConfigs = mapSemaphoreConfigs != null && !mapSemaphoreConfigs.isEmpty();
         boolean hasProperties = properties != null && !properties.isEmpty();
         out.writeByte(ByteUtil.toByte(checkCompatibility,
                 reuseAddress,
@@ -734,6 +736,7 @@ public class Config implements DataSerializable {
                 hasMapTopicConfigs,
                 hasMapQueueConfigs,
                 hasMapMergePolicyConfigs,
+                hasMapSemaphoreConfigs,
                 hasProperties));
         networkConfig.writeData(out);
         executorConfig.writeData(out);
@@ -753,6 +756,15 @@ public class Config implements DataSerializable {
                 final ExecutorConfig executorConfig = entry.getValue();
                 executorConfig.setName(name);
                 executorConfig.writeData(out);
+            }
+        }
+        if (hasMapSemaphoreConfigs) {
+            out.writeInt(mapSemaphoreConfigs.size());
+            for (final Entry<String, SemaphoreConfig> entry : mapSemaphoreConfigs.entrySet()) {
+                final String name = entry.getKey();
+                final SemaphoreConfig semaphoreConfig = entry.getValue();
+                semaphoreConfig.setName(name);
+                semaphoreConfig.writeData(out);
             }
         }
         if (hasMapTopicConfigs) {

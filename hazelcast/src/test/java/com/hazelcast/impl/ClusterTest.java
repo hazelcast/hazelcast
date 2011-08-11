@@ -160,7 +160,7 @@ public class ClusterTest {
         assertEquals(5, a1.getAndSet(13));
         assertEquals(13, a1.get());
         assertEquals(13, a2.get());
-        h1.shutdown();
+        h1.getLifecycleService().shutdown();
         assertEquals(13, a2.getAndSet(21));
         assertEquals(21, a2.get());
         final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
@@ -173,7 +173,7 @@ public class ClusterTest {
         assertTrue(a3.compareAndSet(6, 0));
         assertEquals(0, a3.get());
         assertEquals(0, a2.get());
-        h2.shutdown();
+        h2.getLifecycleService().shutdown();
         assertEquals(0, a3.get());
     }
 
@@ -2603,73 +2603,6 @@ public class ClusterTest {
             Thread.sleep(15);
         }
         assertTrue(latch.await(60, TimeUnit.SECONDS));
-    }
-
-    /**
-     * @todo doesn't work
-     */
-    @Test
-    @Ignore
-    public void testMultiInstanceSemaphore() {
-        final Random random = new Random();
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(new Config());
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(new Config());
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(new Config());
-        final ISemaphore semaphore1 = instance1.getSemaphore("testMultiSemaphore");
-        final ISemaphore semaphore2 = instance2.getSemaphore("testMultiSemaphore");
-        final ISemaphore semaphore3 = instance3.getSemaphore("testMultiSemaphore");
-        assertEquals(1, semaphore1.availablePermits());
-        assertEquals(1, semaphore2.availablePermits());
-        assertEquals(1, semaphore3.availablePermits());
-        ExecutorService executorService = Executors.newCachedThreadPool();
-        executorService.execute(new Runnable() {
-            public void run() {
-                for (int i = 0; i < 10; i++) {
-                    semaphore1.tryAcquire();
-                    assertEquals(0, semaphore1.availablePermits());
-                    try {
-                        Thread.sleep(random.nextInt(100));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    semaphore1.release();
-                }
-            }
-        });
-        executorService.execute(new Runnable() {
-            public void run() {
-                for (int i = 0; i < 20; i++) {
-                    semaphore2.tryAcquire();
-                    assertEquals(0, semaphore2.availablePermits());
-                    try {
-                        Thread.sleep(random.nextInt(100));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    semaphore2.release();
-                }
-            }
-        });
-        executorService.execute(new Runnable() {
-            public void run() {
-                for (int i = 0; i < 30; i++) {
-                    semaphore3.tryAcquire();
-                    assertEquals(0, semaphore3.availablePermits());
-                    try {
-                        Thread.sleep(random.nextInt(100));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    semaphore3.release();
-                }
-            }
-        });
-        try {
-            executorService.shutdown();
-            executorService.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     @Test

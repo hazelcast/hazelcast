@@ -17,16 +17,17 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.monitor.MemberState;
+import com.hazelcast.monitor.*;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MemberStateImpl implements MemberState {
     /**
@@ -36,68 +37,89 @@ public class MemberStateImpl implements MemberState {
 
     Address address = new Address();
     MemberHealthStatsImpl memberHealthStats = new MemberHealthStatsImpl();
+    Map<String, LocalAtomicNumberStatsImpl> atomicNumberStats = new HashMap<String, LocalAtomicNumberStatsImpl>();
+    Map<String, LocalCountDownLatchStatsImpl> countDownLatchStats = new HashMap<String, LocalCountDownLatchStatsImpl>();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
+    Map<String, LocalSemaphoreStatsImpl> semaphoreStats = new HashMap<String, LocalSemaphoreStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     List<Integer> lsPartitions = new ArrayList<Integer>(271);
 
     public void writeData(DataOutput out) throws IOException {
         address.writeData(out);
         memberHealthStats.writeData(out);
-        int mapCount = mapStats.size();
-        int queueCount = queueStats.size();
-        int topicCount = topicStats.size();
-        out.writeInt(mapCount);
-        Set<Map.Entry<String, LocalMapStatsImpl>> maps = mapStats.entrySet();
-        for (Map.Entry<String, LocalMapStatsImpl> mapStatsEntry : maps) {
-            out.writeUTF(mapStatsEntry.getKey());
-            mapStatsEntry.getValue().writeData(out);
+        out.writeInt(atomicNumberStats.size());
+        for (Map.Entry<String, LocalAtomicNumberStatsImpl> entry : atomicNumberStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
         }
-        out.writeInt(queueCount);
-        Set<Map.Entry<String, LocalQueueStatsImpl>> queueStatEntries = queueStats.entrySet();
-        for (Map.Entry<String, LocalQueueStatsImpl> queueStatEntry : queueStatEntries) {
-            out.writeUTF(queueStatEntry.getKey());
-            queueStatEntry.getValue().writeData(out);
+        out.writeInt(countDownLatchStats.size());
+        for (Map.Entry<String, LocalCountDownLatchStatsImpl> entry : countDownLatchStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
         }
-        out.writeInt(topicCount);
-        Set<Map.Entry<String, LocalTopicStatsImpl>> topicStatEntries = topicStats.entrySet();
-        for (Map.Entry<String, LocalTopicStatsImpl> topicStatEntry : topicStatEntries) {
-            out.writeUTF(topicStatEntry.getKey());
-            topicStatEntry.getValue().writeData(out);
+        out.writeInt(mapStats.size());
+        for (Map.Entry<String, LocalMapStatsImpl> entry : mapStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
         }
-        int partitionCount = lsPartitions.size();
-        out.writeInt(partitionCount);
-        for (int i = 0; i < partitionCount; i++) {
-            out.writeInt(lsPartitions.get(i));
+        out.writeInt(queueStats.size());
+        for (Map.Entry<String, LocalQueueStatsImpl> entry : queueStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        out.writeInt(semaphoreStats.size());
+        for (Map.Entry<String, LocalSemaphoreStatsImpl> entry : semaphoreStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        out.writeInt(topicStats.size());
+        for (Map.Entry<String, LocalTopicStatsImpl> entry : topicStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        out.writeInt(lsPartitions.size());
+        for (Integer lsPartition : lsPartitions) {
+            out.writeInt(lsPartition);
         }
     }
 
     public void readData(DataInput in) throws IOException {
         address.readData(in);
         memberHealthStats.readData(in);
-        int mapCount = in.readInt();
-        for (int i = 0; i < mapCount; i++) {
-            String mapName = in.readUTF();
-            LocalMapStatsImpl localMapStatsImpl = new LocalMapStatsImpl();
-            localMapStatsImpl.readData(in);
-            mapStats.put(mapName, localMapStatsImpl);
+        DataSerializable impl;
+        String name;
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalAtomicNumberStatsImpl()).readData(in);
+            atomicNumberStats.put(name, (LocalAtomicNumberStatsImpl) impl);
         }
-        int queueCount = in.readInt();
-        for (int i = 0; i < queueCount; i++) {
-            String queueName = in.readUTF();
-            LocalQueueStatsImpl localQueueStats = new LocalQueueStatsImpl();
-            localQueueStats.readData(in);
-            queueStats.put(queueName, localQueueStats);
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalCountDownLatchStatsImpl()).readData(in);
+            countDownLatchStats.put(name, (LocalCountDownLatchStatsImpl) impl);
         }
-        int topicCount = in.readInt();
-        for (int i = 0; i < topicCount; i++) {
-            String topicName = in.readUTF();
-            LocalTopicStatsImpl localTopicStats = new LocalTopicStatsImpl();
-            localTopicStats.readData(in);
-            topicStats.put(topicName, localTopicStats);
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalMapStatsImpl()).readData(in);
+            mapStats.put(name, (LocalMapStatsImpl) impl);
         }
-        int partitionCount = in.readInt();
-        for (int i = 0; i < partitionCount; i++) {
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalQueueStatsImpl()).readData(in);
+            queueStats.put(name, (LocalQueueStatsImpl) impl);
+        }
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalSemaphoreStatsImpl()).readData(in);
+            semaphoreStats.put(name, (LocalSemaphoreStatsImpl) impl);
+        }
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalTopicStatsImpl()).readData(in);
+            topicStats.put(name, (LocalTopicStatsImpl) impl);
+        }
+        for (int i = in.readInt(); i > 0; i--) {
             lsPartitions.add(in.readInt());
         }
     }
@@ -118,12 +140,24 @@ public class MemberStateImpl implements MemberState {
         return memberHealthStats;
     }
 
+    public LocalAtomicNumberStats getLocalAtomicNumberStats(String atomicLongName) {
+        return atomicNumberStats.get(atomicLongName);
+    }
+
+    public LocalCountDownLatchStats getLocalCountDownLatchStats(String countDownLatchName) {
+        return countDownLatchStats.get(countDownLatchName);
+    }
+
     public LocalMapStats getLocalMapStats(String mapName) {
         return mapStats.get(mapName);
     }
 
     public LocalQueueStats getLocalQueueStats(String queueName) {
         return queueStats.get(queueName);
+    }
+
+    public LocalSemaphoreStats getLocalSemaphoreStats(String semaphoreName) {
+        return semaphoreStats.get(semaphoreName);
     }
 
     public LocalTopicStats getLocalTopicStats(String topicName) {
@@ -138,12 +172,24 @@ public class MemberStateImpl implements MemberState {
         this.address = address;
     }
 
-    public void putLocalMapStats(String mapName, LocalMapStatsImpl localMapStats) {
-        mapStats.put(mapName, localMapStats);
+    public void putLocalAtomicNumberStats(String name, LocalAtomicNumberStatsImpl localAtomicLongStats) {
+        atomicNumberStats.put(name, localAtomicLongStats);
     }
 
-    public void putLocalQueueStats(String queueName, LocalQueueStatsImpl localQueueStats) {
-        queueStats.put(queueName, localQueueStats);
+    public void putLocalCountDownLatchStats(String name, LocalCountDownLatchStatsImpl localCountDownLatchStats) {
+        countDownLatchStats.put(name, localCountDownLatchStats);
+    }
+
+    public void putLocalMapStats(String name, LocalMapStatsImpl localMapStats) {
+        mapStats.put(name, localMapStats);
+    }
+
+    public void putLocalQueueStats(String name, LocalQueueStatsImpl localQueueStats) {
+        queueStats.put(name, localQueueStats);
+    }
+
+    public void putLocalSemaphoreStats(String name, LocalSemaphoreStatsImpl localSemaphoreStats) {
+        semaphoreStats.put(name, localSemaphoreStats);
     }
 
     public void putLocalTopicStats(String name, LocalTopicStatsImpl localTopicStats) {

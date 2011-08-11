@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -78,8 +78,14 @@ public class TestFullApplicationContext {
     @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
 
-    @Resource(name = "atomicNumber")
-    private AtomicNumber atomicNumber;
+    @Resource(name = "atomicLong")
+    private AtomicNumber atomicLong;
+
+    @Resource(name="countDownLatch")
+    private ICountDownLatch countDownLatch;
+
+    @Resource(name="semaphore")
+    private ISemaphore semaphore;
 
     @Resource(name = "dummyMapStore")
     private MapStore dummyMapStore;
@@ -209,6 +215,15 @@ public class TestFullApplicationContext {
     }
 
     @Test
+    public void testSemaphoreConfig() {
+        SemaphoreConfig testSemaphoreConfig = config.getSemaphoreConfig("testSemaphore");
+        assertNotNull(testSemaphoreConfig);
+        assertEquals(testSemaphoreConfig.getInitialPermits(), 0);
+        assertEquals(testSemaphoreConfig.isFactoryEnabled(), false);
+        assertNull(testSemaphoreConfig.getFactoryClassName());
+    }
+
+    @Test
     public void testProperties() {
         final Properties properties = config.getProperties();
         assertNotNull(properties);
@@ -242,7 +257,9 @@ public class TestFullApplicationContext {
         assertNotNull(list);
         assertNotNull(executorService);
         assertNotNull(idGenerator);
-        assertNotNull(atomicNumber);
+        assertNotNull(atomicLong);
+        assertNotNull(countDownLatch);
+        assertNotNull(semaphore);
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());
         assertEquals("multiMap", multiMap.getName());
@@ -251,7 +268,9 @@ public class TestFullApplicationContext {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
-        assertEquals("atomicNumber", atomicNumber.getName());
+        assertEquals("atomicLong", atomicLong.getName());
+        assertEquals("countDownLatch", countDownLatch.getName());
+        assertEquals("semaphore", semaphore.getName());
     }
     
     @Test

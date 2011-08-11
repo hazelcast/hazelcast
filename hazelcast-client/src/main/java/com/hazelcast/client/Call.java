@@ -81,7 +81,6 @@ public class Call {
             Object res = (response != null) ? response : responseQueue.poll(timeout, unit);
             return handleResponse(res);
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }

@@ -619,12 +619,25 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     public void handleSemaphore(final org.w3c.dom.Node node) {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
-        final SemaphoreConfig sConfig = new SemaphoreConfig();
-        sConfig.setName(name);
+        final SemaphoreConfig sConfig = new SemaphoreConfig(name);
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
             final String value = getTextContent(n).trim();
-            if (cleanNodeName(n.getNodeName()).equals("size")) {
-                sConfig.setSize(getIntegerValue("size", value, 1));
+            if ("initial-permits".equals(nodeName)) {
+                sConfig.setInitialPermits(getIntegerValue("initial-permits", value, MapConfig.DEFAULT_BACKUP_COUNT));
+            } else if ("semaphore-factory".equals(nodeName)) {
+                final NamedNodeMap atts = n.getAttributes();
+                for (int a = 0; a < atts.getLength(); a++) {
+                    final org.w3c.dom.Node att = atts.item(a);
+                    if (att.getNodeName().equals("enabled")) {
+                        sConfig.setFactoryEnabled(checkTrue(getTextContent(att).trim()));
+                        for (org.w3c.dom.Node subNode : new IterableNodeList(n.getChildNodes())) {
+                            if ("class-name".equals(cleanNodeName(subNode.getNodeName()))) {
+                                sConfig.setFactoryClassName(getTextContent(n).trim());
+                            }
+                        }
+                    }
+                }
             }
         }
         config.addSemaphoreConfig(sConfig);

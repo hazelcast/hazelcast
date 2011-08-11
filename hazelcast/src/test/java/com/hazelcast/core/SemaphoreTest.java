@@ -21,13 +21,16 @@ import com.hazelcast.config.SemaphoreConfig;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
+import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
-/**
- * @author: iocanel
- */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class SemaphoreTest {
 
@@ -53,18 +56,23 @@ public class SemaphoreTest {
         Config config = new Config();
         config.addSemaphoreConfig(semaphoreConfig);
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        ISemaphore semaphore = instance.getSemaphore("testSemaphoreWithTimeout");
+        ISemaphore semaphore = instance.getSemaphore("test");
         //Test acquire and timeout.
-        assertEquals(10, semaphore.availablePermits());
-        semaphore.tryAcquire();
-        assertEquals(9, semaphore.availablePermits());
-        assertEquals(false, semaphore.tryAcquire(10, 10, TimeUnit.MILLISECONDS));
-        assertEquals(9, semaphore.availablePermits());
-        //Test acquire and timeout and check for partial acquisitions.
-        semaphore = instance.getSemaphore("testSemaphoreWithTimeoutAnd10Permits");
-        assertEquals(10, semaphore.availablePermits());
-        assertEquals(false, semaphore.tryAcquire(20, 10, TimeUnit.MILLISECONDS));
-        assertEquals(10, semaphore.availablePermits());
+        try {
+            assertEquals(10, semaphore.availablePermits());
+            semaphore.tryAcquire();
+            assertEquals(9, semaphore.availablePermits());
+            assertEquals(false, semaphore.tryAcquire(10, 10, TimeUnit.MILLISECONDS));
+            assertEquals(9, semaphore.availablePermits());
+            semaphore.release();
+
+            //Test acquire and timeout and check for partial acquisitions.
+            assertEquals(10, semaphore.availablePermits());
+            assertEquals(false, semaphore.tryAcquire(20, 10, TimeUnit.MILLISECONDS));
+            assertEquals(10, semaphore.availablePermits());
+        } catch (Throwable e) {
+            fail(e.getMessage());
+        }
     }
 
     @Test
@@ -73,7 +81,19 @@ public class SemaphoreTest {
         Config config = new Config();
         config.addSemaphoreConfig(semaphoreConfig);
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        ISemaphore semaphore = instance.getSemaphore("testSimpleSemaphore");
+        ISemaphore semaphore = instance.getSemaphore("test");
+        assertEquals(1, semaphore.availablePermits());
+        semaphore.tryAcquire();
+        assertEquals(0, semaphore.availablePermits());
+        semaphore.release();
+        assertEquals(1, semaphore.availablePermits());
+        semaphore.tryAcquire();
+        assertEquals(0, semaphore.availablePermits());
+        semaphore.release();
+        assertEquals(1, semaphore.availablePermits());
+        semaphore.tryAcquire();
+        assertEquals(0, semaphore.availablePermits());
+        semaphore.release();
         assertEquals(1, semaphore.availablePermits());
         semaphore.tryAcquire();
         assertEquals(0, semaphore.availablePermits());
@@ -87,7 +107,7 @@ public class SemaphoreTest {
         Config config = new Config();
         config.addSemaphoreConfig(semaphoreConfig);
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        ISemaphore semaphore = instance.getSemaphore("testSemaphoreReducePermits");
+        ISemaphore semaphore = instance.getSemaphore("test");
         assertEquals(10, semaphore.availablePermits());
         semaphore.reducePermits(1);
         assertEquals(9, semaphore.availablePermits());
@@ -102,22 +122,19 @@ public class SemaphoreTest {
     }
 
     @Test
-    @Ignore
     public void testSemaphoreDisconnect() {
         SemaphoreConfig semaphoreConfig = new SemaphoreConfig("default", 10);
         Config config = new Config();
         config.addSemaphoreConfig(semaphoreConfig);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        ISemaphore semaphore1 = instance1.getSemaphore("testDisconnectSemaphore");
-        ISemaphore semaphore2 = instance2.getSemaphore("testDisconnectSemaphore");
+        ISemaphore semaphore1 = instance1.getSemaphore("test");
+        ISemaphore semaphore2 = instance2.getSemaphore("test");
         assertEquals(10, semaphore1.availablePermits());
-        semaphore1.tryAcquire(5);
+        semaphore1.tryAcquireAttach(5);
         semaphore1.reducePermits(1);
         instance1.shutdown();
-        int result = semaphore2.availablePermits();
-        int expectedResult = 9;
-        assertEquals(expectedResult, result);
+        assertEquals(9, semaphore2.availablePermits());
     }
 
     @Test
@@ -127,9 +144,9 @@ public class SemaphoreTest {
         config.addSemaphoreConfig(semaphoreConfig);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        ISemaphore semaphore1 = instance1.getSemaphore("testDisconnectSemaphore");
-        ISemaphore semaphore2 = instance2.getSemaphore("testDisconnectSemaphore");
-        semaphore2.tryAcquire(5);
+        ISemaphore semaphore1 = instance1.getSemaphore("test");
+        ISemaphore semaphore2 = instance2.getSemaphore("test");
+        semaphore2.tryAcquireAttach(5);
         int result = semaphore1.availablePermits();
         int expectedResult = 5;
         assertEquals(expectedResult, result);
@@ -137,5 +154,140 @@ public class SemaphoreTest {
         expectedResult = 10;
         result = semaphore1.availablePermits();
         assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void testAsyncAcquire() throws Exception {
+        final ISemaphore semaphore = Hazelcast.getSemaphore("test");
+        assertEquals(0, semaphore.availablePermits());
+        final Future f1 = semaphore.acquireAsync();
+        Thread thread = new Thread(){
+            @Override
+            public void run() {
+                for (;;){
+                    try {
+                        f1.get(1, TimeUnit.SECONDS);
+                        break;
+                    } catch (InterruptedException e) {
+                        //expected
+                        semaphore.release();
+                        assertFalse(f1.cancel(false));
+                        break;
+                    } catch (ExecutionException e) {
+                        // not gonna happen
+                    } catch (TimeoutException e) {
+                        // keep trying
+                    }
+                }
+            }
+        };
+        assertEquals(0, semaphore.availablePermits());
+        thread.start();
+        Thread.sleep(3500);
+        thread.interrupt();
+        assertEquals(0, semaphore.availablePermits());
+    }
+
+    @Test
+    public void testSemaphoreIncreasePermits() {
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig("default", 1);
+        Config config = new Config();
+        config.addSemaphoreConfig(semaphoreConfig);
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        ISemaphore semaphore = instance.getSemaphore("test");
+        assertEquals(1, semaphore.availablePermits());
+        semaphore.release();
+        assertEquals(2, semaphore.availablePermits());
+    }
+
+    @Test
+    public void testSemaphoreTryAcquireTimeout() throws InterruptedException {
+        ISemaphore semaphore = Hazelcast.getSemaphore("test");
+        assertEquals(0, semaphore.availablePermits());
+        try {
+            semaphore.tryAcquire(5000, TimeUnit.MILLISECONDS);
+        } catch (InstanceDestroyedException e) {
+            e.printStackTrace();
+        }
+        assertEquals(0, semaphore.availablePermits());
+    }
+
+    @Test
+    public void testMultiInstanceSemaphore() {
+        final Random random = new Random();
+        final int rndTimeMax = 20;
+        int initialPermits = 2;
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(null);
+        final ISemaphore semaphore1 = instance1.getSemaphore("test");
+        final ISemaphore semaphore2 = instance2.getSemaphore("test");
+        final ISemaphore semaphore3 = instance3.getSemaphore("test");
+        semaphore1.release(initialPermits);
+        assertEquals(initialPermits, semaphore1.availablePermits());
+        assertEquals(initialPermits, semaphore2.availablePermits());
+        assertEquals(initialPermits, semaphore3.availablePermits());
+        Thread thread1 = new Thread() {
+            public void run() {
+                for (int i = 0; i < 100; i++) {
+                    try {
+                        semaphore1.acquire(2);
+                        Thread.sleep(random.nextInt(rndTimeMax));
+                        semaphore1.release(2);
+                        Thread.sleep(random.nextInt(rndTimeMax));
+                    } catch (InterruptedException e) {
+                        fail(e.getMessage());
+                    } catch (InstanceDestroyedException e) {
+                        fail(e.getMessage());
+                    }
+                }
+            }
+        };
+        Thread thread2 = new Thread() {
+             public void run() {
+                for (int i = 0; i < 200; i++) {
+                    try {
+                        semaphore2.acquire();
+                        Thread.sleep(random.nextInt(rndTimeMax));
+                        semaphore2.release();
+                        Thread.sleep(random.nextInt(rndTimeMax));
+                    } catch (InterruptedException e) {
+                        fail(e.getMessage());
+                    } catch (InstanceDestroyedException e) {
+                        fail(e.getMessage());
+                    }
+                }
+            }
+        };
+        Thread thread3 = new Thread() {
+             public void run() {
+                for (int i = 0; i < 300; i++) {
+                    try {
+                        semaphore3.acquire();
+                        Thread.sleep(random.nextInt(rndTimeMax));
+                        semaphore3.release();
+                        Thread.sleep(random.nextInt(rndTimeMax));
+                    } catch (InterruptedException e) {
+                        fail(e.getMessage());
+                    } catch (InstanceDestroyedException e) {
+                        fail(e.getMessage());
+                    }
+                }
+            }
+         };
+        thread1.start();
+        thread2.start();
+        thread3.start();
+        try {
+            thread1.join();
+            thread2.join();
+            thread3.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            fail();
+        }
+        assertEquals(initialPermits, semaphore1.availablePermits());
+        assertEquals(initialPermits, semaphore2.availablePermits());
+        assertEquals(initialPermits, semaphore3.availablePermits());
     }
 }

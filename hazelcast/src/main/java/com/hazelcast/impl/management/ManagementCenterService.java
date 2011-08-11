@@ -35,6 +35,7 @@ import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.nio.IOUtil.newInputStream;
 import static com.hazelcast.nio.IOUtil.newOutputStream;
 
@@ -60,12 +61,18 @@ public class ManagementCenterService implements MembershipListener {
     private final StatsInstanceFilter instanceFilterMap;
     private final StatsInstanceFilter instanceFilterQueue;
     private final StatsInstanceFilter instanceFilterTopic;
+    private final StatsInstanceFilter instanceFilterAtomicLong;
+    private final StatsInstanceFilter instanceFilterCountDownLatch;
+    private final StatsInstanceFilter instanceFilterSemaphore;
 
     public ManagementCenterService(FactoryImpl factoryImpl) throws Exception {
         this.factory = factoryImpl;
         this.instanceFilterMap = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_MAP_EXCLUDES.getString());
         this.instanceFilterQueue = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_QUEUE_EXCLUDES.getString());
         this.instanceFilterTopic = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_TOPIC_EXCLUDES.getString());
+        this.instanceFilterAtomicLong = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_ATOMIC_LONG_EXCLUDES.getString());
+        this.instanceFilterCountDownLatch = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_COUNT_DOWN_LATCH_EXCLUDES.getString());
+        this.instanceFilterSemaphore = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_SEMAPHORE_EXCLUDES.getString());
         thisAddress = ((MemberImpl) factory.getCluster().getLocalMember()).getAddress();
         updateMemberOrder();
         logger = factory.node.getLogger(ManagementCenterService.class.getName());
@@ -281,9 +288,13 @@ public class ManagementCenterService implements MembershipListener {
             }
         }
         Collection<HazelcastInstanceAwareInstance> proxyObjects = new ArrayList<HazelcastInstanceAwareInstance>(factory.getProxies());
-        createMemState(memberState, proxyObjects.iterator(), Instance.InstanceType.MAP);
-        createMemState(memberState, proxyObjects.iterator(), Instance.InstanceType.QUEUE);
-        createMemState(memberState, proxyObjects.iterator(), Instance.InstanceType.TOPIC);
+        createMemState(memberState, proxyObjects.iterator(), InstanceType.MAP);
+        createMemState(memberState, proxyObjects.iterator(), InstanceType.QUEUE);
+        createMemState(memberState, proxyObjects.iterator(), InstanceType.TOPIC);
+        // uncomment when client changes are made
+        //createMemState(memberState, proxyObjects.iterator(), InstanceType.ATOMIC_LONG);
+        //createMemState(memberState, proxyObjects.iterator(), InstanceType.COUNT_DOWN_LATCH);
+        //createMemState(memberState, proxyObjects.iterator(), InstanceType.SEMAPHORE);
     }
 
     private void createMemState(MemberStateImpl memberState,
@@ -294,22 +305,40 @@ public class ManagementCenterService implements MembershipListener {
             HazelcastInstanceAwareInstance proxyObject = it.next();
             if (proxyObject.getInstanceType() == type) {
                 if (count < 20) {
-                    if (type == Instance.InstanceType.MAP) {
+                    if (type.isMap()) {
                         MProxy mapProxy = (MProxy) proxyObject;
                         if (instanceFilterMap.visible(mapProxy.getName())) {
                             memberState.putLocalMapStats(mapProxy.getName(), (LocalMapStatsImpl) mapProxy.getLocalMapStats());
                             count++;
                         }
-                    } else if (type == Instance.InstanceType.QUEUE) {
+                    } else if (type.isQueue()) {
                         QProxy qProxy = (QProxy) proxyObject;
                         if (instanceFilterQueue.visible(qProxy.getName())) {
                             memberState.putLocalQueueStats(qProxy.getName(), (LocalQueueStatsImpl) qProxy.getLocalQueueStats());
                             count++;
                         }
-                    } else if (type == Instance.InstanceType.TOPIC) {
+                    } else if (type.isTopic()) {
                         TopicProxy topicProxy = (TopicProxy) proxyObject;
-                        if (instanceFilterQueue.visible(topicProxy.getName())) {
+                        if (instanceFilterTopic.visible(topicProxy.getName())) {
                             memberState.putLocalTopicStats(topicProxy.getName(), (LocalTopicStatsImpl) topicProxy.getLocalTopicStats());
+                            count++;
+                        }
+                    } else if (type.isAtomicNumber()) {
+                        AtomicNumberProxy atomicLongProxy = (AtomicNumberProxy) proxyObject;
+                        if (instanceFilterQueue.visible(atomicLongProxy.getName())) {
+                            memberState.putLocalAtomicNumberStats(atomicLongProxy.getName(), (LocalAtomicNumberStatsImpl) atomicLongProxy.getLocalAtomicLongStats());
+                            count++;
+                        }
+                    } else if (type.isCountDownLatch()) {
+                        CountDownLatchProxy cdlProxy = (CountDownLatchProxy) proxyObject;
+                        if (instanceFilterCountDownLatch.visible(cdlProxy.getName())) {
+                            memberState.putLocalCountDownLatchStats(cdlProxy.getName(), (LocalCountDownLatchStatsImpl) cdlProxy.getLocalCountDownLatchStats());
+                            count++;
+                        }
+                    } else if (type.isSemaphore()) {
+                        SemaphoreProxy semaphoreProxy = (SemaphoreProxy) proxyObject;
+                        if (instanceFilterSemaphore.visible(semaphoreProxy.getName())) {
+                            memberState.putLocalSemaphoreStats(semaphoreProxy.getName(), (LocalSemaphoreStatsImpl) semaphoreProxy.getLocalSemaphoreStats());
                             count++;
                         }
                     }
@@ -322,9 +351,13 @@ public class ManagementCenterService implements MembershipListener {
     Set<String> getLongInstanceNames() {
         Set<String> setLongInstanceNames = new HashSet<String>(10);
         Collection<HazelcastInstanceAwareInstance> proxyObjects = new ArrayList<HazelcastInstanceAwareInstance>(factory.getProxies());
-        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), Instance.InstanceType.MAP);
-        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), Instance.InstanceType.QUEUE);
-        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), Instance.InstanceType.TOPIC);
+        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MAP);
+        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.QUEUE);
+        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.TOPIC);
+        // uncomment when client changes are made
+        ///collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.ATOMIC_LONG);
+        ///collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.COUNT_DOWN_LATCH);
+        ///collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.SEMAPHORE);
         return setLongInstanceNames;
     }
 
@@ -336,22 +369,40 @@ public class ManagementCenterService implements MembershipListener {
             HazelcastInstanceAwareInstance proxyObject = it.next();
             if (proxyObject.getInstanceType() == type) {
                 if (count < 20) {
-                    if (type == Instance.InstanceType.MAP) {
+                    if (type.isMap()) {
                         MProxy mapProxy = (MProxy) proxyObject;
                         if (instanceFilterMap.visible(mapProxy.getName())) {
                             setLongInstanceNames.add(mapProxy.getLongName());
                             count++;
                         }
-                    } else if (type == Instance.InstanceType.QUEUE) {
+                    } else if (type.isQueue()) {
                         QProxy qProxy = (QProxy) proxyObject;
                         if (instanceFilterQueue.visible(qProxy.getName())) {
                             setLongInstanceNames.add(qProxy.getLongName());
                             count++;
                         }
-                    } else if (type == Instance.InstanceType.TOPIC) {
+                    } else if (type.isTopic()) {
                         TopicProxy topicProxy = (TopicProxy) proxyObject;
                         if (instanceFilterTopic.visible(topicProxy.getName())) {
                             setLongInstanceNames.add(topicProxy.getLongName());
+                            count++;
+                        }
+                    } else if (type.isAtomicNumber()) {
+                        AtomicNumberProxy atomicLongProxy = (AtomicNumberProxy) proxyObject;
+                        if (instanceFilterAtomicLong.visible(atomicLongProxy.getName())) {
+                            setLongInstanceNames.add(atomicLongProxy.getLongName());
+                            count++;
+                        }
+                    } else if (type.isCountDownLatch()) {
+                        CountDownLatchProxy cdlProxy = (CountDownLatchProxy) proxyObject;
+                        if (instanceFilterCountDownLatch.visible(cdlProxy.getName())) {
+                            setLongInstanceNames.add(cdlProxy.getLongName());
+                            count++;
+                        }
+                    } else if (type.isSemaphore()) {
+                        SemaphoreProxy semaphoreProxy = (SemaphoreProxy) proxyObject;
+                        if (instanceFilterSemaphore.visible(semaphoreProxy.getName())) {
+                            setLongInstanceNames.add(semaphoreProxy.getLongName());
                             count++;
                         }
                     }

@@ -212,8 +212,8 @@ public class HazelcastTest {
     }
 
     @Test
-    public void testAtomicNumber() {
-        AtomicNumber an = Hazelcast.getAtomicNumber("testAtomicNumber");
+    public void testAtomicLong() {
+        AtomicNumber an = Hazelcast.getAtomicNumber("testAtomicLong");
         assertEquals(0, an.get());
         assertEquals(-1, an.decrementAndGet());
         assertEquals(0, an.incrementAndGet());
@@ -225,9 +225,8 @@ public class HazelcastTest {
         assertEquals(28, an.get());
         assertEquals(28, an.getAndAdd(-3));
         assertEquals(24, an.decrementAndGet());
-        assertFalse(an.compareAndSet(23, 50));
+        Assert.assertFalse(an.compareAndSet(23, 50));
         assertTrue(an.compareAndSet(24, 50));
-        assertFalse(an.compareAndSet(51, 0));
         assertTrue(an.compareAndSet(50, 0));
     }
 
@@ -1074,9 +1073,8 @@ public class HazelcastTest {
             public void run() {
                 try {
                     q.take();
-                    fail();
                 } catch (InterruptedException e) {
-                    // expected
+                    e.printStackTrace();
                 }
             }
         });
