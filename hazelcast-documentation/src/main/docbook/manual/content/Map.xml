@@ -205,9 +205,9 @@ public boolean removeCustomer (Customer customer) {
             is called, Hazelcast will call your store implementation to store the entry into a
             datastore. Hazelcast can call your implementation to store the entries synchronously
             (write-through) with no-delay or asynchronously (write-behind) with delay and it is
-            defined by the <literal>write-delay-seconds</literal> value in the configuration. If it
-            is write-through, when the <literal>map.put(key,value)</literal> call returns, you can
-            be sure that <itemizedlist>
+            defined by the <literal>write-delay-seconds</literal> value in the configuration. </para>
+        <para>If it is write-through, when the <literal>map.put(key,value)</literal> call returns,
+            you can be sure that <itemizedlist>
                 <listitem>
                     <para>
                         <literal>MapStore.store(key,value)</literal> is successfully called so the
@@ -230,23 +230,22 @@ public boolean removeCustomer (Customer customer) {
                         backup-count is greater than 0) </para>
                 </listitem>
                 <listitem>
-                    <para>The entry is marked as <literal>dirty</literal> so that
-                            after <literal>write-delay-seconds</literal>, it can be persisted.
-                    </para>
+                    <para>The entry is marked as <literal>dirty</literal> so that after
+                            <literal>write-delay-seconds</literal>, it can be persisted. </para>
                 </listitem>
-            </itemizedlist> Same behavior goes for the <literal>remove(key</literal>
-                and <literal>MapStore.delete(key)</literal>. If <literal>MapStore</literal> throws an
+            </itemizedlist> Same behavior goes for the <literal>remove(key</literal> and
+                <literal>MapStore.delete(key)</literal>. If <literal>MapStore</literal> throws an
             exception then the exception will be propagated back to the original
-                <literal>put</literal> or <literal>remove</literal> call in the form
-                of <literal>RuntimeException</literal>. When write-through is used, Hazelcast will
-            call <literal>MapStore.store(key,value)</literal> and
+                <literal>put</literal> or <literal>remove</literal> call in the form of
+                <literal>RuntimeException</literal>. When write-through is used, Hazelcast will call
+                <literal>MapStore.store(key,value)</literal> and
                 <literal>MapStore.delete(key)</literal> for each entry update. When write-behind is
             used, Hazelcast will call <literal>MapStore.store(map)</literal>, and
                 <literal>MapStore.delete(collection)</literal> to do all writes in a single call.
             Also note that your MapStore or MapLoader implementation should not use Hazelcast
             Map/Queue/MultiMap/List/Set operations. Your implementation should only work with your
-            data store. Otherwise you may get into deadlock situations. Here is a sample
-            configuration: <programlisting language="xml"><![CDATA[<hazelcast>
+            data store. Otherwise you may get into deadlock situations. </para>
+        <para>Here is a sample configuration: <programlisting language="xml"><![CDATA[<hazelcast>
     ...
     <map name="default">
         ...
