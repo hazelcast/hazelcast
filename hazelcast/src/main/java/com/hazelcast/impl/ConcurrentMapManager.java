@@ -2701,7 +2701,7 @@ public class ConcurrentMapManager extends BaseManager {
                         SemaphoreFactory factory = sc.getFactoryImplementation();
                         if (factory == null) {
                             String factoryClassName = sc.getFactoryClassName();
-                            if (factoryClassName != null && !factoryClassName.isEmpty()) {
+                            if (factoryClassName != null && factoryClassName.length() != 0) {
                                 ClassLoader cl = node.getConfig().getClassLoader();
                                 Class factoryClass = Serializer.classForName(cl, factoryClassName);
                                 factory = (SemaphoreFactory) factoryClass.newInstance();
