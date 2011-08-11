@@ -409,18 +409,20 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             BeanDefinitionBuilder mapStoreConfigBuilder = createBeanBuilder(MapStoreConfig.class, "mapStoreConfig");
             final AbstractBeanDefinition beanDefinition = mapStoreConfigBuilder.getBeanDefinition();
             final String implAttrName = "implementation";
+            final String factoryImplAttrName = "factory-implementation";
+            
+            fillValues(node, mapStoreConfigBuilder, implAttrName, factoryImplAttrName);
+            handleProperties(node, mapStoreConfigBuilder);
             
             final NamedNodeMap attrs = node.getAttributes();
             final Node implRef = attrs.getNamedItem(implAttrName);
+            final Node factoryImplRef = attrs.getNamedItem(factoryImplAttrName); 
             
-            org.springframework.util.Assert.isTrue(attrs.getNamedItem("class-name") != null || implRef != null, 
-            		"Either 'class-name' or 'implementation' attribute of MapStoreConfig has to be specified!");
-            
-            fillValues(node, mapStoreConfigBuilder, implAttrName);
-            handleProperties(node, mapStoreConfigBuilder);
-            
+            if(factoryImplRef != null) {
+            	mapStoreConfigBuilder.addPropertyReference(xmlToJavaName(factoryImplAttrName), getValue(factoryImplRef));
+            }
             if(implRef != null) {
-            	mapStoreConfigBuilder.addPropertyReference(implRef.getNodeName(), implRef.getNodeValue());
+            	mapStoreConfigBuilder.addPropertyReference(xmlToJavaName(implAttrName), getValue(implRef));
             }
 
             mapConfigBuilder.addPropertyValue("mapStoreConfig", beanDefinition);

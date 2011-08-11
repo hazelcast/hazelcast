@@ -22,10 +22,14 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="backup-count" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="time-to-live-seconds" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="max-idle-seconds" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="eviction-policy" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="max-size" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="eviction-percentage" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="merge-policy" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="map-store" minOccurs="0" maxOccurs="1" />
+	            <xs:element ref="near-cache" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" use="required">
@@ -88,11 +92,25 @@
     <xs:element name="time-to-live-seconds" default="0">
         <xs:annotation>
             <xs:documentation>
-                Maximum number of seconds for each item to stay in the queue. Items that are
-                not consumed in "time-to-live-seconds" will automatically get evicted from the queue.
-                Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+                Maximum number of seconds for each entry to stay in the map. Entries that are
+				older than &lt;time-to-live-seconds&gt; and not updated for &lt;time-to-live-seconds&gt;
+				will get automatically evicted from the map.
+				Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
             </xs:documentation>
         </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:byte"/>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="max-idle-seconds" default="0">
+    	<xs:annotation>
+            <xs:documentation>
+                Maximum number of seconds for each entry to stay idle in the map. Entries that are
+				idle(not touched) for more than &lt;max-idle-seconds&gt; will get
+				automatically evicted from the map. Entry is touched if get, put or containsKey is called.
+				Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+            </xs:documentation>
+        </xs:annotation> 
         <xs:simpleType>
             <xs:restriction base="xs:byte"/>
         </xs:simpleType>
@@ -423,7 +441,6 @@
             <xs:enumeration value="hazelcast.initial.wait.seconds"/>
             <xs:enumeration value="hazelcast.restart.on.max.idle"/>
             <xs:enumeration value="hazelcast.map.partition.count"/>
-            <xs:enumeration value="hazelcast.queue.block.size"/>
             <xs:enumeration value="hazelcast.map.remove.delay.seconds"/>
             <xs:enumeration value="hazelcast.map.cleanup.delay.seconds"/>
             <xs:enumeration value="hazelcast.executor.query.thread.count"/>
@@ -457,6 +474,7 @@
 			<xs:enumeration value="hazelcast.version.check.enabled"/>
 			<xs:enumeration value="hazelcast.map.max.backup.count"/>
 			<xs:enumeration value="hazelcast.topic.flow.control.enabled"/>
+			<xs:enumeration value="hazelcast.max.wait.seconds.before.join"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:element name="property">
@@ -581,6 +599,27 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
+    <xs:element name="map-store">
+        <xs:complexType>
+            <xs:sequence>
+            	<xs:element name="class-name" minOccurs="0" maxOccurs="1" type="xs:string" />
+            	<xs:element name="factory-class-name" minOccurs="0" maxOccurs="1" type="xs:string"/>
+            	<xs:element name="write-delay-seconds" minOccurs="0" maxOccurs="1" type="xs:integer" default="0"/>
+            </xs:sequence>
+            <xs:attribute name="enabled" default="true" type="xs:boolean"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="near-cache">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="max-size" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="time-to-live-seconds" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="max-idle-seconds" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="eviction-policy" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="invalidate-on-change" minOccurs="0" maxOccurs="1" type="xs:boolean" default="true" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="wan-replication">
         <xs:complexType>
             <xs:sequence>
@@ -640,7 +679,6 @@
         	</xs:attribute>        
         </xs:complexType>
     </xs:element>
-    
     <xs:simpleType name="ST_port">
         <xs:restriction base="xs:short"/>
     </xs:simpleType>

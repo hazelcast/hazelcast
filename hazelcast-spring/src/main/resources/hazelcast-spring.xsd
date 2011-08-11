@@ -21,16 +21,16 @@
                             <xs:complexType>
                                 <xs:sequence/>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="core-pool-size" use="optional" type="xs:string"/>
-                                <xs:attribute name="max-pool-size" use="optional" type="xs:string"/>
-                                <xs:attribute name="keep-alive-seconds" use="optional" type="xs:string"/>
+                                <xs:attribute name="core-pool-size" use="optional" type="xs:integer"/>
+                                <xs:attribute name="max-pool-size" use="optional" type="xs:integer"/>
+                                <xs:attribute name="keep-alive-seconds" use="optional" type="xs:integer"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="queue" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence/>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="max-size-per-jvm" use="required" type="xs:string"/>
+                                <xs:attribute name="max-size-per-jvm" use="required" type="xs:integer"/>
                                 <xs:attribute name="backing-map-ref" use="optional" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
@@ -42,18 +42,20 @@
                                             <xs:sequence/>
                                             <xs:attribute name="enabled" use="required" type="xs:boolean"/>
                                             <xs:attribute name="class-name" use="optional" type="xs:string"/>
+                                            <xs:attribute name="factory-class-name" use="optional" type="xs:string"/>
                                             <xs:attribute name="implementation" use="optional" type="xs:string"/>
-                                            <xs:attribute name="write-delay-seconds" use="required" type="xs:string"/>
+                                            <xs:attribute name="factory-implementation" use="optional" type="xs:string"/>
+                                            <xs:attribute name="write-delay-seconds" use="required" type="xs:integer"/>
                                         </xs:complexType>
                                     </xs:element>
                                     <xs:element name="near-cache" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
                                             <xs:sequence/>
-                                            <xs:attribute name="time-to-live-seconds" use="required" type="xs:string"/>
-                                            <xs:attribute name="max-idle-seconds" use="required" type="xs:string"/>
+                                            <xs:attribute name="time-to-live-seconds" use="required" type="xs:integer"/>
+                                            <xs:attribute name="max-idle-seconds" use="required" type="xs:integer"/>
                                             <xs:attribute name="eviction-policy" use="required" type="xs:string"/>
-                                            <xs:attribute name="max-size" use="required" type="xs:string"/>
-                                            <xs:attribute name="invalidate-on-change" use="required" type="xs:string"/>
+                                            <xs:attribute name="max-size" use="required" type="xs:integer"/>
+                                            <xs:attribute name="invalidate-on-change" use="required" type="xs:boolean"/>
                                         </xs:complexType>
                                     </xs:element>
                                     
@@ -65,17 +67,17 @@
 								    </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string"/>
-                                <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
-                                <xs:attribute name="max-size" use="optional" type="xs:string"/>
-                                <xs:attribute name="max-idle-seconds" use="optional" type="xs:string"/>
-                                <xs:attribute name="eviction-delay-seconds" use="optional" type="xs:string"/>
-                                <xs:attribute name="eviction-percentage" use="optional" type="xs:string"/>
+                                <xs:attribute name="backup-count" use="optional" type="xs:integer"/>
+                                <xs:attribute name="time-to-live-seconds" use="optional" type="xs:integer"/>
+                                <xs:attribute name="max-size" use="optional" type="xs:integer"/>
+                                <xs:attribute name="max-idle-seconds" use="optional" type="xs:integer"/>
+                                <xs:attribute name="eviction-delay-seconds" use="optional" type="xs:integer"/>
+                                <xs:attribute name="eviction-percentage" use="optional" type="xs:integer"/>
                                 <xs:attribute name="eviction-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="merge-policy" use="optional" type="xs:string"/>
-                                <xs:attribute name="value-indexed" use="optional" type="xs:string"/>
-                                <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
-                                <xs:attribute name="cache-value" use="optional" type="xs:string"/>
+                                <xs:attribute name="value-indexed" use="optional" type="xs:boolean"/>
+                                <xs:attribute name="read-backup-data" use="optional" type="xs:boolean"/>
+                                <xs:attribute name="cache-value" use="optional" type="xs:boolean"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="merge-policies" type="merge-policies" minOccurs="0" maxOccurs="unbounded"/>
@@ -249,7 +251,6 @@
             <xs:enumeration value="hazelcast.initial.wait.seconds"/>
             <xs:enumeration value="hazelcast.restart.on.max.idle"/>
             <xs:enumeration value="hazelcast.map.partition.count"/>
-            <xs:enumeration value="hazelcast.queue.block.size"/>
             <xs:enumeration value="hazelcast.map.remove.delay.seconds"/>
             <xs:enumeration value="hazelcast.map.cleanup.delay.seconds"/>
             <xs:enumeration value="hazelcast.executor.query.thread.count"/>
@@ -283,6 +284,7 @@
             <xs:enumeration value="hazelcast.version.check.enabled"/>
             <xs:enumeration value="hazelcast.map.max.backup.count"/>
             <xs:enumeration value="hazelcast.topic.flow.control.enabled"/>
+            <xs:enumeration value="hazelcast.max.wait.seconds.before.join"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -312,7 +314,7 @@
         <xs:attribute name="algorithm" use="optional" type="xs:string"/>
         <xs:attribute name="salt" use="optional" type="xs:string"/>
         <xs:attribute name="password" use="optional" type="xs:string"/>
-        <xs:attribute name="iteration-count" use="optional" type="xs:string"/>
+        <xs:attribute name="iteration-count" use="optional" type="xs:integer"/>
     </xs:complexType>
 
     <xs:complexType name="asymmetric-encryption">

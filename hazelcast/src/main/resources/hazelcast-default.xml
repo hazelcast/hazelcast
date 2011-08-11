@@ -6,22 +6,6 @@
         <name>dev</name>
         <password>dev-pass</password>
     </group>
-    <wan-replication name="my-wan-cluster">
-        <target-cluster group-name="tokyo" group-password="tokyo-pass">
-            <replication-impl>com.hazelcast.impl.wan.WanNoDelayReplication</replication-impl>
-            <end-points>
-                <address>10.2.1.1:5701</address>
-                <address>10.2.1.2:5701</address>
-            </end-points>
-        </target-cluster>
-        <target-cluster group-name="london" group-password="london-pass">
-            <replication-impl>com.hazelcast.impl.wan.WanNoDelayReplication</replication-impl>
-            <end-points>
-                <address>10.3.5.1:5701</address>
-                <address>10.3.5.2:5701</address>
-            </end-points>
-        </target-cluster>
-    </wan-replication>
     <network>
         <port auto-increment="true">5701</port>
         <join>
@@ -79,7 +63,6 @@
         <keep-alive-seconds>60</keep-alive-seconds>
     </executor-service>
     <queue name="default">
-
         <!--
             Maximum size of the queue. When a JVM's local queue size reaches the maximum,
             all put/offer operations will get blocked until the queue size
@@ -88,13 +71,11 @@
             Integer.MAX_VALUE. Default is 0.
         -->
         <max-size-per-jvm>0</max-size-per-jvm>
-
         <!--
             Name of the map configuration that will be used for the backing distributed
             map for this queue.
         -->
         <backing-map-ref>default</backing-map-ref>
-
     </queue>
     <map name="default">
         <!--
@@ -103,6 +84,20 @@
             fail-safety. 0 means no backup.
         -->
         <backup-count>1</backup-count>
+        <!--
+			Maximum number of seconds for each entry to stay in the map. Entries that are
+			older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
+			will get automatically evicted from the map.
+			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+		-->
+        <time-to-live-seconds>0</time-to-live-seconds>
+        <!--
+			Maximum number of seconds for each entry to stay idle in the map. Entries that are
+			idle(not touched) for more than <max-idle-seconds> will get
+			automatically evicted from the map. Entry is touched if get, put or containsKey is called.
+			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+		-->
+        <max-idle-seconds>0</max-idle-seconds>
         <!--
             Valid values are:
             NONE (no eviction),
@@ -125,7 +120,6 @@
             get evicted.
         -->
         <eviction-percentage>25</eviction-percentage>
-
         <!--
             While recovering from split-brain (network partitioning),
             map entries in the small cluster will merge into the bigger cluster
@@ -143,13 +137,7 @@
             hz.LATEST_UPDATE ; entry with the latest update wins.
         -->
         <merge-policy>hz.ADD_NEW_ENTRY</merge-policy>
-
-
-        <wan-replication-ref name="my-wan-cluster">
-            <merge-policy>hz.MERGING_WINS</merge-policy>
-        </wan-replication-ref>
     </map>
-
     <!-- Add your own semaphore configurations here:
         <semaphore name="default">
             <initial-permits>10</initial-permits>
@@ -166,4 +154,5 @@
         	</map-merge-policy>
     	</merge-policies>
     -->
+
 </hazelcast>

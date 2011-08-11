@@ -78,7 +78,7 @@ public class TestFullApplicationContext {
     @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
 
-    @Resource(name = "atomicLong")
+    @Resource(name = "atomicNumber")
     private AtomicNumber atomicLong;
 
     @Resource(name="countDownLatch")
@@ -89,6 +89,9 @@ public class TestFullApplicationContext {
 
     @Resource(name = "dummyMapStore")
     private MapStore dummyMapStore;
+    
+    @Autowired
+    private MapStoreFactory dummyMapStoreFactory;
     
     @Autowired
     private WanReplicationEndpoint wanReplication;
@@ -110,8 +113,7 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        System.out.println(config.getMapConfigs().keySet());
-        assertEquals(4, config.getMapConfigs().size());
+        assertEquals(6, config.getMapConfigs().size());
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
         assertEquals("testMap", testMapConfig.getName());
@@ -155,6 +157,11 @@ public class TestFullApplicationContext {
         assertNull(simpleMapConfig.getMapStoreConfig());
         // Test that the simpleMapConfig does NOT have a nearCacheConfig
         assertNull(simpleMapConfig.getNearCacheConfig());
+        
+        MapConfig testMapConfig3 = config.getMapConfig("testMap3");
+        assertEquals("com.hazelcast.spring.DummyStoreFactory", testMapConfig3.getMapStoreConfig().getFactoryClassName());
+        MapConfig testMapConfig4 = config.getMapConfig("testMap4");
+        assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
     }
 
     @Test
@@ -268,7 +275,7 @@ public class TestFullApplicationContext {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
-        assertEquals("atomicLong", atomicLong.getName());
+        assertEquals("atomicNumber", atomicLong.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }

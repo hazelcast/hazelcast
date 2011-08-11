@@ -69,7 +69,7 @@ public class TestClientApplicationContext {
     @Resource(name="idGenerator")
     private IdGenerator idGenerator;
 
-	@Resource(name="atomicLong")
+	@Resource(name="atomicNumber")
 	private AtomicNumber atomicLong;
 
     @Resource(name="countDownLatch")
@@ -118,7 +118,7 @@ public class TestClientApplicationContext {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
-        assertEquals("atomicLong", atomicLong.getName());
+        assertEquals("atomicNumber", atomicLong.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }
