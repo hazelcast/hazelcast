@@ -277,8 +277,8 @@ public final class ClusterService implements Runnable, Constants {
                     }
                 }, "hz.RestartThread").start();
             }
+            lastCheck = now;
         }
-        lastCheck = now;
         if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL_MILLIS) {
             publishUtilization();
             for (Runnable runnable : periodicRunnables) {
