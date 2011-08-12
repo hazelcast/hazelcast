@@ -1,20 +1,24 @@
 package com.hazelcast.config;
 
-import org.junit.Ignore;
-import org.junit.Test;
-import org.xml.sax.SAXException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
+import org.xml.sax.SAXException;
 
 public class XMLConfigBuilderTest {
 
@@ -91,11 +95,19 @@ public class XMLConfigBuilderTest {
     }
 
     @Test
-    @Ignore
     public void testXSDDefaultXML() throws SAXException, IOException {
+        testXSDConfigXML("hazelcast-default.xml");
+    }
+    
+    @Test
+    public void testXSDFullConfigXML() throws SAXException, IOException {
+        testXSDConfigXML("hazelcast-fullconfig.xml");
+    }
+    
+    private void testXSDConfigXML(String xmlResource) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
         URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-basic.xsd");
-        URL xmlURL = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-default.xml");
+        URL xmlURL = XMLConfigBuilderTest.class.getClassLoader().getResource(xmlResource);
         File schemaFile = new File(schemaUrl.getFile());
         File defaultXML = new File(xmlURL.getFile());
         Schema schema = factory.newSchema(schemaFile);

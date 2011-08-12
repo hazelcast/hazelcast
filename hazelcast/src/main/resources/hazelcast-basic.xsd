@@ -298,7 +298,7 @@
     <xs:element name="class-name">
         <xs:annotation>
             <xs:documentation>
-                Fully qualified merge policy class name
+                Fully qualified class name
             </xs:documentation>
         </xs:annotation>
         <xs:simpleType>
@@ -602,13 +602,17 @@
     <xs:element name="map-store">
         <xs:complexType>
             <xs:sequence>
-            	<xs:element name="class-name" minOccurs="0" maxOccurs="1" type="xs:string" />
-            	<xs:element name="factory-class-name" minOccurs="0" maxOccurs="1" type="xs:string"/>
-            	<xs:element name="write-delay-seconds" minOccurs="0" maxOccurs="1" type="xs:integer" default="0"/>
+            	<xs:choice minOccurs="0" maxOccurs="1">
+	            	<xs:element ref="class-name" />
+    	        	<xs:element ref="factory-class-name" />
+            	</xs:choice>
+            	<xs:element ref="write-delay-seconds" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="enabled" default="true" type="xs:boolean"/>
         </xs:complexType>
     </xs:element>
+  	<xs:element name="factory-class-name" type="xs:string"/>
+  	<xs:element name="write-delay-seconds" type="xs:integer" default="0"/>
     <xs:element name="near-cache">
         <xs:complexType>
             <xs:sequence>
@@ -616,10 +620,11 @@
                 <xs:element ref="time-to-live-seconds" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="max-idle-seconds" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="eviction-policy" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="invalidate-on-change" minOccurs="0" maxOccurs="1" type="xs:boolean" default="true" />
+                <xs:element ref="invalidate-on-change" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
         </xs:complexType>
     </xs:element>
+    <xs:element name="invalidate-on-change" type="xs:boolean" default="true" />
     <xs:element name="wan-replication">
         <xs:complexType>
             <xs:sequence>
