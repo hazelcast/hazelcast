@@ -259,7 +259,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     void syncForDeadCountDownLatches(Address deadAddress) {
         final CMap cmap = maps.get(MapConfig.COUNT_DOWN_LATCH_MAP_NAME);
-        if (deadAddress != null && cmap != null){
+        if (deadAddress != null && cmap != null) {
             for (Record record : cmap.mapRecords.values()) {
                 DistributedCountDownLatch cdl = (DistributedCountDownLatch) record.getValue();
                 if (cdl != null && cdl.isOwnerOrMemberAddress(deadAddress)) {
@@ -2691,7 +2691,6 @@ public class ConcurrentMapManager extends BaseManager {
 
     abstract class SemaphoreOperationHandler extends SchedulableOperationHandler {
         abstract void doSemaphoreOperation(Request request, DistributedSemaphore semaphore);
-        private Request request;
 
         @Override
         public void handle(Request request) {
