@@ -284,7 +284,7 @@ public boolean removeCustomer (Customer customer) {
                     <para> When <code>getMap()</code> first called from any node, initialization starts </para>
                 </listitem>
                 <listitem>
-                    <para> Hazelcast will call <code>MapLoader.getAllKeys()</code> to get all your keys on each
+                    <para> Hazelcast will call <code>MapLoader.loadAllKeys()</code> to get all your keys on each
                         node </para>
                 </listitem>
                 <listitem>
