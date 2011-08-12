@@ -17,8 +17,10 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.monitor.LocalAtomicNumberStats;
+
 /**
- * IAtomicLong is a backed-up distributed implementation of
+ * AtomicNumber is a backed-up distributed implementation of
  * {@link java.util.concurrent.atomic.AtomicLong java.util.concurrent.atomic.AtomicLong}.
  */
 public interface AtomicNumber extends Instance {
@@ -103,4 +105,7 @@ public interface AtomicNumber extends Instance {
      * Not implemented. Use set().
      */
     void lazySet(long newValue);
+    
+    
+    LocalAtomicNumberStats getLocalAtomicNumberStats();
 }

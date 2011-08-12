@@ -19,7 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.Prefix;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import com.hazelcast.monitor.LocalAtomicNumberStats;
 
 import static com.hazelcast.impl.ClusterOperation.*;
 
@@ -73,7 +73,7 @@ public class AtomicNumberClientProxy implements AtomicNumber {
     }
 
     public InstanceType getInstanceType() {
-        return InstanceType.ATOMIC_LONG;
+        return InstanceType.ATOMIC_NUMBER;
     }
 
     public String getName() {
@@ -82,11 +82,15 @@ public class AtomicNumberClientProxy implements AtomicNumber {
 
     @Deprecated
     public boolean weakCompareAndSet(long expect, long update) {
-        throw new NotImplementedException();
+        return compareAndSet(expect, update);
     }
 
     @Deprecated
     public void lazySet(long newValue) {
-        throw new NotImplementedException();
+    	set(newValue);
     }
+
+	public LocalAtomicNumberStats getLocalAtomicNumberStats() {
+		throw new UnsupportedOperationException();
+	}
 }

@@ -15,50 +15,37 @@
  *
  */
 
-package com.hazelcast.impl;
-
-import com.hazelcast.monitor.LocalCountDownLatchOperationStats;
-import com.hazelcast.nio.DataSerializable;
+package com.hazelcast.impl.monitor;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class LocalCountDownLatchOperationStatsImpl implements LocalCountDownLatchOperationStats {
-    long periodStart;
-    long periodEnd;
+import com.hazelcast.monitor.LocalCountDownLatchOperationStats;
+
+public class LocalCountDownLatchOperationStatsImpl extends LocalOperationStatsSupport 
+	implements LocalCountDownLatchOperationStats {
+	
     long numberOfAwaitsReleased;
     long numberOfGatesOpened;
     OperationStat await = new OperationStat(0,0);
     OperationStat countdown = new OperationStat(0,0);
     OperationStat other = new OperationStat(0,0);
 
-    public void writeData(DataOutput out) throws IOException {
+    void writeDataInternal(DataOutput out) throws IOException {
         await.writeData(out);
         countdown.writeData(out);
         other.writeData(out);
-        out.writeLong(periodStart);
-        out.writeLong(periodEnd);
     }
 
-    public void readData(DataInput in) throws IOException {
+    void readDataInternal(DataInput in) throws IOException {
         (await = new OperationStat()).readData(in);
         (countdown = new OperationStat()).readData(in);
         (other = new OperationStat()).readData(in);
-        periodStart = in.readLong();
-        periodEnd = in.readLong();
     }
 
     public long total() {
-          return await.count + countdown.count + other.count;
-    }
-
-    public long getPeriodStart() {
-        return periodStart;
-    }
-
-    public long getPeriodEnd() {
-        return periodEnd;
+    	return await.count + countdown.count + other.count;
     }
 
     public long getNumberOfAwaits() {
@@ -99,42 +86,5 @@ public class LocalCountDownLatchOperationStatsImpl implements LocalCountDownLatc
                 ", await:" + await +
                 ", countdown:" + countdown +
                 ", other:" + other + "}";
-    }
-
-    class OperationStat implements DataSerializable {
-        long count;
-        long totalLatency;
-
-        public OperationStat() {
-            this(0, 0);
-        }
-
-        public OperationStat(long c, long l) {
-            this.count = c;
-            this.totalLatency = l;
-        }
-
-        @Override
-        public String toString() {
-            return "OperationStat{" +
-                    "count=" + count +
-                    ", averageLatency=" + ((count == 0) ? 0 : totalLatency / count) +
-                    '}';
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeLong(count);
-            out.writeLong(totalLatency);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            count = in.readLong();
-            totalLatency = in.readLong();
-        }
-
-        public void add(long c, long l) {
-            count += c;
-            totalLatency += l;
-        }
     }
 }

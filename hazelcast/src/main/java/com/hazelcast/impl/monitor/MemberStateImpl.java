@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.monitor;
 
 import com.hazelcast.monitor.*;
 import com.hazelcast.nio.Address;
@@ -37,27 +37,17 @@ public class MemberStateImpl implements MemberState {
 
     Address address = new Address();
     MemberHealthStatsImpl memberHealthStats = new MemberHealthStatsImpl();
-    Map<String, LocalAtomicNumberStatsImpl> atomicNumberStats = new HashMap<String, LocalAtomicNumberStatsImpl>();
-    Map<String, LocalCountDownLatchStatsImpl> countDownLatchStats = new HashMap<String, LocalCountDownLatchStatsImpl>();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
-    Map<String, LocalSemaphoreStatsImpl> semaphoreStats = new HashMap<String, LocalSemaphoreStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
+    Map<String, LocalAtomicNumberStatsImpl> atomicNumberStats = new HashMap<String, LocalAtomicNumberStatsImpl>();
+    Map<String, LocalCountDownLatchStatsImpl> countDownLatchStats = new HashMap<String, LocalCountDownLatchStatsImpl>();
+    Map<String, LocalSemaphoreStatsImpl> semaphoreStats = new HashMap<String, LocalSemaphoreStatsImpl>();
     List<Integer> lsPartitions = new ArrayList<Integer>(271);
 
     public void writeData(DataOutput out) throws IOException {
         address.writeData(out);
         memberHealthStats.writeData(out);
-        out.writeInt(atomicNumberStats.size());
-        for (Map.Entry<String, LocalAtomicNumberStatsImpl> entry : atomicNumberStats.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
-        }
-        out.writeInt(countDownLatchStats.size());
-        for (Map.Entry<String, LocalCountDownLatchStatsImpl> entry : countDownLatchStats.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
-        }
         out.writeInt(mapStats.size());
         for (Map.Entry<String, LocalMapStatsImpl> entry : mapStats.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -68,13 +58,23 @@ public class MemberStateImpl implements MemberState {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
-        out.writeInt(semaphoreStats.size());
-        for (Map.Entry<String, LocalSemaphoreStatsImpl> entry : semaphoreStats.entrySet()) {
+        out.writeInt(topicStats.size());
+        for (Map.Entry<String, LocalTopicStatsImpl> entry : topicStats.entrySet()) {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
-        out.writeInt(topicStats.size());
-        for (Map.Entry<String, LocalTopicStatsImpl> entry : topicStats.entrySet()) {
+        out.writeInt(atomicNumberStats.size());
+        for (Map.Entry<String, LocalAtomicNumberStatsImpl> entry : atomicNumberStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        out.writeInt(countDownLatchStats.size());
+        for (Map.Entry<String, LocalCountDownLatchStatsImpl> entry : countDownLatchStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        out.writeInt(semaphoreStats.size());
+        for (Map.Entry<String, LocalSemaphoreStatsImpl> entry : semaphoreStats.entrySet()) {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
@@ -91,16 +91,6 @@ public class MemberStateImpl implements MemberState {
         String name;
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
-            (impl = new LocalAtomicNumberStatsImpl()).readData(in);
-            atomicNumberStats.put(name, (LocalAtomicNumberStatsImpl) impl);
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            (impl = new LocalCountDownLatchStatsImpl()).readData(in);
-            countDownLatchStats.put(name, (LocalCountDownLatchStatsImpl) impl);
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
             (impl = new LocalMapStatsImpl()).readData(in);
             mapStats.put(name, (LocalMapStatsImpl) impl);
         }
@@ -111,13 +101,23 @@ public class MemberStateImpl implements MemberState {
         }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
-            (impl = new LocalSemaphoreStatsImpl()).readData(in);
-            semaphoreStats.put(name, (LocalSemaphoreStatsImpl) impl);
+            (impl = new LocalTopicStatsImpl()).readData(in);
+            topicStats.put(name, (LocalTopicStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
-            (impl = new LocalTopicStatsImpl()).readData(in);
-            topicStats.put(name, (LocalTopicStatsImpl) impl);
+            (impl = new LocalAtomicNumberStatsImpl()).readData(in);
+            atomicNumberStats.put(name, (LocalAtomicNumberStatsImpl) impl);
+        }
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalCountDownLatchStatsImpl()).readData(in);
+            countDownLatchStats.put(name, (LocalCountDownLatchStatsImpl) impl);
+        }
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalSemaphoreStatsImpl()).readData(in);
+            semaphoreStats.put(name, (LocalSemaphoreStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
             lsPartitions.add(in.readInt());

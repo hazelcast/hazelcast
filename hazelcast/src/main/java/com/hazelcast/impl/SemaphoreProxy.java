@@ -19,7 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.Instance;
-import com.hazelcast.monitor.LocalSemaphoreStats;
+import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 
@@ -29,8 +29,6 @@ public interface SemaphoreProxy extends ISemaphore, Instance {
     public final static int ACQUIRED = 0;
     public final static int ACQUIRE_FAILED = 1;
     public final static int INSTANCE_DESTROYED = 2;
-
-    LocalSemaphoreStats getLocalSemaphoreStats();
 
     SemaphoreOperationsCounter getOperationsCounter();
 

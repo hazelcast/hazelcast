@@ -18,20 +18,36 @@
 package com.hazelcast.monitor;
 
 
-public interface LocalAtomicNumberOperationStats extends LocalInstanceOperationStats {
+public interface LocalLockOperationStats extends LocalInstanceOperationStats {
     /**
-     * Returns the number of operations that modified the stored atomic value.
+     * Returns the number of lock operations.
      *
      *
-     * @return number of modified operations
+     * @return number of lock operations
      */
-    public long getNumberOfModifyOps();
+    public long getNumberOfLocks();
 
     /**
-     * Returns the number of operations that did not modify the stored atomic value.
+     * Returns the number of unlock operations.
      *
      *
-     * @return number of non-modified operations
+     * @return number of unlock operations
      */
-    public long getNumberOfNonModifyOps();
+    public long getNumberOfUnlocks();
+    
+    /**
+     * Returns the number of failed lock operations.
+     *
+     *
+     * @return number of failed lock operations
+     */
+    public long getNumberOfFailedLocks();
+    
+    /**
+     * Returns the number of total operations.
+     *
+     *
+     * @return number of total operations
+     */
+    public long total();
 }

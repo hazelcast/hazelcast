@@ -17,6 +17,8 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.impl.monitor.LocalMapOperationStatsImpl;
+import com.hazelcast.impl.monitor.MapOperationsCounter;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.nio.DataSerializable;
 import org.junit.Test;
@@ -198,7 +200,7 @@ public class MapOperationsCounterTest {
         mapOperationStats.incrementGets(0);
         mapOperationStats.incrementRemoves(0);
         ((DataSerializable) mapOperationStats.getPublishedStats()).writeData(dout);
-        MapOperationStatsImpl newStat = new MapOperationStatsImpl();
+        LocalMapOperationStatsImpl newStat = new LocalMapOperationStatsImpl();
         ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
         newStat.readData(new DataInputStream(bis));
         assertEquals(mapOperationStats.getPublishedStats().getNumberOfGets(), newStat.getNumberOfGets());

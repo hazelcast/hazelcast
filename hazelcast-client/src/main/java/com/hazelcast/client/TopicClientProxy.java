@@ -22,6 +22,7 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.monitor.LocalTopicStats;
 
 import static com.hazelcast.client.ProxyHelper.check;
 
@@ -99,4 +100,8 @@ public class TopicClientProxy<T> implements ITopic {
     public int hashCode() {
         return getName().hashCode();
     }
+
+	public LocalTopicStats getLocalTopicStats() {
+		throw new UnsupportedOperationException();
+	}
 }

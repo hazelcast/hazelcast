@@ -15,36 +15,31 @@
  *
  */
 
-package com.hazelcast.impl;
-
-import com.hazelcast.monitor.LocalMapOperationStats;
-import com.hazelcast.nio.DataSerializable;
+package com.hazelcast.impl.monitor;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MapOperationStatsImpl implements LocalMapOperationStats {
+import com.hazelcast.monitor.LocalMapOperationStats;
 
-    long periodStart;
-    long periodEnd;
+public class LocalMapOperationStatsImpl extends LocalOperationStatsSupport implements LocalMapOperationStats {
+
     OperationStat gets = new OperationStat(0,0);
     OperationStat puts = new OperationStat(0,0);
     OperationStat removes = new OperationStat(0,0);
     long numberOfOtherOperations;
     long numberOfEvents;
 
-    public void writeData(DataOutput out) throws IOException {
+    void writeDataInternal(DataOutput out) throws IOException {
         puts.writeData(out);
         gets.writeData(out);
         removes.writeData(out);
         out.writeLong(numberOfOtherOperations);
         out.writeLong(numberOfEvents);
-        out.writeLong(periodStart);
-        out.writeLong(periodEnd);
     }
 
-    public void readData(DataInput in) throws IOException {
+    void readDataInternal(DataInput in) throws IOException {
         puts = new OperationStat();
         puts.readData(in);
         gets = new OperationStat();
@@ -53,20 +48,10 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
         removes.readData(in);
         numberOfOtherOperations = in.readLong();
         numberOfEvents = in.readLong();
-        periodStart = in.readLong();
-        periodEnd = in.readLong();
     }
 
     public long total() {
         return puts.count + gets.count + removes.count + numberOfOtherOperations;
-    }
-
-    public long getPeriodStart() {
-        return periodStart;
-    }
-
-    public long getPeriodEnd() {
-        return periodEnd;
     }
 
     public long getNumberOfPuts() {
@@ -110,42 +95,5 @@ public class MapOperationStatsImpl implements LocalMapOperationStats {
                 "\n, others: " + numberOfOtherOperations +
                 "\n, received events: " + numberOfEvents +
                 "}";
-    }
-
-    class OperationStat implements DataSerializable {
-        long count;
-        long totalLatency;
-
-        public OperationStat() {
-            this(0, 0);
-        }
-
-        public OperationStat(long c, long l) {
-            this.count = c;
-            this.totalLatency = l;
-        }
-
-        @Override
-        public String toString() {
-            return "OperationStat{" +
-                    "count=" + count +
-                    ", averageLatency=" + ((count == 0) ? 0 : totalLatency / count) +
-                    '}';
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeLong(count);
-            out.writeLong(totalLatency);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            count = in.readLong();
-            totalLatency = in.readLong();
-        }
-
-        public void add(long c, long l) {
-            count += c;
-            totalLatency += l;
-        }
     }
 }

@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.impl.monitor.LocalTopicStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 

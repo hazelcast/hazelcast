@@ -21,6 +21,7 @@ import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.InstanceDestroyedException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.Prefix;
+import com.hazelcast.monitor.LocalCountDownLatchStats;
 import com.hazelcast.nio.Address;
 
 import java.util.concurrent.TimeUnit;
@@ -94,4 +95,8 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
     public String getName() {
         return name.substring(Prefix.COUNT_DOWN_LATCH.length());
     }
+
+	public LocalCountDownLatchStats getLocalCountDownLatchStats() {
+		throw new UnsupportedOperationException();
+	}
 }

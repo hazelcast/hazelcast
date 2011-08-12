@@ -15,24 +15,24 @@
  *
  */
 
-package com.hazelcast.impl;
-
-import com.hazelcast.monitor.LocalQueueOperationStats;
-import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.DataSerializable;
+package com.hazelcast.impl.monitor;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class LocalQueueStatsImpl implements LocalQueueStats, DataSerializable {
+import com.hazelcast.monitor.LocalQueueOperationStats;
+import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.nio.DataSerializable;
+
+public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOperationStats> 
+	implements LocalQueueStats, DataSerializable {
+	
     private int ownedItemCount;
     private int backupItemCount;
     private long minAge;
     private long maxAge;
     private long aveAge;
-
-    private LocalQueueOperationStats queueOperationStats;
 
     public LocalQueueStatsImpl() {
     }
@@ -45,24 +45,26 @@ public class LocalQueueStatsImpl implements LocalQueueStats, DataSerializable {
         this.aveAge = aveAge;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    void writeDataInternal(DataOutput out) throws IOException {
         out.writeInt(ownedItemCount);
         out.writeInt(backupItemCount);
         out.writeLong(minAge);
         out.writeLong(maxAge);
         out.writeLong(aveAge);
-        queueOperationStats.writeData(out);
     }
 
-    public void readData(DataInput in) throws IOException {
+    void readDataInternal(DataInput in) throws IOException {
         ownedItemCount = in.readInt();
         backupItemCount = in.readInt();
         minAge = in.readLong();
         maxAge = in.readLong();
         aveAge = in.readLong();
-        queueOperationStats = new LocalQueueOperationStatsImpl();
-        queueOperationStats.readData(in);
     }
+    
+    @Override
+	LocalQueueOperationStats newOperationStatsInstance() {
+		return new LocalQueueOperationStatsImpl();
+	}
 
     public int getOwnedItemCount() {
         return ownedItemCount;
@@ -84,14 +86,6 @@ public class LocalQueueStatsImpl implements LocalQueueStats, DataSerializable {
         return aveAge;
     }
 
-    public LocalQueueOperationStats getOperationStats() {
-        return queueOperationStats;
-    }
-
-    public void setOperationStats(LocalQueueOperationStats operationStats) {
-        queueOperationStats = operationStats;
-    }
-
     @Override
     public String toString() {
         return "LocalQueueStatsImpl{" +
@@ -100,7 +94,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats, DataSerializable {
                 ", backupItemCount=" + backupItemCount +
                 ", minAge=" + minAge +
                 ", maxAge=" + maxAge +
-                ", queueOperationStats=" + queueOperationStats +
+                ", queueOperationStats=" + operationStats +
                 '}';
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.base.ScheduledAction;
+import com.hazelcast.impl.monitor.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;

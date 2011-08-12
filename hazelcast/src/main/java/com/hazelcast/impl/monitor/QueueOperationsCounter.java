@@ -15,39 +15,32 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.monitor;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.hazelcast.monitor.LocalQueueOperationStats;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
-public class QueueOperationsCounter {
+public class QueueOperationsCounter extends OperationsCounterSupport<LocalQueueOperationStats> {
+	
+	private static final LocalQueueOperationStats empty = new LocalQueueOperationStatsImpl();
+	
     private AtomicLong offers = new AtomicLong();
     private AtomicLong rejectedOffers = new AtomicLong();
     private AtomicLong polls = new AtomicLong();
     private AtomicLong emptyPolls = new AtomicLong();
     private AtomicLong others = new AtomicLong();
     private AtomicLong events = new AtomicLong();
-    private long startTime = now();
-    private long endTime = Long.MAX_VALUE;
-    private transient LocalQueueOperationStats published = null;
-    private List<QueueOperationsCounter> listOfSubStats = new ArrayList<QueueOperationsCounter>();
-    final private Object lock = new Object();
-    final private LocalQueueOperationStats empty = new LocalQueueOperationStatsImpl();
-
-    final private long interval;
 
     public QueueOperationsCounter() {
-        this(5000);
+    	super();
     }
 
     public QueueOperationsCounter(long interval) {
-        this.interval = interval;
+        super(interval);
     }
 
-    private QueueOperationsCounter getAndReset() {
+    QueueOperationsCounter getAndReset() {
         QueueOperationsCounter newOne = new QueueOperationsCounter();
         newOne.offers.set(offers.getAndSet(0));
         newOne.polls.set(polls.getAndSet(0));
@@ -59,20 +52,6 @@ public class QueueOperationsCounter {
         newOne.endTime = now();
         this.startTime = newOne.endTime;
         return newOne;
-    }
-
-    public LocalQueueOperationStats getPublishedStats() {
-        if (published == null) {
-            synchronized (lock) {
-                if (published == null) {
-                    published = getThis();
-                }
-            }
-        }
-        if (published.getPeriodEnd() < now() - interval) {
-            return empty;
-        }
-        return published;
     }
 
     public void incrementOffers() {
@@ -105,31 +84,11 @@ public class QueueOperationsCounter {
         publishSubResult();
     }
 
-    long now() {
-        return System.currentTimeMillis();
-    }
-
-    private void publishSubResult() {
-        long subInterval = interval / 5;
-        if (now() - startTime > subInterval) {
-            synchronized (lock) {
-                if (now() - startTime >= subInterval) {
-                    QueueOperationsCounter copy = getAndReset();
-                    if (listOfSubStats.size() == 5) {
-                        listOfSubStats.remove(0);
-                    }
-                    listOfSubStats.add(copy);
-                    this.published = aggregate(listOfSubStats);
-                }
-            }
-        }
-    }
-
-    private LocalQueueOperationStats aggregate(List<QueueOperationsCounter> list) {
+    LocalQueueOperationStats aggregateSubCounterStats() {
         LocalQueueOperationStatsImpl stats = new LocalQueueOperationStatsImpl();
-        stats.periodStart = list.get(0).startTime;
-        for (int i = 0; i < list.size(); i++) {
-            QueueOperationsCounter sub = list.get(i);
+        stats.periodStart = ((QueueOperationsCounter) listOfSubCounters.get(0)).startTime;
+        for (int i = 0; i < listOfSubCounters.size(); i++) {
+            QueueOperationsCounter sub = (QueueOperationsCounter) listOfSubCounters.get(i);
             stats.numberOfPolls += sub.polls.get();
             stats.numberOfOffers += sub.offers.get();
             stats.numberOfRejectedOffers += sub.rejectedOffers.get();
@@ -141,7 +100,7 @@ public class QueueOperationsCounter {
         return stats;
     }
 
-    private LocalQueueOperationStats getThis() {
+    LocalQueueOperationStats getThis() {
         LocalQueueOperationStatsImpl stats = new LocalQueueOperationStatsImpl();
         stats.periodStart = this.startTime;
         stats.numberOfPolls = this.polls.get();
@@ -151,5 +110,9 @@ public class QueueOperationsCounter {
         stats.numberOfEvents = this.events.get();
         stats.periodEnd = now();
         return stats;
+    }
+    
+    LocalQueueOperationStats getEmpty() {
+    	return empty;
     }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.InstanceDestroyedException;
 import com.hazelcast.core.Prefix;
+import com.hazelcast.monitor.LocalSemaphoreStats;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -185,4 +186,8 @@ public class SemaphoreClientProxy implements ISemaphore {
             }
         };
     }
+
+	public LocalSemaphoreStats getLocalSemaphoreStats() {
+		throw new UnsupportedOperationException();
+	}
 }

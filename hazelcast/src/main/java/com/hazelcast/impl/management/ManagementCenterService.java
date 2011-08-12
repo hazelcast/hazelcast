@@ -20,6 +20,13 @@ package com.hazelcast.impl.management;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.*;
+import com.hazelcast.impl.monitor.LocalAtomicNumberStatsImpl;
+import com.hazelcast.impl.monitor.LocalCountDownLatchStatsImpl;
+import com.hazelcast.impl.monitor.LocalMapStatsImpl;
+import com.hazelcast.impl.monitor.LocalQueueStatsImpl;
+import com.hazelcast.impl.monitor.LocalSemaphoreStatsImpl;
+import com.hazelcast.impl.monitor.LocalTopicStatsImpl;
+import com.hazelcast.impl.monitor.MemberStateImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.TimedClusterState;
@@ -61,7 +68,7 @@ public class ManagementCenterService implements MembershipListener {
     private final StatsInstanceFilter instanceFilterMap;
     private final StatsInstanceFilter instanceFilterQueue;
     private final StatsInstanceFilter instanceFilterTopic;
-    private final StatsInstanceFilter instanceFilterAtomicLong;
+    private final StatsInstanceFilter instanceFilterAtomicNumber;
     private final StatsInstanceFilter instanceFilterCountDownLatch;
     private final StatsInstanceFilter instanceFilterSemaphore;
 
@@ -70,7 +77,7 @@ public class ManagementCenterService implements MembershipListener {
         this.instanceFilterMap = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_MAP_EXCLUDES.getString());
         this.instanceFilterQueue = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_QUEUE_EXCLUDES.getString());
         this.instanceFilterTopic = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_TOPIC_EXCLUDES.getString());
-        this.instanceFilterAtomicLong = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_ATOMIC_LONG_EXCLUDES.getString());
+        this.instanceFilterAtomicNumber = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_ATOMIC_NUMBER_EXCLUDES.getString());
         this.instanceFilterCountDownLatch = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_COUNT_DOWN_LATCH_EXCLUDES.getString());
         this.instanceFilterSemaphore = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_SEMAPHORE_EXCLUDES.getString());
         thisAddress = ((MemberImpl) factory.getCluster().getLocalMember()).getAddress();
@@ -325,8 +332,8 @@ public class ManagementCenterService implements MembershipListener {
                         }
                     } else if (type.isAtomicNumber()) {
                         AtomicNumberProxy atomicLongProxy = (AtomicNumberProxy) proxyObject;
-                        if (instanceFilterQueue.visible(atomicLongProxy.getName())) {
-                            memberState.putLocalAtomicNumberStats(atomicLongProxy.getName(), (LocalAtomicNumberStatsImpl) atomicLongProxy.getLocalAtomicLongStats());
+                        if (instanceFilterAtomicNumber.visible(atomicLongProxy.getName())) {
+                            memberState.putLocalAtomicNumberStats(atomicLongProxy.getName(), (LocalAtomicNumberStatsImpl) atomicLongProxy.getLocalAtomicNumberStats());
                             count++;
                         }
                     } else if (type.isCountDownLatch()) {
@@ -341,7 +348,7 @@ public class ManagementCenterService implements MembershipListener {
                             memberState.putLocalSemaphoreStats(semaphoreProxy.getName(), (LocalSemaphoreStatsImpl) semaphoreProxy.getLocalSemaphoreStats());
                             count++;
                         }
-                    }
+                    } 
                 }
                 it.remove();
             }
@@ -355,9 +362,9 @@ public class ManagementCenterService implements MembershipListener {
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.QUEUE);
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.TOPIC);
         // uncomment when client changes are made
-        ///collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.ATOMIC_LONG);
-        ///collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.COUNT_DOWN_LATCH);
-        ///collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.SEMAPHORE);
+        // collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.ATOMIC_NUMBER);
+        // collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.COUNT_DOWN_LATCH);
+        // collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.SEMAPHORE);
         return setLongInstanceNames;
     }
 
@@ -389,7 +396,7 @@ public class ManagementCenterService implements MembershipListener {
                         }
                     } else if (type.isAtomicNumber()) {
                         AtomicNumberProxy atomicLongProxy = (AtomicNumberProxy) proxyObject;
-                        if (instanceFilterAtomicLong.visible(atomicLongProxy.getName())) {
+                        if (instanceFilterAtomicNumber.visible(atomicLongProxy.getName())) {
                             setLongInstanceNames.add(atomicLongProxy.getLongName());
                             count++;
                         }

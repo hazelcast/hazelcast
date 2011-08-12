@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.ILock;
 import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.monitor.LocalLockStats;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -88,4 +89,8 @@ public class LockClientProxy implements ILock {
     public int hashCode() {
         return getId().hashCode();
     }
+
+	public LocalLockStats getLocalLockStats() {
+		throw new UnsupportedOperationException();
+	}
 }

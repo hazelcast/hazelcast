@@ -15,18 +15,17 @@
  *
  */
 
-package com.hazelcast.impl;
-
-import com.hazelcast.monitor.LocalMapOperationStats;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.DataSerializable;
+package com.hazelcast.impl.monitor;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
+import com.hazelcast.monitor.LocalMapOperationStats;
+import com.hazelcast.monitor.LocalMapStats;
+
+public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperationStats> implements LocalMapStats {
     private final AtomicLong lastAccessTime = new AtomicLong();
     private final AtomicLong hits = new AtomicLong();
     private long ownedEntryCount;
@@ -41,7 +40,6 @@ public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
     private long lockedEntryCount;
     private long lockWaitCount;
     private long dirtyEntryCount;
-    private LocalMapOperationStats operationStats;
 
     enum Op {
         CREATE,
@@ -57,7 +55,7 @@ public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
     public LocalMapStatsImpl() {
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    void writeDataInternal(DataOutput out) throws IOException {
         out.writeLong(lastAccessTime.get());
         out.writeLong(hits.get());
         out.writeLong(ownedEntryCount);
@@ -72,10 +70,9 @@ public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
         out.writeLong(lockedEntryCount);
         out.writeLong(lockWaitCount);
         out.writeLong(dirtyEntryCount);
-        operationStats.writeData(out);
     }
 
-    public void readData(DataInput in) throws IOException {
+    void readDataInternal(DataInput in) throws IOException {
         lastAccessTime.set(in.readLong());
         hits.set(in.readLong());
         ownedEntryCount = in.readLong();
@@ -90,9 +87,12 @@ public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
         lockedEntryCount = in.readLong();
         lockWaitCount = in.readLong();
         dirtyEntryCount = in.readLong();
-        operationStats = new MapOperationStatsImpl();
-        operationStats.readData(in);
     }
+    
+    @Override
+	LocalMapOperationStats newOperationStatsInstance() {
+		return new LocalMapOperationStatsImpl();
+	}
 
     public long getOwnedEntryCount() {
         return ownedEntryCount;
@@ -196,14 +196,6 @@ public class LocalMapStatsImpl implements LocalMapStats, DataSerializable {
 
     public void setLockWaitCount(long lockWaitCount) {
         this.lockWaitCount = lockWaitCount;
-    }
-
-    public LocalMapOperationStats getOperationStats() {
-        return operationStats;
-    }
-
-    public void setOperationStats(LocalMapOperationStats operationStats) {
-        this.operationStats = operationStats;
     }
 
     public long getDirtyEntryCount() {

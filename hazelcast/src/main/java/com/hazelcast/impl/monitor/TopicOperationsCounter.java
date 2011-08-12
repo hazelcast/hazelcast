@@ -15,35 +15,27 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.monitor;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.hazelcast.monitor.LocalTopicOperationStats;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
-public class TopicOperationsCounter {
+public class TopicOperationsCounter extends OperationsCounterSupport<LocalTopicOperationStats> {
+	private static final LocalTopicOperationStats empty = new LocalTopicOperationStatsImpl();
+	
     private AtomicLong messagePublishes = new AtomicLong();
     private AtomicLong receivedMessages = new AtomicLong();
-    private long startTime = now();
-    private long endTime = Long.MAX_VALUE;
-    private transient LocalTopicOperationStats published = null;
-    private List<TopicOperationsCounter> listOfSubStats = new ArrayList<TopicOperationsCounter>();
-    final private Object lock = new Object();
-    final private LocalTopicOperationStats empty = new LocalTopicOperationStatsImpl();
-
-    final private long interval;
 
     public TopicOperationsCounter() {
-        this(5000);
+        super();
     }
 
     public TopicOperationsCounter(long interval) {
-        this.interval = interval;
+        super(interval);
     }
 
-    private TopicOperationsCounter getAndReset() {
+    TopicOperationsCounter getAndReset() {
         TopicOperationsCounter newOne = new TopicOperationsCounter();
         newOne.messagePublishes.set(messagePublishes.getAndSet(0));
         newOne.receivedMessages.set(receivedMessages.getAndSet(0));
@@ -51,20 +43,6 @@ public class TopicOperationsCounter {
         newOne.endTime = now();
         this.startTime = newOne.endTime;
         return newOne;
-    }
-
-    public LocalTopicOperationStats getPublishedStats() {
-        if (published == null) {
-            synchronized (lock) {
-                if (published == null) {
-                    published = getThis();
-                }
-            }
-        }
-        if (published.getPeriodEnd() < now() - interval) {
-            return empty;
-        }
-        return published;
     }
 
     public void incrementPublishes() {
@@ -77,31 +55,11 @@ public class TopicOperationsCounter {
         publishSubResult();
     }
 
-    long now() {
-        return System.currentTimeMillis();
-    }
-
-    private void publishSubResult() {
-        long subInterval = interval / 5;
-        if (now() - startTime > subInterval) {
-            synchronized (lock) {
-                if (now() - startTime >= subInterval) {
-                    TopicOperationsCounter copy = getAndReset();
-                    if (listOfSubStats.size() == 5) {
-                        listOfSubStats.remove(0);
-                    }
-                    listOfSubStats.add(copy);
-                    this.published = aggregate(listOfSubStats);
-                }
-            }
-        }
-    }
-
-    private LocalTopicOperationStats aggregate(List<TopicOperationsCounter> list) {
+    LocalTopicOperationStats aggregateSubCounterStats() {
         LocalTopicOperationStatsImpl stats = new LocalTopicOperationStatsImpl();
-        stats.periodStart = list.get(0).startTime;
-        for (int i = 0; i < list.size(); i++) {
-            TopicOperationsCounter sub = list.get(i);
+        stats.periodStart = ((TopicOperationsCounter) listOfSubCounters.get(0)).startTime;
+        for (int i = 0; i < listOfSubCounters.size(); i++) {
+            TopicOperationsCounter sub = (TopicOperationsCounter) listOfSubCounters.get(i);
             stats.numberOfPublishes += sub.messagePublishes.get();
             stats.numberOfReceives += sub.receivedMessages.get();
             stats.periodEnd = sub.endTime;
@@ -109,12 +67,16 @@ public class TopicOperationsCounter {
         return stats;
     }
 
-    private LocalTopicOperationStats getThis() {
+    LocalTopicOperationStats getThis() {
         LocalTopicOperationStatsImpl stats = new LocalTopicOperationStatsImpl();
         stats.periodStart = this.startTime;
         stats.numberOfPublishes = this.messagePublishes.get();
         stats.numberOfReceives = this.receivedMessages.get();
         stats.periodEnd = now();
         return stats;
+    }
+    
+    LocalTopicOperationStats getEmpty() {
+    	return empty;
     }
 }

@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.IQueue;
+import com.hazelcast.impl.monitor.QueueOperationsCounter;
 
 public interface QProxy<E> extends IQueue<E> {
     QueueOperationsCounter getQueueOperationCounter();

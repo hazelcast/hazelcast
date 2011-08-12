@@ -17,6 +17,6 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalTopicStats {
-    public LocalTopicOperationStats getOperationStats();
+public interface LocalTopicStats extends LocalInstanceStats<LocalTopicOperationStats> {
+
 }

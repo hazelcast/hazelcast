@@ -19,14 +19,12 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.Instance;
-import com.hazelcast.monitor.LocalAtomicNumberStats;
+import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 
 public interface AtomicNumberProxy extends AtomicNumber, Instance {
     public static final Data DATA_LONG_ZERO = IOUtil.toData(0L);
-
-    LocalAtomicNumberStats getLocalAtomicLongStats();
 
     AtomicNumberOperationsCounter getOperationsCounter();
 

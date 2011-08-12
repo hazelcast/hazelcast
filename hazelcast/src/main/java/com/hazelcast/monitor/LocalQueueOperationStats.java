@@ -17,27 +17,12 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.nio.DataSerializable;
-
 /**
  * Local Queue Operation Statistics returns number of queue operations in bounded period. The period
  * has start and end times. Given the number of operations in that period, one can calculate the number of
  * operations per second.
  */
-public interface LocalQueueOperationStats extends DataSerializable {
-    /**
-     * Gets the start time of the period in milliseconds.
-     *
-     * @return start time in milliseconds.
-     */
-    public long getPeriodStart();
-
-    /**
-     * Gets the end time of the period in milliseconds.
-     *
-     * @return end time in milliseconds.
-     */
-    public long getPeriodEnd();
+public interface LocalQueueOperationStats extends LocalInstanceOperationStats {
 
     /**
      * Returns the number of offer/put/add operations.

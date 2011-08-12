@@ -26,6 +26,20 @@ import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.impl.management.ManagementCenterService;
+import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
+import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
+import com.hazelcast.impl.monitor.LocalAtomicNumberStatsImpl;
+import com.hazelcast.impl.monitor.LocalCountDownLatchStatsImpl;
+import com.hazelcast.impl.monitor.LocalLockStatsImpl;
+import com.hazelcast.impl.monitor.LocalMapStatsImpl;
+import com.hazelcast.impl.monitor.LocalQueueStatsImpl;
+import com.hazelcast.impl.monitor.LocalSemaphoreStatsImpl;
+import com.hazelcast.impl.monitor.LocalTopicStatsImpl;
+import com.hazelcast.impl.monitor.LockOperationsCounter;
+import com.hazelcast.impl.monitor.MapOperationsCounter;
+import com.hazelcast.impl.monitor.QueueOperationsCounter;
+import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
+import com.hazelcast.impl.monitor.TopicOperationsCounter;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -676,7 +690,7 @@ public class FactoryImpl implements HazelcastInstance {
             } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
                 proxy = new CountDownLatchProxyImpl(name, this);
             } else if (name.equals("lock")) {
-                proxy = new LockProxy(this, proxyKey.key);
+                proxy = new LockProxyImpl(this, proxyKey.key);
             }
             final HazelcastInstanceAwareInstance anotherProxy = proxies.putIfAbsent(proxyKey, proxy);
             if (anotherProxy != null) {
@@ -727,16 +741,16 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static class LockProxy extends SerializationHelper implements HazelcastInstanceAwareInstance, ILock, DataSerializable {
+    public static class LockProxyImpl extends SerializationHelper implements HazelcastInstanceAwareInstance, LockProxy, DataSerializable {
 
         private Object key = null;
-        private transient ILock base = null;
+        private transient LockProxy base = null;
         private transient FactoryImpl factory = null;
 
-        public LockProxy() {
+        public LockProxyImpl() {
         }
 
-        public LockProxy(HazelcastInstance hazelcastInstance, Object key) {
+        public LockProxyImpl(HazelcastInstance hazelcastInstance, Object key) {
             super();
             this.key = key;
             setHazelcastInstance(hazelcastInstance);
@@ -750,7 +764,7 @@ public class FactoryImpl implements HazelcastInstance {
         private void ensure() {
             factory.initialChecks();
             if (base == null) {
-                base = factory.getLock(key);
+                base = (LockProxy) factory.getLock(key);
             }
         }
 
@@ -763,7 +777,7 @@ public class FactoryImpl implements HazelcastInstance {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            LockProxy lockProxy = (LockProxy) o;
+            LockProxyImpl lockProxy = (LockProxyImpl) o;
             return !(key != null ? !key.equals(lockProxy.key) : lockProxy.key != null);
         }
 
@@ -829,10 +843,23 @@ public class FactoryImpl implements HazelcastInstance {
             ensure();
             return base.getId();
         }
+        
+        public LocalLockStats getLocalLockStats() {
+        	ensure();
+			return base.getLocalLockStats();
+		}
 
-        private class LockProxyBase implements ILock {
+		public LockOperationsCounter getLockOperationCounter() {
+			ensure();
+			return base.getLockOperationCounter();
+		}
+
+        private class LockProxyBase implements LockProxy {
+        	private LockOperationsCounter lockOperationsCounter = new LockOperationsCounter(); 
+        	
             public void lock() {
                 factory.locksMapProxy.lock(key);
+                lockOperationsCounter.incrementLocks();
             }
 
             public void lockInterruptibly() throws InterruptedException {
@@ -844,19 +871,31 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean tryLock() {
-                return factory.locksMapProxy.tryLock(key);
+                if(factory.locksMapProxy.tryLock(key)) {
+                	lockOperationsCounter.incrementLocks();
+                	return true;
+                }
+                lockOperationsCounter.incrementFailedLocks();
+                return false;
             }
 
             public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
                 try {
-                    return factory.locksMapProxy.tryLock(key, time, unit);
+                    if(factory.locksMapProxy.tryLock(key, time, unit)) {
+                    	lockOperationsCounter.incrementLocks();
+                    	return true;
+                    }
                 } catch (RuntimeInterruptedException e) {
+                	lockOperationsCounter.incrementFailedLocks();
                     throw new InterruptedException();
                 }
+                lockOperationsCounter.incrementFailedLocks();
+                return false;
             }
 
             public void unlock() {
                 factory.locksMapProxy.unlock(key);
+                lockOperationsCounter.incrementUnlocks();
             }
 
             public void destroy() {
@@ -874,6 +913,16 @@ public class FactoryImpl implements HazelcastInstance {
             public Object getId() {
                 return new ProxyKey("lock", key);
             }
+
+			public LocalLockStats getLocalLockStats() {
+				LocalLockStatsImpl localLockStats = new LocalLockStatsImpl();
+				localLockStats.setOperationStats(lockOperationsCounter.getPublishedStats());
+                return localLockStats;
+			}
+
+			public LockOperationsCounter getLockOperationCounter() {
+				return lockOperationsCounter;
+			}
         }
     }
 
@@ -1115,7 +1164,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public LocalTopicStats getLocalTopicStats() {
                 LocalTopicStatsImpl localTopicStats = topicManager.getTopicInstance(name).getTopicStats();
-                localTopicStats.setOperationsStats(topicOperationsCounter.getPublishedStats());
+                localTopicStats.setOperationStats(topicOperationsCounter.getPublishedStats());
                 return localTopicStats;
             }
 
@@ -1241,9 +1290,9 @@ public class FactoryImpl implements HazelcastInstance {
             return base.getOperationsCounter();
         }
 
-        public LocalAtomicNumberStats getLocalAtomicLongStats() {
+        public LocalAtomicNumberStats getLocalAtomicNumberStats() {
             ensure();
-            return base.getLocalAtomicLongStats();
+            return base.getLocalAtomicNumberStats();
         }
 
         @Deprecated
@@ -1307,7 +1356,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public InstanceType getInstanceType() {
-                return InstanceType.ATOMIC_LONG;
+                return InstanceType.ATOMIC_NUMBER;
             }
 
             public void destroy() {
@@ -1319,9 +1368,9 @@ public class FactoryImpl implements HazelcastInstance {
                 return operationsCounter;
             }
 
-            public LocalAtomicNumberStats getLocalAtomicLongStats() {
+            public LocalAtomicNumberStats getLocalAtomicNumberStats() {
                 LocalAtomicNumberStatsImpl localAtomicStats = new LocalAtomicNumberStatsImpl();
-                localAtomicStats.setOperationsStats(operationsCounter.getPublishedStats());
+                localAtomicStats.setOperationStats(operationsCounter.getPublishedStats());
                 return localAtomicStats;
             }
 
@@ -1534,7 +1583,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public LocalCountDownLatchStats getLocalCountDownLatchStats() {
                 LocalCountDownLatchStatsImpl localCountDownLatchStats = new LocalCountDownLatchStatsImpl();
-                localCountDownLatchStats.setOperationsStats(operationsCounter.getPublishedStats());
+                localCountDownLatchStats.setOperationStats(operationsCounter.getPublishedStats());
                 return localCountDownLatchStats;
             }
 
@@ -1984,7 +2033,7 @@ public class FactoryImpl implements HazelcastInstance {
 
             public LocalSemaphoreStats getLocalSemaphoreStats() {
                 LocalSemaphoreStatsImpl localSemaphoreStats = new LocalSemaphoreStatsImpl();
-                localSemaphoreStats.setOperationsStats(operationsCounter.getPublishedStats());
+                localSemaphoreStats.setOperationStats(operationsCounter.getPublishedStats());
                 return localSemaphoreStats;
             }
 

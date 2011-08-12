@@ -40,10 +40,7 @@ public interface ClusterStateView extends DataSerializable {
 
     Set<String> getIdGenerators();
 
-    @Deprecated
     Set<String> getAtomicNumbers();
-
-    Set<String> getAtomicLongs();
 
     Set<String> getCountDownLatches();
 

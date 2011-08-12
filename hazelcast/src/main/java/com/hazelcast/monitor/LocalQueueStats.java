@@ -20,7 +20,7 @@ package com.hazelcast.monitor;
 /**
  * Local queue statistics.
  */
-public interface LocalQueueStats {
+public interface LocalQueueStats extends LocalInstanceStats<LocalQueueOperationStats> {
     /**
      * Returns the number of owned items in this member.
      *
@@ -56,10 +56,4 @@ public interface LocalQueueStats {
      */
     long getAveAge();
 
-    /**
-     * Returns the operation stats for this member.
-     *
-     * @return operation stats
-     */
-    LocalQueueOperationStats getOperationStats();
 }

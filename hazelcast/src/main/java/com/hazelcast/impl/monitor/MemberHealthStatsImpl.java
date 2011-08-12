@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.monitor;
 
 import com.hazelcast.monitor.MemberHealthStats;
 import com.hazelcast.nio.DataSerializable;

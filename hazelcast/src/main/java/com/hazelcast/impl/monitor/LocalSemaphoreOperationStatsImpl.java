@@ -15,18 +15,17 @@
  *
  */
 
-package com.hazelcast.impl;
-
-import com.hazelcast.monitor.LocalSemaphoreOperationStats;
-import com.hazelcast.nio.DataSerializable;
+package com.hazelcast.impl.monitor;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class LocalSemaphoreOperationStatsImpl implements LocalSemaphoreOperationStats {
-    long periodStart;
-    long periodEnd;
+import com.hazelcast.monitor.LocalSemaphoreOperationStats;
+
+public class LocalSemaphoreOperationStatsImpl extends LocalOperationStatsSupport 
+	implements LocalSemaphoreOperationStats {
+	
     OperationStat acquires = new OperationStat(0,0);
     OperationStat nonAcquires = new OperationStat(0,0);
     long numberOfRejectedAcquires;
@@ -36,7 +35,7 @@ public class LocalSemaphoreOperationStatsImpl implements LocalSemaphoreOperation
     long numberOfPermitsDetached;
     long numberOfPermitsReduced;
 
-    public void writeData(DataOutput out) throws IOException {
+    void writeDataInternal(DataOutput out) throws IOException {
         acquires.writeData(out);
         nonAcquires.writeData(out);
         out.writeLong(numberOfRejectedAcquires);
@@ -45,11 +44,9 @@ public class LocalSemaphoreOperationStatsImpl implements LocalSemaphoreOperation
         out.writeLong(numberOfPermitsAttached);
         out.writeLong(numberOfPermitsDetached);
         out.writeLong(numberOfPermitsReduced);
-        out.writeLong(periodStart);
-        out.writeLong(periodEnd);
     }
 
-    public void readData(DataInput in) throws IOException {
+    void readDataInternal(DataInput in) throws IOException {
         (acquires = new OperationStat()).readData(in);
         (nonAcquires = new OperationStat()).readData(in);
         numberOfRejectedAcquires = in.readLong();
@@ -58,20 +55,10 @@ public class LocalSemaphoreOperationStatsImpl implements LocalSemaphoreOperation
         numberOfPermitsAttached = in.readLong();
         numberOfPermitsDetached = in.readLong();
         numberOfPermitsReduced = in.readLong();
-        periodStart = in.readLong();
-        periodEnd = in.readLong();
     }
 
     public long total() {
           return acquires.count + nonAcquires.count;
-    }
-
-    public long getPeriodStart() {
-        return periodStart;
-    }
-
-    public long getPeriodEnd() {
-        return periodEnd;
     }
 
     public long getNumberOfAcquireOps() {
@@ -126,42 +113,5 @@ public class LocalSemaphoreOperationStatsImpl implements LocalSemaphoreOperation
                 ", permits detached: " + numberOfPermitsDetached +
                 ", permits reduced: " + numberOfPermitsReduced +
                 "}";
-    }
-
-    class OperationStat implements DataSerializable {
-        long count;
-        long totalLatency;
-
-        public OperationStat() {
-            this(0, 0);
-        }
-
-        public OperationStat(long c, long l) {
-            this.count = c;
-            this.totalLatency = l;
-        }
-
-        @Override
-        public String toString() {
-            return "OperationStat{" +
-                    "count=" + count +
-                    ", averageLatency=" + ((count == 0) ? 0 : totalLatency / count) +
-                    '}';
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeLong(count);
-            out.writeLong(totalLatency);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            count = in.readLong();
-            totalLatency = in.readLong();
-        }
-
-        public void add(long c, long l) {
-            count += c;
-            totalLatency += l;
-        }
     }
 }

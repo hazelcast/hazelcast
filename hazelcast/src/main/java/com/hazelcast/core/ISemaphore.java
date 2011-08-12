@@ -20,6 +20,8 @@ package com.hazelcast.core;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import com.hazelcast.monitor.LocalSemaphoreStats;
+
 
 /**
  * ISemaphore is a backed-up distributed implementation of {@link java.util.concurrent.Semaphore java.util.concurrent.Semaphore}.
@@ -570,4 +572,6 @@ public interface ISemaphore extends Instance {
      * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
      */
     public boolean tryAcquireAttach(int permits, long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException;
+    
+    LocalSemaphoreStats getLocalSemaphoreStats();
 }

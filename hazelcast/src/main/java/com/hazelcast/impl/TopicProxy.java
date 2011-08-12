@@ -19,11 +19,9 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Instance;
-import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.impl.monitor.TopicOperationsCounter;
 
 public interface TopicProxy extends ITopic, Instance {
-
-    LocalTopicStats getLocalTopicStats();
 
     TopicOperationsCounter getTopicOperationCounter();
 

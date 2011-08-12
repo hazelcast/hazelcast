@@ -62,7 +62,7 @@ public class GroupProperties {
     public static final String PROP_LOG_STATE = "hazelcast.log.state";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
     public static final String PROP_ENABLE_JMX_DETAILED = "hazelcast.jmx.detailed";
-    public static final String PROP_MC_ATOMIC_LONG_EXCLUDES = "hazelcast.mc.atomicnumber.excludes";
+    public static final String PROP_MC_ATOMIC_NUMBER_EXCLUDES = "hazelcast.mc.atomicnumber.excludes";
     public static final String PROP_MC_COUNT_DOWN_LATCH_EXCLUDES = "hazelcast.mc.countdownlatch.excludes";
     public static final String PROP_MC_MAP_EXCLUDES = "hazelcast.mc.map.excludes";
     public static final String PROP_MC_QUEUE_EXCLUDES = "hazelcast.mc.queue.excludes";
@@ -151,7 +151,7 @@ public class GroupProperties {
 
     public final GroupProperty ENABLE_JMX_DETAILED;
 
-    public final GroupProperty MC_ATOMIC_LONG_EXCLUDES;
+    public final GroupProperty MC_ATOMIC_NUMBER_EXCLUDES;
 
     public final GroupProperty MC_COUNT_DOWN_LATCH_EXCLUDES;
 
@@ -202,7 +202,7 @@ public class GroupProperties {
         LOG_STATE = new GroupProperty(config, PROP_LOG_STATE, "false");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
         ENABLE_JMX_DETAILED = new GroupProperty(config, PROP_ENABLE_JMX_DETAILED, "false");
-        MC_ATOMIC_LONG_EXCLUDES = new GroupProperty(config, PROP_MC_ATOMIC_LONG_EXCLUDES, null);
+        MC_ATOMIC_NUMBER_EXCLUDES = new GroupProperty(config, PROP_MC_ATOMIC_NUMBER_EXCLUDES, null);
         MC_COUNT_DOWN_LATCH_EXCLUDES = new GroupProperty(config, PROP_MC_COUNT_DOWN_LATCH_EXCLUDES, null);
         MC_MAP_EXCLUDES = new GroupProperty(config, PROP_MC_MAP_EXCLUDES, null);
         MC_QUEUE_EXCLUDES = new GroupProperty(config, PROP_MC_QUEUE_EXCLUDES, null);

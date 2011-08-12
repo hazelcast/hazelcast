@@ -28,7 +28,7 @@ package com.hazelcast.monitor;
  * Hazelcast will mark it as removed and erase it couple of seconds later for
  * correct versioning of backups.
  */
-public interface LocalMapStats {
+public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats> {
 
     /**
      * Returns the number of entries owned by this member.
@@ -134,11 +134,4 @@ public interface LocalMapStats {
      * @return
      */
     long getDirtyEntryCount();
-
-    /**
-     * Returns the Operation Statistics, like number of puts, gets and etc.
-     *
-     * @return
-     */
-    LocalMapOperationStats getOperationStats();
 }

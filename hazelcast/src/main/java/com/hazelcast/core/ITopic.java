@@ -17,6 +17,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.monitor.LocalTopicStats;
+
 public interface ITopic<E> extends Instance {
 
     String getName();
@@ -26,4 +28,6 @@ public interface ITopic<E> extends Instance {
     void addMessageListener(MessageListener<E> listener);
 
     void removeMessageListener(MessageListener<E> listener);
+    
+    LocalTopicStats getLocalTopicStats();
 }

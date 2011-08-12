@@ -15,40 +15,28 @@
  *
  */
 
-package com.hazelcast.impl;
-
-import com.hazelcast.monitor.LocalTopicOperationStats;
+package com.hazelcast.impl.monitor;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class LocalTopicOperationStatsImpl implements LocalTopicOperationStats {
-    long periodStart;
-    long periodEnd;
+import com.hazelcast.monitor.LocalTopicOperationStats;
+
+public class LocalTopicOperationStatsImpl extends LocalOperationStatsSupport
+	implements LocalTopicOperationStats {
+	
     long numberOfPublishes;
     long numberOfReceives;
 
-    public void writeData(DataOutput out) throws IOException {
-        out.writeLong(periodStart);
-        out.writeLong(periodEnd);
+    void writeDataInternal(DataOutput out) throws IOException {
         out.writeLong(numberOfPublishes);
         out.writeLong(numberOfReceives);
     }
 
-    public void readData(DataInput in) throws IOException {
-        periodStart = in.readLong();
-        periodEnd = in.readLong();
+    void readDataInternal(DataInput in) throws IOException {
         numberOfPublishes = in.readLong();
         numberOfReceives = in.readLong();
-    }
-
-    public long getPeriodStart() {
-        return periodStart;
-    }
-
-    public long getPeriodEnd() {
-        return periodEnd;
     }
 
     public long getNumberOfPublishes() {

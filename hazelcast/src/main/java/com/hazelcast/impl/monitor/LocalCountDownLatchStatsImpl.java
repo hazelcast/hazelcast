@@ -15,23 +15,16 @@
  *
  */
 
-package com.hazelcast.monitor;
+package com.hazelcast.impl.monitor;
 
+import com.hazelcast.monitor.LocalCountDownLatchOperationStats;
+import com.hazelcast.monitor.LocalCountDownLatchStats;
 
-public interface LocalAtomicNumberOperationStats extends LocalInstanceOperationStats {
-    /**
-     * Returns the number of operations that modified the stored atomic value.
-     *
-     *
-     * @return number of modified operations
-     */
-    public long getNumberOfModifyOps();
-
-    /**
-     * Returns the number of operations that did not modify the stored atomic value.
-     *
-     *
-     * @return number of non-modified operations
-     */
-    public long getNumberOfNonModifyOps();
+public class LocalCountDownLatchStatsImpl extends LocalInstanceStatsSupport<LocalCountDownLatchOperationStats> 
+	implements LocalCountDownLatchStats {
+	
+	@Override
+	LocalCountDownLatchOperationStats newOperationStatsInstance() {
+		return new LocalCountDownLatchOperationStatsImpl();
+	}
 }

@@ -17,6 +17,6 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalCountDownLatchStats {
-    public LocalCountDownLatchOperationStats getOperationStats();
+public interface LocalCountDownLatchStats extends LocalInstanceStats<LocalCountDownLatchOperationStats> {
+    
 }

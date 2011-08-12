@@ -17,6 +17,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.monitor.LocalCountDownLatchStats;
 import com.hazelcast.nio.Address;
 
 import java.util.concurrent.TimeUnit;
@@ -191,4 +192,6 @@ public interface ICountDownLatch extends Instance {
      * @throws IllegalArgumentException if {@code count} is negative
      */
     public boolean setCount(int count);
+    
+    LocalCountDownLatchStats getLocalCountDownLatchStats();
 }

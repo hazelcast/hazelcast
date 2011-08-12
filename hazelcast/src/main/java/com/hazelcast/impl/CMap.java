@@ -26,6 +26,7 @@ import com.hazelcast.impl.concurrentmap.LFUMapEntryComparator;
 import com.hazelcast.impl.concurrentmap.LRUMapEntryComparator;
 import com.hazelcast.impl.concurrentmap.MapStoreWrapper;
 import com.hazelcast.impl.concurrentmap.MultiData;
+import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.merge.MergePolicy;
 import com.hazelcast.nio.*;

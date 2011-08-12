@@ -17,6 +17,6 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalSemaphoreStats {
-    public LocalSemaphoreOperationStats getOperationStats();
+public interface LocalSemaphoreStats extends LocalInstanceStats<LocalSemaphoreOperationStats> {
+    
 }

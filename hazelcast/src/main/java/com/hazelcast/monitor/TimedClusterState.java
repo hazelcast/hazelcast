@@ -17,7 +17,7 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.impl.MemberStateImpl;
+import com.hazelcast.impl.monitor.MemberStateImpl;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;

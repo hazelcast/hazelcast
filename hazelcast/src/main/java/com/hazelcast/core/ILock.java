@@ -19,6 +19,8 @@ package com.hazelcast.core;
 
 import java.util.concurrent.locks.Lock;
 
+import com.hazelcast.monitor.LocalLockStats;
+
 public interface ILock extends Lock, Instance {
     /**
      * Returns the lock object, the key for this lock instance.
@@ -26,4 +28,6 @@ public interface ILock extends Lock, Instance {
      * @return lock object.
      */
     Object getLockObject();
+    
+    LocalLockStats getLocalLockStats();
 }

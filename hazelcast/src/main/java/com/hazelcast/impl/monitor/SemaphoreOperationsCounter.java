@@ -15,15 +15,16 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.monitor;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.hazelcast.monitor.LocalSemaphoreOperationStats;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
-public class SemaphoreOperationsCounter {
+public class SemaphoreOperationsCounter extends OperationsCounterSupport<LocalSemaphoreOperationStats> {
+	
+	final private static LocalSemaphoreOperationStats empty = new LocalSemaphoreOperationStatsImpl();
+	
     private OperationCounter modified = new OperationCounter();
     private OperationCounter nonModified = new OperationCounter();
     private OperationCounter acquires = new OperationCounter();
@@ -34,48 +35,26 @@ public class SemaphoreOperationsCounter {
     private AtomicLong permitsAttached = new AtomicLong();
     private AtomicLong permitsDetached = new AtomicLong();
     private AtomicLong permitsReduced = new AtomicLong();
-    private long startTime = now();
-    private long endTime = Long.MAX_VALUE;
-    private transient LocalSemaphoreOperationStatsImpl published = null;
-    private List<SemaphoreOperationsCounter> listOfSubStats = new ArrayList<SemaphoreOperationsCounter>();
-    final private static LocalSemaphoreOperationStats empty = new LocalSemaphoreOperationStatsImpl();
-    final private Object lock = new Object();
-
-    final private long interval;
 
     public SemaphoreOperationsCounter() {
-        this(5000);
+    	super();
     }
 
     public SemaphoreOperationsCounter(long interval) {
-        this.interval = interval;
+    	super(interval);
     }
 
-    LocalSemaphoreOperationStats getPublishedStats() {
-        if (published == null) {
-            synchronized (lock) {
-                if (published == null) {
-                    published = getThis();
-                }
-            }
-        }
-        if (published.getPeriodEnd() < now() - interval) {
-            return empty;
-        }
-        return published;
-    }
-
-    void incrementModified(long elapsed) {
+    public void incrementModified(long elapsed) {
         modified.count(elapsed);
         publishSubResult();
     }
 
-    void incrementNonModified(long elapsed) {
+    public void incrementNonModified(long elapsed) {
         nonModified.count(elapsed);
         publishSubResult();
     }
 
-    void incrementAcquires(long elapsed, int permits, boolean attached) {
+    public void incrementAcquires(long elapsed, int permits, boolean attached) {
         acquires.count(elapsed);
         permitsAcquired.addAndGet(permits);
         if (attached)
@@ -83,13 +62,13 @@ public class SemaphoreOperationsCounter {
         publishSubResult();
     }
 
-    void incrementRejectedAcquires(long elapsed) {
+    public void incrementRejectedAcquires(long elapsed) {
         acquires.count(elapsed);
         rejectedAcquires.incrementAndGet();
         publishSubResult();
     }
 
-    void incrementReleases(long elapsed, int permits, boolean detached) {
+    public void incrementReleases(long elapsed, int permits, boolean detached) {
         permitsReleased.addAndGet(permits);
         if(detached)
             incrementNonAcquires(elapsed, -permits);
@@ -97,7 +76,7 @@ public class SemaphoreOperationsCounter {
             incrementNonAcquires(elapsed, 0);
     }
 
-    void incrementNonAcquires(long elapsed, int attachedDelta) {
+    public void incrementNonAcquires(long elapsed, int attachedDelta) {
         nonAcquires.count(elapsed);
         if (attachedDelta > 0) {
             permitsAttached.addAndGet(attachedDelta);
@@ -112,30 +91,11 @@ public class SemaphoreOperationsCounter {
         incrementNonAcquires(elapsed, 0);
     }
 
-    private long now() {
-        return System.currentTimeMillis();
-    }
-
-    private void publishSubResult() {
-        long subInterval = interval / 5;
-        if (now() - startTime > subInterval) {
-            synchronized (lock) {
-                if (now() - startTime >= subInterval) {
-                    SemaphoreOperationsCounter copy = getAndReset();
-                    if (listOfSubStats.size() == 5) {
-                        listOfSubStats.remove(0);
-                    }
-                    listOfSubStats.add(copy);
-                    this.published = aggregate(listOfSubStats);
-                }
-            }
-        }
-    }
-
-    private LocalSemaphoreOperationStatsImpl aggregate(List<SemaphoreOperationsCounter> list) {
+    LocalSemaphoreOperationStatsImpl aggregateSubCounterStats() {
         LocalSemaphoreOperationStatsImpl stats = new LocalSemaphoreOperationStatsImpl();
-        stats.periodStart = list.get(0).startTime;
-        for (SemaphoreOperationsCounter sub : list) {
+        stats.periodStart = ((SemaphoreOperationsCounter) listOfSubCounters.get(0)).startTime;
+        for (Object obj : listOfSubCounters) {
+        	SemaphoreOperationsCounter sub = (SemaphoreOperationsCounter) obj;
             stats.acquires.add(sub.acquires.count.get(), sub.acquires.totalLatency.get());
             stats.nonAcquires.add(sub.nonAcquires.count.get(), sub.nonAcquires.totalLatency.get());
             stats.numberOfRejectedAcquires += sub.rejectedAcquires.get();
@@ -149,7 +109,7 @@ public class SemaphoreOperationsCounter {
         return stats;
     }
 
-    private SemaphoreOperationsCounter getAndReset() {
+    SemaphoreOperationsCounter getAndReset() {
         SemaphoreOperationsCounter newOne = new SemaphoreOperationsCounter();
         newOne.acquires.set(acquires.copyAndReset());
         newOne.nonAcquires.set(nonAcquires.copyAndReset());
@@ -165,7 +125,7 @@ public class SemaphoreOperationsCounter {
         return newOne;
     }
 
-    private LocalSemaphoreOperationStatsImpl getThis() {
+    LocalSemaphoreOperationStats getThis() {
         LocalSemaphoreOperationStatsImpl stats = new LocalSemaphoreOperationStatsImpl();
         stats.periodStart = this.startTime;
         stats.acquires = stats.new OperationStat(this.acquires.count.get(), this.acquires.totalLatency.get());
@@ -179,41 +139,8 @@ public class SemaphoreOperationsCounter {
         stats.periodEnd = now();
         return stats;
     }
-
-    class OperationCounter {
-        final AtomicLong count;
-        final AtomicLong totalLatency;
-
-        public OperationCounter() {
-            this(0, 0);
-        }
-
-        public OperationCounter(long c, long l) {
-            this.count = new AtomicLong(c);
-            totalLatency = new AtomicLong(l);
-        }
-
-        public OperationCounter copyAndReset() {
-            OperationCounter copy = new OperationCounter(count.get(), totalLatency.get());
-            this.count.set(0);
-            this.totalLatency.set(0);
-            return copy;
-        }
-
-        public void set(OperationCounter now) {
-            this.count.set(now.count.get());
-            this.totalLatency.set(now.totalLatency.get());
-        }
-
-        public void count(long elapsed) {
-            this.count.incrementAndGet();
-            this.totalLatency.addAndGet(elapsed);
-        }
-
-        @Override
-        public String toString() {
-            long count = this.count.get();
-            return "OperationStat{" + "count=" + count + ", averageLatency=" + ((count == 0) ? 0 : totalLatency.get() / count) + '}';
-        }
+    
+    LocalSemaphoreOperationStats getEmpty() {
+    	return empty;
     }
 }
