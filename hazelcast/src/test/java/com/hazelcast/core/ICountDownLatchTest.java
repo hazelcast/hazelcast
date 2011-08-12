@@ -150,7 +150,6 @@ public class ICountDownLatchTest {
         assertEquals(1, result.get());
     }
 
-    @Ignore
     @Test
     public void testCountDownLatchInstanceDestroyed() throws InterruptedException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
