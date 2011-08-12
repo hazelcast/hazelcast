@@ -2695,8 +2695,7 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         public void handle(Request request) {
             request.record = ensureRecord(request, null);
-            if (request.record.getValue() != null) {
-            } else {
+            if (request.record.getValue() == null) {
                 final String name = (String) toObject(request.key);
                 final SemaphoreConfig sc = node.getConfig().getSemaphoreConfig(name);
                 int initialPermits = sc.getInitialPermits();

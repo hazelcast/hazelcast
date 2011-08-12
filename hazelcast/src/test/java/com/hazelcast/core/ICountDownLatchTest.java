@@ -16,8 +16,7 @@
  */
 package com.hazelcast.core;
 
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.impl.CountDownLatchProxy;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -51,13 +50,13 @@ public class ICountDownLatchTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         final ICountDownLatch cdl1 = h1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = h2.getCountDownLatch("test");
-        Address h1Address = ((MemberImpl) h1.getCluster().getLocalMember()).getAddress();
+        Member h1Member = h1.getCluster().getLocalMember();
         final AtomicInteger result = new AtomicInteger();
         int count = 5;
         assertTrue(cdl1.setCount(count));
-        assertEquals(count, cdl2.getCount());
-        assertEquals(h1Address, cdl1.getOwnerAddress());
-        assertEquals(h1Address, cdl2.getOwnerAddress());
+        assertEquals(count, ((CountDownLatchProxy) cdl2).getCount());
+        assertEquals(h1Member, ((CountDownLatchProxy) cdl1).getOwner());
+        assertEquals(h1Member, ((CountDownLatchProxy) cdl2).getOwner());
         Thread thread = new Thread() {
             @Override
             public void run() {
@@ -72,7 +71,7 @@ public class ICountDownLatchTest {
         };
         thread.start();
         for (int i = count; i > 0; i--) {
-            assertEquals(i, cdl2.getCount());
+            assertEquals(i, ((CountDownLatchProxy) cdl2).getCount());
             cdl1.countDown();
             Thread.sleep(100);
         }
@@ -85,15 +84,15 @@ public class ICountDownLatchTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         final ICountDownLatch cdl1 = h1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = h2.getCountDownLatch("test");
-        Address h1Address = ((MemberImpl) h2.getCluster().getLocalMember()).getAddress();
+        Member h2Member = h2.getCluster().getLocalMember();
         final AtomicInteger result = new AtomicInteger();
-        assertNull(cdl1.getOwnerAddress());
-        assertNull(cdl2.getOwnerAddress());
+        assertNull(((CountDownLatchProxy) cdl1).getOwner());
+        assertNull(((CountDownLatchProxy) cdl2).getOwner());
         assertTrue(cdl2.setCount(1));
-        assertEquals(1, cdl1.getCount());
-        assertEquals(1, cdl2.getCount());
-        assertEquals(h1Address, cdl1.getOwnerAddress());
-        assertEquals(h1Address, cdl2.getOwnerAddress());
+        assertEquals(1, ((CountDownLatchProxy) cdl1).getCount());
+        assertEquals(1, ((CountDownLatchProxy) cdl2).getCount());
+        assertEquals(h2Member, ((CountDownLatchProxy) cdl1).getOwner());
+        assertEquals(h2Member, ((CountDownLatchProxy) cdl2).getOwner());
         Thread thread = new Thread() {
             @Override
             public void run() {
@@ -121,12 +120,12 @@ public class ICountDownLatchTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         final ICountDownLatch cdl1 = h1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = h2.getCountDownLatch("test");
-        Address h1Address = ((MemberImpl) h1.getCluster().getLocalMember()).getAddress();
+        Member h1Member = h1.getCluster().getLocalMember();
         final AtomicInteger result = new AtomicInteger();
         cdl1.setCount(1);
-        assertEquals(1, cdl2.getCount());
-        assertEquals(h1Address, cdl1.getOwnerAddress());
-        assertEquals(h1Address, cdl2.getOwnerAddress());
+        assertEquals(1, ((CountDownLatchProxy) cdl2).getCount());
+        assertEquals(h1Member, ((CountDownLatchProxy) cdl1).getOwner());
+        assertEquals(h1Member, ((CountDownLatchProxy) cdl2).getOwner());
         Thread thread = new Thread() {
             @Override
             public void run() {
@@ -154,12 +153,12 @@ public class ICountDownLatchTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         final ICountDownLatch cdl1 = h1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = h2.getCountDownLatch("test");
-        Address h1Address = ((MemberImpl) h1.getCluster().getLocalMember()).getAddress();
+        Member h1Member = h1.getCluster().getLocalMember();
         final AtomicInteger result = new AtomicInteger();
         cdl1.setCount(1);
-        assertEquals(1, cdl2.getCount());
-        assertEquals(h1Address, cdl1.getOwnerAddress());
-        assertEquals(h1Address, cdl2.getOwnerAddress());
+        assertEquals(1, ((CountDownLatchProxy) cdl2).getCount());
+        assertEquals(h1Member, ((CountDownLatchProxy) cdl1).getOwner());
+        assertEquals(h1Member, ((CountDownLatchProxy) cdl2).getOwner());
         Thread thread = new Thread() {
             @Override
             public void run() {

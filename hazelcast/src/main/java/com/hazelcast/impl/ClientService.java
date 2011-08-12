@@ -572,7 +572,7 @@ public class ClientService implements ConnectionListener {
 
     private class CountDownLatchGetOwnerHandler extends CountDownLatchClientHandler {
         void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
-            packet.setValue(toData(cdlProxy.getOwnerAddress()));
+            packet.setValue(toData(cdlProxy.getOwner()));
         }
     }
 

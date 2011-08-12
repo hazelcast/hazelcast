@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.Instance;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 
 public interface CountDownLatchProxy extends ICountDownLatch, Instance {
@@ -29,6 +30,10 @@ public interface CountDownLatchProxy extends ICountDownLatch, Instance {
     public final static int OWNER_LEFT = 3;
 
     public boolean setCount(int count, Address ownerAddress);
+
+    public int getCount();
+
+    public Member getOwner();
 
     CountDownLatchOperationsCounter getCountDownLatchOperationsCounter();
 

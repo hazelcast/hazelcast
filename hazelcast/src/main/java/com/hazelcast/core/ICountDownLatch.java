@@ -31,9 +31,10 @@ import java.util.concurrent.TimeUnit;
  * performed in other threads completes.
  * <p/>
  * Unlike Java's implementation, Hazelcast's ICountDownLatch count can be re-set
- * after a countdown has finished. This allows the same proxy instance to be reused.
- * <p/>The Hazelcast member address that successfully invokes {@link #setCount(int)}
- * becomes the owner of the countdown and is responsible for staying connected to
+ * after a countdown has finished but not during an active count. This allows the same 
+ * proxy instance to be reused.
+ * <p/>The Hazelcast member that successfully invokes {@link #setCount(int)} becomes 
+ * the owner of the countdown and is responsible for staying connected to
  * the cluster until the count reaches zero.  If the owner becomes disconnected prior
  * to count reaching zero all awaiting threads will be notified.  This provides a
  * safety mechanism in the distributed environment.
@@ -59,13 +60,13 @@ public interface ICountDownLatch extends Instance {
      * <li>The count reaches zero due to invocations of the
      * {@link #countDown} method;
      * <li>This ICountDownLatch instance is destroyed;
-     * <li>The countdown owner address becomes disconnected; or
+     * <li>The countdown owner becomes disconnected; or
      * <li>Some other thread {@linkplain Thread#interrupt interrupts}
      * the current thread.
      * </ul>
      * <p/>If the ICountDownLatch instance is destroyed while waiting then
      * {@link InstanceDestroyedException} will be thrown.
-     * <p/>If the countdown owner address becomes disconnected while waiting then
+     * <p/>If the countdown owner becomes disconnected while waiting then
      * {@link MemberLeftException} will be thrown.
      * <p>If the current thread:
      * <ul>
@@ -76,7 +77,7 @@ public interface ICountDownLatch extends Instance {
      * interrupted status is cleared.
      *
      * @throws InstanceDestroyedException if the instance is destroyed while waiting
-     * @throws MemberLeftException if the countdown owner address becomes disconnected while waiting
+     * @throws MemberLeftException if the countdown owner becomes disconnected while waiting
      * @throws InterruptedException if the current thread is interrupted
      * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
      */
@@ -96,7 +97,7 @@ public interface ICountDownLatch extends Instance {
      * <li>The count reaches zero due to invocations of the
      * {@link #countDown} method;
      * <li>This ICountDownLatch instance is destroyed;
-     * <li>The countdown owner address becomes disconnected;
+     * <li>The countdown owner becomes disconnected;
      * <li>Some other thread {@linkplain Thread#interrupt interrupts}
      * the current thread; or
      * <li>The specified waiting time elapses.
@@ -107,7 +108,7 @@ public interface ICountDownLatch extends Instance {
      * <p/>
      * <p/>If the ICountDownLatch instance is destroyed while waiting then
      * {@link InstanceDestroyedException} will be thrown.
-     * <p/>If the countdown owner address becomes disconnected while waiting then
+     * <p/>If the countdown owner becomes disconnected while waiting then
      * {@link MemberLeftException} will be thrown.
      * <p>If the current thread:
      * <ul>
@@ -126,7 +127,7 @@ public interface ICountDownLatch extends Instance {
      * @return {@code true} if the count reached zero and {@code false}
      *         if the waiting time elapsed before the count reached zero
      * @throws InstanceDestroyedException if the instance is destroyed while waiting
-     * @throws MemberLeftException if the countdown owner address becomes disconnected while waiting
+     * @throws MemberLeftException if the countdown owner becomes disconnected while waiting
      * @throws InterruptedException if the current thread is interrupted
      * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
      */
@@ -140,21 +141,12 @@ public interface ICountDownLatch extends Instance {
      * If the new count is zero:
      * <ul>
      * <li>All waiting threads are re-enabled for thread scheduling purposes; and
-     * <li>Countdown owner address is set to {@code null}.
+     * <li>Countdown owner is set to {@code null}.
      * </ul>
      * <p/>
      * If the current count equals zero then nothing happens.
      */
     public void countDown();
-
-    /**
-     * Returns the current count.
-     * <p/>
-     * <ul><li>This method is typically used for debugging and testing purposes.
-     * </ul>
-     * @return the current count
-     */
-    public int getCount();
 
     /**
      * Returns whether the current count is greater than zero.
@@ -164,23 +156,13 @@ public interface ICountDownLatch extends Instance {
     public boolean hasCount();
 
     /**
-     * Returns the owner's {@link Address} of the current countdown.
-     * <p/>
-     * <ul><li>This method is typically used for debugging and testing purposes.
-     * </ul>
-     * @return the current countdown owner's address or {@code null} if the
-     * count is zero
-     */
-    public Address getOwnerAddress();
-
-    /**
-     * Sets the count to the given value if the current count is zero. The address
-     * of the caller becomes the owner of the countdown and is responsible for
+     * Sets the count to the given value if the current count is zero. The calling
+     * cluster member becomes the owner of the countdown and is responsible for
      * staying connected to the cluster until the count reaches zero.
-     * <p/>If the owner address becomes disconnected before the count reaches zero:
+     * <p/>If the owner becomes disconnected before the count reaches zero:
      * <ul>
      * <li>Count will be set to zero;
-     * <li>Countdown owner address will be set to {@code null}; and
+     * <li>Countdown owner will be set to {@code null}; and
      * <li>All awaiting threads will be thrown a {@link MemberLeftException}.
      * </ul>
      * <p/>If count is not zero then this method does nothing and returns {@code false}.

@@ -17,12 +17,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.InstanceDestroyedException;
-import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.core.Prefix;
+import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalCountDownLatchStats;
-import com.hazelcast.nio.Address;
 
 import java.util.concurrent.TimeUnit;
 
@@ -68,8 +64,8 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
         return (Integer) proxyHelper.doOp(COUNT_DOWN_LATCH_GET_COUNT, null, null);
     }
 
-    public Address getOwnerAddress() {
-        return (Address) proxyHelper.doOp(COUNT_DOWN_LATCH_GET_OWNER, null, null);
+    public Member getOwner() {
+        return (Member) proxyHelper.doOp(COUNT_DOWN_LATCH_GET_OWNER, null, null);
     }
 
     public boolean hasCount() {

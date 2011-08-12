@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.*;
+import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 import org.junit.*;
 
@@ -49,18 +50,17 @@ public class HazelcastClientCountDownLatchTest {
     }
 
     @Test
-    public void testCountDownLatchSimple() throws InterruptedException, IOException {
+    public void testClientCountDownLatchSimple() throws InterruptedException, IOException {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client1 = newHazelcastClient(instance);
         HazelcastClient client2 = newHazelcastClient(instance);
         final ICountDownLatch cdl1 = client1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = client2.getCountDownLatch("test");
-        final Socket socket1 = client1.connectionManager.getConnection().getSocket();
-        final Address client1Address = new Address(socket1.getLocalAddress(), socket1.getLocalPort());
+        final Member c1Member = clientToMember(client1); 
         final AtomicInteger result = new AtomicInteger();
         int count = 5;
         cdl1.setCount(count);
-        assertEquals(client1Address, cdl2.getOwnerAddress());
+        assertEquals(c1Member, ((CountDownLatchClientProxy) cdl2).getOwner());
         Thread thread = new Thread(){
             @Override
             public void run() {
@@ -76,7 +76,7 @@ public class HazelcastClientCountDownLatchTest {
         };
         thread.start();
         for (int i = count; i > 0; i--){
-            assertEquals(i, cdl2.getCount());
+            assertEquals(i, ((CountDownLatchClientProxy) cdl2).getCount());
             cdl1.countDown();
             Thread.sleep(100);
         }
@@ -84,18 +84,17 @@ public class HazelcastClientCountDownLatchTest {
     }
 
     @Test
-    public void testCountDownLatchOwnerLeft() throws InterruptedException, IOException {
+    public void testClientCountDownLatchOwnerLeft() throws InterruptedException, IOException {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client1 = newHazelcastClient(instance);
         HazelcastClient client2 = newHazelcastClient(instance);
         final ICountDownLatch cdl1 = client1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = client2.getCountDownLatch("test");
-        final Socket socket1 = client1.connectionManager.getConnection().getSocket();
-        final Address client1Address = new Address(socket1.getLocalAddress(), socket1.getLocalPort());
+        final Member c1Member = clientToMember(client1); 
         final AtomicInteger result = new AtomicInteger();
         cdl1.setCount(1);
-        assertEquals(1, cdl2.getCount());
-        assertEquals(client1Address, cdl2.getOwnerAddress());
+        assertEquals(1, ((CountDownLatchClientProxy) cdl2).getCount());
+        assertEquals(c1Member, ((CountDownLatchClientProxy) cdl2).getOwner());
         Thread thread = new Thread(){
             @Override
             public void run() {
@@ -119,18 +118,17 @@ public class HazelcastClientCountDownLatchTest {
     }
 
     @Test
-    public void testCountDownLatchInstanceDestroyed() throws InterruptedException, IOException {
+    public void testClientCountDownLatchInstanceDestroyed() throws InterruptedException, IOException {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client1 = newHazelcastClient(instance);
         HazelcastClient client2 = newHazelcastClient(instance);
         final ICountDownLatch cdl1 = client1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = client2.getCountDownLatch("test");
-        final Socket socket1 = client1.connectionManager.getConnection().getSocket();
-        final Address client1Address = new Address(socket1.getLocalAddress(), socket1.getLocalPort());
+        final Member c1Member = clientToMember(client1); 
         final AtomicInteger result = new AtomicInteger();
         cdl1.setCount(1);
-        assertEquals(1, cdl2.getCount());
-        assertEquals(client1Address, cdl2.getOwnerAddress());
+        assertEquals(1, ((CountDownLatchClientProxy) cdl2).getCount());
+        assertEquals(c1Member, ((CountDownLatchClientProxy) cdl2).getOwner());
         Thread thread = new Thread(){
             @Override
             public void run() {
@@ -154,18 +152,17 @@ public class HazelcastClientCountDownLatchTest {
     }
 
     @Test
-    public void testCountDownLatchClientShutdown() throws InterruptedException, IOException {
+    public void testClientCountDownLatchClientShutdown() throws InterruptedException, IOException {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(null);
         HazelcastClient client1 = newHazelcastClient(instance);
         HazelcastClient client2 = newHazelcastClient(instance);
         final ICountDownLatch cdl1 = client1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = client2.getCountDownLatch("test");
-        final Socket socket1 = client1.connectionManager.getConnection().getSocket();
-        final Address client1Address = new Address(socket1.getLocalAddress(), socket1.getLocalPort());
+        final Member c1Member = clientToMember(client1); 
         final AtomicInteger result = new AtomicInteger();
         cdl1.setCount(1);
-        assertEquals(1, cdl2.getCount());
-        assertEquals(client1Address, cdl2.getOwnerAddress());
+        assertEquals(1, ((CountDownLatchClientProxy) cdl2).getCount());
+        assertEquals(c1Member, ((CountDownLatchClientProxy) cdl2).getOwner());
         Thread thread = new Thread(){
             @Override
             public void run() {
@@ -186,5 +183,12 @@ public class HazelcastClientCountDownLatchTest {
         client1.shutdown();
         thread.join();
         assertEquals(1, result.get());
+    }
+    
+    // remove this when Clients become members
+    private Member clientToMember(HazelcastClient client) throws IOException {
+        final Socket socket1 = client.connectionManager.getConnection().getSocket();
+        final Address client1Address = new Address(socket1.getLocalAddress(), socket1.getLocalPort());
+        return new MemberImpl(client1Address, false); 
     }
 }

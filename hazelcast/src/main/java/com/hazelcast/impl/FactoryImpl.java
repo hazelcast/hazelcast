@@ -1472,9 +1472,9 @@ public class FactoryImpl implements HazelcastInstance {
             return base.getCount();
         }
 
-        public Address getOwnerAddress() {
+        public Member getOwner() {
             ensure();
-            return base.getOwnerAddress();
+            return base.getOwner();
         }
 
         public boolean hasCount() {
@@ -1557,8 +1557,10 @@ public class FactoryImpl implements HazelcastInstance {
                 return newMCountDownLatch().getCount(getNameAsData());
             }
 
-            public Address getOwnerAddress() {
-                return newMCountDownLatch().getOwnerAddress(getNameAsData());
+            public Member getOwner() {
+                final Address owner = newMCountDownLatch().getOwnerAddress(getNameAsData());
+                final Address local = node.baseVariables.thisAddress;
+                return owner != null ? new MemberImpl(owner, local.equals(owner)) : null;
             }
 
             public boolean hasCount() {

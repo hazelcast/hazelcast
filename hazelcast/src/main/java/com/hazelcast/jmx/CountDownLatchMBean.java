@@ -18,7 +18,8 @@
 package com.hazelcast.jmx;
 
 import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.nio.Address;
+import com.hazelcast.core.Member;
+import com.hazelcast.impl.CountDownLatchProxy;
 
 /**
  * MBean for ICountDownLatch
@@ -48,9 +49,9 @@ public class CountDownLatchMBean extends AbstractMBean<ICountDownLatch> {
     }
 
     @JMXAttribute("CurrentOwner")
-    @JMXDescription("getOwnerAddress() result")
-    public Address getCurrentOwner() {
-        return getManagedObject().getOwnerAddress();
+    @JMXDescription("getOwner() result")
+    public Member getCurrentOwner() {
+        return getOwner();
     }
 
     @JMXOperation("countDown")
@@ -62,12 +63,12 @@ public class CountDownLatchMBean extends AbstractMBean<ICountDownLatch> {
     @JMXOperation("getCount")
     @JMXDescription("return current count value")
     public long getCount() {
-        return getManagedObject().getCount();
+        return ((CountDownLatchProxy)getManagedObject()).getCount();
     }
 
-    @JMXOperation("getOwnerAddress")
-    @JMXDescription("return current count value")
-    public Address getOwnerAddress() {
-        return getManagedObject().getOwnerAddress();
+    @JMXOperation("getOwner")
+    @JMXDescription("return current count owner")
+    public Member getOwner() {
+        return ((CountDownLatchProxy)getManagedObject()).getOwner();
     }
 }
