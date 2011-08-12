@@ -7,13 +7,17 @@
        xmlns:ns3='http://www.w3.org/1999/xhtml'
        xmlns:db='http://docbook.org/ns/docbook'>
     <title>Key based Distributed Executions</title>
-    <para> Hazelcast has a standard way of finding out which member owns/manages each key object.
-                Following operations will be routed to the same member, since all of them are
-                operating based on the same key, "key1". <programlisting language="java"><![CDATA[Hazelcast.getMap("mapa").put("key1", value);
+    <para>Hazelcast has a standard way of finding out which member owns/manages each key object.
+        Following operations will be routed to the same member, since all of them are
+        operating based on the same key, "key1".
+    </para>
+    <programlisting language="java">
+        <![CDATA[
+Hazelcast.getMap("mapa").put("key1", value);
 Hazelcast.getMap("mapb").get("key1");
 Hazelcast.getMap("mapc").remove("key1");
-// since map names are different, operation will be manipulating 
-// different entries, but the operation will take place on the 
+// since map names are different, operation will be manipulating
+// different entries, but the operation will take place on the
 // same member since the keys ("key1") are the same
 
 Hazelcast.getLock ("key1").lock();
@@ -23,11 +27,82 @@ Hazelcast.getLock ("key1").lock();
 Hazelcast.getExecutorService().execute(new DistributedTask(runnable, "key1"));
 // distributed execution will execute the 'runnable' on the same member
 // since "key1" is passed as the key.
+    ]]></programlisting>
+    <para>So when the keys are the same then entries are stored on the same node. But we
+        sometimes want to have related entries stored on the same node. Consider customer
+        and his/her order entries. We would have customers map with customerId as the key
+        and orders map with orderId as the key. Since customerId and orderIds are different
+        keys, customer and his/her orders may fall into different members/nodes in your cluster.
+        So how can we have them stored on the same node? The trick here is to create an affinity
+        between customer and orders. If we can somehow make them part of the same partition then
+        these entries will be co-located. We achieve this by making orderIds
+        <literal>PartitionAware</literal>
+    </para>
 
-]]></programlisting> Let say you have a customers map where customerId is the key and the customer
-                object is the value. and customer object contains the customer's orders. and let say
-                you want to remove one of the orders of a customer and return the number of
-                remaining orders. Here is how you would normally do it: <programlisting language="java"><![CDATA[public static int removeOrder(long customerId, long orderId) throws Exception {
+    <programlisting language="java"><![CDATA[
+public class OrderKey implements Serializable, PartitionAware {
+    int customerId;
+    int orderId;
+
+    public OrderKey(int orderId, int customerId) {
+        this.customerId = customerId;
+        this.orderId = orderId;
+    }
+
+    public int getCustomerId() {
+        return customerId;
+    }
+
+    public int getOrderId() {
+        return orderId;
+    }
+
+    public Object getPartitionKey() {
+        return customerId;
+    }
+
+    @Override
+    public String toString() {
+        return "OrderKey{" +
+                "customerId=" + customerId +
+                ", orderId=" + orderId +
+                '}';
+    }
+}
+        ]]></programlisting>
+    Notice that OrderKey implements
+    <literal>PartitionAware</literal>
+    and
+    <literal>getPartitionKey()</literal>
+    returns the
+    <literal>customerId</literal>. This will make sure that
+    <literal>Customer</literal>
+    entry and its
+    <literal>Order</literal>s
+    are going to be stored on the same node.
+
+    <programlisting language="java"><![CDATA[
+Map mapCustomers = Hazelcast.getMap("customers")
+Map mapOrders = Hazelcast.getMap("orders")
+// create the customer entry with customer id = 1
+mapCustomers.put(1, customer);
+// now create the orders for this customer
+mapOrders.put(new OrderKey(21, 1), order);
+mapOrders.put(new OrderKey(22, 1), order);
+mapOrders.put(new OrderKey(23, 1), order);
+    ]]></programlisting>
+    <para>
+        Let say you have a customers map where
+        <literal>customerId</literal>
+        is the key and the customer
+        object is the value. and customer object contains the customer's orders. and let say
+        you want to remove one of the orders of a customer and return the number of
+        remaining orders. Here is how you would normally do it:
+    </para>
+
+    <programlisting language="java">
+        <![CDATA[
+public static int removeOrder(long customerId, long orderId) throws Exception {
     IMap<Long, Customer> mapCustomers = Hazelcast.getMap("customers");
     mapCustomers.lock (customerId);
     Customer customer = mapCustomers. get(customerId);
@@ -36,85 +111,113 @@ Hazelcast.getExecutorService().execute(new DistributedTask(runnable, "key1"));
     mapCustomers.unlock(customerId);
     return customer.getOrderCount();
 }
-]]></programlisting> There are couple of things we should consider: <orderedlist>
-                        <listitem>
-                                <para>There are four distributed operations there.. lock, get, put,
-                                        unlock.. Can we reduce the number of distributed operations?
-                                </para>
-                        </listitem>
-                        <listitem>
-                                <para>Customer object may not be that big but can we not have to
-                                        pass that object through the wire? Notice that, we are
-                                        actually passing customer object through the wire twice; get
-                                        and put. </para>
-                                <para>So instead, why not moving the computation over to the member
-                                        (JVM) where your customer data actually is. </para>
-                                <para>Here is how you can do this with distributed executor service: <orderedlist>
-                                                <listitem>
-                                                  <para>Send a <literal>Callable</literal> task to
-                                                  the member owning the key, clusterId. </para>
-                                                </listitem>
-                                                <listitem>
-                                                  <para><literal>Callable</literal> does the
-                                                  deletion of the order right there and returns with
-                                                  the remaining order count. </para>
-                                                </listitem>
-                                                <listitem>
-                                                  <para>Upon completion of the
-                                                  <literal>Callable</literal> task, return the
-                                                  result (remaining order count). Plus you do not
-                                                  have to wait until the the task complete; since
-                                                  distributed executions are asynchronous, you can
-                                                  do other things meanwhile. here is a sample code: <programlisting language="java"><![CDATA[public static int removeOrder(long customerId, long orderId) throws Exception {
-	   ExecutorService es = Hazelcast.getExecutorService();
-	   FutureTask<Integer> task = new DistributedTask<Integer>(new OrderDeletionTask(customerId, orderId), customerId);
-	   es.execute(task);
-	   int remainingOrders = task.get();
-	   return remainingOrders;
+]]></programlisting>
+    There are couple of things we should consider:
+    <orderedlist>
+        <listitem>
+            <para>There are four distributed operations there.. lock, get, put,
+                unlock.. Can we reduce the number of distributed operations?
+            </para>
+        </listitem>
+        <listitem>
+            <para>Customer object may not be that big but can we not have to
+                pass that object through the wire? Notice that, we are
+                actually passing customer object through the wire twice; get
+                and put.
+            </para>
+
+        </listitem>
+
+    </orderedlist>
+    <para>So instead, why not moving the computation over to the member
+        (JVM) where your customer data actually is.
+        Here is how you can do this with distributed executor service:
+    </para>
+    <orderedlist>
+        <listitem>
+            <para>
+                Send a
+                <literal>PartitionAware</literal>
+                <literal>Callable</literal>
+                task.
+            </para>
+        </listitem>
+        <listitem>
+            <para>
+                <literal>Callable</literal>
+                does the deletion of the order right there and returns with
+                the remaining order count.
+            </para>
+        </listitem>
+        <listitem>
+            Upon completion of the
+            <literal>Callable</literal>
+            task, return the
+            result (remaining order count). Plus you do not
+            have to wait until the the task complete; since
+            distributed executions are asynchronous, you can
+            do other things in the meantime.
+        </listitem>
+    </orderedlist>
+    Here is a sample code:
+    <programlisting language="java"><![CDATA[
+public static int removeOrder(long customerId, long orderId) throws Exception {
+    ExecutorService es = Hazelcast.getExecutorService();
+    OrderDeletionTask task = new OrderDeletionTask(customerId, orderId);
+    Future future = es.submit(task);
+    int remainingOrders = future.get();
+    return remainingOrders;
 }
 
-public static class OrderDeletionTask implements Callable<Integer>, Serializable {
+public static class OrderDeletionTask implements Callable<Integer>, PartitionAware, Serializable {
 
-	   private static final long serialVersionUID = 1L;
-	   private long customerId;
-	   private long orderId;
-	
-	   public OrderDeletionTask() {
-	   }
-	   public OrderDeletionTask(long customerId, long orderId) {
-	           super();
-	           this.customerId = customerId;
-	           this.orderId = orderId;
-	   }
-	   public Integer call () {
-	           IMap<Long, Customer> mapCustomers = Hazelcast.getMap("customers");
-	           mapCustomers.lock (customerId);
-	           Customer customer = mapCustomers. get(customerId);
-	           customer.removeOrder (orderId);
-	           mapCustomers.put(customerId, customer);
-	           mapCustomers.unlock(customerId);
-	           return customer.getOrderCount();
-	   }
+   private long customerId;
+   private long orderId;
+
+   public OrderDeletionTask() {
+   }
+   public OrderDeletionTask(long customerId, long orderId) {
+       super();
+       this.customerId = customerId;
+       this.orderId = orderId;
+   }
+   public Integer call () {
+       IMap<Long, Customer> mapCustomers = Hazelcast.getMap("customers");
+       mapCustomers.lock (customerId);
+       Customer customer = mapCustomers. get(customerId);
+       customer.removeOrder (orderId);
+       mapCustomers.put(customerId, customer);
+       mapCustomers.unlock(customerId);
+       return customer.getOrderCount();
+   }
+
+   public Object getPartitionKey() {
+       return customerId;
+   }
 }
-]]></programlisting> Benefits of doing the same operation with <literal>DistributedTask</literal>
-                                                  based on the key are: <itemizedlist>
-                                                  <listitem>
-                                                  <para>Only one distributed execution
-                                                  (<literal>es.execute(task)</literal>), instead of four.</para>
-                                                  </listitem>
-                                                  <listitem>
-                                                  <para>Less data sent over the wire. </para>
-                                                  </listitem>
-                                                  <listitem>
-                                                  <para>Since lock/update/unlock cycle is done
-                                                  locally (local to the customer data), lock
-                                                  duration for the <literal>Customer</literal> entry
-                                                  is much less so enabling higher
-                                                  concurrency.</para>
-                                                  </listitem>
-                                                  </itemizedlist></para>
-                                                </listitem>
-                                        </orderedlist></para>
-                        </listitem>
-                </orderedlist></para>
+        ]]></programlisting>
+    Benefits of doing the same operation with
+    distributed
+    <literal>ExecutorService</literal>
+    based on the key are:
+    <itemizedlist>
+        <listitem>
+            <para>
+                Only one distributed execution (<literal>es.submit(task)</literal>), instead of four.
+            </para>
+        </listitem>
+        <listitem>
+            <para>
+                Less data is sent over the wire.
+            </para>
+        </listitem>
+        <listitem>
+            <para>
+                Since lock/update/unlock cycle is done locally (local to the customer data), lock duration for the
+                <literal>Customer</literal>
+                entry is much less so enabling higher concurrency.
+            </para>
+        </listitem>
+    </itemizedlist>
+
 </sect1>

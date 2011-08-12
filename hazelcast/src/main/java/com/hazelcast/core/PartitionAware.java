@@ -17,6 +17,6 @@
 
 package com.hazelcast.core;
 
-public interface PartitionAware {
-    Object getPartitionKey();
+public interface PartitionAware<T> {
+    T getPartitionKey();
 }

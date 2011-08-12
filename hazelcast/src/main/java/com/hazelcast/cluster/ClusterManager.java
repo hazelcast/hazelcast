@@ -441,14 +441,18 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             node.topicManager.syncForDead(deadAddress);
             node.getClusterImpl().setMembers(lsMembers);
             // toArray will avoid CME as onDisconnect does remove the calls
-            Object[] calls = mapCalls.values().toArray();
-            for (Object call : calls) {
-                ((Call) call).onDisconnect(deadAddress);
-            }
+            disconnectExistingCalls(deadAddress);
             logger.log(Level.INFO, this.toString());
         }
         if (isMaster()) {
             sendProcessableToAll(new RemoveMember(deadAddress), false);
+        }
+    }
+
+    public void disconnectExistingCalls(Address deadAddress) {
+        Object[] calls = mapCalls.values().toArray();
+        for (Object call : calls) {
+            ((Call) call).onDisconnect(deadAddress);
         }
     }
 

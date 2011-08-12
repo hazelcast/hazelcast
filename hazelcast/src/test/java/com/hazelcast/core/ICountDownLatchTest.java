@@ -89,7 +89,8 @@ public class ICountDownLatchTest {
         final AtomicInteger result = new AtomicInteger();
         assertNull(cdl1.getOwnerAddress());
         assertNull(cdl2.getOwnerAddress());
-        cdl2.setCount(1);
+        assertTrue(cdl2.setCount(1));
+        assertEquals(1, cdl1.getCount());
         assertEquals(1, cdl2.getCount());
         assertEquals(h1Address, cdl1.getOwnerAddress());
         assertEquals(h1Address, cdl2.getOwnerAddress());

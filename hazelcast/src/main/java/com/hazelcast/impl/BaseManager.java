@@ -474,6 +474,9 @@ public abstract class BaseManager {
             return responses.poll(time, unit);
         }
 
+        protected void onStillWaiting() {
+        }
+
         public Object waitAndGetResult() {
             while (true) {
                 try {
@@ -488,6 +491,7 @@ public abstract class BaseManager {
                     if (Thread.interrupted()) {
                         handleInterruptedException();
                     }
+                    onStillWaiting();
                 } catch (InterruptedException e) {
                     handleInterruptedException();
                 }
@@ -714,6 +718,7 @@ public abstract class BaseManager {
     public abstract class TargetAwareOp extends ResponseQueueCall {
 
         protected Address target = null;
+        protected Connection targetConnection = null;
 
         public TargetAwareOp() {
         }
@@ -735,6 +740,17 @@ public abstract class BaseManager {
         }
 
         @Override
+        protected void onStillWaiting() {
+            enqueueAndReturn(new Processable() {
+                public void process() {
+                    if (targetConnection != null && !targetConnection.live()) {
+                        redo();
+                    }
+                }
+            });
+        }
+
+        @Override
         public void onDisconnect(final Address dead) {
             if (dead.equals(target)) {
                 target = null;
@@ -745,6 +761,7 @@ public abstract class BaseManager {
         public void reset() {
             super.reset();
             target = null;
+            targetConnection = null;
         }
 
         @Override
@@ -783,8 +800,10 @@ public abstract class BaseManager {
                 request.setPacket(packet);
                 packet.callId = getCallId();
                 request.callId = getCallId();
-                final boolean sent = send(packet, target);
+                targetConnection = node.connectionManager.getConnection(target);
+                boolean sent = send(packet, targetConnection);
                 if (!sent) {
+                    targetConnection = null;
                     logger.log(Level.FINEST, TargetAwareOp.this + " Packet cannot be sent to " + target);
                     releasePacket(packet);
                     packetNotSent();

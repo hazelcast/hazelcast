@@ -20,6 +20,7 @@ package com.hazelcast.nio;
 import com.hazelcast.cluster.Bind;
 import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.Processable;
 import com.hazelcast.logging.ILogger;
 
 import java.nio.channels.SocketChannel;
@@ -86,6 +87,14 @@ public class ConnectionManager {
             if (node.joined() && node.isMaster()) {
                 logger.log(Level.WARNING, msg);
                 connExisting.closeSilently();
+                final Address deadEndpoint = connExisting.getEndPoint();
+                if (deadEndpoint != null) {
+                    node.clusterManager.enqueueAndReturn(new Processable() {
+                        public void process() {
+                            node.clusterManager.disconnectExistingCalls(deadEndpoint);
+                        }
+                    });
+                }
             } else {
                 logger.log(Level.FINEST, msg);
                 return true;

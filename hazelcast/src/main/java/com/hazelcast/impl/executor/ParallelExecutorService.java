@@ -158,9 +158,10 @@ public class ParallelExecutorService {
         }
 
         class ExecutionSegment implements Runnable {
-            final ConcurrentLinkedQueue<Runnable> q = new ConcurrentLinkedQueue<Runnable>();
+            final LinkedBlockingQueue<Runnable> q = new LinkedBlockingQueue<Runnable>();
             final AtomicInteger size = new AtomicInteger();
             final int segmentIndex;
+            volatile boolean executing = false;
 
             ExecutionSegment(int segmentIndex) {
                 this.segmentIndex = segmentIndex;
@@ -170,27 +171,37 @@ public class ParallelExecutorService {
                 waitingExecutions.incrementAndGet();
                 q.offer(e);
                 onOffer();
-                if (size.incrementAndGet() == 1) {
+                // ordering of executing and size is
+                // very important for possible race issue.
+                // these are both volatile. order is guaranteed.
+                if (!executing && size.incrementAndGet() == 1) {
                     executorService.execute(ExecutionSegment.this);
                 }
             }
 
             public void run() {
+                executing = true;
                 activeCount.incrementAndGet();
-                Runnable r = q.poll();
-                while (r != null) {
-                    try {
-                        beforeRun();
-                        r.run();
-                        afterRun();
-                        waitingExecutions.decrementAndGet();
-                    } catch (Throwable e) {
-                        logger.log(Level.WARNING, e.getMessage(), e);
-                    }
-                    size.decrementAndGet();
+                Runnable r = null;
+                try {
                     r = q.poll();
+                    while (r != null) {
+                        try {
+                            beforeRun();
+                            r.run();
+                            afterRun();
+                            waitingExecutions.decrementAndGet();
+                        } catch (Throwable e) {
+                            logger.log(Level.WARNING, e.getMessage(), e);
+                        }
+                        size.decrementAndGet();
+                        r = q.poll(5, TimeUnit.SECONDS);
+                    }
+                } catch (InterruptedException ignored) {
+                } finally {
+                    activeCount.decrementAndGet();
+                    executing = false;
                 }
-                activeCount.decrementAndGet();
             }
 
             public void shutdown() {

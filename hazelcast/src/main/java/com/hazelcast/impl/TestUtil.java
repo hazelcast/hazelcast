@@ -28,6 +28,8 @@ import com.hazelcast.partition.PartitionService;
 import org.junit.Ignore;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -448,7 +450,7 @@ public class TestUtil {
     }
 
     @Ignore
-    public static class OrderUpdateRunnable implements Serializable, Runnable, PartitionAware, HazelcastInstanceAware {
+    public static class OrderUpdateRunnable implements Serializable, Runnable, PartitionAware<Integer>, HazelcastInstanceAware {
         int customerId;
         int orderId;
         transient HazelcastInstance hazelcastInstance;
@@ -472,7 +474,7 @@ public class TestUtil {
             return orderId;
         }
 
-        public Object getPartitionKey() {
+        public Integer getPartitionKey() {
             return customerId;
         }
 
@@ -568,6 +570,9 @@ public class TestUtil {
         int age;
         boolean active;
         double salary;
+        Timestamp date;
+        Date createDate;
+        java.sql.Date sqlDate;
 
         public Employee(long id, String name, int age, boolean live, double price) {
             this(id, name, null, age, live, price);
@@ -584,9 +589,16 @@ public class TestUtil {
             this.age = age;
             this.active = live;
             this.salary = price;
+            this.createDate = new Date();
+            this.date = new Timestamp(createDate.getTime());
+            this.sqlDate = new java.sql.Date(createDate.getTime());
         }
 
         public Employee() {
+        }
+
+        public Timestamp getDate() {
+            return date;
         }
 
         public String getName() {

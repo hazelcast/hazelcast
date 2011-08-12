@@ -24,7 +24,6 @@ import com.hazelcast.util.ThreadWatcher;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -111,9 +110,6 @@ public abstract class SelectorBase implements Runnable {
         try {
             ThreadContext.get().setCurrentFactory(node.factory);
             while (live) {
-//                 if (threadWatcher.incrementRunCount() % 10000 == 0) {
-//                    publishUtilization();
-//                }
                 threadWatcher.incrementRunCount();
                 long currentMillis = System.currentTimeMillis();
                 if ((currentMillis - lastPublish) > TEN_SECOND_MILLIS) {
@@ -142,21 +138,15 @@ public abstract class SelectorBase implements Runnable {
                 final Iterator<SelectionKey> it = setSelectedKeys.iterator();
                 while (it.hasNext()) {
                     final SelectionKey sk = it.next();
-                    it.remove();
                     try {
+                        it.remove();
                         if (sk.isValid()) {
                             sk.interestOps(sk.interestOps() & ~sk.readyOps());
                             SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
                             selectionHandler.handle();
-                        } else {
-                            logger.log(Level.WARNING, sk.isWritable() + " not valid @ " + Thread.currentThread().getName());
                         }
-                    } catch (CancelledKeyException e) {
-                        logger.log(Level.WARNING, "CancelledKey at " + Thread.currentThread().getName(), e);
-                        // nothing do
                     } catch (Throwable e) {
                         handleSelectorException(e);
-                        //break;
                     }
                 }
             }

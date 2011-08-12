@@ -26,11 +26,18 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class Predicates {
+
+    private static final SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+    private static final SimpleDateFormat sqlDateFormat = new SimpleDateFormat("yyyy-mm-dd");
 
     public static class GreaterLessPredicate extends EqualPredicate {
         boolean equal = false;
@@ -547,6 +554,24 @@ public final class Predicates {
                 result = Float.valueOf(value);
             } else if (type instanceof Byte) {
                 result = Byte.valueOf(value);
+            } else if (type instanceof Timestamp) {
+                try {
+                    result = new Timestamp(timestampFormat.parse(value).getTime());
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            } else if (type instanceof java.sql.Date) {
+                try {
+                    result = sqlDateFormat.parse(value);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            } else if (type instanceof Date) {
+                try {
+                    result = dateFormat.parse(value);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
             } else {
                 throw new RuntimeException("Unknown type " + type + " value=" + value);
             }

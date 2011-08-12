@@ -20,6 +20,9 @@ package com.hazelcast.query;
 import com.hazelcast.core.MapEntry;
 import org.junit.Test;
 
+import java.sql.Timestamp;
+import java.util.Date;
+
 import static org.junit.Assert.*;
 
 public class PredicatesTest {
@@ -27,6 +30,9 @@ public class PredicatesTest {
     public void testEqual() {
         Object value = new QueryTest.Employee("abc-123-xvz", 34, true, 10D);
         Object nullNameValue = new QueryTest.Employee(null, 34, true, 10D);
+        assertTrue(new SqlPredicate("date >= '" + new Timestamp(0) + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("createDate >= '" + new Date(0) + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("sqlDate >= '" + new java.sql.Date(0) + "'").apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("name = 'null'").apply(createEntry("1", nullNameValue)));
         assertTrue(new SqlPredicate("name = null").apply(createEntry("1", nullNameValue)));
         assertTrue(new SqlPredicate("name = NULL").apply(createEntry("1", nullNameValue)));

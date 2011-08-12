@@ -52,13 +52,20 @@ public class SemaphoreConfig implements DataSerializable {
     public void readData(DataInput in) throws IOException {
         name = in.readUTF();
         initialPermits = in.readInt();
-        factoryClassName = in.readUTF();
+        boolean hasFactory = in.readBoolean();
+        if (hasFactory) {
+            factoryClassName = in.readUTF();
+        }
     }
 
     public void writeData(DataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(initialPermits);
-        out.writeUTF(factoryClassName);
+        boolean hasFactory = (factoryClassName != null);
+        out.writeBoolean(hasFactory);
+        if (hasFactory) {
+            out.writeUTF(factoryClassName);
+        }
     }
 
     public String getName() {
@@ -112,7 +119,7 @@ public class SemaphoreConfig implements DataSerializable {
     @Override
     public String toString() {
         return "SemaphoreConfig [name=" + this.name
-                + ", factoryEnabled="+Boolean.valueOf(factoryEnabled)
+                + ", factoryEnabled=" + Boolean.valueOf(factoryEnabled)
                 + ", factoryClassName=" + this.factoryClassName
                 + ", factoryImplementation=" + this.factoryImplementation + "]";
     }
