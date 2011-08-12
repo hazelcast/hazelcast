@@ -246,10 +246,10 @@ public class ConcurrentMapManager extends BaseManager {
 
     void syncForDeadSemaphores(Address deadAddress) {
         CMap cmap = maps.get(MapConfig.SEMAPHORE_MAP_NAME);
-        if (cmap != null){
-            for (Record record :  cmap.mapRecords.values()) {
+        if (cmap != null) {
+            for (Record record : cmap.mapRecords.values()) {
                 DistributedSemaphore semaphore = (DistributedSemaphore) record.getValue();
-                if (semaphore.onDisconnect(deadAddress)){
+                if (semaphore.onDisconnect(deadAddress)) {
                     record.setValue(toData(semaphore));
                     record.incrementVersion();
                 }
@@ -259,7 +259,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     void syncForDeadCountDownLatches(Address deadAddress) {
         final CMap cmap = maps.get(MapConfig.COUNT_DOWN_LATCH_MAP_NAME);
-        if (deadAddress != null && cmap != null){
+        if (deadAddress != null && cmap != null) {
             for (Iterator<Record> iterator = cmap.mapRecords.values().iterator(); iterator.hasNext();) {
                 Record record = iterator.next();
                 DistributedCountDownLatch cdl = (DistributedCountDownLatch) record.getValue();
@@ -1225,7 +1225,7 @@ public class ConcurrentMapManager extends BaseManager {
             this.operationsCounter = operationsCounter;
         }
 
-        private long doAtomicOp(ClusterOperation op, Data name, long value, Data expected){
+        private long doAtomicOp(ClusterOperation op, Data name, long value, Data expected) {
             long begin = currentTimeMillis();
             setLocal(op, MapConfig.ATOMIC_LONG_MAP_NAME, name, expected, 0, 0);
             request.longValue = value;
@@ -1251,7 +1251,7 @@ public class ConcurrentMapManager extends BaseManager {
         public boolean await(Data name, long timeout, TimeUnit unit) throws InstanceDestroyedException, MemberLeftException {
             try {
                 int awaitResult = doCountDownLatchOp(COUNT_DOWN_LATCH_AWAIT, name, 0, unit.toMillis(timeout));
-                switch (awaitResult){
+                switch (awaitResult) {
                     case CountDownLatchProxy.INSTANCE_DESTROYED:
                         throw new InstanceDestroyedException(InstanceType.COUNT_DOWN_LATCH, (String) toObject(name));
                     case CountDownLatchProxy.OWNER_LEFT:
@@ -1259,7 +1259,8 @@ public class ConcurrentMapManager extends BaseManager {
                         throw new MemberLeftException(owner);
                     case CountDownLatchProxy.AWAIT_DONE:
                         return true;
-                    case CountDownLatchProxy.AWAIT_FAILED: default:
+                    case CountDownLatchProxy.AWAIT_FAILED:
+                    default:
                         return false;
                 }
             } finally {
@@ -1301,18 +1302,18 @@ public class ConcurrentMapManager extends BaseManager {
             this.operationsCounter = operationsCounter;
         }
 
-        private int doCountDownLatchOp(ClusterOperation op, Data name, int value, long timeout){
+        private int doCountDownLatchOp(ClusterOperation op, Data name, int value, long timeout) {
             return doCountDownLatchOp(op, name, value, timeout, thisAddress);
         }
 
-        private int doCountDownLatchOp(ClusterOperation op, Data name, int value, long timeout, Address endPoint){
+        private int doCountDownLatchOp(ClusterOperation op, Data name, int value, long timeout, Address endPoint) {
             begin = currentTimeMillis();
             setLocal(op, MapConfig.COUNT_DOWN_LATCH_MAP_NAME, name, null, timeout, -1);
             request.longValue = value;
             request.lockAddress = endPoint;
             doOp();
             Data backup = (Data) getResultAsIs();
-            int responseValue = (int)request.longValue;
+            int responseValue = (int) request.longValue;
             if (backup != null) {
                 request.value = backup;
                 request.longValue = 0L;
@@ -1369,14 +1370,15 @@ public class ConcurrentMapManager extends BaseManager {
         public boolean tryAcquire(Data name, int permits, boolean attach, long timeout) throws InstanceDestroyedException {
             try {
                 int acquireResult = doSemaphoreOp(SEMAPHORE_TRY_ACQUIRE, name, permits, attach, timeout);
-                switch (acquireResult){
+                switch (acquireResult) {
                     case SemaphoreProxy.INSTANCE_DESTROYED:
                         operationsCounter.incrementRejectedAcquires(currentTimeMillis() - begin);
                         throw new InstanceDestroyedException(InstanceType.SEMAPHORE, (String) toObject(name));
                     case SemaphoreProxy.ACQUIRED:
                         operationsCounter.incrementAcquires(currentTimeMillis() - begin, permits, attach);
                         return true;
-                    case SemaphoreProxy.ACQUIRE_FAILED: default:
+                    case SemaphoreProxy.ACQUIRE_FAILED:
+                    default:
                         operationsCounter.incrementRejectedAcquires(currentTimeMillis() - begin);
                         return false;
                 }
@@ -1395,15 +1397,15 @@ public class ConcurrentMapManager extends BaseManager {
             this.operationsCounter = operationsCounter;
         }
 
-        private int doSemaphoreOp(ClusterOperation op, Data name, long longValue, Object value, long timeout){
+        private int doSemaphoreOp(ClusterOperation op, Data name, long longValue, Object value, long timeout) {
             begin = currentTimeMillis();
             int responseValue = 1;
-            if (longValue != 0L){
+            if (longValue != 0L) {
                 setLocal(op, MapConfig.SEMAPHORE_MAP_NAME, name, value, timeout, -1);
                 request.longValue = longValue;
                 doOp();
                 Data backup = (Data) getResultAsIs();
-                responseValue = (int)request.longValue;
+                responseValue = (int) request.longValue;
                 if (backup != null) {
                     request.value = backup;
                     request.longValue = 0L;
@@ -2610,17 +2612,17 @@ public class ConcurrentMapManager extends BaseManager {
                 request.response = record.getValueData();
             }
             request.longValue = retValue;
-            if(changed && request.operation == COUNT_DOWN_LATCH_COUNT_DOWN && cdl.getCount() == 0){
+            if (changed && request.operation == COUNT_DOWN_LATCH_COUNT_DOWN && cdl.getCount() == 0) {
                 request.longValue = releaseThreads(record);
             }
             returnResponse(request);
         }
 
-        private int releaseThreads(Record record){
+        private int releaseThreads(Record record) {
             int threadsReleased = 0;
             final List<ScheduledAction> scheduledActions = record.getScheduledActions();
             if (scheduledActions != null) {
-                for (ScheduledAction sa : scheduledActions){
+                for (ScheduledAction sa : scheduledActions) {
                     node.clusterManager.deregisterScheduledAction(sa);
                     if (!sa.expired()) {
                         sa.consume();
@@ -2657,7 +2659,7 @@ public class ConcurrentMapManager extends BaseManager {
         void doCountDownLatchOperation(Request request, DistributedCountDownLatch cdl) {
             final List<ScheduledAction> scheduledActions = request.record.getScheduledActions();
             if (scheduledActions != null) {
-                for (ScheduledAction sa : scheduledActions){
+                for (ScheduledAction sa : scheduledActions) {
                     node.clusterManager.deregisterScheduledAction(sa);
                     doResponse(sa.getRequest(), null, CountDownLatchProxy.INSTANCE_DESTROYED, false);
                 }
@@ -2690,6 +2692,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     abstract class SemaphoreOperationHandler extends SchedulableOperationHandler {
         abstract void doSemaphoreOperation(Request request, DistributedSemaphore semaphore);
+
         private Request request;
 
         @Override
@@ -2706,7 +2709,7 @@ public class ConcurrentMapManager extends BaseManager {
                             String factoryClassName = sc.getFactoryClassName();
                             if (factoryClassName != null && factoryClassName.length() != 0) {
                                 ClassLoader cl = node.getConfig().getClassLoader();
-                                Class factoryClass = Serializer.classForName(cl, factoryClassName);
+                                Class factoryClass = Serializer.loadClass(cl, factoryClassName);
                                 factory = (SemaphoreFactory) factoryClass.newInstance();
                             }
                         }
@@ -2776,10 +2779,10 @@ public class ConcurrentMapManager extends BaseManager {
             if (scheduledActions != null) {
                 final int threadId = ThreadContext.get().getThreadId();
                 final Iterator<ScheduledAction> i = scheduledActions.iterator();
-                while (i.hasNext()){
+                while (i.hasNext()) {
                     final ScheduledAction sa = i.next();
                     final Request sr = sa.getRequest();
-                    if (sr.lockThreadId == threadId && sr.caller.equals(request.caller)){
+                    if (sr.lockThreadId == threadId && sr.caller.equals(request.caller)) {
                         node.clusterManager.deregisterScheduledAction(sa);
                         doResponse(sr, null, SemaphoreProxy.ACQUIRE_FAILED, false);
                         i.remove();
@@ -2798,9 +2801,9 @@ public class ConcurrentMapManager extends BaseManager {
         void doSemaphoreOperation(Request request, DistributedSemaphore semaphore) {
             final List<ScheduledAction> scheduledActions = request.record.getScheduledActions();
             if (scheduledActions != null) {
-                for (ScheduledAction sa : scheduledActions){
+                for (ScheduledAction sa : scheduledActions) {
                     final Request sr = sa.getRequest();
-                    if (sr.caller.equals(request.caller) && sr.lockThreadId == ThreadContext.get().getThreadId()){
+                    if (sr.caller.equals(request.caller) && sr.lockThreadId == ThreadContext.get().getThreadId()) {
                         node.clusterManager.deregisterScheduledAction(sa);
                         doResponse(sr, null, SemaphoreProxy.INSTANCE_DESTROYED, false);
                     }

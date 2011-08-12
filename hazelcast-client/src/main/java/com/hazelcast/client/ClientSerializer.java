@@ -27,14 +27,14 @@ public class ClientSerializer extends AbstractSerializer {
     public ClientSerializer() {
         super(new DataSerializer() {
             @Override
-            protected Class classForName(final String className) throws ClassNotFoundException {
+            protected Class loadClass(final String className) throws ClassNotFoundException {
                 String name = className;
                 if (name.equals("com.hazelcast.impl.Keys")) {
                     name = "com.hazelcast.client.impl.CollectionWrapper";
                 } else if (className.equals("com.hazelcast.impl.CMap$Values")) {
                     name = "com.hazelcast.client.impl.Values";
                 }
-                return super.classForName(name);
+                return super.loadClass(name);
             }
 
             @Override

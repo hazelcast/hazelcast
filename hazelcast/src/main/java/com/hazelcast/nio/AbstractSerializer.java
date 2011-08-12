@@ -53,32 +53,32 @@ public abstract class AbstractSerializer {
         return constructor.newInstance();
     }
 
-    public static Class<?> classForName(final String className) throws ClassNotFoundException {
-        return classForName(null, className);
+    public static Class<?> loadClass(final String className) throws ClassNotFoundException {
+        return loadClass(null, className);
     }
 
-    public static Class<?> classForName(final ClassLoader classLoader, final String className) throws ClassNotFoundException {
+    public static Class<?> loadClass(final ClassLoader classLoader, final String className) throws ClassNotFoundException {
         if (className == null) {
             throw new IllegalArgumentException("ClassName cannot be null!");
         }
         if (className.startsWith("com.hazelcast")) {
-            return Class.forName(className, true, AbstractSerializer.class.getClassLoader());
+            return AbstractSerializer.class.getClassLoader().loadClass(className);
         }
         ClassLoader theClassLoader = classLoader;
         if (theClassLoader == null) {
             theClassLoader = Thread.currentThread().getContextClassLoader();
         }
         if (theClassLoader != null) {
-            return Class.forName(className, true, theClassLoader);
+            return theClassLoader.loadClass(className);
         }
-        return Class.forName(className);
+        return ClassLoader.getSystemClassLoader().loadClass(className);
     }
 
     public static ObjectInputStream newObjectInputStream(final InputStream in) throws IOException {
         return new ObjectInputStream(in) {
             @Override
             protected Class<?> resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
-                return classForName(desc.getName());
+                return loadClass(desc.getName());
             }
         };
     }

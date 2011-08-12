@@ -88,7 +88,7 @@ public class SerializationHelper {
             DataSerializable ds;
             try {
                 String className = in.readUTF();
-                ds = (DataSerializable) Serializer.newInstance(Serializer.classForName(className));
+                ds = (DataSerializable) Serializer.newInstance(Serializer.loadClass(className));
             } catch (Throwable e) {
                 throw new IOException(e.getMessage());
             }

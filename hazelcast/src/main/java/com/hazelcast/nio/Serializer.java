@@ -35,12 +35,12 @@ public final class Serializer extends AbstractSerializer {
         return AbstractSerializer.newInstance(klass);
     }
 
-    public static Class<?> classForName(final String className) throws ClassNotFoundException {
-        return AbstractSerializer.classForName(className);
+    public static Class<?> loadClass(final String className) throws ClassNotFoundException {
+        return AbstractSerializer.loadClass(className);
     }
 
-    public static Class<?> classForName(final ClassLoader classLoader, final String className) throws ClassNotFoundException {
-        return AbstractSerializer.classForName(classLoader, className);
+    public static Class<?> loadClass(final ClassLoader classLoader, final String className) throws ClassNotFoundException {
+        return AbstractSerializer.loadClass(classLoader, className);
     }
 
     public Data writeObject(final Object obj) {
@@ -89,8 +89,8 @@ public final class Serializer extends AbstractSerializer {
             return SERIALIZER_TYPE_DATA;
         }
 
-        protected Class classForName(final String className) throws ClassNotFoundException {
-            return AbstractSerializer.classForName(className);
+        protected Class loadClass(final String className) throws ClassNotFoundException {
+            return AbstractSerializer.loadClass(className);
         }
 
         protected String toClassName(final Class clazz) throws ClassNotFoundException {
@@ -100,7 +100,7 @@ public final class Serializer extends AbstractSerializer {
         public final DataSerializable read(final FastByteArrayInputStream bbis) throws Exception {
             final String className = bbis.readUTF();
             try {
-                final DataSerializable ds = (DataSerializable) newInstance(classForName(className));
+                final DataSerializable ds = (DataSerializable) newInstance(loadClass(className));
                 ds.readData(bbis);
                 return ds;
             } catch (final Exception e) {

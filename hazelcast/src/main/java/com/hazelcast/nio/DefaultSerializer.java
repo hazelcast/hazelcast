@@ -28,7 +28,8 @@ import java.util.TreeSet;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import static com.hazelcast.nio.AbstractSerializer.*;
+import static com.hazelcast.nio.AbstractSerializer.newInstance;
+import static com.hazelcast.nio.AbstractSerializer.newObjectInputStream;
 
 public class DefaultSerializer implements CustomSerializer {
 
@@ -247,11 +248,11 @@ public class DefaultSerializer implements CustomSerializer {
         }
 
         public final Class read(final FastByteArrayInputStream bbis) throws Exception {
-            return classForName(bbis.readUTF());
+            return loadClass(bbis.readUTF());
         }
 
-        protected Class classForName(final String className) throws ClassNotFoundException {
-            return AbstractSerializer.classForName(className);
+        protected Class loadClass(final String className) throws ClassNotFoundException {
+            return AbstractSerializer.loadClass(className);
         }
 
         public final void write(final FastByteArrayOutputStream bbos, final Class obj) throws Exception {
@@ -323,7 +324,7 @@ public class DefaultSerializer implements CustomSerializer {
         public final Externalizable read(final FastByteArrayInputStream bbis) throws Exception {
             final String className = bbis.readUTF();
             try {
-                final Externalizable ds = (Externalizable) newInstance(classForName(className));
+                final Externalizable ds = (Externalizable) newInstance(AbstractSerializer.loadClass(className));
                 ds.readExternal(newObjectInputStream(bbis));
                 return ds;
             } catch (final Exception e) {

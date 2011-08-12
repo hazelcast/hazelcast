@@ -30,7 +30,7 @@ public class Logger {
                     String loggerClass = System.getProperty("hazelcast.logging.class");
                     if (loggerClass != null) {
                         try {
-                            loggerFactory = (LoggerFactory) Serializer.classForName(loggerClass).newInstance();
+                            loggerFactory = (LoggerFactory) Serializer.loadClass(loggerClass).newInstance();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -40,13 +40,13 @@ public class Logger {
                         if (loggerType != null) {
                             if ("log4j".equals(loggerType)) {
                                 try {
-                                    loggerFactory = (LoggerFactory) Serializer.classForName("com.hazelcast.logging.Log4jFactory").newInstance();
+                                    loggerFactory = (LoggerFactory) Serializer.loadClass("com.hazelcast.logging.Log4jFactory").newInstance();
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
                             } else if ("slf4j".equals(loggerType)) {
                                 try {
-                                    loggerFactory = (LoggerFactory) Serializer.classForName("com.hazelcast.logging.Slf4jFactory").newInstance();
+                                    loggerFactory = (LoggerFactory) Serializer.loadClass("com.hazelcast.logging.Slf4jFactory").newInstance();
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }

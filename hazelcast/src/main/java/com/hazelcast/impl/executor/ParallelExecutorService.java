@@ -20,6 +20,7 @@ package com.hazelcast.impl.executor;
 import com.hazelcast.logging.ILogger;
 
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -158,62 +159,80 @@ public class ParallelExecutorService {
         }
 
         class ExecutionSegment implements Runnable {
-            final LinkedBlockingQueue<Runnable> q = new LinkedBlockingQueue<Runnable>();
-            final AtomicInteger size = new AtomicInteger();
+            final Queue<Runnable> q = new LinkedBlockingQueue<Runnable>();
             final int segmentIndex;
-            volatile boolean executing = false;
+            int size = 0;
+            boolean executing = false;
 
             ExecutionSegment(int segmentIndex) {
                 this.segmentIndex = segmentIndex;
+            }
+
+            public synchronized boolean shouldRun() {
+                size++;
+                if (!executing) {
+                    executing = true;
+                    return true;
+                }
+                return false;
+            }
+
+            public synchronized boolean shouldLoop() {
+                return size > 0;
+            }
+
+            public synchronized void decrement() {
+                size--;
+            }
+
+            public synchronized void setExecuting(boolean executing) {
+                this.executing = executing;
             }
 
             public void offer(Runnable e) {
                 waitingExecutions.incrementAndGet();
                 q.offer(e);
                 onOffer();
-                // ordering of executing and size is
-                // very important for possible race issue.
-                // these are both volatile. order is guaranteed.
-                if (!executing && size.incrementAndGet() == 1) {
+                if (shouldRun()) {
                     executorService.execute(ExecutionSegment.this);
                 }
             }
 
             public void run() {
-                executing = true;
                 activeCount.incrementAndGet();
-                Runnable r = null;
-                try {
-                    r = q.poll();
-                    while (r != null) {
-                        try {
-                            beforeRun();
-                            r.run();
-                            afterRun();
-                            waitingExecutions.decrementAndGet();
-                        } catch (Throwable e) {
-                            logger.log(Level.WARNING, e.getMessage(), e);
-                        }
-                        size.decrementAndGet();
-                        r = q.poll(5, TimeUnit.SECONDS);
+                while (shouldLoop()) {
+                    doRun();
+                }
+                setExecuting(false);
+                activeCount.decrementAndGet();
+            }
+
+            private void doRun() {
+                Runnable r = q.poll();
+                while (r != null) {
+                    try {
+                        beforeRun();
+                        r.run();
+                        afterRun();
+                        waitingExecutions.decrementAndGet();
+                    } catch (Throwable e) {
+                        logger.log(Level.WARNING, e.getMessage(), e);
                     }
-                } catch (InterruptedException ignored) {
-                } finally {
-                    activeCount.decrementAndGet();
-                    executing = false;
+                    decrement();
+                    r = q.poll();
                 }
             }
 
             public void shutdown() {
                 Runnable r = q.poll();
                 while (r != null) {
-                    size.decrementAndGet();
+                    decrement();
                     r = q.poll();
                 }
             }
 
-            public int size() {
-                return size.get();
+            public synchronized int size() {
+                return size;
             }
         }
     }
