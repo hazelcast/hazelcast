@@ -259,9 +259,8 @@ public class ConcurrentMapManager extends BaseManager {
 
     void syncForDeadCountDownLatches(Address deadAddress) {
         final CMap cmap = maps.get(MapConfig.COUNT_DOWN_LATCH_MAP_NAME);
-        if (deadAddress != null && cmap != null) {
-            for (Iterator<Record> iterator = cmap.mapRecords.values().iterator(); iterator.hasNext();) {
-                Record record = iterator.next();
+        if (deadAddress != null && cmap != null){
+            for (Record record : cmap.mapRecords.values()) {
                 DistributedCountDownLatch cdl = (DistributedCountDownLatch) record.getValue();
                 if (cdl != null && cdl.isOwnerOrMemberAddress(deadAddress)) {
                     List<ScheduledAction> scheduledActions = record.getScheduledActions();
@@ -276,7 +275,7 @@ public class ConcurrentMapManager extends BaseManager {
                         }
                         scheduledActions.clear();
                     }
-                    iterator.remove();
+                    cdl.setOwnerLeft();
                 }
             }
         }
@@ -1255,7 +1254,7 @@ public class ConcurrentMapManager extends BaseManager {
                     case CountDownLatchProxy.INSTANCE_DESTROYED:
                         throw new InstanceDestroyedException(InstanceType.COUNT_DOWN_LATCH, (String) toObject(name));
                     case CountDownLatchProxy.OWNER_LEFT:
-                        Member owner = node.clusterManager.getMember(request.lockAddress);
+                        Member owner = new MemberImpl(request.lockAddress, thisAddress.equals(request.lockAddress));
                         throw new MemberLeftException(owner);
                     case CountDownLatchProxy.AWAIT_DONE:
                         return true;
@@ -2692,7 +2691,6 @@ public class ConcurrentMapManager extends BaseManager {
 
     abstract class SemaphoreOperationHandler extends SchedulableOperationHandler {
         abstract void doSemaphoreOperation(Request request, DistributedSemaphore semaphore);
-
         private Request request;
 
         @Override

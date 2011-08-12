@@ -38,7 +38,7 @@ public class DistributedCountDownLatch implements DataSerializable  {
 
     public void readData(DataInput in) throws IOException {
         count = in.readInt();
-        if (count > 0) {
+        if (count != 0) {
             memberAddress.readData(in);
             ownerAddress.readData(in);
         }
@@ -46,7 +46,7 @@ public class DistributedCountDownLatch implements DataSerializable  {
 
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(count);
-        if (count > 0) {
+        if (count != 0) {
             memberAddress.writeData(out);
             ownerAddress.writeData(out);
         }
@@ -68,14 +68,22 @@ public class DistributedCountDownLatch implements DataSerializable  {
         return deadAddress.equals(ownerAddress) || deadAddress.equals(memberAddress);
     }
 
+    public boolean ownerLeft() {
+        return count == -1;
+    }
+
     public boolean setCount(int count, Address memberAddress, Address ownerAddress) {
-        if (this.count != 0 || count == 0) {
+        if (this.count > 0 || count <= 0) {
             return false;
         }
         this.count = count;
         this.memberAddress = memberAddress;
         this.ownerAddress = ownerAddress;
         return true;
+    }
+
+    public void setOwnerLeft() {
+        count = -1;
     }
 
     @Override
