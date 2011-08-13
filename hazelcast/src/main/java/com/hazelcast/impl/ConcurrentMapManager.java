@@ -2638,7 +2638,10 @@ public class ConcurrentMapManager extends BaseManager {
 
     class CountDownLatchAwaitOperationHandler extends CountDownLatchOperationHandler {
         void doCountDownLatchOperation(Request request, DistributedCountDownLatch cdl) {
-            if (cdl.getCount() == 0) {
+            if (cdl.ownerLeft()) {
+                request.clearForResponse();
+                doResponse(request, null, CountDownLatchProxy.OWNER_LEFT, false);
+            } else if (cdl.getCount() == 0) {
                 request.clearForResponse();
                 doResponse(request, null, CountDownLatchProxy.AWAIT_DONE, false);
             } else {
