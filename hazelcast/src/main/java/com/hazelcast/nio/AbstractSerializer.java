@@ -68,6 +68,10 @@ public abstract class AbstractSerializer {
         if (theClassLoader == null) {
             theClassLoader = Thread.currentThread().getContextClassLoader();
         }
+        if (className.startsWith("[L")) {
+            // ClassLoader.loadClass doesn't understand Arrays!
+            return Class.forName(className, true, theClassLoader);
+        }
         if (theClassLoader != null) {
             return theClassLoader.loadClass(className);
         }
