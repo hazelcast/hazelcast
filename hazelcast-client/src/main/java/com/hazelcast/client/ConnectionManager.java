@@ -46,7 +46,7 @@ public class ConnectionManager implements MembershipListener {
     private volatile int lastDisconnectedConnectionId = -1;
     private ClientBinder binder;
 
-    private volatile boolean lookinglForAlive = false;
+    private volatile boolean lookingForLiveConnection = false;
     private volatile boolean running = true;
 
     private final LifecycleServiceClientImpl lifecycleService;
@@ -107,21 +107,21 @@ public class ConnectionManager implements MembershipListener {
             synchronized (this) {
                 final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT);
                 final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
-                currentConnection = lookForAliveConnection(attemptsLimit, reconnectionTimeout);
+                currentConnection = lookForLiveConnection(attemptsLimit, reconnectionTimeout);
             }
         }
         return currentConnection;
     }
 
-    public Connection lookForAliveConnection() throws IOException {
+    public Connection lookForLiveConnection() throws IOException {
         final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT);
         final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
-        return lookForAliveConnection(attemptsLimit, reconnectionTimeout);
+        return lookForLiveConnection(attemptsLimit, reconnectionTimeout);
     }
 
-    private Connection lookForAliveConnection(final int attemptsLimit,
-                                              final int reconnectionTimeout) throws IOException {
-        lookinglForAlive = true;
+    private Connection lookForLiveConnection(final int attemptsLimit,
+                                             final int reconnectionTimeout) throws IOException {
+        lookingForLiveConnection = true;
         try {
             boolean restored = false;
             int attempt = 0;
@@ -145,7 +145,7 @@ public class ConnectionManager implements MembershipListener {
                 }
                 if (currentConnection != null) {
                     logger.log(Level.FINE, "Client is connecting to " + currentConnection);
-                    lookinglForAlive = false;
+                    lookingForLiveConnection = false;
                     break;
                 }
                 if (attempt >= attemptsLimit) {
@@ -168,7 +168,7 @@ public class ConnectionManager implements MembershipListener {
                 notifyConnectionIsRestored();
             }
         } finally {
-            lookinglForAlive = false;
+            lookingForLiveConnection = false;
         }
         return currentConnection;
     }
@@ -185,7 +185,7 @@ public class ConnectionManager implements MembershipListener {
     }
 
     public Connection getConnection() throws IOException {
-        if (currentConnection == null && running && !lookinglForAlive) {
+        if (currentConnection == null && running && !lookingForLiveConnection) {
             boolean restored = false;
             synchronized (this) {
                 if (currentConnection == null) {

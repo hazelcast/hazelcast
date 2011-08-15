@@ -172,7 +172,7 @@ public class OutRunnable extends IORunnable {
             client.runAsyncAndWait(new Runnable() {
                 public void run() {
                     try {
-                        final Connection lookForAliveConnection = client.getConnectionManager().lookForAliveConnection();
+                        final Connection lookForAliveConnection = client.getConnectionManager().lookForLiveConnection();
                         if (lookForAliveConnection == null) {
                             logger.log(Level.WARNING, "lookForAliveConnection is null, reconnection: " + reconnection);
                             if (reconnection.get()) {
