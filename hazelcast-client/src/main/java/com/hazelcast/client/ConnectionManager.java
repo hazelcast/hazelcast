@@ -59,7 +59,6 @@ public class ConnectionManager implements MembershipListener {
         if (shuffle) {
             Collections.shuffle(this.clusterMembers);
         }
-        scheduleAHeartBeatThread();
     }
 
     public ConnectionManager(final HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress address, long timeout) {
@@ -67,10 +66,9 @@ public class ConnectionManager implements MembershipListener {
         this.client = client;
         this.lifecycleService = lifecycleService;
         this.clusterMembers.add(address);
-        scheduleAHeartBeatThread();
     }
 
-    private void scheduleAHeartBeatThread() {
+    void scheduleHeartbeatTimerTask() {
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override

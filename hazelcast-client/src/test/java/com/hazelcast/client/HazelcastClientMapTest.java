@@ -474,9 +474,9 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     @Test
-    public void itertateOverMapKeys() {
+    public void iterateOverMapKeys() {
         HazelcastClient hClient = getHazelcastClient();
-        Map<String, String> map = hClient.getMap("itertateOverMapKeys");
+        Map<String, String> map = hClient.getMap("iterateOverMapKeys");
         map.put("1", "A");
         map.put("2", "B");
         map.put("3", "C");
@@ -497,9 +497,9 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     @Test
-    public void itertateOverMapEntries() {
+    public void iterateOverMapEntries() {
         HazelcastClient hClient = getHazelcastClient();
-        IMap<String, String> map = hClient.getMap("itertateOverMapEntries");
+        IMap<String, String> map = hClient.getMap("iterateOverMapEntries");
         map.put("1", "A");
         map.put("2", "B");
         map.put("3", "C");

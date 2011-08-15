@@ -104,6 +104,7 @@ public class HazelcastClient implements HazelcastInstance {
             connectionManager.updateMembers();
         }
         lifecycleService.fireLifecycleEvent(STARTED);
+        connectionManager.scheduleHeartbeatTimerTask();
     }
 
     GroupConfig groupConfig() {

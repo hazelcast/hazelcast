@@ -62,20 +62,16 @@ public abstract class AbstractSerializer {
             throw new IllegalArgumentException("ClassName cannot be null!");
         }
         if (className.startsWith("com.hazelcast")) {
-            return AbstractSerializer.class.getClassLoader().loadClass(className);
+            return Class.forName(className, true, AbstractSerializer.class.getClassLoader());
         }
         ClassLoader theClassLoader = classLoader;
         if (theClassLoader == null) {
             theClassLoader = Thread.currentThread().getContextClassLoader();
         }
-        if (className.startsWith("[L")) {
-            // ClassLoader.loadClass doesn't understand Arrays!
+        if (theClassLoader != null) {
             return Class.forName(className, true, theClassLoader);
         }
-        if (theClassLoader != null) {
-            return theClassLoader.loadClass(className);
-        }
-        return ClassLoader.getSystemClassLoader().loadClass(className);
+        return Class.forName(className);
     }
 
     public static ObjectInputStream newObjectInputStream(final InputStream in) throws IOException {
