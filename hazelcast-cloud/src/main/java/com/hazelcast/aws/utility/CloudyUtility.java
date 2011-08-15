@@ -69,7 +69,6 @@ public class CloudyUtility {
             Util.streamXML(doc, baos);
             final byte[] bytes = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-            System.out.println("XML is : " + Util.inputStreamToString(bais));
             Element element = doc.getDocumentElement();
             NodeHolder elementNodeHolder = new NodeHolder(element);
             List<String> names = new ArrayList<String>();

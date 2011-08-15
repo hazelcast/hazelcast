@@ -82,7 +82,6 @@ public class ConnectionManager implements MembershipListener {
                             public void run() {
                                 Set<Member> members = client.getCluster().getMembers();
                                 if (members != null && members.size() >= 1) {
-                                    System.out.println(members);
                                     latch.countDown();
                                 }
                             }

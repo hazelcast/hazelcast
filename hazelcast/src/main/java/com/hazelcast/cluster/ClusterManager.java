@@ -890,7 +890,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 ScheduledAction sa = it.next();
                 Request request = sa.getRequest();
                 if (endpoint.equals(request.caller) && threadIds.contains(request.lockThreadId)) {
-                    System.out.println("invalided scheduled action ");
                     sa.setValid(false);
                     it.remove();
                 }
