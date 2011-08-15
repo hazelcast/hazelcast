@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:cache="http://www.hazelcast.com/schema/config"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+		http://www.hazelcast.com/schema/config
+		http://www.hazelcast.com/schema/config/hazelcast-spring.xsd">
+
+	<cache:config id="config">
+		<cache:map name="testCache"
+			backup-count="2"
+			eviction-policy="NONE"
+			max-size="0"
+			eviction-percentage="30"
+			merge-policy="hz.ADD_NEW_ENTRY"/>
+	</cache:config>
+
+</beans>
