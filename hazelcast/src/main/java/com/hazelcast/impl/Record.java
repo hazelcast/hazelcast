@@ -312,7 +312,7 @@ public final class Record implements MapEntry {
 
     public void setLastUpdated() {
         if (expirationTime != Long.MAX_VALUE && expirationTime > 0) {
-            long ttl = expirationTime - (lastUpdateTime > 0L ? lastUpdateTime : creationTime);
+        	long ttl = expirationTime - Math.max(lastUpdateTime, creationTime);
             setExpirationTime(ttl);
         }
         setLastUpdateTime(System.currentTimeMillis());
