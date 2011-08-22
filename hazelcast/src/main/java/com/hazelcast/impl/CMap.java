@@ -484,9 +484,6 @@ public class CMap {
             Record record = getRecord(req);
             if (record != null) {
                 if (record.isActive()) {
-                    if (record.getCopyCount() > 0) {
-                        record.decrementCopyCount();
-                    }
                     markAsEvicted(record);
                 }
             }
@@ -701,7 +698,6 @@ public class CMap {
         }
         record.setActive(true);
         record.incrementVersion();
-        record.incrementCopyCount();
         if (!backup) {
             updateIndexes(record);
             concurrentMapManager.fireMapEvent(mapListeners, EntryEvent.TYPE_ADDED, null, record, req.caller);
@@ -962,7 +958,6 @@ public class CMap {
         markAsDirty(record);
         req.clearForResponse();
         req.version = record.getVersion();
-        req.longValue = record.getCopyCount();
         if (localUpdateListener != null && req.txnId != Long.MIN_VALUE) {
             localUpdateListener.recordUpdated(record);
         }
@@ -1427,7 +1422,6 @@ public class CMap {
             }
         }
         record.setIndexes(req.indexes, req.indexTypes);
-        record.setCopyCount((int) req.longValue);
         if (req.lockCount >= 0) {
             DistributedLock lock = new DistributedLock(req.lockAddress, req.lockThreadId, req.lockCount);
             record.setLock(lock);
@@ -1444,10 +1438,7 @@ public class CMap {
             unlock(record, req);
         }
         boolean removed = false;
-        if (record.getCopyCount() > 0) {
-            record.decrementCopyCount();
-            removed = true;
-        } else if (record.getValueData() != null) {
+        if (record.getValueData() != null) {
             removed = true;
         } else if (record.getMultiValues() != null) {
             removed = true;
@@ -1457,7 +1448,6 @@ public class CMap {
             record.incrementVersion();
         }
         req.version = record.getVersion();
-        req.longValue = record.getCopyCount();
         markAsRemoved(record);
         return true;
     }
@@ -1473,7 +1463,6 @@ public class CMap {
             markAsEvicted(record);
             req.clearForResponse();
             req.version = record.getVersion();
-            req.longValue = record.getCopyCount();
             lastEvictionTime = now;
             return true;
         }
@@ -1518,7 +1507,6 @@ public class CMap {
             }
             req.clearForResponse();
             req.version = record.getVersion();
-            req.longValue = record.getCopyCount();
             req.response = oldValue;
         } finally {
             if (req.txnId != -1) {
@@ -1616,7 +1604,8 @@ public class CMap {
             throw new RuntimeException("Cannot create record from a 0 size key: " + key);
         }
         int blockId = concurrentMapManager.getBlockId(key);
-        return new Record(this, blockId, key, value, ttl, maxIdle, concurrentMapManager.newRecordId());
+//        return new SimpleRecord(blockId, this, concurrentMapManager.newRecordId(), key, value);
+        return new DefaultRecord(this, blockId, key, value, ttl, maxIdle, concurrentMapManager.newRecordId());
     }
 
     public void addListener(Data key, Address address, boolean includeValue) {

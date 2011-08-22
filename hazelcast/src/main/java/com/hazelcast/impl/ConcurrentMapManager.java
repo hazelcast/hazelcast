@@ -3536,10 +3536,6 @@ public class ConcurrentMapManager extends BaseManager {
                             if (record.getValueData() != null) {
                                 Data value = (onlyKeys) ? null : record.getValueData();
                                 pairs.addKeyValue(new KeyValue(key, value));
-                            } else if (record.getCopyCount() > 0) {
-                                for (int i = 0; i < record.getCopyCount(); i++) {
-                                    pairs.addKeyValue(new KeyValue(key, null));
-                                }
                             } else if (record.getMultiValues() != null) {
                                 int size = record.getMultiValues().size();
                                 if (size > 0) {

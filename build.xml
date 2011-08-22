@@ -1,5 +1,5 @@
 <project basedir="." name="hazelcast" default="jar">
-    <property name="version" value="1.9.4-RC1"/>
+    <property name="version" value="1.9.5-SNAPSHOT"/>
 
     <property name="core.src.dir" value="hazelcast/src/main/java"/>
     <property name="core.classes.dir" value="hazelcast/target/classes"/>
@@ -15,8 +15,8 @@
         <javac destdir="${core.classes.dir}" compiler="javac1.5" debug="on" nowarn="yes">
             <src path="${core.src.dir}"/>
             <exclude name="**/Log4jFactory.java"/>
-        	<exclude name="**/Slf4jFactory.java"/>
-        	<exclude name="**/TestUtil.java"/>
+            <exclude name="**/Slf4jFactory.java"/>
+            <exclude name="**/TestUtil.java"/>
         </javac>
         <tstamp>
             <format property="TODAY" pattern="yyyyMMdd" locale="en"/>
@@ -77,7 +77,7 @@
                 <![CDATA[<h1>Hazelcast</h1>]]>
             </doctitle>
             <bottom>
-                <![CDATA[<i>Copyright &#1.9.4-RC1; 2008-2011 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
+                <![CDATA[<i>Copyright &#1.9.5-SNAPSHOT; 2008-2011 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
             <link offline="false" href="http://java.sun.com/j2se/1.5.0/docs/api/" packagelistLoc="C:\tmp"/>
             <link href="http://java.sun.com/j2se/1.5.0/docs/api/"/>
             <link href="http://java.sun.com/products/servlet/2.3/javadoc/"/>

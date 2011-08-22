@@ -32,6 +32,7 @@ public class ClusterListTest {
     @BeforeClass
     public static void init() throws Exception {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 

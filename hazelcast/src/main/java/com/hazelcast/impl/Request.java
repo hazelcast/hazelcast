@@ -210,7 +210,6 @@ public class Request {
             lockAddress = lock.getLockAddress();
             lockCount = lock.getLockCount();
         }
-        longValue = record.getCopyCount();
         ttl = record.getRemainingTTL();
         timeout = record.getRemainingIdle();
         key = record.getKeyData();
