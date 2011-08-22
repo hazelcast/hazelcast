@@ -20,8 +20,8 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
-import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl;
-import com.hazelcast.impl.FactoryImpl.CollectionProxyImpl.CollectionProxyReal;
+import com.hazelcast.impl.FactoryImpl.SetProxyImpl;
+import com.hazelcast.impl.FactoryImpl.SetProxyImpl.SetProxyReal;
 import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.logging.ILogger;
@@ -449,7 +449,7 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             Collection<Instance> instances = node.factory.getInstances();
             ArrayList<Object> instanceIds = new ArrayList<Object>();
-             for (Instance instance : instances) {
+            for (Instance instance : instances) {
                 Object id = instance.getId();
                 if (id instanceof FactoryImpl.ProxyKey) {
                     Object key = ((FactoryImpl.ProxyKey) id).getKey();
@@ -583,7 +583,6 @@ public class ClientService implements ConnectionListener {
         }
     }
 
-
     public static class CountDownLatchLeave implements RemotelyProcessable {
         Address deadAddress;
         transient Node node;
@@ -631,7 +630,7 @@ public class ClientService implements ConnectionListener {
     }
 
     private class SemaphoreAttachDetachHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean attach){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean attach) {
             ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
             if (attach) {
                 semaphoreProxy.attach(permits);
@@ -651,31 +650,31 @@ public class ClientService implements ConnectionListener {
     }
 
     private class SemaphoreGetAttachedHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag) {
             packet.setValue(toData(semaphoreProxy.attachedPermits()));
         }
     }
 
     private class SemaphoreGetAvailableHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag) {
             packet.setValue(toData(semaphoreProxy.availablePermits()));
         }
     }
 
     private class SemaphoreDrainHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag) {
             packet.setValue(toData(semaphoreProxy.drainPermits()));
         }
     }
 
     private class SemaphoreReduceHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean flag){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean flag) {
             semaphoreProxy.reducePermits(permits);
         }
     }
 
     private class SemaphoreReleaseHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean detach){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean detach) {
             if (detach) {
                 semaphoreProxy.releaseDetach(permits);
                 getClientEndpoint(packet.conn).attachDetachPermits(packet.name, -permits);
@@ -686,12 +685,12 @@ public class ClientService implements ConnectionListener {
     }
 
     private class SemaphoreTryAcquireHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean attach){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean attach) {
             try {
                 boolean acquired;
                 if (attach) {
                     acquired = semaphoreProxy.tryAcquireAttach(permits, packet.timeout, TimeUnit.MILLISECONDS);
-                    if(acquired){
+                    if (acquired) {
                         getClientEndpoint(packet.conn).attachDetachPermits(packet.name, permits);
                     }
                 } else {
@@ -1197,8 +1196,8 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void doSetOp(final Node node, final Packet packet) {
-            final CollectionProxyImpl collectionProxy = (CollectionProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
-            final MProxy mapProxy = ((CollectionProxyReal) collectionProxy.getBase()).mapProxy;
+            final FactoryImpl.SetProxyImpl collectionProxy = (FactoryImpl.SetProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+            final MProxy mapProxy = ((SetProxyReal) collectionProxy.getBase()).mapProxy;
             packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData()));
         }
 
@@ -1249,8 +1248,8 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void doSetOp(Node node, Packet packet) {
-            CollectionProxyImpl collectionProxy = (CollectionProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
-            MProxy mapProxy = ((CollectionProxyReal) collectionProxy.getBase()).mapProxy;
+            FactoryImpl.SetProxyImpl collectionProxy = (SetProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+            MProxy mapProxy = ((SetProxyReal) collectionProxy.getBase()).mapProxy;
             packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>()));
         }
 
@@ -1280,8 +1279,8 @@ public class ClientService implements ConnectionListener {
                 IMap map = (IMap) node.factory.getOrCreateProxyByName(Prefix.MAP + (String) listProxy.getId());
                 clientEndpoint.addThisAsListener(map, null, true);
             } else if (getInstanceType(packet.name).equals(InstanceType.SET)) {
-                CollectionProxyImpl collectionProxy = (CollectionProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
-                IMap map = ((CollectionProxyReal) collectionProxy.getBase()).mapProxy;
+                FactoryImpl.SetProxyImpl collectionProxy = (FactoryImpl.SetProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+                IMap map = ((SetProxyReal) collectionProxy.getBase()).mapProxy;
                 clientEndpoint.addThisAsListener(map, null, includeValue);
             } else if (getInstanceType(packet.name).equals(InstanceType.QUEUE)) {
                 IQueue<Object> queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);

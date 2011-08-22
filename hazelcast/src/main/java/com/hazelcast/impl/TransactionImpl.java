@@ -42,20 +42,6 @@ public class TransactionImpl implements Transaction {
         this.logger = factory.getLoggingService().getLogger(this.getClass().getName());
     }
 
-    public Object attachAddOp(String name, Object key) {
-        TransactionRecord rec = findTransactionRecord(name, key);
-        if (rec == null) {
-            rec = new TransactionRecord(name, key, 1, true);
-            transactionRecords.add(rec);
-            return null;
-        } else {
-            Object old = rec.value;
-            rec.value = ((Integer) rec.value) + 1;
-            rec.removed = false;
-            return old;
-        }
-    }
-
     public Object attachPutOp(String name, Object key, Object value, boolean newRecord) {
         return attachPutOp(name, key, value, 0, -1, newRecord);
     }
@@ -341,12 +327,7 @@ public class TransactionImpl implements Transaction {
                     factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
                 }
             } else {
-                if (instanceType.isList()) {
-                    int count = (Integer) value;
-                    for (int i = 0; i < count; i++) {
-                        factory.node.concurrentMapManager.new MAdd().addToList(name, key);
-                    }
-                } else if (instanceType.isMultiMap()) {
+                if (instanceType.isMultiMap()) {
                     factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
                 } else {
                     factory.node.concurrentMapManager.new MPut().put(name, key, value, -1, ttl, id);

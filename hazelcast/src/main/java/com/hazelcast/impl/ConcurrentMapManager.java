@@ -1109,19 +1109,6 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class MAdd extends MBackupAndMigrationAwareOp {
-        boolean addToList(String name, Object value) {
-            ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getTransaction();
-            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                txn.attachAddOp(name, value);
-                return true;
-            } else {
-                Data key = ThreadContext.get().toData(value);
-                boolean result = booleanCall(CONCURRENT_MAP_ADD_TO_LIST, name, key, null, 0, -1);
-                backup(CONCURRENT_MAP_BACKUP_ADD);
-                return result;
-            }
-        }
 
         boolean addToSet(String name, Object value) {
             ThreadContext threadContext = ThreadContext.get();

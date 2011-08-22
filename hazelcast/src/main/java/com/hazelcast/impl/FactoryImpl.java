@@ -26,20 +26,7 @@ import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
 import com.hazelcast.impl.management.ManagementCenterService;
-import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
-import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
-import com.hazelcast.impl.monitor.LocalAtomicNumberStatsImpl;
-import com.hazelcast.impl.monitor.LocalCountDownLatchStatsImpl;
-import com.hazelcast.impl.monitor.LocalLockStatsImpl;
-import com.hazelcast.impl.monitor.LocalMapStatsImpl;
-import com.hazelcast.impl.monitor.LocalQueueStatsImpl;
-import com.hazelcast.impl.monitor.LocalSemaphoreStatsImpl;
-import com.hazelcast.impl.monitor.LocalTopicStatsImpl;
-import com.hazelcast.impl.monitor.LockOperationsCounter;
-import com.hazelcast.impl.monitor.MapOperationsCounter;
-import com.hazelcast.impl.monitor.QueueOperationsCounter;
-import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
-import com.hazelcast.impl.monitor.TopicOperationsCounter;
+import com.hazelcast.impl.monitor.*;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -680,7 +667,7 @@ public class FactoryImpl implements HazelcastInstance {
             } else if (name.startsWith(Prefix.MULTIMAP)) {
                 proxy = new MultiMapProxyImpl(name, this);
             } else if (name.startsWith(Prefix.SET)) {
-                proxy = new CollectionProxyImpl(name, this);
+                proxy = new SetProxyImpl(name, this);
             } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
                 proxy = new AtomicNumberProxyImpl(name, this);
             } else if (name.startsWith(Prefix.IDGEN)) {
@@ -843,20 +830,20 @@ public class FactoryImpl implements HazelcastInstance {
             ensure();
             return base.getId();
         }
-        
-        public LocalLockStats getLocalLockStats() {
-        	ensure();
-			return base.getLocalLockStats();
-		}
 
-		public LockOperationsCounter getLockOperationCounter() {
-			ensure();
-			return base.getLockOperationCounter();
-		}
+        public LocalLockStats getLocalLockStats() {
+            ensure();
+            return base.getLocalLockStats();
+        }
+
+        public LockOperationsCounter getLockOperationCounter() {
+            ensure();
+            return base.getLockOperationCounter();
+        }
 
         private class LockProxyBase implements LockProxy {
-        	private LockOperationsCounter lockOperationsCounter = new LockOperationsCounter(); 
-        	
+            private LockOperationsCounter lockOperationsCounter = new LockOperationsCounter();
+
             public void lock() {
                 factory.locksMapProxy.lock(key);
                 lockOperationsCounter.incrementLocks();
@@ -871,9 +858,9 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean tryLock() {
-                if(factory.locksMapProxy.tryLock(key)) {
-                	lockOperationsCounter.incrementLocks();
-                	return true;
+                if (factory.locksMapProxy.tryLock(key)) {
+                    lockOperationsCounter.incrementLocks();
+                    return true;
                 }
                 lockOperationsCounter.incrementFailedLocks();
                 return false;
@@ -881,12 +868,12 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
                 try {
-                    if(factory.locksMapProxy.tryLock(key, time, unit)) {
-                    	lockOperationsCounter.incrementLocks();
-                    	return true;
+                    if (factory.locksMapProxy.tryLock(key, time, unit)) {
+                        lockOperationsCounter.incrementLocks();
+                        return true;
                     }
                 } catch (RuntimeInterruptedException e) {
-                	lockOperationsCounter.incrementFailedLocks();
+                    lockOperationsCounter.incrementFailedLocks();
                     throw new InterruptedException();
                 }
                 lockOperationsCounter.incrementFailedLocks();
@@ -914,15 +901,15 @@ public class FactoryImpl implements HazelcastInstance {
                 return new ProxyKey("lock", key);
             }
 
-			public LocalLockStats getLocalLockStats() {
-				LocalLockStatsImpl localLockStats = new LocalLockStatsImpl();
-				localLockStats.setOperationStats(lockOperationsCounter.getPublishedStats());
+            public LocalLockStats getLocalLockStats() {
+                LocalLockStatsImpl localLockStats = new LocalLockStatsImpl();
+                localLockStats.setOperationStats(lockOperationsCounter.getPublishedStats());
                 return localLockStats;
-			}
+            }
 
-			public LockOperationsCounter getLockOperationCounter() {
-				return lockOperationsCounter;
-			}
+            public LockOperationsCounter getLockOperationCounter() {
+                return lockOperationsCounter;
+            }
         }
     }
 
@@ -1184,7 +1171,7 @@ public class FactoryImpl implements HazelcastInstance {
         public AtomicNumberProxyImpl(String name, FactoryImpl factory) {
             setName(name);
             setHazelcastInstance(factory);
-             base = new AtomicNumberProxyReal();
+            base = new AtomicNumberProxyReal();
         }
 
         Data getNameAsData() {
@@ -1837,13 +1824,13 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
 
-        private Future doAsyncAcquire(final Integer permits, final Boolean attach){
+        private Future doAsyncAcquire(final Integer permits, final Boolean attach) {
             final SemaphoreProxyImpl semaphoreProxy = SemaphoreProxyImpl.this;
             AsyncCall call = new AsyncCall() {
                 @Override
                 protected void call() {
                     try {
-                        if(attach)
+                        if (attach)
                             semaphoreProxy.acquireAttach(permits);
                         else
                             semaphoreProxy.acquire(permits);
@@ -2055,25 +2042,21 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static class CollectionProxyImpl extends BaseCollection implements CollectionProxy, HazelcastInstanceAwareInstance, DataSerializable {
+    public static class SetProxyImpl extends AbstractCollection implements ISet, DataSerializable, HazelcastInstanceAwareInstance {
         String name = null;
-        private transient CollectionProxy base = null;
+        private transient ISet base = null;
         private transient FactoryImpl factory = null;
 
-        public CollectionProxyImpl() {
+        public SetProxyImpl() {
         }
 
-        public CollectionProxyImpl(String name, FactoryImpl factory) {
+        public SetProxyImpl(String name, FactoryImpl factory) {
             this.name = name;
             this.factory = factory;
-            this.base = new CollectionProxyReal();
+            this.base = new SetProxyReal();
         }
 
-        public FactoryImpl getFactory() {
-            return factory;
-        }
-
-        public CollectionProxy getBase() {
+        public ISet getBase() {
             return base;
         }
 
@@ -2084,7 +2067,7 @@ public class FactoryImpl implements HazelcastInstance {
         private void ensure() {
             factory.initialChecks();
             if (base == null) {
-                base = (CollectionProxy) factory.getOrCreateProxyByName(name);
+                base = (ISet) factory.getOrCreateProxyByName(name);
             }
         }
 
@@ -2096,18 +2079,14 @@ public class FactoryImpl implements HazelcastInstance {
         @Override
         public String toString() {
             ensure();
-            if (getInstanceType().isSet()) {
-                return "Set [" + getName() + "]";
-            } else {
-                return "List [" + getName() + "]";
-            }
+            return "Set [" + getName() + "]";
         }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            CollectionProxyImpl that = (CollectionProxyImpl) o;
+            SetProxyImpl that = (SetProxyImpl) o;
             return !(name != null ? !name.equals(that.name) : that.name != null);
         }
 
@@ -2186,16 +2165,11 @@ public class FactoryImpl implements HazelcastInstance {
             base.removeItemListener(itemListener);
         }
 
-        public boolean removeKey(Object key) {
-            ensure();
-            return base.removeKey(key);
-        }
-
-        class CollectionProxyReal extends BaseCollection implements CollectionProxy {
+        class SetProxyReal extends AbstractCollection implements ISet {
 
             final MProxy mapProxy;
 
-            public CollectionProxyReal() {
+            public SetProxyReal() {
                 mapProxy = new MProxyImpl(name, factory);
             }
 
@@ -2205,12 +2179,12 @@ public class FactoryImpl implements HazelcastInstance {
 
             @Override
             public boolean equals(Object o) {
-                return CollectionProxyImpl.this.equals(o);
+                return SetProxyImpl.this.equals(o);
             }
 
             @Override
             public int hashCode() {
-                return CollectionProxyImpl.this.hashCode();
+                return SetProxyImpl.this.hashCode();
             }
 
             public InstanceType getInstanceType() {
@@ -2237,10 +2211,6 @@ public class FactoryImpl implements HazelcastInstance {
 
             @Override
             public boolean remove(Object obj) {
-                return mapProxy.removeKey(obj);
-            }
-
-            public boolean removeKey(Object obj) {
                 return mapProxy.removeKey(obj);
             }
 
@@ -3829,12 +3799,7 @@ public class FactoryImpl implements HazelcastInstance {
             public boolean add(Object value) {
                 check(value);
                 MAdd madd = concurrentMapManager.new MAdd();
-                InstanceType type = concurrentMapManager.getInstanceType(name);
-                if (type == InstanceType.LIST) {
-                    return madd.addToList(name, value);
-                } else {
-                    return madd.addToSet(name, value);
-                }
+                return madd.addToSet(name, value);
             }
 
             public boolean removeKey(Object key) {
