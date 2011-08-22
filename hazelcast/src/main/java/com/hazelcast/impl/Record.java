@@ -29,12 +29,10 @@ import java.util.*;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public final class Record implements MapEntry {
-
     private final CMap cmap;
     private final Long id;
     private final short blockId;
     private final Data key;
-
     private volatile Object valueObject = null;
     private volatile Data value;
     private volatile boolean active = true;
