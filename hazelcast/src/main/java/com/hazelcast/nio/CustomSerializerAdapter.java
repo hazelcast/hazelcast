@@ -19,7 +19,7 @@ package com.hazelcast.nio;
 
 public class CustomSerializerAdapter implements TypeSerializer {
 
-    private CustomSerializer customSerializer;
+    private final CustomSerializer customSerializer;
 
     public CustomSerializerAdapter(CustomSerializer customSerializer) {
         this.customSerializer = customSerializer;
