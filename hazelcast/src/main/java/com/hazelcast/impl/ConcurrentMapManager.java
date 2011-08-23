@@ -1108,32 +1108,6 @@ public class ConcurrentMapManager extends BaseManager {
         mapCaches.remove(name);
     }
 
-    class MAdd extends MBackupAndMigrationAwareOp {
-
-        boolean addToSet(String name, Object value) {
-            ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getTransaction();
-            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                if (!txn.has(name, value)) {
-                    MContainsKey containsKey = new MContainsKey();
-                    if (!containsKey.containsKey(name, value)) {
-                        txn.attachPutOp(name, value, null, true);
-                        return true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            } else {
-                Data key = ThreadContext.get().toData(value);
-                boolean result = booleanCall(CONCURRENT_MAP_ADD_TO_SET, name, key, null, 0, -1);
-                backup(CONCURRENT_MAP_BACKUP_ADD);
-                return result;
-            }
-        }
-    }
-
     class MPutMulti extends MBackupAndMigrationAwareOp {
 
         boolean put(String name, Object key, Object value) {

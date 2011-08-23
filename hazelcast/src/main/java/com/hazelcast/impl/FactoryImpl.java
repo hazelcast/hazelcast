@@ -2229,6 +2229,11 @@ public class FactoryImpl implements HazelcastInstance {
                 return mapProxy.size();
             }
 
+            @Override
+            public void clear() {
+                mapProxy.clear();
+            }
+
             public void destroy() {
                 factory.destroyInstanceClusterWide(name, null);
             }
@@ -3798,8 +3803,8 @@ public class FactoryImpl implements HazelcastInstance {
 
             public boolean add(Object value) {
                 check(value);
-                MAdd madd = concurrentMapManager.new MAdd();
-                return madd.addToSet(name, value);
+                Object old = putIfAbsent(value, toData(Boolean.TRUE));
+                return old == null;
             }
 
             public boolean removeKey(Object key) {

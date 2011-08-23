@@ -17,6 +17,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.impl.GroupProperties;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -43,6 +44,7 @@ public class HazelcastTest {
     @BeforeClass
     @AfterClass
     public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
@@ -380,7 +382,7 @@ public class HazelcastTest {
         map.remove("Hello");
         Set<IMap.Entry<String, String>> set = map.entrySet();
         for (IMap.Entry<String, String> e : set) {
-            fail("Iterator should not contain removed entry, found "+e.getKey());
+            fail("Iterator should not contain removed entry, found " + e.getKey());
         }
     }
 
