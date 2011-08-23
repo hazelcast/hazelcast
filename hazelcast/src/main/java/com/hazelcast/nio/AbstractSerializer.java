@@ -93,8 +93,7 @@ public abstract class AbstractSerializer {
             ts.write(bos, object);
             bos.flush();
         } catch (Throwable e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new HazelcastSerializationException(e);
         }
     }
 
@@ -104,8 +103,7 @@ public abstract class AbstractSerializer {
             TypeSerializer ts = (typeId == ds.getTypeId()) ? ds : cs;
             return ts.read(bis);
         } catch (Throwable e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new HazelcastSerializationException(e);
         }
     }
 
