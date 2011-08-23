@@ -1,1 +1,1 @@
-com.hazelcast.elasticmemory.EnterpriseNodeInitializer
+com.hazelcast.impl.base.DefaultNodeInitializer
