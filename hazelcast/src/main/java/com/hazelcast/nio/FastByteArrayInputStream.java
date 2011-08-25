@@ -239,15 +239,15 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
      *             form: <blockquote>
      *             <p/>
      *             <pre>
-     *                                                                                                                                                             DataInputStream d = new DataInputStream(in);
-     *                                                                                                                                                             </pre>
-     *             <p/>
+     *                                                                                                                                                                                     DataInputStream d = new DataInputStream(in);
+     *                                                                                                                                                                                     </pre>
+     *
      *             </blockquote> with: <blockquote>
-     *             <p/>
+     *
      *             <pre>
-     *                                                                                                                                                             BufferedReader d = new BufferedReader(new InputStreamReader(in));
-     *                                                                                                                                                             </pre>
-     *             <p/>
+     *                                                                                                                                                                                     BufferedReader d = new BufferedReader(new InputStreamReader(in));
+     *                                                                                                                                                                                     </pre>
+     *
      *             </blockquote>
      */
     @Deprecated
@@ -385,8 +385,11 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     public final String readUTF() throws IOException {
-        StringBuilder result = new StringBuilder();
-        int chunkSize = readInt();
+        boolean isNull = readBoolean();
+        if (isNull) return null;
+        int length = readInt();
+        StringBuilder result = new StringBuilder(length);
+        int chunkSize = length / FastByteArrayOutputStream.STRING_CHUNK_SIZE + 1;
         while (chunkSize > 0) {
             result.append(readShortUTF());
             chunkSize--;

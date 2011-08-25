@@ -67,6 +67,9 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
             sk.cancel();
         }
         connection.close();
+        if (connection.getType().isClient() && !connection.getType().isBinary()) {
+            return;
+        }
         StringBuilder sb = new StringBuilder();
         sb.append(Thread.currentThread().getName());
         sb.append(" Closing socket to endpoint ");
