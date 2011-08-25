@@ -26,7 +26,7 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
 
     private final byte writeBuffer[] = new byte[8];
 
-    private static final int STRING_CHUNK_SIZE = 16 * 1024;
+    static final int STRING_CHUNK_SIZE = 16 * 1024;
 
     public FastByteArrayOutputStream() {
         this(32);
@@ -161,9 +161,12 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
     }
 
     public final void writeUTF(final String str) throws IOException {
+        boolean isNull = (str == null);
+        writeBoolean(isNull);
+        if (isNull) return;
         int length = str.length();
+        writeInt(length);
         int chunkSize = length / STRING_CHUNK_SIZE + 1;
-        writeInt(chunkSize);
         for (int i = 0; i < chunkSize; i++) {
             int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
             int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
