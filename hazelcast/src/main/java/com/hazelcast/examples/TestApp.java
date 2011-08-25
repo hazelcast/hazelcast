@@ -371,6 +371,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleMapUnlock(args);
         } else if (first.equals("l.add")) {
             handleListAdd(args);
+        } else if (first.equals("l.set")) {
+            handleListSet(args);
         } else if ("l.addmany".equals(first)) {
             handleListAddMany(args);
         } else if (first.equals("l.remove")) {
@@ -439,11 +441,32 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     protected void handleListRemove(String[] args) {
-        println(getList().remove(args[1]));
+        int index = -1;
+        try {
+            index = Integer.parseInt(args[1]);
+        } catch (NumberFormatException e) {
+            // NOP
+        }
+        if (index >= 0) {
+            println(getList().remove(index));
+        } else {
+            println(getList().remove(args[1]));
+        }
     }
 
     protected void handleListAdd(String[] args) {
-        println(getList().add(args[1]));
+        if (args.length == 3) {
+            final int index = Integer.parseInt(args[1]);
+            getList().add(index, args[2]);
+            println("true");
+        } else {
+            println(getList().add(args[1]));
+        }
+    }
+
+    protected void handleListSet(String[] args) {
+        final int index = Integer.parseInt(args[1]);
+        println(getList().set(index, args[2]));
     }
 
     protected void handleMapPut(String[] args) {
@@ -1181,8 +1204,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("");
         println("-- List commands:");
         println("l.add <string>");
+        println("l.add <index> <string>");
         println("l.contains <string>");
         println("l.remove <string>");
+        println("l.remove <index>");
+        println("l.set <index> <string>");
         println("l.iterator [remove]");
         println("l.size");
         println("l.clear");
