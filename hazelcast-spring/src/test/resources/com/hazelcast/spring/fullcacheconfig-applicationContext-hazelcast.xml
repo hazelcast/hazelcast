@@ -45,10 +45,10 @@
             </hz:wan-replication>
             <hz:network port="${cluster.port}" port-auto-increment="false">
                 <hz:join>
-                    <hz:multicast enabled="false"
+                    <hz:multicast enabled="${boolean.false}"
                                   multicast-group="224.2.2.3"
                                   multicast-port="54327"/>
-                    <hz:tcp-ip enabled="true">
+                    <hz:tcp-ip enabled="${boolean.true}">
                     	<hz:required-member>127.0.0.1:5800</hz:required-member>
 <!--                         <hz:members>${cluster.members}</hz:members> -->
                         <hz:interface>127.0.0.1:5800</hz:interface>
