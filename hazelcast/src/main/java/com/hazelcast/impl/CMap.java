@@ -1794,6 +1794,21 @@ public class CMap {
                 }
             }
         }
+
+        public String toString() {
+            Iterator i = iterator();
+            if (!i.hasNext())
+                return "[]";
+            StringBuilder sb = new StringBuilder();
+            sb.append('[');
+            for (; ;) {
+                Object e = i.next();
+                sb.append(e == this ? "(this Collection)" : e);
+                if (!i.hasNext())
+                    return sb.append(']').toString();
+                sb.append(", ");
+            }
+        }
     }
 
     public static class CMapEntry implements HazelcastInstanceAware, MapEntry, DataSerializable {

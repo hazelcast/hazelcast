@@ -2836,7 +2836,8 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public Collection get(Object key) {
-                return (Collection) mapProxy.get(key);
+                MMultiGet multiGet = factory.node.concurrentMapManager. new MMultiGet();
+                return multiGet.get(name, key);
             }
 
             public boolean put(Object key, Object value) {
@@ -2848,7 +2849,8 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public Collection remove(Object key) {
-                return (Collection) mapProxy.remove(key);
+                MRemoveMulti m = factory.node.concurrentMapManager. new MRemoveMulti();
+                return m.remove(name, key);
             }
 
             public int size() {

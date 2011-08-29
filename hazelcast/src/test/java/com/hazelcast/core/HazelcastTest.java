@@ -380,7 +380,7 @@ public class HazelcastTest {
         map.remove("Hello");
         Set<IMap.Entry<String, String>> set = map.entrySet();
         for (IMap.Entry<String, String> e : set) {
-            fail("Iterator should not contain removed entry, found "+e.getKey());
+            fail("Iterator should not contain removed entry, found " + e.getKey());
         }
     }
 
@@ -860,6 +860,37 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testMultiMapPutGetRemove() {
+        MultiMap mm = Hazelcast.getMultiMap("testMultiMapPutGetRemove");
+        mm.put("1", "C");
+        mm.put("2", "x");
+        mm.put("2", "y");
+        mm.put("1", "A");
+        mm.put("1", "B");
+        Collection g1 = mm.get("1");
+        assertTrue(g1.contains("A"));
+        assertTrue(g1.contains("B"));
+        assertTrue(g1.contains("C"));
+        assertEquals(5, mm.size());
+        assertTrue(mm.remove("1", "C"));
+        assertEquals(4, mm.size());
+        Collection g2 = mm.get("1");
+        assertTrue(g2.contains("A"));
+        assertTrue(g2.contains("B"));
+        assertFalse(g2.contains("C"));
+        Collection r1 = mm.remove("2");
+        assertTrue(r1.contains("x"));
+        assertTrue(r1.contains("y"));
+        assertNull(mm.get("2"));
+        assertEquals(2, mm.size());
+        Collection r2 = mm.remove("1");
+        assertTrue(r2.contains("A"));
+        assertTrue(r2.contains("B"));
+        assertNull(mm.get("1"));
+        assertEquals(0, mm.size());
+    }
+
+    @Test
     public void testMultiMapGetNameAndType() {
         MultiMap<String, String> map = Hazelcast.getMultiMap("testMultiMapGetNameAndType");
         assertEquals("testMultiMapGetNameAndType", map.getName());
@@ -1069,19 +1100,21 @@ public class HazelcastTest {
     @Test
     public void testInterruption() throws InterruptedException {
         final IQueue<String> q = Hazelcast.getQueue("testInterruption");
+        final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread(new Runnable() {
             public void run() {
                 try {
                     q.take();
+                    fail();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    latch.countDown();
                 }
             }
         });
         t.start();
         Thread.sleep(2000);
         t.interrupt();
-        Thread.sleep(10);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         q.offer("message");
         assertEquals(1, q.size());
     }
