@@ -64,7 +64,7 @@
         After the chain is completed, request will come back to the filter again. Filter will check if request is in a
         valid session again. If it is then it will go over the Serializable session attributes and persist them on the
         Hazelcast cluster.
-        When requested is dispatched, container may not have to call the filters again. So HazelcastWM makes sure that
+        When request is dispatched, container may not have to call the filters again. So HazelcastWM makes sure that
         the resource (JSP or Servlet) that the request is forwarded or included will get the original request/response,
         not the wrapped request/response. This is the reason why all application JSP and Servlets are also wrapped by
         HazelcastWM. That way when the

@@ -42,15 +42,13 @@ public class Installer {
 
     private String clusteredFilePrefix = "clustered-";
 
-    private boolean addHazellib = true;
+    private boolean addHazelcastLib = true;
 
     private boolean replaceOld = false;
 
     private boolean appsSharingSessions = false;
 
-    private boolean wrapServletAndJSP = true;
-
-    private String version = "1.8.3";
+    private String version = "1.9.4";
 
     private String libDir = "../lib/";
 
@@ -75,8 +73,8 @@ public class Installer {
         return clusteredFilePrefix;
     }
 
-    public boolean isAddHazellib() {
-        return addHazellib;
+    public boolean isAddHazelcastLib() {
+        return addHazelcastLib;
     }
 
     public boolean isAppsSharingSessions() {
@@ -119,8 +117,6 @@ public class Installer {
                     modifyWar(in, out);
                 } else if (name.equals("WEB-INF/web.xml")) {
                     readModifyWrite(in, out);
-                } else if (entry.getName().endsWith(".jsp")) {
-                    modifyJSP(in, out);
                 } else {
                     Util.copyStream(in, out);
                 }
@@ -128,7 +124,7 @@ public class Installer {
             }
             if (jarLocation == null)
                 jarLocation = "";
-            if (isAddHazellib()) {
+            if (isAddHazelcastLib()) {
                 log("Jar Location " + jarLocation);
                 String hazelcastJarName = "hazelcast-" + version + ".jar";
                 String hazelcastWMJarName = "hazelcast-wm-" + version + ".jar";
@@ -179,22 +175,6 @@ public class Installer {
                 } else if ("filter".equals(name)) {
                     if (firstFilter == null) {
                         firstFilter = node;
-                    }
-                } else if ("servlet".equals(name)) {
-                    final NodeList nl = node.getChildNodes();
-                    for (int a = 0; a < nl.getLength(); a++) {
-                        final Node n = nl.item(a);
-                        if (n.getNodeName().equals("servlet-class")) {
-                            final String className = n.getTextContent();
-                            final String wrapperClass = "com.hazelcast.web.ServletWrapper";
-                            final String hazelParam = "*hazelcast-base-servlet-class";
-                            n.setTextContent(wrapperClass);
-                            Node initParam;
-                            initParam = append(doc, node, "init-param", null);
-                            append(doc, initParam, "param-name", hazelParam);
-                            append(doc, initParam, "param-value", className);
-                            node.appendChild(initParam);
-                        }
                     }
                 } else if ("session-config".equals(name)) {
                     final NodeList nl = node.getChildNodes();
@@ -247,6 +227,9 @@ public class Installer {
         final Element filterMapping = doc.createElement("filter-mapping");
         append(doc, filterMapping, "filter-name", "hazel-filter");
         append(doc, filterMapping, "url-pattern", "/*");
+        append(doc, filterMapping, "dispatcher", "FORWARD");
+        append(doc, filterMapping, "dispatcher", "INCLUDE");
+        append(doc, filterMapping, "dispatcher", "REQUEST");
         final Element contextListener = doc.createElement("listener");
         append(doc, contextListener, "listener-class",
                 "com.hazelcast.web.WebFilter$ContextListener");
@@ -262,8 +245,8 @@ public class Installer {
             Util.streamXML(finalDoc, System.out);
     }
 
-    public void setAddHazellib(final boolean addHazellib) {
-        this.addHazellib = addHazellib;
+    public void setAddHazelcastLib(final boolean addHazelcastLib) {
+        this.addHazelcastLib = addHazelcastLib;
     }
 
     public void setAppsSharingSessions(final boolean appsSharingSessions) {
@@ -345,11 +328,13 @@ public class Installer {
                 if (arg.startsWith("-")) {
                     if (arg.equals("-apps-sharing-sessions")) {
                         appsSharingSessions = true;
-                        addHazellib = false;
+                        addHazelcastLib = false;
                     } else if (arg.startsWith("-version")) {
                         version = arg.substring(arg.indexOf("-version") + "-version".length());
                     } else if (arg.startsWith("-libDir")) {
                         libDir = arg.substring(arg.indexOf("-libDir") + "-libDir".length());
+                    } else if (arg.startsWith("-excludeJar")) {
+                        addHazelcastLib = false;
                     }
                 } else {
                     setApps.add(arg);
@@ -365,25 +350,6 @@ public class Installer {
     private void log(final Object obj) {
         if (DEBUG)
             logger.log(Level.INFO, obj.toString());
-    }
-
-    private void modifyJSP(final InputStream in, final OutputStream out) {
-        log("Modifying JSP");
-        try {
-            final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
-            final BufferedReader br = new BufferedReader(new InputStreamReader(in));
-            String strLine;
-            if (wrapServletAndJSP) {
-                bw.write("<%@ page extends=\"com.hazelcast.web.JspWrapper\" %>\n");
-            }
-            while ((strLine = br.readLine()) != null) {
-                bw.write(strLine);
-                bw.write('\n');
-            }
-            bw.flush();
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private void modifyWar(final InputStream in, final OutputStream os) {
@@ -409,8 +375,6 @@ public class Installer {
                     final ByteArrayInputStream binWebXml = new ByteArrayInputStream(webxmlBytes);
                     readModifyWrite(binWebXml, out);
                     binWebXml.close();
-                } else if (entry.getName().endsWith(".jsp")) {
-                    modifyJSP(zin, out);
                 } else {
                     Util.copyStream(zin, out);
                 }

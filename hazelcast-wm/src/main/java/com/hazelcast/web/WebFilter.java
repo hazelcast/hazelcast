@@ -37,6 +37,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.hazelcast.nio.IOUtil.toObject;
+
 public class WebFilter implements Filter {
     public static class ContextListener implements ServletContextListener,
             ServletContextAttributeListener {
@@ -78,7 +80,7 @@ public class WebFilter implements Filter {
         public void contextInitialized(final ServletContextEvent arg0) {
             final AppContext app = WebFilter.ensureServletContext(arg0.getServletContext());
             if (app != null) {
-                app.fireContextInitilized(arg0);
+                app.fireContextInitialized(arg0);
             }
         }
     }
@@ -103,31 +105,22 @@ public class WebFilter implements Filter {
 
     static class RequestWrapper extends HttpServletRequestWrapper {
         class RequestDispatcherWrapper implements RequestDispatcher {
-            final RequestDispatcher dispatcherOriginal;
+            final String target;
 
-            final HttpServletRequest reqOriginal;
-
-            public RequestDispatcherWrapper(final RequestDispatcher dispatcherOriginal,
-                                            final HttpServletRequest reqOriginal) {
-                super();
-                this.dispatcherOriginal = dispatcherOriginal;
-                this.reqOriginal = reqOriginal;
+            RequestDispatcherWrapper(String target) {
+                this.target = target;
             }
 
             public void forward(final ServletRequest req, final ServletResponse res)
                     throws ServletException, IOException {
-                if (DEBUG) {
-                    log("FORWARDING...");
-                }
-                dispatcherOriginal.forward(reqOriginal, res);
+                log("FORWARDING... " + original);
+                original.getRequestDispatcher(target).forward(original, res);
             }
 
             public void include(final ServletRequest req, final ServletResponse res)
                     throws ServletException, IOException {
-                if (DEBUG) {
-                    log("INCLUDING...");
-                }
-                dispatcherOriginal.include(reqOriginal, res);
+                log("INCLUDING... " + original);
+                original.getRequestDispatcher(target).include(original, res);
             }
         }
 
@@ -199,7 +192,7 @@ public class WebFilter implements Filter {
 
         @Override
         public RequestDispatcher getRequestDispatcher(final String target) {
-            return new RequestDispatcherWrapper(original.getRequestDispatcher(target), original);
+            return original.getRequestDispatcher(target);
         }
 
         @Override
@@ -224,10 +217,8 @@ public class WebFilter implements Filter {
             if (requestedSessionId != null) {
                 session = context.getSession(requestedSessionId, false);
             }
-            if (DEBUG) {
-                log(requestedSessionId + " is requestedSessionId and  getSession : " + session);
-                log("Request AppContext " + context);
-            }
+            log(requestedSessionId + " is requestedSessionId and  getSession : " + session);
+            log("Request AppContext " + context);
             if (session == null) {
                 if (create) {
                     session = context.createNewSession();
@@ -235,13 +226,11 @@ public class WebFilter implements Filter {
                     if (requestedSessionId != null) {
                         final Map mapSession = (Map) context.getClusterMap().remove(
                                 requestedSessionId);
-                        if (DEBUG) {
-                            log(session + " Reloading from map.. " + mapSession);
-                            log("ContextPath " + getContextPath());
-                            log("pathInfo " + getPathInfo());
-                            log("pathtranslated " + getPathTranslated());
-                            log("requesturi " + getRequestURI());
-                        }
+                        log(session + " Reloading from map.. " + mapSession);
+                        log("ContextPath " + getContextPath());
+                        log("pathInfo " + getPathInfo());
+                        log("pathtranslated " + getPathTranslated());
+                        log("requesturi " + getRequestURI());
                         if (mapSession != null) {
                             final Set<Map.Entry> entries = mapSession.entrySet();
                             for (final Map.Entry entry : entries) {
@@ -498,14 +487,10 @@ public class WebFilter implements Filter {
         public void addSnapshotListener(final SnapshotListener snapshotListener) {
             synchronized (lsSnapshotListeners) {
                 if (DEBUG) {
-                    log("CONTEXT registering a snapshot listerner " + snapshotListener);
+                    log("CONTEXT registering a snapshot listener " + snapshotListener);
                 }
                 lsSnapshotListeners.add(snapshotListener);
             }
-        }
-
-        public void destroy() {
-            mapSessions.clear();
         }
 
         public void fireAttributeAdded(final ServletContextAttributeEvent arg0) {
@@ -582,7 +567,7 @@ public class WebFilter implements Filter {
             }
         }
 
-        public void fireContextInitilized(final ServletContextEvent arg0) {
+        public void fireContextInitialized(final ServletContextEvent arg0) {
             if (ready.get()) {
                 if (lsContextListeners.size() > 0) {
                     executor.execute(new Runnable() {
@@ -596,7 +581,7 @@ public class WebFilter implements Filter {
             } else {
                 scheduledContextEvents.add(new Runnable() {
                     public void run() {
-                        fireContextInitilized(arg0);
+                        fireContextInitialized(arg0);
                     }
                 });
             }
@@ -772,7 +757,7 @@ public class WebFilter implements Filter {
     } // END of Controller
 
     private static class HazelSession implements HttpSession {
-        private byte[] hash = null;
+        private Data currentSessionData = null;
 
         private MessageDigest md = null;
 
@@ -946,25 +931,19 @@ public class WebFilter implements Filter {
         }
 
         public boolean sessionChanged(final Data data) {
-            if (data == null) {
-                if (hash == null) {
-                    return false;
-                } else {
-                    hash = null;
+            log(currentSessionData + " vs " + data);
+            log(toObject(currentSessionData) + " vs " + toObject(data));
+            try {
+                if (data == null) {
+                    return currentSessionData != null;
+                }
+                if (currentSessionData == null) {
                     return true;
                 }
+                return !data.equals(currentSessionData);
+            } finally {
+                currentSessionData = data;
             }
-            final byte[] newHash = hash(data);
-            if (hash == null) {
-                hash = newHash;
-                return true;
-            }
-            final boolean same = Arrays.equals(hash, newHash);
-            if (!same) {
-                hash = newHash;
-                return true;
-            }
-            return false;
         }
 
         public void setAttribute(final String name, final Object value) {
@@ -1150,7 +1129,7 @@ public class WebFilter implements Filter {
 
     protected static Logger logger = Logger.getLogger(WebFilter.class.getName());
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     private static final String SESSION_URL_PHRASE = ";jsessionid=";
 
@@ -1195,7 +1174,7 @@ public class WebFilter implements Filter {
         return app.getOriginalServletContext();
     }
 
-    static String getAppName (ServletContext servletContext) {
+    static String getAppName(ServletContext servletContext) {
         String name = servletContext.getContextPath();
         if (name.equals("")) {
             name = "_rootWebapp";
@@ -1215,6 +1194,7 @@ public class WebFilter implements Filter {
     static void log(final Object obj) {
         if (DEBUG) {
             logger.log(Level.FINEST, obj.toString());
+            System.out.println(obj.toString());
         }
     }
 
@@ -1283,21 +1263,18 @@ public class WebFilter implements Filter {
 
     public void doFilter(ServletRequest req, ServletResponse res, final FilterChain chain)
             throws IOException, ServletException {
-        log("doFILTER");
-        if (DEBUG) {
-            log(appsSharingSessions + " FILTERING %%55555.. " + req.getClass().getName());
-        }
+        log("FILTERING %%55555.. " + req.getClass().getName());
         if (!(req instanceof HttpServletRequest)) {
             chain.doFilter(req, res);
         } else {
             if (req instanceof RequestWrapper) {
+                log("Request is instance ! continue...");
                 chain.doFilter(req, res);
                 return;
-            } else {
-                if (req.getAttribute(HAZELCAST_REQUEST) != null) {
-                    chain.doFilter(req, res);
-                    return;
-                }
+            } else if (req.getAttribute(HAZELCAST_REQUEST) != null) {
+                log("Request has hazelcast request ! continue...");
+                chain.doFilter(req, res);
+                return;
             }
             HttpServletRequest httpReq = (HttpServletRequest) req;
             if (DEBUG) {
@@ -1361,6 +1338,7 @@ public class WebFilter implements Filter {
                 while (attsNames.hasMoreElements()) {
                     final String attName = attsNames.nextElement();
                     final Object value = session.getAttribute(attName);
+                    log(attName + " session " + value + " serializable : " + (value instanceof Serializable));
                     if (value instanceof Serializable) {
                         if (mapData == null) {
                             mapData = new HashMap<String, Object>();
@@ -1371,14 +1349,13 @@ public class WebFilter implements Filter {
                 boolean sessionChanged = false;
                 Data data = session.writeObject(mapData);
                 sessionChanged = session.sessionChanged(data);
+                log(sessionId + " session changed? " + sessionChanged);
                 if (sessionChanged) {
                     if (data == null) {
                         mapData = new HashMap<String, Object>();
                         data = session.writeObject(mapData);
                     }
-                    if (DEBUG) {
-                        log("PUTTING SESSION " + sessionId);
-                    }
+                    log("PUTTING SESSION " + sessionId + "  values " + mapData);
                     if (session.knownToCluster()) {
                         app.getClusterMap().put(sessionId, data);
                     } else {
