@@ -74,11 +74,7 @@
     </chapter>
     <chapter xml:id="HttpSessionClustering">
         <title>Http Session Clustering with HazelcastWM</title>
-
         <xi:include href="HttpSessionClustering.xml"/>
-        <xi:include href="HazelcastWMHowItWorks.xml"/>
-        <xi:include href="HazelcastWMSnapshotEvents.xml"/>
-        <xi:include href="HazelcastWMTestedWebContainers.xml"/>
     </chapter>
     <chapter xml:id="Encryption">
         <title>Encryption</title>
