@@ -17,11 +17,14 @@
 
 package com.hazelcast.web;
 
-public interface Context {
-	
-    public final static String ATTRIBUTE_NAME = "*hazelcast-servlet-context";
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
 
-    void addSnapshotListener(SnapshotListener snapshotListener);
+public class SessionListener implements HttpSessionListener {
+    public void sessionCreated(HttpSessionEvent httpSessionEvent) {
+    }
 
-    void removeSnapshotListener(SnapshotListener snapshotListener);
+    public void sessionDestroyed(HttpSessionEvent httpSessionEvent) {
+        WebFilter.destroySession(httpSessionEvent.getSession());
+    }
 }

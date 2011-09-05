@@ -198,21 +198,12 @@ public class Installer {
         append(doc, filter, "filter-name", "hazel-filter");
         append(doc, filter, "filter-class", "com.hazelcast.web.WebFilter");
         Node initParam = append(doc, filter, "init-param", null);
-        append(doc, initParam, "param-name", "listener-count");
-        append(doc, initParam, "param-value", String.valueOf(lsListeners.size()));
-        initParam = append(doc, filter, "init-param", null);
         append(doc, initParam, "param-name", "apps-sharing-sessions");
         append(doc, initParam, "param-value", String.valueOf(appsSharingSessions));
         if (sessionTimeout != sessionTimeoutDefault) {
             initParam = append(doc, filter, "init-param", null);
             append(doc, initParam, "param-name", "session-timeout");
             append(doc, initParam, "param-value", "" + sessionTimeout);
-        }
-        int counter = 0;
-        for (final String listener : lsListeners) {
-            initParam = append(doc, filter, "init-param", null);
-            append(doc, initParam, "param-name", "listener" + counter++);
-            append(doc, initParam, "param-value", listener);
         }
         Node first = firstFilter;
         if (first == null) {

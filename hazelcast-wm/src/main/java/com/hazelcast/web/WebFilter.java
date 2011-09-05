@@ -26,63 +26,111 @@ import javax.servlet.*;
 import javax.servlet.http.*;
 import java.io.IOException;
 import java.io.Serializable;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class WebFilter implements Filter {
-    public static class ContextListener implements ServletContextListener,
-            ServletContextAttributeListener {
 
-        public void attributeAdded(final ServletContextAttributeEvent arg0) {
-            if (arg0.getName().equals(Context.ATTRIBUTE_NAME))
-                return;
-            final AppContext app = WebFilter.ensureServletContext(arg0.getServletContext());
-            if (app != null) {
-                app.fireAttributeAdded(arg0);
+    private static final ConcurrentMap<String, String> mapOriginalSessions = new ConcurrentHashMap<String, String>(1000);
+
+    private static final ConcurrentMap<String, HazelSession> mapSessions = new ConcurrentHashMap<String, HazelSession>(1000);
+
+    private ServletContext servletContext = null;
+
+    private String clusterMapName = "none";
+
+    private int maxInactiveInterval = 30; // minutes
+
+    private static Logger logger = Logger.getLogger(WebFilter.class.getName());
+
+    private static final boolean DEBUG = true;
+
+    private static final String SESSION_URL_PHRASE = ";jsessionid=";
+
+    private static final String HAZELCAST_REQUEST = "*hazelcast-request";
+
+    public WebFilter() {
+    }
+
+    public void init(final FilterConfig config) throws ServletException {
+        final String sessionTimeoutValue = config.getInitParameter("session-timeout");
+        servletContext = config.getServletContext();
+        if (sessionTimeoutValue != null) {
+            maxInactiveInterval = Integer.parseInt(sessionTimeoutValue.trim());
+        }
+        clusterMapName = "_web_" + servletContext.getServletContextName();
+    }
+
+    public static void destroySession(HttpSession originalSession) {
+        String hazelcastSessionId = mapOriginalSessions.remove(originalSession.getId());
+        if (hazelcastSessionId != null) {
+            HazelSession hazelSession = mapSessions.remove(hazelcastSessionId);
+            if (hazelSession != null) {
+                log("Destroying session " + hazelSession);
+                hazelSession.webFilter.destroySession(hazelSession);
             }
         }
+    }
 
-        public void attributeRemoved(final ServletContextAttributeEvent arg0) {
-            if (arg0.getName().equals(Context.ATTRIBUTE_NAME))
-                return;
-            final AppContext app = WebFilter.ensureServletContext(arg0.getServletContext());
-            if (app != null) {
-                app.fireAttributeRemoved(arg0);
+    static void log(final Object obj) {
+        if (DEBUG) {
+            logger.log(Level.FINEST, obj.toString());
+            System.out.println(obj.toString());
+        }
+    }
+
+    boolean urlRewriteEnabled() {
+        return true;
+    }
+
+    void changeSessionId(final HazelSession session) {
+        String oldId = session.getId();
+        mapSessions.remove(oldId);
+        getClusterMap().remove(oldId);
+        session.id = generateSessionId();
+        while (mapSessions.containsKey(session.getId())) {
+            session.id = generateSessionId();
+        }
+        mapSessions.put(session.getId(), session);
+    }
+
+    HazelSession createNewSession(String requestedSessionId) {
+        String id = (requestedSessionId == null) ? generateSessionId() : requestedSessionId;
+        while (mapSessions.containsKey(id)) {
+            id = generateSessionId();
+        }
+        return getSessionWithId(id, true);
+    }
+
+    void destroySession(final HazelSession session) {
+        final String id = session.id;
+        session.destroy();
+        mapSessions.remove(id);
+        log(id + " Removing from cluster " + getClusterMap().remove(id));
+    }
+
+    public IMap getClusterMap() {
+        return Hazelcast.getMap(clusterMapName);
+    }
+
+    HazelSession getSessionWithId(final String sessionId, final boolean create) {
+        HazelSession session = mapSessions.get(sessionId);
+        if (session == null && create) {
+            session = new HazelSession(this, sessionId);
+            session.setMaxInactiveInterval(maxInactiveInterval * 60);
+            final HazelSession oldSessionInfo = mapSessions.putIfAbsent(sessionId, session);
+            if (oldSessionInfo != null) {
+                session = oldSessionInfo;
             }
         }
-
-        public void attributeReplaced(final ServletContextAttributeEvent arg0) {
-            if (arg0.getName().equals(Context.ATTRIBUTE_NAME))
-                return;
-            final AppContext app = WebFilter.ensureServletContext(arg0.getServletContext());
-            if (app != null) {
-                app.fireAttributeReplaced(arg0);
-            }
-        }
-
-        public void contextDestroyed(final ServletContextEvent arg0) {
-            final AppContext app = WebFilter.getAppContext(arg0.getServletContext());
-            if (app != null) {
-                app.fireContextDestroyed(arg0);
-            }
-        }
-
-        public void contextInitialized(final ServletContextEvent arg0) {
-            final AppContext app = WebFilter.ensureServletContext(arg0.getServletContext());
-            if (app != null) {
-                app.fireContextInitialized(arg0);
-            }
-        }
+        return session;
     }
 
     static class IteratorEnumeration implements Enumeration<String> {
@@ -103,29 +151,7 @@ public class WebFilter implements Filter {
         }
     }
 
-    static class RequestWrapper extends HttpServletRequestWrapper {
-        class RequestDispatcherWrapper implements RequestDispatcher {
-            final String target;
-
-            RequestDispatcherWrapper(String target) {
-                this.target = target;
-            }
-
-            public void forward(final ServletRequest req, final ServletResponse res)
-                    throws ServletException, IOException {
-                log("FORWARDING... " + original);
-                original.getRequestDispatcher(target).forward(original, res);
-            }
-
-            public void include(final ServletRequest req, final ServletResponse res)
-                    throws ServletException, IOException {
-                log("INCLUDING... " + original);
-                original.getRequestDispatcher(target).include(original, res);
-            }
-        }
-
-        protected static Logger logger = Logger.getLogger(RequestWrapper.class.getName());
-
+    class RequestWrapper extends HttpServletRequestWrapper {
         HazelSession hazelSession = null;
 
         final ResponseWrapper res;
@@ -133,10 +159,6 @@ public class WebFilter implements Filter {
         final ConcurrentMap<String, Object> atts = new ConcurrentHashMap<String, Object>();
 
         final long creationTime;
-
-        final AppContext context;
-
-        final HttpServletRequest original;
 
         String requestedSessionId = null;
 
@@ -146,15 +168,17 @@ public class WebFilter implements Filter {
 
         boolean requestedSessionIdFromURL = false;
 
-        public RequestWrapper(final AppContext context, final HttpServletRequest req,
+        public RequestWrapper(final HttpServletRequest req,
                               final ResponseWrapper res) {
             super(req);
+            log("REQ Wrapping " + req.getClass().getName());
             this.res = res;
-            this.context = context;
-            this.original = req;
-            this.original.setAttribute(HAZELCAST_REQUEST, this);
+            req.setAttribute(HAZELCAST_REQUEST, this);
             creationTime = System.nanoTime();
-            final Cookie[] cookies = req.getCookies();
+        }
+
+        void setExtractSessionId() {
+            final Cookie[] cookies = ((HttpServletRequest) getRequest()).getCookies();
             if (cookies != null) {
                 for (final Cookie cookie : cookies) {
                     if (cookie.getName().equalsIgnoreCase("JSESSIONID")) {
@@ -167,12 +191,10 @@ public class WebFilter implements Filter {
                 }
             }
             if (requestedSessionId == null) {
-                if (DEBUG) {
-                    logger.log(Level.FINEST, "contextPath : " + getContextPath());
-                    logger.log(Level.FINEST, "queryString : " + getQueryString());
-                    logger.log(Level.FINEST, "requestURI : " + getRequestURI());
-                    logger.log(Level.FINEST, "requestURL : " + getRequestURL());
-                }
+                logger.log(Level.FINEST, "contextPath : " + getContextPath());
+                logger.log(Level.FINEST, "queryString : " + getQueryString());
+                logger.log(Level.FINEST, "requestURI : " + getRequestURI());
+                logger.log(Level.FINEST, "requestURL : " + getRequestURL());
                 requestedSessionId = res.extractSessionId(getRequestURL().toString());
                 if (DEBUG) {
                     log("Extracted sessionId from URL " + requestedSessionId);
@@ -183,16 +205,33 @@ public class WebFilter implements Filter {
             }
         }
 
+        public void setRequestedSessionId(HazelSession hazelSession, String requestedSessionId, boolean fromCookie) {
+            this.hazelSession = hazelSession;
+            this.requestedSessionId = requestedSessionId;
+            requestedSessionIdFromCookie = fromCookie;
+            requestedSessionIdFromURL = !requestedSessionIdFromCookie;
+        }
+
+        @Override
+        public RequestDispatcher getRequestDispatcher(final String path) {
+            final ServletRequest original = getRequest();
+            return new RequestDispatcher() {
+                public void forward(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
+                    log("FORWARD " + original);
+                    original.getRequestDispatcher(path).forward(original, servletResponse);
+                }
+
+                public void include(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
+                    original.getRequestDispatcher(path).forward(original, servletResponse);
+                }
+            };
+        }
+
         @Override
         public Enumeration getAttributeNames() {
             if (atts.size() == 0)
                 return new IteratorEnumeration(null);
             return new IteratorEnumeration(atts.keySet().iterator());
-        }
-
-        @Override
-        public RequestDispatcher getRequestDispatcher(final String target) {
-            return original.getRequestDispatcher(target);
         }
 
         @Override
@@ -215,17 +254,17 @@ public class WebFilter implements Filter {
             final String requestedSessionId = getRequestedSessionId();
             HazelSession session = null;
             if (requestedSessionId != null) {
-                session = context.getSession(requestedSessionId, false);
+                session = getSessionWithId(requestedSessionId, false);
             }
             log(requestedSessionId + " is requestedSessionId and  getSession : " + session);
-            log("Request AppContext " + context);
             if (session == null) {
                 if (create) {
-                    session = context.createNewSession();
+                    HttpSession originalSession = super.getSession(true);
+                    session = createNewSession(requestedSessionId);
+                    session.setOriginalSession(originalSession);
                     hazelSession = session;
                     if (requestedSessionId != null) {
-                        final Map mapSession = (Map) context.getClusterMap().remove(
-                                requestedSessionId);
+                        final Map mapSession = (Map) getClusterMap().remove(requestedSessionId);
                         log(session + " Reloading from map.. " + mapSession);
                         log("ContextPath " + getContextPath());
                         log("pathInfo " + getPathInfo());
@@ -285,82 +324,17 @@ public class WebFilter implements Filter {
             return requestedSessionIdValid;
         }
 
-        @Override
-        public Object getAttribute(String name) {
-            if (DEBUG) {
-                logger.log(Level.FINEST, "getAttribute " + name);
-            }
-            return atts.get(name);
-        }
-
-        @Override
-        public void removeAttribute(final String name) {
-            if (DEBUG) {
-                logger.log(Level.FINEST, "removeAttribute " + name);
-            }
-            if (HAZELCAST_REQUEST.equals(name))
-                return;
-            final Object oldValue = atts.remove(name);
-            if (oldValue == null)
-                return;
-            if (context.lsRequestAttListeners.size() > 0) {
-                executor.execute(new Runnable() {
-                    public void run() {
-                        final ServletRequestAttributeEvent event = new ServletRequestAttributeEvent(
-                                context.getOriginalServletContext(), RequestWrapper.this, name,
-                                oldValue);
-                        for (final ServletRequestAttributeListener listener : context.lsRequestAttListeners) {
-                            listener.attributeRemoved(event);
-                        }
-                    }
-                });
-            }
-        }
-
-        @Override
-        public void setAttribute(final String name, final Object value) {
-            if (DEBUG) {
-                logger.log(Level.FINEST, "setAttribute " + name + " value is " + value);
-            }
-            if (HAZELCAST_REQUEST.equals(name))
-                return;
-            if (value == null) {
-                removeAttribute(name);
-            } else {
-                final Object oldValue = atts.put(name, value);
-                if (context.lsRequestAttListeners.size() > 0) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            final Object eventValue = (oldValue == null) ? value : oldValue;
-                            final ServletRequestAttributeEvent event = new ServletRequestAttributeEvent(
-                                    context.getOriginalServletContext(), RequestWrapper.this, name,
-                                    eventValue);
-                            for (final ServletRequestAttributeListener listener : context.lsRequestAttListeners) {
-                                if (oldValue == null)
-                                    listener.attributeAdded(event);
-                                else
-                                    listener.attributeReplaced(event);
-                            }
-                        }
-                    });
-                }
-            }
-        }
-
         public void setRequestedSessionIdValid(final boolean valid) {
             requestedSessionIdValid = valid;
         }
     } // END of RequestWrapper
 
-    static class ResponseWrapper extends HttpServletResponseWrapper {
-
-        AppContext context = null;
+    class ResponseWrapper extends HttpServletResponseWrapper {
 
         RequestWrapper req = null;
 
-        public ResponseWrapper(final AppContext context, final HttpServletResponse original) {
+        public ResponseWrapper(final HttpServletResponse original) {
             super(original);
-            this.context = context;
         }
 
         @Override
@@ -368,7 +342,7 @@ public class WebFilter implements Filter {
             if (url == null) {
                 throw new NullPointerException("URL can not be null");
             }
-            if (!context.urlRewriteEnabled()) {
+            if (!urlRewriteEnabled()) {
                 return url;
             }
             return encodeURL(url, SESSION_URL_PHRASE);
@@ -439,327 +413,8 @@ public class WebFilter implements Filter {
         }
     }
 
-    private static class AppContext implements Context {
-
-        protected static Logger logger = Logger.getLogger(AppContext.class.getName());
-
-        List<ServletContextAttributeListener> lsContextAttListeners = new ArrayList<ServletContextAttributeListener>();
-
-        List<HttpSessionListener> lsSessionListeners = new ArrayList<HttpSessionListener>();
-
-        List<HttpSessionAttributeListener> lsSessionAttListeners = new ArrayList<HttpSessionAttributeListener>();
-
-        List<ServletContextListener> lsContextListeners = new ArrayList<ServletContextListener>();
-
-        List<ServletRequestListener> lsRequestListeners = new ArrayList<ServletRequestListener>();
-
-        List<ServletRequestAttributeListener> lsRequestAttListeners = new ArrayList<ServletRequestAttributeListener>();
-
-        List<SnapshotListener> lsSnapshotListeners = new ArrayList<SnapshotListener>();
-
-        private final ConcurrentMap<String, HazelSession> mapSessions = new ConcurrentHashMap<String, HazelSession>(
-                10);
-
-        private final AtomicReference<Snapshot> snapshot = new AtomicReference<Snapshot>();
-
-        private int maxInactiveInterval = 1;
-
-        private int snapshotLifeTime;
-
-        private final ServletContext servletContext;
-
-        private final AtomicBoolean ready = new AtomicBoolean(false);
-
-        private final String clusterMapName;
-
-        private final Queue<Runnable> scheduledContextEvents = new ConcurrentLinkedQueue<Runnable>();
-
-        public AppContext(final ServletContext servletContext) {
-            this.servletContext = servletContext;
-            clusterMapName = "_web_"
-                    + ((appsSharingSessions) ? "shared" : servletContext.getServletContextName());
-            logger.log(Level.FINEST, "CLUSTER MAP NAME " + clusterMapName);
-            this.servletContext.setAttribute(Context.ATTRIBUTE_NAME, this);
-            init(1);
-            snapshot.set(new Snapshot(this, snapshotLifeTime));
-        }
-
-        public void addSnapshotListener(final SnapshotListener snapshotListener) {
-            synchronized (lsSnapshotListeners) {
-                if (DEBUG) {
-                    log("CONTEXT registering a snapshot listener " + snapshotListener);
-                }
-                lsSnapshotListeners.add(snapshotListener);
-            }
-        }
-
-        public void fireAttributeAdded(final ServletContextAttributeEvent arg0) {
-            if (ready.get()) {
-                if (lsContextAttListeners.size() > 0) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            for (final ServletContextAttributeListener listener : lsContextAttListeners) {
-                                listener.attributeAdded(arg0);
-                            }
-                        }
-                    });
-                }
-            } else {
-                scheduledContextEvents.add(new Runnable() {
-                    public void run() {
-                        fireAttributeAdded(arg0);
-                    }
-                });
-            }
-        }
-
-        public void fireAttributeRemoved(final ServletContextAttributeEvent arg0) {
-            if (ready.get()) {
-                if (lsContextAttListeners.size() > 0) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            for (final ServletContextAttributeListener listener : lsContextAttListeners) {
-                                listener.attributeRemoved(arg0);
-                            }
-                        }
-                    });
-                }
-            } else {
-                scheduledContextEvents.add(new Runnable() {
-                    public void run() {
-                        fireAttributeRemoved(arg0);
-                    }
-                });
-            }
-        }
-
-        public void fireAttributeReplaced(final ServletContextAttributeEvent arg0) {
-            if (ready.get()) {
-                if (lsContextAttListeners.size() > 0) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            for (final ServletContextAttributeListener listener : lsContextAttListeners) {
-                                listener.attributeReplaced(arg0);
-                            }
-                        }
-                    });
-                }
-            } else {
-                scheduledContextEvents.add(new Runnable() {
-                    public void run() {
-                        fireAttributeReplaced(arg0);
-                    }
-                });
-            }
-        }
-
-        public void fireContextDestroyed(final ServletContextEvent arg0) {
-            if (ready.get()) {
-                if (lsContextListeners.size() > 0) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            for (final ServletContextListener listener : lsContextListeners) {
-                                listener.contextDestroyed(arg0);
-                            }
-                        }
-                    });
-                }
-            }
-        }
-
-        public void fireContextInitialized(final ServletContextEvent arg0) {
-            if (ready.get()) {
-                if (lsContextListeners.size() > 0) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            for (final ServletContextListener listener : lsContextListeners) {
-                                listener.contextInitialized(arg0);
-                            }
-                        }
-                    });
-                }
-            } else {
-                scheduledContextEvents.add(new Runnable() {
-                    public void run() {
-                        fireContextInitialized(arg0);
-                    }
-                });
-            }
-        }
-
-        public IMap getClusterMap() {
-            return Hazelcast.getMap(clusterMapName);
-        }
-
-        public ServletContext getOriginalServletContext() {
-            return servletContext;
-        }
-
-        public String getServletContextName() {
-            return servletContext.getServletContextName();
-        }
-
-        public void init(final int maxInactiveInterval) {
-            this.maxInactiveInterval = maxInactiveInterval;
-            this.snapshotLifeTime = (maxInactiveInterval * 60 * 1000) / 30;
-            if (maxInactiveInterval < 0)
-                snapshotLifeTime = 60 * 1000;
-            else if (maxInactiveInterval < 3)
-                snapshotLifeTime = 5 * 1000;
-            else if (maxInactiveInterval > 100)
-                snapshotLifeTime = 120 * 1000;
-        }
-
-        public void removeSnapshotListener(final SnapshotListener snapshotListener) {
-            synchronized (lsSnapshotListeners) {
-                lsSnapshotListeners.remove(snapshotListener);
-            }
-        }
-
-        public void setReady() {
-            ready.set(true);
-            if (scheduledContextEvents.size() > 0) {
-                while (true) {
-                    final Runnable scheduled = scheduledContextEvents.poll();
-                    if (scheduled == null)
-                        return;
-                    scheduled.run();
-                }
-            }
-        }
-
-        public boolean urlRewriteEnabled() {
-            return true;
-        }
-
-        void changeSessionId(final HazelSession session) {
-            mapSessions.remove(session.getId());
-            session.id = generateSessionId();
-            while (mapSessions.containsKey(session.getId())) {
-                session.id = generateSessionId();
-            }
-            mapSessions.put(session.getId(), session);
-        }
-
-        HazelSession createNewSession() {
-            String id = generateSessionId();
-            while (mapSessions.containsKey(id)) {
-                id = generateSessionId();
-            }
-            return getSession(id, true);
-        }
-
-        void destroySession(final HazelSession session) {
-            final String id = session.id;
-            if (lsSessionListeners.size() > 0) {
-                executor.execute(new Runnable() {
-                    public void run() {
-                        final HttpSessionEvent event = new HttpSessionEvent(session);
-                        for (final HttpSessionListener listener : lsSessionListeners) {
-                            listener.sessionDestroyed(event);
-                        }
-                    }
-                });
-            }
-            session.destroy();
-            mapSessions.remove(id);
-            getClusterMap().remove(id);
-            getSnapshot().destroyedSessions.incrementAndGet();
-        }
-
-        HazelSession getSession(final String sessionId, final boolean create) {
-            HazelSession session = mapSessions.get(sessionId);
-            if (create && session == null) {
-                session = new HazelSession(this, sessionId);
-                session.setMaxInactiveInterval(maxInactiveInterval * 60);
-                final HazelSession oldSessionInfo = mapSessions.putIfAbsent(sessionId, session);
-                if (oldSessionInfo != null) {
-                    session = oldSessionInfo;
-                }
-            }
-            return session;
-        }
-
-        Snapshot getSnapshot() {
-            Snapshot s = snapshot.get();
-            if (s.invalid()) {
-                if (DEBUG) {
-                    log("Snapshot is not valid");
-                }
-                synchronized (Snapshot.class) {
-                    s = snapshot.get();
-                    if (s.invalid()) {
-                        final Snapshot sNew = new Snapshot(this, snapshotLifeTime);
-                        final boolean ok = snapshot.compareAndSet(s, sNew);
-                        if (ok) {
-                            fireSnapshotEvent(s.createSnapshotEvent());
-                            return sNew;
-                        } else
-                            return snapshot.get();
-                    }
-                }
-            }
-            return s;
-        }
-
-        private void fireSnapshotEvent(final SnapshotEvent snapshotEvent) {
-            if (DEBUG) {
-                log(lsSnapshotListeners.size() + " FireSnapshotEvent " + snapshotEvent);
-            }
-            synchronized (lsSnapshotListeners) {
-                for (final SnapshotListener listener : lsSnapshotListeners) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            listener.handleSnapshot(snapshotEvent);
-                        }
-                    });
-                }
-            }
-        }
-    } // END of AppContext
-
-    private static class Controller implements Runnable {
-
-        public void control(final AppContext app) {
-            try {
-                if (DEBUG) {
-                    log("Controller checking the sessions");
-                }
-                final Collection<HazelSession> sessions = app.mapSessions.values();
-                final long currentTime = System.currentTimeMillis();
-                for (final HazelSession session : sessions) {
-                    if (session != null) {
-                        if (session.expired(currentTime) || !session.valid.get()) {
-                            final String id = session.id;
-                            if (DEBUG) {
-                                log("Controller removing a session " + id);
-                            }
-                            app.destroySession(session);
-                        }
-                    } else {
-                        if (DEBUG) {
-                            log("SessionInfo got null hazelsession " + session);
-                        }
-                    }
-                }
-            } catch (final Throwable t) {
-                if (DEBUG) {
-                    t.printStackTrace();
-                }
-            }
-        }
-
-        public void run() {
-            for (AppContext appContext : mapApps.values()) {
-                control(appContext);
-            }
-        }
-    } // END of Controller
-
-    private static class HazelSession implements HttpSession {
+    private class HazelSession implements HttpSession {
         private Data currentSessionData = null;
-
-        private MessageDigest md = null;
 
         public int minSize = -1;
 
@@ -779,34 +434,25 @@ public class WebFilter implements Filter {
 
         String id = null;
 
-        ConcurrentMap<String, Object> atts = new ConcurrentHashMap<String, Object>();
+        HttpSession originalSession;
 
-        AppContext context = null;
+        WebFilter webFilter;
 
-        public HazelSession(final AppContext context, final String sessionId) {
-            this.context = context;
-            try {
-                md = MessageDigest.getInstance("md5");
-            } catch (final NoSuchAlgorithmException e) {
-            }
+        public HazelSession(WebFilter webFilter, final String sessionId) {
+            this.webFilter = webFilter;
             this.id = sessionId;
             creationTime.set(System.currentTimeMillis());
             lastAccessedTime.set(System.currentTimeMillis());
-            final List<HttpSessionListener> lsSessionListeners = context.lsSessionListeners;
-            if (DEBUG) {
-                log("Creating session " + lsSessionListeners.size());
-            }
-            if (lsSessionListeners.size() > 0) {
-                executor.execute(new Runnable() {
-                    public void run() {
-                        final HttpSessionEvent event = new HttpSessionEvent(HazelSession.this);
-                        for (final HttpSessionListener listener : lsSessionListeners) {
-                            listener.sessionCreated(event);
-                        }
-                    }
-                });
-            }
-            context.getSnapshot().createdSessions.incrementAndGet();
+        }
+
+        public HttpSession getOriginalSession() {
+            return originalSession;
+        }
+
+        public void setOriginalSession(HttpSession originalSession) {
+            this.originalSession = originalSession;
+            log(HazelSession.this + " setting original session " + originalSession);
+            mapOriginalSessions.put(originalSession.getId(), id);
         }
 
         public boolean expired(final long currentTime) {
@@ -818,14 +464,12 @@ public class WebFilter implements Filter {
 
         public Object getAttribute(final String name) {
             checkState();
-            return atts.get(name);
+            return originalSession.getAttribute(name);
         }
 
         public Enumeration getAttributeNames() {
             checkState();
-            if (atts.size() == 0)
-                return new IteratorEnumeration(null);
-            return new IteratorEnumeration(atts.keySet().iterator());
+            return originalSession.getAttributeNames();
         }
 
         public long getCreationTime() {
@@ -851,7 +495,7 @@ public class WebFilter implements Filter {
         }
 
         public ServletContext getServletContext() {
-            return context.getOriginalServletContext();
+            return servletContext;
         }
 
         public HttpSessionContext getSessionContext() {
@@ -861,25 +505,18 @@ public class WebFilter implements Filter {
 
         public Object getValue(final String name) {
             checkState();
-            return atts.get(name);
+            return originalSession.getValue(name);
         }
 
         public String[] getValueNames() {
             checkState();
-            return atts.keySet().toArray(new String[atts.size()]);
-        }
-
-        public byte[] hash(final Data data) {
-            if (data == null)
-                return null;
-            md.reset();
-            md.digest(data.buffer);
-            return md.digest();
+            return originalSession.getValueNames();
         }
 
         public void invalidate() {
             checkState();
-            context.destroySession(this);
+            originalSession.invalidate();
+            destroySession(this);
         }
 
         public boolean isNew() {
@@ -893,36 +530,17 @@ public class WebFilter implements Filter {
 
         public void putValue(final String name, final Object value) {
             checkState();
-            setAttribute(name, value);
+            originalSession.setAttribute(name, value);
         }
 
         public void removeAttribute(final String name) {
             checkState();
-            final Object oldValue = atts.remove(name);
-            if (oldValue != null) {
-                if (oldValue instanceof HttpSessionBindingListener) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            HttpSessionBindingEvent bindingEvent;
-                            bindingEvent = new HttpSessionBindingEvent(HazelSession.this, name,
-                                    oldValue);
-                            ((HttpSessionBindingListener) oldValue).valueUnbound(bindingEvent);
-                        }
-                    });
-                }
-                final List<HttpSessionAttributeListener> lsSessionAttributeListeners = context.lsSessionAttListeners;
-                if (lsSessionAttributeListeners.size() > 0) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            final HttpSessionBindingEvent event = new HttpSessionBindingEvent(
-                                    HazelSession.this, name, oldValue);
-                            for (final HttpSessionAttributeListener listener : lsSessionAttributeListeners) {
-                                listener.attributeRemoved(event);
-                            }
-                        }
-                    });
-                }
-            }
+            originalSession.removeAttribute(name);
+        }
+
+        public void setAttribute(final String name, final Object value) {
+            checkState();
+            originalSession.setAttribute(name, value);
         }
 
         public void removeValue(final String name) {
@@ -943,57 +561,6 @@ public class WebFilter implements Filter {
                 return !data.equals(currentSessionData);
             } finally {
                 currentSessionData = data;
-            }
-        }
-
-        public void setAttribute(final String name, final Object value) {
-            checkState();
-            if (DEBUG) {
-                log(name + " Setting attribute !!! " + context.lsSessionAttListeners.size());
-            }
-            if (value == null) {
-                removeAttribute(name);
-            } else {
-                final Object oldValue = atts.put(name, value);
-                if (value instanceof HttpSessionBindingListener) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            final HttpSessionBindingEvent event = new HttpSessionBindingEvent(
-                                    HazelSession.this, name, value);
-                            final HttpSessionBindingListener listener = (HttpSessionBindingListener) value;
-                            listener.valueBound(event);
-                        }
-                    });
-                }
-                if (oldValue != null && oldValue instanceof HttpSessionBindingListener) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            final HttpSessionBindingEvent event = new HttpSessionBindingEvent(
-                                    HazelSession.this, name, oldValue);
-                            final HttpSessionBindingListener listener = (HttpSessionBindingListener) value;
-                            listener.valueUnbound(event);
-                        }
-                    });
-                }
-                final List<HttpSessionAttributeListener> lsSessionAttributeListeners = context.lsSessionAttListeners;
-                if (lsSessionAttributeListeners.size() > 0) {
-                    executor.execute(new Runnable() {
-                        public void run() {
-                            Object eventValue = value;
-                            if (oldValue != null)
-                                eventValue = oldValue;
-                            final HttpSessionBindingEvent event = new HttpSessionBindingEvent(
-                                    HazelSession.this, name, eventValue);
-                            for (final HttpSessionAttributeListener listener : lsSessionAttributeListeners) {
-                                if (oldValue != null) {
-                                    listener.attributeReplaced(event);
-                                } else {
-                                    listener.attributeAdded(event);
-                                }
-                            }
-                        }
-                    });
-                }
             }
         }
 
@@ -1037,9 +604,6 @@ public class WebFilter implements Filter {
 
         void destroy() {
             valid.set(false);
-            context = null;
-            atts.clear();
-            md = null;
         }
 
         private void checkState() {
@@ -1047,156 +611,6 @@ public class WebFilter implements Filter {
                 throw new IllegalStateException("Session is invalid!");
         }
     }// END of HazelSession
-
-    private static class Snapshot {
-        private final long createTime;
-
-        private final long lifeTime;
-
-        private final AppContext context;
-
-        public AtomicLong aveRequestTime = new AtomicLong();
-
-        public AtomicLong minRequestTime = new AtomicLong(Long.MAX_VALUE);
-
-        public AtomicLong maxRequestTime = new AtomicLong(Long.MIN_VALUE);
-
-        public AtomicLong numberOfRequests = new AtomicLong();
-
-        public AtomicInteger createdSessions = new AtomicInteger();
-
-        public AtomicInteger destroyedSessions = new AtomicInteger();
-
-        private final Object averageLock = new Object();
-
-        public AtomicLong tempNumberOfRequests = new AtomicLong();
-
-        public AtomicLong tempTotalReqTime = new AtomicLong();
-
-        public Snapshot(final AppContext context, final long snapshotLifeTime) {
-            createTime = System.currentTimeMillis();
-            this.lifeTime = snapshotLifeTime;
-            this.context = context;
-        }
-
-        public SnapshotEvent createSnapshotEvent() {
-            flush();
-            final long minReqT = (minRequestTime.get() == Long.MAX_VALUE) ? 0 : minRequestTime
-                    .get();
-            final long maxReqT = (maxRequestTime.get() == Long.MIN_VALUE) ? 0 : maxRequestTime
-                    .get();
-            return new SnapshotEvent(context.getOriginalServletContext(), createdSessions.get(),
-                    destroyedSessions.get(), minReqT, maxReqT, aveRequestTime.get(),
-                    numberOfRequests.get());
-        }
-
-        public boolean invalid() {
-            return (System.currentTimeMillis() - createTime) > lifeTime;
-        }
-
-        public void requestTime(final long nano) {
-            if (nano < minRequestTime.get())
-                minRequestTime.set(nano);
-            if (nano > maxRequestTime.get())
-                maxRequestTime.set(nano);
-            final long tempCount = tempNumberOfRequests.incrementAndGet();
-            tempTotalReqTime.addAndGet(nano);
-            if (tempCount > 10000) {
-                synchronized (averageLock) {
-                    if (tempCount > 10000) {
-                        flush();
-                    }
-                }
-            }
-        }
-
-        void flush() {
-            final long tempReqCount = tempNumberOfRequests.get();
-            if (tempReqCount > 0) {
-                final long temReqTime = tempTotalReqTime.get();
-                final long aveReqTime = aveRequestTime.get();
-                final long reqs = numberOfRequests.get();
-                final long totalTime = ((aveReqTime * reqs) + temReqTime);
-                final long totalReqCount = reqs + tempReqCount;
-                final long newAve = totalTime / totalReqCount;
-                aveRequestTime.set(newAve);
-                numberOfRequests.set(totalReqCount);
-                tempNumberOfRequests.set(0);
-                tempTotalReqTime.set(0);
-            }
-        }
-    }
-
-    protected static Logger logger = Logger.getLogger(WebFilter.class.getName());
-
-    private static final boolean DEBUG = true;
-
-    private static final String SESSION_URL_PHRASE = ";jsessionid=";
-
-    public static final String HAZELCAST_REQUEST = "*hazelcast-request";
-
-    private static final ConcurrentMap<String, AppContext> mapApps = new ConcurrentHashMap<String, AppContext>(
-            10);
-
-    private AppContext app = null;
-
-    private static boolean appsSharingSessions = false;
-
-    private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(5);
-
-    static {
-        executor.scheduleAtFixedRate(new Controller(), 0, 60, TimeUnit.SECONDS);
-        executor.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                for (AppContext appContext : mapApps.values()) {
-                    appContext.getSnapshot();
-                }
-            }
-        }, 0, 10, TimeUnit.SECONDS);
-    }
-
-    public WebFilter() {
-    }
-
-    public static synchronized AppContext ensureServletContext(final ServletContext servletContext) {
-        AppContext app = getAppContext(servletContext);
-        if (app == null) {
-            app = new AppContext(servletContext);
-            setAppContext(app);
-        }
-        return app;
-    }
-
-    public static synchronized ServletContext getServletContext(final ServletContext original) {
-        final AppContext app = getAppContext(original);
-        if (app == null)
-            return original;
-        return app.getOriginalServletContext();
-    }
-
-    static String getAppName(ServletContext servletContext) {
-        String name = servletContext.getContextPath();
-        if (name.equals("")) {
-            name = "_rootWebapp";
-        }
-        return name;
-    }
-
-    public static synchronized AppContext setAppContext(final AppContext app) {
-        String appName = getAppName(app.getOriginalServletContext());
-        if (appsSharingSessions) {
-            appName = "_hz_shared_app";
-        }
-        log(appsSharingSessions + " PUTTING.. " + appName + " appObj " + app);
-        return mapApps.put(appName, app);
-    }
-
-    static void log(final Object obj) {
-        if (DEBUG) {
-            logger.log(Level.FINEST, obj.toString());
-            System.out.println(obj.toString());
-        }
-    }
 
     private static void addCookieForSession(final RequestWrapper req, final String sessionId) {
         final Cookie sessionCookie = new Cookie("JSESSIONID", sessionId);
@@ -1228,14 +642,6 @@ public class WebFilter implements Filter {
         return id;
     }
 
-    private static AppContext getAppContext(final ServletContext servletContext) {
-        String appName = getAppName(servletContext);
-        if (appsSharingSessions) {
-            appName = "_hz_shared_app";
-        }
-        return mapApps.get(appName);
-    }
-
     private static void removeCookieForSession(final RequestWrapper req, final String sessionId) {
         final Cookie[] cookies = req.getCookies();
         if (cookies != null) {
@@ -1257,10 +663,6 @@ public class WebFilter implements Filter {
         }
     }
 
-    public void destroy() {
-        mapApps.remove(app.getServletContextName());
-    }
-
     public void doFilter(ServletRequest req, ServletResponse res, final FilterChain chain)
             throws IOException, ServletException {
         log("FILTERING %%55555.. " + req.getClass().getName());
@@ -1269,10 +671,6 @@ public class WebFilter implements Filter {
         } else {
             if (req instanceof RequestWrapper) {
                 log("Request is instance ! continue...");
-                chain.doFilter(req, res);
-                return;
-            } else if (req.getAttribute(HAZELCAST_REQUEST) != null) {
-                log("Request has hazelcast request ! continue...");
                 chain.doFilter(req, res);
                 return;
             }
@@ -1290,19 +688,17 @@ public class WebFilter implements Filter {
                     }
                 }
             }
-            final ResponseWrapper resWrapper = new ResponseWrapper(app, (HttpServletResponse) res);
-            final RequestWrapper reqWrapper = new RequestWrapper(app, httpReq, resWrapper);
+            boolean newRequest = (req.getAttribute(HAZELCAST_REQUEST) == null);
+            final ResponseWrapper resWrapper = new ResponseWrapper((HttpServletResponse) res);
+            final RequestWrapper reqWrapper = new RequestWrapper(httpReq, resWrapper);
             resWrapper.setRequest(reqWrapper);
-            final ServletRequestEvent event = (app.lsRequestListeners.size() == 0) ? null
-                    : new ServletRequestEvent(app.getOriginalServletContext(), reqWrapper);
-            if (event != null) {
-                executor.execute(new Runnable() {
-                    public void run() {
-                        for (final ServletRequestListener listener : app.lsRequestListeners) {
-                            listener.requestInitialized(event);
-                        }
-                    }
-                });
+            if (!newRequest) {
+                RequestWrapper existingReq = (RequestWrapper) req.getAttribute(HAZELCAST_REQUEST);
+                reqWrapper.setRequestedSessionId(existingReq.hazelSession,
+                        existingReq.requestedSessionId,
+                        existingReq.requestedSessionIdFromCookie);
+            } else {
+                reqWrapper.setExtractSessionId();
             }
             req = null;
             res = null;
@@ -1317,7 +713,7 @@ public class WebFilter implements Filter {
                     if (DEBUG) {
                         log("doFilter got session expiration for " + session.getId());
                     }
-                    app.destroySession(session);
+                    destroySession(session);
                 }
             }
             chain.doFilter(reqWrapper, resWrapper);
@@ -1357,13 +753,13 @@ public class WebFilter implements Filter {
                     }
                     log("PUTTING SESSION " + sessionId + "  values " + mapData);
                     if (session.knownToCluster()) {
-                        app.getClusterMap().put(sessionId, data);
+                        getClusterMap().put(sessionId, data);
                     } else {
-                        Object old = app.getClusterMap().putIfAbsent(sessionId, data);
+                        Object old = getClusterMap().putIfAbsent(sessionId, data);
                         int tryCount = 1;
                         while (old != null) {
-                            app.changeSessionId(session);
-                            old = app.getClusterMap().putIfAbsent(sessionId, data);
+                            changeSessionId(session);
+                            old = getClusterMap().putIfAbsent(sessionId, data);
                             if (tryCount++ >= 3)
                                 throw new RuntimeException("SessinId Generator is no good!");
                         }
@@ -1373,62 +769,14 @@ public class WebFilter implements Filter {
                 session.setLastAccessed();
                 session.setNew(false);
             }
-            app.getSnapshot().requestTime((System.nanoTime() - reqWrapper.creationTime) / 1000);
-            if (event != null) {
-                executor.execute(new Runnable() {
-                    public void run() {
-                        for (final ServletRequestListener listener : app.lsRequestListeners) {
-                            listener.requestDestroyed(event);
-                        }
-                    }
-                });
-            }
         }
     }
 
-    public void init(final FilterConfig config) throws ServletException {
-        int maxInactiveInterval = 30; // minutes
-        final String appsSharingSessionsValue = config.getInitParameter("apps-sharing-sessions");
-        if (appsSharingSessionsValue != null) {
-            appsSharingSessions = Boolean.valueOf(appsSharingSessionsValue.trim());
+    public void destroy() {
+        for (HazelSession session : mapSessions.values()) {
+            destroySession(session);
         }
-        final String sessionTimeoutValue = config.getInitParameter("session-timeout");
-        if (sessionTimeoutValue != null) {
-            maxInactiveInterval = Integer.parseInt(sessionTimeoutValue.trim());
-        }
-        app = ensureServletContext(config.getServletContext());
-        app.init(maxInactiveInterval);
-        final int listenerCount = Integer.parseInt(config.getInitParameter("listener-count"));
-        for (int i = 0; i < listenerCount; i++) {
-            final String listenerClass = config.getInitParameter("listener" + i);
-            if (DEBUG) {
-                log("Found listener " + listenerClass);
-            }
-            try {
-                final Object listener = Class.forName(listenerClass).newInstance();
-                if (listener instanceof HttpSessionListener) {
-                    app.lsSessionListeners.add((HttpSessionListener) listener);
-                }
-                if (listener instanceof HttpSessionAttributeListener) {
-                    app.lsSessionAttListeners.add((HttpSessionAttributeListener) listener);
-                }
-                if (listener instanceof ServletContextListener) {
-                    app.lsContextListeners.add((ServletContextListener) listener);
-                }
-                if (listener instanceof ServletContextAttributeListener) {
-                    app.lsContextAttListeners.add((ServletContextAttributeListener) listener);
-                }
-                if (listener instanceof ServletRequestListener) {
-                    app.lsRequestListeners.add((ServletRequestListener) listener);
-                }
-                if (listener instanceof ServletRequestAttributeListener) {
-                    app.lsRequestAttListeners.add((ServletRequestAttributeListener) listener);
-                }
-            } catch (final Exception e) {
-                e.printStackTrace();
-            }
-        }
-        app.setReady();
+        mapSessions.clear();
     }
 }// END of WebFilter
 
