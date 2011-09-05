@@ -39,17 +39,19 @@
             </para>
         </listitem>
         <listitem>
-            <para>Put the following xml into <literal>web.xml</literal> file. Make sure Hazelcast filter is placed
+            <para>Put the following xml into
+                <literal>web.xml</literal>
+                file. Make sure Hazelcast filter is placed
                 before all the other filters if any; put it at the top for example.
             </para>
             <para>
                 <programlisting language="xml"><![CDATA[
     <filter>
-        <filter-name>hazel-filter</filter-name>
+        <filter-name>hazelcast-filter</filter-name>
         <filter-class>com.hazelcast.web.WebFilter</filter-class>
     </filter>
     <filter-mapping>
-        <filter-name>hazel-filter</filter-name>
+        <filter-name>hazelcast-filter</filter-name>
         <url-pattern>/*</url-pattern>
         <dispatcher>FORWARD</dispatcher>
         <dispatcher>INCLUDE</dispatcher>
