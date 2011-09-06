@@ -1,12 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 xml:id="KeyBasedDistributedExecution" version='5.0' xmlns='http://docbook.org/ns/docbook'
+<sect1 xml:id="DataAffinity" version='5.0' xmlns='http://docbook.org/ns/docbook'
        xmlns:xlink='http://www.w3.org/1999/xlink'
        xmlns:xi='http://www.w3.org/2001/XInclude'
        xmlns:ns5='http://www.w3.org/2000/svg'
        xmlns:ns4='http://www.w3.org/1998/Math/MathML'
        xmlns:ns3='http://www.w3.org/1999/xhtml'
        xmlns:db='http://docbook.org/ns/docbook'>
-    <title>Key based Distributed Executions</title>
+    <title>Data Affinity (Co-location of related entries)</title>
     <para>Hazelcast has a standard way of finding out which member owns/manages each key object.
         Following operations will be routed to the same member, since all of them are
         operating based on the same key, "key1".

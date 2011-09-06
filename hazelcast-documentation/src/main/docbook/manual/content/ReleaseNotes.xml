@@ -22,7 +22,7 @@
             </listitem>
             <listitem>
                 <para>New
-                    <link xlink:href="#KeyBasedDistributedExecution">Data Affinity</link>
+                    <link xlink:href="#DataAffinity">Data Affinity</link>
                     (co-location of related entries) feature.
                 </para>
             </listitem>
