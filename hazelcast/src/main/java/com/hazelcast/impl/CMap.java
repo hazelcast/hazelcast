@@ -1604,8 +1604,8 @@ public class CMap {
             throw new RuntimeException("Cannot create record from a 0 size key: " + key);
         }
         int blockId = concurrentMapManager.getBlockId(key);
-//        return new SimpleRecord(blockId, this, concurrentMapManager.newRecordId(), key, value);
-        return new DefaultRecord(this, blockId, key, value, ttl, maxIdle, concurrentMapManager.newRecordId());
+        return new SimpleRecord(blockId, this, concurrentMapManager.newRecordId(), key, value);
+//        return new DefaultRecord(this, blockId, key, value, ttl, maxIdle, concurrentMapManager.newRecordId());
     }
 
     public void addListener(Data key, Address address, boolean includeValue) {

@@ -115,7 +115,7 @@ public class SimpleRecord implements Record {
     }
 
     public boolean testLock(int threadId, Address address) {
-        return false;
+        return true;
     }
 
     public boolean lock(int threadId, Address address) {
