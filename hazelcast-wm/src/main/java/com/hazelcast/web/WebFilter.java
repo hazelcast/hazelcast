@@ -222,7 +222,7 @@ public class WebFilter implements Filter {
                 }
 
                 public void include(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
-                    original.getRequestDispatcher(path).forward(original, servletResponse);
+                    original.getRequestDispatcher(path).include(original, servletResponse);
                 }
             };
         }
