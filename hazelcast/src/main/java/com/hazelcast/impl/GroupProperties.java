@@ -68,7 +68,8 @@ public class GroupProperties {
     public static final String PROP_MC_QUEUE_EXCLUDES = "hazelcast.mc.queue.excludes";
     public static final String PROP_MC_SEMAPHORE_EXCLUDES = "hazelcast.mc.semaphore.excludes";
     public static final String PROP_MC_TOPIC_EXCLUDES = "hazelcast.mc.topic.excludes";
-
+    public static final String PROP_MC_MAX_VISIBLE_INSTANCE_COUNT = "hazelcast.mc.max.visible.instance.count";
+    
     public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
 
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
@@ -162,6 +163,8 @@ public class GroupProperties {
     public final GroupProperty MC_SEMAPHORE_EXCLUDES;
 
     public final GroupProperty MC_TOPIC_EXCLUDES;
+    
+    public final GroupProperty MC_MAX_INSTANCE_COUNT;
 
     public GroupProperties(Config config) {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
@@ -208,6 +211,7 @@ public class GroupProperties {
         MC_QUEUE_EXCLUDES = new GroupProperty(config, PROP_MC_QUEUE_EXCLUDES, null);
         MC_SEMAPHORE_EXCLUDES = new GroupProperty(config, PROP_MC_SEMAPHORE_EXCLUDES, null);
         MC_TOPIC_EXCLUDES = new GroupProperty(config, PROP_MC_TOPIC_EXCLUDES, null);
+        MC_MAX_INSTANCE_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_INSTANCE_COUNT, "50");
     }
 
     public static class GroupProperty {
