@@ -50,7 +50,7 @@ public class WebFilter implements Filter {
 
     private static Logger logger = Logger.getLogger(WebFilter.class.getName());
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private static final String SESSION_URL_PHRASE = ";jsessionid=";
 

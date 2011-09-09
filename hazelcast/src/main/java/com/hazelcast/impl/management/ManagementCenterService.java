@@ -248,19 +248,17 @@ public class ManagementCenterService implements MembershipListener {
         }
 
         void sendState() {
-            final MemberState latestState = updateLocalState();
+            boolean preparedStateData = false;
+            int compressedCount = 0;
             for (Address address : socketAddresses.keySet()) {
                 if (!thisAddress.equals(address)) {
                     final SocketAddress socketAddress = socketAddresses.get(address);
                     if (socketAddress != null) {
                         try {
-                            bbState.clear();
-                            latestState.writeData(dos);
-                            dos.flush();
-                            deflater.reset();
-                            deflater.setInput(bbState.array(), 0, bbState.position());
-                            deflater.finish();
-                            final int compressedCount = deflater.deflate(data);
+                        	if(!preparedStateData) {
+                        		compressedCount = prepareStateData();
+                        		preparedStateData = true;
+                        	} 
                             packet.setData(data, 0, compressedCount);
                             packet.setSocketAddress(socketAddress);
                             socket.send(packet);
@@ -272,6 +270,17 @@ public class ManagementCenterService implements MembershipListener {
                     }
                 }
             }
+        }
+        
+        int prepareStateData() throws IOException {
+        	final MemberState latestState = updateLocalState();
+            bbState.clear();
+            latestState.writeData(dos);
+            dos.flush();
+            deflater.reset();
+            deflater.setInput(bbState.array(), 0, bbState.position());
+            deflater.finish();
+            return deflater.deflate(data);
         }
     }
 
