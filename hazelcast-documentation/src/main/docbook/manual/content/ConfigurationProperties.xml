@@ -377,6 +377,12 @@ cfg.setProperty("hazelcast.property.foo", "value");
 				<td>boolean</td>
 				<td>true</td>
 			</tr>
+			<tr>
+				<td><db:literal>hazelcast.mc.max.visible.instance.count</db:literal></td>
+				<td>Management Center maximum visible instance count</td>
+				<td>integer</td>
+				<td>50</td>
+			</tr>
 		</tbody>
 	</table>
 	
