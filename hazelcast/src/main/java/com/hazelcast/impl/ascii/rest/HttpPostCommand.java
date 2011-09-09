@@ -29,7 +29,7 @@ public class HttpPostCommand extends HttpCommand {
     boolean nextLine = false;
     boolean readyToReadData = false;
     private ByteBuffer line = ByteBuffer.allocate(500);
-    private String contentType = "text/html";
+    private String contentType = null;
     private final SocketTextReader socketTextRequestReader;
     private boolean chunked = false;
 
@@ -98,7 +98,7 @@ public class HttpPostCommand extends HttpCommand {
             byte b = cb.get();
             char c = (char) b;
             if (c == '\n') {
-                processLine(toStringAndClear(line));
+                processLine(toStringAndClear(line).toLowerCase());
                 if (nextLine) {
                     readyToReadData = true;
                 }
@@ -143,7 +143,7 @@ public class HttpPostCommand extends HttpCommand {
             data = ByteBuffer.allocate(Integer.parseInt(currentLine.substring(currentLine.indexOf(' ') + 1)));
         } else if (!chunked && currentLine.startsWith(HEADER_CHUNKED)) {
             chunked = true;
-        } else if (currentLine.startsWith("Expect: 100")) {
+        } else if (currentLine.startsWith(HEADER_EXPECT_100)) {
             socketTextRequestReader.sendResponse(new NoOpCommand(RES_100));
         }
     }
