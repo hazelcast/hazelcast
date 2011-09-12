@@ -31,6 +31,7 @@ import java.util.Set;
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class ListProxyImpl extends AbstractList implements IList, DataSerializable, HazelcastInstanceAwareInstance {
+	String actualName;
     String name;
     FactoryImpl factory;
 
@@ -38,7 +39,8 @@ public class ListProxyImpl extends AbstractList implements IList, DataSerializab
     }
 
     public ListProxyImpl(String name, FactoryImpl factory) {
-        this.name = Prefix.QUEUE + name;
+    	this.actualName = name;
+        this.name = Prefix.QUEUE + actualName;
         this.factory = factory;
     }
 
@@ -47,7 +49,8 @@ public class ListProxyImpl extends AbstractList implements IList, DataSerializab
     }
 
     public void destroy() {
-        factory.destroyProxy(new FactoryImpl.ProxyKey(name, null));
+    	factory.destroyInstanceClusterWide(actualName, null);
+        factory.destroyInstanceClusterWide(Prefix.MAP + name, null);
     }
 
     public Object getId() {

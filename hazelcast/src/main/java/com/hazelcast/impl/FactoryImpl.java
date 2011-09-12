@@ -549,6 +549,10 @@ public class FactoryImpl implements HazelcastInstance {
         if (proxy instanceof MProxy) {
             MProxy mProxy = (MProxy) proxy;
             CMap cmap = node.concurrentMapManager.getMap(mProxy.getLongName());
+            if(cmap == null) {
+            	logger.log(Level.WARNING, "Cmap[" + mProxy.getLongName() + "] has not been created yet! Initialization attemp failed!");
+            	return;
+            }
             if (!cmap.isMapForQueue() && !cmap.initialized) {
                 synchronized (cmap.getInitLock()) {
                     if (!cmap.initialized) {
@@ -928,14 +932,14 @@ public class FactoryImpl implements HazelcastInstance {
 
     Object createInstanceClusterWide(final ProxyKey proxyKey) {
         final BlockingQueue<Object> result = ResponseQueueFactory.newResponseQueue();
-        node.clusterService.enqueueAndReturn(new Processable() {
+        node.clusterService.enqueueAndWait(new Processable() {
             public void process() {
                 try {
                     result.put(createProxy(proxyKey));
                 } catch (InterruptedException ignored) {
                 }
             }
-        });
+        }, 10);
         Object proxy = null;
         try {
             proxy = result.take();

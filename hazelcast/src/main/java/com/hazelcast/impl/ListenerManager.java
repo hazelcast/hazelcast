@@ -287,6 +287,14 @@ public class ListenerManager extends BaseManager {
             registerListener(name, key, false, false);
         }
     }
+    
+    synchronized void removeAllRegisteredListeners(String name) {
+    	for (ListenerItem listenerItem : listeners) {
+    		if (listenerItem.name.equals(name)) {
+    			listeners.remove(listenerItem);
+    		}
+    	}
+    }
 
     void callListeners(DataAwareEntryEvent dataAwareEntryEvent) {
         for (ListenerItem listenerItem : listeners) {

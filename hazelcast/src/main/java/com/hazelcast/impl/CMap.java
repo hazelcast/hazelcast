@@ -1543,6 +1543,7 @@ public class CMap {
         }
         mapRecords.clear();
         mapIndexService.clear();
+        node.listenerManager.removeAllRegisteredListeners(getName());
         if (mapStoreWrapper != null) {
             try {
                 mapStoreWrapper.destroy();
