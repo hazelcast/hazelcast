@@ -15,6 +15,8 @@
         <javac destdir="${core.classes.dir}" compiler="javac1.5" debug="on" nowarn="yes">
             <src path="${core.src.dir}"/>
             <exclude name="**/Log4jFactory.java"/>
+        	<exclude name="**/Slf4jFactory.java"/>
+        	<exclude name="**/TestUtil.java"/>
         </javac>
         <tstamp>
             <format property="TODAY" pattern="yyyyMMdd" locale="en"/>
