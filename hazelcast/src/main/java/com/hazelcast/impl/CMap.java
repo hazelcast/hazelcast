@@ -1567,6 +1567,7 @@ public class CMap {
         if (!record.isActive() || !record.isValid(now)) {
             record.setActive();
             record.setCreationTime(now);
+            record.setLastUpdateTime(0L);
             record.setExpirationTime(ttl);
         }
     }
