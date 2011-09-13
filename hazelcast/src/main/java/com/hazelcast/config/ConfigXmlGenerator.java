@@ -195,22 +195,39 @@ public class ConfigXmlGenerator {
         return format(xml.toString(), 5);
     }
 
-    private String format(String input, int indent) {
+    private String format(final String input, int indent) {
         if (!formatted) {
             return input;
         }
         try {
-            Source xmlInput = new StreamSource(new StringReader(input));
-            StringWriter stringWriter = new StringWriter();
-            StreamResult xmlOutput = new StreamResult(stringWriter);
+            final Source xmlInput = new StreamSource(new StringReader(input));
+            final StreamResult xmlOutput = new StreamResult(new StringWriter());
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            transformerFactory.setAttribute("indent-number", indent);
+            
+            /* Older versions of Xalan still use this method of setting indent values.  
+             * Attempt to make this work but don't completely fail if it's a problem. 
+             */
+            try { 
+            	transformerFactory.setAttribute("indent-number", indent); 
+            } catch (IllegalArgumentException e) {
+            	logger.log(Level.FINEST, "Failed to set indent-number attribute; cause: " + e.getMessage());
+            }
             Transformer transformer = transformerFactory.newTransformer();
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
             transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+
+            /* Newer versions of Xalan will look for a fully-qualified output property in order to specify amount of 
+             * indentation to use.  Attempt to make this work as well but again don't completely fail if it's a problem.
+             */
+            try { 
+            	transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", Integer.toString(indent)); 
+            } catch (IllegalArgumentException e) {
+            	logger.log(Level.FINEST, "Failed to set indent-amount property; cause: " + e.getMessage());
+            }
             transformer.transform(xmlInput, xmlOutput);
             return xmlOutput.getWriter().toString();
+
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
             return input;
