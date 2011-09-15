@@ -51,6 +51,8 @@ public class ConnectionManager implements MembershipListener {
 
     private final LifecycleServiceClientImpl lifecycleService;
 
+    Timer heartbeatTimer = new Timer();
+
     public ConnectionManager(HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress[] clusterMembers, boolean shuffle, long timeout) {
         this.TIMEOUT = timeout;
         this.client = client;
@@ -69,8 +71,7 @@ public class ConnectionManager implements MembershipListener {
     }
 
     void scheduleHeartbeatTimerTask() {
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
+        heartbeatTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 long diff = client.getInRunnable().lastReceived - System.currentTimeMillis();
@@ -313,5 +314,6 @@ public class ConnectionManager implements MembershipListener {
     public void shutdown() {
         logger.log(Level.INFO, getClass().getSimpleName() + " shutdown");
         running = false;
+        heartbeatTimer.cancel();
     }
 }
