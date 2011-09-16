@@ -40,6 +40,7 @@ public class WanReplicationService {
             wr = mapWanReplications.get(name);
             if (wr != null) return wr;
             WanReplicationConfig wanReplicationConfig = node.getConfig().getWanReplicationConfig(name);
+            if (wanReplicationConfig == null) return null;
             List<WanTargetClusterConfig> targets = wanReplicationConfig.getTargetClusterConfigs();
             WanReplicationEndpoint[] targetClusters = new WanReplicationEndpoint[targets.size()];
             int count = 0;

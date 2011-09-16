@@ -191,6 +191,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleGroup(node);
             } else if ("properties".equals(nodeName)) {
                 handleProperties(node, config.getProperties());
+            } else if ("wan-replication".equals(nodeName)) {
+                handleWanReplication(node);
             } else if ("executor-service".equals(nodeName)) {
                 handleExecutor(node);
             } else if ("queue".equals(nodeName)) {
@@ -205,6 +207,35 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleMergePolicies(node);
             }
         }
+    }
+
+    public void handleWanReplication(final org.w3c.dom.Node node) throws Exception {
+        final Node attName = node.getAttributes().getNamedItem("name");
+        final String name = getTextContent(attName);
+        final WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
+        wanReplicationConfig.setName(name);
+        for (org.w3c.dom.Node nodeTarget : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(nodeTarget.getNodeName());
+            if ("target-cluster".equals(nodeName)) {
+                WanTargetClusterConfig wanTarget = new WanTargetClusterConfig();
+                for (org.w3c.dom.Node targetChild : new IterableNodeList(nodeTarget.getChildNodes())) {
+                    final String targetChildName = cleanNodeName(targetChild.getNodeName());
+                    if ("replication-impl".equals(targetChildName)) {
+                        wanTarget.setReplicationImpl(getTextContent(targetChild));
+                    } else if ("end-points".equals(targetChildName)) {
+                        for (org.w3c.dom.Node address : new IterableNodeList(targetChild.getChildNodes())) {
+                            final String addressNodeName = cleanNodeName(address.getNodeName());
+                            if ("address".equals(addressNodeName)) {
+                                String addressStr = getTextContent(address);
+                                wanTarget.addEndpoint(addressStr);
+                            }
+                        }
+                    }
+                }
+                wanReplicationConfig.addTargetClusterConfig(wanTarget);
+            }
+        }
+        config.addWanReplicationConfig(wanReplicationConfig);
     }
 
     public void handleNetwork(final org.w3c.dom.Node node) throws Exception {

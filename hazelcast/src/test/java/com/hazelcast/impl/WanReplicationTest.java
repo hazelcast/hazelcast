@@ -148,4 +148,31 @@ public class WanReplicationTest {
         Assert.assertEquals(size, h11.getMap("default").size());
         Assert.assertEquals(size, h21.getMap("default").size());
     }
+
+    @Test
+    public void testWANClusteringActivePassive() throws Exception {
+        Config c1 = new Config();
+        Config c2 = new Config();
+        c1.getGroupConfig().setName("differentGroup");
+        c1.addWanReplicationConfig(new WanReplicationConfig()
+                .setName("my-wan")
+                .addTargetClusterConfig(new WanTargetClusterConfig()
+                        .addEndpoint("127.0.0.1:5702")));
+        c1.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
+                .setName("my-wan")
+                .setMergePolicy(PassThroughMergePolicy.NAME));
+        c2.getGroupConfig().setName("sameGroup");
+        c2.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
+                .setName("my-wan")
+                .setMergePolicy(PassThroughMergePolicy.NAME));
+        HazelcastInstance h10 = Hazelcast.newHazelcastInstance(c1);
+        HazelcastInstance h20 = Hazelcast.newHazelcastInstance(c2);
+        int size = 1000;
+        for (int i = 0; i < size; i++) {
+            h10.getMap("default").put(size + i, "value" + (size + i));
+        }
+        Thread.sleep(5000);
+        Assert.assertEquals(size, h10.getMap("default").size());
+        Assert.assertEquals(size, h20.getMap("default").size());
+    }
 }

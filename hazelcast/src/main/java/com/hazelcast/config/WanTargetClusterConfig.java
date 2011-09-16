@@ -17,6 +17,7 @@
 
 package com.hazelcast.config;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class WanTargetClusterConfig {
     String groupPassword = "dev-pass";
     String replicationImpl;
     Object replicationImplObject;
-    List<String> lsEndpoints ; // ip:port
+    List<String> lsEndpoints; // ip:port
 
     public String getGroupName() {
         return groupName;
@@ -48,15 +49,15 @@ public class WanTargetClusterConfig {
     public List<String> getEndpoints() {
         return lsEndpoints;
     }
-    
+
     public void setEndpoints(List<String> list) {
-    	lsEndpoints = list;
+        lsEndpoints = list;
     }
 
     public WanTargetClusterConfig addEndpoint(String address) {
-    	if(lsEndpoints == null) {
-    		lsEndpoints = new ArrayList<String>(2);
-    	}
+        if (lsEndpoints == null) {
+            lsEndpoints = new ArrayList<String>(2);
+        }
         lsEndpoints.add(address);
         return this;
     }
@@ -77,5 +78,19 @@ public class WanTargetClusterConfig {
     public WanTargetClusterConfig setReplicationImplObject(Object replicationImplObject) {
         this.replicationImplObject = replicationImplObject;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(MessageFormat.format("<target-cluster group-name={0} group-password={1}>\n", groupName, groupPassword));
+        sb.append("\t<replication-impl>" + replicationImpl + "</replication-impl>\n");
+        sb.append("\t<end-points>\n");
+        for (String endpoint : lsEndpoints) {
+            sb.append("\t\t<address>" + endpoint + "</address>\n");
+        }
+        sb.append("\t</end-points>\n");
+        sb.append("</target-cluster>\n");
+        return sb.toString();
     }
 }
