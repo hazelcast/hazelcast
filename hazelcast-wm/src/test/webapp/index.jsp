@@ -7,7 +7,7 @@
         java.util.Enumeration enumKeys = session.getAttributeNames();
         while (enumKeys.hasMoreElements()) {
             String skey = (String) enumKeys.nextElement();
-            String svalue =  (String) session.getAttribute(skey);
+            String svalue =  session.getAttribute(skey).toString();
             out.println(skey + ": " + svalue + " <br>");
         }
 

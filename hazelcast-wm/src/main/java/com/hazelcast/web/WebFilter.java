@@ -34,8 +34,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.hazelcast.nio.IOUtil.toObject;
-
 public class WebFilter implements Filter {
 
     private static final ConcurrentMap<String, String> mapOriginalSessions = new ConcurrentHashMap<String, String>(1000);
@@ -549,8 +547,6 @@ public class WebFilter implements Filter {
         }
 
         public boolean sessionChanged(final Data data) {
-            log(currentSessionData + " vs " + data);
-            log(toObject(currentSessionData) + " vs " + toObject(data));
             try {
                 if (data == null) {
                     return currentSessionData != null;
@@ -665,7 +661,7 @@ public class WebFilter implements Filter {
 
     public void doFilter(ServletRequest req, ServletResponse res, final FilterChain chain)
             throws IOException, ServletException {
-        log("FILTERING %%55555.. " + req.getClass().getName());
+        log("FILTERING " + req.getClass().getName());
         if (!(req instanceof HttpServletRequest)) {
             chain.doFilter(req, res);
         } else {
@@ -717,6 +713,7 @@ public class WebFilter implements Filter {
                 }
             }
             chain.doFilter(reqWrapper, resWrapper);
+            if (!newRequest) return;
             req = null; // for easy debugging. reqWrapper should be used
             session = reqWrapper.getSession(false);
             if (session != null)
@@ -734,7 +731,6 @@ public class WebFilter implements Filter {
                 while (attsNames.hasMoreElements()) {
                     final String attName = attsNames.nextElement();
                     final Object value = session.getAttribute(attName);
-                    log(attName + " session " + value + " serializable : " + (value instanceof Serializable));
                     if (value instanceof Serializable) {
                         if (mapData == null) {
                             mapData = new HashMap<String, Object>();
@@ -745,7 +741,6 @@ public class WebFilter implements Filter {
                 boolean sessionChanged = false;
                 Data data = session.writeObject(mapData);
                 sessionChanged = session.sessionChanged(data);
-                log(sessionId + " session changed? " + sessionChanged);
                 if (sessionChanged) {
                     if (data == null) {
                         mapData = new HashMap<String, Object>();
@@ -761,7 +756,7 @@ public class WebFilter implements Filter {
                             changeSessionId(session);
                             old = getClusterMap().putIfAbsent(sessionId, data);
                             if (tryCount++ >= 3)
-                                throw new RuntimeException("SessinId Generator is no good!");
+                                throw new RuntimeException("SessionId Generator is no good!");
                         }
                         session.setKnownToCluster(true);
                     }

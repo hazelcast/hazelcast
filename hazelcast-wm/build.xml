@@ -1,14 +1,33 @@
-<project basedir="." name="hazelcast" default="jar">
+<project basedir="." name="hazelcast" default="war">
 
     <property name="src.dir" value="src"/>
-    <property name="classes.dir" value="web/WEB-INF/classes/"/>
     <property name="war.name" value="demo.war"/>
+    <property name="webapp.dir" value="src/test/webapp"/>
 
+    <target name="war">
+        <delete file="${war.name}" failonerror="false"/>
+        <war destfile="${war.name}" webxml="${webapp.dir}/WEB-INF/web.xml">
+            <fileset dir="${webapp.dir}"/>
+            <lib dir="../hazelcast/target/">
+                <include name="hazelcast*.jar"/>
+                <exclude name="**sources.jar"/>
+                <exclude name="**tests.jar"/>
+            </lib>
+            <lib dir="target/">
+                <include name="hazelcast*.jar"/>
+                <exclude name="**sources.jar"/>
+                <exclude name="**tests.jar"/>
+            </lib>
+            <classes dir="target/test-classes"/>
+        </war>
+    </target>
+    <!--
     <target name="war">
         <jar jarfile="${war.name}">
             <fileset dir="src/test/webapp" defaultexcludes="yes">
                 <include name="**/**"/>
-            </fileset>  
+            </fileset>
         </jar>
     </target>
+    -->
 </project>
