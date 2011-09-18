@@ -26,18 +26,28 @@ public class MapEntryListenerTest {
 
     @Before
     public void before() {
-        globalCount.set(0);
-        localCount.set(0);
         h1 = Hazelcast.newHazelcastInstance(null);
-        map1 = h1.getMap(n);
         h2 = Hazelcast.newHazelcastInstance(null);
-        map2 = h2.getMap(n);
+        createMaps();
     }
 
     @After
     public void after() {
+    	destroyMaps();
         h1.getLifecycleService().shutdown();
         h2.getLifecycleService().shutdown();
+    }
+    
+    private void createMaps() {
+    	globalCount.set(0);
+        localCount.set(0);
+    	map1 = h1.getMap(n);
+    	map2 = h2.getMap(n);
+    }
+    
+    private void destroyMaps() {
+    	map1.destroy();
+    	map2.destroy();
     }
 
     @Test
@@ -85,6 +95,28 @@ public class MapEntryListenerTest {
         int k = 3;
         putDummyData(k);
         checkCountWithExpected(k * 2, k);
+    }
+    
+    @Test
+    /**
+     * Test for Issue 663
+     */
+    public void createAfterDestroyListenerTest() throws Exception {
+    	createMaps();
+    	localListenerTest();
+    	destroyMaps();
+    	
+    	createMaps();
+    	localListenerTest();
+    	destroyMaps();
+    	
+    	createMaps();
+    	globalListenerTest();
+    	destroyMaps();
+    	
+    	createMaps();
+    	globalListenerTest();
+    	destroyMaps();
     }
 
     private void putDummyData(int k) {
