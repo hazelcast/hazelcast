@@ -31,27 +31,25 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.TimedClusterState;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.PipedZipBufferFactory;
+import com.hazelcast.nio.PipedZipBufferFactory.DeflatingPipedBuffer;
+import com.hazelcast.nio.PipedZipBufferFactory.InflatingPipedBuffer;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 
 import java.io.*;
 import java.net.*;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 import static com.hazelcast.core.Instance.InstanceType;
-import static com.hazelcast.nio.IOUtil.newInputStream;
-import static com.hazelcast.nio.IOUtil.newOutputStream;
 
 public class ManagementCenterService implements MembershipListener {
 	
-	private static final int DATAGRAM_BUFFER_SIZE = 64 * 1000;
-	private static final int STATE_DATA_BUFFER_SIZE = DATAGRAM_BUFFER_SIZE * 10; // best speed approx. zip ratio
+	private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
 
     private final Queue<ClientHandler> qClientHandlers = new LinkedBlockingQueue<ClientHandler>(100);
     private final FactoryImpl factory;
@@ -182,11 +180,8 @@ public class ManagementCenterService implements MembershipListener {
 
     class UDPListener extends Thread {
         final DatagramSocket socket;
-        final ByteBuffer bbState = ByteBuffer.allocate(STATE_DATA_BUFFER_SIZE);
-        final byte[] data = new byte[DATAGRAM_BUFFER_SIZE];
-        final DatagramPacket packet = new DatagramPacket(data, DATAGRAM_BUFFER_SIZE);
-        final DataInputStream dis = new DataInputStream(newInputStream(bbState));
-        final Inflater inflater = new Inflater();
+        final InflatingPipedBuffer buffer = PipedZipBufferFactory.createInflatingBuffer(DATAGRAM_BUFFER_SIZE);
+        final DatagramPacket packet = new DatagramPacket(buffer.getInputBuffer().array(), DATAGRAM_BUFFER_SIZE);
         
         public UDPListener(DatagramSocket socket) throws SocketException {
             super("hz.UDP.Listener");
@@ -198,15 +193,11 @@ public class ManagementCenterService implements MembershipListener {
             try {
                 while (running) {
                     try {
-                        bbState.clear();
+                    	buffer.reset();
                         socket.receive(packet);
-                        inflater.reset();
-                        inflater.setInput(data);
-                        final int actualCount = inflater.inflate(bbState.array());
-                        bbState.limit(actualCount);
-                        bbState.position(0);
+                        buffer.inflate(packet.getLength());
                         MemberStateImpl memberState = new MemberStateImpl();
-                        memberState.readData(dis);
+                        memberState.readData(buffer.getDataInput());
                         memberStates.put(memberState.getAddress(), memberState);
                     } catch (SocketTimeoutException ignored) {
                     }
@@ -215,7 +206,6 @@ public class ManagementCenterService implements MembershipListener {
                 if (running && factory.node.isActive()) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }
-                inflater.end();
             }
         }
     }
@@ -223,10 +213,7 @@ public class ManagementCenterService implements MembershipListener {
     class UDPSender extends Thread {
         final DatagramSocket socket;
         final DatagramPacket packet = new DatagramPacket(new byte[0], 0);
-        final byte[] data = new byte[DATAGRAM_BUFFER_SIZE];
-        final Deflater deflater = new Deflater(Deflater.BEST_SPEED);
-        final ByteBuffer bbState = ByteBuffer.allocate(STATE_DATA_BUFFER_SIZE);
-        final DataOutputStream dos = new DataOutputStream(newOutputStream(bbState));
+        final DeflatingPipedBuffer buffer = PipedZipBufferFactory.createDeflatingBuffer(DATAGRAM_BUFFER_SIZE, Deflater.BEST_SPEED);
 
         public UDPSender(DatagramSocket socket) throws SocketException {
             super("hz.UDP.Sender");
@@ -243,7 +230,6 @@ public class ManagementCenterService implements MembershipListener {
                 if (running && factory.node.isActive()) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }
-                deflater.end();
             }
         }
 
@@ -259,7 +245,7 @@ public class ManagementCenterService implements MembershipListener {
                         		compressedCount = prepareStateData();
                         		preparedStateData = true;
                         	} 
-                            packet.setData(data, 0, compressedCount);
+                            packet.setData(buffer.getOutputBuffer().array(), 0, compressedCount);
                             packet.setSocketAddress(socketAddress);
                             socket.send(packet);
                         } catch (IOException e) {
@@ -274,13 +260,9 @@ public class ManagementCenterService implements MembershipListener {
         
         int prepareStateData() throws IOException {
         	final MemberState latestState = updateLocalState();
-            bbState.clear();
-            latestState.writeData(dos);
-            dos.flush();
-            deflater.reset();
-            deflater.setInput(bbState.array(), 0, bbState.position());
-            deflater.finish();
-            return deflater.deflate(data);
+            buffer.reset();
+            latestState.writeData(buffer.getDataOutput());
+            return buffer.deflate();
         }
     }
 
