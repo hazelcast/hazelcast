@@ -17,6 +17,8 @@
 
 package com.hazelcast.web;
 
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.ThreadContext;
@@ -38,17 +40,19 @@ public class WebFilter implements Filter {
 
     private static final ConcurrentMap<String, String> mapOriginalSessions = new ConcurrentHashMap<String, String>(1000);
 
-    private static final ConcurrentMap<String, HazelSession> mapSessions = new ConcurrentHashMap<String, HazelSession>(1000);
+    private static final ConcurrentMap<String, HazelcastHttpSession> mapSessions = new ConcurrentHashMap<String, HazelcastHttpSession>(1000);
 
     private ServletContext servletContext = null;
 
     private String clusterMapName = "none";
 
+    private boolean stickySession = true;
+
     private int maxInactiveInterval = 30; // minutes
 
     private static Logger logger = Logger.getLogger(WebFilter.class.getName());
 
-    private static final boolean DEBUG = false;
+    private boolean DEBUG = false;
 
     private static final String SESSION_URL_PHRASE = ";jsessionid=";
 
@@ -58,26 +62,72 @@ public class WebFilter implements Filter {
     }
 
     public void init(final FilterConfig config) throws ServletException {
+        String debugParam = config.getInitParameter("debug");
+        if (debugParam != null) {
+            DEBUG = Boolean.valueOf(debugParam);
+        }
         final String sessionTimeoutValue = config.getInitParameter("session-timeout");
         servletContext = config.getServletContext();
         if (sessionTimeoutValue != null) {
             maxInactiveInterval = Integer.parseInt(sessionTimeoutValue.trim());
         }
-        clusterMapName = "_web_" + servletContext.getServletContextName();
+        String mapName = config.getInitParameter("map-name");
+        if (mapName != null) {
+            clusterMapName = mapName;
+        } else {
+            clusterMapName = "_web_" + servletContext.getServletContextName();
+        }
+        String stickySessionParam = config.getInitParameter("sticky-session");
+        if (stickySessionParam != null) {
+            stickySession = Boolean.valueOf(stickySessionParam);
+        }
+        if (!stickySession) {
+            getClusterMap().addEntryListener(new EntryListener() {
+                public void entryAdded(EntryEvent entryEvent) {
+                }
+
+                public void entryRemoved(EntryEvent entryEvent) {
+                    removeSessionLocally((String) entryEvent.getKey());
+                }
+
+                public void entryUpdated(EntryEvent entryEvent) {
+                    markSessionDirty((String) entryEvent.getKey());
+                }
+
+                public void entryEvicted(EntryEvent entryEvent) {
+                }
+            }, false);
+        }
+        log("sticky:" + stickySession + ", debug: " + DEBUG + ", map-name: " + clusterMapName);
+    }
+
+    void removeSessionLocally(String sessionId) {
+        HazelcastHttpSession hazelSession = mapSessions.remove(sessionId);
+        if (hazelSession != null) {
+            mapOriginalSessions.remove(hazelSession.originalSession.getId());
+            log("Destroying session locally " + hazelSession);
+            hazelSession.destroy();
+        }
+    }
+
+    void markSessionDirty(String sessionId) {
+        HazelcastHttpSession hazelSession = mapSessions.get(sessionId);
+        if (hazelSession != null) {
+            hazelSession.setDirty(true);
+        }
     }
 
     public static void destroySession(HttpSession originalSession) {
         String hazelcastSessionId = mapOriginalSessions.remove(originalSession.getId());
         if (hazelcastSessionId != null) {
-            HazelSession hazelSession = mapSessions.remove(hazelcastSessionId);
+            HazelcastHttpSession hazelSession = mapSessions.remove(hazelcastSessionId);
             if (hazelSession != null) {
-                log("Destroying session " + hazelSession);
                 hazelSession.webFilter.destroySession(hazelSession);
             }
         }
     }
 
-    static void log(final Object obj) {
+    void log(final Object obj) {
         if (DEBUG) {
             logger.log(Level.FINEST, obj.toString());
             System.out.println(obj.toString());
@@ -88,7 +138,7 @@ public class WebFilter implements Filter {
         return true;
     }
 
-    void changeSessionId(final HazelSession session) {
+    void changeSessionId(final HazelcastHttpSession session) {
         String oldId = session.getId();
         mapSessions.remove(oldId);
         getClusterMap().remove(oldId);
@@ -99,7 +149,7 @@ public class WebFilter implements Filter {
         mapSessions.put(session.getId(), session);
     }
 
-    HazelSession createNewSession(String requestedSessionId) {
+    HazelcastHttpSession createNewSession(String requestedSessionId) {
         String id = (requestedSessionId == null) ? generateSessionId() : requestedSessionId;
         while (mapSessions.containsKey(id)) {
             id = generateSessionId();
@@ -107,7 +157,7 @@ public class WebFilter implements Filter {
         return getSessionWithId(id, true);
     }
 
-    void destroySession(final HazelSession session) {
+    void destroySession(final HazelcastHttpSession session) {
         final String id = session.id;
         session.destroy();
         mapSessions.remove(id);
@@ -118,12 +168,12 @@ public class WebFilter implements Filter {
         return Hazelcast.getMap(clusterMapName);
     }
 
-    HazelSession getSessionWithId(final String sessionId, final boolean create) {
-        HazelSession session = mapSessions.get(sessionId);
+    HazelcastHttpSession getSessionWithId(final String sessionId, final boolean create) {
+        HazelcastHttpSession session = mapSessions.get(sessionId);
         if (session == null && create) {
-            session = new HazelSession(this, sessionId);
+            session = new HazelcastHttpSession(this, sessionId);
             session.setMaxInactiveInterval(maxInactiveInterval * 60);
-            final HazelSession oldSessionInfo = mapSessions.putIfAbsent(sessionId, session);
+            final HazelcastHttpSession oldSessionInfo = mapSessions.putIfAbsent(sessionId, session);
             if (oldSessionInfo != null) {
                 session = oldSessionInfo;
             }
@@ -150,7 +200,7 @@ public class WebFilter implements Filter {
     }
 
     class RequestWrapper extends HttpServletRequestWrapper {
-        HazelSession hazelSession = null;
+        HazelcastHttpSession hazelcastSession = null;
 
         final ResponseWrapper res;
 
@@ -182,9 +232,6 @@ public class WebFilter implements Filter {
                     if (cookie.getName().equalsIgnoreCase("JSESSIONID")) {
                         requestedSessionId = cookie.getValue();
                         requestedSessionIdFromCookie = true;
-                        if (DEBUG) {
-                            log("Extracted sessionId from cookie " + requestedSessionId);
-                        }
                     }
                 }
             }
@@ -194,17 +241,14 @@ public class WebFilter implements Filter {
                 logger.log(Level.FINEST, "requestURI : " + getRequestURI());
                 logger.log(Level.FINEST, "requestURL : " + getRequestURL());
                 requestedSessionId = res.extractSessionId(getRequestURL().toString());
-                if (DEBUG) {
-                    log("Extracted sessionId from URL " + requestedSessionId);
-                }
                 if (requestedSessionId != null) {
                     requestedSessionIdFromURL = true;
                 }
             }
         }
 
-        public void setRequestedSessionId(HazelSession hazelSession, String requestedSessionId, boolean fromCookie) {
-            this.hazelSession = hazelSession;
+        public void setRequestedSessionId(HazelcastHttpSession hazelcastSession, String requestedSessionId, boolean fromCookie) {
+            this.hazelcastSession = hazelcastSession;
             this.requestedSessionId = requestedSessionId;
             requestedSessionIdFromCookie = fromCookie;
             requestedSessionIdFromURL = !requestedSessionIdFromCookie;
@@ -215,7 +259,6 @@ public class WebFilter implements Filter {
             final ServletRequest original = getRequest();
             return new RequestDispatcher() {
                 public void forward(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
-                    log("FORWARD " + original);
                     original.getRequestDispatcher(path).forward(original, servletResponse);
                 }
 
@@ -234,10 +277,7 @@ public class WebFilter implements Filter {
 
         @Override
         public String getRequestedSessionId() {
-            if (requestedSessionId != null)
-                return requestedSessionId;
-            else
-                return super.getRequestedSessionId();
+            return (requestedSessionId != null) ? requestedSessionId : super.getRequestedSessionId();
         }
 
         @Override
@@ -246,60 +286,40 @@ public class WebFilter implements Filter {
         }
 
         @Override
-        public HazelSession getSession(final boolean create) {
-            if (hazelSession != null)
-                return hazelSession;
+        public HazelcastHttpSession getSession(final boolean create) {
+            if (hazelcastSession != null)
+                return hazelcastSession;
             final String requestedSessionId = getRequestedSessionId();
-            HazelSession session = null;
             if (requestedSessionId != null) {
-                session = getSessionWithId(requestedSessionId, false);
+                hazelcastSession = getSessionWithId(requestedSessionId, false);
             }
-            log(requestedSessionId + " is requestedSessionId and  getSession : " + session);
-            if (session == null) {
-                if (create) {
-                    HttpSession originalSession = super.getSession(true);
-                    session = createNewSession(requestedSessionId);
-                    session.setOriginalSession(originalSession);
-                    hazelSession = session;
-                    if (requestedSessionId != null) {
-                        final Map mapSession = (Map) getClusterMap().remove(requestedSessionId);
-                        log(session + " Reloading from map.. " + mapSession);
-                        log("ContextPath " + getContextPath());
-                        log("pathInfo " + getPathInfo());
-                        log("pathtranslated " + getPathTranslated());
-                        log("requesturi " + getRequestURI());
-                        if (mapSession != null) {
-                            final Set<Map.Entry> entries = mapSession.entrySet();
-                            for (final Map.Entry entry : entries) {
-                                session.setAttribute((String) entry.getKey(), entry.getValue());
-                            }
-                        }
-                        removeCookieForSession(this, requestedSessionId);
-                        final Cookie[] cookies = getCookies();
-                        if (cookies != null) {
-                            removeCookies:
-                            for (final Cookie cookie : cookies) {
-                                final String name = cookie.getName();
-                                final String value = cookie.getValue();
-                                final String path = cookie.getPath();
-                                if (getContextPath().equals(path)) {
-                                    if (name.equals("JSESSIONID")
-                                            && value.equals(requestedSessionId)) {
-                                        if (DEBUG) {
-                                            log("Found old sessionId cookie DELETING " + value);
-                                        }
-                                        cookie.setMaxAge(0);
-                                        res.addCookie(cookie);
-                                        break removeCookies;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    addCookieForSession(this, session.getId());
+            log("create: " + create + " reqSessionId: " + requestedSessionId
+                    + " is requestedSessionId and  getSession : " + hazelcastSession);
+            if (hazelcastSession == null && create) {
+                HttpSession originalSession = super.getSession(true);
+                hazelcastSession = createNewSession(requestedSessionId);
+                hazelcastSession.setOriginalSession(originalSession);
+                if (requestedSessionId != null) {
+                    final Map mapSession = (Map) getClusterMap().remove(requestedSessionId);
+                    overrideSession(hazelcastSession, mapSession);
+                    removeCookieForSession(this, requestedSessionId);
                 }
+                addCookieForSession(this, hazelcastSession.getId());
+            } else if (hazelcastSession != null && !stickySession && requestedSessionId != null && hazelcastSession.isDirty()) {
+                log(requestedSessionId + " is dirty reloading.");
+                final Map mapSession = (Map) getClusterMap().get(requestedSessionId);
+                overrideSession(hazelcastSession, mapSession);
             }
-            return session;
+            return hazelcastSession;
+        }
+
+        private void overrideSession(HazelcastHttpSession session, Map mapSession) {
+            if (session == null || mapSession == null) return;
+            final Set<Map.Entry> entries = mapSession.entrySet();
+            for (final Map.Entry entry : entries) {
+                session.setAttribute((String) entry.getKey(), entry.getValue());
+            }
+            session.setDirty(false);
         }
 
         @Override
@@ -320,10 +340,6 @@ public class WebFilter implements Filter {
         @Override
         public boolean isRequestedSessionIdValid() {
             return requestedSessionIdValid;
-        }
-
-        public void setRequestedSessionIdValid(final boolean valid) {
-            requestedSessionIdValid = valid;
         }
     } // END of RequestWrapper
 
@@ -385,7 +401,7 @@ public class WebFilter implements Filter {
                 }
                 return url;
             }
-            final HazelSession session = req.getSession(false);
+            final HazelcastHttpSession session = req.getSession(false);
             if (session == null)
                 return url;
             if (!session.valid.get())
@@ -411,7 +427,7 @@ public class WebFilter implements Filter {
         }
     }
 
-    private class HazelSession implements HttpSession {
+    private class HazelcastHttpSession implements HttpSession {
         private Data currentSessionData = null;
 
         public int minSize = -1;
@@ -426,6 +442,8 @@ public class WebFilter implements Filter {
 
         AtomicBoolean valid = new AtomicBoolean(true);
 
+        volatile boolean dirty = false;
+
         AtomicBoolean isNew = new AtomicBoolean(true);
 
         AtomicBoolean knownToCluster = new AtomicBoolean(false);
@@ -436,20 +454,16 @@ public class WebFilter implements Filter {
 
         WebFilter webFilter;
 
-        public HazelSession(WebFilter webFilter, final String sessionId) {
+        public HazelcastHttpSession(WebFilter webFilter, final String sessionId) {
             this.webFilter = webFilter;
             this.id = sessionId;
             creationTime.set(System.currentTimeMillis());
             lastAccessedTime.set(System.currentTimeMillis());
         }
 
-        public HttpSession getOriginalSession() {
-            return originalSession;
-        }
-
         public void setOriginalSession(HttpSession originalSession) {
             this.originalSession = originalSession;
-            log(HazelSession.this + " setting original session " + originalSession);
+            log(HazelcastHttpSession.this + " setting original session " + originalSession);
             mapOriginalSessions.put(originalSession.getId(), id);
         }
 
@@ -498,7 +512,7 @@ public class WebFilter implements Filter {
 
         public HttpSessionContext getSessionContext() {
             checkState();
-            return null;
+            return originalSession.getSessionContext();
         }
 
         public Object getValue(final String name) {
@@ -509,6 +523,14 @@ public class WebFilter implements Filter {
         public String[] getValueNames() {
             checkState();
             return originalSession.getValueNames();
+        }
+
+        public boolean isDirty() {
+            return dirty;
+        }
+
+        public void setDirty(boolean dirty) {
+            this.dirty = dirty;
         }
 
         public void invalidate() {
@@ -570,8 +592,6 @@ public class WebFilter implements Filter {
         }
 
         public void setMaxInactiveInterval(int maxInactiveSeconds) {
-            if (DEBUG)
-                log("setting max interval seconds to " + maxInactiveSeconds);
             if (maxInactiveSeconds < 0)
                 maxInactiveSeconds = -1;
             maxInactiveInterval.set(maxInactiveSeconds * 1000L);
@@ -608,15 +628,11 @@ public class WebFilter implements Filter {
         }
     }// END of HazelSession
 
-    private static void addCookieForSession(final RequestWrapper req, final String sessionId) {
+    private void addCookieForSession(final RequestWrapper req, final String sessionId) {
         final Cookie sessionCookie = new Cookie("JSESSIONID", sessionId);
         sessionCookie.setPath(req.getContextPath());
         sessionCookie.setMaxAge(-1);
         req.res.addCookie(sessionCookie);
-        if (DEBUG) {
-            log(req.getContextPath() + " ADDING JSESSIONID COOKIE " + sessionCookie.getValue()
-                    + " now cookie.path " + sessionCookie.getPath());
-        }
     }
 
     private static synchronized String generateSessionId() {
@@ -631,11 +647,7 @@ public class WebFilter implements Filter {
                     sb.append(c);
             }
         }
-        id = "HZ" + sb.toString();
-        if (DEBUG) {
-            log("Randomly generated session Id " + id);
-        }
-        return id;
+        return id = "HZ" + sb.toString();
     }
 
     private static void removeCookieForSession(final RequestWrapper req, final String sessionId) {
@@ -647,9 +659,6 @@ public class WebFilter implements Filter {
                 final String path = cookie.getPath();
                 if (req.getContextPath().equals(path)) {
                     if (name.equals("JSESSIONID") && value.equals(sessionId)) {
-                        if (DEBUG) {
-                            log("Found old sessionId cookie DELETING " + value);
-                        }
                         cookie.setMaxAge(0);
                         req.res.addCookie(cookie);
                         break;
@@ -671,26 +680,14 @@ public class WebFilter implements Filter {
                 return;
             }
             HttpServletRequest httpReq = (HttpServletRequest) req;
-            if (DEBUG) {
-                final Cookie[] cookies = httpReq.getCookies();
-                if (cookies != null) {
-                    for (final Cookie cookie : cookies) {
-                        final String name = cookie.getName();
-                        final String value = cookie.getValue();
-                        final String path = cookie.getPath();
-                        if (name.equalsIgnoreCase("JSESSIONID")) {
-                            log(path + " Request has JSESSIONID cookie " + value);
-                        }
-                    }
-                }
-            }
             boolean newRequest = (req.getAttribute(HAZELCAST_REQUEST) == null);
             final ResponseWrapper resWrapper = new ResponseWrapper((HttpServletResponse) res);
             final RequestWrapper reqWrapper = new RequestWrapper(httpReq, resWrapper);
             resWrapper.setRequest(reqWrapper);
             if (!newRequest) {
                 RequestWrapper existingReq = (RequestWrapper) req.getAttribute(HAZELCAST_REQUEST);
-                reqWrapper.setRequestedSessionId(existingReq.hazelSession,
+                log("Not New Request setting " + existingReq.hazelcastSession);
+                reqWrapper.setRequestedSessionId(existingReq.hazelcastSession,
                         existingReq.requestedSessionId,
                         existingReq.requestedSessionIdFromCookie);
             } else {
@@ -699,16 +696,14 @@ public class WebFilter implements Filter {
             req = null;
             res = null;
             httpReq = null;
-            HazelSession session = null;
+            HazelcastHttpSession session = null;
             String sessionId = null;
             session = reqWrapper.getSession(false);
             if (session != null)
                 sessionId = session.getId();
             if (session != null) {
                 if (session.expired(System.currentTimeMillis())) {
-                    if (DEBUG) {
-                        log("doFilter got session expiration for " + session.getId());
-                    }
+                    log("doFilter got session expiration for " + session.getId());
                     destroySession(session);
                 }
             }
@@ -720,9 +715,7 @@ public class WebFilter implements Filter {
                 sessionId = session.getId();
             if (session != null) {
                 if (!session.valid.get()) {
-                    if (DEBUG) {
-                        log("Session is not valid. removing cookie for " + sessionId);
-                    }
+                    log("Session is not valid. removing cookie for " + sessionId);
                     removeCookieForSession(reqWrapper, sessionId);
                     return;
                 }
@@ -768,7 +761,7 @@ public class WebFilter implements Filter {
     }
 
     public void destroy() {
-        for (HazelSession session : mapSessions.values()) {
+        for (HazelcastHttpSession session : mapSessions.values()) {
             destroySession(session);
         }
         mapSessions.clear();
