@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<para version='5.0' xmlns='http://docbook.org/ns/docbook'
+      xmlns:xlink='http://www.w3.org/1999/xlink'
+      xmlns:xi='http://www.w3.org/2001/XInclude'
+      xmlns:ns5='http://www.w3.org/2000/svg'
+      xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+      xmlns:ns3='http://www.w3.org/1999/xhtml'
+      xmlns:db='http://docbook.org/ns/docbook'>
+    Say you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down
+    then your users on that server will be directed to one of the live servers (B or C) but their sessions will be lost!
+    So we have to have all these sessions backed up somewhere if we don't want to lose the sessions upon server crashes.
+    Hazelcast WM allows you to cluster user http sessions automatically. Followings are required for enabling
+    Hazelcast Session Clustering:
+    <itemizedlist>
+        <listitem>
+            <para>Target application or web server should support Java 1.5+
+            </para>
+        </listitem>
+        <listitem>
+            <para>Target application or web server should support Servlet 2.4+ spec
+            </para>
+        </listitem>
+        <listitem>
+            <para>Session objects that needs to be clustered have to be Serializable
+            </para>
+        </listitem>
+    </itemizedlist>
+    Here are the steps to setup Hazelcast Session Clustering:
+    <orderedlist>
+        <listitem>
+            <para>Put the
+                <literal>hazelcast</literal>
+                and
+                <literal>hazelcast-wm</literal>
+                jars in your
+                <literal>WEB-INF/lib</literal>
+                directory.
+            </para>
+        </listitem>
+        <listitem>
+            <para>Put the following xml into
+                <literal>web.xml</literal>
+                file. Make sure Hazelcast filter is placed
+                before all the other filters if any; put it at the top for example.
+            </para>
+            <para>
+                <programlisting language="xml"><![CDATA[
+    <filter>
+        <filter-name>hazelcast-filter</filter-name>
+        <filter-class>com.hazelcast.web.WebFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>hazelcast-filter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>FORWARD</dispatcher>
+        <dispatcher>INCLUDE</dispatcher>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
+
+    <listener>
+        <listener-class>com.hazelcast.web.SessionListener</listener-class>
+    </listener>
+]]></programlisting>
+            </para>
+        </listitem>
+        <listitem>
+            <para>Package and deploy your war file as you would normally do.
+            </para>
+        </listitem>
+    </orderedlist>
+    It is that easy! All http requests will go through Hazelcast
+    <literal>WebFilter</literal>
+    and it will put the
+    session objects into Hazelcast distributed map if needed.
+
+</para>
