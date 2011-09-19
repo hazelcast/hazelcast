@@ -671,6 +671,20 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }, 5);
     }
 
+    public boolean checkAuthorization(String groupName, String groupPassword, Address target) {
+        AbstractRemotelyCallable<Boolean> authorizationCall = new AuthorizationCall(groupName, groupPassword);
+        AsyncRemotelyBooleanCallable call = new NoneMemberAsyncRemotelyBooleanCallable();
+        call.executeProcess(target, authorizationCall);
+        return call.getResultAsBoolean();
+    }
+
+    public class NoneMemberAsyncRemotelyBooleanCallable extends AsyncRemotelyBooleanCallable {
+        @Override
+        protected boolean memberOnly() {
+            return false;
+        }
+    }
+
     public class AsyncRemotelyBooleanCallable extends TargetAwareOp {
         AbstractRemotelyCallable<Boolean> arp = null;
 

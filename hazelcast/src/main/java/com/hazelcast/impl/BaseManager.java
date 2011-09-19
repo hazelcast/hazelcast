@@ -787,12 +787,16 @@ public abstract class BaseManager {
             }
         }
 
+        protected boolean memberOnly() {
+            return true;
+        }
+
         protected void memberDoesNotExist() {
             setResult(OBJECT_REDO);
         }
 
         protected void invoke() {
-            if (getMember(target) == null) {
+            if (memberOnly() && getMember(target) == null) {
                 memberDoesNotExist();
             } else {
                 addCall(TargetAwareOp.this);
