@@ -91,7 +91,7 @@
     <map name="my-shared-map">
         ...
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy>hz.MERGING_WINS</merge-policy>
+            <merge-policy>hz.PASS_THROUGH</merge-policy>
         </wan-replication-ref>
     </map>
 </network>
@@ -112,9 +112,8 @@
         <literal>merge policy</literal>
         for merging replica entries and resolving conflicts
         during the merge. Default merge policy is
-        <literal>hz.MERGING_WINS</literal>
-        which will apply all
-        in-coming updates as is.
+        <literal>hz.PASS_THROUGH</literal>
+        which will apply all in-coming updates as is.
     </para>
 
 </para>
