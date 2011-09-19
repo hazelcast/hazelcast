@@ -18,15 +18,17 @@
 package com.hazelcast.merge;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.base.DataRecordEntry;
 
 public class PassThroughMergePolicy implements MergePolicy {
     public static final String NAME = "hz.PASS_THROUGH";
 
     public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
-        if (!mergingEntry.isValid()) {
+        DataRecordEntry mergingDataEntry = (DataRecordEntry) mergingEntry;
+        if (!mergingDataEntry.isValid()) {
             return REMOVE_EXISTING;
         } else {
-            return mergingEntry;
+            return mergingDataEntry.getValueData();
         }
     }
 }

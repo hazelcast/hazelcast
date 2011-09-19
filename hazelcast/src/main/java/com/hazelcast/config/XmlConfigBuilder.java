@@ -544,9 +544,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         this.config.addQueueConfig(qConfig);
     }
 
+    String getAttribute(Node node, String attName) {
+        final Node attNode = node.getAttributes().getNamedItem(attName);
+        if (attNode == null) return null;
+        return getTextContent(attNode);
+    }
+
     public void handleMap(final org.w3c.dom.Node node) throws Exception {
-        final Node attName = node.getAttributes().getNamedItem("name");
-        final String name = getTextContent(attName);
+        final String name = getAttribute(node, "name");
         final MapConfig mapConfig = new MapConfig();
         mapConfig.setName(name);
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
@@ -605,6 +610,18 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 mapConfig.setCacheValue(checkTrue(value));
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(checkTrue(value));
+            } else if ("wan-replication-ref".equals(nodeName)) {
+                WanReplicationRef wanReplicationRef = new WanReplicationRef();
+                final String wanName = getAttribute(n, "name");
+                wanReplicationRef.setName(wanName);
+                for (org.w3c.dom.Node wanChild : new IterableNodeList(n.getChildNodes())) {
+                    final String wanChildName = cleanNodeName(wanChild.getNodeName());
+                    final String wanChildValue = getTextContent(n).trim();
+                    if ("merge-policy".equals(wanChildName)) {
+                        wanReplicationRef.setMergePolicy(wanChildValue);
+                    }
+                }
+                mapConfig.setWanReplicationRef(wanReplicationRef);
             }
         }
         this.config.addMapConfig(mapConfig);

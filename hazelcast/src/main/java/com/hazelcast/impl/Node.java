@@ -252,7 +252,7 @@ public class Node {
     }
 
     public void failedConnection(Address address) {
-        logger.log(Level.WARNING, getThisAddress() + "failed " + address);
+        logger.log(Level.FINEST, getThisAddress() + " failed connecting to " + address);
         failedConnections.add(address);
     }
 

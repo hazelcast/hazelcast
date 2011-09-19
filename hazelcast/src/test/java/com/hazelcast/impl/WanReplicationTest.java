@@ -169,10 +169,13 @@ public class WanReplicationTest {
         HazelcastInstance h20 = Hazelcast.newHazelcastInstance(c2);
         int size = 1000;
         for (int i = 0; i < size; i++) {
-            h10.getMap("default").put(size + i, "value" + (size + i));
+            h10.getMap("default").put(i, "value" + i);
         }
         Thread.sleep(5000);
         Assert.assertEquals(size, h10.getMap("default").size());
         Assert.assertEquals(size, h20.getMap("default").size());
+        for (int i = 0; i < size; i++) {
+            Assert.assertEquals("value" + i, h20.getMap("default").get(i));
+        }
     }
 }

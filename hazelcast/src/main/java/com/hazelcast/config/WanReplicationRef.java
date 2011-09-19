@@ -38,4 +38,12 @@ public class WanReplicationRef {
         this.mergePolicy = mergePolicy;
         return this;
     }
+
+    @Override
+    public String toString() {
+        return "WanReplicationRef{" +
+                "name='" + name + '\'' +
+                ", mergePolicy='" + mergePolicy + '\'' +
+                '}';
+    }
 }
