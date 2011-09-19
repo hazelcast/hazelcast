@@ -49,19 +49,19 @@ public class WanReplicationTest {
     public void testWANClustering() throws Exception {
         Config c1 = new Config();
         Config c2 = new Config();
-        c1.getGroupConfig().setName("differentGroup");
+        c1.getGroupConfig().setName("newyork");
         c1.addWanReplicationConfig(new WanReplicationConfig()
                 .setName("my-wan")
                 .addTargetClusterConfig(new WanTargetClusterConfig()
-                        .addEndpoint("127.0.0.1:5702")));
+                        .addEndpoint("127.0.0.1:5702").setGroupName("london")));
         c1.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
                 .setName("my-wan")
                 .setMergePolicy(PassThroughMergePolicy.NAME));
-        c2.getGroupConfig().setName("sameGroup");
+        c2.getGroupConfig().setName("london");
         c2.addWanReplicationConfig(new WanReplicationConfig()
                 .setName("my-wan")
                 .addTargetClusterConfig(new WanTargetClusterConfig()
-                        .addEndpoint("127.0.0.1:5701")));
+                        .addEndpoint("127.0.0.1:5701").setGroupName("newyork")));
         c2.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
                 .setName("my-wan")
                 .setMergePolicy(PassThroughMergePolicy.NAME));
@@ -97,19 +97,19 @@ public class WanReplicationTest {
     public void testWANClustering2() throws Exception {
         Config c1 = new Config();
         Config c2 = new Config();
-        c1.getGroupConfig().setName("differentGroup");
+        c1.getGroupConfig().setName("newyork");
         c1.addWanReplicationConfig(new WanReplicationConfig()
                 .setName("my-wan")
                 .addTargetClusterConfig(new WanTargetClusterConfig()
-                        .addEndpoint("127.0.0.1:5703")));
+                        .addEndpoint("127.0.0.1:5703").setGroupName("london")));
         c1.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
                 .setName("my-wan")
                 .setMergePolicy(PassThroughMergePolicy.NAME));
-        c2.getGroupConfig().setName("sameGroup");
+        c2.getGroupConfig().setName("london");
         c2.addWanReplicationConfig(new WanReplicationConfig()
                 .setName("my-wan")
                 .addTargetClusterConfig(new WanTargetClusterConfig()
-                        .addEndpoint("127.0.0.1:5701")));
+                        .addEndpoint("127.0.0.1:5701").setGroupName("newyork")));
         c2.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
                 .setName("my-wan")
                 .setMergePolicy(PassThroughMergePolicy.NAME));
