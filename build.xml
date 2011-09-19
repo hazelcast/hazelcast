@@ -1,5 +1,5 @@
 <project basedir="." name="hazelcast" default="jar">
-    <property name="version" value="1.9.4.1"/>
+    <property name="version" value="1.9.4.2"/>
 
     <property name="core.src.dir" value="hazelcast/src/main/java"/>
     <property name="core.classes.dir" value="hazelcast/target/classes"/>
@@ -77,7 +77,7 @@
                 <![CDATA[<h1>Hazelcast</h1>]]>
             </doctitle>
             <bottom>
-                <![CDATA[<i>Copyright &#1.9.4.1; 2008-2011 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
+                <![CDATA[<i>Copyright &#1.9.4.2; 2008-2011 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
             <link offline="false" href="http://java.sun.com/j2se/1.5.0/docs/api/" packagelistLoc="C:\tmp"/>
             <link href="http://java.sun.com/j2se/1.5.0/docs/api/"/>
             <link href="http://java.sun.com/products/servlet/2.3/javadoc/"/>
