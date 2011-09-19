@@ -178,15 +178,15 @@ public class ParallelExecutorService {
             }
 
             public synchronized boolean shouldLoop() {
-                return size > 0;
+                boolean loop = size > 0;
+                if (!loop) {
+                    executing = false;
+                }
+                return loop;
             }
 
             public synchronized void decrement() {
                 size--;
-            }
-
-            public synchronized void setExecuting(boolean executing) {
-                this.executing = executing;
             }
 
             public void offer(Runnable e) {
@@ -203,7 +203,6 @@ public class ParallelExecutorService {
                 while (shouldLoop()) {
                     doRun();
                 }
-                setExecuting(false);
                 activeCount.decrementAndGet();
             }
 
@@ -217,8 +216,9 @@ public class ParallelExecutorService {
                         waitingExecutions.decrementAndGet();
                     } catch (Throwable e) {
                         logger.log(Level.WARNING, e.getMessage(), e);
+                    } finally {
+                        decrement();
                     }
-                    decrement();
                     r = q.poll();
                 }
             }
