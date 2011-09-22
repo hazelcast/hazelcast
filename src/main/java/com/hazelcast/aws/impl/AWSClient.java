@@ -29,8 +29,8 @@ public class AWSClient {
         this.secretKey = secretKey;
     }
 
-    public List<String> getPrivateDnsNames() throws Exception {
-        List<String> list = new DescribeInstances(accessKey, secretKey).execute(endpoint);
+    public List<String> getPrivateDnsNames(String groupName) throws Exception {
+        List<String> list = new DescribeInstances(accessKey, secretKey, groupName).execute(endpoint);
         return list;
     }
 

@@ -34,8 +34,9 @@ import static com.hazelcast.aws.utility.CloudyUtility.unmarshalTheResponse;
 public class DescribeInstances {
     private static final int FIVE_MINUTES = 5 * 60 * 1000;
     private final EC2RequestSigner rs;
+    private final String groupName;
 
-    public DescribeInstances(String accessKey, String secretKey) {
+    public DescribeInstances(String accessKey, String secretKey, String groupName) {
         rs = new EC2RequestSigner(secretKey);
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
@@ -43,6 +44,7 @@ public class DescribeInstances {
         attributes.put("SignatureMethod", SIGNATURE_METHOD);
         attributes.put("AWSAccessKeyId", accessKey);
         attributes.put("Timestamp", getFormattedTimestamp());
+        this.groupName = groupName;
     }
 
     /**
@@ -82,7 +84,7 @@ public class DescribeInstances {
         httpConnection.setRequestMethod(GET);
         httpConnection.setDoOutput(true);
         httpConnection.connect();
-        Object response = unmarshalTheResponse(httpConnection.getInputStream());
+        Object response = unmarshalTheResponse(httpConnection.getInputStream(), groupName);
         return response;
     }
 }
