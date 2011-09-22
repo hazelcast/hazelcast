@@ -18,7 +18,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.junit.Ignore;
@@ -42,7 +41,7 @@ public class TcpIpJoinerOverAWSTest {
         bundle.load(new FileInputStream(new File("/Users/Malikov/.aws/AwsCredentials.properties")));
         config.getNetworkConfig().getJoin().getAwsConfig().setAccessKey(bundle.getProperty("accessKey"));
         config.getNetworkConfig().getJoin().getAwsConfig().setSecretKey(bundle.getProperty("secretKey"));
-        config.getNetworkConfig().getJoin().getAwsConfig().setGroupName("ads");
+        config.getNetworkConfig().getJoin().getAwsConfig().setSecurityGroupName("ads");
 //        config.getNetworkConfig().getJoin().getAwsConfig().setRegion("us-west-1");
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         h2.getLifecycleService().shutdown();
