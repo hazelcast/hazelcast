@@ -223,6 +223,7 @@ public class ManagementCenterService implements MembershipListener {
         public void run() {
             try {
                 while (running) {
+                	updateLocalState();
                     sendState();
                     Thread.sleep(5000);
                 }
@@ -259,7 +260,7 @@ public class ManagementCenterService implements MembershipListener {
         }
         
         int prepareStateData() throws IOException {
-        	final MemberState latestState = updateLocalState();
+        	final MemberState latestState = latestThisMemberState;
             buffer.reset();
             latestState.writeData(buffer.getDataOutput());
             return buffer.deflate();
