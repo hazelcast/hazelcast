@@ -40,7 +40,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
             aws.setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
         }
-        this.groupName = awsConfig.getGroupName();
+        this.groupName = awsConfig.getSecurityGroupName();
     }
 
     @Override
