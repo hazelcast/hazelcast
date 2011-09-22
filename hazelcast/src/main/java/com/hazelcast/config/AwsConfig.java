@@ -23,6 +23,11 @@ public class AwsConfig {
     private String accessKey;
     private String secretKey;
     private String region;
+    private String groupName;
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
@@ -61,10 +66,15 @@ public class AwsConfig {
                 ", accessKey='" + accessKey + '\'' +
                 ", secretKey='" + secretKey + '\'' +
                 ", region='" + region + '\'' +
+                ", groupName=" + groupName +
                 '}';
     }
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public String getGroupName() {
+        return groupName;
     }
 }

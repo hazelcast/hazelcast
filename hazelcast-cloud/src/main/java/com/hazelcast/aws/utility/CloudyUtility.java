@@ -55,12 +55,12 @@ public class CloudyUtility {
         return result;
     }
 
-    public static Object unmarshalTheResponse(InputStream stream) throws IOException {
-        Object o = parse(stream);
+    public static Object unmarshalTheResponse(InputStream stream, String groupName) throws IOException {
+        Object o = parse(stream, groupName);
         return o;
     }
 
-    private static Object parse(InputStream in) {
+    private static Object parse(InputStream in, String groupName) {
         final DocumentBuilder builder;
         try {
             builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -77,7 +77,7 @@ public class CloudyUtility {
                 List<NodeHolder> items = reservation.getSubNodes("item");
                 for (NodeHolder item : items) {
                     NodeHolder instancesset = item.getSub("instancesset");
-                    names.addAll(instancesset.getList("privateipaddress"));
+                    names.addAll(instancesset.getList("privateipaddress", groupName));
                 }
             }
             return names;
@@ -119,7 +119,7 @@ public class CloudyUtility {
             return list;
         }
 
-        public List<String> getList(String name) {
+        public List<String> getList(String name, String groupName) {
             List<String> list = new ArrayList<String>();
             if (node != null) {
                 for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
@@ -127,7 +127,15 @@ public class CloudyUtility {
                     if ("item".equals(nodeName)) {
                         if (new NodeHolder(node).getSub("instancestate").getSub("name").getNode().getFirstChild().getNodeValue().equals("running")) {
                             String ip = new NodeHolder(node).getSub(name).getNode().getFirstChild().getNodeValue();
-                            if (ip != null) {
+                            boolean isInGroup = (groupName == null);
+                            if (groupName != null) {
+                                for (NodeHolder group : new NodeHolder(node).getSub("groupset").getSubNodes("item")) {
+                                    if (groupName.equals(group.getSub("groupname").getNode().getFirstChild().getNodeValue())) {
+                                        isInGroup = true;
+                                    }
+                                }
+                            }
+                            if (ip != null && isInGroup) {
                                 list.add(ip);
                             }
                         }
