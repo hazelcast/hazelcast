@@ -1,5 +1,4 @@
 <%@ page
-      errorPage="ErrorPage.jsp"
       import="java.io.*"
       import="java.util.*"
       import="com.hazelcast.wm.test.*"

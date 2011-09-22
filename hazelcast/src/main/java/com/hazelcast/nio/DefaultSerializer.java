@@ -134,13 +134,6 @@ public class DefaultSerializer implements CustomSerializer {
         Object result = this.typeSerializer[typeId].read(bis);
         return result;
     }
-//    public byte[] write(Object object) throws Exception {
-//        return new byte[0];  //To change body of implemented methods use File | Settings | File Templates.
-//    }
-//
-//    public Object read(byte[] bytes) throws Exception {
-//        return null;  //To change body of implemented methods use File | Settings | File Templates.
-//    }
 
     public static class LongSerializer implements TypeSerializer<Long> {
         public final int priority() {

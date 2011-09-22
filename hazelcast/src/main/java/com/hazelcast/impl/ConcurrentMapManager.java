@@ -2289,7 +2289,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void process(final Packet packet) {
             final DataRecordEntry dataRecordEntry = (DataRecordEntry) toObject(packet.getValueData());
-            final CMap cmap = node.concurrentMapManager.getOrCreateMap(packet.name);
+            node.concurrentMapManager.getOrCreateMap(packet.name);
             parallelExecutor.execute(new Runnable() {
                 public void run() {
                     mergeWanRecord(dataRecordEntry);

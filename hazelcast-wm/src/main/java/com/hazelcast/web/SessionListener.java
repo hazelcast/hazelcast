@@ -25,6 +25,6 @@ public class SessionListener implements HttpSessionListener {
     }
 
     public void sessionDestroyed(HttpSessionEvent httpSessionEvent) {
-        WebFilter.destroySession(httpSessionEvent.getSession());
+        WebFilter.destroyOriginalSession(httpSessionEvent.getSession());
     }
 }

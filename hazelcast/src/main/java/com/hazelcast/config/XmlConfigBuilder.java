@@ -218,6 +218,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String nodeName = cleanNodeName(nodeTarget.getNodeName());
             if ("target-cluster".equals(nodeName)) {
                 WanTargetClusterConfig wanTarget = new WanTargetClusterConfig();
+                String groupName = getAttribute(nodeTarget, "group-name");
+                String groupPassword = getAttribute(nodeTarget, "group-password");
+                if (groupName != null) {
+                    wanTarget.setGroupName(groupName);
+                }
+                if (groupPassword != null) {
+                    wanTarget.setGroupPassword(groupPassword);
+                }
                 for (org.w3c.dom.Node targetChild : new IterableNodeList(nodeTarget.getChildNodes())) {
                     final String targetChildName = cleanNodeName(targetChild.getNodeName());
                     if ("replication-impl".equals(targetChildName)) {
