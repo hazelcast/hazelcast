@@ -31,6 +31,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 
     final AWSClient aws;
     final ILogger logger = Logger.getLogger(this.getClass().getName());
+    final String groupName;
 
     public TcpIpJoinerOverAWS(Node node) {
         super(node);
@@ -39,12 +40,13 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
             aws.setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
         }
+        this.groupName = awsConfig.getGroupName();
     }
 
     @Override
     protected List<String> getMembers(Config config) {
         try {
-            List<String> list = aws.getPrivateDnsNames();
+            List<String> list = aws.getPrivateDnsNames(groupName);
             logger.log(Level.FINEST, "The list of possible members are: " + list);
             return list;
         } catch (Exception e) {
