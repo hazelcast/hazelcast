@@ -62,14 +62,14 @@ public abstract class AbstractSerializer {
             throw new IllegalArgumentException("ClassName cannot be null!");
         }
         if (className.startsWith("com.hazelcast")) {
-            return Class.forName(className, true, AbstractSerializer.class.getClassLoader());
+            return AbstractSerializer.class.getClassLoader().loadClass(className);
         }
         ClassLoader theClassLoader = classLoader;
         if (theClassLoader == null) {
             theClassLoader = Thread.currentThread().getContextClassLoader();
         }
         if (theClassLoader != null) {
-            return Class.forName(className, true, theClassLoader);
+            return theClassLoader.loadClass(className);
         }
         return Class.forName(className);
     }
