@@ -35,6 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
+import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 
 public class MulticastService implements Runnable {
@@ -120,10 +121,16 @@ public class MulticastService implements Runnable {
                 } catch (SocketTimeoutException ignore) {
                     return null;
                 }
-                inflatingBuffer.inflate(datagramPacketReceive.getLength());
-                JoinInfo joinInfo = new JoinInfo();
-                joinInfo.readData(inflatingBuffer.getDataInput());
-                return joinInfo;
+                
+                try {
+                	inflatingBuffer.inflate(datagramPacketReceive.getLength());
+                	JoinInfo joinInfo = new JoinInfo();
+                	joinInfo.readData(inflatingBuffer.getDataInput());
+                	return joinInfo;
+				} catch (DataFormatException e) {
+					logger.log(Level.FINEST, "Received data format is invalid." +
+							" (An old version of Hazelcast may be running here.)", e);
+				}
             } catch (Exception e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }

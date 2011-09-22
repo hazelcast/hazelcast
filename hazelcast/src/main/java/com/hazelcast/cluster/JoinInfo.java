@@ -17,16 +17,17 @@
 
 package com.hazelcast.cluster;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.logging.Level;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.NodeType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
-
-import java.io.*;
-import java.net.DatagramPacket;
-import java.util.logging.Level;
 
 public class JoinInfo extends JoinRequest implements DataSerializable {
 
@@ -73,28 +74,28 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
         }
     }
 
-    public void writeToPacket(DatagramPacket packet) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(bos);
-        try {
-            writeData(dos);
-            dos.flush();
-            packet.setData(bos.toByteArray());
-            packet.setLength(bos.size());
-        } catch (IOException e) {
-            logger.log(Level.FINEST, e.getMessage(), e);
-        }
-    }
-
-    public void readFromPacket(DatagramPacket packet) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData(), 0, packet.getLength());
-        DataInputStream dis = new DataInputStream(bis);
-        try {
-            readData(dis);
-        } catch (IOException e) {
-            logger.log(Level.FINEST, e.getMessage(), e);
-        }
-    }
+//    public void writeToPacket(DatagramPacket packet) {
+//        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//        DataOutputStream dos = new DataOutputStream(bos);
+//        try {
+//            writeData(dos);
+//            dos.flush();
+//            packet.setData(bos.toByteArray());
+//            packet.setLength(bos.size());
+//        } catch (IOException e) {
+//            logger.log(Level.FINEST, e.getMessage(), e);
+//        }
+//    }
+//
+//    public void readFromPacket(DatagramPacket packet) {
+//        ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData(), 0, packet.getLength());
+//        DataInputStream dis = new DataInputStream(bis);
+//        try {
+//            readData(dis);
+//        } catch (IOException e) {
+//            logger.log(Level.FINEST, e.getMessage(), e);
+//        }
+//    }
 
     /**
      * @param request the request to set
