@@ -290,8 +290,8 @@ public class TcpIpJoiner extends AbstractJoiner {
         if (portSet) {
             list = Collections.singletonList(new Address(host, port, true));
         } else {
-            list = new ArrayList(6);
-            for (int i = -2; i < 3; i++) {
+            list = new ArrayList<Address>(3);
+            for (int i = 0; i < 3; i++) {
                 list.add(new Address(host, port + i, true));
             }
         }
@@ -363,7 +363,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                             // port is not set
                             if (shouldCheck) {
                                 if (config.isPortAutoIncrement()) {
-                                    for (int i = -2; i < 3; i++) {
+                                    for (int i = 0; i < 3; i++) {
                                         final Address addressProper = new Address(inetAddress.getAddress(), port + i);
                                         if (!addressProper.equals(thisAddress)) {
                                             setPossibleAddresses.add(addressProper);
