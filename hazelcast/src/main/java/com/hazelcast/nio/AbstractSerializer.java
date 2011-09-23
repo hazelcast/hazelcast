@@ -32,6 +32,10 @@ public abstract class AbstractSerializer {
     private static final ILogger logger = Logger.getLogger(AbstractSerializer.class.getName());
 
     private static final int OUTPUT_STREAM_BUFFER_SIZE = 100 << 10;
+    
+    private static final Class[] PRIMITIVE_CLASSES_ARRAY = {int.class, long.class, boolean.class, byte.class, 
+    		float.class, double.class, byte.class, char.class, short.class};
+    private static final int MAX_PRIM_CLASSNAME_LENGTH = 7; // boolean.class.getName().length();
 
     private final FastByteArrayOutputStream bbos;
     private final FastByteArrayInputStream bbis;
@@ -60,6 +64,13 @@ public abstract class AbstractSerializer {
     public static Class<?> loadClass(final ClassLoader classLoader, final String className) throws ClassNotFoundException {
         if (className == null) {
             throw new IllegalArgumentException("ClassName cannot be null!");
+        }
+        if(className.length() <= MAX_PRIM_CLASSNAME_LENGTH && Character.isLowerCase(className.charAt(0))) {
+        	for (int i = 0; i < PRIMITIVE_CLASSES_ARRAY.length; i++) {
+				if(className.equals(PRIMITIVE_CLASSES_ARRAY[i].getName())) {
+					return PRIMITIVE_CLASSES_ARRAY[i];
+				}
+			}
         }
         if (className.startsWith("com.hazelcast")) {
             return Class.forName(className, true, AbstractSerializer.class.getClassLoader());
