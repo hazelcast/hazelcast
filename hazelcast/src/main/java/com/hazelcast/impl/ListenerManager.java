@@ -287,13 +287,13 @@ public class ListenerManager extends BaseManager {
             registerListener(name, key, false, false);
         }
     }
-    
+
     synchronized void removeAllRegisteredListeners(String name) {
-    	for (ListenerItem listenerItem : listeners) {
-    		if (listenerItem.name.equals(name)) {
-    			listeners.remove(listenerItem);
-    		}
-    	}
+        for (ListenerItem listenerItem : listeners) {
+            if (listenerItem.name.equals(name)) {
+                listeners.remove(listenerItem);
+            }
+        }
     }
 
     void callListeners(DataAwareEntryEvent dataAwareEntryEvent) {
@@ -305,10 +305,9 @@ public class ListenerManager extends BaseManager {
     }
 
     private void callListener(final ListenerItem listenerItem, final EntryEvent event) {
-    	if(listenerItem.localListener && !((DataAwareEntryEvent) event).firedLocally) {
-	    	return;
-    	}
-    	
+        if (listenerItem.localListener && !((DataAwareEntryEvent) event).firedLocally) {
+            return;
+        }
         final Object listener = listenerItem.listener;
         final EntryEventType entryEventType = event.getEventType();
         if (listenerItem.instanceType == Instance.InstanceType.MAP) {
@@ -423,7 +422,7 @@ public class ListenerManager extends BaseManager {
         }
 
         public boolean listens(DataAwareEntryEvent dataAwareEntryEvent) {
-            String name = dataAwareEntryEvent.getName();
+            String name = dataAwareEntryEvent.getLongName();
             return this.name.equals(name) && (this.key == null || dataAwareEntryEvent.getKey().equals(this.key));
         }
 

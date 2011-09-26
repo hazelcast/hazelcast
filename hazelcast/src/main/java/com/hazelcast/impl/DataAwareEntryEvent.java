@@ -29,8 +29,8 @@ public class DataAwareEntryEvent extends EntryEvent {
     protected final Data dataNewValue;
 
     protected final Data dataOldValue;
-    
-    protected final boolean firedLocally; 
+
+    protected final boolean firedLocally;
 
     public DataAwareEntryEvent(Member from, int eventType,
                                String name, Data dataKey,
@@ -73,5 +73,9 @@ public class DataAwareEntryEvent extends EntryEvent {
             value = toObject(dataNewValue);
         }
         return value;
+    }
+
+    public String getLongName() {
+        return name;
     }
 }

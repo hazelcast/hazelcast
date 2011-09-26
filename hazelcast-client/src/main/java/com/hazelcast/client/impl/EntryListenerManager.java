@@ -115,7 +115,7 @@ public class EntryListenerManager {
         final EntryEvent event = new EntryEvent(packet.getName(), null, (int) packet.getLongValue(),
                 toObject(packet.getKey()),
                 oldValue, value);
-        String name = event.getName();
+        String name = packet.getName();
         Object key = toKey(event.getKey());
         if (entryListeners.get(name) != null) {
             notifyListeners(event, entryListeners.get(name).get(NULL_KEY));

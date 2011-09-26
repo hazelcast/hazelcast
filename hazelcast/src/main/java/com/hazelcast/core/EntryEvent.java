@@ -128,7 +128,7 @@ public class EntryEvent<K, V> extends EventObject {
      * @return name of the map.
      */
     public String getName() {
-        return name;
+        return name.substring(Prefix.MAP.length());
     }
 
     @Override
