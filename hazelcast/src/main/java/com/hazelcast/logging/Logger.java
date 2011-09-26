@@ -27,40 +27,48 @@ public class Logger {
         if (loggerFactory == null) {
             synchronized (factoryLock) {
                 if (loggerFactory == null) {
-                    String loggerClass = System.getProperty("hazelcast.logging.class");
-                    if (loggerClass != null) {
-                        try {
-                            loggerFactory = (LoggerFactory) Serializer.loadClass(loggerClass).newInstance();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    if (loggerFactory == null) {
-                        String loggerType = System.getProperty("hazelcast.logging.type");
-                        if (loggerType != null) {
-                            if ("log4j".equals(loggerType)) {
-                                try {
-                                    loggerFactory = (LoggerFactory) Serializer.loadClass("com.hazelcast.logging.Log4jFactory").newInstance();
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            } else if ("slf4j".equals(loggerType)) {
-                                try {
-                                    loggerFactory = (LoggerFactory) Serializer.loadClass("com.hazelcast.logging.Slf4jFactory").newInstance();
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            } else if ("none".equals(loggerType)) {
-                                loggerFactory = new NoLogFactory();
-                            }
-                        }
-                    }
-                    if (loggerFactory == null) {
-                        loggerFactory = new StandardLoggerFactory();
-                    }
+                    String loggerType = System.getProperty("hazelcast.logging.type");
+                    loggerFactory = newLoggerFactory(loggerType);
                 }
             }
         }
         return loggerFactory.getLogger(name);
+    }
+
+    public static LoggerFactory newLoggerFactory(String loggerType) {
+        LoggerFactory loggerFactory = null;
+        String loggerClass = System.getProperty("hazelcast.logging.class");
+        if (loggerClass != null) {
+            try {
+                loggerFactory = (LoggerFactory) Serializer.loadClass(loggerClass).newInstance();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (loggerFactory == null) {
+            if (loggerType != null) {
+                if ("log4j".equals(loggerType)) {
+                    try {
+                        loggerFactory = (LoggerFactory) Serializer.loadClass("com.hazelcast.logging.Log4jFactory").newInstance();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else if ("slf4j".equals(loggerType)) {
+                    try {
+                        loggerFactory = (LoggerFactory) Serializer.loadClass("com.hazelcast.logging.Slf4jFactory").newInstance();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else if ("jdk".equals(loggerType)) {
+                    loggerFactory = new StandardLoggerFactory();
+                } else if ("none".equals(loggerType)) {
+                    loggerFactory = new NoLogFactory();
+                }
+            }
+        }
+        if (loggerFactory == null) {
+            loggerFactory = new StandardLoggerFactory();
+        }
+        return loggerFactory;
     }
 }

@@ -32,11 +32,13 @@ public class LoggingServiceImpl implements LoggingService {
             = new CopyOnWriteArrayList<LogListenerRegistration>();
 
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
+    private final LoggerFactory loggerFactory;
     private volatile Level minLevel = Level.OFF;
 
-    public LoggingServiceImpl(String groupName, Member thisMember) {
+    public LoggingServiceImpl(String groupName, String loggingType, Member thisMember) {
         this.groupName = groupName;
         this.thisMember = thisMember;
+        this.loggerFactory = Logger.newLoggerFactory(loggingType);
     }
 
     public ILogger getLogger(String name) {
@@ -59,7 +61,7 @@ public class LoggingServiceImpl implements LoggingService {
     }
 
     public void removeLogListener(LogListener logListener) {
-    	lsListeners.remove(new LogListenerRegistration(Level.ALL, logListener));
+        lsListeners.remove(new LogListenerRegistration(Level.ALL, logListener));
     }
 
     void handleLogEvent(LogEvent logEvent) {
@@ -90,21 +92,21 @@ public class LoggingServiceImpl implements LoggingService {
         /**
          * True if LogListeners are equal.
          */
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			LogListenerRegistration other = (LogListenerRegistration) obj;
-			if (logListener == null) {
-				if (other.logListener != null)
-					return false;
-			} else if (!logListener.equals(other.logListener))
-				return false;
-			return true;
-		}
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            LogListenerRegistration other = (LogListenerRegistration) obj;
+            if (logListener == null) {
+                if (other.logListener != null)
+                    return false;
+            } else if (!logListener.equals(other.logListener))
+                return false;
+            return true;
+        }
     }
 
     class DefaultLogger implements ILogger {
@@ -113,7 +115,7 @@ public class LoggingServiceImpl implements LoggingService {
 
         DefaultLogger(String name) {
             this.name = name;
-            this.logger = Logger.getLogger(name);
+            this.logger = loggerFactory.getLogger(name);
         }
 
         public void log(Level level, String message) {
