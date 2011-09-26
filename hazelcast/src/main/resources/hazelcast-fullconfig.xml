@@ -209,7 +209,7 @@
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy>hz.MERGING_WINS</merge-policy>
+            <merge-policy>hz.PASS_THROUGH</merge-policy>
         </wan-replication-ref>
     </map>
     
