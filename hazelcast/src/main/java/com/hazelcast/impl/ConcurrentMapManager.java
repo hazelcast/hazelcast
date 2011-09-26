@@ -2760,33 +2760,53 @@ public class ConcurrentMapManager extends BaseManager {
         abstract void doSemaphoreOperation(Request request, DistributedSemaphore semaphore);
 
         @Override
-        public void handle(Request request) {
+        public void handle(final Request request) {
             request.record = ensureRecord(request, null);
             if (request.record.getValue() == null) {
                 final String name = (String) toObject(request.key);
                 final SemaphoreConfig sc = node.getConfig().getSemaphoreConfig(name);
-                int initialPermits = sc.getInitialPermits();
+                final int configInitialPermits = sc.getInitialPermits();
                 if (sc.isFactoryEnabled()) {
-                    try {
-                        SemaphoreFactory factory = sc.getFactoryImplementation();
-                        if (factory == null) {
-                            String factoryClassName = sc.getFactoryClassName();
-                            if (factoryClassName != null && factoryClassName.length() != 0) {
-                                ClassLoader cl = node.getConfig().getClassLoader();
-                                Class factoryClass = Serializer.loadClass(cl, factoryClassName);
-                                factory = (SemaphoreFactory) factoryClass.newInstance();
+                    node.executorManager.executeNow(new Runnable() {
+                        public void run() {
+                            try {
+                                initSemaphore(sc, request, name);
+                            } catch (Exception e) {
+                                logger.log(Level.SEVERE, e.getMessage(), e);
+                            } finally {
+                                enqueueAndReturn(new Processable() {
+                                    public void process() {
+                                        SemaphoreOperationHandler.this.handle(request);
+                                    }
+                                });
                             }
                         }
-                        if (factory != null) {
-                            initialPermits = factory.getInitialPermits(name, initialPermits);
-                        }
-                    } catch (Exception e) {
-                        logger.log(Level.SEVERE, e.getMessage(), e);
-                    }
+                    });
+                    return;
+                } else {
+                    request.record.setValue(new DistributedSemaphore(configInitialPermits));
                 }
-                request.record.setValue(new DistributedSemaphore(initialPermits));
             }
             doOperation(request);
+        }
+
+        synchronized void initSemaphore(SemaphoreConfig sc, Request request, String name) throws Exception {
+            if (request.record.getValue() == null) {
+                final int configInitialPermits = sc.getInitialPermits();
+                SemaphoreFactory factory = sc.getFactoryImplementation();
+                if (factory == null) {
+                    String factoryClassName = sc.getFactoryClassName();
+                    if (factoryClassName != null && factoryClassName.length() != 0) {
+                        ClassLoader cl = node.getConfig().getClassLoader();
+                        Class factoryClass = Serializer.loadClass(cl, factoryClassName);
+                        factory = (SemaphoreFactory) factoryClass.newInstance();
+                    }
+                }
+                if (factory != null) {
+                    int initialPermits = factory.getInitialPermits(name, configInitialPermits);
+                    request.record.setValue(new DistributedSemaphore(initialPermits));
+                }
+            }
         }
 
         @Override
