@@ -449,7 +449,7 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             Collection<Instance> instances = node.factory.getInstances();
             ArrayList<Object> instanceIds = new ArrayList<Object>();
-             for (Instance instance : instances) {
+            for (Instance instance : instances) {
                 Object id = instance.getId();
                 if (id instanceof FactoryImpl.ProxyKey) {
                     Object key = ((FactoryImpl.ProxyKey) id).getKey();
@@ -506,7 +506,7 @@ public class ClientService implements ConnectionListener {
         abstract Object processCall(AtomicNumberProxy atomicLongProxy, Long value, Long expected);
 
         public void processCall(Node node, Packet packet) {
-            final AtomicNumberProxy atomicLong = (AtomicNumberProxy) node.factory.getAtomicNumber(packet.name);
+            final AtomicNumberProxy atomicLong = (AtomicNumberProxy) node.factory.getOrCreateProxyByName(packet.name);
             final Long value = (Long) toObject(packet.getValueData());
             final Long expectedValue = (Long) toObject(packet.getKeyData());
             packet.setValue(toData(processCall(atomicLong, value, expectedValue)));
@@ -583,7 +583,6 @@ public class ClientService implements ConnectionListener {
         }
     }
 
-
     public static class CountDownLatchLeave implements RemotelyProcessable {
         Address deadAddress;
         transient Node node;
@@ -631,7 +630,7 @@ public class ClientService implements ConnectionListener {
     }
 
     private class SemaphoreAttachDetachHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean attach){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean attach) {
             ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
             if (attach) {
                 semaphoreProxy.attach(permits);
@@ -651,31 +650,31 @@ public class ClientService implements ConnectionListener {
     }
 
     private class SemaphoreGetAttachedHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag) {
             packet.setValue(toData(semaphoreProxy.attachedPermits()));
         }
     }
 
     private class SemaphoreGetAvailableHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag) {
             packet.setValue(toData(semaphoreProxy.availablePermits()));
         }
     }
 
     private class SemaphoreDrainHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag) {
             packet.setValue(toData(semaphoreProxy.drainPermits()));
         }
     }
 
     private class SemaphoreReduceHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean flag){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean flag) {
             semaphoreProxy.reducePermits(permits);
         }
     }
 
     private class SemaphoreReleaseHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean detach){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean detach) {
             if (detach) {
                 semaphoreProxy.releaseDetach(permits);
                 getClientEndpoint(packet.conn).attachDetachPermits(packet.name, -permits);
@@ -686,12 +685,12 @@ public class ClientService implements ConnectionListener {
     }
 
     private class SemaphoreTryAcquireHandler extends SemaphoreClientOperationHandler {
-        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean attach){
+        void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer permits, boolean attach) {
             try {
                 boolean acquired;
                 if (attach) {
                     acquired = semaphoreProxy.tryAcquireAttach(permits, packet.timeout, TimeUnit.MILLISECONDS);
-                    if(acquired){
+                    if (acquired) {
                         getClientEndpoint(packet.conn).attachDetachPermits(packet.name, permits);
                     }
                 } else {
