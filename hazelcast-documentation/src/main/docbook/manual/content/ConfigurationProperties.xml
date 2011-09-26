@@ -96,6 +96,12 @@ cfg.setProperty("hazelcast.property.foo", "value");
 				<td>true</td>
 			</tr>
 			<tr>
+				<td><db:literal>hazelcast.logging.type</db:literal></td>
+				<td>Name of <link xlink:href="#Logging">logging</link> framework type to send logging events.</td>
+				<td>enum</td>
+				<td>jdk</td>
+			</tr>
+			<tr>
 				<td><literal>hazelcast.map.load.chunk.size</literal>
 				</td>
 				<td>Chunk size for <link xlink:href="#MapPersistence">MapLoader</link> 's map initialization

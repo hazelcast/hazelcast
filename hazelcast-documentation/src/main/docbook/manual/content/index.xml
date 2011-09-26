@@ -92,6 +92,7 @@
         <xi:include href="NetworkPartitioning.xml"/>
         <xi:include href="WildcardConfiguration.xml"/>
         <xi:include href="ConfigurationProperties.xml"/>
+        <xi:include href="Logging.xml"/>
     </chapter>
     <chapter xml:id="HibernateSecondLevelCache">
         <title>Hibernate Second Level Cache</title>
