@@ -22,6 +22,7 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.hibernate.Query;
@@ -115,12 +116,16 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 			session.close();
 		}
 		
+		Map<?,?> cache = hz.getMap(DummyEntity.class.getName());
 		assertEquals(count, stats.getEntityInsertCount());
 		assertEquals(count * 2, stats.getSecondLevelCachePutCount());
 		assertEquals(0, stats.getEntityLoadCount());
 		assertEquals(count, stats.getSecondLevelCacheHitCount());
 		assertEquals(0, stats.getSecondLevelCacheMissCount());
-		assertEquals(count, hz.getMap(DummyEntity.class.getName()).size());
+		assertEquals(count, cache.size());
+		
+		sf.getCache().evictEntityRegion(DummyEntity.class);
+		assertEquals(0, cache.size());
 		
 		stats.logSummary();
 	}
