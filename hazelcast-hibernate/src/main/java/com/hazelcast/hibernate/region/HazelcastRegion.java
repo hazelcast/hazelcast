@@ -25,4 +25,5 @@ import org.hibernate.cache.Region;
  */
 public interface HazelcastRegion extends Region {
     IMap getCache();
+    void clearCache();
 }

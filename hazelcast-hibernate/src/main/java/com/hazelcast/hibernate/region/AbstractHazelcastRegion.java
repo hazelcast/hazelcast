@@ -47,6 +47,15 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
     public final IMap getCache() {
         return cache;
     }
+    
+    public final void clearCache() {
+    	// clear all cache and destroy proxies
+    	// when a new operation done over this proxy
+    	// Hazelcast will initialize and create map again.
+    	cache.destroy();
+    	// create Hazelcast internal proxies, has no effect on map operations
+    	instance.getMap(regionName);
+    }
 
     public void destroy() throws CacheException {
 //    	Destroy of the region should not propagate 
