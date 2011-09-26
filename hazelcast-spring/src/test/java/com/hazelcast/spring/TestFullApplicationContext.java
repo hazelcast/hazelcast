@@ -219,6 +219,13 @@ public class TestFullApplicationContext {
         assertEquals("127.0.0.1:5800", members.get(0));
         assertEquals("127.0.0.1:5801", members.get(1));
         assertEquals("127.0.0.1:5800", tcp.getRequiredMember());
+        
+        AwsConfig aws = networkConfig.getJoin().getAwsConfig();
+        assertFalse(aws.isEnabled());
+        assertEquals("sample-access-key", aws.getAccessKey());
+        assertEquals("sample-secret-key", aws.getSecretKey());
+        assertEquals("sample-region", aws.getRegion());
+        assertEquals("sample-group", aws.getSecurityGroupName());
     }
 
     @Test
