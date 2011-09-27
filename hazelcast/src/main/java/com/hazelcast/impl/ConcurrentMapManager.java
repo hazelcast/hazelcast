@@ -351,17 +351,17 @@ public class ConcurrentMapManager extends BaseManager {
         String name = mergingEntry.getName();
         DataRecordEntry existingEntry = new MGetDataRecordEntry().get(name, mergingEntry.getKeyData());
         final CMap cmap = node.concurrentMapManager.getMap(name);
+        MProxy mproxy = (MProxy) node.factory.getOrCreateProxyByName(name);
         MergePolicy mergePolicy = cmap.wanMergePolicy;
         if (mergePolicy == null) {
             logger.log(Level.SEVERE, "Received wan merge but no merge policy defined!");
         } else {
             Object winner = mergePolicy.merge(cmap.getName(), mergingEntry, existingEntry);
             if (winner != null) {
-                ThreadContext.CallCache callCache = ThreadContext.get().getCallCache(node.factory);
                 if (winner == MergePolicy.REMOVE_EXISTING) {
-                    callCache.getMRemove().removeForSync(name, mergingEntry.getKey());
+                    mproxy.removeForSync(mergingEntry.getKey());
                 } else {
-                    callCache.getMPut().putForSync(name, mergingEntry.getKeyData(), winner);
+                    mproxy.putForSync(mergingEntry.getKeyData(), winner);
                 }
             }
         }
