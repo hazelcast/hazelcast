@@ -52,8 +52,9 @@
 <property name="hibernate.cache.hazelcast.native_client_password">dev-pass</property>
 ]]></programlisting><emphasis role="italic"> To use Native Client you should add
                         <literal>hazelcast-client-&lt;version&gt;.jar</literal> into your
-                        classpath.</emphasis></para>
-            <para><link xlink:href="#NativeClient">Read more about NativeClient &amp; SuperClient</link></para>
+                    classpath.</emphasis></para>
+            <para><link xlink:href="#NativeClient">Read more about NativeClient &amp;
+                    SuperClient</link></para>
         </listitem>
         <listitem>
             <para>If you are using one of Hibernate pre-3.3 version, add following property. <programlisting language="xml"><![CDATA[<property name="hibernate.cache.provider_class">com.hazelcast.hibernate.provider.HazelcastCacheProvider</property>
@@ -110,8 +111,9 @@
             <para>If you are using Hibernate-Annotations then you can add
                     <emphasis>class-cache</emphasis> or <emphasis>collection-cache</emphasis>
                 element into your Hibernate configuration file with <emphasis>usage</emphasis>
-                attribute with one of _read only_,<emphasis>read/write</emphasis>, _nonstrict
-                read/write_. <programlisting language="xml"><![CDATA[<class-cache usage="read-only" class="eg.Immutable"/>
+                attribute with one of <emphasis>read
+                only</emphasis>,<emphasis>read/write</emphasis>, <emphasis>nonstrict
+                    read/write</emphasis>. <programlisting language="xml"><![CDATA[<class-cache usage="read-only" class="eg.Immutable"/>
  <class-cache usage="read-write" class="eg.Cat"/>
  <collection-cache collection="eg.Cat.kittens" usage="read-write"/>
 ]]></programlisting></para>
@@ -125,5 +127,8 @@ public class Cat implements Serializable {
 }
 ]]></programlisting></para>
         </listitem>
-    </itemizedlist> And now last thing you should be aware of is to drop
+    </itemizedlist> Accessing underlying <code>HazelcastInstance</code> is possible by using
+        <code>HazelcastAccessor</code>. <programlisting language="java"><![CDATA[   SessionFactory sessionFactory = ...;
+    HazelcastInstance hazelcastInstance = HazelcastAccessor.getHazelcastInstance(sessionFactory);        
+]]></programlisting> And now last thing you should be aware of is to drop
         <literal>hazelcast-hibernate-&lt;version&gt;.jar</literal> into your classpath. </para>

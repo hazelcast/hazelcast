@@ -146,5 +146,28 @@
     <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
     <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
     <hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
-]]></programlisting>
+    ]]></programlisting> If you are using Hibernate with Hazelcast as 2nd level cache provider, you
+    can easily create <code>CacheProvider</code> or <code>RegionFactory</code> instances within
+    Spring configuration. That way it is possible to use same <code>HazelcastInstance</code> as Hibernate L2
+    cache instance.<programlisting language="xml"><![CDATA[
+    <hz:hibernate-cache-provider id="cacheProvider" instance-ref="instance" />
+            
+    ...
+    
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" scope="singleton">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="cacheProvider" ref="cacheProvider" />
+		...
+	</bean>
+	]]></programlisting> Or by Spring version 3.1 <programlisting language="xml"><![CDATA[
+    <hz:hibernate-region-factory id="regionFactory" instance-ref="instance" />
+            
+    ...
+    
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" scope="singleton">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="cacheRegionFactory" ref="regionFactory" />
+		...
+	</bean>
+	]]></programlisting>
 </para>
