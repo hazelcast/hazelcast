@@ -17,20 +17,21 @@
 
 package com.hazelcast.aws.impl;
 
+import com.hazelcast.config.AwsConfig;
+
 import java.util.List;
 
 public class AWSClient {
-    private String accessKey;
-    private String secretKey;
-    private String endpoint = Constants.HOST_HEADER;
 
-    public AWSClient(String accessKey, String secretKey) {
-        this.accessKey = accessKey;
-        this.secretKey = secretKey;
+    private String endpoint = Constants.HOST_HEADER;
+    private final AwsConfig awsConfig;
+
+    public AWSClient(AwsConfig awsConfig) {
+        this.awsConfig = awsConfig;
     }
 
-    public List<String> getPrivateDnsNames(String groupName) throws Exception {
-        List<String> list = new DescribeInstances(accessKey, secretKey, groupName).execute(endpoint);
+    public List<String> getPrivateDnsNames(AwsConfig groupName) throws Exception {
+        List<String> list = new DescribeInstances(awsConfig).execute(endpoint);
         return list;
     }
 

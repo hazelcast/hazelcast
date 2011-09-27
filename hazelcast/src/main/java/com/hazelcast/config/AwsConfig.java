@@ -24,6 +24,8 @@ public class AwsConfig {
     private String secretKey;
     private String region;
     private String securityGroupName;
+    private String tagKey;
+    private String tagValue;
 
     public void setSecurityGroupName(String securityGroupName) {
         this.securityGroupName = securityGroupName;
@@ -76,5 +78,21 @@ public class AwsConfig {
 
     public String getSecurityGroupName() {
         return securityGroupName;
+    }
+
+    public void setTagKey(String tagKey) {
+        this.tagKey = tagKey;
+    }
+
+    public void setTagValue(String tagValue) {
+        this.tagValue = tagValue;
+    }
+
+    public String getTagKey() {
+        return tagKey;
+    }
+
+    public String getTagValue() {
+        return tagValue;
     }
 }

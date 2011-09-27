@@ -441,6 +441,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 join.getAwsConfig().setRegion(value);
             } else if ("security-group-name".equals(cleanNodeName(n.getNodeName()))) {
                 join.getAwsConfig().setSecurityGroupName(value);
+            } else if ("tag-key".equals(cleanNodeName(n.getNodeName()))) {
+                join.getAwsConfig().setTagKey(value);
+            } else if ("tag-value".equals(cleanNodeName(n.getNodeName()))) {
+                join.getAwsConfig().setTagValue(value);
             }
         }
     }
