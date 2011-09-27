@@ -38,6 +38,7 @@ import org.junit.Test;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
+import com.hazelcast.hibernate.instance.HazelcastAccessor;
 
 public abstract class HibernateStatisticsTestSupport extends HibernateTestSupport {
 	
@@ -58,7 +59,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 	}
 	
 	protected HazelcastInstance getHazelcastInstance() {
-		return getHazelcastInstance(sf);
+		return HazelcastAccessor.getHazelcastInstance(sf);
 	}
 
 	protected abstract Properties getCacheProperties();

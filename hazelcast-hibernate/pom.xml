@@ -60,10 +60,16 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <!--            <version>3.3.2.GA</version>-->
             <version>3.5.0-Final</version>
             <scope>provided</scope>
         </dependency>
+<!--  		<dependency> -->
+<!--         	<groupId>org.hibernate</groupId> -->
+<!--         	<artifactId>hibernate</artifactId> -->
+<!--         	<version>3.2.7.ga</version> -->
+<!--         	<type>jar</type> -->
+<!--         	<scope>provided</scope> -->
+<!--         </dependency> -->
         <dependency>
             <groupId>hsqldb</groupId>
             <artifactId>hsqldb</artifactId>

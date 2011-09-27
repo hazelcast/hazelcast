@@ -63,15 +63,4 @@ public abstract class HibernateTestSupport {
 		sf.getStatistics().setStatisticsEnabled(true);
 		return sf;
 	}
-	
-	protected static HazelcastInstance getHazelcastInstance(SessionFactory sf) {
-		RegionFactory rf = ((SessionFactoryImplementor) sf).getSettings().getRegionFactory();
-		if(rf instanceof HazelcastCacheRegionFactory) {
-			return ((HazelcastCacheRegionFactory) rf).getHazelcastInstance();
-		}
-		else if(rf instanceof RegionFactoryCacheProviderBridge) {
-			return ((HazelcastCacheProvider) ((RegionFactoryCacheProviderBridge) rf).getCacheProvider()).getHazelcastInstance();
-		}
-		return null;
-	}
 }

@@ -24,6 +24,7 @@ import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import com.hazelcast.impl.GroupProperties;
 import org.hibernate.SessionFactory;
@@ -47,7 +48,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
     public void test() {
         Properties props = getDefaultProperties();
         SessionFactory sf = createSessionFactory(props);
-        HazelcastInstance hz = getHazelcastInstance(sf);
+        HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
         assertNotSame(Hazelcast.getDefaultInstance(), hz);
         assertEquals(1, hz.getCluster().getMembers().size());
         MapConfig cfg = hz.getConfig().getMapConfig("com.hazelcast.hibernate.entity.*");
@@ -64,7 +65,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         Properties props = getDefaultProperties();
         props.setProperty(CacheEnvironment.USE_SUPER_CLIENT, "true");
         SessionFactory sf = createSessionFactory(props);
-        HazelcastInstance hz = getHazelcastInstance(sf);
+        HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
         assertTrue(hz.getCluster().getLocalMember().isSuperClient());
         assertEquals(2, main.getCluster().getMembers().size());
         sf.close();
@@ -80,7 +81,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_PASSWORD, "dev-pass");
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_HOSTS, "localhost");
         SessionFactory sf = createSessionFactory(props);
-        HazelcastInstance hz = getHazelcastInstance(sf);
+        HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
         assertTrue(hz instanceof HazelcastClient);
         assertEquals(1, main.getCluster().getMembers().size());
         HazelcastClient client = (HazelcastClient) hz;
