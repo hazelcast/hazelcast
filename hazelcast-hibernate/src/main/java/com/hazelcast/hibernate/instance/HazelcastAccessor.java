@@ -29,6 +29,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+/**
+ * Access underlying HazelcastInstance using Hibernate SessionFactory 
+ */
 public abstract class HazelcastAccessor {
 
 	static final ILogger logger = Logger.getLogger(HazelcastAccessor.class.getName());

@@ -38,11 +38,12 @@ final class CacheProviderHazelcastAccessor extends HazelcastAccessor {
 			return null;
 		}
 		
-		final CacheProvider provider = (CacheProvider) providerObject;
-		if(provider == null) {
+		if(providerObject == null) {
 			logger.log(Level.SEVERE, "Hibernate 2nd level cache has not been enabled!");	
 			return null;
 		}
+		
+		final CacheProvider provider = (CacheProvider) providerObject;
 		if(provider instanceof HazelcastCacheProvider) {
 			return ((HazelcastCacheProvider) provider).getHazelcastInstance();
 		}
