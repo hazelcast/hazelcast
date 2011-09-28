@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.4"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+
+    <display-name>demo</display-name>
+    <filter>
+        <filter-name>hazelcast-filter</filter-name>
+        <filter-class>com.hazelcast.web.WebFilter</filter-class>
+        <init-param>
+            <param-name>map-name</param-name>
+            <param-value>default</param-value>
+        </init-param>
+        <init-param>
+            <param-name>sticky-session</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>debug</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>hazelcast-filter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>FORWARD</dispatcher>
+        <dispatcher>INCLUDE</dispatcher>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
+
+    <listener>
+        <listener-class>
+            com.hazelcast.web.SessionListener
+        </listener-class>
+    </listener>
+    <!--
+    <servlet>
+        <servlet-name>HelloServlet</servlet-name>
+        <servlet-class>mypackage.Hello</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>HelloServlet</servlet-name>
+        <url-pattern>/hello</url-pattern>
+    </servlet-mapping>
+    -->
+</web-app>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<connector xmlns="http://java.sun.com/xml/ns/j2ee"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee
+           http://java.sun.com/xml/ns/j2ee/connector_1_5.xsd"
+           version="1.5">
+    <description>Hazelcast Resource Adapter</description>
+    <display-name>HazelcastRA</display-name>
+    <!--
+    icon element seems to cause a problem with JBoss 5.1.
+    icon element doesn't seem to be part of the connector dtd.
+    try also removing it.
+    -->
+    <icon></icon>
+    <vendor-name>Hazelcast.com</vendor-name>
+    <eis-type>Hazelcast</eis-type>
+    <resourceadapter-version>1.9.4.3</resourceadapter-version>
+
+    <license>
+        <description>Copyright (c) Hazelcast.com</description>
+        <license-required>true</license-required>
+    </license>
+    <resourceadapter>
+        <resourceadapter-class>com.hazelcast.jca.ResourceAdapterImpl</resourceadapter-class>
+        <outbound-resourceadapter>
+            <connection-definition>
+                <managedconnectionfactory-class>com.hazelcast.jca.ManagedConnectionFactoryImpl
+                </managedconnectionfactory-class>
+                <connectionfactory-interface>javax.resource.cci.ConnectionFactory</connectionfactory-interface>
+                <connectionfactory-impl-class>com.hazelcast.jca.ConnectionFactoryImpl</connectionfactory-impl-class>
+                <connection-interface>javax.resource.cci.ConnectionFactory</connection-interface>
+                <connection-impl-class>com.hazelcast.jca.ConnectionImpl</connection-impl-class>
+            </connection-definition>
+            <transaction-support>LocalTransaction</transaction-support>
+            <authentication-mechanism>
+                <authentication-mechanism-type>BasicPassword</authentication-mechanism-type>
+                <credential-interface>javax.resource.spi.security.PasswordCredential</credential-interface>
+            </authentication-mechanism>
+            <reauthentication-support>false</reauthentication-support>
+        </outbound-resourceadapter>
+    </resourceadapter>
+</connector>
