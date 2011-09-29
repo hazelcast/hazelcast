@@ -36,7 +36,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
     public TcpIpJoinerOverAWS(Node node) {
         super(node);
         AwsConfig awsConfig = node.getConfig().getNetworkConfig().getJoin().getAwsConfig();
-        aws = new AWSClient(awsConfig.getAccessKey(), awsConfig.getSecretKey());
+        aws = new AWSClient(awsConfig);
         if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
             aws.setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
         }
@@ -46,7 +46,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
     @Override
     protected List<String> getMembers(Config config) {
         try {
-            List<String> list = aws.getPrivateDnsNames(groupName);
+            List<String> list = aws.getPrivateDnsNames(config.getNetworkConfig().getJoin().getAwsConfig());
             logger.log(Level.FINEST, "The list of possible members are: " + list);
             return list;
         } catch (Exception e) {

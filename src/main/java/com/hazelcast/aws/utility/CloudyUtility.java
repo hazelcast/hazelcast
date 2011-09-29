@@ -18,6 +18,7 @@
 package com.hazelcast.aws.utility;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.AwsConfig;
 import com.hazelcast.impl.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -27,10 +28,7 @@ import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -55,12 +53,12 @@ public class CloudyUtility {
         return result;
     }
 
-    public static Object unmarshalTheResponse(InputStream stream, String groupName) throws IOException {
-        Object o = parse(stream, groupName);
+    public static Object unmarshalTheResponse(InputStream stream, AwsConfig awsConfig) throws IOException {
+        Object o = parse(stream, awsConfig);
         return o;
     }
 
-    private static Object parse(InputStream in, String groupName) {
+    private static Object parse(InputStream in, AwsConfig awsConfig) {
         final DocumentBuilder builder;
         try {
             builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -68,7 +66,15 @@ public class CloudyUtility {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Util.streamXML(doc, baos);
             final byte[] bytes = baos.toByteArray();
-            final ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+//            final ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+//            Reader reader = new BufferedReader(new InputStreamReader(bais));
+//            int n;
+//            char[] buffer = new char[1024];
+//            Writer writer = new StringWriter();
+//            while ((n = reader.read(buffer)) != -1) {
+//                writer.write(buffer, 0, n);
+//            }
+//            System.out.println(writer.toString());
             Element element = doc.getDocumentElement();
             NodeHolder elementNodeHolder = new NodeHolder(element);
             List<String> names = new ArrayList<String>();
@@ -77,7 +83,7 @@ public class CloudyUtility {
                 List<NodeHolder> items = reservation.getSubNodes("item");
                 for (NodeHolder item : items) {
                     NodeHolder instancesset = item.getSub("instancesset");
-                    names.addAll(instancesset.getList("privateipaddress", groupName));
+                    names.addAll(instancesset.getList("privateipaddress", awsConfig));
                 }
             }
             return names;
@@ -119,7 +125,7 @@ public class CloudyUtility {
             return list;
         }
 
-        public List<String> getList(String name, String groupName) {
+        public List<String> getList(String name, AwsConfig awsConfig) {
             List<String> list = new ArrayList<String>();
             if (node != null) {
                 for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
@@ -127,15 +133,8 @@ public class CloudyUtility {
                     if ("item".equals(nodeName)) {
                         if (new NodeHolder(node).getSub("instancestate").getSub("name").getNode().getFirstChild().getNodeValue().equals("running")) {
                             String ip = new NodeHolder(node).getSub(name).getNode().getFirstChild().getNodeValue();
-                            boolean isInGroup = (groupName == null);
-                            if (groupName != null) {
-                                for (NodeHolder group : new NodeHolder(node).getSub("groupset").getSubNodes("item")) {
-                                    if (groupName.equals(group.getSub("groupname").getNode().getFirstChild().getNodeValue())) {
-                                        isInGroup = true;
-                                    }
-                                }
-                            }
-                            if (ip != null && isInGroup) {
+                            boolean passed = applyFilter(awsConfig, node);
+                            if (ip != null && passed) {
                                 list.add(ip);
                             }
                         }
@@ -143,6 +142,52 @@ public class CloudyUtility {
                 }
             }
             return list;
+        }
+
+        private boolean applyFilter(AwsConfig awsConfig, Node node) {
+            boolean inGroup = applyFilter(node, awsConfig.getSecurityGroupName(), "groupset", "groupname");
+            return inGroup && applyTagFilter(node,awsConfig.getTagKey(), awsConfig.getTagValue());
+        }
+
+        private boolean applyFilter(Node node, String filter, String set, String filterField) {
+            boolean passed = (nullOrEmpty(filter));
+            if (!passed) {
+                for (NodeHolder group : new NodeHolder(node).getSub(set).getSubNodes("item")) {
+                    NodeHolder nh = group.getSub(filterField);
+                    if (nh != null && nh.getNode().getFirstChild() != null && filter.equals(nh.getNode().getFirstChild().getNodeValue())) {
+                        passed = true;
+                    }
+                }
+            }
+            return passed;
+        }
+
+        private boolean applyTagFilter(Node node, String keyExpected, String valueExpected) {
+            if (nullOrEmpty(keyExpected)) {
+                return true;
+            } else {
+                for (NodeHolder group : new NodeHolder(node).getSub("tagset").getSubNodes("item")) {
+                    if (keyEquals(keyExpected, group) &&
+                            (nullOrEmpty(valueExpected) || valueEquals(valueExpected, group))) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
+        private boolean valueEquals(String valueExpected, NodeHolder group) {
+            NodeHolder nhValue = group.getSub("value");
+            return nhValue != null && nhValue.getNode().getFirstChild() != null && valueExpected.equals(nhValue.getNode().getFirstChild().getNodeValue());
+        }
+
+        private boolean nullOrEmpty(String keyExpected) {
+            return keyExpected == null || keyExpected.equals("");
+        }
+
+        private boolean keyEquals(String keyExpected, NodeHolder group) {
+            NodeHolder nhKey = group.getSub("key");
+            return nhKey != null && nhKey.getNode().getFirstChild() != null && keyExpected.equals(nhKey.getNode().getFirstChild().getNodeValue());
         }
 
         public Node getNode() {
