@@ -96,6 +96,12 @@ cfg.setProperty("hazelcast.property.foo", "value");
 				<td>true</td>
 			</tr>
 			<tr>
+				<td><db:literal>hazelcast.logging.type</db:literal></td>
+				<td>Name of <link xlink:href="#Logging">logging</link> framework type to send logging events.</td>
+				<td>enum</td>
+				<td>jdk</td>
+			</tr>
+			<tr>
 				<td><literal>hazelcast.map.load.chunk.size</literal>
 				</td>
 				<td>Chunk size for <link xlink:href="#MapPersistence">MapLoader</link> 's map initialization
@@ -376,6 +382,12 @@ cfg.setProperty("hazelcast.property.foo", "value");
 				<td>Enable waiting for the topic publish until messages are written through the sockets</td>
 				<td>boolean</td>
 				<td>true</td>
+			</tr>
+			<tr>
+				<td><db:literal>hazelcast.mc.max.visible.instance.count</db:literal></td>
+				<td>Management Center maximum visible instance count</td>
+				<td>integer</td>
+				<td>100</td>
 			</tr>
 		</tbody>
 	</table>

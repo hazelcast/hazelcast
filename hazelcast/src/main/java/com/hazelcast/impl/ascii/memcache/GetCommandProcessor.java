@@ -54,6 +54,10 @@ public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand
         if (value != null) {
             if (value instanceof MemcacheEntry) {
                 entry = (MemcacheEntry) value;
+            } else if (value instanceof byte[]) {
+                entry = new MemcacheEntry(getCommand.getKey(), ((byte[]) value), 0);
+            } else if (value instanceof String) {
+                entry = new MemcacheEntry(getCommand.getKey(), ((String) value).getBytes(), 0);
             } else {
                 try {
                     entry = new MemcacheEntry(getCommand.getKey(), IOUtil.serializeToBytes(value), 0);

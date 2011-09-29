@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:p="http://www.springframework.org/schema/p"
        xmlns:hz="http://www.hazelcast.com/schema/config"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
@@ -54,6 +53,9 @@
                         <hz:interface>127.0.0.1:5800</hz:interface>
                         <hz:interface>127.0.0.1:5801</hz:interface>
                     </hz:tcp-ip>
+                    <hz:aws enabled="false" access-key="sample-access-key" secret-key="sample-secret-key" 
+                    	region="sample-region" security-group-name="sample-group"
+                    	tag-key="sample-tag-key" tag-value="sample-tag-value"/>
                 </hz:join>
                 <hz:interfaces enabled="false">
                     <hz:interface>10.10.1.*</hz:interface>

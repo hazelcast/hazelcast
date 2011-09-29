@@ -217,18 +217,21 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
-
     <xs:element name="region">
         <xs:simpleType>
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
+    
+    <xs:element name="security-group-name" type="xs:string" />
+    <xs:element name="tag-key" type="xs:string" />
+    <xs:element name="tag-value" type="xs:string" />
 
     <xs:element name="multicast">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="multicast-group" minOccurs="0"/>
-                <xs:element ref="multicast-port" minOccurs="0"/>
+                <xs:element ref="multicast-group" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="multicast-port" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
         </xs:complexType>
@@ -237,9 +240,12 @@
     <xs:element name="aws">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="access-key" minOccurs="0"/>
-                <xs:element ref="secret-key" minOccurs="0"/>
-                <xs:element ref="region" minOccurs="0"/>
+                <xs:element ref="access-key" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="secret-key" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="region" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="security-group-name" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="tag-key" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="tag-value" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
         </xs:complexType>
@@ -475,6 +481,8 @@
 			<xs:enumeration value="hazelcast.map.max.backup.count"/>
 			<xs:enumeration value="hazelcast.topic.flow.control.enabled"/>
 			<xs:enumeration value="hazelcast.max.wait.seconds.before.join"/>
+			<xs:enumeration value="hazelcast.mc.max.visible.instance.count"/>
+			<xs:enumeration value="hazelcast.logging.type"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:element name="property">

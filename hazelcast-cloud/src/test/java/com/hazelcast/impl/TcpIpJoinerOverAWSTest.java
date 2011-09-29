@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.Properties;
 
 public class TcpIpJoinerOverAWSTest {
@@ -44,5 +45,12 @@ public class TcpIpJoinerOverAWSTest {
 //        config.getNetworkConfig().getJoin().getAwsConfig().setRegion("us-west-1");
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         h2.getLifecycleService().shutdown();
+    }
+    @Test
+    public void test() throws FileNotFoundException {
+        System.setProperty("hazelcast.config", "/Users/malikov/hazelcast-1.9.4/bin/hazelcast.xml");
+//        XmlConfigBuilder configBuilder = new XmlConfigBuilder(new FileInputStream(new File("/Users/malikov/hazelcast-1.9.4/bin/hazelcast.xml")));
+//        HazelcastInstance h = Hazelcast.newHazelcastInstance(configBuilder.build());
+        Hazelcast.getMap("myMap").get(1);
     }
 }

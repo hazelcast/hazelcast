@@ -10,10 +10,14 @@
     <para>Just like queue and set, Hazelcast will partition your map entries; and almost evenly
         distribute onto all Hazelcast members. Distributed maps have 1 backup (replica-count) by
         default so that if a member goes down, we don't lose data. Backup operations are synchronous
-        so when a <literal>map.put(key, value)</literal> returns, it is guaranteed that the entry is
+        so when a
+        <literal>map.put(key, value)</literal>
+        returns, it is guaranteed that the entry is
         replicated to one other node. For the reads, it is also guaranteed that
-            <literal>map.get(key)</literal> returns the latest value of the entry. Consistency is
-        strictly enforced. <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
+        <literal>map.get(key)</literal>
+        returns the latest value of the entry. Consistency is
+        strictly enforced.
+        <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
 import java.util.Map;
 import java.util.Collection;
 
@@ -26,11 +30,19 @@ Collection<Customer> colCustomers = mapCustomers.values();
 for (Customer customer : colCustomers) {
 	// process customer
 }
-]]></programlisting> <literal>Hazelcast.getMap()</literal> actually returns <literal>com.hazelcast.core.IMap</literal> which extends
-        <literal>java.util.concurrent.ConcurrentMap</literal> interface. So methods like
-            <literal>ConcurrentMap.putIfAbsent(key,value)</literal> and
-            <literal>ConcurrentMap.replace(key,value)</literal> can be used on distributed map as
-        shown in the example below. <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
+]]></programlisting>
+        <literal>Hazelcast.getMap()</literal>
+        actually returns
+        <literal>com.hazelcast.core.IMap</literal>
+        which extends
+        <literal>java.util.concurrent.ConcurrentMap</literal>
+        interface. So methods like
+        <literal>ConcurrentMap.putIfAbsent(key,value)</literal>
+        and
+        <literal>ConcurrentMap.replace(key,value)</literal>
+        can be used on distributed map as
+        shown in the example below.
+        <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
 import java.util.concurrent.ConcurrentMap;
 
 Customer getCustomer (String id) {
@@ -53,12 +65,30 @@ public boolean removeCustomer (Customer customer) {
     return map.remove(customer.getId(), customer) );           
 }                                  
     	
-]]></programlisting> All <literal>ConcurrentMap</literal> operations such as <literal>put</literal>
-        and <literal>remove</literal> might wait if the key is locked by another thread in the local
+]]></programlisting>
+        All
+        <literal>ConcurrentMap</literal>
+        operations such as
+        <literal>put</literal>
+        and
+        <literal>remove</literal>
+        might wait if the key is locked by another thread in the local
         or remote JVM, but they will eventually return with success.
-            <literal>ConcurrentMap</literal> operations never
-            throw <literal>java.util.ConcurrentModificationException</literal>. Also see <link
-            xlink:href="#InternalsDistributedMap">distributed map internals</link>.</para>
+        <literal>ConcurrentMap</literal>
+        operations never
+        throw<literal>java.util.ConcurrentModificationException</literal>.
+        <para>Also see:
+            <itemizedlist>
+                <listitem><link xlink:href="#InternalsDistributedMap">Distributed Map internals</link>.
+                </listitem>
+                <listitem><link xlink:href="#DataAffinity">Data Affinity</link>.
+                </listitem>
+                <listitem><link xlink:href="#WildcardConfiguration">Map Configuration with wildcards.</link>.
+                </listitem>
+            </itemizedlist>
+
+        </para>
+    </para>
     <sect2 xml:id="MapBackup" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
            xmlns:xi='http://www.w3.org/2001/XInclude'
@@ -67,19 +97,25 @@ public boolean removeCustomer (Customer customer) {
            xmlns:ns3='http://www.w3.org/1999/xhtml'
            xmlns:db='http://docbook.org/ns/docbook'>
         <title>Backups</title>
-        <para> Hazelcast will distribute map entries onto multiple JVMs (cluster members). Each JVM
+        <para>Hazelcast will distribute map entries onto multiple JVMs (cluster members). Each JVM
             holds some portion of the data but we don't want to lose data when a member JVM crashes.
             To provide data-safety, Hazelcast allows you to specify the number of backup copies you
             want to have. That way data on a JVM will be synchronously copied onto other JVM(s). By
             default, Hazelcast will have one backup copy. Backup operations
-                are<emphasis>synchronous</emphasis>. When a <literal>map.put(key,value)</literal>
+            are<emphasis>synchronous</emphasis>. When a
+            <literal>map.put(key,value)</literal>
             call returns, it means entry is updated on the both owner and backup JVMs. If backup
             count &gt;= 1, then each member will carry both owned entries and backup copies of other
-            member(s). So for the <literal>map.get(key)</literal> call, it is possible that calling
-            member has backup copy of that key but by default, <literal>map.get(key)</literal> will always read the
+            member(s). So for the
+            <literal>map.get(key)</literal>
+            call, it is possible that calling
+            member has backup copy of that key but by default,
+            <literal>map.get(key)</literal>
+            will always read the
             value from the actual owner of the key for consistency. It is possible to enable backup
             reads by changing the configuration. Enabling backup reads will give you greater
-            performance. <programlisting language="xml"><![CDATA[<hazelcast>
+            performance.
+            <programlisting language="xml"><![CDATA[<hazelcast>
     ...
     <map name="default">
         <!--
@@ -100,16 +136,22 @@ public boolean removeCustomer (Customer customer) {
 
     </map>
 </hazelcast>
-]]></programlisting><emphasis role="italic"><emphasis role="bold"> Q. If I have only one backup-copy
+]]></programlisting>
+            <emphasis role="italic">
+                <emphasis role="bold">Q. If I have only one backup-copy
                     then, will I always lose data if two JVMs crash at the same
-                time?</emphasis></emphasis></para>
+                    time?
+                </emphasis>
+            </emphasis>
+        </para>
         <para>Not always. Cluster member list is the same on each member. Hazelcast will backup each
             member's data onto next members in the member list. Let say you have a cluster with
             members A, B, C, D, E, F, G and the backup-count is 1, then Hazelcast will copy A's data
             onto B, B's data onto C... and G's data onto A. If A and B crashes at the same time then
             you will lose data because B was the backup of A. But A and C crashes at the same time,
             you won't lose any data because B was the backup of A and D was the backup of C. So you
-            will only lose that if <literal>sequential-JVM-crash-count &gt; backup-count</literal>. </para>
+            will only lose that if<literal>sequential-JVM-crash-count &gt; backup-count</literal>.
+        </para>
     </sect2>
     <sect2 xml:id="MapEviction" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
@@ -122,9 +164,12 @@ public boolean removeCustomer (Customer customer) {
         <para>Hazelcast also supports policy based eviction for distributed map. Currently supported
             eviction policies are LRU (Least Recently Used) and LFU (Least Frequently Used). This
             feature enables Hazelcast to be used as a distributed cache. If
-                <literal>time-to-live-seconds</literal> is not 0 then entries older than
-                <literal>time-to-live-seconds</literal> value will get evicted, regardless of the
-            eviction policy set. Here is a sample configuration for eviction: <programlisting language="xml"><![CDATA[<hazelcast>
+            <literal>time-to-live-seconds</literal>
+            is not 0 then entries older than
+            <literal>time-to-live-seconds</literal>
+            value will get evicted, regardless of the
+            eviction policy set. Here is a sample configuration for eviction:
+            <programlisting language="xml"><![CDATA[<hazelcast>
     ...
     <map name="default">
         <!--
@@ -199,53 +244,85 @@ public boolean removeCustomer (Customer customer) {
         <title>Persistence</title>
         <para>Hazelcast allows you to load and store the distributed map entries from/to a
             persistent datastore such as relational database. If a loader implementation is
-            provided, when <literal>get(key)</literal> is called, if the map entry doesn't exist
+            provided, when
+            <literal>get(key)</literal>
+            is called, if the map entry doesn't exist
             in-memory then Hazelcast will call your loader implementation to load the entry from a
-            datastore. If a store implementation is provided, when <literal>put(key,value)</literal>
+            datastore. If a store implementation is provided, when
+            <literal>put(key,value)</literal>
             is called, Hazelcast will call your store implementation to store the entry into a
             datastore. Hazelcast can call your implementation to store the entries synchronously
             (write-through) with no-delay or asynchronously (write-behind) with delay and it is
-            defined by the <literal>write-delay-seconds</literal> value in the configuration. </para>
-        <para>If it is write-through, when the <literal>map.put(key,value)</literal> call returns,
-            you can be sure that <itemizedlist>
+            defined by the
+            <literal>write-delay-seconds</literal>
+            value in the configuration.
+        </para>
+        <para>If it is write-through, when the
+            <literal>map.put(key,value)</literal>
+            call returns,
+            you can be sure that
+            <itemizedlist>
                 <listitem>
                     <para>
-                        <literal>MapStore.store(key,value)</literal> is successfully called so the
-                        entry is persisted. </para>
+                        <literal>MapStore.store(key,value)</literal>
+                        is successfully called so the
+                        entry is persisted.
+                    </para>
                 </listitem>
                 <listitem>
-                    <para>In-Memory entry is updated </para>
-                </listitem>
-                <listitem>
-                    <para>In-Memory backup copies are successfully created on other JVMs (if
-                        backup-count is greater than 0) </para>
-                </listitem>
-            </itemizedlist> If it is write-behind, when the <literal>map.put(key,value)</literal>
-            call returns, you can be sure that <itemizedlist>
-                <listitem>
-                    <para>In-Memory entry is updated </para>
+                    <para>In-Memory entry is updated</para>
                 </listitem>
                 <listitem>
                     <para>In-Memory backup copies are successfully created on other JVMs (if
-                        backup-count is greater than 0) </para>
+                        backup-count is greater than 0)
+                    </para>
+                </listitem>
+            </itemizedlist>
+            If it is write-behind, when the
+            <literal>map.put(key,value)</literal>
+            call returns, you can be sure that
+            <itemizedlist>
+                <listitem>
+                    <para>In-Memory entry is updated</para>
                 </listitem>
                 <listitem>
-                    <para>The entry is marked as <literal>dirty</literal> so that after
-                            <literal>write-delay-seconds</literal>, it can be persisted. </para>
+                    <para>In-Memory backup copies are successfully created on other JVMs (if
+                        backup-count is greater than 0)
+                    </para>
                 </listitem>
-            </itemizedlist> Same behavior goes for the <literal>remove(key</literal> and
-                <literal>MapStore.delete(key)</literal>. If <literal>MapStore</literal> throws an
+                <listitem>
+                    <para>The entry is marked as
+                        <literal>dirty</literal>
+                        so that after
+                        <literal>write-delay-seconds</literal>, it can be persisted.
+                    </para>
+                </listitem>
+            </itemizedlist>
+            Same behavior goes for the
+            <literal>remove(key</literal>
+            and
+            <literal>MapStore.delete(key)</literal>. If
+            <literal>MapStore</literal>
+            throws an
             exception then the exception will be propagated back to the original
-                <literal>put</literal> or <literal>remove</literal> call in the form of
-                <literal>RuntimeException</literal>. When write-through is used, Hazelcast will call
-                <literal>MapStore.store(key,value)</literal> and
-                <literal>MapStore.delete(key)</literal> for each entry update. When write-behind is
-            used, Hazelcast will call <literal>MapStore.store(map)</literal>, and
-                <literal>MapStore.delete(collection)</literal> to do all writes in a single call.
+            <literal>put</literal>
+            or
+            <literal>remove</literal>
+            call in the form of
+            <literal>RuntimeException</literal>. When write-through is used, Hazelcast will call
+            <literal>MapStore.store(key,value)</literal>
+            and
+            <literal>MapStore.delete(key)</literal>
+            for each entry update. When write-behind is
+            used, Hazelcast will call<literal>MapStore.store(map)</literal>, and
+            <literal>MapStore.delete(collection)</literal>
+            to do all writes in a single call.
             Also note that your MapStore or MapLoader implementation should not use Hazelcast
             Map/Queue/MultiMap/List/Set operations. Your implementation should only work with your
-            data store. Otherwise you may get into deadlock situations. </para>
-        <para>Here is a sample configuration: <programlisting language="xml"><![CDATA[<hazelcast>
+            data store. Otherwise you may get into deadlock situations.
+        </para>
+        <para>Here is a sample configuration:
+            <programlisting language="xml"><![CDATA[<hazelcast>
     ...
     <map name="default">
         ...
@@ -267,50 +344,77 @@ public boolean removeCustomer (Customer customer) {
         </map-store>
     </map>
 </hazelcast>
-]]></programlisting></para>
-        <para><emphasis role="italic"><emphasis role="bold">Initialization on
-                startup:</emphasis></emphasis>
+]]></programlisting>
         </para>
-        <para>As of 1.9.3 <literal>MapLoader</literal> has the new
-                <literal>MapLoader.loadAllKeys</literal> API. It is used for pre-populating the
+        <para>
+            <emphasis role="italic">
+                <emphasis role="bold">Initialization on
+                    startup:
+                </emphasis>
+            </emphasis>
+        </para>
+        <para>As of 1.9.3
+            <literal>MapLoader</literal>
+            has the new
+            <literal>MapLoader.loadAllKeys</literal>
+            API. It is used for pre-populating the
             in-memory map when the map is first touched/used. If
-                <literal>MapLoader.loadAllKeys</literal> returns NULL then nothing will be loaded.
-            Your <literal>MapLoader.loadAllKeys</literal> implementation can return all or some of the keys. You may
-            select and return only the <literal>hot</literal> keys, for instance. Also note that
+            <literal>MapLoader.loadAllKeys</literal>
+            returns NULL then nothing will be loaded.
+            Your
+            <literal>MapLoader.loadAllKeys</literal>
+            implementation can return all or some of the keys. You may
+            select and return only the
+            <literal>hot</literal>
+            keys, for instance. Also note that
             this is the fastest way of pre-populating the map as Hazelcast will optimize the loading
-            process by having each node loading owned portion of the entries. </para>
-        <para>Here is  MapLoader initialization flow;<db:orderedlist>
+            process by having each node loading owned portion of the entries.
+        </para>
+        <para>Here is MapLoader initialization flow;
+            <db:orderedlist>
                 <listitem>
-                    <para> When <code>getMap()</code> first called from any node, initialization starts </para>
-                </listitem>
-                <listitem>
-                    <para> Hazelcast will call <code>MapLoader.loadAllKeys()</code> to get all your keys on each
-                        node </para>
-                </listitem>
-                <listitem>
-                    <para> Each node will figure out the list of keys it owns </para>
-                </listitem>
-                <listitem>
-                    <para> Each node will load all its owned keys by calling <code>MapLoader.loadAll(keys)</code>
+                    <para>When
+                        <code>getMap()</code>
+                        first called from any node, initialization starts
                     </para>
                 </listitem>
                 <listitem>
-                    <para> Each node puts its owned entries into the map by
-                        calling <code>IMap.putTransient(key,value)</code> </para>
+                    <para>Hazelcast will call
+                        <code>MapLoader.loadAllKeys()</code>
+                        to get all your keys on each
+                        node
+                    </para>
                 </listitem>
-            </db:orderedlist></para>
+                <listitem>
+                    <para>Each node will figure out the list of keys it owns</para>
+                </listitem>
+                <listitem>
+                    <para>Each node will load all its owned keys by calling
+                        <code>MapLoader.loadAll(keys)</code>
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>Each node puts its owned entries into the map by
+                        calling
+                        <code>IMap.putTransient(key,value)</code>
+                    </para>
+                </listitem>
+            </db:orderedlist>
+        </para>
     </sect2>
     <sect2 xml:id="MapQuery" version="5.0" xmlns="http://docbook.org/ns/docbook"
-        xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude"
-        xmlns:ns5="http://www.w3.org/2000/svg" xmlns:ns4="http://www.w3.org/1998/Math/MathML"
-        xmlns:ns3="http://www.w3.org/1999/xhtml" xmlns:db="http://docbook.org/ns/docbook">
+           xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude"
+           xmlns:ns5="http://www.w3.org/2000/svg" xmlns:ns4="http://www.w3.org/1998/Math/MathML"
+           xmlns:ns3="http://www.w3.org/1999/xhtml" xmlns:db="http://docbook.org/ns/docbook">
         <title>Query</title>
         <para>Hazelcast partitions your data and spreads across cluster of servers. You can surely
             iterate over the map entries and look for certain entries you are interested in but this
             is not very efficient as you will have to bring entire entry set and iterate locally.
-            Instead, Hazelcast allows you to run distributed queries on your distributed map. </para>
-        <para>Let's say you have a "employee" map containing values of <literal>Employee</literal>
-            objects: <programlisting language="java"><![CDATA[import java.io.Serializable;
+            Instead, Hazelcast allows you to run distributed queries on your distributed map.
+        </para>
+        <para>Let's say you have a "employee" map containing values of
+            <literal>Employee</literal>
+            objects:<programlisting language="java"><![CDATA[import java.io.Serializable;
 
 public class Employee implements Serializable {
         private String name;
@@ -345,20 +449,32 @@ public class Employee implements Serializable {
         }
 }
 ]]></programlisting>Now you are looking for the employees who are active and with age less than 30.
-            Hazelcast allows you to find these entries in two different ways: </para>
-        <para><emphasis role="bold"> Distributed SQL Query </emphasis></para>
-        <para><literal>SqlPredicate</literal> takes regular SQL where clause. Here is an example: <programlisting language="java"><![CDATA[import com.hazelcast.core.IMap;
+            Hazelcast allows you to find these entries in two different ways:
+        </para>
+        <para>
+            <emphasis role="bold">Distributed SQL Query</emphasis>
+        </para>
+        <para>
+            <literal>SqlPredicate</literal>
+            takes regular SQL where clause. Here is an example:
+            <programlisting language="java"><![CDATA[import com.hazelcast.core.IMap;
 import com.hazelcast.query.SqlPredicate;
 
 IMap map = Hazelcast.getMap("employee");
 
 Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AND age < 30"));
-]]></programlisting> Supported SQL syntax: <itemizedlist>
+]]></programlisting>
+            Supported SQL syntax:
+            <itemizedlist>
                 <listitem>
-                    <para>AND/OR<itemizedlist>
+                    <para>AND/OR
+                        <itemizedlist>
                             <listitem>
-                                <para><literal>&lt;expression&gt; AND &lt;expression&gt; AND
-                                        &lt;expression&gt;...</literal><itemizedlist>
+                                <para>
+                                    <literal>&lt;expression&gt; AND &lt;expression&gt; AND
+                                        &lt;expression&gt;...
+                                    </literal>
+                                    <itemizedlist>
                                         <listitem>
                                             <para>
                                                 <literal>active AND age&gt;30</literal>
@@ -367,25 +483,30 @@ Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AN
                                         <listitem>
                                             <para>
                                                 <literal>active=false OR age = 45 OR name =
-                                                  'Joe'</literal>
+                                                    'Joe'
+                                                </literal>
                                             </para>
                                         </listitem>
                                         <listitem>
                                             <para>
                                                 <literal>active AND (age &gt;20 OR salary &lt;
-                                                  60000)</literal>
+                                                    60000)
+                                                </literal>
                                             </para>
                                         </listitem>
-                                    </itemizedlist></para>
+                                    </itemizedlist>
+                                </para>
                             </listitem>
-                        </itemizedlist></para>
+                        </itemizedlist>
+                    </para>
                 </listitem>
                 <listitem>
                     <para>
                         <literal>=, !=, &lt;, &lt;=, &gt;, &gt;=</literal>
                         <itemizedlist>
                             <listitem>
-                                <para><literal>&lt;expression&gt; = value</literal>
+                                <para>
+                                    <literal>&lt;expression&gt; = value</literal>
                                     <itemizedlist>
                                         <listitem>
                                             <para>
@@ -402,69 +523,98 @@ Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AN
                                                 <literal>salary != 50000</literal>
                                             </para>
                                         </listitem>
-                                    </itemizedlist></para>
+                                    </itemizedlist>
+                                </para>
                             </listitem>
-                        </itemizedlist></para>
+                        </itemizedlist>
+                    </para>
                 </listitem>
                 <listitem>
-                    <para>BETWEEN <itemizedlist>
+                    <para>BETWEEN
+                        <itemizedlist>
                             <listitem>
-                                <para><literal>&lt;attribute&gt; [NOT] BETWEEN &lt;value1&gt; AND
-                                        &lt;value2&gt;</literal><itemizedlist>
+                                <para>
+                                    <literal>&lt;attribute&gt; [NOT] BETWEEN &lt;value1&gt; AND
+                                        &lt;value2&gt;</literal>
+                                    <itemizedlist>
                                         <listitem>
                                             <para>
                                                 <literal>age BETWEEN 20 AND 33 (same as age &gt;=20
-                                                  AND age&lt;=33)</literal>
+                                                    AND age&lt;=33)
+                                                </literal>
                                             </para>
                                         </listitem>
                                         <listitem>
                                             <para>
                                                 <literal>age NOT BETWEEN 30 AND 40 (same as age
-                                                  &lt;30 OR age&gt;40)</literal>
+                                                    &lt;30 OR age&gt;40)
+                                                </literal>
                                             </para>
                                         </listitem>
-                                    </itemizedlist></para>
+                                    </itemizedlist>
+                                </para>
                             </listitem>
-                        </itemizedlist></para>
+                        </itemizedlist>
+                    </para>
                 </listitem>
                 <listitem>
-                    <para>LIKE <itemizedlist>
+                    <para>LIKE
+                        <itemizedlist>
                             <listitem>
                                 <para>
                                     <literal>&lt;attribute&gt; [NOT] LIKE 'expression'</literal>
                                 </para>
-                                <para><literal>%</literal> (percentage sign) is placeholder for many
-                                    characters, <literal>_</literal> (underscore) is placeholder for
-                                    only one character. <itemizedlist>
+                                <para>
+                                    <literal>%</literal>
+                                    (percentage sign) is placeholder for many
+                                    characters,
+                                    <literal>_</literal>
+                                    (underscore) is placeholder for
+                                    only one character.
+                                    <itemizedlist>
                                         <listitem>
                                             <para>
-                                                <literal>name LIKE 'Jo%'</literal> (true for 'Joe',
-                                                'Josh', 'Joseph' etc.) </para>
+                                                <literal>name LIKE 'Jo%'</literal>
+                                                (true for 'Joe',
+                                                'Josh', 'Joseph' etc.)
+                                            </para>
                                         </listitem>
                                         <listitem>
                                             <para>
-                                                <literal>name LIKE 'Jo_'</literal> (true for 'Joe';
-                                                false for 'Josh') </para>
+                                                <literal>name LIKE 'Jo_'</literal>
+                                                (true for 'Joe';
+                                                false for 'Josh')
+                                            </para>
                                         </listitem>
                                         <listitem>
                                             <para>
-                                                <literal>name NOT LIKE 'Jo_'</literal> (true for
-                                                'Josh'; false for 'Joe') </para>
+                                                <literal>name NOT LIKE 'Jo_'</literal>
+                                                (true for
+                                                'Josh'; false for 'Joe')
+                                            </para>
                                         </listitem>
                                         <listitem>
                                             <para>
-                                                <literal>name LIKE 'J_s%'</literal> (true for
-                                                'Josh', 'Joseph'; false 'John', 'Joe') </para>
+                                                <literal>name LIKE 'J_s%'</literal>
+                                                (true for
+                                                'Josh', 'Joseph'; false 'John', 'Joe')
+                                            </para>
                                         </listitem>
-                                    </itemizedlist></para>
+                                    </itemizedlist>
+                                </para>
                             </listitem>
-                        </itemizedlist></para>
+                        </itemizedlist>
+                    </para>
                 </listitem>
                 <listitem>
-                    <para>IN <itemizedlist>
+                    <para>IN
+                        <itemizedlist>
                             <listitem>
-                                <para><literal>&lt;attribute&gt; [NOT] IN (val1, val2,
-                                        ...)</literal><itemizedlist>
+                                <para>
+                                    <literal>&lt;attribute&gt; [NOT] IN (val1, val2,
+                                        ...)
+                                    </literal>
+                                    <itemizedlist>
                                         <listitem>
                                             <para>
                                                 <literal>age IN (20, 30, 40)</literal>
@@ -475,15 +625,20 @@ Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AN
                                                 <literal>age NOT IN (60, 70)</literal>
                                             </para>
                                         </listitem>
-                                    </itemizedlist></para>
+                                    </itemizedlist>
+                                </para>
                             </listitem>
-                        </itemizedlist></para>
+                        </itemizedlist>
+                    </para>
                 </listitem>
-            </itemizedlist>Examples: <itemizedlist>
+            </itemizedlist>
+            Examples:
+            <itemizedlist>
                 <listitem>
                     <para>
                         <literal>active AND (salary &gt;= 50000 OR (age NOT BETWEEN 20 AND
-                            30))</literal>
+                            30))
+                        </literal>
                     </para>
                 </listitem>
                 <listitem>
@@ -491,10 +646,14 @@ Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AN
                         <literal>age IN (20, 30, 40) AND salary BETWEEN (50000, 80000)</literal>
                     </para>
                 </listitem>
-            </itemizedlist></para>
-        <para><emphasis role="bold"> Criteria API</emphasis></para>
+            </itemizedlist>
+        </para>
+        <para>
+            <emphasis role="bold">Criteria API</emphasis>
+        </para>
         <para>If SQL is not enough or programmable queries are preferred then JPA criteria like API
-            can be used. Here is an example: <programlisting language="java"><![CDATA[import com.hazelcast.core.IMap;
+            can be used. Here is an example:
+            <programlisting language="java"><![CDATA[import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.EntryObject;
@@ -506,24 +665,43 @@ Predicate predicate = e.is("active").and(e.get("age").lessThan(30));
 
 Set<Employee> employees = (Set<Employee>) map.values(predicate);
 
-]]></programlisting></para>
-        <para><emphasis role="bold">Indexing</emphasis></para>
+]]></programlisting>
+        </para>
+        <para>
+            <emphasis role="bold">Indexing</emphasis>
+        </para>
         <para>Hazelcast distributed queries will run on each member in parallel and only results
             will return the caller. When a query runs on a member, Hazelcast will iterate through
             the entire owned entries and find the matching ones. Can we make this even faster? Yes
             by indexing the mostly queried fields. Just like you would do for your database. Of
-            course, indexing will add overhead for each <literal>write</literal> operation but
+            course, indexing will add overhead for each
+            <literal>write</literal>
+            operation but
             queries will be a lot faster. If you are querying your map a lot then make sure to add
-            indexes for most frequently queried fields. So if your <literal>active and age &lt;
-                30</literal> query, for example, is used a lot then make sure you add index for
-                <literal>active</literal> and <literal>age</literal> fields. Here is how: <programlisting language="java"><![CDATA[IMap imap = Hazelcast.getMap("employees");
+            indexes for most frequently queried fields. So if your
+            <literal>active and age &lt;
+                30
+            </literal>
+            query, for example, is used a lot then make sure you add index for
+            <literal>active</literal>
+            and
+            <literal>age</literal>
+            fields. Here is how:
+            <programlisting language="java"><![CDATA[IMap imap = Hazelcast.getMap("employees");
 imap.addIndex("age", true);        // ordered, since we have ranged queries for this field
 imap.addIndex("active", false);    // not ordered, because boolean field cannot have range
-]]></programlisting> API <literal>IMap.addIndex(fieldName, ordered)</literal> is used for adding
+]]></programlisting>
+            API
+            <literal>IMap.addIndex(fieldName, ordered)</literal>
+            is used for adding
             index. For a each indexed field, if you have -ranged- queries such
-                as <literal>age&gt;30</literal>, <literal>age BETWEEN 40 AND 60</literal> then
-                <literal>ordered</literal> parameter should be <literal>true</literal>, otherwise set
-            it to <literal>false</literal>. </para>
+            as<literal>age&gt;30</literal>,
+            <literal>age BETWEEN 40 AND 60</literal>
+            then
+            <literal>ordered</literal>
+            parameter should be<literal>true</literal>, otherwise set
+            it to<literal>false</literal>.
+        </para>
     </sect2>
     <sect2 xml:id="MapNearCache" version='5.0' xmlns='http://docbook.org/ns/docbook'
            xmlns:xlink='http://www.w3.org/1999/xlink'
@@ -648,6 +826,6 @@ System.out.println ("oldValue        : " + entry.setValue(newValue);
 
         </para>
     </sect2>
-    
+
     <xi:include href="WildcardConfigurationLink.xml"/>
 </sect1>

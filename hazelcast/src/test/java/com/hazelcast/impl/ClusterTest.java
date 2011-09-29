@@ -742,12 +742,12 @@ public class ClusterTest {
     }
 
     @Test(timeout = 60000)
-    public void testTcpIp() throws Exception {
+    public void testTcpIpWithMembers() throws Exception {
         Config c = new Config();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         c.getNetworkConfig().getInterfaces().setEnabled(true);
-        c.getNetworkConfig().getJoin().getTcpIpConfig().addAddress(new Address("127.0.0.1", 5701));
+        c.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
         c.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         assertEquals(1, h1.getCluster().getMembers().size());
@@ -755,6 +755,30 @@ public class ClusterTest {
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         testTwoNodes(h1, h2);
+        h1.getLifecycleService().shutdown();
+        h1 = Hazelcast.newHazelcastInstance(c);
+        testTwoNodes(h2, h1);
+    }
+
+    @Test(timeout = 60000)
+    public void testTcpIp() throws Exception {
+        Config c = new Config();
+        c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
+        c.getNetworkConfig().getInterfaces().setEnabled(true);
+        c.getNetworkConfig().getJoin().getTcpIpConfig()
+                .addAddress(new Address("127.0.0.1", 5701))
+                .addAddress(new Address("127.0.0.1", 5702));
+        c.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
+        assertEquals(1, h1.getCluster().getMembers().size());
+        h1.getMap("default").put("1", "value1");
+        assertEquals("value1", h1.getMap("default").put("1", "value2"));
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
+        testTwoNodes(h1, h2);
+        h1.getLifecycleService().shutdown();
+        h1 = Hazelcast.newHazelcastInstance(c);
+        testTwoNodes(h2, h1);
     }
 
     @Test(timeout = 60000)
@@ -763,26 +787,32 @@ public class ClusterTest {
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         c.getNetworkConfig().getInterfaces().setEnabled(true);
-        c.getNetworkConfig().getJoin().getTcpIpConfig().addAddress(new Address("127.0.0.1", 5701));
+        c.getNetworkConfig().getJoin().getTcpIpConfig()
+                .addAddress(new Address("127.0.0.1", 5701))
+                .addAddress(new Address("127.0.0.1", 5702));
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         assertEquals(1, h1.getCluster().getMembers().size());
         h1.getMap("default").put("1", "value1");
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         testTwoNodes(h1, h2);
+        h1.getLifecycleService().shutdown();
+        h1 = Hazelcast.newHazelcastInstance(c);
+        testTwoNodes(h2, h1);
     }
 
     @Test(timeout = 60000)
     public void testMulticast() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(1, h1.getCluster().getMembers().size());
         h1.getMap("default").put("1", "value1");
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         testTwoNodes(h1, h2);
     }
 
     private void testTwoNodes(HazelcastInstance h1, HazelcastInstance h2) throws Exception {
+        h1.getMultiMap("default").clear();
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
         assertEquals(2, h1.getCluster().getMembers().size());

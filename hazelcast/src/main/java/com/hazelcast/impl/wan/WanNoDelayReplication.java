@@ -21,6 +21,7 @@ import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
@@ -30,12 +31,14 @@ import java.util.LinkedList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
 
     private Node node;
+    private ILogger logger;
     private String groupName;
     private String password;
     private final LinkedBlockingQueue<String> addressQueue = new LinkedBlockingQueue<String>();
@@ -45,6 +48,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
 
     public void init(Node node, String groupName, String password, String... targets) {
         this.node = node;
+        this.logger = node.getLogger(WanNoDelayReplication.class.getName());
         this.groupName = groupName;
         this.password = password;
         addressQueue.addAll(Arrays.asList(targets));
@@ -70,15 +74,28 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                 RecordUpdate ru = (failureQ.size() > 0) ? failureQ.removeFirst() : q.take();
                 if (conn == null) {
                     conn = getConnection();
+                    boolean authorized = node.clusterManager.checkAuthorization(groupName, password, conn.getEndPoint());
+                    if (!authorized) {
+                        conn.close();
+                        conn = null;
+                        if (logger != null) {
+                            logger.log(Level.SEVERE, "Invalid groupName or groupPassword! ");
+                        }
+                    }
                 }
-                conn.getWriteHandler().enqueueSocketWritable(ru.toNewPacket());
-                if (!conn.live()) {
+                if (conn != null && conn.live()) {
+                    conn.getWriteHandler().enqueueSocketWritable(ru.toNewPacket());
+                } else {
                     failureQ.addFirst(ru);
+                    conn = null;
                 }
             } catch (InterruptedException e) {
                 running = false;
             } catch (Throwable e) {
-                e.printStackTrace();
+                if (logger != null) {
+                    logger.log(Level.WARNING, e.getMessage(), e);
+                }
+                conn = null;
             }
         }
     }
@@ -106,8 +123,9 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                 }
             } catch (Throwable e) {
                 Thread.sleep(1000);
+            } finally {
+                addressQueue.offer(targetStr);
             }
-            addressQueue.offer(targetStr);
         }
     }
 

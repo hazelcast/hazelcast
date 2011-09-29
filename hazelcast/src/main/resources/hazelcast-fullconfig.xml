@@ -73,10 +73,15 @@
                 <interface>127.0.0.1</interface>
             </tcp-ip>
             <aws enabled="false">
-                <access-key>my-access-key</access-key>
-                <secret-key>my-secret-key</secret-key>
-                <region>us-east-1</region>
-            </aws>
+		        <access-key>my-access-key</access-key>
+		        <secret-key>my-secret-key</secret-key>
+		        <!--optional, default is us-east-1 -->
+		        <region>us-west-1</region>  							
+		        <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
+		        <security-group-name>hazelcast-sg</security-group-name> 
+		        <tag-key>type</tag-key>  						
+		        <tag-value>hz-nodes</tag-value>  				
+		    </aws>
         </join>
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>
@@ -209,7 +214,7 @@
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy>hz.MERGING_WINS</merge-policy>
+            <merge-policy>hz.PASS_THROUGH</merge-policy>
         </wan-replication-ref>
     </map>
     

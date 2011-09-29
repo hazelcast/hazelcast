@@ -22,22 +22,22 @@ import java.util.List;
 
 public class WanReplicationConfig {
     String name;
-    List<WanTargetClusterConfig> lsTargetClusterConfigs ;
+    List<WanTargetClusterConfig> lsTargetClusterConfigs;
 
     public List<WanTargetClusterConfig> getTargetClusterConfigs() {
         return lsTargetClusterConfigs;
     }
 
     public WanReplicationConfig addTargetClusterConfig(WanTargetClusterConfig wanTargetClusterConfig) {
-    	if(lsTargetClusterConfigs == null) {
-    		lsTargetClusterConfigs = new ArrayList<WanTargetClusterConfig>(2);
-    	}
+        if (lsTargetClusterConfigs == null) {
+            lsTargetClusterConfigs = new ArrayList<WanTargetClusterConfig>(2);
+        }
         lsTargetClusterConfigs.add(wanTargetClusterConfig);
         return this;
     }
-    
+
     public void setTargetClusterConfigs(List<WanTargetClusterConfig> list) {
-    	lsTargetClusterConfigs = list;
+        lsTargetClusterConfigs = list;
     }
 
     public String getName() {
@@ -47,5 +47,17 @@ public class WanReplicationConfig {
     public WanReplicationConfig setName(String name) {
         this.name = name;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<wan-replication name='" + name + "'>\n");
+        for (WanTargetClusterConfig targetClusterConfig : lsTargetClusterConfigs) {
+            sb.append(targetClusterConfig.toString());
+            sb.append("\n");
+        }
+        sb.append("</wan-replication>\n");
+        return sb.toString();
     }
 }

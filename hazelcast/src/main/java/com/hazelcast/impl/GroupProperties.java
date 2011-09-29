@@ -59,6 +59,7 @@ public class GroupProperties {
     public static final String PROP_EXECUTOR_MIGRATION_THREAD_COUNT = "hazelcast.executor.migration.thread.count";
     public static final String PROP_EXECUTOR_CLIENT_THREAD_COUNT = "hazelcast.executor.client.thread.count";
     public static final String PROP_EXECUTOR_STORE_THREAD_COUNT = "hazelcast.executor.store.thread.count";
+    public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
     public static final String PROP_LOG_STATE = "hazelcast.log.state";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
     public static final String PROP_ENABLE_JMX_DETAILED = "hazelcast.jmx.detailed";
@@ -68,6 +69,7 @@ public class GroupProperties {
     public static final String PROP_MC_QUEUE_EXCLUDES = "hazelcast.mc.queue.excludes";
     public static final String PROP_MC_SEMAPHORE_EXCLUDES = "hazelcast.mc.semaphore.excludes";
     public static final String PROP_MC_TOPIC_EXCLUDES = "hazelcast.mc.topic.excludes";
+    public static final String PROP_MC_MAX_VISIBLE_INSTANCE_COUNT = "hazelcast.mc.max.visible.instance.count";
 
     public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
 
@@ -147,6 +149,8 @@ public class GroupProperties {
 
     public final GroupProperty LOG_STATE;
 
+    public final GroupProperty LOGGING_TYPE;
+
     public final GroupProperty ENABLE_JMX;
 
     public final GroupProperty ENABLE_JMX_DETAILED;
@@ -162,6 +166,8 @@ public class GroupProperties {
     public final GroupProperty MC_SEMAPHORE_EXCLUDES;
 
     public final GroupProperty MC_TOPIC_EXCLUDES;
+
+    public final GroupProperty MC_MAX_INSTANCE_COUNT;
 
     public GroupProperties(Config config) {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
@@ -200,6 +206,7 @@ public class GroupProperties {
         EXECUTOR_CLIENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_CLIENT_THREAD_COUNT, "40");
         EXECUTOR_STORE_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_STORE_THREAD_COUNT, "16");
         LOG_STATE = new GroupProperty(config, PROP_LOG_STATE, "false");
+        LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
         ENABLE_JMX_DETAILED = new GroupProperty(config, PROP_ENABLE_JMX_DETAILED, "false");
         MC_ATOMIC_NUMBER_EXCLUDES = new GroupProperty(config, PROP_MC_ATOMIC_NUMBER_EXCLUDES, null);
@@ -208,6 +215,7 @@ public class GroupProperties {
         MC_QUEUE_EXCLUDES = new GroupProperty(config, PROP_MC_QUEUE_EXCLUDES, null);
         MC_SEMAPHORE_EXCLUDES = new GroupProperty(config, PROP_MC_SEMAPHORE_EXCLUDES, null);
         MC_TOPIC_EXCLUDES = new GroupProperty(config, PROP_MC_TOPIC_EXCLUDES, null);
+        MC_MAX_INSTANCE_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_INSTANCE_COUNT, "100");
     }
 
     public static class GroupProperty {

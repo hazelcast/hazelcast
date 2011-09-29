@@ -15,13 +15,21 @@
  *
  */
 
-package com.hazelcast.web;
+package com.hazelcast.wm.test;
 
-public interface Context {
-	
-    public final static String ATTRIBUTE_NAME = "*hazelcast-servlet-context";
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
-    void addSnapshotListener(SnapshotListener snapshotListener);
+public class Value implements Serializable {
+    private void writeObject(ObjectOutputStream stream)
+            throws IOException {
+        System.out.println("WRITE OBJECT");
+    }
 
-    void removeSnapshotListener(SnapshotListener snapshotListener);
+    private void readObject(ObjectInputStream stream)
+            throws IOException {
+        System.out.println("READ OBJECT");
+    }
 }

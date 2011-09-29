@@ -58,7 +58,7 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
 	}
 
 	public void removeAll() throws CacheException {
-		getCache().clear();
+		hazelcastRegion.clearCache();
 	}
 
 	public void evict(final Object key) throws CacheException {
@@ -66,7 +66,7 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
 	}
 
 	public void evictAll() throws CacheException {
-		getCache().clear();
+		hazelcastRegion.clearCache();
 	}
 
 	/**

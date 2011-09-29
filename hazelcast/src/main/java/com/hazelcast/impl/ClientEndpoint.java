@@ -25,7 +25,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.nio.IOUtil.toData;
@@ -173,7 +173,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
             keys.add(dataAwareEntryEvent.getOldValueData());
             valueEvent = toData(keys);
         }
-        String name = event.getName();
+        String name = dataAwareEntryEvent.getLongName();
         if (name.startsWith(Prefix.MAP_OF_LIST)) {
             name = name.substring(Prefix.MAP_FOR_QUEUE.length());
             valueEvent = ((DataAwareEntryEvent) event).getNewValueData();
@@ -258,10 +258,10 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     }
 
     private void releaseAttachedSemaphorePermits() {
-        for (Map.Entry<String, AtomicInteger> entry : attachedSemaphorePermits.entrySet()){
+        for (Map.Entry<String, AtomicInteger> entry : attachedSemaphorePermits.entrySet()) {
             final ISemaphore semaphore = node.factory.getSemaphore(entry.getKey());
             final int permits = entry.getValue().get();
-            if(permits>0){
+            if (permits > 0) {
                 semaphore.releaseDetach(permits);
             } else {
                 semaphore.reducePermits(permits);
@@ -271,7 +271,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     }
 
     public void attachDetachPermits(String name, int permits) {
-        if (attachedSemaphorePermits.containsKey(name)){
+        if (attachedSemaphorePermits.containsKey(name)) {
             attachedSemaphorePermits.get(name).addAndGet(permits);
         } else {
             attachedSemaphorePermits.put(name, new AtomicInteger(permits));

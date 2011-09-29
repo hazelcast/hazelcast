@@ -1531,6 +1531,7 @@ public class CMap {
         }
         mapRecords.clear();
         mapIndexService.clear();
+        node.listenerManager.removeAllRegisteredListeners(getName());
         if (mapStoreWrapper != null) {
             try {
                 mapStoreWrapper.destroy();
@@ -1604,8 +1605,7 @@ public class CMap {
             throw new RuntimeException("Cannot create record from a 0 size key: " + key);
         }
         int blockId = concurrentMapManager.getBlockId(key);
-        return new SimpleRecord(blockId, this, concurrentMapManager.newRecordId(), key, value);
-//        return new DefaultRecord(this, blockId, key, value, ttl, maxIdle, concurrentMapManager.newRecordId());
+        return new Record(this, blockId, key, value, ttl, maxIdle, concurrentMapManager.newRecordId());
     }
 
     public void addListener(Data key, Address address, boolean includeValue) {
@@ -1782,6 +1782,21 @@ public class CMap {
                 for (Data data : lsValues) {
                     data.writeData(out);
                 }
+            }
+        }
+
+        public String toString() {
+            Iterator i = iterator();
+            if (!i.hasNext())
+                return "[]";
+            StringBuilder sb = new StringBuilder();
+            sb.append('[');
+            for (; ;) {
+                Object e = i.next();
+                sb.append(e == this ? "(this Collection)" : e);
+                if (!i.hasNext())
+                    return sb.append(']').toString();
+                sb.append(", ");
             }
         }
     }

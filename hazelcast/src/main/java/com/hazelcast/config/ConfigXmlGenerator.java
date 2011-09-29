@@ -39,25 +39,23 @@ public class ConfigXmlGenerator {
         xml.append("<password>").append(config.getGroupConfig().getPassword()).append("</password>");
         xml.append("</group>");
         appendProperties(xml, config.getProperties());
-        
         final Collection<WanReplicationConfig> wanRepConfigs = config.getWanReplicationConfigs().values();
         for (WanReplicationConfig wan : wanRepConfigs) {
-			xml.append("<wan-replication name=\"").append(wan.getName()).append("\">");
-			final List<WanTargetClusterConfig> targets = wan.getTargetClusterConfigs();
-			for (WanTargetClusterConfig t : targets) {
-				xml.append("<target-cluster group-name=\"").append(t.getGroupName())
-					.append("\" group-password=\"").append(t.getGroupPassword()).append("\">");
-				xml.append("<replication-impl>").append(t.getReplicationImpl()).append("</replication-impl>");
-				xml.append("<end-points>");
-				final List<String> eps = t.getEndpoints();
-				for (String ep : eps) {
-					xml.append("<address>").append(ep).append("</address>");
-				}
-				xml.append("</end-points>");
-			}
-			xml.append("</wan-replication>");
-		}
-        
+            xml.append("<wan-replication name=\"").append(wan.getName()).append("\">");
+            final List<WanTargetClusterConfig> targets = wan.getTargetClusterConfigs();
+            for (WanTargetClusterConfig t : targets) {
+                xml.append("<target-cluster group-name=\"").append(t.getGroupName())
+                        .append("\" group-password=\"").append(t.getGroupPassword()).append("\">");
+                xml.append("<replication-impl>").append(t.getReplicationImpl()).append("</replication-impl>");
+                xml.append("<end-points>");
+                final List<String> eps = t.getEndpoints();
+                for (String ep : eps) {
+                    xml.append("<address>").append(ep).append("</address>");
+                }
+                xml.append("</end-points>").append("</target-cluster>");
+            }
+            xml.append("</wan-replication>");
+        }
         final NetworkConfig netCfg = config.getNetworkConfig();
         xml.append("<network>");
         xml.append("<port auto-increment=\"").append(config.isPortAutoIncrement()).append("\">")
@@ -165,11 +163,11 @@ public class ConfigXmlGenerator {
                 xml.append("<invalidate-on-change>").append(n.isInvalidateOnChange()).append("</invalidate-on-change>");
                 xml.append("</near-cache>");
             }
-            if(m.getWanReplicationRef() != null) {
-            	final WanReplicationRef wan = m.getWanReplicationRef();
-            	xml.append("<wan-replication-ref name=\"").append(wan.getName()).append("\"");
-            	xml.append("<merge-policy>").append(wan.getMergePolicy()).append("</merge-policy>");
-            	xml.append("</wan-replication-ref>");
+            if (m.getWanReplicationRef() != null) {
+                final WanReplicationRef wan = m.getWanReplicationRef();
+                xml.append("<wan-replication-ref name=\"").append(wan.getName()).append("\">");
+                xml.append("<merge-policy>").append(wan.getMergePolicy()).append("</merge-policy>");
+                xml.append("</wan-replication-ref>");
             }
             xml.append("</map>");
         }
@@ -195,20 +193,34 @@ public class ConfigXmlGenerator {
         return format(xml.toString(), 5);
     }
 
-    private String format(String input, int indent) {
+    private String format(final String input, int indent) {
         if (!formatted) {
             return input;
         }
         try {
-            Source xmlInput = new StreamSource(new StringReader(input));
-            StringWriter stringWriter = new StringWriter();
-            StreamResult xmlOutput = new StreamResult(stringWriter);
+            final Source xmlInput = new StreamSource(new StringReader(input));
+            final StreamResult xmlOutput = new StreamResult(new StringWriter());
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            transformerFactory.setAttribute("indent-number", indent);
+            /* Older versions of Xalan still use this method of setting indent values.
+            * Attempt to make this work but don't completely fail if it's a problem.
+            */
+            try {
+                transformerFactory.setAttribute("indent-number", indent);
+            } catch (IllegalArgumentException e) {
+                logger.log(Level.FINEST, "Failed to set indent-number attribute; cause: " + e.getMessage());
+            }
             Transformer transformer = transformerFactory.newTransformer();
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
             transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            /* Newer versions of Xalan will look for a fully-qualified output property in order to specify amount of
+            * indentation to use.  Attempt to make this work as well but again don't completely fail if it's a problem.
+            */
+            try {
+                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", Integer.toString(indent));
+            } catch (IllegalArgumentException e) {
+                logger.log(Level.FINEST, "Failed to set indent-amount property; cause: " + e.getMessage());
+            }
             transformer.transform(xmlInput, xmlOutput);
             return xmlOutput.getWriter().toString();
         } catch (Exception e) {

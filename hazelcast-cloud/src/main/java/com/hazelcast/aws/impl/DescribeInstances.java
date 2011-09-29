@@ -19,6 +19,7 @@ package com.hazelcast.aws.impl;
 
 import com.hazelcast.aws.security.EC2RequestSigner;
 import com.hazelcast.aws.utility.CloudyUtility;
+import com.hazelcast.config.AwsConfig;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -34,17 +35,17 @@ import static com.hazelcast.aws.utility.CloudyUtility.unmarshalTheResponse;
 public class DescribeInstances {
     private static final int FIVE_MINUTES = 5 * 60 * 1000;
     private final EC2RequestSigner rs;
-    private final String groupName;
+    private AwsConfig awsConfig;
 
-    public DescribeInstances(String accessKey, String secretKey, String groupName) {
-        rs = new EC2RequestSigner(secretKey);
+    public DescribeInstances(AwsConfig awsConfig) {
+        rs = new EC2RequestSigner(awsConfig.getSecretKey());
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
         attributes.put("SignatureVersion", SIGNATURE_VERSION);
         attributes.put("SignatureMethod", SIGNATURE_METHOD);
-        attributes.put("AWSAccessKeyId", accessKey);
+        attributes.put("AWSAccessKeyId", awsConfig.getAccessKey());
         attributes.put("Timestamp", getFormattedTimestamp());
-        this.groupName = groupName;
+        this.awsConfig = awsConfig;
     }
 
     /**
@@ -84,7 +85,7 @@ public class DescribeInstances {
         httpConnection.setRequestMethod(GET);
         httpConnection.setDoOutput(true);
         httpConnection.connect();
-        Object response = unmarshalTheResponse(httpConnection.getInputStream(), groupName);
+        Object response = unmarshalTheResponse(httpConnection.getInputStream(), awsConfig);
         return response;
     }
 }

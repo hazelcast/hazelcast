@@ -22,6 +22,7 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.hibernate.Query;
@@ -37,6 +38,7 @@ import org.junit.Test;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
+import com.hazelcast.hibernate.instance.HazelcastAccessor;
 
 public abstract class HibernateStatisticsTestSupport extends HibernateTestSupport {
 	
@@ -57,7 +59,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 	}
 	
 	protected HazelcastInstance getHazelcastInstance() {
-		return getHazelcastInstance(sf);
+		return HazelcastAccessor.getHazelcastInstance(sf);
 	}
 
 	protected abstract Properties getCacheProperties();
@@ -115,12 +117,16 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 			session.close();
 		}
 		
+		Map<?,?> cache = hz.getMap(DummyEntity.class.getName());
 		assertEquals(count, stats.getEntityInsertCount());
 		assertEquals(count * 2, stats.getSecondLevelCachePutCount());
 		assertEquals(0, stats.getEntityLoadCount());
 		assertEquals(count, stats.getSecondLevelCacheHitCount());
 		assertEquals(0, stats.getSecondLevelCacheMissCount());
-		assertEquals(count, hz.getMap(DummyEntity.class.getName()).size());
+		assertEquals(count, cache.size());
+		
+		sf.getCache().evictEntityRegion(DummyEntity.class);
+		assertEquals(0, cache.size());
 		
 		stats.logSummary();
 	}

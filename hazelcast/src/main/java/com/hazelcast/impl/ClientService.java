@@ -506,7 +506,7 @@ public class ClientService implements ConnectionListener {
         abstract Object processCall(AtomicNumberProxy atomicLongProxy, Long value, Long expected);
 
         public void processCall(Node node, Packet packet) {
-            final AtomicNumberProxy atomicLong = (AtomicNumberProxy) node.factory.getAtomicNumber(packet.name);
+            final AtomicNumberProxy atomicLong = (AtomicNumberProxy) node.factory.getOrCreateProxyByName(packet.name);
             final Long value = (Long) toObject(packet.getValueData());
             final Long expectedValue = (Long) toObject(packet.getKeyData());
             packet.setValue(toData(processCall(atomicLong, value, expectedValue)));

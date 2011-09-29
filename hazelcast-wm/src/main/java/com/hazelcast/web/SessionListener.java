@@ -17,8 +17,14 @@
 
 package com.hazelcast.web;
 
-public interface SnapshotListener {
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
 
-    void handleSnapshot(SnapshotEvent membersipEvent);
+public class SessionListener implements HttpSessionListener {
+    public void sessionCreated(HttpSessionEvent httpSessionEvent) {
+    }
 
+    public void sessionDestroyed(HttpSessionEvent httpSessionEvent) {
+        WebFilter.destroyOriginalSession(httpSessionEvent.getSession());
+    }
 }

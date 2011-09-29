@@ -23,9 +23,10 @@ import com.hazelcast.nio.IOUtil;
 import java.nio.ByteBuffer;
 
 public abstract class HttpCommand extends AbstractTextCommand {
-    public static final String HEADER_CONTENT_TYPE = "Content-Type: ";
-    public static final String HEADER_CONTENT_LENGTH = "Content-Length: ";
-    public static final String HEADER_CHUNKED = "Transfer-Encoding: chunked";
+    public static final String HEADER_CONTENT_TYPE = "content-type: ";
+    public static final String HEADER_CONTENT_LENGTH = "content-length: ";
+    public static final String HEADER_CHUNKED = "transfer-encoding: chunked";
+    public static final String HEADER_EXPECT_100 = "expect: 100";
 
     protected final String uri;
     protected ByteBuffer response;

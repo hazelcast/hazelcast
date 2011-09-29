@@ -199,7 +199,8 @@ public class Node {
                 return new Packet();
             }
         };
-        this.loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), localMember);
+        String loggingType = groupProperties.LOGGING_TYPE.getString();
+        this.loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, localMember);
         this.logger = loggingService.getLogger(Node.class.getName());
         clusterImpl = new ClusterImpl(this, localMember);
         baseVariables = new NodeBaseVariables(address, localMember);
@@ -252,7 +253,7 @@ public class Node {
     }
 
     public void failedConnection(Address address) {
-        logger.log(Level.WARNING, getThisAddress() + "failed " + address);
+        logger.log(Level.FINEST, getThisAddress() + " failed connecting to " + address);
         failedConnections.add(address);
     }
 

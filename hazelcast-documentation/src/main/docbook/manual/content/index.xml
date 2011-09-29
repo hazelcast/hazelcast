@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
 <book xmlns='http://docbook.org/ns/docbook' xmlns:xlink='http://www.w3.org/1999/xlink'
       xmlns:xi='http://www.w3.org/2001/XInclude' version='5.0'>
-    
+
     <info>
         <title>Hazelcast Documentation</title>
         <subtitle>version 1.9.4</subtitle>
-        <pubdate>10 August 2011</pubdate>
+        <pubdate>6 September 2011</pubdate>
         <copyright>
             <year>2011</year>
             <holder>Hazel Bilisim Ltd. Sti.</holder>
@@ -14,7 +14,8 @@
             <para>Permission to use, copy, modify and distribute
                 this document for any purpose and
                 without fee is hereby granted in perpetuity, provided that the above
-                copyright notice and this paragraph appear in all copies.</para>
+                copyright notice and this paragraph appear in all copies.
+            </para>
         </legalnotice>
         <keywordset>
             <keyword>hazelcast</keyword>
@@ -24,17 +25,15 @@
             <keyword>cluster</keyword>
             <keyword>data grid</keyword>
             <keyword>in-memory data grid</keyword>
-        </keywordset>        
+        </keywordset>
     </info>
-    
+
     <chapter xml:id="Introduction">
         <title>Introduction</title>
-
         <xi:include href="Introduction.xml"/>
     </chapter>
     <chapter xml:id="DDS">
         <title>Distributed Data Structures</title>
-
         <xi:include href="DDS.xml"/>
         <xi:include href="Queue.xml"/>
         <xi:include href="Topic.xml"/>
@@ -45,49 +44,46 @@
         <xi:include href="Lock.xml"/>
         <xi:include href="Events.xml"/>
     </chapter>
+    <chapter xml:id="DataAffinity">
+        <title>Data Affinity</title>
+        <xi:include href="DataAffinity.xml"/>
+    </chapter>
     <chapter xml:id="JMX">
         <title>Monitoring with JMX</title>
-
         <xi:include href="JMX.xml"/>
     </chapter>
     <chapter xml:id="ClusterUtilities">
         <title>Cluster Utilities</title>
-        
         <xi:include href="ClusterInterface.xml"/>
         <xi:include href="IdGenerator.xml"/>
         <xi:include href="SuperClient.xml"/>
     </chapter>
     <chapter xml:id="Transactions">
         <title>Transactions</title>
-
         <xi:include href="TransactionInterface.xml"/>
         <xi:include href="JEEIntegration.xml"/>
     </chapter>
     <chapter xml:id="ExecutorService">
         <title>Distributed Executor Service</title>
-
         <xi:include href="ExecutorService.xml"/>
         <xi:include href="DistributedExecution.xml"/>
-        <xi:include href="KeyBasedDistributedExecution.xml"/>
         <xi:include href="ExecutionCancellation.xml"/>
         <xi:include href="ExecutionCallback.xml"/>
     </chapter>
     <chapter xml:id="HttpSessionClustering">
         <title>Http Session Clustering with HazelcastWM</title>
-
         <xi:include href="HttpSessionClustering.xml"/>
-        <xi:include href="HazelcastWMHowItWorks.xml"/>
-        <xi:include href="HazelcastWMSnapshotEvents.xml"/>
-        <xi:include href="HazelcastWMTestedWebContainers.xml"/>
+    </chapter>
+    <chapter xml:id="WanReplication">
+        <title>WAN Replication</title>
+        <xi:include href="WanReplication.xml"/>
     </chapter>
     <chapter xml:id="Encryption">
         <title>Encryption</title>
-
         <xi:include href="Encryption.xml"/>
     </chapter>
     <chapter xml:id="Config">
         <title>Configuration</title>
-
         <xi:include href="Config.xml"/>
         <xi:include href="ConfigFullTcpIp.xml"/>
         <xi:include href="EC2AutoDiscovery.xml"/>
@@ -96,20 +92,18 @@
         <xi:include href="NetworkPartitioning.xml"/>
         <xi:include href="WildcardConfiguration.xml"/>
         <xi:include href="ConfigurationProperties.xml"/>
+        <xi:include href="Logging.xml"/>
     </chapter>
     <chapter xml:id="HibernateSecondLevelCache">
         <title>Hibernate Second Level Cache</title>
-
         <xi:include href="HibernateSecondLevelCache.xml"/>
     </chapter>
     <chapter xml:id="SpringIntegration">
         <title>Spring Integration</title>
-
         <xi:include href="SpringIntegration.xml"/>
     </chapter>
     <chapter xml:id="Clients">
         <title>Clients</title>
-
         <xi:include href="Clients.xml"/>
         <xi:include href="NativeClient.xml"/>
         <xi:include href="MemcacheClient.xml"/>
@@ -117,7 +111,6 @@
     </chapter>
     <chapter xml:id="Internals">
         <title>Internals</title>
-
         <xi:include href="InternalsThreads.xml"/>
         <xi:include href="InternalsSerialization.xml"/>
         <xi:include href="InternalsClusterMembership.xml"/>
@@ -125,7 +118,6 @@
     </chapter>
     <chapter xml:id="Miscellaneous">
         <title>Miscellaneous</title>
-
         <xi:include href="CommonGotchas.xml"/>
         <xi:include href="ClusterTestHowTo.xml"/>
         <xi:include href="Todo.xml"/>

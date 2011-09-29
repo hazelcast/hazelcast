@@ -17,46 +17,17 @@
 
 package com.hazelcast.spring;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-
+import com.hazelcast.config.*;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
-import org.springframework.beans.factory.support.ManagedList;
-import org.springframework.beans.factory.support.ManagedMap;
+import org.springframework.beans.factory.support.*;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-import com.hazelcast.config.AbstractXmlConfigHelper;
-import com.hazelcast.config.AsymmetricEncryptionConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.Interfaces;
-import com.hazelcast.config.Join;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.config.QueueConfig;
-import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.config.TopicConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.config.WanTargetClusterConfig;
+import java.lang.reflect.Method;
+import java.util.*;
 
 public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionParser  {
 
@@ -281,6 +252,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                     handleMulticast(child, joinConfigBuilder);
                 } else if ("tcp-ip".equals(name)) {
                     handleTcpIp(child, joinConfigBuilder);
+                } else if ("aws".equals(name)) {
+                    handleAws(child, joinConfigBuilder);
                 }
             }
             
@@ -302,7 +275,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
         public void handleMulticast(Node node, BeanDefinitionBuilder joinConfigBuilder) {
             createAndFillBeanBuilder(node, MulticastConfig.class, "multicastConfig", joinConfigBuilder);
         }
-        
+
         public void handleTcpIp(Node node, BeanDefinitionBuilder joinConfigBuilder) {
             final BeanDefinitionBuilder builder = 
                 createAndFillBeanBuilder(node, TcpIpConfig.class,
@@ -320,7 +293,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             }
             builder.addPropertyValue("members", members);
         }
-        
+
+        public void handleAws(Node node, BeanDefinitionBuilder joinConfigBuilder) {
+            createAndFillBeanBuilder(node, AwsConfig.class, "awsConfig", joinConfigBuilder);
+        }
+
         public void handleQueue(Node node) {
             createAndFillListedBean(node, QueueConfig.class, "queueConfig", queueManagedMap);
         }

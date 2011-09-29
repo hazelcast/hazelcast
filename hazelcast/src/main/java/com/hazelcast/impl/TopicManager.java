@@ -73,6 +73,7 @@ public class TopicManager extends BaseManager {
         TopicInstance instance = mapTopics.remove(name);
         if (instance != null) {
             instance.mapListeners.clear();
+            node.listenerManager.removeAllRegisteredListeners(name);
         }
     }
 

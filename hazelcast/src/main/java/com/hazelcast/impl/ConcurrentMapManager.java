@@ -351,17 +351,17 @@ public class ConcurrentMapManager extends BaseManager {
         String name = mergingEntry.getName();
         DataRecordEntry existingEntry = new MGetDataRecordEntry().get(name, mergingEntry.getKeyData());
         final CMap cmap = node.concurrentMapManager.getMap(name);
+        MProxy mproxy = (MProxy) node.factory.getOrCreateProxyByName(name);
         MergePolicy mergePolicy = cmap.wanMergePolicy;
         if (mergePolicy == null) {
             logger.log(Level.SEVERE, "Received wan merge but no merge policy defined!");
         } else {
             Object winner = mergePolicy.merge(cmap.getName(), mergingEntry, existingEntry);
             if (winner != null) {
-                ThreadContext.CallCache callCache = ThreadContext.get().getCallCache(node.factory);
                 if (winner == MergePolicy.REMOVE_EXISTING) {
-                    callCache.getMRemove().removeForSync(name, mergingEntry.getKey());
+                    mproxy.removeForSync(mergingEntry.getKey());
                 } else {
-                    callCache.getMPut().putForSync(name, mergingEntry.getKeyData(), winner);
+                    mproxy.putForSync(mergingEntry.getKeyData(), winner);
                 }
             }
         }
@@ -1108,25 +1108,119 @@ public class ConcurrentMapManager extends BaseManager {
         mapCaches.remove(name);
     }
 
+    class MRemoveMulti extends MBackupAndMigrationAwareOp {
+
+        public Collection remove(String name, Object key) {
+            final ThreadContext tc = ThreadContext.get();
+            TransactionImpl txn = tc.getCallContext().getTransaction();
+            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                Collection committedValues = null;
+                if (!txn.has(name, key)) {
+                    MLock mlock = new MLock();
+                    boolean locked = mlock.lockAndGetValue(name, key, null, DEFAULT_TXN_TIMEOUT);
+                    if (!locked) throwCME(key);
+                    committedValues = (Collection) toObject(mlock.oldValue);
+                } else {
+                    Object value = objectCall(CONCURRENT_MAP_GET, name, key, null, 0, -1);
+                    if (value instanceof AddressAwareException) {
+                        rethrowException(request.operation, (AddressAwareException) value);
+                    }
+                    committedValues = (Collection) value;
+                }
+                List allValues = new ArrayList();
+                int removedValueCount = 1;
+                if (committedValues != null) {
+                    allValues.addAll(committedValues);
+                    removedValueCount = committedValues.size();
+                }
+                txn.getMulti(name, key, allValues);
+                txn.attachRemoveOp(name, key, null, false, removedValueCount);
+                return allValues;
+            } else {
+                Collection result = (Collection) objectCall(CONCURRENT_MAP_REMOVE, name, key, null, 0, -1);
+                if (result != null) {
+                    backup(CONCURRENT_MAP_BACKUP_REMOVE);
+                }
+                return result;
+            }
+        }
+
+        boolean remove(String name, Object key, Object value) {
+            ThreadContext threadContext = ThreadContext.get();
+            TransactionImpl txn = threadContext.getCallContext().getTransaction();
+            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                if (!txn.has(name, key)) {
+                    MLock mlock = new MLock();
+                    boolean locked = mlock.lockAndGetValue(name, key, value, DEFAULT_TXN_TIMEOUT);
+                    if (!locked) throwCME(key);
+                    Data oldValue = mlock.oldValue;
+                    boolean existingRecord = (oldValue != null);
+                    txn.attachRemoveOp(name, key, value, !existingRecord);
+                    return existingRecord;
+                } else {
+                    MContainsKey mContainsKey = new MContainsKey();
+                    boolean containsEntry = mContainsKey.containsEntry(name, key, value);
+                    txn.attachRemoveOp(name, key, value, !containsEntry);
+                    return containsEntry;
+                }
+            } else {
+                boolean result = booleanCall(CONCURRENT_MAP_REMOVE_MULTI, name, key, value, 0, -1);
+                if (result) {
+                    backup(CONCURRENT_MAP_BACKUP_REMOVE_MULTI);
+                }
+                return result;
+            }
+        }
+    }
+
+    class MMultiGet extends MTargetAwareOp {
+
+        public Collection get(String name, Object key) {
+            final ThreadContext tc = ThreadContext.get();
+            TransactionImpl txn = tc.getCallContext().getTransaction();
+            Object value = objectCall(CONCURRENT_MAP_GET, name, key, null, 0, -1);
+            if (value instanceof AddressAwareException) {
+                rethrowException(request.operation, (AddressAwareException) value);
+            }
+            Collection currentValues = (Collection) value;
+            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                List allValues = new ArrayList();
+                if (currentValues != null) {
+                    allValues.addAll(currentValues);
+                }
+                txn.getMulti(name, key, allValues);
+                if (allValues.size() == 0) {
+                    return null;
+                }
+                return allValues;
+            } else {
+                return currentValues;
+            }
+        }
+
+        @Override
+        public boolean isMigrationAware() {
+            return true;
+        }
+    }
+
     class MPutMulti extends MBackupAndMigrationAwareOp {
 
         boolean put(String name, Object key, Object value) {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                if (!txn.has(name, key, value)) {
+                if (!txn.has(name, key)) {
                     MLock mlock = new MLock();
-                    boolean locked = mlock.lockAndGetValue(name, key, value, DEFAULT_TXN_TIMEOUT);
+                    boolean locked = mlock.lock(name, key, DEFAULT_TXN_TIMEOUT);
                     if (!locked)
                         throwCME(key);
-                    boolean added = (mlock.oldValue == null);
-                    if (added) {
-                        txn.attachPutOp(name, key, value, true);
-                    }
-                    return added;
-                } else {
+                }
+                if (txn.has(name, key, value)) {
                     return false;
                 }
+                txn.attachPutMultiOp(name, key, value);
+                return true;
             } else {
                 boolean result = booleanCall(CONCURRENT_MAP_PUT_MULTI, name, key, value, 0, -1);
                 if (result) {
@@ -1567,36 +1661,6 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MRemoveMulti extends MBackupAndMigrationAwareOp {
-
-        boolean remove(String name, Object key, Object value) {
-            ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getTransaction();
-            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                if (!txn.has(name, key)) {
-                    MLock mlock = new MLock();
-                    boolean locked = mlock.lockAndGetValue(name, key, value, DEFAULT_TXN_TIMEOUT);
-                    if (!locked) throwCME(key);
-                    Data oldValue = mlock.oldValue;
-                    boolean existingRecord = (oldValue != null);
-                    txn.attachRemoveOp(name, key, value, !existingRecord);
-                    return existingRecord;
-                } else {
-                    MContainsKey mContainsKey = new MContainsKey();
-                    boolean containsEntry = mContainsKey.containsEntry(name, key, value);
-                    txn.attachRemoveOp(name, key, value, !containsEntry);
-                    return containsEntry;
-                }
-            } else {
-                boolean result = booleanCall(CONCURRENT_MAP_REMOVE_MULTI, name, key, value, 0, -1);
-                if (result) {
-                    backup(CONCURRENT_MAP_BACKUP_REMOVE_MULTI);
-                }
-                return result;
-            }
-        }
-    }
-
     abstract class MBackupAndMigrationAwareOp extends MBackupAwareOp {
         @Override
         public boolean isMigrationAware() {
@@ -1986,7 +2050,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         boolean onResponse(Object response) {
             // If Caller Thread is client, then the response is in
-            // the form of Data so We need to deserialize it here
+            // the form of Data so We need to deserialize ithere
             Pairs pairs = null;
             if (response instanceof Data) {
                 pairs = (Pairs) toObject((Data) response);
@@ -2186,7 +2250,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void process(final Packet packet) {
             final DataRecordEntry dataRecordEntry = (DataRecordEntry) toObject(packet.getValueData());
-            final CMap cmap = node.concurrentMapManager.getOrCreateMap(packet.name);
+            node.concurrentMapManager.getOrCreateMap(packet.name);
             parallelExecutor.execute(new Runnable() {
                 public void run() {
                     mergeWanRecord(dataRecordEntry);
@@ -2657,33 +2721,53 @@ public class ConcurrentMapManager extends BaseManager {
         abstract void doSemaphoreOperation(Request request, DistributedSemaphore semaphore);
 
         @Override
-        public void handle(Request request) {
+        public void handle(final Request request) {
             request.record = ensureRecord(request, null);
             if (request.record.getValue() == null) {
                 final String name = (String) toObject(request.key);
                 final SemaphoreConfig sc = node.getConfig().getSemaphoreConfig(name);
-                int initialPermits = sc.getInitialPermits();
+                final int configInitialPermits = sc.getInitialPermits();
                 if (sc.isFactoryEnabled()) {
-                    try {
-                        SemaphoreFactory factory = sc.getFactoryImplementation();
-                        if (factory == null) {
-                            String factoryClassName = sc.getFactoryClassName();
-                            if (factoryClassName != null && factoryClassName.length() != 0) {
-                                ClassLoader cl = node.getConfig().getClassLoader();
-                                Class factoryClass = Serializer.loadClass(cl, factoryClassName);
-                                factory = (SemaphoreFactory) factoryClass.newInstance();
+                    node.executorManager.executeNow(new Runnable() {
+                        public void run() {
+                            try {
+                                initSemaphore(sc, request, name);
+                            } catch (Exception e) {
+                                logger.log(Level.SEVERE, e.getMessage(), e);
+                            } finally {
+                                enqueueAndReturn(new Processable() {
+                                    public void process() {
+                                        SemaphoreOperationHandler.this.handle(request);
+                                    }
+                                });
                             }
                         }
-                        if (factory != null) {
-                            initialPermits = factory.getInitialPermits(name, initialPermits);
-                        }
-                    } catch (Exception e) {
-                        logger.log(Level.SEVERE, e.getMessage(), e);
-                    }
+                    });
+                    return;
+                } else {
+                    request.record.setValue(new DistributedSemaphore(configInitialPermits));
                 }
-                request.record.setValue(new DistributedSemaphore(initialPermits));
             }
             doOperation(request);
+        }
+
+        synchronized void initSemaphore(SemaphoreConfig sc, Request request, String name) throws Exception {
+            if (request.record.getValue() == null) {
+                final int configInitialPermits = sc.getInitialPermits();
+                SemaphoreFactory factory = sc.getFactoryImplementation();
+                if (factory == null) {
+                    String factoryClassName = sc.getFactoryClassName();
+                    if (factoryClassName != null && factoryClassName.length() != 0) {
+                        ClassLoader cl = node.getConfig().getClassLoader();
+                        Class factoryClass = Serializer.loadClass(cl, factoryClassName);
+                        factory = (SemaphoreFactory) factoryClass.newInstance();
+                    }
+                }
+                if (factory != null) {
+                    int initialPermits = factory.getInitialPermits(name, configInitialPermits);
+                    request.record.setValue(new DistributedSemaphore(initialPermits));
+                }
+            }
         }
 
         @Override

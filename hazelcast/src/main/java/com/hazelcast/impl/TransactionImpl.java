@@ -46,6 +46,10 @@ public class TransactionImpl implements Transaction {
         return attachPutOp(name, key, value, 0, -1, newRecord);
     }
 
+    public void attachPutMultiOp(String name, Object key, Object value) {
+        transactionRecords.add(new TransactionRecord(name, key, value, true));
+    }
+
     public Object attachPutOp(String name, Object key, Object value, long timeout, boolean newRecord) {
         return attachPutOp(name, key, value, timeout, -1, newRecord);
     }
@@ -149,7 +153,16 @@ public class TransactionImpl implements Transaction {
     }
 
     public TransactionRecord findTransactionRecord(String name, Object key) {
-        return findTransactionRecord(name, key, null);
+        for (TransactionRecord transactionRecord : transactionRecords) {
+            if (transactionRecord.name.equals(name)) {
+                if (transactionRecord.key != null) {
+                    if (transactionRecord.key.equals(key)) {
+                        return transactionRecord;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public TransactionRecord findTransactionRecord(String name, Object key, Object value) {
@@ -157,7 +170,9 @@ public class TransactionImpl implements Transaction {
             if (transactionRecord.name.equals(name)) {
                 if (transactionRecord.key != null) {
                     if (transactionRecord.key.equals(key)) {
-                        if (value == null || value.equals(transactionRecord.value)) {
+                        if (value == null && transactionRecord.value == null) {
+                            return transactionRecord;
+                        } else if (value != null && value.equals(transactionRecord.value)) {
                             return transactionRecord;
                         }
                     }
@@ -246,6 +261,25 @@ public class TransactionImpl implements Transaction {
         return lsEntries;
     }
 
+    public void getMulti(String name, Object key, Collection col) {
+        for (TransactionRecord transactionRecord : transactionRecords) {
+            if (transactionRecord.name.equals(name)) {
+                if (key.equals(transactionRecord.key)) {
+                    if (!transactionRecord.removed && transactionRecord.newRecord) {
+                        col.add(transactionRecord.value);
+                    } else if (transactionRecord.removed) {
+                        if (transactionRecord.value == null) {
+                            col.clear();
+                            return;
+                        } else {
+                            col.remove(transactionRecord.value);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public Map newKeys(String name) {
         Map newEntries = null;
         for (TransactionRecord transactionRecord : transactionRecords) {
@@ -321,7 +355,11 @@ public class TransactionImpl implements Transaction {
                     if (instanceType.isMap()) {
                         factory.node.concurrentMapManager.new MRemove().remove(name, key, -1);
                     } else if (instanceType.isMultiMap()) {
-                        factory.node.concurrentMapManager.new MRemoveMulti().remove(name, key, value);
+                        if (value == null) {
+                            factory.node.concurrentMapManager.new MRemove().remove(name, key, -1);
+                        } else {
+                            factory.node.concurrentMapManager.new MRemoveMulti().remove(name, key, value);
+                        }
                     }
                 } else {
                     factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);

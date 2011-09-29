@@ -21,8 +21,10 @@
     <aws enabled="true">
         <access-key>my-access-key</access-key>
         <secret-key>my-secret-key</secret-key>
-        <region>us-west-1</region>  !--optional, default is us-east-1 --
-        <security-group-name>hazelcast-sg</security-group-name>  !--optional, only instances belonging to this group will be discovered, default will try all running instances --
+        <region>us-west-1</region>  							<!--optional, default is us-east-1 -->
+        <security-group-name>hazelcast-sg</security-group-name> <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
+        <tag-key>type</tag-key>  								<!-- optional-->
+        <tag-value>hz-nodes</tag-value>  						<!-- optional-->
     </aws>
 </join>
 ]]></programlisting>

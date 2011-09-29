@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: hazelcast-all
 Bundle-SymbolicName: hazelcast-all
-Bundle-Version: 1.9.5.SNAPSHOT
+Bundle-Version: 1.9.4.3
 Import-Package: javax.xml.parsers, javax.xml.transform, org.w3c.dom, javax.xml.transform.dom, javax.xml.transform.stream, javax.crypto, javax.crypto.spec, javax.crypto.interfaces
 Bundle-ClassPath: .
 Bundle-Vendor: Hazel Ltd.

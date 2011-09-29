@@ -32,7 +32,12 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class TransactionTest {
@@ -538,12 +543,47 @@ public class TransactionTest {
         txnMMap.commit();
         assertEquals(2, mmap.size());
         txnMMap2.begin();
+        assertEquals(2, mmap.size());
+        assertEquals(2, txnMMap2.size());
         Collection values = txnMMap2.remove("1");
         assertEquals(2, values.size());
         assertEquals(2, txnMMap.size());
         assertEquals(0, txnMMap2.size());
         txnMMap2.commit();
         assertEquals(0, mmap.size());
+    }
+
+    @Test
+    public void testMultiMapPutRemoveWithTxn() {
+        MultiMap multiMap = Hazelcast.getMultiMap("testMultiMapPutRemoveWithTxn");
+        multiMap.put("1", "C");
+        multiMap.put("2", "x");
+        multiMap.put("2", "y");
+        TransactionalMultiMap txnMap = newTransactionalMultiMapProxy("testMultiMapPutRemoveWithTxn");
+        txnMap.begin();
+        txnMap.put("1", "A");
+        txnMap.put("1", "B");
+        Collection g1 = txnMap.get("1");
+        assertTrue(g1.contains("A"));
+        assertTrue(g1.contains("B"));
+        assertTrue(g1.contains("C"));
+        assertTrue(txnMap.remove("1", "C"));
+        assertEquals(4, txnMap.size());
+        Collection g2 = txnMap.get("1");
+        assertTrue(g2.contains("A"));
+        assertTrue(g2.contains("B"));
+        assertFalse(g2.contains("C"));
+        Collection r1 = txnMap.remove("2");
+        assertTrue(r1.contains("x"));
+        assertTrue(r1.contains("y"));
+        assertNull(txnMap.get("2"));
+        Collection r2 = txnMap.remove("1");
+        assertEquals(2, r2.size());
+        assertTrue(r2.contains("A"));
+        assertTrue(r2.contains("B"));
+        assertNull(txnMap.get("1"));
+        txnMap.commit();
+        assertEquals(0, txnMap.size());
     }
 
     @Test

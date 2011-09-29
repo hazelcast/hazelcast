@@ -31,22 +31,25 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.TimedClusterState;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.PipedZipBufferFactory;
+import com.hazelcast.nio.PipedZipBufferFactory.DeflatingPipedBuffer;
+import com.hazelcast.nio.PipedZipBufferFactory.InflatingPipedBuffer;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 
 import java.io.*;
 import java.net.*;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
+import java.util.zip.Deflater;
 
 import static com.hazelcast.core.Instance.InstanceType;
-import static com.hazelcast.nio.IOUtil.newInputStream;
-import static com.hazelcast.nio.IOUtil.newOutputStream;
 
 public class ManagementCenterService implements MembershipListener {
+	
+	private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
 
     private final Queue<ClientHandler> qClientHandlers = new LinkedBlockingQueue<ClientHandler>(100);
     private final FactoryImpl factory;
@@ -58,7 +61,6 @@ public class ManagementCenterService implements MembershipListener {
     private final TCPListener tcpListener;
     private final List<ClientHandler> lsClientHandlers = new CopyOnWriteArrayList<ClientHandler>();
     private final ILogger logger;
-    private static final int DATAGRAM_BUFFER_SIZE = 64 * 1000;
     private final ConcurrentMap<Address, MemberState> memberStates = new ConcurrentHashMap<Address, MemberState>(1000);
     private final ConcurrentMap<Address, SocketAddress> socketAddresses = new ConcurrentHashMap<Address, SocketAddress>(1000);
     private final Set<Address> addresses = new CopyOnWriteArraySet<Address>();
@@ -71,6 +73,7 @@ public class ManagementCenterService implements MembershipListener {
     private final StatsInstanceFilter instanceFilterAtomicNumber;
     private final StatsInstanceFilter instanceFilterCountDownLatch;
     private final StatsInstanceFilter instanceFilterSemaphore;
+    private final int maxVisibleInstanceCount;
 
     public ManagementCenterService(FactoryImpl factoryImpl) throws Exception {
         this.factory = factoryImpl;
@@ -86,6 +89,7 @@ public class ManagementCenterService implements MembershipListener {
         for (int i = 0; i < 100; i++) {
             qClientHandlers.offer(new ClientHandler());
         }
+        maxVisibleInstanceCount = factory.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger(); 
         factory.getCluster().addMembershipListener(this);
         MemberImpl memberLocal = (MemberImpl) factory.getCluster().getLocalMember();
         int port = memberLocal.getInetSocketAddress().getPort() + 100;
@@ -176,10 +180,9 @@ public class ManagementCenterService implements MembershipListener {
 
     class UDPListener extends Thread {
         final DatagramSocket socket;
-        final ByteBuffer bbState = ByteBuffer.allocate(DATAGRAM_BUFFER_SIZE);
-        final DatagramPacket packet = new DatagramPacket(bbState.array(), bbState.capacity());
-        final DataInputStream dis = new DataInputStream(newInputStream(bbState));
-
+        final InflatingPipedBuffer buffer = PipedZipBufferFactory.createInflatingBuffer(DATAGRAM_BUFFER_SIZE);
+        final DatagramPacket packet = new DatagramPacket(buffer.getInputBuffer().array(), DATAGRAM_BUFFER_SIZE);
+        
         public UDPListener(DatagramSocket socket) throws SocketException {
             super("hz.UDP.Listener");
             this.socket = socket;
@@ -190,12 +193,11 @@ public class ManagementCenterService implements MembershipListener {
             try {
                 while (running) {
                     try {
-                        bbState.clear();
+                    	buffer.reset();
                         socket.receive(packet);
-                        bbState.limit(packet.getLength());
-                        bbState.position(0);
+                        buffer.inflate(packet.getLength());
                         MemberStateImpl memberState = new MemberStateImpl();
-                        memberState.readData(dis);
+                        memberState.readData(buffer.getDataInput());
                         memberStates.put(memberState.getAddress(), memberState);
                     } catch (SocketTimeoutException ignored) {
                     }
@@ -211,8 +213,7 @@ public class ManagementCenterService implements MembershipListener {
     class UDPSender extends Thread {
         final DatagramSocket socket;
         final DatagramPacket packet = new DatagramPacket(new byte[0], 0);
-        final ByteBuffer bbState = ByteBuffer.allocate(DATAGRAM_BUFFER_SIZE);
-        final DataOutputStream dos = new DataOutputStream(newOutputStream(bbState));
+        final DeflatingPipedBuffer buffer = PipedZipBufferFactory.createDeflatingBuffer(DATAGRAM_BUFFER_SIZE, Deflater.BEST_SPEED);
 
         public UDPSender(DatagramSocket socket) throws SocketException {
             super("hz.UDP.Sender");
@@ -222,6 +223,7 @@ public class ManagementCenterService implements MembershipListener {
         public void run() {
             try {
                 while (running) {
+                	updateLocalState();
                     sendState();
                     Thread.sleep(5000);
                 }
@@ -233,16 +235,18 @@ public class ManagementCenterService implements MembershipListener {
         }
 
         void sendState() {
-            final MemberState latestState = updateLocalState();
+            boolean preparedStateData = false;
+            int compressedCount = 0;
             for (Address address : socketAddresses.keySet()) {
                 if (!thisAddress.equals(address)) {
                     final SocketAddress socketAddress = socketAddresses.get(address);
                     if (socketAddress != null) {
                         try {
-                            bbState.clear();
-                            latestState.writeData(dos);
-                            dos.flush();
-                            packet.setData(bbState.array(), 0, bbState.position());
+                        	if(!preparedStateData) {
+                        		compressedCount = prepareStateData();
+                        		preparedStateData = true;
+                        	} 
+                            packet.setData(buffer.getOutputBuffer().array(), 0, compressedCount);
                             packet.setSocketAddress(socketAddress);
                             socket.send(packet);
                         } catch (IOException e) {
@@ -253,6 +257,13 @@ public class ManagementCenterService implements MembershipListener {
                     }
                 }
             }
+        }
+        
+        int prepareStateData() throws IOException {
+        	final MemberState latestState = latestThisMemberState;
+            buffer.reset();
+            latestState.writeData(buffer.getDataOutput());
+            return buffer.deflate();
         }
     }
 
@@ -311,7 +322,7 @@ public class ManagementCenterService implements MembershipListener {
         while (it.hasNext()) {
             HazelcastInstanceAwareInstance proxyObject = it.next();
             if (proxyObject.getInstanceType() == type) {
-                if (count < 20) {
+                if (count < maxVisibleInstanceCount) {
                     if (type.isMap()) {
                         MProxy mapProxy = (MProxy) proxyObject;
                         if (instanceFilterMap.visible(mapProxy.getName())) {
@@ -356,7 +367,7 @@ public class ManagementCenterService implements MembershipListener {
     }
 
     Set<String> getLongInstanceNames() {
-        Set<String> setLongInstanceNames = new HashSet<String>(10);
+        Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
         Collection<HazelcastInstanceAwareInstance> proxyObjects = new ArrayList<HazelcastInstanceAwareInstance>(factory.getProxies());
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MAP);
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.QUEUE);
@@ -375,7 +386,7 @@ public class ManagementCenterService implements MembershipListener {
         while (it.hasNext()) {
             HazelcastInstanceAwareInstance proxyObject = it.next();
             if (proxyObject.getInstanceType() == type) {
-                if (count < 20) {
+                if (count < maxVisibleInstanceCount) {
                     if (type.isMap()) {
                         MProxy mapProxy = (MProxy) proxyObject;
                         if (instanceFilterMap.visible(mapProxy.getName())) {

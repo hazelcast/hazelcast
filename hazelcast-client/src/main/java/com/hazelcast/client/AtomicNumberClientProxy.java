@@ -29,7 +29,7 @@ public class AtomicNumberClientProxy implements AtomicNumber {
 
     public AtomicNumberClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper(getName(), hazelcastClient);
+        this.proxyHelper = new ProxyHelper(name, hazelcastClient);
     }
 
     public long addAndGet(long delta) {
@@ -87,10 +87,10 @@ public class AtomicNumberClientProxy implements AtomicNumber {
 
     @Deprecated
     public void lazySet(long newValue) {
-    	set(newValue);
+        set(newValue);
     }
 
-	public LocalAtomicNumberStats getLocalAtomicNumberStats() {
-		throw new UnsupportedOperationException();
-	}
+    public LocalAtomicNumberStats getLocalAtomicNumberStats() {
+        throw new UnsupportedOperationException();
+    }
 }

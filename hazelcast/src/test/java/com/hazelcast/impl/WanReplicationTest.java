@@ -49,19 +49,19 @@ public class WanReplicationTest {
     public void testWANClustering() throws Exception {
         Config c1 = new Config();
         Config c2 = new Config();
-        c1.getGroupConfig().setName("differentGroup");
+        c1.getGroupConfig().setName("newyork");
         c1.addWanReplicationConfig(new WanReplicationConfig()
                 .setName("my-wan")
                 .addTargetClusterConfig(new WanTargetClusterConfig()
-                        .addEndpoint("127.0.0.1:5702")));
+                        .addEndpoint("127.0.0.1:5702").setGroupName("london")));
         c1.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
                 .setName("my-wan")
                 .setMergePolicy(PassThroughMergePolicy.NAME));
-        c2.getGroupConfig().setName("sameGroup");
+        c2.getGroupConfig().setName("london");
         c2.addWanReplicationConfig(new WanReplicationConfig()
                 .setName("my-wan")
                 .addTargetClusterConfig(new WanTargetClusterConfig()
-                        .addEndpoint("127.0.0.1:5701")));
+                        .addEndpoint("127.0.0.1:5701").setGroupName("newyork")));
         c2.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
                 .setName("my-wan")
                 .setMergePolicy(PassThroughMergePolicy.NAME));
@@ -97,19 +97,19 @@ public class WanReplicationTest {
     public void testWANClustering2() throws Exception {
         Config c1 = new Config();
         Config c2 = new Config();
-        c1.getGroupConfig().setName("differentGroup");
+        c1.getGroupConfig().setName("newyork");
         c1.addWanReplicationConfig(new WanReplicationConfig()
                 .setName("my-wan")
                 .addTargetClusterConfig(new WanTargetClusterConfig()
-                        .addEndpoint("127.0.0.1:5703")));
+                        .addEndpoint("127.0.0.1:5703").setGroupName("london")));
         c1.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
                 .setName("my-wan")
                 .setMergePolicy(PassThroughMergePolicy.NAME));
-        c2.getGroupConfig().setName("sameGroup");
+        c2.getGroupConfig().setName("london");
         c2.addWanReplicationConfig(new WanReplicationConfig()
                 .setName("my-wan")
                 .addTargetClusterConfig(new WanTargetClusterConfig()
-                        .addEndpoint("127.0.0.1:5701")));
+                        .addEndpoint("127.0.0.1:5701").setGroupName("newyork")));
         c2.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
                 .setName("my-wan")
                 .setMergePolicy(PassThroughMergePolicy.NAME));
@@ -147,5 +147,35 @@ public class WanReplicationTest {
         Assert.assertEquals(size, h12.getMap("default").size());
         Assert.assertEquals(size, h11.getMap("default").size());
         Assert.assertEquals(size, h21.getMap("default").size());
+    }
+
+    @Test
+    public void testWANClusteringActivePassive() throws Exception {
+        Config c1 = new Config();
+        Config c2 = new Config();
+        c1.getGroupConfig().setName("newyork");
+        c1.addWanReplicationConfig(new WanReplicationConfig()
+                .setName("my-wan")
+                .addTargetClusterConfig(new WanTargetClusterConfig()
+                        .addEndpoint("127.0.0.1:5702").setGroupName("london")));
+        c1.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
+                .setName("my-wan")
+                .setMergePolicy(PassThroughMergePolicy.NAME));
+        c2.getGroupConfig().setName("london");
+        c2.getMapConfig("default").setWanReplicationRef(new WanReplicationRef()
+                .setName("my-wan")
+                .setMergePolicy(PassThroughMergePolicy.NAME));
+        HazelcastInstance h10 = Hazelcast.newHazelcastInstance(c1);
+        HazelcastInstance h20 = Hazelcast.newHazelcastInstance(c2);
+        int size = 1000;
+        for (int i = 0; i < size; i++) {
+            h10.getMap("default").put(i, "value" + i);
+        }
+        Thread.sleep(5000);
+        Assert.assertEquals(size, h10.getMap("default").size());
+        Assert.assertEquals(size, h20.getMap("default").size());
+        for (int i = 0; i < size; i++) {
+            Assert.assertEquals("value" + i, h20.getMap("default").get(i));
+        }
     }
 }

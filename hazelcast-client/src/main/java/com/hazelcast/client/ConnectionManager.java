@@ -50,8 +50,8 @@ public class ConnectionManager implements MembershipListener {
     private volatile boolean running = true;
 
     private final LifecycleServiceClientImpl lifecycleService;
-
     Timer heartbeatTimer = new Timer();
+
 
     public ConnectionManager(HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress[] clusterMembers, boolean shuffle, long timeout) {
         this.TIMEOUT = timeout;
