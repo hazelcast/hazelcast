@@ -33,7 +33,18 @@ import java.net.URLConnection;
 import java.util.logging.Level;
 
 public class VersionCheck {
-    public static void check(Node hazelcastNode, String buildDate, String version) {
+    public static void check(final Node hazelcastNode, final String buildDate, final String version) {
+        if (!hazelcastNode.getGroupProperties().VERSION_CHECK_ENABLED.getBoolean()) {
+            return;
+        }
+        new Thread(new Runnable() {
+            public void run() {
+                doCheck(hazelcastNode, buildDate, version);
+            }
+        }).start();
+    }
+
+    private static void doCheck(Node hazelcastNode, String buildDate, String version) {
         if (!hazelcastNode.getGroupProperties().VERSION_CHECK_ENABLED.getBoolean()) {
             return;
         }
