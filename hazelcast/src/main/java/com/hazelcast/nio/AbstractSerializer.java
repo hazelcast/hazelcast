@@ -32,9 +32,9 @@ public abstract class AbstractSerializer {
     private static final ILogger logger = Logger.getLogger(AbstractSerializer.class.getName());
 
     private static final int OUTPUT_STREAM_BUFFER_SIZE = 100 << 10;
-    
-    private static final Class[] PRIMITIVE_CLASSES_ARRAY = {int.class, long.class, boolean.class, byte.class, 
-    		float.class, double.class, byte.class, char.class, short.class};
+
+    private static final Class[] PRIMITIVE_CLASSES_ARRAY = {int.class, long.class, boolean.class, byte.class,
+            float.class, double.class, byte.class, char.class, short.class};
     private static final int MAX_PRIM_CLASSNAME_LENGTH = 7; // boolean.class.getName().length();
 
     private final FastByteArrayOutputStream bbos;
@@ -65,22 +65,26 @@ public abstract class AbstractSerializer {
         if (className == null) {
             throw new IllegalArgumentException("ClassName cannot be null!");
         }
-        if(className.length() <= MAX_PRIM_CLASSNAME_LENGTH && Character.isLowerCase(className.charAt(0))) {
-        	for (int i = 0; i < PRIMITIVE_CLASSES_ARRAY.length; i++) {
-				if(className.equals(PRIMITIVE_CLASSES_ARRAY[i].getName())) {
-					return PRIMITIVE_CLASSES_ARRAY[i];
-				}
-			}
-        }
-        if (className.startsWith("com.hazelcast")) {
-            return AbstractSerializer.class.getClassLoader().loadClass(className);
+        if (className.length() <= MAX_PRIM_CLASSNAME_LENGTH && Character.isLowerCase(className.charAt(0))) {
+            for (int i = 0; i < PRIMITIVE_CLASSES_ARRAY.length; i++) {
+                if (className.equals(PRIMITIVE_CLASSES_ARRAY[i].getName())) {
+                    return PRIMITIVE_CLASSES_ARRAY[i];
+                }
+            }
         }
         ClassLoader theClassLoader = classLoader;
+        if (className.startsWith("com.hazelcast.") || className.startsWith("[Lcom.hazelcast.")) {
+            theClassLoader = AbstractSerializer.class.getClassLoader();
+        }
         if (theClassLoader == null) {
             theClassLoader = Thread.currentThread().getContextClassLoader();
         }
         if (theClassLoader != null) {
-            return theClassLoader.loadClass(className);
+            if (className.startsWith("[L")) {
+                return Class.forName(className, true, theClassLoader);
+            } else {
+                return theClassLoader.loadClass(className);
+            }
         }
         return Class.forName(className);
     }
@@ -109,12 +113,13 @@ public abstract class AbstractSerializer {
     }
 
     protected Object toObject(final FastByteArrayInputStream bis) {
+        byte typeId = -1;
         try {
-            final byte typeId = bis.readByte();
+            typeId = bis.readByte();
             TypeSerializer ts = (typeId == ds.getTypeId()) ? ds : cs;
             return ts.read(bis);
         } catch (Throwable e) {
-            throw new HazelcastSerializationException(e);
+            throw new HazelcastSerializationException("Problem when serializing type " + typeId, e);
         }
     }
 
