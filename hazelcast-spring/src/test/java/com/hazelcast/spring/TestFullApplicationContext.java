@@ -226,6 +226,8 @@ public class TestFullApplicationContext {
         assertEquals("sample-secret-key", aws.getSecretKey());
         assertEquals("sample-region", aws.getRegion());
         assertEquals("sample-group", aws.getSecurityGroupName());
+        assertEquals("sample-tag-key", aws.getTagKey());
+        assertEquals("sample-tag-value", aws.getTagValue());
     }
 
     @Test

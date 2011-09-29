@@ -54,7 +54,8 @@
                         <hz:interface>127.0.0.1:5801</hz:interface>
                     </hz:tcp-ip>
                     <hz:aws enabled="false" access-key="sample-access-key" secret-key="sample-secret-key" 
-                    	region="sample-region" security-group-name="sample-group"/>
+                    	region="sample-region" security-group-name="sample-group"
+                    	tag-key="sample-tag-key" tag-value="sample-tag-value"/>
                 </hz:join>
                 <hz:interfaces enabled="false">
                     <hz:interface>10.10.1.*</hz:interface>
