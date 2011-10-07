@@ -41,6 +41,8 @@ public interface Cluster {
     /**
      * Set of current members of the cluster.
      * Returning set instance is not modifiable.
+     * Every member in the cluster has the same member list in the same
+     * order. First member is the oldest member.
      *
      * @return current members of the cluster
      */
