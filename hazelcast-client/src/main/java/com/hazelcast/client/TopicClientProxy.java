@@ -43,7 +43,7 @@ public class TopicClientProxy<T> implements ITopic {
 
     public void publish(Object message) {
         check(message);
-        proxyHelper.doOp(ClusterOperation.TOPIC_PUBLISH, message, null);
+        proxyHelper.doFireAndForget(ClusterOperation.TOPIC_PUBLISH, message, null);
     }
 
     public void addMessageListener(MessageListener messageListener) {
@@ -101,7 +101,7 @@ public class TopicClientProxy<T> implements ITopic {
         return getName().hashCode();
     }
 
-	public LocalTopicStats getLocalTopicStats() {
-		throw new UnsupportedOperationException();
-	}
+    public LocalTopicStats getLocalTopicStats() {
+        throw new UnsupportedOperationException();
+    }
 }

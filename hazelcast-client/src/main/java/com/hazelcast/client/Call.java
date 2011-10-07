@@ -41,6 +41,8 @@ public class Call {
 
     volatile long replied = 0;
 
+    private volatile boolean fireNforget;
+
     public Call(Long id, Packet request) {
         this.id = id;
         this.request = request;
@@ -101,5 +103,13 @@ public class Call {
     public String toString() {
         return "Call " + "[" + id + "] operation=" +
                 (request != null ? request.getOperation() : null);
+    }
+
+    public boolean isFireNforget() {
+        return fireNforget;
+    }
+
+    public void setFireNforget(boolean fireNforget) {
+        this.fireNforget = fireNforget;
     }
 }

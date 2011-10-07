@@ -312,6 +312,10 @@ public class ClientService implements ConnectionListener {
             ITopic<Object> topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
             topic.publish(packet.getKeyData());
         }
+
+        @Override
+        protected void sendResponse(Packet request) {
+        }
     }
 
     private class QueueRemainingCapacityHandler extends ClientQueueOperationHandler {

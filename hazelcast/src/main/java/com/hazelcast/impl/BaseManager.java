@@ -1214,11 +1214,6 @@ public abstract class BaseManager {
                 skipSuperClient, distance);
     }
 
-    protected MemberImpl getPreviousMemberBefore(final Address address,
-                                                 final boolean skipSuperClient, final int distance) {
-        return getPreviousMemberBefore(lsMembers, address, skipSuperClient, distance);
-    }
-
     protected MemberImpl getPreviousMemberBefore(final List<MemberImpl> lsMembers,
                                                  final Address address, final boolean skipSuperClient, final int distance) {
         final int size = lsMembers.size();

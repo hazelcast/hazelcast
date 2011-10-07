@@ -145,6 +145,13 @@ public class ProxyHelper {
         return getValue(response);
     }
 
+    public void doFireAndForget(ClusterOperation operation, Object key, Object value) {
+        Packet request = prepareRequest(operation, key, value, 0, null);
+        Call fireNForgetCall = createCall(request);
+        fireNForgetCall.setFireNforget(true);
+        sendCall(fireNForgetCall);
+    }
+
     Packet prepareRequest(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit timeunit) {
         byte[] k = null;
         byte[] v = null;
@@ -169,7 +176,7 @@ public class ProxyHelper {
     }
 
     Packet prepareRequest(ClusterOperation operation, Object key,
-                                    Object value) {
+                          Object value) {
         return prepareRequest(operation, key, value, 0, null);
     }
 
