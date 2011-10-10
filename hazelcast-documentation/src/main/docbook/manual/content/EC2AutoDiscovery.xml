@@ -10,6 +10,9 @@
     <para>Hazelcast supports EC2 Auto Discovery as of 1.9.4. It is useful when you don't want or
         can't provide the list of possible IP addresses. Here is a sample configuration:
         Disable join over multicast and tcp/ip and enable aws. Also provide the credentials.
+        The aws tag accepts an attribute called "conn-timeout-seconds". The default value is 5.
+        Increasing this value is recommended if you have many IP's listed and members can not properly build up the
+        cluster.
         <programlisting language="xml"><![CDATA[<join>
     <multicast enabled="false">
         <multicast-group>224.2.2.3</multicast-group>
