@@ -1075,6 +1075,7 @@ public class BlockingQueueManager extends BaseManager {
             @Override
             public void onExpire() {
                 request.response = -1L;
+                offerWaitList.remove(this);
                 returnResponse(request);
                 setValid(false);
             }
@@ -1096,6 +1097,7 @@ public class BlockingQueueManager extends BaseManager {
             @Override
             public void onExpire() {
                 request.response = null;
+                pollWaitList.remove(this);
                 returnResponse(request);
                 setValid(false);
             }
