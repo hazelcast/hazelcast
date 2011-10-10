@@ -425,7 +425,11 @@ public class WebFilter implements Filter {
 
     private void addSessionCookie(final RequestWrapper req, final String sessionId) {
         final Cookie sessionCookie = new Cookie(HAZELCAST_SESSION_COOKIE_NAME, sessionId);
-        sessionCookie.setPath(req.getContextPath());
+        String path = req.getContextPath();
+        if("".equals(path)) {
+        	path = "/";
+        }
+        sessionCookie.setPath(path);
         sessionCookie.setMaxAge(-1);
         req.res.addCookie(sessionCookie);
     }
