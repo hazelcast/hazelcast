@@ -17,6 +17,8 @@
 
 package com.hazelcast.hibernate.query;
 
+import java.util.Properties;
+
 import org.hibernate.cache.QueryResultsRegion;
 
 import com.hazelcast.core.HazelcastInstance;
@@ -27,7 +29,7 @@ import com.hazelcast.hibernate.region.AbstractGeneralRegion;
  */
 public class HazelcastQueryResultsRegion extends AbstractGeneralRegion implements QueryResultsRegion {
 
-    public HazelcastQueryResultsRegion(final HazelcastInstance instance, final String name) {
-        super(instance, name);
+    public HazelcastQueryResultsRegion(final HazelcastInstance instance, final String name, final Properties props) {
+        super(instance, name, props);
     }
 }

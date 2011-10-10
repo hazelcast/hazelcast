@@ -17,6 +17,8 @@
 
 package com.hazelcast.hibernate.entity;
 
+import java.util.Properties;
+
 import com.hazelcast.hibernate.access.ReadWriteAccessDelegate;
 
 /**
@@ -25,7 +27,7 @@ import com.hazelcast.hibernate.access.ReadWriteAccessDelegate;
  * @author Leo Kim (lkim@limewire.com)
  */
 final class ReadWriteAccessStrategy extends AbstractEntityRegionAccessStrategy {
-    ReadWriteAccessStrategy(final HazelcastEntityRegion entityRegion) {
-        super(new ReadWriteAccessDelegate<HazelcastEntityRegion>(entityRegion));
+    ReadWriteAccessStrategy(final HazelcastEntityRegion entityRegion, final Properties props) {
+        super(new ReadWriteAccessDelegate<HazelcastEntityRegion>(entityRegion, props));
     }
 }

@@ -22,16 +22,11 @@ import java.util.Properties;
 import java.util.logging.Level;
 
 import org.hibernate.SessionFactory;
-import org.hibernate.cache.RegionFactory;
-import org.hibernate.cache.impl.bridge.RegionFactoryCacheProviderBridge;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.engine.SessionFactoryImplementor;
 import org.junit.After;
 import org.junit.Before;
 
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 

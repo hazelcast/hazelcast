@@ -17,6 +17,8 @@
 
 package com.hazelcast.hibernate.timestamp;
 
+import java.util.Properties;
+
 import org.hibernate.cache.TimestampsRegion;
 
 import com.hazelcast.core.HazelcastInstance;
@@ -27,7 +29,7 @@ import com.hazelcast.hibernate.region.AbstractGeneralRegion;
  */
 public class HazelcastTimestampsRegion extends AbstractGeneralRegion implements TimestampsRegion {
 
-    public HazelcastTimestampsRegion(final HazelcastInstance instance, final String name) {
-        super(instance, name);
+    public HazelcastTimestampsRegion(final HazelcastInstance instance, final String name, final Properties props) {
+        super(instance, name, props);
     }
 }

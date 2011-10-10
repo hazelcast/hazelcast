@@ -17,6 +17,8 @@
 
 package com.hazelcast.hibernate.access;
 
+import java.util.Properties;
+
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 
@@ -33,7 +35,7 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
 	protected final ILogger LOG = Logger.getLogger(getClass().getName());
 	private final T hazelcastRegion;
 
-	protected AbstractAccessDelegate(final T hazelcastRegion) {
+	protected AbstractAccessDelegate(final T hazelcastRegion, final Properties props) {
 		this.hazelcastRegion = hazelcastRegion;
 	}
 

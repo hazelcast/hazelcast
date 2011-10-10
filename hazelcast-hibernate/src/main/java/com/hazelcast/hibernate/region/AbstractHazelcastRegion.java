@@ -18,6 +18,7 @@
 package com.hazelcast.hibernate.region;
 
 import java.util.Map;
+import java.util.Properties;
 
 import org.hibernate.cache.CacheException;
 
@@ -35,13 +36,15 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
     private final IMap cache;
     private final String regionName;
     private final int timeout;
+    protected final Properties props;
 
-    protected AbstractHazelcastRegion(final HazelcastInstance instance, final String regionName) {
+    protected AbstractHazelcastRegion(final HazelcastInstance instance, final String regionName, final Properties props) {
     	super();
     	this.instance = instance;
         this.cache = instance.getMap(regionName);
         this.regionName = regionName;
         this.timeout = HazelcastTimestamper.getTimeout(instance, regionName);
+        this.props = props;
     }
 
     public final IMap getCache() {

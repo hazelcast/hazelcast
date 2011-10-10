@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.hibernate;
+package com.hazelcast.hibernate.instance;
 
 import java.util.Properties;
 import java.util.logging.Level;
@@ -25,16 +25,29 @@ import org.hibernate.util.PropertiesHelper;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 class HazelcastClientLoader implements IHazelcastInstanceLoader {
 	
 	private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class.getName());
+	
+	private final Properties props = new Properties();
+	private HazelcastClient client;
+	
+	public void configure(Properties props) {
+		this.props.putAll(props);
+	}
 
-	public HazelcastInstance loadInstance(Properties props) throws CacheException {
+	public HazelcastInstance loadInstance() throws CacheException {
 		if(props == null) {
 			throw new NullPointerException("Hibernate environment properties is null!");
+		}
+		
+		if(client != null && client.getLifecycleService().isRunning()) {
+			logger.log(Level.WARNING, "Current HazelcastClient is already active! Shutting it down...");
+			unloadInstance();
 		}
 		
 		String[] hosts = PropertiesHelper.toStringArray(CacheEnvironment.NATIVE_CLIENT_HOSTS, ",", props);
@@ -57,6 +70,18 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
     	
     	logger.log(Level.INFO, msg.toString());
     	
-    	return HazelcastClient.newHazelcastClient(group, pass, hosts);
+    	return (client = HazelcastClient.newHazelcastClient(group, pass, hosts));
+	}
+
+	public void unloadInstance() throws CacheException {
+		if(client == null) {
+			return;
+		}
+		try {
+			client.shutdown();
+			client = null;
+		} catch (Exception e) {
+			throw new CacheException(e);
+		}
 	}
 }

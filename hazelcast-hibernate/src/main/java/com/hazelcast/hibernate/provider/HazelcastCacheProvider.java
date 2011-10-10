@@ -27,8 +27,9 @@ import org.hibernate.cache.CacheProvider;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
-import com.hazelcast.hibernate.HazelcastInstanceFactory;
 import com.hazelcast.hibernate.HazelcastTimestamper;
+import com.hazelcast.hibernate.instance.HazelcastInstanceFactory;
+import com.hazelcast.hibernate.instance.IHazelcastInstanceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -47,6 +48,7 @@ public final class HazelcastCacheProvider implements CacheProvider {
 
     private static final ILogger LOG = Logger.getLogger(HazelcastCacheProvider.class.getName());
     
+    private IHazelcastInstanceLoader instanceLoader = null;
     private HazelcastInstance instance;
 
     public HazelcastCacheProvider() {
@@ -60,7 +62,7 @@ public final class HazelcastCacheProvider implements CacheProvider {
      * We ignore the <code>Properties</code> passed in here in favor of the <code>hazelcast.xml</code> file.
      */
     public Cache buildCache(final String name, final Properties properties) throws CacheException {
-        return new HazelcastCache(instance, name);
+        return new HazelcastCache(instance, name, properties);
     }
 
     /**
@@ -78,7 +80,8 @@ public final class HazelcastCacheProvider implements CacheProvider {
         LOG.log(Level.INFO, "Starting up HazelcastCacheProvider...");
         
         if(instance == null || !instance.getLifecycleService().isRunning()) {
-        	instance = HazelcastInstanceFactory.createInstance(props);
+        	instanceLoader = HazelcastInstanceFactory.createInstanceLoader(props);
+        	instance = instanceLoader.loadInstance();
         }
     }
     
@@ -90,7 +93,11 @@ public final class HazelcastCacheProvider implements CacheProvider {
      * Calls <code>{@link Hazelcast#shutdown()}</code>.
      */
     public void stop() {
-        LOG.log(Level.INFO, "Shutting down HazelcastCacheProvider...");
-        instance.getLifecycleService().shutdown();
+        if(instanceLoader != null) {
+        	LOG.log(Level.INFO, "Shutting down HazelcastCacheProvider...");
+	        instanceLoader.unloadInstance();
+	        instance = null;
+	        instanceLoader = null;
+    	}
     }
 }

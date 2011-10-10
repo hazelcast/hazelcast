@@ -17,6 +17,8 @@
 
 package com.hazelcast.hibernate.collection;
 
+import java.util.Properties;
+
 import com.hazelcast.hibernate.access.NonStrictReadWriteAccessDelegate;
 
 /**
@@ -24,7 +26,7 @@ import com.hazelcast.hibernate.access.NonStrictReadWriteAccessDelegate;
  */
 final class NonStrictReadWriteAccessStrategy extends AbstractCollectionRegionAccessStrategy {
 
-    NonStrictReadWriteAccessStrategy(final HazelcastCollectionRegion collectionRegion) {
-        super(new NonStrictReadWriteAccessDelegate<HazelcastCollectionRegion>(collectionRegion));
+    NonStrictReadWriteAccessStrategy(final HazelcastCollectionRegion collectionRegion, final Properties props) {
+        super(new NonStrictReadWriteAccessDelegate<HazelcastCollectionRegion>(collectionRegion, props));
     }
 }

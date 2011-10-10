@@ -17,6 +17,7 @@
 
 package com.hazelcast.hibernate.access;
 
+import java.util.Properties;
 import java.util.logging.Level;
 
 import org.hibernate.cache.CacheException;
@@ -31,8 +32,8 @@ import com.hazelcast.hibernate.region.HazelcastRegion;
 
 public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrictReadWriteAccessDelegate<T> {
 
-    public ReadOnlyAccessDelegate(T hazelcastRegion) {
-		super(hazelcastRegion);
+    public ReadOnlyAccessDelegate(T hazelcastRegion, final Properties props) {
+		super(hazelcastRegion, props);
 	}
 
     /**

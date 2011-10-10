@@ -17,13 +17,15 @@
 
 package com.hazelcast.hibernate.collection;
 
+import java.util.Properties;
+
 import com.hazelcast.hibernate.access.ReadWriteAccessDelegate;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
 final class ReadWriteAccessStrategy extends AbstractCollectionRegionAccessStrategy {
-    ReadWriteAccessStrategy(final HazelcastCollectionRegion collectionRegion) {
-        super(new ReadWriteAccessDelegate<HazelcastCollectionRegion>(collectionRegion));
+    ReadWriteAccessStrategy(final HazelcastCollectionRegion collectionRegion, final Properties props) {
+        super(new ReadWriteAccessDelegate<HazelcastCollectionRegion>(collectionRegion, props));
     }
 }

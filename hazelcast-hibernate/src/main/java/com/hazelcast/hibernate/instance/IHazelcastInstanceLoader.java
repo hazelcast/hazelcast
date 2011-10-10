@@ -15,14 +15,19 @@
  *
  */
 
-package com.hazelcast.hibernate;
+package com.hazelcast.hibernate.instance;
 
 import java.util.Properties;
+
+import org.hibernate.cache.CacheException;
 
 import com.hazelcast.core.HazelcastInstance;
 
 public interface IHazelcastInstanceLoader {
 	
-	HazelcastInstance loadInstance(Properties props);
-
+	void configure(Properties props);
+	
+	HazelcastInstance loadInstance() throws CacheException ;
+	
+	void unloadInstance() throws CacheException ;
 }

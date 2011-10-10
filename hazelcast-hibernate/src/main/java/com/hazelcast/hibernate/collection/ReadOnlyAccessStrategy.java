@@ -17,13 +17,15 @@
 
 package com.hazelcast.hibernate.collection;
 
+import java.util.Properties;
+
 import com.hazelcast.hibernate.access.ReadOnlyAccessDelegate;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
 final class ReadOnlyAccessStrategy extends AbstractCollectionRegionAccessStrategy {
-    ReadOnlyAccessStrategy(final HazelcastCollectionRegion collectionRegion) {
-        super(new ReadOnlyAccessDelegate<HazelcastCollectionRegion>(collectionRegion));
+    ReadOnlyAccessStrategy(final HazelcastCollectionRegion collectionRegion, final Properties props) {
+        super(new ReadOnlyAccessDelegate<HazelcastCollectionRegion>(collectionRegion, props));
     }
 }

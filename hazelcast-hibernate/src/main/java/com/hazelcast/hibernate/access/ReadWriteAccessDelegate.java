@@ -17,9 +17,13 @@
 
 package com.hazelcast.hibernate.access;
 
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 
+import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 
 /**
@@ -29,8 +33,11 @@ import com.hazelcast.hibernate.region.HazelcastRegion;
  */
 public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends AbstractAccessDelegate<T> {
 
-	public ReadWriteAccessDelegate(T hazelcastRegion) {
-		super(hazelcastRegion);
+	private final int lockTimeout ;
+	
+	public ReadWriteAccessDelegate(T hazelcastRegion, final Properties props) {
+		super(hazelcastRegion, props);
+		lockTimeout = CacheEnvironment.getLockTimeoutInSeconds(props);
 	}
 
 	public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
@@ -60,7 +67,13 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
 	}
 
 	public SoftLock lockItem(final Object key, final Object version) throws CacheException {
-		getCache().lock(key);
+		if(lockTimeout > 0) {
+    		if(!getCache().tryLock(key, lockTimeout, TimeUnit.SECONDS)) {
+    			throw new CacheException("Cache lock could not be acquired! Wait-time: " + lockTimeout + " seconds");
+    		}
+    	} else {
+    		getCache().lock(key);
+    	}
 		return new SoftLock(){}; // dummy lock
 	}
 	

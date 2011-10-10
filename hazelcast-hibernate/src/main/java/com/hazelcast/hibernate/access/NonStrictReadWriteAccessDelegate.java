@@ -17,6 +17,8 @@
 
 package com.hazelcast.hibernate.access;
 
+import java.util.Properties;
+
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 
@@ -30,8 +32,8 @@ import com.hazelcast.hibernate.region.HazelcastRegion;
  */
 public class NonStrictReadWriteAccessDelegate<T extends HazelcastRegion> extends AbstractAccessDelegate<T> {
 
-	public NonStrictReadWriteAccessDelegate(T hazelcastRegion) {
-		super(hazelcastRegion);
+	public NonStrictReadWriteAccessDelegate(T hazelcastRegion, final Properties props) {
+		super(hazelcastRegion, props);
 	}
     
 	public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {

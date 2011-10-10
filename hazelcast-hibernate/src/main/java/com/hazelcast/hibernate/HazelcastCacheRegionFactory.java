@@ -33,6 +33,8 @@ import org.hibernate.cfg.Settings;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.collection.HazelcastCollectionRegion;
 import com.hazelcast.hibernate.entity.HazelcastEntityRegion;
+import com.hazelcast.hibernate.instance.HazelcastInstanceFactory;
+import com.hazelcast.hibernate.instance.IHazelcastInstanceLoader;
 import com.hazelcast.hibernate.query.HazelcastQueryResultsRegion;
 import com.hazelcast.hibernate.timestamp.HazelcastTimestampsRegion;
 import com.hazelcast.logging.ILogger;
@@ -45,6 +47,7 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
 
     private static final ILogger LOG = Logger.getLogger(HazelcastCacheRegionFactory.class.getName());
     
+    private IHazelcastInstanceLoader instanceLoader = null;
     private HazelcastInstance instance;
 
     public HazelcastCacheRegionFactory() {
@@ -60,22 +63,22 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
 
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
                                                   final CacheDataDescription metadata) throws CacheException {
-        return new HazelcastCollectionRegion(instance, regionName, metadata);
+        return new HazelcastCollectionRegion(instance, regionName, properties, metadata);
     }
 
     public EntityRegion buildEntityRegion(final String regionName, final Properties properties,
                                           final CacheDataDescription metadata) throws CacheException {
-        return new HazelcastEntityRegion(instance, regionName, metadata);
+        return new HazelcastEntityRegion(instance, regionName, properties, metadata);
     }
 
     public QueryResultsRegion buildQueryResultsRegion(final String regionName, final Properties properties)
             throws CacheException {
-        return new HazelcastQueryResultsRegion(instance, regionName);
+        return new HazelcastQueryResultsRegion(instance, regionName, properties);
     }
 
     public TimestampsRegion buildTimestampsRegion(final String regionName, final Properties properties)
             throws CacheException {
-        return new HazelcastTimestampsRegion(instance, regionName);
+        return new HazelcastTimestampsRegion(instance, regionName, properties);
     }
 
     /**
@@ -93,13 +96,18 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
         LOG.log(Level.INFO, "Starting up HazelcastCacheRegionFactory...");
         
         if(instance == null || !instance.getLifecycleService().isRunning()) {
-        	 instance = HazelcastInstanceFactory.createInstance(properties);
+        	instanceLoader = HazelcastInstanceFactory.createInstanceLoader(properties);
+        	instance = instanceLoader.loadInstance();
         }
     }
 
     public void stop() {
-        LOG.log(Level.INFO, "Shutting down HazelcastCacheRegionFactory...");
-        instance.getLifecycleService().shutdown();
+    	if(instanceLoader != null) {
+	        LOG.log(Level.INFO, "Shutting down HazelcastCacheRegionFactory...");
+	        instanceLoader.unloadInstance();
+	        instance = null;
+	        instanceLoader = null;
+    	}
     }
     
     public HazelcastInstance getHazelcastInstance() {

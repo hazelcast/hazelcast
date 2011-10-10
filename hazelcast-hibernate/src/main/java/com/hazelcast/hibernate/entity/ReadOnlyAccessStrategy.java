@@ -17,13 +17,15 @@
 
 package com.hazelcast.hibernate.entity;
 
+import java.util.Properties;
+
 import com.hazelcast.hibernate.access.ReadOnlyAccessDelegate;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
 final class ReadOnlyAccessStrategy extends AbstractEntityRegionAccessStrategy {
-    ReadOnlyAccessStrategy(final HazelcastEntityRegion entityRegion) {
-        super(new ReadOnlyAccessDelegate<HazelcastEntityRegion>(entityRegion));
+    ReadOnlyAccessStrategy(final HazelcastEntityRegion entityRegion, final Properties props) {
+        super(new ReadOnlyAccessDelegate<HazelcastEntityRegion>(entityRegion, props));
     }
 }

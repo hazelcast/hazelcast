@@ -17,6 +17,8 @@
 
 package com.hazelcast.hibernate.collection;
 
+import java.util.Properties;
+
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CollectionRegion;
@@ -31,8 +33,9 @@ import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
  */
 public class HazelcastCollectionRegion extends AbstractTransactionalDataRegion implements CollectionRegion {
 
-    public HazelcastCollectionRegion(final HazelcastInstance instance, final String regionName, final CacheDataDescription metadata) {
-        super(instance, regionName, metadata);
+    public HazelcastCollectionRegion(final HazelcastInstance instance, final String regionName, 
+    		final Properties props, final CacheDataDescription metadata) {
+        super(instance, regionName, props, metadata);
     }
 
     public CollectionRegionAccessStrategy buildAccessStrategy(final AccessType accessType) throws CacheException {
@@ -41,13 +44,13 @@ public class HazelcastCollectionRegion extends AbstractTransactionalDataRegion i
                     "Got null AccessType while attempting to build CollectionRegionAccessStrategy. This can't happen!");
         }
         if (AccessType.READ_ONLY.equals(accessType)) {
-            return new ReadOnlyAccessStrategy(this);
+            return new ReadOnlyAccessStrategy(this, props);
         }
         if (AccessType.NONSTRICT_READ_WRITE.equals(accessType)) {
-            return new NonStrictReadWriteAccessStrategy(this);
+            return new NonStrictReadWriteAccessStrategy(this, props);
         }
         if (AccessType.READ_WRITE.equals(accessType)) {
-            return new ReadWriteAccessStrategy(this);
+            return new ReadWriteAccessStrategy(this, props);
         }
         if (AccessType.TRANSACTIONAL.equals(accessType)) {
             throw new CacheException("Transactional access is not currently supported by Hazelcast.");

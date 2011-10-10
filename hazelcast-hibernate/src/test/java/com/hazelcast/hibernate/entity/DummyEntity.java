@@ -35,6 +35,11 @@ public class DummyEntity {
 		super();
 	}
 
+	public DummyEntity(long id) {
+		super();
+		this.id = id;
+	}
+	
 	public DummyEntity(long id, String name, double value, Date date) {
 		super();
 		this.id = id;

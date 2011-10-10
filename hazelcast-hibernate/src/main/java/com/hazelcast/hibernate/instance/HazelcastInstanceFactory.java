@@ -15,25 +15,29 @@
  *
  */
 
-package com.hazelcast.hibernate;
+package com.hazelcast.hibernate.instance;
 
 import java.util.Properties;
 
 import org.hibernate.cache.CacheException;
-import org.hibernate.util.PropertiesHelper;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.CacheEnvironment;
 
 public final class HazelcastInstanceFactory {
 	
-	private final static String HZ_CLIENT_LOADER_CLASSNAME = "com.hazelcast.hibernate.HazelcastClientLoader";
-	private final static String HZ_INSTANCE_LOADER_CLASSNAME = "com.hazelcast.hibernate.HazelcastInstanceLoader";
+	private final static String HZ_CLIENT_LOADER_CLASSNAME = "com.hazelcast.hibernate.instance.HazelcastClientLoader";
+	private final static String HZ_INSTANCE_LOADER_CLASSNAME = "com.hazelcast.hibernate.instance.HazelcastInstanceLoader";
 	
 	public static HazelcastInstance createInstance(Properties props) throws CacheException {
+		return createInstanceLoader(props).loadInstance();
+	}
+	
+	public static IHazelcastInstanceLoader createInstanceLoader(Properties props) throws CacheException {
 		boolean useNativeClient = false;
 		
         if(props != null) {
-        	useNativeClient = PropertiesHelper.getBoolean(CacheEnvironment.USE_NATIVE_CLIENT, props, false);
+        	useNativeClient = CacheEnvironment.isNativeClient(props);
         }
         
         IHazelcastInstanceLoader loader = null;
@@ -52,7 +56,8 @@ public final class HazelcastInstanceFactory {
 		} catch (Exception e) {
 			throw new CacheException(e);
 		}
-        
-        return loader.loadInstance(props);
+		
+        loader.configure(props);
+        return loader;
 	}
 }

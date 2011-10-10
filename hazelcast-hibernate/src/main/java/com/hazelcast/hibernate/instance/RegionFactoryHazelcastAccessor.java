@@ -45,10 +45,9 @@ final class RegionFactoryHazelcastAccessor extends HazelcastAccessor {
 			logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheProvider!");
 		} else if(rf instanceof HazelcastCacheRegionFactory) {
 			return ((HazelcastCacheRegionFactory) rf).getHazelcastInstance();
+		} else {
+			logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheRegionFactory!");
 		}
-		
-		logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheRegionFactory!");
 		return null;
 	}
-
 }

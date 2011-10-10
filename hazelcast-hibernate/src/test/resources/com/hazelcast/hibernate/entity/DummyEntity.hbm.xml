@@ -13,8 +13,8 @@
 		<id name="id" column="uid" type="long" unsaved-value="null">
 			<generator class="assigned" />
 		</id>
-		
-		<property name="name" type="string" length="100" />
+		<version name="version" column="version_" type="integer"/>
+		<property name="name" column="entity_name" type="string" length="100" />
 		<property name="date" column="dummy_date" type="date" />
 		<property name="value" column="dummy_value" type="double" />
 		

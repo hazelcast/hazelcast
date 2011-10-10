@@ -17,13 +17,15 @@
 
 package com.hazelcast.hibernate.entity;
 
+import java.util.Properties;
+
 import com.hazelcast.hibernate.access.NonStrictReadWriteAccessDelegate;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
 final class NonStrictReadWriteAccessStrategy extends AbstractEntityRegionAccessStrategy {
-    NonStrictReadWriteAccessStrategy(final HazelcastEntityRegion entityRegion) {
-        super(new NonStrictReadWriteAccessDelegate<HazelcastEntityRegion>(entityRegion));
+    NonStrictReadWriteAccessStrategy(final HazelcastEntityRegion entityRegion, final Properties props) {
+        super(new NonStrictReadWriteAccessDelegate<HazelcastEntityRegion>(entityRegion, props));
     }
 }

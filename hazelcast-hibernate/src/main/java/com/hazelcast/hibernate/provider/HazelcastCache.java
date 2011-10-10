@@ -18,6 +18,8 @@
 package com.hazelcast.hibernate.provider;
 
 import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import org.hibernate.cache.Cache;
@@ -26,6 +28,7 @@ import org.hibernate.cache.CacheException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
 import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.logging.ILogger;
@@ -47,13 +50,15 @@ public final class HazelcastCache implements Cache {
     private final IMap cache;
     private final String regionName;
     private final int timeout ;
+    private final int lockTimeout;
 
-    public HazelcastCache(final HazelcastInstance instance, final String regionName) {
+    public HazelcastCache(final HazelcastInstance instance, final String regionName, final Properties props) {
         LOG.log(Level.INFO, "Creating new HazelcastCache with region name: " + regionName);
         this.instance = instance;
         this.cache = instance.getMap(regionName);
         this.regionName = regionName;
         this.timeout = HazelcastTimestamper.getTimeout(instance, regionName);
+        this.lockTimeout = CacheEnvironment.getLockTimeoutInSeconds(props);
     }
 
     public void clear() throws CacheException {
@@ -106,7 +111,13 @@ public final class HazelcastCache implements Cache {
     }
 
     public void lock(final Object key) throws CacheException {
-        cache.lock(key);
+    	if(lockTimeout > 0) {
+    		if(!cache.tryLock(key, lockTimeout, TimeUnit.SECONDS)) {
+    			throw new CacheException("Cache lock could not be acquired! Wait-time: " + lockTimeout + " seconds");
+    		}
+    	} else {
+    		cache.lock(key);
+    	}
     }
 
     public void unlock(final Object key) throws CacheException {
