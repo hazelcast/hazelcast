@@ -23,6 +23,7 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.security.Credentials;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -45,6 +46,7 @@ public class ConnectionManager implements MembershipListener {
     private final HazelcastClient client;
     private volatile int lastDisconnectedConnectionId = -1;
     private ClientBinder binder;
+    private final Credentials credentials;
 
     private volatile boolean lookingForLiveConnection = false;
     private volatile boolean running = true;
@@ -53,7 +55,8 @@ public class ConnectionManager implements MembershipListener {
     Timer heartbeatTimer = new Timer();
 
 
-    public ConnectionManager(HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress[] clusterMembers, boolean shuffle, long timeout) {
+    public ConnectionManager(HazelcastClient client, Credentials credentials, LifecycleServiceClientImpl lifecycleService, 
+    		InetSocketAddress[] clusterMembers, boolean shuffle, long timeout) {
         this.TIMEOUT = timeout;
         this.client = client;
         this.lifecycleService = lifecycleService;
@@ -61,13 +64,16 @@ public class ConnectionManager implements MembershipListener {
         if (shuffle) {
             Collections.shuffle(this.clusterMembers);
         }
+        this.credentials = credentials;
     }
 
-    public ConnectionManager(final HazelcastClient client, LifecycleServiceClientImpl lifecycleService, InetSocketAddress address, long timeout) {
+    public ConnectionManager(final HazelcastClient client, Credentials credentials, LifecycleServiceClientImpl lifecycleService, 
+    		InetSocketAddress address, long timeout) {
         this.TIMEOUT = timeout;
         this.client = client;
         this.lifecycleService = lifecycleService;
         this.clusterMembers.add(address);
+        this.credentials = credentials;
     }
 
     void scheduleHeartbeatTimerTask() {
@@ -227,7 +233,7 @@ public class ConnectionManager implements MembershipListener {
     }
 
     void bindConnection(Connection connection) throws IOException {
-        binder.bind(connection);
+        binder.bind(connection, credentials);
     }
 
     public void destroyConnection(final Connection connection) {
@@ -310,7 +316,7 @@ public class ConnectionManager implements MembershipListener {
     List<InetSocketAddress> getClusterMembers() {
         return clusterMembers;
     }
-
+    
     public void shutdown() {
         logger.log(Level.INFO, getClass().getSimpleName() + " shutdown");
         running = false;

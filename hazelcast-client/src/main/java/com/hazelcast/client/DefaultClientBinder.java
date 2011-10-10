@@ -18,11 +18,11 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.cluster.Bind;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.security.Credentials;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -39,10 +39,10 @@ public class DefaultClientBinder implements ClientBinder {
         this.client = client;
     }
 
-    public void bind(Connection connection) throws IOException {
+    public void bind(Connection connection, Credentials credentials) throws IOException {
         logger.log(Level.FINEST, connection + " -> "
                 + connection.getAddress().getHostName() + ":" + connection.getSocket().getLocalPort());
-        auth(connection);
+        auth(connection, credentials);
         Bind b = null;
         try {
             b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
@@ -55,11 +55,9 @@ public class DefaultClientBinder implements ClientBinder {
         write(connection, bind);
     }
 
-    void auth(Connection connection) throws IOException {
+    void auth(Connection connection, Credentials credentials) throws IOException {
         Packet auth = new Packet();
-        final GroupConfig groupConfig = client.groupConfig();
-        auth.set("", ClusterOperation.CLIENT_AUTHENTICATE,
-                toByte(groupConfig.getName()), toByte(groupConfig.getPassword()));
+        auth.set("", ClusterOperation.CLIENT_AUTHENTICATE, new byte[0], toByte(credentials));
         Packet packet = writeAndRead(connection, auth);
         final Object response = toObject(packet.getValue());
         logger.log(Level.FINEST, "auth responce:" + response);

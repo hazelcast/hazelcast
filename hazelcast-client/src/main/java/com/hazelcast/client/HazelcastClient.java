@@ -26,6 +26,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.security.Credentials;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
@@ -54,7 +56,7 @@ public class HazelcastClient implements HazelcastInstance {
     final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>(100);
 
     final ListenerManager listenerManager;
-    final private OutRunnable out;
+    final OutRunnable out;
     final InRunnable in;
     final ConnectionManager connectionManager;
     final Map<Object, Object> mapProxies = new ConcurrentHashMap<Object, Object>(100);
@@ -72,39 +74,47 @@ public class HazelcastClient implements HazelcastInstance {
     volatile boolean active = true;
 
     private HazelcastClient(ClientProperties properties, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
+    	this(properties, new UsernamePasswordCredentials(properties.getProperty(ClientPropertyName.GROUP_NAME), 
+    			properties.getProperty(ClientPropertyName.GROUP_PASSWORD)), shuffle, clusterMembers, automatic);
+    }
+    
+    private HazelcastClient(ClientProperties properties, Credentials credentials, 
+    		boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
         this.properties = properties;
         this.id = clientIdCounter.incrementAndGet();
         final long timeout = Long.valueOf(properties.getProperty(ClientPropertyName.CONNECTION_TIMEOUT));
-        final String prefix = "hz.client." + this.id + ".";
         lifecycleService = new LifecycleServiceClientImpl(this);
         lifecycleService.fireLifecycleEvent(STARTING);
         connectionManager = automatic ?
-                new ConnectionManager(this, lifecycleService, clusterMembers[0], timeout) :
-                new ConnectionManager(this, lifecycleService, clusterMembers, shuffle, timeout);
+                new ConnectionManager(this, credentials, lifecycleService, clusterMembers[0], timeout) :
+                new ConnectionManager(this, credentials, lifecycleService, clusterMembers, shuffle, timeout);
         connectionManager.setBinder(new DefaultClientBinder(this));
         out = new OutRunnable(this, calls, new PacketWriter());
-        in = new InRunnable(this, out, calls, new PacketReader());
-        listenerManager = new ListenerManager(this);
+    	in = new InRunnable(this, out, calls, new PacketReader());
+    	listenerManager = new ListenerManager(this);
+    	
         try {
-            final Connection c = connectionManager.getInitConnection();
-            if (c == null) {
-                throw new IllegalStateException("Unable to connect to cluster");
-            }
-        } catch (IOException e) {
-            throw new ClusterClientException(e.getMessage(), e);
-        }
-        new Thread(out, prefix + "OutThread").start();
-        new Thread(in, prefix + "InThread").start();
-        new Thread(listenerManager, prefix + "Listener").start();
-        mapLockProxy = getMap(Prefix.HAZELCAST + "Locks");
-        clusterClientProxy = new ClusterClientProxy(this);
-        partitionClientProxy = new PartitionClientProxy(this);
-        if (automatic) {
-            this.getCluster().addMembershipListener(connectionManager);
-            connectionManager.updateMembers();
-        }
-        lifecycleService.fireLifecycleEvent(STARTED);
-        connectionManager.scheduleHeartbeatTimerTask();
+    		final Connection c = connectionManager.getInitConnection();
+    		if (c == null) {
+    			throw new IllegalStateException("Unable to connect to cluster");
+    		}
+    	} catch (IOException e) {
+    		throw new ClusterClientException(e.getMessage(), e);
+    	}
+    	
+    	final String prefix = "hz.client." + this.id + ".";
+    	new Thread(out, prefix + "OutThread").start();
+    	new Thread(in, prefix + "InThread").start();
+    	new Thread(listenerManager, prefix + "Listener").start();
+    	mapLockProxy = getMap(Prefix.HAZELCAST + "Locks");
+    	clusterClientProxy = new ClusterClientProxy(this);
+    	partitionClientProxy = new PartitionClientProxy(this);
+    	if (automatic) {
+    		this.getCluster().addMembershipListener(connectionManager);
+    		connectionManager.updateMembers();
+    	}
+    	lifecycleService.fireLifecycleEvent(STARTED);
+    	connectionManager.scheduleHeartbeatTimerTask();
     }
 
     GroupConfig groupConfig() {
@@ -143,6 +153,11 @@ public class HazelcastClient implements HazelcastInstance {
      */
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String... addresses) {
         return newHazelcastClient(ClientProperties.createBaseClientProperties(groupName, groupPassword), addresses);
+    }
+    
+    public static HazelcastClient newHazelcastClient(Credentials credentials, String address) {
+    	InetSocketAddress a = parse(address);
+    	return new HazelcastClient(new ClientProperties(), credentials, false, new InetSocketAddress[]{a}, false);
     }
 
     /**

@@ -184,7 +184,12 @@ public class ProxyHelper {
         if (response.getValue() != null) {
             Object result = toObject(response.getValue());
             if (result instanceof ClientServiceException) {
-                throw new RuntimeException(((ClientServiceException) result).getThrowable());
+            	final ClientServiceException ex = (ClientServiceException) result;
+            	if(ex.getThrowable() instanceof RuntimeException) {
+            		throw (RuntimeException) ex.getThrowable();
+            	} else {
+            		throw new RuntimeException(ex.getThrowable());
+            	}
             }
             return result;
         }

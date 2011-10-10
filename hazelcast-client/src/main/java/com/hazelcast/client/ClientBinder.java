@@ -1,6 +1,8 @@
 package com.hazelcast.client;
 
-import java.io.IOException;/*
+import java.io.IOException;
+import com.hazelcast.security.Credentials;
+/*
  * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,5 +20,5 @@ import java.io.IOException;/*
  */
 
 public interface ClientBinder {
-    public void bind(Connection connection) throws IOException;
+    public void bind(Connection connection, Credentials credentials) throws IOException;
 }

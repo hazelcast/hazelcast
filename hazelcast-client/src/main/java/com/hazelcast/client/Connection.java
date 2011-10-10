@@ -25,7 +25,6 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Holds the socket to one of the members of Hazelcast Cluster.

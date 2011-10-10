@@ -19,6 +19,9 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
+import com.hazelcast.security.Credentials;
+import com.hazelcast.security.UsernamePasswordCredentials;
+
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -33,6 +36,8 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class ConnectionManagerTest {
+    final Credentials credentials = new UsernamePasswordCredentials();
+
     private LifecycleServiceClientImpl createLifecycleServiceClientImpl(HazelcastClient hazelcastClient, final List<LifecycleState> lifecycleEvents) {
         final LifecycleServiceClientImpl lifecycleService = new LifecycleServiceClientImpl(hazelcastClient);
         lifecycleService.addLifecycleListener(new LifecycleListener() {
@@ -52,7 +57,7 @@ public class ConnectionManagerTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
+        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -62,7 +67,7 @@ public class ConnectionManagerTest {
         connectionManager.setBinder(binder);
         connectionManager.getConnection();
         assertEquals(connection, connectionManager.getConnection());
-        verify(binder).bind(connection);
+        verify(binder).bind(connection, credentials);
         assertEquals(connection, connectionManager.getConnection());
         assertEquals(1, latch.getCount());
         assertArrayEquals(new Object[]{LifecycleState.CLIENT_CONNECTION_OPENING}, lifecycleEvents.toArray());
@@ -74,7 +79,7 @@ public class ConnectionManagerTest {
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
+        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 return null;
             }
@@ -95,7 +100,7 @@ public class ConnectionManagerTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
+        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -121,7 +126,7 @@ public class ConnectionManagerTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
+        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -146,7 +151,7 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
+        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -171,7 +176,7 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
+        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -210,7 +215,7 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
+        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -233,7 +238,7 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, lifecycleService, inetSocketAddress, 60000) {
+        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
             protected Connection getNextConnection() {
                 return connection;
             }
