@@ -429,8 +429,16 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     private void handleAWS(Node node) {
         final Join join = config.getNetworkConfig().getJoin();
-        boolean enabled = isEnabled(node);
-        join.getAwsConfig().setEnabled(enabled);
+        final NamedNodeMap atts = node.getAttributes();
+        for (int a = 0; a < atts.getLength(); a++) {
+            final Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+                join.getAwsConfig().setEnabled(true);
+            } else if (att.getNodeName().equals("conn-timeout-seconds")) {
+                join.getTcpIpConfig().setConnectionTimeoutSeconds(getIntegerValue("conn-timeout-seconds", value, 5));
+            }
+        }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
             if ("secret-key".equals(cleanNodeName(n.getNodeName()))) {
@@ -447,18 +455,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 join.getAwsConfig().setTagValue(value);
             }
         }
-    }
-
-    private boolean isEnabled(Node node) {
-        final NamedNodeMap atts = node.getAttributes();
-        for (int a = 0; a < atts.getLength(); a++) {
-            final Node att = atts.item(a);
-            final String value = getTextContent(att).trim();
-            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
-                return checkTrue(value);
-            }
-        }
-        return false;
     }
 
     private void handleMulticast(final org.w3c.dom.Node node) {
