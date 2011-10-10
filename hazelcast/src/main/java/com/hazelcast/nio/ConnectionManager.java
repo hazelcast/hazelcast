@@ -41,6 +41,8 @@ public class ConnectionManager {
 
     final int SOCKET_SEND_BUFFER_SIZE;
 
+    final int SOCKET_LINGER_SECONDS;
+
     final boolean SOCKET_KEEP_ALIVE;
 
     final boolean SOCKET_NO_DELAY;
@@ -68,6 +70,7 @@ public class ConnectionManager {
         this.logger = node.getLogger(ConnectionManager.class.getName());
         this.SOCKET_RECEIVE_BUFFER_SIZE = this.node.getGroupProperties().SOCKET_RECEIVE_BUFFER_SIZE.getInteger() * KILO_BYTE;
         this.SOCKET_SEND_BUFFER_SIZE = this.node.getGroupProperties().SOCKET_SEND_BUFFER_SIZE.getInteger() * KILO_BYTE;
+        this.SOCKET_LINGER_SECONDS = this.node.getGroupProperties().SOCKET_LINGER_SECONDS.getInteger();
         this.SOCKET_KEEP_ALIVE = this.node.getGroupProperties().SOCKET_KEEP_ALIVE.getBoolean();
         this.SOCKET_NO_DELAY = this.node.getGroupProperties().SOCKET_NO_DELAY.getBoolean();
     }
