@@ -17,10 +17,13 @@
 
 package com.hazelcast.impl;
 
+import javax.security.auth.Subject;
+
 public class CallContext {
     final int threadId;
     final boolean client;
     private volatile TransactionImpl txn = null;
+    private Subject currentSubject = null;
 
     static final CallContext DUMMY_CLIENT = new CallContext(0, true);
 
@@ -55,6 +58,14 @@ public class CallContext {
 
     public void reset() {
         this.txn = null;
+    }
+    
+    public Subject getSubject() {
+    	return currentSubject;
+    }
+    
+    public void setSubject(Subject subject) {
+    	this.currentSubject = subject;
     }
 
     @Override

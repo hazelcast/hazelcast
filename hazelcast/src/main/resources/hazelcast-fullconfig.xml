@@ -203,6 +203,9 @@
         	<class-name>com.hazelcast.examples.DummyStore</class-name>
 <!--         	<factory-class-name>com.hazelcast.examples.DummyStoreFactory</factory-class-name> -->
         	<write-delay-seconds>0</write-delay-seconds>
+        	<properties>
+        		<property name="dummy.property">value</property>
+        	</properties>
         </map-store>
         
         <near-cache>
@@ -230,4 +233,72 @@
            	<class-name>com.hazelcast.examples.MyOwnMergePolicy</class-name>
        	</map-merge-policy>
    	</merge-policies>
+	
+	<security enabled="false">
+		<member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
+			<properties>
+				<property name="property">value</property>
+			</properties>
+		</member-credentials-factory>
+		<member-login-modules>
+			<login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="required">
+				<properties>
+					<property name="property">value</property>
+				</properties>
+			</login-module>
+		</member-login-modules>
+		<client-login-modules>
+			<login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="optional">
+				<properties>
+					<property name="property">value</property>
+				</properties>
+			</login-module>
+			<login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="required">
+				<properties>
+					<property name="property">value</property>
+				</properties>
+			</login-module>
+		</client-login-modules>
+		<client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
+			<properties>
+				<property name="property">value</property>
+			</properties>
+		</client-permission-policy>
+		<client-permissions>
+			<all-permissions />
+			<map-permission name="default" principal="dev">
+				<actions>
+					<action>create</action>
+					<action>destroy</action>
+					<action>put</action>
+					<action>get</action>
+				</actions>
+			</map-permission>
+			<map-permission name="custom" principal="dev">
+				<endpoints>
+					<endpoint>127.0.0.1</endpoint>
+				</endpoints>
+				<actions>
+					<action>create</action>
+					<action>destroy</action>
+					<action>put</action>
+					<action>get</action>
+				</actions>
+			</map-permission>
+			<queue-permission name="default" principal="dev">
+				<endpoints>
+					<endpoint>127.0.0.1</endpoint>
+				</endpoints>
+				<actions>
+					<action>create</action>
+					<action>destroy</action>
+					<action>offer</action>
+					<action>poll</action>
+				</actions>
+			</queue-permission>
+			<listener-permisson name="instance"/>
+			<transaction-permission />
+		</client-permissions>
+	</security>
+	   	
 </hazelcast>

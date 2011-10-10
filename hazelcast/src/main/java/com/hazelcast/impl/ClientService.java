@@ -29,14 +29,20 @@ import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.Credentials;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.DistributedTimeoutException;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
+
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.impl.BaseManager.getInstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
@@ -52,6 +58,7 @@ public class ClientService implements ConnectionListener {
     private final ILogger logger;
     private final int THREAD_COUNT;
     final Worker[] workers;
+    private final IHazelcastFactory factory; 
 
     public ClientService(Node node) {
         this.node = node;
@@ -137,6 +144,8 @@ public class ClientService implements ConnectionListener {
         for (int i = 0; i < THREAD_COUNT; i++) {
             workers[i] = new Worker();
         }
+        
+        this.factory = node.securityContext == null ? node.factory : node.initializer.getSecureHazelcastFactory();
     }
 
     boolean firstCall = true;
@@ -157,7 +166,8 @@ public class ClientService implements ConnectionListener {
         if (clientOperationHandler == null) {
             clientOperationHandler = unknownOperationHandler;
         }
-        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, clientOperationHandler);
+        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, 
+        		clientOperationHandler, clientEndpoint.getSubject());
         clientEndpoint.addRequest(clientRequestHandler);
         if (packet.operation == CONCURRENT_MAP_UNLOCK) {
             node.executorManager.executeNow(clientRequestHandler);
@@ -192,6 +202,7 @@ public class ClientService implements ConnectionListener {
 
         public void run() {
             ThreadContext.get().setCurrentFactory(node.factory);
+//        	ThreadContext.get().setCurrentFactory(factory);
             while (active) {
                 Runnable r = null;
                 try {
@@ -241,6 +252,13 @@ public class ClientService implements ConnectionListener {
             node.executorManager.executeNow(new FallThroughRunnable() {
                 public void doRun() {
                     clientEndpoint.connectionRemoved(connection);
+                    if(node.securityContext != null) {
+                    	try {
+							clientEndpoint.getLoginContext().logout();
+						} catch (LoginException e) {
+							logger.log(Level.WARNING, e.getMessage(), e);
+						}
+                    }
                 }
             });
         }
@@ -309,7 +327,7 @@ public class ClientService implements ConnectionListener {
 
     private class TopicPublishHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            ITopic<Object> topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
+            ITopic<Object> topic = (ITopic) factory.getOrCreateProxyByName(packet.name);
             topic.publish(packet.getKeyData());
         }
 
@@ -343,35 +361,35 @@ public class ClientService implements ConnectionListener {
 
     private class DestroyHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            Instance instance = (Instance) node.factory.getOrCreateProxyByName(packet.name);
+            Instance instance = (Instance) factory.getOrCreateProxyByName(packet.name);
             instance.destroy();
         }
     }
 
     private class NewIdHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            IdGenerator idGen = (IdGenerator) node.factory.getOrCreateProxyByName(packet.name);
+            IdGenerator idGen = (IdGenerator) factory.getOrCreateProxyByName(packet.name);
             packet.setValue(toData(idGen.newId()));
         }
     }
 
     private class MapPutMultiHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            MultiMap multiMap = (MultiMap) node.factory.getOrCreateProxyByName(packet.name);
+            MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
             packet.setValue(toData(multiMap.put(packet.getKeyData(), packet.getValueData())));
         }
     }
 
     private class MapValueCountHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            MultiMap multiMap = (MultiMap) node.factory.getOrCreateProxyByName(packet.name);
+            MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
             packet.setValue(toData(multiMap.valueCount(packet.getKeyData())));
         }
     }
 
     private class MapRemoveMultiHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            MultiMap multiMap = (MultiMap) node.factory.getOrCreateProxyByName(packet.name);
+            MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
             if (packet.getValueData() == null || packet.getValueData().size() == 0) {
                 FactoryImpl.MultiMapProxyImpl mmProxyImpl = (FactoryImpl.MultiMapProxyImpl) multiMap;
                 FactoryImpl.MultiMapProxyImpl.MultiMapReal real = mmProxyImpl.getBase();
@@ -408,7 +426,7 @@ public class ClientService implements ConnectionListener {
         public final void handle(Node node, final Packet packet) {
             try {
                 String name = packet.name;
-                ExecutorService executorService = node.factory.getExecutorService(name);
+                ExecutorService executorService = factory.getExecutorService(name);
                 ClientDistributedTask cdt = (ClientDistributedTask) toObject(packet.getKeyData());
                 DistributedTask task;
                 if (cdt.getKey() != null) {
@@ -451,7 +469,7 @@ public class ClientService implements ConnectionListener {
 
     private class GetInstancesHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            Collection<Instance> instances = node.factory.getInstances();
+            Collection<Instance> instances = factory.getInstances();
             ArrayList<Object> instanceIds = new ArrayList<Object>();
             for (Instance instance : instances) {
                 Object id = instance.getId();
@@ -471,7 +489,7 @@ public class ClientService implements ConnectionListener {
 
     private class GetMembersHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            Cluster cluster = node.factory.getCluster();
+            Cluster cluster = factory.getCluster();
             Set<Member> members = cluster.getMembers();
             Set<Data> setData = new LinkedHashSet<Data>();
             if (members != null) {
@@ -487,7 +505,7 @@ public class ClientService implements ConnectionListener {
 
     private class GetPartitionsHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            PartitionService partitionService = node.factory.getPartitionService();
+            PartitionService partitionService = factory.getPartitionService();
             if (packet.getKeyData() != null && packet.getKeyData().size() > 0) {
                 Object key = toObject(packet.getKeyData());
                 Partition partition = partitionService.getPartition(key);
@@ -510,7 +528,7 @@ public class ClientService implements ConnectionListener {
         abstract Object processCall(AtomicNumberProxy atomicLongProxy, Long value, Long expected);
 
         public void processCall(Node node, Packet packet) {
-            final AtomicNumberProxy atomicLong = (AtomicNumberProxy) node.factory.getOrCreateProxyByName(packet.name);
+            final AtomicNumberProxy atomicLong = (AtomicNumberProxy) factory.getOrCreateProxyByName(packet.name);
             final Long value = (Long) toObject(packet.getValueData());
             final Long expectedValue = (Long) toObject(packet.getKeyData());
             packet.setValue(toData(processCall(atomicLong, value, expectedValue)));
@@ -546,7 +564,7 @@ public class ClientService implements ConnectionListener {
 
         public void processCall(Node node, Packet packet) {
             final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
-            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) node.factory.getCountDownLatch(name);
+            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) factory.getCountDownLatch(name);
             final Integer value = (Integer) toObject(packet.getValueData());
             processCall(packet, cdlProxy, value);
         }
@@ -626,7 +644,7 @@ public class ClientService implements ConnectionListener {
         abstract void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag);
 
         public void processCall(Node node, Packet packet) {
-            final SemaphoreProxy semaphoreProxy = (SemaphoreProxy) node.factory.getSemaphore(packet.name);
+            final SemaphoreProxy semaphoreProxy = (SemaphoreProxy) factory.getSemaphore(packet.name);
             final Integer value = (Integer) toObject(packet.getValueData());
             final boolean flag = (Boolean) toObject(packet.getKeyData());
             processCall(packet, semaphoreProxy, value, flag);
@@ -780,7 +798,7 @@ public class ClientService implements ConnectionListener {
 
     private class GetClusterTimeHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            Cluster cluster = node.factory.getCluster();
+            Cluster cluster = factory.getCluster();
             long clusterTime = cluster.getClusterTime();
             packet.setValue(toData(clusterTime));
         }
@@ -788,15 +806,35 @@ public class ClientService implements ConnectionListener {
 
     class ClientAuthenticateHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            String nodeGroupName = node.factory.getConfig().getGroupConfig().getName();
-            String nodeGroupPassword = node.factory.getConfig().getGroupConfig().getPassword();
-            Object groupName = toObject(packet.getKeyData());
-            Object groupPassword = toObject(packet.getValueData());
-            boolean authenticated = (nodeGroupName.equals(groupName) && nodeGroupPassword.equals(groupPassword));
+            final Credentials credentials = (Credentials) toObject(packet.getValueData());
+            
+            boolean authenticated = false;
+            if(node.securityContext != null) {
+            	final Socket endpointSocket = packet.conn.getSocketChannel().socket();
+            	credentials.setEndpoint(Address.toString(endpointSocket.getInetAddress().getAddress()));
+            	try {
+					LoginContext lc = node.securityContext.createClientLoginContext(credentials);
+					lc.login();
+					getClientEndpoint(packet.conn).setLoginContext(lc);
+					authenticated = true;
+				} catch (LoginException e) {
+					e.printStackTrace();
+					authenticated = false;
+				}
+            	
+            } else {
+            	UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
+            	String nodeGroupName = factory.getConfig().getGroupConfig().getName();
+                String nodeGroupPassword = factory.getConfig().getGroupConfig().getPassword();
+	            authenticated = (nodeGroupName.equals(usernamePasswordCredentials.getUsername()) 
+	            		&& nodeGroupPassword.equals(new String(usernamePasswordCredentials.getPassword())));
+            }
+            
             logger.log((authenticated ? Level.INFO : Level.WARNING), "received auth from " + packet.conn
-                    + ", this group name:" + nodeGroupName + ", auth group name:" + groupName
-                    + ", " + (authenticated ?
-                    "successfully authenticated" : "authentication failed"));
+//            		+ ", this group name:" + nodeGroupName + ", auth group name:" + groupName
+            		+ ", " + (authenticated ?
+            				"successfully authenticated" : "authentication failed"));
+            
             packet.clearForResponse();
             packet.setValue(toData(authenticated));
         }
@@ -813,7 +851,7 @@ public class ClientService implements ConnectionListener {
     private class ClientAddInstanceListenerHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             ClientEndpoint endPoint = getClientEndpoint(packet.conn);
-            node.factory.addInstanceListener(endPoint);
+            factory.addInstanceListener(endPoint);
         }
     }
 
@@ -922,7 +960,7 @@ public class ClientService implements ConnectionListener {
         }
 
         public void processCall(Node node, Packet packet) {
-            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
             long ttl = packet.timeout;
             Data value = processMapOp(map, packet.getKeyData(), packet.getValueData(), ttl);
             packet.clearForResponse();
@@ -952,11 +990,11 @@ public class ClientService implements ConnectionListener {
             InstanceType instanceType = getInstanceType(packet.name);
             Data key = packet.getKeyData();
             if (instanceType == InstanceType.MAP) {
-                IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+                IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
                 packet.setKey(null);
                 packet.setValue((Data) map.get(key));
             } else if (instanceType == InstanceType.MULTIMAP) {
-                FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+                FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) factory.getOrCreateProxyByName(packet.name);
                 FactoryImpl.MultiMapProxyImpl.MultiMapReal real = multiMapImpl.getBase();
                 MProxy mapProxy = real.mapProxy;
                 packet.setKey(null);
@@ -1007,13 +1045,13 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             InstanceType instanceType = getInstanceType(packet.name);
             if (instanceType.equals(InstanceType.MAP)) {
-                IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+                IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
                 packet.setValue(toData(map.containsKey(packet.getKeyData())));
             } else if (instanceType.equals(InstanceType.LIST) || instanceType.equals(InstanceType.SET)) {
-                Collection<Object> collection = (Collection) node.factory.getOrCreateProxyByName(packet.name);
+                Collection<Object> collection = (Collection) factory.getOrCreateProxyByName(packet.name);
                 packet.setValue(toData(collection.contains(packet.getKeyData())));
             } else if (instanceType.equals(InstanceType.MULTIMAP)) {
-                MultiMap multiMap = (MultiMap) node.factory.getOrCreateProxyByName(packet.name);
+                MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
                 packet.setValue(toData(multiMap.containsKey(packet.getKeyData())));
             }
         }
@@ -1027,10 +1065,10 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             InstanceType instanceType = getInstanceType(packet.name);
             if (instanceType.equals(InstanceType.MAP)) {
-                IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+                IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
                 packet.setValue(toData(map.containsValue(packet.getValueData())));
             } else if (instanceType.equals(InstanceType.MULTIMAP)) {
-                MultiMap multiMap = (MultiMap) node.factory.getOrCreateProxyByName(packet.name);
+                MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
                 if (packet.getKeyData() != null && packet.getKeyData().size() > 0) {
                     packet.setValue(toData(multiMap.containsEntry(packet.getKeyData(), packet.getValueData())));
                 } else {
@@ -1043,25 +1081,25 @@ public class ClientService implements ConnectionListener {
     private class MapSizeHandler extends ClientCollectionOperationHandler {
         @Override
         public void doListOp(Node node, Packet packet) {
-            IList<Object> list = (IList) node.factory.getOrCreateProxyByName(packet.name);
+            IList<Object> list = (IList) factory.getOrCreateProxyByName(packet.name);
             packet.setValue(toData(list.size()));
         }
 
         @Override
         public void doMapOp(Node node, Packet packet) {
-            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
             packet.setValue(toData(map.size()));
         }
 
         @Override
         public void doSetOp(Node node, Packet packet) {
-            ISet<Object> set = (ISet) node.factory.getOrCreateProxyByName(packet.name);
+            ISet<Object> set = (ISet) factory.getOrCreateProxyByName(packet.name);
             packet.setValue(toData(set.size()));
         }
 
         @Override
         public void doMultiMapOp(Node node, Packet packet) {
-            MultiMap multiMap = (MultiMap) node.factory.getOrCreateProxyByName(packet.name);
+            MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
             packet.setValue(toData(multiMap.size()));
         }
 
@@ -1083,9 +1121,9 @@ public class ClientService implements ConnectionListener {
             Data value = null;
             IMap<Object, Object> map = null;
             if (type == Instance.InstanceType.MAP) {
-                map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+                map = (IMap) factory.getOrCreateProxyByName(packet.name);
             } else {
-                MultiMapProxy multiMapProxy = (MultiMapProxy) node.factory.getOrCreateProxyByName(packet.name);
+                MultiMapProxy multiMapProxy = (MultiMapProxy) factory.getOrCreateProxyByName(packet.name);
                 map = multiMapProxy.getMProxy();
             }
             if (timeout == -1) {
@@ -1111,9 +1149,9 @@ public class ClientService implements ConnectionListener {
             Instance.InstanceType type = getInstanceType(packet.name);
             IMap<Object, Object> map = null;
             if (type == Instance.InstanceType.MAP) {
-                map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+                map = (IMap) factory.getOrCreateProxyByName(packet.name);
             } else {
-                MultiMapProxy multiMapProxy = (MultiMapProxy) node.factory.getOrCreateProxyByName(packet.name);
+                MultiMapProxy multiMapProxy = (MultiMapProxy) factory.getOrCreateProxyByName(packet.name);
                 map = multiMapProxy.getMProxy();
             }
             Data value = processMapOp(map, packet.getKeyData(), packet.getValueData());
@@ -1129,7 +1167,7 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void processCall(Node node, Packet packet) {
-            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
             long timeout = packet.timeout;
             Data value = toData(map.lockMap(timeout, (TimeUnit) toObject(packet.getValueData())));
             packet.setValue(value);
@@ -1144,7 +1182,7 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void processCall(Node node, Packet packet) {
-            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
             Data value = processMapOp(map, packet.getKeyData(), packet.getValueData());
             packet.clearForResponse();
             packet.setValue(value);
@@ -1189,25 +1227,25 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void doListOp(final Node node, final Packet packet) {
-            IMap mapProxy = (IMap) node.factory.getOrCreateProxyByName(Prefix.MAP + Prefix.QUEUE + packet.name);
+            IMap mapProxy = (IMap) factory.getOrCreateProxyByName(Prefix.MAP + Prefix.QUEUE + packet.name);
             packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData()));
         }
 
         @Override
         public void doMapOp(final Node node, final Packet packet) {
-            packet.setValue(getMapKeys((IMap) node.factory.getOrCreateProxyByName(packet.name), packet.getKeyData(), packet.getValueData()));
+            packet.setValue(getMapKeys((IMap) factory.getOrCreateProxyByName(packet.name), packet.getKeyData(), packet.getValueData()));
         }
 
         @Override
         public void doSetOp(final Node node, final Packet packet) {
-            final FactoryImpl.SetProxyImpl collectionProxy = (FactoryImpl.SetProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+            final FactoryImpl.SetProxyImpl collectionProxy = (FactoryImpl.SetProxyImpl) factory.getOrCreateProxyByName(packet.name);
             final MProxy mapProxy = ((SetProxyReal) collectionProxy.getBase()).mapProxy;
             packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData()));
         }
 
         @Override
         public void doMultiMapOp(final Node node, final Packet packet) {
-            final FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+            final FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) factory.getOrCreateProxyByName(packet.name);
             final FactoryImpl.MultiMapProxyImpl.MultiMapReal real = multiMapImpl.getBase();
             final MProxy mapProxy = real.mapProxy;
             final Data value = getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData());
@@ -1217,7 +1255,7 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void doQueueOp(final Node node, final Packet packet) {
-            final IQueue queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
+            final IQueue queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
         }
     }
 
@@ -1241,24 +1279,24 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void doListOp(Node node, Packet packet) {
-            IMap mapProxy = (IMap) node.factory.getOrCreateProxyByName(Prefix.MAP + Prefix.QUEUE + packet.name);
+            IMap mapProxy = (IMap) factory.getOrCreateProxyByName(Prefix.MAP + Prefix.QUEUE + packet.name);
             packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new ArrayList<Data>()));
         }
 
         @Override
         public void doMapOp(Node node, Packet packet) {
-            packet.setValue(getMapKeys((IMap) node.factory.getOrCreateProxyByName(packet.name), packet.getKeyData(), packet.getValueData(), new HashSet<Data>()));
+            packet.setValue(getMapKeys((IMap) factory.getOrCreateProxyByName(packet.name), packet.getKeyData(), packet.getValueData(), new HashSet<Data>()));
         }
 
         @Override
         public void doSetOp(Node node, Packet packet) {
-            FactoryImpl.SetProxyImpl collectionProxy = (SetProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+            FactoryImpl.SetProxyImpl collectionProxy = (SetProxyImpl) factory.getOrCreateProxyByName(packet.name);
             MProxy mapProxy = ((SetProxyReal) collectionProxy.getBase()).mapProxy;
             packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>()));
         }
 
         public void doMultiMapOp(Node node, Packet packet) {
-            FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+            FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) factory.getOrCreateProxyByName(packet.name);
             FactoryImpl.MultiMapProxyImpl.MultiMapReal real = multiMapImpl.getBase();
             MProxy mapProxy = real.mapProxy;
             Data value = getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>());
@@ -1267,7 +1305,7 @@ public class ClientService implements ConnectionListener {
         }
 
         public void doQueueOp(Node node, Packet packet) {
-            IQueue queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
+            IQueue queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
         }
     }
 
@@ -1276,24 +1314,24 @@ public class ClientService implements ConnectionListener {
             final ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
             boolean includeValue = (int) packet.longValue == 1;
             if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
-                IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+                IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
                 clientEndpoint.addThisAsListener(map, packet.getKeyData(), includeValue);
             } else if (getInstanceType(packet.name).equals(InstanceType.LIST)) {
-                ListProxyImpl listProxy = (ListProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
-                IMap map = (IMap) node.factory.getOrCreateProxyByName(Prefix.MAP + (String) listProxy.getId());
+                ListProxyImpl listProxy = (ListProxyImpl) factory.getOrCreateProxyByName(packet.name);
+                IMap map = (IMap) factory.getOrCreateProxyByName(Prefix.MAP + (String) listProxy.getId());
                 clientEndpoint.addThisAsListener(map, null, true);
             } else if (getInstanceType(packet.name).equals(InstanceType.SET)) {
-                FactoryImpl.SetProxyImpl collectionProxy = (FactoryImpl.SetProxyImpl) node.factory.getOrCreateProxyByName(packet.name);
+                FactoryImpl.SetProxyImpl collectionProxy = (FactoryImpl.SetProxyImpl) factory.getOrCreateProxyByName(packet.name);
                 IMap map = ((SetProxyReal) collectionProxy.getBase()).mapProxy;
                 clientEndpoint.addThisAsListener(map, null, includeValue);
             } else if (getInstanceType(packet.name).equals(InstanceType.QUEUE)) {
-                IQueue<Object> queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
+                IQueue<Object> queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
                 final String packetName = packet.name;
                 ItemListener itemListener = new ClientItemListener(clientEndpoint, packetName);
                 queue.addItemListener(itemListener, includeValue);
                 clientEndpoint.queueItemListeners.put(queue, itemListener);
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
-                ITopic<Object> topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
+                ITopic<Object> topic = (ITopic) factory.getOrCreateProxyByName(packet.name);
                 final String packetName = packet.name;
                 MessageListener<Object> messageListener = new ClientMessageListener<Object>(clientEndpoint, packetName);
                 topic.addMessageListener(messageListener);
@@ -1349,13 +1387,13 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
             if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
-                IMap map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+                IMap map = (IMap) factory.getOrCreateProxyByName(packet.name);
                 clientEndpoint.removeThisListener(map, packet.getKeyData());
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
-                ITopic topic = (ITopic) node.factory.getOrCreateProxyByName(packet.name);
+                ITopic topic = (ITopic) factory.getOrCreateProxyByName(packet.name);
                 topic.removeMessageListener(clientEndpoint.messageListeners.remove(topic));
             } else if (getInstanceType(packet.name).equals(InstanceType.QUEUE)) {
-                IQueue queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
+                IQueue queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
                 queue.removeItemListener(clientEndpoint.queueItemListeners.remove(queue));
             }
         }
@@ -1364,7 +1402,7 @@ public class ClientService implements ConnectionListener {
     private class ListAddHandler extends ClientOperationHandler {
         @Override
         public void processCall(Node node, Packet packet) {
-            IList list = (IList) node.factory.getOrCreateProxyByName(packet.name);
+            IList list = (IList) factory.getOrCreateProxyByName(packet.name);
             Boolean value = list.add(packet.getKeyData());
             packet.clearForResponse();
             packet.setValue(toData(value));
@@ -1374,7 +1412,7 @@ public class ClientService implements ConnectionListener {
     private class SetAddHandler extends ClientOperationHandler {
         @Override
         public void processCall(Node node, Packet packet) {
-            ISet list = (ISet) node.factory.getOrCreateProxyByName(packet.name);
+            ISet list = (ISet) factory.getOrCreateProxyByName(packet.name);
             Boolean value = list.add(packet.getKeyData());
             packet.clearForResponse();
             packet.setValue(toData(value));
@@ -1383,7 +1421,7 @@ public class ClientService implements ConnectionListener {
 
     private class MapItemRemoveHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            Collection collection = (Collection) node.factory.getOrCreateProxyByName(packet.name);
+            Collection collection = (Collection) factory.getOrCreateProxyByName(packet.name);
             Data value = toData(collection.remove(packet.getKeyData()));
             packet.clearForResponse();
             packet.setValue(value);
@@ -1435,7 +1473,7 @@ public class ClientService implements ConnectionListener {
         public abstract Data processMapOp(IMap<Object, Object> map, Data key, Data value);
 
         public void processCall(Node node, Packet packet) {
-            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
+            IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
             Data value = processMapOp(map, packet.getKeyData(), packet.getValueData());
             packet.clearForResponse();
             packet.setValue(value);
@@ -1443,9 +1481,9 @@ public class ClientService implements ConnectionListener {
     }
 
     private abstract class ClientMapOperationHandlerWithTTL extends ClientOperationHandler {
-        public void processCall(Node node, Packet packet) {
-            IMap<Object, Object> map = (IMap) node.factory.getOrCreateProxyByName(packet.name);
-            long ttl = packet.timeout;
+        public void processCall(Node node, final Packet packet) {
+            final IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
+            final long ttl = packet.timeout;
             Data value = processMapOp(map, packet.getKeyData(), packet.getValueData(), ttl);
             packet.clearForResponse();
             packet.setValue(value);
@@ -1458,7 +1496,7 @@ public class ClientService implements ConnectionListener {
         public abstract Data processQueueOp(IQueue<Object> queue, Data key, Data value);
 
         public void processCall(Node node, Packet packet) {
-            IQueue<Object> queue = (IQueue) node.factory.getOrCreateProxyByName(packet.name);
+            IQueue<Object> queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
             Data value = processQueueOp(queue, packet.getKeyData(), packet.getValueData());
             packet.clearForResponse();
             packet.setValue(value);
@@ -1497,7 +1535,7 @@ public class ClientService implements ConnectionListener {
         public abstract void processTransactionOp(Transaction transaction);
 
         public void processCall(Node node, Packet packet) {
-            Transaction transaction = node.factory.getTransaction();
+            Transaction transaction = factory.getTransaction();
             processTransactionOp(transaction);
         }
     }

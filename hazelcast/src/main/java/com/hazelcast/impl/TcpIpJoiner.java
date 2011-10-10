@@ -63,13 +63,13 @@ public class TcpIpJoiner extends AbstractJoiner {
                 conn = node.connectionManager.getOrConnect(requiredAddress);
                 Thread.sleep(2000L);
             }
-            while (!joined.get()) {
+            while (node.isActive() && !joined.get()) {
                 final Connection connection = node.connectionManager.getOrConnect(requiredAddress);
                 if (connection == null) {
                     joinViaRequiredMember(joined);
                 }
                 logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
-                node.clusterManager.sendJoinRequest(requiredAddress);
+                node.clusterManager.sendJoinRequest(requiredAddress, true);
                 Thread.sleep(3000L);
             }
         } catch (final Exception e) {
@@ -150,7 +150,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     if (conn != null) {
                         foundConnection = true;
                         logger.log(Level.FINEST, "found and sending join request for " + possibleAddress);
-                        node.clusterManager.sendJoinRequest(possibleAddress);
+                        node.clusterManager.sendJoinRequest(possibleAddress, true);
                     }
                 }
             }
@@ -188,7 +188,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                                 }
                             }
                             int waitCount = 0;
-                            while (waitCount++ < 10) {
+                            while (node.isActive() && waitCount++ < 10) {
                                 Thread.sleep(1000L);
                                 if (responseCounter.get() == 0) {
                                     if (approved) {
@@ -228,11 +228,11 @@ public class TcpIpJoiner extends AbstractJoiner {
             return;
         }
         logger.log(Level.FINEST, node.getThisAddress() + " joining to master " + node.getMasterAddress() + ", group " + node.getConfig().getGroupConfig().getName());
-        while (!node.joined()) {
+        while (node.isActive() && !node.joined()) {
             Thread.sleep(1000L);
             final Address master = node.getMasterAddress();
             if (master != null) {
-                node.clusterManager.sendJoinRequest(master);
+                node.clusterManager.sendJoinRequest(master, true);
                 if (requestCount++ > node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) {
                     logger.log(Level.WARNING, "Couldn't join to the master : " + master);
                     return;

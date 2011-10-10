@@ -95,7 +95,7 @@ public class XMLConfigBuilderTest {
     }
 
     @Test
-    public void testXSDFullConfigXML() throws SAXException, IOException {
+    public void testFullConfigXML() throws SAXException, IOException {
         testXSDConfigXML("hazelcast-fullconfig.xml");
     }
 

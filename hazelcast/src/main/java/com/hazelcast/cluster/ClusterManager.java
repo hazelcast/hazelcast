@@ -22,7 +22,9 @@ import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.Call;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.ScheduledAction;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
+import com.hazelcast.security.Credentials;
 import com.hazelcast.util.Prioritized;
 
 import java.io.DataInput;
@@ -31,6 +33,9 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.util.*;
 import java.util.logging.Level;
+
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -60,9 +65,12 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
 
     private long lastHeartbeat = 0;
+    
+    final ILogger securityLogger ;
 
     public ClusterManager(final Node node) {
         super(node);
+        securityLogger = node.loggingService.getLogger("com.hazelcast.security");
         WAIT_MILLIS_BEFORE_JOIN = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         MAX_WAIT_SECONDS_BEFORE_JOIN = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger();
         MAX_NO_HEARTBEAT_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
@@ -385,7 +393,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             node.setMasterAddress(master.address);
             Connection connMaster = node.connectionManager.getOrConnect(master.address);
             if (connMaster != null) {
-                sendJoinRequest(master.address);
+                sendJoinRequest(master.address, true);
             }
         }
     }
@@ -575,6 +583,26 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 }
             }
             if (isMaster() && node.joined() && node.isActive()) {
+            	final MemberInfo newMemberInfo = new MemberInfo(joinRequest.address, joinRequest.nodeType);
+            	if(node.securityContext != null && !setJoins.contains(newMemberInfo)) {
+            		final Credentials cr = joinRequest.getCredentials();
+            		if(cr == null) {
+            			securityLogger.log(Level.SEVERE, "Expecting security credentials " +
+            					"but credentials could not be found in JoinRequest!");
+            			sendAuthFail(conn);
+            			return;
+            		} else {
+            			try {
+            				LoginContext lc = node.securityContext.createMemberLoginContext(cr);
+							lc.login();
+						} catch (LoginException e) {
+							securityLogger.log(Level.SEVERE, "Authentication has failed for " + cr.getName() + " => (" + e.getMessage() + ")");
+							securityLogger.log(Level.FINEST, e.getMessage(), e);
+							sendAuthFail(conn);
+							return;
+						}
+            		}
+            	}
                 if (joinRequest.to != null && !joinRequest.to.equals(thisAddress)) {
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
                     return;
@@ -584,7 +612,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     if (firstJoinRequest != 0 && now - firstJoinRequest >= MAX_WAIT_SECONDS_BEFORE_JOIN * 1000) {
                         startJoin();
                     } else {
-                        MemberInfo newMemberInfo = new MemberInfo(joinRequest.address, joinRequest.nodeType);
                         if (setJoins.add(newMemberInfo)) {
                             sendProcessableTo(new Master(node.getMasterAddress()), conn);
                             if (firstJoinRequest == 0) {
@@ -603,6 +630,22 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         } else {
             conn.close();
         }
+    }
+    
+    public static class AuthenticationFailureProcessable extends AbstractRemotelyProcessable implements RemotelyProcessable {
+		public void process() {
+			node.executorManager.executeNow(new Runnable() {
+				public void run() {
+					final ILogger logger = node.loggingService.getLogger("com.hazelcast.security");
+					logger.log(Level.SEVERE, "Authentication failed on master node! Node is going to shutdown now!");
+					node.shutdown(true);
+				}
+			});
+		}
+    }
+    
+    private void sendAuthFail(Connection conn) {
+    	sendProcessableTo(new AuthenticationFailureProcessable(), conn);
     }
 
     @Override
@@ -866,10 +909,14 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     public void sendJoinRequest(Address toAddress) {
+    	sendJoinRequest(toAddress, false);
+    }
+    
+    public void sendJoinRequest(Address toAddress, boolean withCredentials) {
         if (toAddress == null) {
             toAddress = node.getMasterAddress();
         }
-        sendProcessableTo(node.createJoinInfo(), toAddress);
+        sendProcessableTo(node.createJoinInfo(withCredentials), toAddress);
     }
 
     public void registerScheduledAction(ScheduledAction scheduledAction) {

@@ -20,6 +20,8 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.NodeType;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.security.Credentials;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -33,6 +35,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
     public byte packetVersion;
     public int buildNumber;
     public Config config;
+    private Credentials credentials;
 
     public JoinRequest() {
         super();
@@ -66,6 +69,11 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         nodeType = NodeType.create(in.readInt());
         config = new Config();
         config.readData(in);
+        boolean hasCredentials = in.readBoolean();
+        if(hasCredentials) {
+        	credentials = (Credentials) SerializationHelper.readObject(in);
+        	credentials.setEndpoint(address.getHost());
+        }
     }
 
     @Override
@@ -80,7 +88,20 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         address.writeData(out);
         out.writeInt(nodeType.getValue());
         config.writeData(out);
+        boolean hasCredentials = credentials != null;
+        out.writeBoolean(hasCredentials);
+        if(hasCredentials) {
+        	SerializationHelper.writeObject(out, credentials);
+        }
     }
+    
+    public void setCredentials(Credentials credentials) {
+		this.credentials = credentials;
+	}
+    
+    public Credentials getCredentials() {
+		return credentials;
+	}
 
     @Override
     public String toString() {

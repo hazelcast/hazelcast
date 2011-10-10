@@ -15,12 +15,17 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.security;
 
-public class NodeFactory {
-    Node newNode(FactoryImpl factory) {
-        ConcurrentMapManager concurrentMapManager;
-        BlockingQueueManager blockingQueueManager;
-        return null;
-    }
+import java.util.Properties;
+
+import com.hazelcast.config.GroupConfig;
+
+public interface ICredentialsFactory {
+	
+	void configure(GroupConfig groupConfig, Properties properties);
+
+	Credentials newCredentials();
+
+	void destroy();
 }

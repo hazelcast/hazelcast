@@ -17,6 +17,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.impl.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -205,11 +207,15 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleSemaphore(node);
             } else if ("merge-policies".equals(nodeName)) {
                 handleMergePolicies(node);
+            } else if ("security".equals(nodeName)) {
+                handleSecurity(node);
+            } else if("instance-name".equals(nodeName)) {
+            	config.setInstanceName(getTextContent(node));
             }
         }
     }
 
-    public void handleWanReplication(final org.w3c.dom.Node node) throws Exception {
+    private void handleWanReplication(final org.w3c.dom.Node node) throws Exception {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
         final WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
@@ -246,7 +252,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         config.addWanReplicationConfig(wanReplicationConfig);
     }
 
-    public void handleNetwork(final org.w3c.dom.Node node) throws Exception {
+    private void handleNetwork(final org.w3c.dom.Node node) throws Exception {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());
             if ("port".equals(nodeName)) {
@@ -276,7 +282,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    public String getTextContent(final Node node) {
+    protected String getTextContent(final Node node) {
         if (domLevel3) {
             return node.getTextContent();
         } else {
@@ -284,12 +290,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    public void handleExecutor(final org.w3c.dom.Node node) throws Exception {
+    private void handleExecutor(final org.w3c.dom.Node node) throws Exception {
         final ExecutorConfig executorConfig = new ExecutorConfig();
         handleViaReflection(node, config, executorConfig);
     }
 
-    public void handleGroup(final org.w3c.dom.Node node) {
+    private void handleGroup(final org.w3c.dom.Node node) {
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
             final String nodeName = cleanNodeName(n.getNodeName());
@@ -301,7 +307,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    public void handleProperties(final org.w3c.dom.Node node, Properties properties) {
+    private void handleProperties(final org.w3c.dom.Node node, Properties properties) {
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             if (n.getNodeType() == org.w3c.dom.Node.TEXT_NODE
                     || n.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
@@ -537,7 +543,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    public void handleQueue(final org.w3c.dom.Node node) {
+    private void handleQueue(final org.w3c.dom.Node node) {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
         final QueueConfig qConfig = new QueueConfig();
@@ -560,7 +566,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         return getTextContent(attNode);
     }
 
-    public void handleMap(final org.w3c.dom.Node node) throws Exception {
+    private void handleMap(final org.w3c.dom.Node node) throws Exception {
         final String name = getAttribute(node, "name");
         final MapConfig mapConfig = new MapConfig();
         mapConfig.setName(name);
@@ -649,20 +655,21 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(n.getNodeName());
-            final String value = getTextContent(n).trim();
             if ("class-name".equals(nodeName)) {
-                mapStoreConfig.setClassName(value);
+                mapStoreConfig.setClassName(getTextContent(n).trim());
             } else if ("factory-class-name".equals(nodeName)) {
-                mapStoreConfig.setFactoryClassName(value);
+                mapStoreConfig.setFactoryClassName(getTextContent(n).trim());
             } else if ("write-delay-seconds".equals(nodeName)) {
-                mapStoreConfig.setWriteDelaySeconds(getIntegerValue("write-delay-seconds", value, MapStoreConfig.DEFAULT_WRITE_DELAY_SECONDS));
+                mapStoreConfig.setWriteDelaySeconds(getIntegerValue("write-delay-seconds", getTextContent(n).trim(), 
+                		MapStoreConfig.DEFAULT_WRITE_DELAY_SECONDS));
+            } else if("properties".equals(nodeName)) {
+            	handleProperties(n, mapStoreConfig.getProperties());
             }
         }
-        handleProperties(node, mapStoreConfig.getProperties());
         return mapStoreConfig;
     }
 
-    public void handleTopic(final org.w3c.dom.Node node) {
+    private void handleTopic(final org.w3c.dom.Node node) {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
         final TopicConfig tConfig = new TopicConfig();
@@ -676,7 +683,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         config.addTopicConfig(tConfig);
     }
 
-    public void handleSemaphore(final org.w3c.dom.Node node) {
+    private void handleSemaphore(final org.w3c.dom.Node node) {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
         final SemaphoreConfig sConfig = new SemaphoreConfig(name);
@@ -703,12 +710,181 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         config.addSemaphoreConfig(sConfig);
     }
 
-    public void handleMergePolicies(final org.w3c.dom.Node node) throws Exception {
+    private void handleMergePolicies(final org.w3c.dom.Node node) throws Exception {
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(n.getNodeName());
             if (nodeName.equals("map-merge-policy")) {
                 handleViaReflection(n, config, new MergePolicyConfig());
             }
         }
+    }
+    
+    private void handleSecurity(final org.w3c.dom.Node node) throws Exception {
+    	final NamedNodeMap atts = node.getAttributes();
+    	final Node enabledNode = atts.getNamedItem("enabled");
+    	final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim())
+    			: false;
+    	config.getSecurityConfig().setEnabled(enabled);
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(child.getNodeName());
+            if ("member-credentials-factory".equals(nodeName)) {
+            	handleCredentialsFactory(child);
+            } else if ("member-login-modules".equals(nodeName)) {
+                handleLoginModules(child, true);
+            } else if ("client-login-modules".equals(nodeName)) {
+                handleLoginModules(child, false);
+            } else if ("client-permission-policy".equals(nodeName)) {
+                handlePermissionPolicy(child);
+            } else if ("client-permissions".equals(nodeName)) {
+                handleSecurityPermissions(child);
+            }
+        }
+    }
+    
+    private void handleCredentialsFactory(final org.w3c.dom.Node node) throws Exception {
+    	final NamedNodeMap attrs = node.getAttributes();
+    	Node classNameNode = attrs.getNamedItem("class-name");
+    	String className = getTextContent(classNameNode);
+    	
+    	final SecurityConfig cfg = config.getSecurityConfig();
+    	final CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig(className);
+    	cfg.setMemberCredentialsConfig(credentialsFactoryConfig);
+    	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(child.getNodeName());
+            if ("properties".equals(nodeName)) {
+                handleProperties(child, credentialsFactoryConfig.getProperties());
+                break;
+            }
+        }
+    }
+    
+    private void handleLoginModules(final org.w3c.dom.Node node, boolean member) throws Exception {
+    	final SecurityConfig cfg = config.getSecurityConfig(); 
+    	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(child.getNodeName());
+            if ("login-module".equals(nodeName)) {
+            	LoginModuleConfig lm = handleLoginModule(child);
+            	if(member) {
+            		cfg.addMemberLoginModuleConfig(lm);
+            	} else {
+            		cfg.addClientLoginModuleConfig(lm);
+            	}
+            }
+        }
+    }
+    
+    private LoginModuleConfig handleLoginModule(final org.w3c.dom.Node node) throws Exception {
+    	final NamedNodeMap attrs = node.getAttributes();
+    	Node classNameNode = attrs.getNamedItem("class-name");
+    	String className = getTextContent(classNameNode);
+    	Node usageNode = attrs.getNamedItem("usage");
+    	LoginModuleUsage usage = usageNode != null 
+    		? LoginModuleUsage.get(getTextContent(usageNode)) : LoginModuleUsage.REQUIRED;   
+    	
+    	final LoginModuleConfig moduleConfig = new LoginModuleConfig(className, usage);
+    	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(child.getNodeName());
+            if ("properties".equals(nodeName)) {
+                handleProperties(child, moduleConfig.getProperties());
+                break;
+            }
+        }
+    	return moduleConfig;
+    }
+    
+    private void handlePermissionPolicy(final org.w3c.dom.Node node) throws Exception {
+    	final NamedNodeMap attrs = node.getAttributes();
+    	Node classNameNode = attrs.getNamedItem("class-name");
+    	String className = getTextContent(classNameNode);
+    	
+    	final SecurityConfig cfg = config.getSecurityConfig();
+    	final PermissionPolicyConfig policyConfig = new PermissionPolicyConfig(className);
+    	cfg.setClientPolicyConfig(policyConfig);
+    	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(child.getNodeName());
+            if ("properties".equals(nodeName)) {
+                handleProperties(child, policyConfig.getProperties());
+                break;
+            }
+        }
+    }
+    
+    private void handleSecurityPermissions(final org.w3c.dom.Node node) throws Exception {
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(child.getNodeName());
+            PermissionType type ;
+            if("map-permission".equals(nodeName)) {
+            	type = PermissionType.MAP;
+            } else if("queue-permission".equals(nodeName)) {
+            	type = PermissionType.QUEUE;
+            } else if("multimap-permission".equals(nodeName)) {
+            	type = PermissionType.MULTIMAP;
+            } else if("topic-permission".equals(nodeName)) {
+            	type = PermissionType.TOPIC;
+            } else if("list-permission".equals(nodeName)) {
+            	type = PermissionType.LIST;
+            } else if("set-permission".equals(nodeName)) {
+            	type = PermissionType.SET;
+            } else if("lock-permission".equals(nodeName)) {
+            	type = PermissionType.LOCK;
+            } else if("atomic-number-permission".equals(nodeName)) {
+            	type = PermissionType.ATOMIC_NUMBER;
+            } else if("countdown-latch-permission".equals(nodeName)) {
+            	type = PermissionType.COUNTDOWN_LATCH;
+            } else if("semaphore-permission".equals(nodeName)) {
+            	type = PermissionType.SEMAPHORE;
+            } else if("executor-service-permission".equals(nodeName)) {
+            	type = PermissionType.EXECUTOR_SERVICE;
+            } else if("listener-permission".equals(nodeName)) {
+            	type = PermissionType.LISTENER;
+            } else if("transaction-permission".equals(nodeName)) {
+            	type = PermissionType.TRANSACTION;
+            } else if("all-permissions".equals(nodeName)) {
+            	type = PermissionType.ALL;
+            } else {
+            	continue;
+            }
+            handleSecurityPermission(child, type);
+        }
+    }
+    
+    private void handleSecurityPermission(final org.w3c.dom.Node node, PermissionType type) throws Exception {
+    	final SecurityConfig cfg = config.getSecurityConfig(); 
+    	final NamedNodeMap attrs = node.getAttributes();
+    	
+    	Node nameNode = attrs.getNamedItem("name");
+    	String name = nameNode != null ? getTextContent(nameNode) : "*";
+    	Node principalNode = attrs.getNamedItem("principal");
+    	String principal = principalNode != null ? getTextContent(principalNode) : "*";
+    	
+    	final PermissionConfig permConfig = new PermissionConfig(type, name, principal);
+    	cfg.addClientPermissionConfig(permConfig);
+    	
+    	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+    		final String nodeName = cleanNodeName(child.getNodeName());
+    		if("endpoints".equals(nodeName)) {
+    			handleSecurityPermissionEndpoints(principalNode, permConfig);
+    		} else if("actions".equals(nodeName)) {
+    			handleSecurityPermissionActions(principalNode, permConfig);
+    		}
+    	}
+    }
+    
+    private void handleSecurityPermissionEndpoints(final org.w3c.dom.Node node, PermissionConfig permConfig) throws Exception {
+    	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+    		final String nodeName = cleanNodeName(child.getNodeName());
+    		if("endpoint".equals(nodeName)) {
+    			permConfig.addEndpoint(getTextContent(child).trim());
+    		}
+    	}
+    }
+    
+    private void handleSecurityPermissionActions(final org.w3c.dom.Node node, PermissionConfig permConfig) throws Exception {
+    	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+    		final String nodeName = cleanNodeName(child.getNodeName());
+    		if("action".equals(nodeName)) {
+    			permConfig.addAction(getTextContent(child).trim());
+    		}
+    	}
     }
 }

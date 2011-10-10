@@ -177,4 +177,8 @@ public class ExecutorServiceProxy implements ExecutorService {
     public void execute(Runnable command) {
         submit(command, null);
     }
+    
+    public String getName() {
+		return name;
+	}
 }

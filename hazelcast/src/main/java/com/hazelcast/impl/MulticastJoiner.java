@@ -41,7 +41,7 @@ public class MulticastJoiner extends AbstractJoiner {
 
     public void doJoin(AtomicBoolean joined) {
         int tryCount = 0;
-        while (!joined.get()) {
+        while (node.isActive() && !joined.get()) {
             logger.log(Level.FINEST, "joining... " + node.getMasterAddress());
             Address masterAddressNow = findMasterWithMulticast();
             if (masterAddressNow != null && masterAddressNow.equals(node.getMasterAddress())) {
@@ -119,7 +119,7 @@ public class MulticastJoiner extends AbstractJoiner {
         Connection conn = node.connectionManager.getOrConnect(masterAddress);
         logger.log(Level.FINEST, "Master connection " + conn);
         if (conn != null) {
-            node.clusterManager.sendJoinRequest(masterAddress);
+            node.clusterManager.sendJoinRequest(masterAddress, true);
         }
     }
 
@@ -128,7 +128,7 @@ public class MulticastJoiner extends AbstractJoiner {
             final String ip = System.getProperty("join.ip");
             if (ip == null) {
                 JoinInfo joinInfo = node.createJoinInfo();
-                for (; currentTryCount.incrementAndGet() <= tryCount.get();) {
+                for (; node.isActive() && currentTryCount.incrementAndGet() <= tryCount.get();) {
                     joinInfo.setTryCount(currentTryCount.get());
                     node.multicastService.send(joinInfo);
                     if (node.getMasterAddress() == null) {

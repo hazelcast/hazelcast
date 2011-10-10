@@ -3033,4 +3033,25 @@ public class ClusterTest {
         hc1.getLifecycleService().shutdown();
         junit.framework.Assert.assertEquals(STORE.size(), m2.keySet().size());
     }
+    
+    @Test
+    public void testNewInstanceByName() {
+    	Config config = new Config();
+    	config.setInstanceName("test");
+    	HazelcastInstance hc1 = Hazelcast.newHazelcastInstance(config);
+    	HazelcastInstance hc2 = Hazelcast.getHazelcastInstanceByName("test");
+    	HazelcastInstance hc3 = Hazelcast.getHazelcastInstanceByName(hc1.getName());
+    	
+    	assertTrue(hc1 == hc2);
+    	assertTrue(hc1 == hc3);
+    	hc1.getLifecycleService().shutdown();
+    }
+    
+    @Test(expected = DuplicateInstanceNameException.class)
+    public void testNewInstanceByNameFail() {
+    	Config config = new Config();
+    	config.setInstanceName("test");
+    	HazelcastInstance hc1 = Hazelcast.newHazelcastInstance(config);
+    	HazelcastInstance hc2 = Hazelcast.newHazelcastInstance(config);
+    }
 }

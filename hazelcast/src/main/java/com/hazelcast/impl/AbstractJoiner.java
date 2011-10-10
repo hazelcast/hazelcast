@@ -52,6 +52,10 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private void postJoin() {
+    	if(!node.isActive()) {
+    		return;
+    	}
+    	
         if (tryCount.incrementAndGet() == 5) {
             node.setAsMaster();
         }
@@ -163,7 +167,7 @@ public abstract class AbstractJoiner implements Joiner {
                 final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
                 if (conn != null) {
                     logger.log(Level.FINEST, "sending join request for " + possibleAddress);
-                    node.clusterManager.sendJoinRequest(possibleAddress);
+                    node.clusterManager.sendJoinRequest(possibleAddress, true);
                 }
             }
     }
