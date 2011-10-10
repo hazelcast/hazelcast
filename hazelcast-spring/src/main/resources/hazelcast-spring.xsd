@@ -13,6 +13,7 @@
             <xs:complexContent>
                 <xs:extension base="beans:identifiedType">
                     <xs:sequence>
+                    	<xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1" />
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
@@ -39,7 +40,9 @@
                                 <xs:sequence>
                                     <xs:element name="map-store" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
-                                            <xs:sequence/>
+                                            <xs:sequence>
+                                            	<xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>	
+                                            </xs:sequence>
                                             <xs:attribute name="enabled" use="required" type="xs:string"/>
                                             <xs:attribute name="class-name" use="optional" type="xs:string"/>
                                             <xs:attribute name="factory-class-name" use="optional" type="xs:string"/>
@@ -250,7 +253,7 @@
         </xs:simpleContent>
     </xs:complexType>
 
-    <xs:simpleType name="propertyName">
+    <xs:simpleType name="propertyNameEnum">
         <xs:restriction base="xs:string">
             <xs:enumeration value="hazelcast.merge.first.run.delay.seconds"/>
             <xs:enumeration value="hazelcast.merge.next.run.delay.seconds"/>
@@ -302,7 +305,14 @@
             <xs:enumeration value="hazelcast.logging.type"/>
         </xs:restriction>
     </xs:simpleType>
-
+	<xs:simpleType name="propertyNameString">
+	    <xs:restriction base="xs:string">
+	        <xs:pattern value="\S.*"/>
+	    </xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="propertyName">
+		<xs:union memberTypes="propertyNameEnum propertyNameString" />
+	</xs:simpleType>
     <xs:complexType name="property">
         <xs:simpleContent>
             <xs:extension base="xs:string">

@@ -19,6 +19,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
+        	<hz:instance-name>test-instance</hz:instance-name>
             <hz:group
                     name="${cluster.group.name}"
                     password="${cluster.group.password}"/>
@@ -117,7 +118,12 @@
                     cache-value="true"
                     eviction-policy="NONE"
                     merge-policy="hz.ADD_NEW_ENTRY">
-                <hz:map-store enabled="true" factory-class-name="com.hazelcast.spring.DummyStoreFactory" write-delay-seconds="0"/>
+                <hz:map-store enabled="true" factory-class-name="com.hazelcast.spring.DummyStoreFactory" write-delay-seconds="0">
+                	<hz:properties>
+                		<hz:property name="dummy.property">value</hz:property>
+                		<hz:property name="dummy.property.2">value2</hz:property>
+                	</hz:properties>
+                </hz:map-store>
             </hz:map>
             <hz:map name="testMap4"
                     backup-count="2"

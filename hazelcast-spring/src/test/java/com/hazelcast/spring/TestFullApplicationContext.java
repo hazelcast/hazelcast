@@ -160,6 +160,9 @@ public class TestFullApplicationContext {
         
         MapConfig testMapConfig3 = config.getMapConfig("testMap3");
         assertEquals("com.hazelcast.spring.DummyStoreFactory", testMapConfig3.getMapStoreConfig().getFactoryClassName());
+        assertFalse(testMapConfig3.getMapStoreConfig().getProperties().isEmpty());
+        assertEquals(testMapConfig3.getMapStoreConfig().getProperty("dummy.property"), "value");
+        
         MapConfig testMapConfig4 = config.getMapConfig("testMap4");
         assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
     }
@@ -260,6 +263,7 @@ public class TestFullApplicationContext {
         final Member member = members.iterator().next();
         final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
         assertEquals(5800, inetSocketAddress.getPort());
+        assertEquals("test-instance", config.getInstanceName());
     }
 
     @Test
