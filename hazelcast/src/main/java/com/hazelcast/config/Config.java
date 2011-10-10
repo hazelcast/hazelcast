@@ -40,7 +40,9 @@ public class Config implements DataSerializable {
     public static final int DEFAULT_PORT = 5701;
 
     private String xmlConfig = null;
-
+    
+    private String instanceName = null;
+    
     private GroupConfig groupConfig = new GroupConfig();
 
     private int port = DEFAULT_PORT;
@@ -78,6 +80,8 @@ public class Config implements DataSerializable {
     private Map<String, MergePolicyConfig> mapMergePolicyConfigs = new ConcurrentHashMap<String, MergePolicyConfig>();
 
     private Map<String, WanReplicationConfig> mapWanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
+    
+    private SecurityConfig securityConfig = new SecurityConfig();
 
     public Config() {
         final String superClientProp = System.getProperty("hazelcast.super.client");
@@ -234,7 +238,7 @@ public class Config implements DataSerializable {
         return t;
     }
 
-    private static boolean nameMatches(final String name, final String pattern) {
+    public static boolean nameMatches(final String name, final String pattern) {
         final int index = pattern.indexOf('*');
         if (index == -1) {
             return name.equals(pattern);
@@ -569,6 +573,14 @@ public class Config implements DataSerializable {
         this.superClient = superClient;
         return this;
     }
+    
+    public SecurityConfig getSecurityConfig() {
+		return securityConfig;
+	}
+    
+    public void setSecurityConfig(SecurityConfig securityConfig) {
+		this.securityConfig = securityConfig;
+	}
 
     /**
      * @param config
@@ -798,7 +810,15 @@ public class Config implements DataSerializable {
             }
         }
     }
-
+    
+    public String getInstanceName() {
+		return instanceName;
+	}
+    
+    public void setInstanceName(String instanceName) {
+		this.instanceName = instanceName;
+	}
+    
     @Override
     public String toString() {
         return "Config [groupConfig=" + this.groupConfig

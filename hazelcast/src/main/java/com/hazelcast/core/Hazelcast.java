@@ -22,6 +22,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.partition.PartitionService;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -377,19 +378,49 @@ public final class Hazelcast {
     }
 
     /**
-     * Creates a new Hazelcast instance (a new node in a cluster).
+     * Creates a new HazelcastInstance (a new node in a cluster).
      * This method allows you to create and run multiple instances
      * of Hazelcast cluster members on the same JVM.
      * <p/>
-     * To shutdown all running hazelcast instances (all members on this JVM)
+     * To shutdown all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
-     * @param config Configuration for the new hazelcast instance (member)
-     * @return new hazelcast instance
+     * @param config Configuration for the new HazelcastInstance (member)
+     * @return new HazelcastInstance
      * @see #shutdownAll()
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
+    }
+    
+    /**
+     * Returns an existing HazelcastInstance with instanceName.
+     * <p/>
+     * To shutdown all running HazelcastInstances (all members on this JVM)
+     * call {@link #shutdownAll()}.
+     *
+     * @param instanceName Name of the HazelcastInstance (member)
+     * @return HazelcastInstance
+     * @see #newHazelcastInstance(Config)
+     * @see #shutdownAll()
+     */
+    public static HazelcastInstance getHazelcastInstanceByName(String instanceName) {
+        return com.hazelcast.impl.FactoryImpl.getHazelcastInstanceProxy(instanceName);
+    }
+    
+    /**
+     * Returns all active/running HazelcastInstances on this JVM.
+     * <p/>
+     * To shutdown all running HazelcastInstances (all members on this JVM)
+     * call {@link #shutdownAll()}.
+     *
+     * @return all HazelcastInstances
+     * @see #newHazelcastInstance(Config)
+     * @see #getHazelcastInstanceByName(String)
+     * @see #shutdownAll()
+     */
+    public static Set<HazelcastInstance> getAllHazelcastInstances() {
+        return com.hazelcast.impl.FactoryImpl.getAllHazelcastInstanceProxies();
     }
 
     /**

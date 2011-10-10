@@ -58,11 +58,13 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 import static com.hazelcast.impl.Util.toMillis;
 import static com.hazelcast.nio.IOUtil.toData;
 
-public class FactoryImpl implements HazelcastInstance {
+public class FactoryImpl implements IHazelcastFactory {
 
     final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);
 
-    private static AtomicInteger factoryIdGen = new AtomicInteger();
+    private static final AtomicInteger factoryIdGen = new AtomicInteger();
+    
+    private static final Object INIT_LOCK = new Object();
 
     final ConcurrentMap<String, HazelcastInstanceAwareInstance> proxiesByName = new ConcurrentHashMap<String, HazelcastInstanceAwareInstance>(1000);
 
@@ -95,16 +97,50 @@ public class FactoryImpl implements HazelcastInstance {
     public final Node node;
 
     volatile boolean restarted = false;
+    
+    public static Set<HazelcastInstance> getAllHazelcastInstanceProxies() {
+    	final Collection<FactoryImpl> factoryColl = factories.values();
+    	final Set<HazelcastInstance> instanceSet = new HashSet<HazelcastInstance>(factoryColl.size());
+    	for (FactoryImpl factoryImpl : factoryColl) {
+    		if(factoryImpl.getLifecycleService().isRunning()) {
+    			instanceSet.add(factoryImpl.hazelcastInstanceProxy);
+    		}
+		}
+    	return instanceSet;
+    }
+    
+    public static HazelcastInstanceProxy getHazelcastInstanceProxy(String instanceName) {
+    	synchronized (INIT_LOCK) {
+    		final FactoryImpl factory = factories.get(instanceName); 
+    		return factory != null ? factory.hazelcastInstanceProxy : null; 
+		}
+    }
 
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
+    	if (config == null) {
+    		config = new XmlConfigBuilder().build();
+    	}
+    	
+    	String name = config.getInstanceName();
+        if(name == null || name.trim().length() == 0) {
+        	name = "_hzInstance_" + factoryIdGen.incrementAndGet() + "_" + config.getGroupConfig().getName();
+        	return newHazelcastInstanceProxy(config, name);
+        } else {
+        	synchronized (INIT_LOCK) {
+        		if(factories.containsKey(name)) {
+        			throw new DuplicateInstanceNameException("HazelcastInstance with name '" + name + "' already exists!");
+        		}
+				return newHazelcastInstanceProxy(config, name);
+			}
+        }
+    }
+    
+    private static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config, String instanceName) {
         FactoryImpl factory = null;
         try {
-            if (config == null) {
-                config = new XmlConfigBuilder().build();
-            }
-            String name = "_hzInstance_" + factoryIdGen.incrementAndGet() + "_" + config.getGroupConfig().getName();
-            factory = new FactoryImpl(name, config);
-            factories.put(name, factory);
+            factory = new FactoryImpl(instanceName, config);
+            factories.put(instanceName, factory);
+            
             boolean firstMember = (factory.node.getClusterImpl().getMembers().iterator().next().localMember());
             int initialWaitSeconds = factory.node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
             if (initialWaitSeconds > 0) {
@@ -149,6 +185,9 @@ public class FactoryImpl implements HazelcastInstance {
         } catch (Throwable t) {
             if (factory != null) {
                 factory.logger.log(Level.SEVERE, t.getMessage(), t);
+            }
+            if(t instanceof RuntimeException) {
+            	throw (RuntimeException) t;
             }
             throw new RuntimeException(t);
         }
@@ -279,6 +318,24 @@ public class FactoryImpl implements HazelcastInstance {
         public LifecycleService getLifecycleService() {
             return hazelcastInstance.getLifecycleService();
         }
+        
+        public boolean equals(Object obj) {
+        	if(obj == null) {
+        		return false;
+        	}
+        	if(this == obj) {
+        		return true;
+        	}
+        	if(obj instanceof HazelcastInstanceProxy) {
+        		HazelcastInstanceProxy that = (HazelcastInstanceProxy) obj;
+        		return hazelcastInstance.equals(that.hazelcastInstance);
+        	}
+        	return false;
+        }
+        
+        public int hashCode() {
+        	return hazelcastInstance.hashCode();
+        }
     }
 
     public String getName() {
@@ -328,6 +385,9 @@ public class FactoryImpl implements HazelcastInstance {
         idGeneratorMapProxy = new MProxyImpl(Prefix.MAP_HAZELCAST + "IdGenerator", this);
         lifecycleService.fireLifecycleEvent(STARTING);
         node.start();
+        if(!node.isActive()) {
+        	throw new IllegalStateException("Node failed to start!");
+        }
         globalProxies.addEntryListener(new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 if (node.localMember.equals(event.getMember())) {
