@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.impl.concurrentmap.RecordFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
 import com.hazelcast.util.SortedHashMap;
@@ -24,8 +25,6 @@ import com.hazelcast.util.SortedHashMap;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class NearCache {
     private final ILogger logger;
@@ -37,6 +36,7 @@ public class NearCache {
     private final long ttl;           // 0 means never expires
     private final long maxIdleTime;   // 0 means never idle 
     private final boolean invalidateOnChange;
+    private final RecordFactory recordFactory;
 
     public NearCache(CMap cmap, SortedHashMap.OrderingType orderingType, int maxSize, long ttl, long maxIdleTime, boolean invalidateOnChange) {
         this.cmap = cmap;
@@ -51,6 +51,7 @@ public class NearCache {
                 ? new HashMap<Data, Object>()
                 : new SortedHashMap<Data, Object>(size, orderingType);
         this.cache = new ConcurrentHashMap<Object, CacheEntry>(size, 0.75f, 1);
+        this.recordFactory = cmap.concurrentMapManager.recordFactory;
     }
 
     boolean shouldInvalidateOnChange() {
@@ -101,7 +102,7 @@ public class NearCache {
             Collection<CacheEntry> entries = cache.values();
             for (CacheEntry entry : entries) {
                 if (!entry.isValid(now)) {
-                    lsKeysToInvalidate.add(entry.keyData);
+                    lsKeysToInvalidate.add(entry.record.getKeyData());
                 }
             }
         }
@@ -180,6 +181,7 @@ public class NearCache {
             if (removedCacheEntry == null) {
                 throw new IllegalStateException("Removed CacheEntry cannot be null");
             }
+            removedCacheEntry.invalidate();
         }
     }
 
@@ -209,10 +211,7 @@ public class NearCache {
     }
 
     private class CacheEntry implements Processable {
-        final Object key;
-        final Data keyData;
-        private Data valueData = null;
-        private Object value = null;
+        private final NearCacheRecord record;
         private final long createTime;
         private volatile long lastAccessTime;
 
@@ -223,9 +222,7 @@ public class NearCache {
             if (keyData == null) {
                 throw new IllegalStateException("keyData cannot be null");
             }
-            this.key = key;
-            this.keyData = keyData;
-            this.valueData = valueData;
+            this.record = recordFactory.createNewNearCacheRecord(keyData, valueData);
             this.createTime = System.currentTimeMillis();
             touch(createTime);
         }
@@ -249,28 +246,23 @@ public class NearCache {
         }
 
         public void setValue(Data valueData) {
-            this.valueData = valueData;
-            this.value = null;
+        	record.setValueData(valueData);
         }
 
         public Object getValue() {
-            if (value != null) {
-                return value;
-            }
-            if (valueData == null) {
-                return null;
-            }
-            value = toObject(valueData);
-            valueData = null;
-            return value;
+            return record.getValue();
         }
 
         public Data getValueData() {
-            return valueData;
+            return record.getValueData();
         }
 
         public void process() {
-            sortedMap.get(keyData);
+            sortedMap.get(record.getKeyData());
+        }
+        
+        public void invalidate() {
+        	record.invalidate();
         }
     }
 }

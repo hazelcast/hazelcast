@@ -198,7 +198,7 @@ public class TestUtil {
     }
 
     public static Record newRecord(CMap cmap, long recordId, Data key, Data value) {
-        return new Record(cmap, 1, key, value, 0, 0, recordId);
+        return new DefaultRecord(cmap, 1, key, value, 0, 0, recordId);
     }
 
     public static Record newRecord(long recordId, Data key, Data value) {

@@ -61,7 +61,7 @@ public class MapIndexService {
         }
         if (indexValue != null) {
             Long newValueIndex = -1L;
-            if (record.isActive() && record.getValueData() != null) {
+            if (record.isActive() && record.hasValueData()) {
                 newValueIndex = (long) record.getValueData().hashCode();
             }
             indexValue.index(newValueIndex, record);

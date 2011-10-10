@@ -872,9 +872,9 @@ public class CMap {
     boolean isApplicable(ClusterOperation operation, Request req, long now) {
         Record record = getRecord(req);
         if (ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT.equals(operation)) {
-            return record == null || !record.isActive() || !record.isValid(now) || record.getValueData() == null;
+            return record == null || !record.isActive() || !record.isValid(now) || !record.hasValueData();
         } else if (ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL.equals(operation)) {
-            return record != null && record.isActive() && record.isValid(now) && record.getValueData() != null;
+            return record != null && record.isActive() && record.isValid(now) && record.hasValueData();
         } else if (ClusterOperation.CONCURRENT_MAP_REPLACE_IF_SAME.equals(operation)) {
             if (record != null && record.isActive() && record.isValid(now)) {
                 MultiData multiData = (MultiData) toObject(req.value);
@@ -1438,7 +1438,7 @@ public class CMap {
             unlock(record, req);
         }
         boolean removed = false;
-        if (record.getValueData() != null) {
+        if (record.hasValueData()) {
             removed = true;
         } else if (record.getMultiValues() != null) {
             removed = true;
@@ -1485,7 +1485,7 @@ public class CMap {
                 }
             }
             if (req.value != null) {
-                if (record.getValueData() != null) {
+                if (record.hasValueData()) {
                     if (!record.getValueData().equals(req.value)) {
                         return;
                     }
@@ -1605,7 +1605,8 @@ public class CMap {
             throw new RuntimeException("Cannot create record from a 0 size key: " + key);
         }
         int blockId = concurrentMapManager.getBlockId(key);
-        return new Record(this, blockId, key, value, ttl, maxIdle, concurrentMapManager.newRecordId());
+        return concurrentMapManager.recordFactory.createNewRecord(this, blockId, key, value, 
+        		ttl, maxIdle, concurrentMapManager.newRecordId());
     }
 
     public void addListener(Data key, Address address, boolean includeValue) {

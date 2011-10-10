@@ -70,6 +70,11 @@ public class GroupProperties {
     public static final String PROP_MC_SEMAPHORE_EXCLUDES = "hazelcast.mc.semaphore.excludes";
     public static final String PROP_MC_TOPIC_EXCLUDES = "hazelcast.mc.topic.excludes";
     public static final String PROP_MC_MAX_VISIBLE_INSTANCE_COUNT = "hazelcast.mc.max.visible.instance.count";
+    public static final String PROP_CONCURRENT_MAP_SIMPLE_RECORD = "hazelcast.map.simple.record";
+    public static final String PROP_OFFHEAP_ENABLED = "hazelcast.offheap.enabled";
+    public static final String PROP_OFFHEAP_TOTAL_SIZE = "hazelcast.offheap.total.size";
+    public static final String PROP_OFFHEAP_CHUNK_SIZE = "hazelcast.offheap.chunk.size";
+    
 
     public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
 
@@ -166,8 +171,16 @@ public class GroupProperties {
     public final GroupProperty MC_SEMAPHORE_EXCLUDES;
 
     public final GroupProperty MC_TOPIC_EXCLUDES;
-
+    
     public final GroupProperty MC_MAX_INSTANCE_COUNT;
+  
+    public final GroupProperty CONCURRENT_MAP_SIMPLE_RECORD;
+    
+    public final GroupProperty OFFHEAP_ENABLED;
+    
+    public final GroupProperty OFFHEAP_TOTAL_SIZE;
+    
+    public final GroupProperty OFFHEAP_CHUNK_SIZE;
 
     public GroupProperties(Config config) {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
@@ -216,6 +229,10 @@ public class GroupProperties {
         MC_SEMAPHORE_EXCLUDES = new GroupProperty(config, PROP_MC_SEMAPHORE_EXCLUDES, null);
         MC_TOPIC_EXCLUDES = new GroupProperty(config, PROP_MC_TOPIC_EXCLUDES, null);
         MC_MAX_INSTANCE_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_INSTANCE_COUNT, "100");
+        CONCURRENT_MAP_SIMPLE_RECORD = new GroupProperty(config, PROP_CONCURRENT_MAP_SIMPLE_RECORD, "false");
+        OFFHEAP_ENABLED = new GroupProperty(config, PROP_OFFHEAP_ENABLED, "false");
+        OFFHEAP_TOTAL_SIZE = new GroupProperty(config, PROP_OFFHEAP_TOTAL_SIZE, "128M");
+        OFFHEAP_CHUNK_SIZE = new GroupProperty(config, PROP_OFFHEAP_CHUNK_SIZE, "1K");
     }
 
     public static class GroupProperty {

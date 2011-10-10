@@ -23,20 +23,22 @@ import com.hazelcast.config.Join;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
 import com.hazelcast.impl.base.CpuUtilization;
+import com.hazelcast.impl.base.NodeInitializer;
+import com.hazelcast.impl.base.NodeInitializerFactory;
 import com.hazelcast.impl.base.VersionCheck;
 import com.hazelcast.impl.wan.WanReplicationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
+import com.hazelcast.security.Credentials;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.util.NoneStrictObjectPool;
 
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -126,6 +128,10 @@ public class Node {
     final WanReplicationService wanReplicationService;
 
     final Joiner joiner;
+    
+    public final NodeInitializer initializer;
+    
+    public SecurityContext securityContext = null;
 
     public Node(FactoryImpl factory, Config config) {
         this.id = counter.incrementAndGet();
@@ -135,29 +141,7 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         this.superClient = config.isSuperClient();
         this.localNodeType = (superClient) ? NodeType.SUPER_CLIENT : NodeType.MEMBER;
-        String version = System.getProperty("hazelcast.version", "unknown");
-        String build = System.getProperty("hazelcast.build", "unknown");
-        if ("unknown".equals(version) || "unknown".equals(build)) {
-            try {
-                InputStream inRuntimeProperties = Node.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
-                if (inRuntimeProperties != null) {
-                    Properties runtimeProperties = new Properties();
-                    runtimeProperties.load(inRuntimeProperties);
-                    version = runtimeProperties.getProperty("hazelcast.version");
-                    build = runtimeProperties.getProperty("hazelcast.build");
-                }
-            } catch (Exception ignored) {
-            }
-        }
-        int tmpBuildNumber = 0;
-        try {
-            tmpBuildNumber = Integer.getInteger("hazelcast.build", -1);
-            if (tmpBuildNumber == -1) {
-                tmpBuildNumber = Integer.parseInt(build);
-            }
-        } catch (Exception ignored) {
-        }
-        buildNumber = tmpBuildNumber;
+        
         ServerSocketChannel serverSocketChannelTemp = null;
         Address localAddress = null;
         try {
@@ -171,6 +155,9 @@ public class Node {
             localAddress = addressPicker.pickAddress();
             localAddress.setThisAddress(true);
         } catch (Throwable e) {
+        	if(e instanceof RuntimeException) {
+        		throw (RuntimeException) e;
+        	}
             throw new RuntimeException(e);
         }
         serverSocketChannel = serverSocketChannelTemp;
@@ -202,6 +189,11 @@ public class Node {
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         this.loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, localMember);
         this.logger = loggingService.getLogger(Node.class.getName());
+        
+        initializer = NodeInitializerFactory.create();
+        initializer.beforeInitialize(this);
+        securityContext = config.getSecurityConfig().isEnabled() ? initializer.createSecurityContext() : null;
+        
         clusterImpl = new ClusterImpl(this, localMember);
         baseVariables = new NodeBaseVariables(address, localMember);
         //initialize managers..
@@ -219,11 +211,11 @@ public class Node {
         topicManager = new TopicManager(this);
         textCommandService = new TextCommandServiceImpl(this);
         clusterManager.addMember(false, localMember);
-        ILogger systemLogger = getLogger("com.hazelcast.system");
-        systemLogger.log(Level.INFO, "Hazelcast " + version + " ("
-                + build + ") starting at " + address);
-        systemLogger.log(Level.INFO, "Copyright (C) 2008-2011 Hazelcast.com");
-        VersionCheck.check(this, build, version);
+        initializer.afterInitialize(this);
+        
+        buildNumber = initializer.getBuildNumber();
+        
+        VersionCheck.check(this, initializer.getBuild(), initializer.getVersion());
         Join join = config.getNetworkConfig().getJoin();
         MulticastService mcService = null;
         try {
@@ -363,6 +355,9 @@ public class Node {
             textCommandService.stop();
             masterAddress = null;
             packetPool.clear();
+            if(securityContext != null) {
+            	securityContext.destroy();
+            }
             logger.log(Level.FINEST, "Shutting down the cluster manager");
             int numThreads = threadGroup.activeCount();
             Thread[] threads = new Thread[numThreads * 2];
@@ -483,8 +478,18 @@ public class Node {
     }
 
     public JoinInfo createJoinInfo() {
-        return new JoinInfo(this.getLogger(JoinInfo.class.getName()), true, address, config, getLocalNodeType(),
+    	return createJoinInfo(false);
+    }
+    
+    public JoinInfo createJoinInfo(boolean withCredentials) {
+        final JoinInfo jr = new JoinInfo(this.getLogger(JoinInfo.class.getName()), true, address, config, getLocalNodeType(),
                 Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size(), 0);
+        
+        if(withCredentials && securityContext != null) {
+        	Credentials c = securityContext.getCredentialsFactory().newCredentials();
+        	jr.setCredentials(c);
+        }
+        return jr;
     }
 
     public boolean validateJoinRequest(JoinRequest joinRequest) throws Exception {
@@ -494,7 +499,7 @@ public class Node {
             try {
                 valid = config.isCompatible(joinRequest.config);
             } catch (Exception e) {
-                logger.log(Level.FINEST, "Invalid join request, reason:" + e.getMessage());
+                logger.log(Level.WARNING, "Invalid join request, reason:" + e.getMessage());
                 throw e;
             }
         }

@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
+import com.hazelcast.impl.concurrentmap.RecordFactory;
 import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
@@ -65,9 +66,11 @@ public class ConcurrentMapManager extends BaseManager {
     final ParallelExecutor storeExecutor;
     final ParallelExecutor evictionExecutor;
     private static final String BATCH_OPS_EXECUTOR_NAME = "hz_batch";
-
+    final RecordFactory recordFactory;
+    
     ConcurrentMapManager(Node node) {
         super(node);
+        recordFactory = node.initializer.getRecordFactory();
         storeExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         evictionExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
@@ -505,7 +508,7 @@ public class ConcurrentMapManager extends BaseManager {
             final CMap cMap = maps.get(name);
             if (cMap != null) {
                 Record record = cMap.getOwnedRecord(dataKey);
-                if (record != null && record.isActive() && record.isValid() && record.getValueData() != null) {
+                if (record != null && record.isActive() && record.isValid() && record.hasValueData()) {
                     if (cMap.readBackupData) {
                         return true;
                     } else {
@@ -1108,71 +1111,6 @@ public class ConcurrentMapManager extends BaseManager {
         mapCaches.remove(name);
     }
 
-    class MRemoveMulti extends MBackupAndMigrationAwareOp {
-
-        public Collection remove(String name, Object key) {
-            final ThreadContext tc = ThreadContext.get();
-            TransactionImpl txn = tc.getCallContext().getTransaction();
-            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                Collection committedValues = null;
-                if (!txn.has(name, key)) {
-                    MLock mlock = new MLock();
-                    boolean locked = mlock.lockAndGetValue(name, key, null, DEFAULT_TXN_TIMEOUT);
-                    if (!locked) throwCME(key);
-                    committedValues = (Collection) toObject(mlock.oldValue);
-                } else {
-                    Object value = objectCall(CONCURRENT_MAP_GET, name, key, null, 0, -1);
-                    if (value instanceof AddressAwareException) {
-                        rethrowException(request.operation, (AddressAwareException) value);
-                    }
-                    committedValues = (Collection) value;
-                }
-                List allValues = new ArrayList();
-                int removedValueCount = 1;
-                if (committedValues != null) {
-                    allValues.addAll(committedValues);
-                    removedValueCount = committedValues.size();
-                }
-                txn.getMulti(name, key, allValues);
-                txn.attachRemoveOp(name, key, null, false, removedValueCount);
-                return allValues;
-            } else {
-                Collection result = (Collection) objectCall(CONCURRENT_MAP_REMOVE, name, key, null, 0, -1);
-                if (result != null) {
-                    backup(CONCURRENT_MAP_BACKUP_REMOVE);
-                }
-                return result;
-            }
-        }
-
-        boolean remove(String name, Object key, Object value) {
-            ThreadContext threadContext = ThreadContext.get();
-            TransactionImpl txn = threadContext.getCallContext().getTransaction();
-            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                if (!txn.has(name, key)) {
-                    MLock mlock = new MLock();
-                    boolean locked = mlock.lockAndGetValue(name, key, value, DEFAULT_TXN_TIMEOUT);
-                    if (!locked) throwCME(key);
-                    Data oldValue = mlock.oldValue;
-                    boolean existingRecord = (oldValue != null);
-                    txn.attachRemoveOp(name, key, value, !existingRecord);
-                    return existingRecord;
-                } else {
-                    MContainsKey mContainsKey = new MContainsKey();
-                    boolean containsEntry = mContainsKey.containsEntry(name, key, value);
-                    txn.attachRemoveOp(name, key, value, !containsEntry);
-                    return containsEntry;
-                }
-            } else {
-                boolean result = booleanCall(CONCURRENT_MAP_REMOVE_MULTI, name, key, value, 0, -1);
-                if (result) {
-                    backup(CONCURRENT_MAP_BACKUP_REMOVE_MULTI);
-                }
-                return result;
-            }
-        }
-    }
-
     class MMultiGet extends MTargetAwareOp {
 
         public Collection get(String name, Object key) {
@@ -1661,6 +1599,71 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    class MRemoveMulti extends MBackupAndMigrationAwareOp {
+
+        public Collection remove(String name, Object key) {
+            final ThreadContext tc = ThreadContext.get();
+            TransactionImpl txn = tc.getCallContext().getTransaction();
+            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                Collection committedValues = null;
+                if (!txn.has(name, key)) {
+                    MLock mlock = new MLock();
+                    boolean locked = mlock.lockAndGetValue(name, key, null, DEFAULT_TXN_TIMEOUT);
+                    if (!locked) throwCME(key);
+                    committedValues = (Collection) toObject(mlock.oldValue);
+                } else {
+                    Object value = objectCall(CONCURRENT_MAP_GET, name, key, null, 0, -1);
+                    if (value instanceof AddressAwareException) {
+                        rethrowException(request.operation, (AddressAwareException) value);
+                    }
+                    committedValues = (Collection) value;
+                }
+                List allValues = new ArrayList();
+                int removedValueCount = 1;
+                if (committedValues != null) {
+                    allValues.addAll(committedValues);
+                    removedValueCount = committedValues.size();
+                }
+                txn.getMulti(name, key, allValues);
+                txn.attachRemoveOp(name, key, null, false, removedValueCount);
+                return allValues;
+            } else {
+                Collection result = (Collection) objectCall(CONCURRENT_MAP_REMOVE, name, key, null, 0, -1);
+                if (result != null) {
+                    backup(CONCURRENT_MAP_BACKUP_REMOVE);
+                }
+                return result;
+            }
+        }
+
+        boolean remove(String name, Object key, Object value) {
+            ThreadContext threadContext = ThreadContext.get();
+            TransactionImpl txn = threadContext.getCallContext().getTransaction();
+            if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                if (!txn.has(name, key)) {
+                    MLock mlock = new MLock();
+                    boolean locked = mlock.lockAndGetValue(name, key, value, DEFAULT_TXN_TIMEOUT);
+                    if (!locked) throwCME(key);
+                    Data oldValue = mlock.oldValue;
+                    boolean existingRecord = (oldValue != null);
+                    txn.attachRemoveOp(name, key, value, !existingRecord);
+                    return existingRecord;
+                } else {
+                    MContainsKey mContainsKey = new MContainsKey();
+                    boolean containsEntry = mContainsKey.containsEntry(name, key, value);
+                    txn.attachRemoveOp(name, key, value, !containsEntry);
+                    return containsEntry;
+                }
+            } else {
+                boolean result = booleanCall(CONCURRENT_MAP_REMOVE_MULTI, name, key, value, 0, -1);
+                if (result) {
+                    backup(CONCURRENT_MAP_BACKUP_REMOVE_MULTI);
+                }
+                return result;
+            }
+        }
+    }
+
     abstract class MBackupAndMigrationAwareOp extends MBackupAwareOp {
         @Override
         public boolean isMigrationAware() {
@@ -1978,7 +1981,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (cMap != null) {
                 long now = currentTimeMillis();
                 for (Record record : cMap.mapRecords.values()) {
-                    if (record.isActive() && record.isValid(now) && record.getValueData() != null) {
+                    if (record.isActive() && record.isValid(now) && record.hasValueData()) {
                         if (cMap.readBackupData) {
                             return false;
                         } else {
@@ -2316,7 +2319,7 @@ public class ConcurrentMapManager extends BaseManager {
                     return;
                 }
                 Record record = cmap.getRecord(request);
-                if ((record == null || record.getValueData() == null) && cmap.loader != null) {
+                if ((record == null || !record.hasValueData()) && cmap.loader != null) {
                     storeExecutor.execute(new RemoveLoader(cmap, request), request.key.hashCode());
                 } else {
                     storeProceed(cmap, request);
@@ -2461,7 +2464,7 @@ public class ConcurrentMapManager extends BaseManager {
                     return;
                 }
                 Record record = cmap.getRecord(request);
-                if ((record == null || record.getValueData() == null) && cmap.loader != null) {
+                if ((record == null || !record.hasValueData()) && cmap.loader != null) {
                     storeExecutor.execute(new PutLoader(cmap, request), request.key.hashCode());
                 } else {
                     storeProceed(cmap, request);
@@ -2978,7 +2981,7 @@ public class ConcurrentMapManager extends BaseManager {
                         record == null
                                 || !record.isActive()
                                 || !record.isValid()
-                                || record.getValueData() == null);
+                                || !record.hasValueData());
                 DataRecordEntry existing = (doesNotExist) ? null : new DataRecordEntry(record);
                 node.executorManager.executeNow(new MergeLoader(cmap, request, existing));
             } else {
@@ -3040,7 +3043,7 @@ public class ConcurrentMapManager extends BaseManager {
                     && (record == null
                     || !record.isActive()
                     || !record.isValid()
-                    || record.getValueData() == null)) {
+                    || !record.hasValueData())) {
                 storeExecutor.execute(new GetMapEntryLoader(cmap, request), request.key.hashCode());
             } else {
                 doOperation(request);
@@ -3092,7 +3095,7 @@ public class ConcurrentMapManager extends BaseManager {
                         && (record == null
                         || !record.isActive()
                         || !record.isValid()
-                        || record.getValueData() == null)) {
+                        || !record.hasValueData())) {
                     storeExecutor.execute(new GetDataRecordEntryLoader(cmap, request), request.key.hashCode());
                 } else {
                     doOperation(request);
@@ -3148,7 +3151,7 @@ public class ConcurrentMapManager extends BaseManager {
                     && (record == null
                     || !record.isActive()
                     || !record.isValid()
-                    || record.getValueData() == null)) {
+                    || !record.hasValueData())) {
                 storeExecutor.execute(new GetLoader(cmap, request), request.key.hashCode());
             } else {
                 doOperation(request);
@@ -3197,7 +3200,7 @@ public class ConcurrentMapManager extends BaseManager {
                         && (record == null
                         || !record.isActive()
                         || !record.isValid()
-                        || record.getValueData() == null)) {
+                        || !record.hasValueData())) {
                     storeExecutor.execute(new ContainsKeyLoader(cmap, request), request.key.hashCode());
                 } else {
                     doOperation(request);
@@ -3337,23 +3340,28 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public void handle(Request request) {
-            if (shouldSchedule(request)) {
-                if (request.hasEnoughTimeToSchedule()) {
-                    schedule(request);
-                } else {
-                    onNoTimeToSchedule(request);
-                }
+        	final CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request)) {
+	            if (shouldSchedule(request)) {
+	                if (request.hasEnoughTimeToSchedule()) {
+	                    schedule(request);
+	                } else {
+	                    onNoTimeToSchedule(request);
+	                }
+	            } else {
+	                Record record = cmap.getRecord(request.key);
+	                if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET
+	                        && cmap.loader != null
+	                        && (record == null || !record.hasValueData())) {
+	                    storeExecutor.execute(new LockLoader(cmap, request), request.key.hashCode());
+	                } else {
+	                    doOperation(request);
+	                    returnResponse(request);
+	                }
+	            }
             } else {
-                CMap cmap = getOrCreateMap(request.name);
-                Record record = cmap.getRecord(request.key);
-                if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET
-                        && cmap.loader != null
-                        && (record == null || record.getValueData() == null)) {
-                    storeExecutor.execute(new LockLoader(cmap, request), request.key.hashCode());
-                } else {
-                    doOperation(request);
-                    returnResponse(request);
-                }
+                request.response = OBJECT_REDO;
+                returnResponse(request);
             }
         }
 
@@ -3578,7 +3586,7 @@ public class ConcurrentMapManager extends BaseManager {
                             boolean onlyKeys = (request.operation == CONCURRENT_MAP_ITERATE_KEYS_ALL ||
                                     request.operation == CONCURRENT_MAP_ITERATE_KEYS);
                             Data key = record.getKeyData();
-                            if (record.getValueData() != null) {
+                            if (record.hasValueData()) {
                                 Data value = (onlyKeys) ? null : record.getValueData();
                                 pairs.addKeyValue(new KeyValue(key, value));
                             } else if (record.getMultiValues() != null) {
