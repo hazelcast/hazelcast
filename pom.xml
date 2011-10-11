@@ -81,6 +81,15 @@
                     <include>**/*.schemas</include>
                 </includes>
             </resource>
+            <resource>
+            	<directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*.license</include>
+                    <include>**/*.key</include>
+					<include>**/META-INF/services/*.*</include>
+                </includes>
+            </resource>
         </resources>
 
         <plugins>
