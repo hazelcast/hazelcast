@@ -36,6 +36,7 @@ public class GroupProperties {
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
     public static final String PROP_SOCKET_SEND_BUFFER_SIZE = "hazelcast.socket.send.buffer.size";
+    public static final String PROP_SOCKET_LINGER_SECONDS = "hazelcast.socket.linger.seconds";
     public static final String PROP_SOCKET_KEEP_ALIVE = "hazelcast.socket.keep.alive";
     public static final String PROP_SOCKET_NO_DELAY = "hazelcast.socket.no.delay";
     public static final String PROP_SERIALIZER_GZIP_ENABLED = "hazelcast.serializer.gzip.enabled";
@@ -74,7 +75,6 @@ public class GroupProperties {
     public static final String PROP_OFFHEAP_ENABLED = "hazelcast.offheap.enabled";
     public static final String PROP_OFFHEAP_TOTAL_SIZE = "hazelcast.offheap.total.size";
     public static final String PROP_OFFHEAP_CHUNK_SIZE = "hazelcast.offheap.chunk.size";
-    
 
     public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
 
@@ -111,6 +111,8 @@ public class GroupProperties {
     public final GroupProperty SOCKET_RECEIVE_BUFFER_SIZE; // number of kilobytes
 
     public final GroupProperty SOCKET_SEND_BUFFER_SIZE;    // number of kilobytes
+
+    public final GroupProperty SOCKET_LINGER_SECONDS;
 
     public final GroupProperty SOCKET_KEEP_ALIVE;
 
@@ -171,15 +173,15 @@ public class GroupProperties {
     public final GroupProperty MC_SEMAPHORE_EXCLUDES;
 
     public final GroupProperty MC_TOPIC_EXCLUDES;
-    
+
     public final GroupProperty MC_MAX_INSTANCE_COUNT;
-  
+
     public final GroupProperty CONCURRENT_MAP_SIMPLE_RECORD;
-    
+
     public final GroupProperty OFFHEAP_ENABLED;
-    
+
     public final GroupProperty OFFHEAP_TOTAL_SIZE;
-    
+
     public final GroupProperty OFFHEAP_CHUNK_SIZE;
 
     public GroupProperties(Config config) {
@@ -198,6 +200,7 @@ public class GroupProperties {
         SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SOCKET_RECEIVE_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_RECEIVE_BUFFER_SIZE, "32");
         SOCKET_SEND_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_SEND_BUFFER_SIZE, "32");
+        SOCKET_LINGER_SECONDS = new GroupProperty(config, PROP_SOCKET_LINGER_SECONDS, "0");
         SOCKET_KEEP_ALIVE = new GroupProperty(config, PROP_SOCKET_KEEP_ALIVE, "true");
         SOCKET_NO_DELAY = new GroupProperty(config, PROP_SOCKET_NO_DELAY, "true");
         SHUTDOWNHOOK_ENABLED = new GroupProperty(config, PROP_SHUTDOWNHOOK_ENABLED, "true");

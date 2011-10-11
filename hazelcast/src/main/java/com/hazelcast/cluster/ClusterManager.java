@@ -27,15 +27,11 @@ import com.hazelcast.nio.*;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.util.Prioritized;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.net.ConnectException;
 import java.util.*;
 import java.util.logging.Level;
-
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -65,8 +61,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
 
     private long lastHeartbeat = 0;
-    
-    final ILogger securityLogger ;
+
+    final ILogger securityLogger;
 
     public ClusterManager(final Node node) {
         super(node);
@@ -283,7 +279,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 for (Address address : lsDeadAddresses) {
                     logger.log(Level.FINEST, "NO HEARTBEAT should remove " + address);
                     doRemoveAddress(address);
-                    sendRemoveMemberToOthers(address);
                 }
             }
         } else {
@@ -294,7 +289,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 boolean removed = false;
                 if (masterMember != null) {
                     if ((now - masterMember.getLastRead()) >= (MAX_NO_HEARTBEAT_MILLIS)) {
-                        logger.log(Level.FINEST, "Master node has timed out it's heartbeat and will be removed");
+                        logger.log(Level.WARNING, "Master node has timed out its heartbeat and will be removed");
                         doRemoveAddress(masterAddress);
                         removed = true;
                     } else if ((now - masterMember.getLastRead()) >= 5000 && (now - masterMember.getLastPing()) >= 5000) {
@@ -314,7 +309,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         if (conn != null) {
                             sendHeartbeat(conn);
                         } else {
-//                            System.out.println(node.getThisAddress() + " can not connect to " + address);
                             logger.log(Level.FINEST, "could not connect to " + address + " to send heartbeat");
                         }
                     } else {
@@ -369,6 +363,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void sendHeartbeat(Connection conn) {
+        if (conn == null) return;
         Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT, 0);
         sendOrReleasePacket(packet, conn);
     }
@@ -380,10 +375,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     private void sendRemoveMemberToOthers(final Address deadAddress) {
         for (MemberImpl member : lsMembers) {
             Address address = member.getAddress();
-            if (!thisAddress.equals(address)) {
-                if (!address.equals(deadAddress)) {
-                    sendProcessableTo(new MemberRemover(deadAddress), address);
-                }
+            if (!thisAddress.equals(address) && !address.equals(deadAddress)) {
+                sendProcessableTo(new MemberRemover(deadAddress), address);
             }
         }
     }
@@ -405,6 +398,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
         } else { // Remove dead member
             if (connection.address != null) {
+                logger.log(Level.FINEST, "Disconnected from " + connection.address + "... will be removed!");
                 doRemoveAddress(connection.address);
             }
         } // end of REMOVE CONNECTION
@@ -448,12 +442,12 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             node.listenerManager.syncForDead(deadAddress);
             node.topicManager.syncForDead(deadAddress);
             node.getClusterImpl().setMembers(lsMembers);
-            // toArray will avoid CME as onDisconnect does remove the calls
             disconnectExistingCalls(deadAddress);
+            if (isMaster()) {
+                logger.log(Level.FINEST, deadAddress + " is dead. Sending remove to all other members.");
+                sendRemoveMemberToOthers(deadAddress);
+            }
             logger.log(Level.INFO, this.toString());
-        }
-        if (isMaster()) {
-            sendProcessableToAll(new RemoveMember(deadAddress), false);
         }
     }
 
@@ -461,42 +455,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         Object[] calls = mapCalls.values().toArray();
         for (Object call : calls) {
             ((Call) call).onDisconnect(deadAddress);
-        }
-    }
-
-    public static class RemoveMember implements RemotelyProcessable {
-        Address deadAddress;
-        transient Node node;
-
-        public RemoveMember(Address deadAddress) {
-            this.deadAddress = deadAddress;
-        }
-
-        public RemoveMember() {
-        }
-
-        public void setConnection(Connection conn) {
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            deadAddress.writeData(out);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            deadAddress = new Address();
-            deadAddress.readData(in);
-        }
-
-        public Node getNode() {
-            return node;
-        }
-
-        public void setNode(Node node) {
-            this.node = node;
-        }
-
-        public void process() {
-            node.clusterManager.doRemoveAddress(deadAddress);
         }
     }
 
@@ -583,26 +541,26 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 }
             }
             if (isMaster() && node.joined() && node.isActive()) {
-            	final MemberInfo newMemberInfo = new MemberInfo(joinRequest.address, joinRequest.nodeType);
-            	if(node.securityContext != null && !setJoins.contains(newMemberInfo)) {
-            		final Credentials cr = joinRequest.getCredentials();
-            		if(cr == null) {
-            			securityLogger.log(Level.SEVERE, "Expecting security credentials " +
-            					"but credentials could not be found in JoinRequest!");
-            			sendAuthFail(conn);
-            			return;
-            		} else {
-            			try {
-            				LoginContext lc = node.securityContext.createMemberLoginContext(cr);
-							lc.login();
-						} catch (LoginException e) {
-							securityLogger.log(Level.SEVERE, "Authentication has failed for " + cr.getName() + " => (" + e.getMessage() + ")");
-							securityLogger.log(Level.FINEST, e.getMessage(), e);
-							sendAuthFail(conn);
-							return;
-						}
-            		}
-            	}
+                final MemberInfo newMemberInfo = new MemberInfo(joinRequest.address, joinRequest.nodeType);
+                if (node.securityContext != null && !setJoins.contains(newMemberInfo)) {
+                    final Credentials cr = joinRequest.getCredentials();
+                    if (cr == null) {
+                        securityLogger.log(Level.SEVERE, "Expecting security credentials " +
+                                "but credentials could not be found in JoinRequest!");
+                        sendAuthFail(conn);
+                        return;
+                    } else {
+                        try {
+                            LoginContext lc = node.securityContext.createMemberLoginContext(cr);
+                            lc.login();
+                        } catch (LoginException e) {
+                            securityLogger.log(Level.SEVERE, "Authentication has failed for " + cr.getName() + " => (" + e.getMessage() + ")");
+                            securityLogger.log(Level.FINEST, e.getMessage(), e);
+                            sendAuthFail(conn);
+                            return;
+                        }
+                    }
+                }
                 if (joinRequest.to != null && !joinRequest.to.equals(thisAddress)) {
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
                     return;
@@ -631,21 +589,21 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             conn.close();
         }
     }
-    
+
     public static class AuthenticationFailureProcessable extends AbstractRemotelyProcessable implements RemotelyProcessable {
-		public void process() {
-			node.executorManager.executeNow(new Runnable() {
-				public void run() {
-					final ILogger logger = node.loggingService.getLogger("com.hazelcast.security");
-					logger.log(Level.SEVERE, "Authentication failed on master node! Node is going to shutdown now!");
-					node.shutdown(true);
-				}
-			});
-		}
+        public void process() {
+            node.executorManager.executeNow(new Runnable() {
+                public void run() {
+                    final ILogger logger = node.loggingService.getLogger("com.hazelcast.security");
+                    logger.log(Level.SEVERE, "Authentication failed on master node! Node is going to shutdown now!");
+                    node.shutdown(true, false);
+                }
+            });
+        }
     }
-    
+
     private void sendAuthFail(Connection conn) {
-    	sendProcessableTo(new AuthenticationFailureProcessable(), conn);
+        sendProcessableTo(new AuthenticationFailureProcessable(), conn);
     }
 
     @Override
@@ -909,9 +867,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     public void sendJoinRequest(Address toAddress) {
-    	sendJoinRequest(toAddress, false);
+        sendJoinRequest(toAddress, false);
     }
-    
+
     public void sendJoinRequest(Address toAddress, boolean withCredentials) {
         if (toAddress == null) {
             toAddress = node.getMasterAddress();

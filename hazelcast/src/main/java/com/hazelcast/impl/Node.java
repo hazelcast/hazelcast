@@ -128,9 +128,9 @@ public class Node {
     final WanReplicationService wanReplicationService;
 
     final Joiner joiner;
-    
+
     public final NodeInitializer initializer;
-    
+
     public SecurityContext securityContext = null;
 
     public Node(FactoryImpl factory, Config config) {
@@ -141,7 +141,6 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         this.superClient = config.isSuperClient();
         this.localNodeType = (superClient) ? NodeType.SUPER_CLIENT : NodeType.MEMBER;
-        
         ServerSocketChannel serverSocketChannelTemp = null;
         Address localAddress = null;
         try {
@@ -155,9 +154,9 @@ public class Node {
             localAddress = addressPicker.pickAddress();
             localAddress.setThisAddress(true);
         } catch (Throwable e) {
-        	if(e instanceof RuntimeException) {
-        		throw (RuntimeException) e;
-        	}
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
             throw new RuntimeException(e);
         }
         serverSocketChannel = serverSocketChannelTemp;
@@ -189,11 +188,9 @@ public class Node {
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         this.loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, localMember);
         this.logger = loggingService.getLogger(Node.class.getName());
-        
         initializer = NodeInitializerFactory.create();
         initializer.beforeInitialize(this);
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.createSecurityContext() : null;
-        
         clusterImpl = new ClusterImpl(this, localMember);
         baseVariables = new NodeBaseVariables(address, localMember);
         //initialize managers..
@@ -212,9 +209,7 @@ public class Node {
         textCommandService = new TextCommandServiceImpl(this);
         clusterManager.addMember(false, localMember);
         initializer.afterInitialize(this);
-        
         buildNumber = initializer.getBuildNumber();
-        
         VersionCheck.check(this, initializer.getBuild(), initializer.getVersion());
         Join join = config.getNetworkConfig().getJoin();
         MulticastService mcService = null;
@@ -311,11 +306,20 @@ public class Node {
         clusterManager.stop();
     }
 
-    public void shutdown() {
-        shutdown(false);
+    public void shutdown(final boolean force, final boolean now) {
+        if (now) {
+            doShutdown(force);
+        } else {
+            new Thread(new Runnable() {
+                public void run() {
+                    doShutdown(force);
+                }
+            }).start();
+        }
     }
 
-    public void shutdown(boolean force) {
+    private void doShutdown(boolean force) {
+        long start = System.currentTimeMillis();
         logger.log(Level.FINE, "** we are being asked to shutdown when active = " + String.valueOf(active));
         while (!force && isActive() && concurrentMapManager.partitionManager.hasActiveBackupTask()) {
             try {
@@ -327,7 +331,6 @@ public class Node {
             // set the joined=false first so that
             // threads do not process unnecessary
             // events, such as remove address
-            long start = System.currentTimeMillis();
             joined.set(false);
             setActive(false);
             try {
@@ -355,8 +358,8 @@ public class Node {
             textCommandService.stop();
             masterAddress = null;
             packetPool.clear();
-            if(securityContext != null) {
-            	securityContext.destroy();
+            if (securityContext != null) {
+                securityContext.destroy();
             }
             logger.log(Level.FINEST, "Shutting down the cluster manager");
             int numThreads = threadGroup.activeCount();
@@ -368,6 +371,7 @@ public class Node {
                 thread.interrupt();
             }
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
+            failedConnections.clear();
         }
     }
 
@@ -435,7 +439,7 @@ public class Node {
                 try {
                     serverSocketChannel.close();
                     connectionManager.shutdown();
-                    shutdown(true);
+                    shutdown(true, false);
                 } catch (Throwable ignored) {
                 }
             }
@@ -462,7 +466,7 @@ public class Node {
                 if (isActive() && !completelyShutdown) {
                     completelyShutdown = true;
                     if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean()) {
-                        shutdown();
+                        shutdown(false, true);
                     }
                 } else {
                     logger.log(Level.FINEST, "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
@@ -478,16 +482,15 @@ public class Node {
     }
 
     public JoinInfo createJoinInfo() {
-    	return createJoinInfo(false);
+        return createJoinInfo(false);
     }
-    
+
     public JoinInfo createJoinInfo(boolean withCredentials) {
         final JoinInfo jr = new JoinInfo(this.getLogger(JoinInfo.class.getName()), true, address, config, getLocalNodeType(),
                 Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size(), 0);
-        
-        if(withCredentials && securityContext != null) {
-        	Credentials c = securityContext.getCredentialsFactory().newCredentials();
-        	jr.setCredentials(c);
+        if (withCredentials && securityContext != null) {
+            Credentials c = securityContext.getCredentialsFactory().newCredentials();
+            jr.setCredentials(c);
         }
         return jr;
     }

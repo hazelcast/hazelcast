@@ -40,7 +40,7 @@
         are belong to
         <literal>app2</literal>
         cluster.
-        <programlisting language="java"><![CDATA[<hazelcast>
+        <programlisting language="java"><![CDATA[
         Config configApp1 = new Config();
         configApp1.getGroupConfig().setName("app1");
 

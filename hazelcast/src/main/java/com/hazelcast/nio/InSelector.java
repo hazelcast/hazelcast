@@ -84,7 +84,7 @@ public final class InSelector extends SelectorBase {
                     serverSocketChannel.close();
                 } catch (final Exception ignore) {
                 }
-                node.shutdown();
+                node.shutdown(false, false);
             }
         }
     }

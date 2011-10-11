@@ -17,10 +17,6 @@
 
 package com.hazelcast.impl.base;
 
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.logging.Level;
-
 import com.hazelcast.impl.IHazelcastFactory;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.concurrentmap.DefaultRecordFactory;
@@ -29,30 +25,34 @@ import com.hazelcast.impl.concurrentmap.SimpleRecordFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.logging.Level;
+
 public class DefaultNodeInitializer implements NodeInitializer {
 
-	protected ILogger logger;
-	protected ILogger systemLogger ;
-	protected String version;
-	protected String build;
-	private int buildNumber;
-	protected boolean simpleRecord = false; 
-	
-	public void beforeInitialize(Node node) {
-		systemLogger = node.getLogger("com.hazelcast.system");
-		logger = node.getLogger("com.hazelcast.initializer");
-		parseSystemProps();
-		simpleRecord = node.groupProperties.CONCURRENT_MAP_SIMPLE_RECORD.getBoolean();
-	}
-	
-	public void afterInitialize(Node node) {
-		systemLogger.log(Level.INFO, "Hazelcast Community Version " + version + " ("
+    protected ILogger logger;
+    protected ILogger systemLogger;
+    protected String version;
+    protected String build;
+    private int buildNumber;
+    protected boolean simpleRecord = false;
+
+    public void beforeInitialize(Node node) {
+        systemLogger = node.getLogger("com.hazelcast.system");
+        logger = node.getLogger("com.hazelcast.initializer");
+        parseSystemProps();
+        simpleRecord = node.groupProperties.CONCURRENT_MAP_SIMPLE_RECORD.getBoolean();
+    }
+
+    public void afterInitialize(Node node) {
+        systemLogger.log(Level.INFO, "Hazelcast Community Edition " + version + " ("
                 + build + ") starting at " + node.getThisAddress());
         systemLogger.log(Level.INFO, "Copyright (C) 2008-2011 Hazelcast.com");
-	}
-	
-	protected void parseSystemProps() {
-		version = System.getProperty("hazelcast.version", "unknown");
+    }
+
+    protected void parseSystemProps() {
+        version = System.getProperty("hazelcast.version", "unknown");
         build = System.getProperty("hazelcast.build", "unknown");
         if ("unknown".equals(version) || "unknown".equals(build)) {
             try {
@@ -63,39 +63,41 @@ public class DefaultNodeInitializer implements NodeInitializer {
                     version = runtimeProperties.getProperty("hazelcast.version");
                     build = runtimeProperties.getProperty("hazelcast.build");
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
         try {
-        	buildNumber = Integer.getInteger("hazelcast.build", -1);
+            buildNumber = Integer.getInteger("hazelcast.build", -1);
             if (buildNumber == -1) {
-            	buildNumber = Integer.parseInt(build);
+                buildNumber = Integer.parseInt(build);
             }
-        } catch (Exception ignored) {}
-	}
-	
-	public RecordFactory getRecordFactory() {
-		return simpleRecord ? new SimpleRecordFactory() : new DefaultRecordFactory();
-	}
-	
-	public int getBuildNumber() {
-		return buildNumber;
-	}
+        } catch (Exception ignored) {
+        }
+    }
 
-	public String getVersion() {
-		return version;
-	}
+    public RecordFactory getRecordFactory() {
+        return simpleRecord ? new SimpleRecordFactory() : new DefaultRecordFactory();
+    }
 
-	public String getBuild() {
-		return build;
-	}
+    public int getBuildNumber() {
+        return buildNumber;
+    }
 
-	public SecurityContext createSecurityContext() {
-		logger.log(Level.WARNING, "Security features are only available on Hazelcast Enterprise Edition!");
-		return null;
-	}
+    public String getVersion() {
+        return version;
+    }
 
-	public IHazelcastFactory getSecureHazelcastFactory() {
-		logger.log(Level.WARNING, "Security features are only available on Hazelcast Enterprise Edition!");
-		return null;
-	}
+    public String getBuild() {
+        return build;
+    }
+
+    public SecurityContext createSecurityContext() {
+        logger.log(Level.WARNING, "Security features are only available on Hazelcast Enterprise Edition!");
+        return null;
+    }
+
+    public IHazelcastFactory getSecureHazelcastFactory() {
+        logger.log(Level.WARNING, "Security features are only available on Hazelcast Enterprise Edition!");
+        return null;
+    }
 }

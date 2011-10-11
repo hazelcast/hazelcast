@@ -25,6 +25,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.SqlPredicate;
+import junit.framework.Assert;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -121,6 +122,43 @@ public class MapStoreTest extends TestUtil {
         assertEquals("value1", map2.get(1));
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
+    }
+
+    @Test
+    public void testThreeMemberInit() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        testMapStore.setLoadAllKeys(true);
+        Map store = testMapStore.getStore();
+        Set keys = new HashSet();
+        int size = 10000;
+        for (int i = 0; i < size; i++) {
+            store.put(i, "value" + i);
+            keys.add(i);
+        }
+        Config config = newConfig(testMapStore, 2);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance[] instances = new HazelcastInstance[]{h1, h2, h3};
+        final Random random = new Random();
+        final CountDownLatch latch = new CountDownLatch(50);
+        for (int i = 0; i < 50; i++) {
+            new Thread(new Runnable() {
+                public void run() {
+                    instances[random.nextInt(100) % 3].getMap("default");
+                    latch.countDown();
+                }
+            }).start();
+        }
+        Assert.assertTrue(latch.await(100, TimeUnit.SECONDS));
+        assertEquals(15, testMapStore.callCount.get());
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        IMap map3 = h3.getMap("default");
+        for (int i = 0; i < size; i++) {
+            assertEquals("value" + i, map3.get(i));
+        }
+        assertEquals(15, testMapStore.callCount.get());
     }
 
     @Test

@@ -52,10 +52,9 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private void postJoin() {
-    	if(!node.isActive()) {
-    		return;
-    	}
-    	
+        if (!node.isActive()) {
+            return;
+        }
         if (tryCount.incrementAndGet() == 5) {
             node.setAsMaster();
         }
@@ -84,7 +83,7 @@ public abstract class AbstractJoiner implements Joiner {
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException e) {
-                    node.shutdown();
+                    node.shutdown(false, true);
                 }
                 node.rejoin();
                 return;

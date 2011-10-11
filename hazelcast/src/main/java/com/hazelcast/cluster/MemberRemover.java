@@ -18,7 +18,6 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -36,18 +35,22 @@ public class MemberRemover extends AbstractRemotelyProcessable {
     }
 
     public void process() {
-        getNode().clusterManager.doRemoveAddress(deadAddress);
-    }
-
-    public void setConnection(Connection conn) {
+        if (conn != null) {
+            Address endpoint = conn.getEndPoint();
+            if (endpoint != null && endpoint.equals(getNode().getMasterAddress())) {
+                getNode().clusterManager.doRemoveAddress(deadAddress);
+            }
+        }
     }
 
     public void readData(DataInput in) throws IOException {
+        super.readData(in);
         deadAddress = new Address();
         deadAddress.readData(in);
     }
 
     public void writeData(DataOutput out) throws IOException {
+        super.writeData(out);
         deadAddress.writeData(out);
     }
 }

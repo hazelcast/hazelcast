@@ -142,7 +142,7 @@ public final class Connection {
             writeHandler.shutdown();
         } catch (Throwable ignored) {
         }
-        logger.log(Level.FINE, "Connection silently closed " + this.socketChannel.socket().getRemoteSocketAddress());
+        logger.log(Level.INFO, "Connection silently closed " + this.socketChannel.socket().getRemoteSocketAddress());
     }
 
     public void close() {
@@ -157,7 +157,7 @@ public final class Connection {
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
         }
-        logger.log(Level.FINE, "Connection lost " + this.socketChannel.socket().getRemoteSocketAddress());
+        logger.log(Level.INFO, "Connection lost " + this.socketChannel.socket().getRemoteSocketAddress());
         connectionManager.destroyConnection(this);
         AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
         addOrRemoveConnection.setNode(connectionManager.node);

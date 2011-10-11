@@ -1130,8 +1130,8 @@ public abstract class BaseManager {
     }
 
     public void sendProcessableToAll(RemotelyProcessable rp, boolean processLocally) {
-        rp.setNode(node);
         if (processLocally) {
+            rp.setNode(node);
             rp.process();
         }
         Data value = toData(rp);
@@ -1239,10 +1239,6 @@ public abstract class BaseManager {
                 return member;
         }
         return null;
-    }
-
-    protected boolean isVeryFirstMember() {
-        return isMaster() && node.clusterManager.getMembersBeforeSync().size() == 0;
     }
 
     protected boolean isMaster() {

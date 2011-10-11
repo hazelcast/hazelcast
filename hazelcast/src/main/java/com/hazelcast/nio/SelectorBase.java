@@ -169,7 +169,9 @@ public abstract class SelectorBase implements Runnable {
     }
 
     protected void initSocket(Socket socket) throws Exception {
-        socket.setSoLinger(true, 1);
+        if (node.connectionManager.SOCKET_LINGER_SECONDS > 0) {
+            socket.setSoLinger(true, node.connectionManager.SOCKET_LINGER_SECONDS);
+        }
         socket.setKeepAlive(node.connectionManager.SOCKET_KEEP_ALIVE);
         socket.setTcpNoDelay(node.connectionManager.SOCKET_NO_DELAY);
         socket.setReceiveBufferSize(node.connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
