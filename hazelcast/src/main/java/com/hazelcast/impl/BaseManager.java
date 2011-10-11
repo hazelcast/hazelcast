@@ -1136,7 +1136,7 @@ public abstract class BaseManager {
         }
         Data value = toData(rp);
         for (MemberImpl member : lsMembers) {
-            if (!member.localMember()) {
+            if (!thisAddress.equals(member.getAddress())) {
                 Packet packet = obtainPacket();
                 packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
                 boolean sent = send(packet, member.getAddress());

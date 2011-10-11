@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>1.9.4.3</version>
+        <version>1.9.4.4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -63,13 +63,13 @@
             <version>3.5.0-Final</version>
             <scope>provided</scope>
         </dependency>
-<!--  		<dependency> -->
-<!--         	<groupId>org.hibernate</groupId> -->
-<!--         	<artifactId>hibernate</artifactId> -->
-<!--         	<version>3.2.7.ga</version> -->
-<!--         	<type>jar</type> -->
-<!--         	<scope>provided</scope> -->
-<!--         </dependency> -->
+        <!--  		<dependency> -->
+        <!--         	<groupId>org.hibernate</groupId> -->
+        <!--         	<artifactId>hibernate</artifactId> -->
+        <!--         	<version>3.2.7.ga</version> -->
+        <!--         	<type>jar</type> -->
+        <!--         	<scope>provided</scope> -->
+        <!--         </dependency> -->
         <dependency>
             <groupId>hsqldb</groupId>
             <artifactId>hsqldb</artifactId>

@@ -286,7 +286,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 boolean removed = false;
                 if (masterMember != null) {
                     if ((now - masterMember.getLastRead()) >= (MAX_NO_HEARTBEAT_MILLIS)) {
-                        logger.log(Level.FINEST, "Master node has timed out it's heartbeat and will be removed");
+                        logger.log(Level.WARNING, "Master node has timed out its heartbeat and will be removed");
                         doRemoveAddress(masterAddress);
                         removed = true;
                     } else if ((now - masterMember.getLastRead()) >= 5000 && (now - masterMember.getLastPing()) >= 5000) {
@@ -397,6 +397,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
         } else { // Remove dead member
             if (connection.address != null) {
+                logger.log(Level.FINEST, "Disconnected from " + connection.address + "... will be removed!");
                 doRemoveAddress(connection.address);
             }
         } // end of REMOVE CONNECTION
@@ -442,10 +443,11 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             node.getClusterImpl().setMembers(lsMembers);
             // toArray will avoid CME as onDisconnect does remove the calls
             disconnectExistingCalls(deadAddress);
+            if (isMaster()) {
+                logger.log(Level.FINEST, deadAddress + " is dead. Sending remove to all other members.");
+                sendProcessableToAll(new RemoveMember(deadAddress), false);
+            }
             logger.log(Level.INFO, this.toString());
-        }
-        if (isMaster()) {
-            sendProcessableToAll(new RemoveMember(deadAddress), false);
         }
     }
 

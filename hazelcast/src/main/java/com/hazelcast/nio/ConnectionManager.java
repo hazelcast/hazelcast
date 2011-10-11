@@ -187,8 +187,7 @@ public class ConnectionManager {
                 listener.connectionRemoved(connection);
             }
         }
-        if (connection.live())
-            connection.close();
+        connection.close();
     }
 
     public void start() {
