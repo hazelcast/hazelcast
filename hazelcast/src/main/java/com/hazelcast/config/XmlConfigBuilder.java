@@ -863,9 +863,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
     		final String nodeName = cleanNodeName(child.getNodeName());
     		if("endpoints".equals(nodeName)) {
-    			handleSecurityPermissionEndpoints(principalNode, permConfig);
+    			handleSecurityPermissionEndpoints(child, permConfig);
     		} else if("actions".equals(nodeName)) {
-    			handleSecurityPermissionActions(principalNode, permConfig);
+    			handleSecurityPermissionActions(child, permConfig);
     		}
     	}
     }
