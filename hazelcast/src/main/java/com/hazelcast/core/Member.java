@@ -23,7 +23,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 /**
- * Cluster member interface. The default implementation @link MemberImpl violates the Java Serialization contract. It
+ * Cluster member interface. The default implementation {@link MemberImpl} violates the Java Serialization contract. It
  * should be serialized/deserialized by Hazelcast.
  *
  * @see Cluster

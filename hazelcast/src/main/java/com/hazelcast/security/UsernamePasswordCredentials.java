@@ -21,9 +21,11 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.hazelcast.security.Credentials;
-
-public class UsernamePasswordCredentials extends Credentials {
+/**
+ * Simple implementation of {@link Credentials} using 
+ * username and password as security attributes. 
+ */
+public class UsernamePasswordCredentials extends AbstractCredentials {
 	
 	private static final long serialVersionUID = -1508314631354255039L;
 	

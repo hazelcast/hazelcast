@@ -75,6 +75,7 @@ public class GroupProperties {
     public static final String PROP_OFFHEAP_ENABLED = "hazelcast.offheap.enabled";
     public static final String PROP_OFFHEAP_TOTAL_SIZE = "hazelcast.offheap.total.size";
     public static final String PROP_OFFHEAP_CHUNK_SIZE = "hazelcast.offheap.chunk.size";
+    public static final String PROP_ENTERPRISE_LICENSE_PATH = "hazelcast.enterprise.license.path";
 
     public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
 
@@ -183,6 +184,8 @@ public class GroupProperties {
     public final GroupProperty OFFHEAP_TOTAL_SIZE;
 
     public final GroupProperty OFFHEAP_CHUNK_SIZE;
+    
+    public final GroupProperty LICENSE_PATH;
 
     public GroupProperties(Config config) {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
@@ -236,6 +239,7 @@ public class GroupProperties {
         OFFHEAP_ENABLED = new GroupProperty(config, PROP_OFFHEAP_ENABLED, "false");
         OFFHEAP_TOTAL_SIZE = new GroupProperty(config, PROP_OFFHEAP_TOTAL_SIZE, "128M");
         OFFHEAP_CHUNK_SIZE = new GroupProperty(config, PROP_OFFHEAP_CHUNK_SIZE, "1K");
+        LICENSE_PATH = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_PATH, null);
     }
 
     public static class GroupProperty {

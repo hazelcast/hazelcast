@@ -17,59 +17,32 @@
 
 package com.hazelcast.security;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.Serializable;
 
-import com.hazelcast.nio.DataSerializable;
+/**
+ * Credentials is a container object for endpoint (Members and Clients)
+ * security attributes.
+ *
+ * It is used on authentication process by {@link javax.security.auth.spi.LoginModule}s.
+ */
+public interface Credentials extends Serializable {
 
-public abstract class Credentials implements Serializable, DataSerializable {
+	/**
+	 * Returns IP address of endpoint. 
+	 * @return endpoint address 
+	 */
+	String getEndpoint();
 
-	private static final long serialVersionUID = 3587995040707072446L;
-
-	private transient String endpoint;
-	private String principal;
-
-	public Credentials() {
-	}
+	/**
+	 * Sets IP address of endpoint.
+	 * @param endpoint address
+	 */
+	void setEndpoint(String endpoint) ;
 	
-	public Credentials(String principal) {
-		super();
-		this.principal = principal;
-	}
-
-	public final String getEndpoint() {
-		return endpoint;
-	}
-
-	public final void setEndpoint(String endpoint) {
-		this.endpoint = endpoint;
-	}
+	/**
+	 * Returns principal of endpoint.
+	 * @return endpoint principal
+	 */
+	String getPrincipal() ;
 	
-	public String getPrincipal() {
-		return principal;
-	}
-	
-	public void setPrincipal(String principal) {
-		this.principal = principal;
-	}
-	
-	public String getName() {
-		return principal + '@' + endpoint;
-	}
-	
-	public final void writeData(DataOutput out) throws IOException {
-		out.writeUTF(principal);
-		writeDataInternal(out);
-	}
-	
-	public final void readData(DataInput in) throws IOException {
-		principal = in.readUTF();
-		readDataInternal(in);
-	}
-	
-	protected abstract void writeDataInternal(DataOutput out) throws IOException ;
-	
-	protected abstract void readDataInternal(DataInput in) throws IOException ;
 }
