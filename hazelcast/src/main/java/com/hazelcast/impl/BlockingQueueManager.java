@@ -758,12 +758,12 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     public void removeItemListener(final String name, final ItemListener listener) {
-        List<ListenerManager.ListenerItem> lsListenerItems = node.listenerManager.getListeners();
+        List<ListenerManager.ListenerItem> lsListenerItems = node.listenerManager.getOrCreateListenerList(name);
         for (ListenerManager.ListenerItem listenerItem : lsListenerItems) {
             if (listenerItem.listener instanceof QueueItemListener) {
                 QueueItemListener queueListener = (QueueItemListener) listenerItem.listener;
                 if (queueListener.itemListener == listener) {
-                    node.listenerManager.getListeners().remove(listenerItem);
+                    lsListenerItems.remove(listenerItem);
                     return;
                 }
             }

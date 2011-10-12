@@ -29,6 +29,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class ListenerManager extends BaseManager {
-    final List<ListenerItem> listeners = new CopyOnWriteArrayList<ListenerItem>();
+    final ConcurrentMap<String, List<ListenerItem>> namedListeners = new ConcurrentHashMap<String, List<ListenerItem>>(100);
 
     ListenerManager(Node node) {
         super(node);
@@ -78,21 +80,25 @@ public class ListenerManager extends BaseManager {
     }
 
     public void syncForAdd() {
-        for (ListenerItem listenerItem : listeners) {
-            if (!listenerItem.localListener) {
-                registerListenerWithNoResponse(listenerItem.name, listenerItem.key, listenerItem.includeValue);
+        for (List<ListenerItem> listeners : namedListeners.values()) {
+            for (ListenerItem listenerItem : listeners) {
+                if (!listenerItem.localListener) {
+                    registerListenerWithNoResponse(listenerItem.name, listenerItem.key, listenerItem.includeValue);
+                }
             }
         }
     }
 
     public void syncForAdd(Address newAddress) {
-        for (ListenerItem listenerItem : listeners) {
-            if (!listenerItem.localListener) {
-                Data dataKey = null;
-                if (listenerItem.key != null) {
-                    dataKey = ThreadContext.get().toData(listenerItem.key);
+        for (List<ListenerItem> listeners : namedListeners.values()) {
+            for (ListenerItem listenerItem : listeners) {
+                if (!listenerItem.localListener) {
+                    Data dataKey = null;
+                    if (listenerItem.key != null) {
+                        dataKey = ThreadContext.get().toData(listenerItem.key);
+                    }
+                    sendAddListener(newAddress, listenerItem.name, dataKey, listenerItem.includeValue);
                 }
-                sendAddListener(newAddress, listenerItem.name, dataKey, listenerItem.includeValue);
             }
         }
     }
@@ -221,7 +227,8 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    public void addLocalListener(final String name, Object listener, Instance.InstanceType instanceType) {
+    public synchronized void addLocalListener(final String name, Object listener, Instance.InstanceType instanceType) {
+        List<ListenerItem> listeners = getOrCreateListenerList(name);
         ListenerItem listenerItem = new ListenerItem(name, null, listener, true, instanceType, true);
         listeners.add(listenerItem);
         node.concurrentMapManager.enqueueAndWait(new Processable() {
@@ -231,8 +238,18 @@ public class ListenerManager extends BaseManager {
         }, 10);
     }
 
-    public void addListener(String name, Object listener, Object key, boolean includeValue,
-                            Instance.InstanceType instanceType) {
+    public synchronized List<ListenerItem> getOrCreateListenerList(String name) {
+        List<ListenerItem> listeners = namedListeners.get(name);
+        if (listeners == null) {
+            listeners = new CopyOnWriteArrayList<ListenerItem>();
+            namedListeners.put(name, listeners);
+        }
+        return listeners;
+    }
+
+    public synchronized void addListener(String name, Object listener, Object key, boolean includeValue,
+                                         Instance.InstanceType instanceType) {
+        List<ListenerItem> listeners = getOrCreateListenerList(name);
         boolean remotelyRegister = true;
         for (ListenerItem listenerItem : listeners) {
             if (!remotelyRegister) {
@@ -261,11 +278,9 @@ public class ListenerManager extends BaseManager {
         listeners.add(listenerItem);
     }
 
-    public List<ListenerItem> getListeners() {
-        return listeners;
-    }
-
-    public synchronized void removeListener(String name, Object listener, Object key) {
+    public void removeListener(String name, Object listener, Object key) {
+        List<ListenerItem> listeners = namedListeners.get(name);
+        if (listeners == null) return;
         for (ListenerItem listenerItem : listeners) {
             if (listener == listenerItem.listener && listenerItem.name.equals(name)) {
                 if (key == null && listenerItem.key == null) {
@@ -288,15 +303,12 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    synchronized void removeAllRegisteredListeners(String name) {
-        for (ListenerItem listenerItem : listeners) {
-            if (listenerItem.name.equals(name)) {
-                listeners.remove(listenerItem);
-            }
-        }
+    void removeAllRegisteredListeners(String name) {
+        namedListeners.remove(name);
     }
 
     void callListeners(DataAwareEntryEvent dataAwareEntryEvent) {
+        List<ListenerItem> listeners = getOrCreateListenerList(dataAwareEntryEvent.getLongName());
         for (ListenerItem listenerItem : listeners) {
             if (listenerItem.listens(dataAwareEntryEvent)) {
                 callListener(listenerItem, dataAwareEntryEvent);

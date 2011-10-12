@@ -33,6 +33,8 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.DistributedTimeoutException;
 
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -40,9 +42,6 @@ import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
-
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.impl.BaseManager.getInstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
@@ -58,7 +57,7 @@ public class ClientService implements ConnectionListener {
     private final ILogger logger;
     private final int THREAD_COUNT;
     final Worker[] workers;
-    private final IHazelcastFactory factory; 
+    private final IHazelcastFactory factory;
 
     public ClientService(Node node) {
         this.node = node;
@@ -144,7 +143,6 @@ public class ClientService implements ConnectionListener {
         for (int i = 0; i < THREAD_COUNT; i++) {
             workers[i] = new Worker();
         }
-        
         this.factory = node.securityContext == null ? node.factory : node.initializer.getSecureHazelcastFactory();
     }
 
@@ -166,8 +164,8 @@ public class ClientService implements ConnectionListener {
         if (clientOperationHandler == null) {
             clientOperationHandler = unknownOperationHandler;
         }
-        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext, 
-        		clientOperationHandler, clientEndpoint.getSubject());
+        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext,
+                clientOperationHandler, clientEndpoint.getSubject());
         clientEndpoint.addRequest(clientRequestHandler);
         if (packet.operation == CONCURRENT_MAP_UNLOCK) {
             node.executorManager.executeNow(clientRequestHandler);
@@ -185,9 +183,11 @@ public class ClientService implements ConnectionListener {
     }
 
     public void restart() {
-        for (ListenerManager.ListenerItem listener : node.listenerManager.listeners) {
-            if (listener instanceof ClientListener) {
-                node.listenerManager.removeListener(listener.name, listener, listener.key);
+        for (List<ListenerManager.ListenerItem> listeners : node.listenerManager.namedListeners.values()) {
+            for (ListenerManager.ListenerItem listener : listeners) {
+                if (listener instanceof ClientListener) {
+                    node.listenerManager.removeListener(listener.name, listener, listener.key);
+                }
             }
         }
     }
@@ -202,7 +202,6 @@ public class ClientService implements ConnectionListener {
 
         public void run() {
             ThreadContext.get().setCurrentFactory(node.factory);
-//        	ThreadContext.get().setCurrentFactory(factory);
             while (active) {
                 Runnable r = null;
                 try {
@@ -252,12 +251,12 @@ public class ClientService implements ConnectionListener {
             node.executorManager.executeNow(new FallThroughRunnable() {
                 public void doRun() {
                     clientEndpoint.connectionRemoved(connection);
-                    if(node.securityContext != null) {
-                    	try {
-							clientEndpoint.getLoginContext().logout();
-						} catch (LoginException e) {
-							logger.log(Level.WARNING, e.getMessage(), e);
-						}
+                    if (node.securityContext != null) {
+                        try {
+                            clientEndpoint.getLoginContext().logout();
+                        } catch (LoginException e) {
+                            logger.log(Level.WARNING, e.getMessage(), e);
+                        }
                     }
                 }
             });
@@ -807,34 +806,30 @@ public class ClientService implements ConnectionListener {
     class ClientAuthenticateHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             final Credentials credentials = (Credentials) toObject(packet.getValueData());
-            
             boolean authenticated = false;
-            if(node.securityContext != null) {
-            	final Socket endpointSocket = packet.conn.getSocketChannel().socket();
-            	credentials.setEndpoint(Address.toString(endpointSocket.getInetAddress().getAddress()));
-            	try {
-					LoginContext lc = node.securityContext.createClientLoginContext(credentials);
-					lc.login();
-					getClientEndpoint(packet.conn).setLoginContext(lc);
-					authenticated = true;
-				} catch (LoginException e) {
-					e.printStackTrace();
-					authenticated = false;
-				}
-            	
+            if (node.securityContext != null) {
+                final Socket endpointSocket = packet.conn.getSocketChannel().socket();
+                credentials.setEndpoint(Address.toString(endpointSocket.getInetAddress().getAddress()));
+                try {
+                    LoginContext lc = node.securityContext.createClientLoginContext(credentials);
+                    lc.login();
+                    getClientEndpoint(packet.conn).setLoginContext(lc);
+                    authenticated = true;
+                } catch (LoginException e) {
+                    e.printStackTrace();
+                    authenticated = false;
+                }
             } else {
-            	UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
-            	String nodeGroupName = factory.getConfig().getGroupConfig().getName();
+                UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
+                String nodeGroupName = factory.getConfig().getGroupConfig().getName();
                 String nodeGroupPassword = factory.getConfig().getGroupConfig().getPassword();
-	            authenticated = (nodeGroupName.equals(usernamePasswordCredentials.getUsername()) 
-	            		&& nodeGroupPassword.equals(new String(usernamePasswordCredentials.getPassword())));
+                authenticated = (nodeGroupName.equals(usernamePasswordCredentials.getUsername())
+                        && nodeGroupPassword.equals(new String(usernamePasswordCredentials.getPassword())));
             }
-            
             logger.log((authenticated ? Level.INFO : Level.WARNING), "received auth from " + packet.conn
 //            		+ ", this group name:" + nodeGroupName + ", auth group name:" + groupName
-            		+ ", " + (authenticated ?
-            				"successfully authenticated" : "authentication failed"));
-            
+                    + ", " + (authenticated ?
+                    "successfully authenticated" : "authentication failed"));
             packet.clearForResponse();
             packet.setValue(toData(authenticated));
         }
