@@ -4,8 +4,8 @@
 
     <info>
         <title>Hazelcast Documentation</title>
-        <subtitle>version 1.9.4</subtitle>
-        <pubdate>6 September 2011</pubdate>
+        <subtitle>version 1.9.5</subtitle>
+        <pubdate>15 October 2011</pubdate>
         <copyright>
             <year>2011</year>
             <holder>Hazel Bilisim Ltd. Sti.</holder>
@@ -93,6 +93,14 @@
         <xi:include href="WildcardConfiguration.xml"/>
         <xi:include href="ConfigurationProperties.xml"/>
         <xi:include href="Logging.xml"/>
+    </chapter>
+    <chapter xml:id="Security">
+        <title>Enterprise Security</title>
+        <xi:include href="SecurityIntro.xml"/>
+        <xi:include href="Credentials.xml"/>
+        <xi:include href="ClusterLoginModule.xml"/>
+        <xi:include href="MemberSecurity.xml"/>
+        <xi:include href="ClientSecurity.xml"/>
     </chapter>
     <chapter xml:id="HibernateSecondLevelCache">
         <title>Hibernate Second Level Cache</title>
