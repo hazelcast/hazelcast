@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg"
+      xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml"
+      xmlns:db="http://docbook.org/ns/docbook">
+
+    <para>
+        By default, Hazelcast stores your distributed data (map entries, queue items) into Java heap
+        which is subject to garbage collection. As your heap gets bigger, garbage collection might
+        cause your application to pause tens of seconds, badly effecting your application performance
+        and response times. Elastic Memory is Hazelcast with off-heap (direct) memory storage to avoid GC pauses.
+        Even if you have terabytes of cache in-memory with lots of updates, GC will have almost no effect;
+        resulting in more predictable latency and throughput.
+    </para>
+    <para>
+        Here are the steps to enable Elastic Memory:
+        <itemizedlist>
+            <listitem>
+                <para>
+                    Set the maximum direct memory JVM can allocate.
+                    Example
+                    <literal>java -XX:MaxDirectMemorySize=60G ...</literal>
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Enable Elastic Memory by setting
+                    <literal>hazelcast.elastic.memory.enabled</literal>
+                    <link xlink:href="#ConfigurationProperties">Hazelcast Config Property</link>
+                    to
+                    <literal>true</literal>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Set the total direct memory size for HazelcastInstance by setting
+                    <literal>hazelcast.elastic.memory.total.size</literal>
+                    <link xlink:href="#ConfigurationProperties">Hazelcast Config Property</link>. Size can be
+                    in MB or GB and abbreviation can be used, such as
+                    <literal>60G</literal>
+                    and
+                    <literal>500M</literal>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Set the chunk size in KB by setting
+                    <literal>hazelcast.elastic.memory.chunk.size</literal>
+                    <link xlink:href="#ConfigurationProperties">Hazelcast Config Property</link>.
+                    Hazelcast will partition the entire offheap memory into chunks.
+                    Default chunk size is 1. Chunk size has to be power of 2 such as 1, 2, 4 and 8.
+                </para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        If
+        <literal>NearCache</literal>
+        is defined for a map, all near cached items are also going to be
+        stored on the same off-heap. So off-heap storage is used for both near cache and distributed object
+        storage.
+    </para>
+
+</para>

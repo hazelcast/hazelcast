@@ -44,6 +44,22 @@
         <xi:include href="Lock.xml"/>
         <xi:include href="Events.xml"/>
     </chapter>
+    <chapter xml:id="ElasticMemory">
+        <title>Elastic Memory
+            <superscript>(Enterprise Edition Only)</superscript>
+        </title>
+        <xi:include href="ElasticMemory.xml"/>
+    </chapter>
+    <chapter xml:id="Security">
+        <title>Security
+            <superscript>(Enterprise Edition Only)</superscript>
+        </title>
+        <xi:include href="SecurityIntro.xml"/>
+        <xi:include href="Credentials.xml"/>
+        <xi:include href="ClusterLoginModule.xml"/>
+        <xi:include href="MemberSecurity.xml"/>
+        <xi:include href="ClientSecurity.xml"/>
+    </chapter>
     <chapter xml:id="DataAffinity">
         <title>Data Affinity</title>
         <xi:include href="DataAffinity.xml"/>
@@ -93,14 +109,6 @@
         <xi:include href="WildcardConfiguration.xml"/>
         <xi:include href="ConfigurationProperties.xml"/>
         <xi:include href="Logging.xml"/>
-    </chapter>
-    <chapter xml:id="Security">
-        <title>Enterprise Security</title>
-        <xi:include href="SecurityIntro.xml"/>
-        <xi:include href="Credentials.xml"/>
-        <xi:include href="ClusterLoginModule.xml"/>
-        <xi:include href="MemberSecurity.xml"/>
-        <xi:include href="ClientSecurity.xml"/>
     </chapter>
     <chapter xml:id="HibernateSecondLevelCache">
         <title>Hibernate Second Level Cache</title>
