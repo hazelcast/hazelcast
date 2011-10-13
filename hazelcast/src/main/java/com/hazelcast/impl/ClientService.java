@@ -807,7 +807,11 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             final Credentials credentials = (Credentials) toObject(packet.getValueData());
             boolean authenticated = false;
-            if (node.securityContext != null) {
+            if(credentials == null) {
+            	authenticated = false;
+            	logger.log(Level.SEVERE, "Could not retrieve Credentials object!");
+            }
+            else if (node.securityContext != null) {
                 final Socket endpointSocket = packet.conn.getSocketChannel().socket();
                 credentials.setEndpoint(Address.toString(endpointSocket.getInetAddress().getAddress()));
                 try {
@@ -816,15 +820,22 @@ public class ClientService implements ConnectionListener {
                     getClientEndpoint(packet.conn).setLoginContext(lc);
                     authenticated = true;
                 } catch (LoginException e) {
-                    e.printStackTrace();
+                    logger.log(Level.WARNING, e.getMessage(), e);
                     authenticated = false;
                 }
             } else {
-                UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
-                String nodeGroupName = factory.getConfig().getGroupConfig().getName();
-                String nodeGroupPassword = factory.getConfig().getGroupConfig().getPassword();
-                authenticated = (nodeGroupName.equals(usernamePasswordCredentials.getUsername())
-                        && nodeGroupPassword.equals(new String(usernamePasswordCredentials.getPassword())));
+            	if(credentials instanceof UsernamePasswordCredentials) {
+            		final UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
+            		final String nodeGroupName = factory.getConfig().getGroupConfig().getName();
+            		final String nodeGroupPassword = factory.getConfig().getGroupConfig().getPassword();
+            		authenticated = (nodeGroupName.equals(usernamePasswordCredentials.getUsername())
+            				&& nodeGroupPassword.equals(new String(usernamePasswordCredentials.getPassword())));
+            	} else {
+            		authenticated = false;
+            		logger.log(Level.SEVERE, "Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster group-name" +
+            				" and group-password should be used for authentication!\n" +
+            				"Current credentials type is: " + credentials.getClass().getName());
+            	}
             }
             logger.log((authenticated ? Level.INFO : Level.WARNING), "received auth from " + packet.conn
 //            		+ ", this group name:" + nodeGroupName + ", auth group name:" + groupName

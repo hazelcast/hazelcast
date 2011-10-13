@@ -805,7 +805,10 @@
     	</xs:complexType>
     </xs:element>
     <xs:complexType name="base-permisson">
-    	<xs:attribute name="principal" type="xs:string" use="optional">
+    	<xs:sequence>
+    		<xs:element ref="endpoints" minOccurs="0" maxOccurs="1"/>
+    	</xs:sequence>
+    	<xs:attribute name="principal" type="xs:string" use="optional" default="*">
     		<xs:annotation>
     			<xs:documentation>
     				Name of the principal. Wildcards(*) can be used.
@@ -817,7 +820,6 @@
     	<xs:complexContent>
     		<xs:extension base="base-permisson">
 		    	<xs:sequence>
-		    		<xs:element ref="endpoints" minOccurs="0" maxOccurs="1"/>
 		    		<xs:element ref="actions" minOccurs="1" maxOccurs="1"/>
 		    	</xs:sequence>
 		    	<xs:attribute name="name" type="xs:string" use="required">
@@ -837,6 +839,7 @@
 			    	<xs:attribute name="name" use="required">
 			    		<xs:simpleType>
 			    			<xs:restriction base="xs:string">
+			    				<xs:enumeration value="all" />
 			    				<xs:enumeration value="instance" />
 			    				<xs:enumeration value="member" />
 			    			</xs:restriction>
@@ -860,7 +863,7 @@
     		</xs:documentation>
     	</xs:annotation>
         <xs:simpleType>
-            <xs:restriction base="xs:string"/>
+            <xs:restriction base="xs:string" />
         </xs:simpleType>
     </xs:element>
     <xs:element name="actions">

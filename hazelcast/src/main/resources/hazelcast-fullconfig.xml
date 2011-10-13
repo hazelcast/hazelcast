@@ -265,7 +265,11 @@
 			</properties>
 		</client-permission-policy>
 		<client-permissions>
-			<all-permissions />
+			<all-permissions principal="admin" >
+				<endpoints>
+					<endpoint>127.0.0.1</endpoint>
+				</endpoints>
+			</all-permissions>
 			<map-permission name="default" principal="dev">
 				<actions>
 					<action>create</action>
