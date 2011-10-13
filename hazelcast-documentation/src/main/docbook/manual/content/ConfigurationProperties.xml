@@ -390,20 +390,20 @@ cfg.setProperty("hazelcast.property.foo", "value");
 				<td>100</td>
 			</tr>
 			<tr>
-				<td><db:literal>hazelcast.offheap.enabled</db:literal></td>
+				<td><db:literal>hazelcast.elastic.memory.enabled</db:literal></td>
 				<td>Enable Hazelcast Elastic Memory off-heap storage</td>
 				<td>boolean</td>
 				<td>false</td>
 			</tr>
 			<tr>
-				<td><db:literal>hazelcast.offheap.total.size</db:literal></td>
-				<td>Hazelcast Elastic Memory off-heap storage total size in MB</td>
+				<td><db:literal>hazelcast.elastic.memory.total.size</db:literal></td>
+				<td>Hazelcast Elastic Memory storage total size in MB</td>
 				<td>integer</td>
 				<td>128</td>
 			</tr>
 			<tr>
-				<td><db:literal>hazelcast.offheap.chunk.size</db:literal></td>
-				<td>Hazelcast Elastic Memory off-heap storage chunk size in KB</td>
+				<td><db:literal>hazelcast.elastic.memory.chunk.size</db:literal></td>
+				<td>Hazelcast Elastic Memory storage chunk size in KB</td>
 				<td>integer</td>
 				<td>1</td>
 			</tr>
