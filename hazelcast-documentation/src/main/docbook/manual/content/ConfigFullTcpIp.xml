@@ -22,25 +22,25 @@
         can not properly build up the cluster.
 
         <programlisting language="xml"><![CDATA[<hazelcast>
-	...
-	<network>
-		<port auto-increment="true">5701</port>
-		<join>
-			<multicast enabled="false">
-				<multicast-group>224.2.2.3</multicast-group>
-				<multicast-port>54327</multicast-port>
-			</multicast>
-			<tcp-ip enabled="true">
-				<hostname>machine1</hostname>
-				<hostname>machine2</hostname>
-				<hostname>machine3:5799</hostname>
-				<interface>192.168.1.0-7</interface> 	
-				<interface>192.168.1.21</interface> 
-			</tcp-ip>
-		</join>
-		...
-	</network>
-	...
+    ...
+    <network>
+        <port auto-increment="true">5701</port>
+        <join>
+            <multicast enabled="false">
+                <multicast-group>224.2.2.3</multicast-group>
+                <multicast-port>54327</multicast-port>
+            </multicast>
+            <tcp-ip enabled="true">
+                <hostname>machine1</hostname>
+                <hostname>machine2</hostname>
+                <hostname>machine3:5799</hostname>
+                <interface>192.168.1.0-7</interface>     
+                <interface>192.168.1.21</interface> 
+            </tcp-ip>
+        </join>
+        ...
+    </network>
+    ...
 </hazelcast>
 ]]></programlisting>
 

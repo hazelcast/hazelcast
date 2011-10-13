@@ -25,7 +25,7 @@ mmCustomerOrders.put("1", new Order ("iPod", 79));
 // get orders of the customer with customerId 1.
 Collection<Order> colOrders = mmCustomerOrders.get ("1");
 for (Order order : colOrders) {
-	// process order
+    // process order
 }
 
 // remove specific key/value pair

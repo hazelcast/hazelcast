@@ -19,7 +19,7 @@ MyTask task = q.take();
 boolean offered = q.offer(new MyTask(), 10, TimeUnit.SECONDS);
 task = q.poll (5, TimeUnit.SECONDS);
 if (task != null) {
-	//process task
+    //process task
 }
 ]]></programlisting> If you have 10 million tasks in your "tasks" queue and you are running that
         code over 10 JVMs (or servers), then each server carries 1 million task objects (plus
@@ -27,7 +27,7 @@ if (task != null) {
         as <literal>MyTask</literal> in the example above), that are (en/de)queued have to
             be <literal>Serializable</literal>. Maximum capacity per JVM and the TTL (Time to Live)
         for a queue can be configured as shown in the example below. <programlisting language="xml"><![CDATA[<hazelcast>
-	...
+    ...
     <queue name="tasks">
         <!--
             Maximum size of the queue. When a JVM's local queue size reaches the maximum,
@@ -48,7 +48,7 @@ if (task != null) {
 ]]></programlisting> As of version 1.9.3, distributed queues are backed by distributed maps. Thus,
         queues can have custom backup counts and persistent storage. Hazelcast will generate
         cluster-wide unique id for each element in the queue. Sample configuration: <programlisting language="xml"><![CDATA[<hazelcast>
-	...
+    ...
     <queue name="tasks">
         <!--
             Maximum size of the queue. When a JVM's local queue size reaches the maximum,

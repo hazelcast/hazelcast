@@ -28,15 +28,15 @@ try {
     Context context = new InitialContext(); 
     txn = (UserTransaction) context.lookup("java:comp/UserTransaction"); 
     txn.begin(); 
-	
+    
     ConnectionFactory cf = (ConnectionFactory) context.lookup ("java:comp/env/HazelcastCF"); 
     conn = cf.getConnection();  
-	
+    
     queue.offer("newitem");
     map.put ("1", "value1");
     set.add ("item1");
     list.add ("listitem1");
-	
+    
     txn.commit(); 
 } catch (Throwable e) { 
     if (txn != null) {

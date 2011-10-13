@@ -108,17 +108,17 @@
         -->
         <backup-count>1</backup-count>
         <!-- 
-	        Maximum number of seconds for each entry to stay in the map. Entries that are
-			older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
-			will get automatically evicted from the map.
-			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+            Maximum number of seconds for each entry to stay in the map. Entries that are
+            older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
+            will get automatically evicted from the map.
+            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
         -->
         <time-to-live-seconds>0</time-to-live-seconds>
         <!--
-        	Maximum number of seconds for each entry to stay idle in the map. Entries that are
-			idle(not touched) for more than <max-idle-seconds> will get
-			automatically evicted from the map. Entry is touched if get, put or containsKey is called.
-			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+            Maximum number of seconds for each entry to stay idle in the map. Entries that are
+            idle(not touched) for more than <max-idle-seconds> will get
+            automatically evicted from the map. Entry is touched if get, put or containsKey is called.
+            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
         -->
         <max-idle-seconds>0</max-idle-seconds>
         <!--
@@ -199,20 +199,20 @@
             <programlisting language="java"><![CDATA[Config cfg = new Config();
 cfg.setPort(5900);
 cfg.setPortAutoIncrement(false);
-		
+        
 NetworkConfig network = cfg.getNetworkConfig();
 Join join = network.getJoin();
 join.getMulticastConfig().setEnabled(false);
 join.getTcpIpConfig().addMember("10.45.67.32").addMember("10.45.67.100")
-			.setRequiredMember("192.168.10.100").setEnabled(true);
+            .setRequiredMember("192.168.10.100").setEnabled(true);
 network.getInterfaces().setEnabled(true).addInterface("10.45.67.*");
-		
+        
 MapConfig mapCfg = new MapConfig();
 mapCfg.setName("testMap");
 mapCfg.setBackupCount(2);
 mapCfg.getMaxSizeConfig().setSize(10000);
 mapCfg.setTimeToLiveSeconds(300);
-		
+        
 MapStoreConfig mapStoreCfg = new MapStoreConfig();
 mapStoreCfg.setClassName("com.hazelcast.examples.DummyStore").setEnabled(true);
 mapCfg.setMapStoreConfig(mapStoreCfg);

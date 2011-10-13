@@ -155,19 +155,19 @@
     ...
     
     <bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" scope="singleton">
-		<property name="dataSource" ref="dataSource"/>
-		<property name="cacheProvider" ref="cacheProvider" />
-		...
-	</bean>
-	]]></programlisting> Or by Spring version 3.1 <programlisting language="xml"><![CDATA[
+        <property name="dataSource" ref="dataSource"/>
+        <property name="cacheProvider" ref="cacheProvider" />
+        ...
+    </bean>
+    ]]></programlisting> Or by Spring version 3.1 <programlisting language="xml"><![CDATA[
     <hz:hibernate-region-factory id="regionFactory" instance-ref="instance" />
             
     ...
     
     <bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" scope="singleton">
-		<property name="dataSource" ref="dataSource"/>
-		<property name="cacheRegionFactory" ref="regionFactory" />
-		...
-	</bean>
-	]]></programlisting>
+        <property name="dataSource" ref="dataSource"/>
+        <property name="cacheRegionFactory" ref="regionFactory" />
+        ...
+    </bean>
+    ]]></programlisting>
 </para>

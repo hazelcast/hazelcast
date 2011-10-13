@@ -16,16 +16,16 @@
         default) and if Hazelcast cannot find an matching interface, then it will print a message on console and won't
         start on that node.
         <programlisting language="xml"><![CDATA[<hazelcast>
-	...
-	<network>
-		....
-		<interfaces enabled="true">
-			<interface>10.3.16.*</interface> 
-			<interface>10.3.10.4-18</interface> 
-			<interface>192.168.1.3</interface> 		
-		</interfaces>	
-	</network>
-	...
+    ...
+    <network>
+        ....
+        <interfaces enabled="true">
+            <interface>10.3.16.*</interface> 
+            <interface>10.3.10.4-18</interface> 
+            <interface>192.168.1.3</interface>         
+        </interfaces>    
+    </network>
+    ...
 </hazelcast> 
 ]]></programlisting>
 

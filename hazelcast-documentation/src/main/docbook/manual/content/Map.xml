@@ -28,7 +28,7 @@ mapCustomers.put("3", new Customer("Avi", "Noyan"));
 
 Collection<Customer> colCustomers = mapCustomers.values();
 for (Customer customer : colCustomers) {
-	// process customer
+    // process customer
 }
 ]]></programlisting>
         <literal>Hazelcast.getMap()</literal>
@@ -64,7 +64,7 @@ public boolean removeCustomer (Customer customer) {
     ConcurrentMap<String, Customer> map = Hazelcast.getMap("customers");
     return map.remove(customer.getId(), customer) );           
 }                                  
-    	
+        
 ]]></programlisting>
         All
         <literal>ConcurrentMap</literal>

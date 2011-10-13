@@ -24,10 +24,10 @@ public class Sample implements MessageListener {
     public static void main(String[] args) { 
         Sample sample = new Sample();
         Topic topic = Hazelcast.getTopic ("default");  
-        topic.addMessageListener(sample); 		
+        topic.addMessageListener(sample);         
         topic.publish ("my-message-object");
     }  
-	 
+     
     public void onMessage(Object msg) {
         System.out.println("Message received = " + msg);
     } 

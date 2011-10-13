@@ -23,15 +23,15 @@ Set set     = Hazelcast.getSet  ("myset");
 
 Transaction txn = Hazelcast.getTransaction();
 txn.begin();
-try {	
-	Object obj = queue.poll();
-	//process obj
-	map.put ("1", "value1");
-	set.add ("value");
-	//do other things..
-	txn.commit();
+try {    
+    Object obj = queue.poll();
+    //process obj
+    map.put ("1", "value1");
+    set.add ("value");
+    //do other things..
+    txn.commit();
 }catch (Throwable t)  {
-	txn.rollback();
+    txn.rollback();
 }
 ]]></programlisting>
 

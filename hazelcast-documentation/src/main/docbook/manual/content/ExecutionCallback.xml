@@ -14,19 +14,19 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.DistributedTask;
 import java.util.concurrent.ExecutorService;    
 import java.util.concurrent.Future; 
-		
+        
 ExecutorService es = Hazelcast.getExecutorService();
 DistributedTask<String> task = new DistributedTask<String>(new Fibonacci<Long>(10));
 task.setExecutionCallback(new ExecutionCallback<Long> () {
-	public void done (Future<Long> future) { 
-		try {
-			if (! future.isCancelled()) {
+    public void done (Future<Long> future) { 
+        try {
+            if (! future.isCancelled()) {
                 System.out.println("Fibonacci calculation result = " + future.get());
             }
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 });
 es.execute(task);
 ]]></programlisting> You could have achieved the same results by extending
@@ -35,18 +35,18 @@ es.execute(task);
 import com.hazelcast.core.DistributedTask;
 import java.util.concurrent.ExecutorService;    
 import java.util.concurrent.Future; 
-		
+        
 ExecutorService es = Hazelcast.getExecutorService();
 es.execute(new DistributedTask<String>(new Fibonacci<Long>(10)) {
-	public void done () { 
-		try {
+    public void done () { 
+        try {
             if (! isCancelled()) {
                 System.out.println("Fibonacci calculation result = " + get());
             }
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }); 
 ]]></programlisting>
     </para>

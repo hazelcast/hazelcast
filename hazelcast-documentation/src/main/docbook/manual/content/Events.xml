@@ -25,42 +25,42 @@ import com.hazelcast.core.EntryEvent;
 
 public class Sample implements ItemListener, EntryListener {
 
-	public static void main(String[] args) { 
-		Sample sample = new Sample();
-		Queue queue = Hazelcast.getQueue ("default"); 
-		Map   map   = Hazelcast.getMap   ("default"); 
-		Set   set   = Hazelcast.getSet   ("default"); 
-		//listen for all added/updated/removed entries
-		queue.addItemListener(sample, true);
-		set.addItemListener  (sample, true); 
-		map.addEntryListener (sample, true);		
-		//listen for an entry with specific key 
-		map.addEntryListener (sample, "keyobj");		
-	} 
+    public static void main(String[] args) { 
+        Sample sample = new Sample();
+        Queue queue = Hazelcast.getQueue ("default"); 
+        Map   map   = Hazelcast.getMap   ("default"); 
+        Set   set   = Hazelcast.getSet   ("default"); 
+        //listen for all added/updated/removed entries
+        queue.addItemListener(sample, true);
+        set.addItemListener  (sample, true); 
+        map.addEntryListener (sample, true);        
+        //listen for an entry with specific key 
+        map.addEntryListener (sample, "keyobj");        
+    } 
 
-	public void entryAdded(EntryEvent event) {
-		System.out.println("Entry added key=" + event.getKey() + ", value=" + event.getValue());
-	}
+    public void entryAdded(EntryEvent event) {
+        System.out.println("Entry added key=" + event.getKey() + ", value=" + event.getValue());
+    }
 
-	public void entryRemoved(EntryEvent event) {
-		System.out.println("Entry removed key=" + event.getKey() + ", value=" + event.getValue());
-	}
+    public void entryRemoved(EntryEvent event) {
+        System.out.println("Entry removed key=" + event.getKey() + ", value=" + event.getValue());
+    }
 
-	public void entryUpdated(EntryEvent event) {
-		System.out.println("Entry update key=" + event.getKey() + ", value=" + event.getValue());
-	} 
+    public void entryUpdated(EntryEvent event) {
+        System.out.println("Entry update key=" + event.getKey() + ", value=" + event.getValue());
+    } 
 
-	public void entryEvicted(EntryEvent event) {
-		System.out.println("Entry evicted key=" + event.getKey() + ", value=" + event.getValue());
-	} 
-	
-	public void itemAdded(Object item) {
-		System.out.println("Item added = " + item);
-	}
+    public void entryEvicted(EntryEvent event) {
+        System.out.println("Entry evicted key=" + event.getKey() + ", value=" + event.getValue());
+    } 
+    
+    public void itemAdded(Object item) {
+        System.out.println("Item added = " + item);
+    }
 
-	public void itemRemoved(Object item) {
-		System.out.println("Item removed = " + item);
-	}	 
+    public void itemRemoved(Object item) {
+        System.out.println("Item removed = " + item);
+    }     
 }
        
 ]]></programlisting>

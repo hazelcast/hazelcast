@@ -114,8 +114,8 @@
                 attribute with one of <emphasis>read
                 only</emphasis>,<emphasis>read/write</emphasis>, <emphasis>nonstrict
                     read/write</emphasis>. <programlisting language="xml"><![CDATA[<class-cache usage="read-only" class="eg.Immutable"/>
- <class-cache usage="read-write" class="eg.Cat"/>
- <collection-cache collection="eg.Cat.kittens" usage="read-write"/>
+<class-cache usage="read-write" class="eg.Cat"/>
+<collection-cache collection="eg.Cat.kittens" usage="read-write"/>
 ]]></programlisting></para>
         </listitem>
     </itemizedlist> OR <itemizedlist>
@@ -128,7 +128,7 @@ public class Cat implements Serializable {
 ]]></programlisting></para>
         </listitem>
     </itemizedlist> Accessing underlying <code>HazelcastInstance</code> is possible by using
-        <code>HazelcastAccessor</code>. <programlisting language="java"><![CDATA[   SessionFactory sessionFactory = ...;
-    HazelcastInstance hazelcastInstance = HazelcastAccessor.getHazelcastInstance(sessionFactory);        
+        <code>HazelcastAccessor</code>. <programlisting language="java"><![CDATA[SessionFactory sessionFactory = ...;
+HazelcastInstance hazelcastInstance = HazelcastAccessor.getHazelcastInstance(sessionFactory);        
 ]]></programlisting> And now last thing you should be aware of is to drop
         <literal>hazelcast-hibernate-&lt;version&gt;.jar</literal> into your classpath. </para>

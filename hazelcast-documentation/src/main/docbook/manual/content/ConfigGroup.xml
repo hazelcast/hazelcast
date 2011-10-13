@@ -12,12 +12,12 @@
         production group, test group, app-a group etc...
 
         <programlisting language="xml"><![CDATA[<hazelcast>
-	<group>
-		<name>dev</name>
-		<password>dev-pass</password>
-	</group>
-	...
-	
+    <group>
+        <name>dev</name>
+        <password>dev-pass</password>
+    </group>
+    ...
+    
 </hazelcast>
 ]]></programlisting>
 
