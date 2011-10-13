@@ -58,9 +58,6 @@ public final class HazelcastCacheProvider implements CacheProvider {
     	this.instance = instance;
     }
 
-    /**
-     * We ignore the <code>Properties</code> passed in here in favor of the <code>hazelcast.xml</code> file.
-     */
     public Cache buildCache(final String name, final Properties properties) throws CacheException {
         return new HazelcastCache(instance, name, properties);
     }
