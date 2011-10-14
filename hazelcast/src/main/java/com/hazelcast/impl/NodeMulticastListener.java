@@ -24,12 +24,12 @@ import com.hazelcast.nio.Address;
 
 public class NodeMulticastListener implements MulticastListener {
     final Node node;
-    final Set<String> acceptedInterfaces;
+    final Set<String> trustedInterfaces;
 
     public NodeMulticastListener(Node node) {
         this.node = node;
-        this.acceptedInterfaces = node.getConfig().getNetworkConfig()
-        	.getJoin().getMulticastConfig().getAcceptedInterfaces();
+        this.trustedInterfaces = node.getConfig().getNetworkConfig()
+        	.getJoin().getMulticastConfig().getTrustedInterfaces();
     }
 
     public void onMessage(Object msg) {
@@ -51,8 +51,8 @@ public class NodeMulticastListener implements MulticastListener {
                         if (!node.joined() && !joinInfo.isRequest()) {
                             if (node.masterAddress == null) {
                             	final String masterHost = joinInfo.address.getHost();
-                            	if(acceptedInterfaces.isEmpty() || 
-                            			AddressPicker.matchAddress(masterHost, acceptedInterfaces)) {
+                            	if(trustedInterfaces.isEmpty() || 
+                            			AddressPicker.matchAddress(masterHost, trustedInterfaces)) {
                             		node.masterAddress = new Address(joinInfo.address);
                             	}
                             }

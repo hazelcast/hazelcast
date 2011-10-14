@@ -234,12 +234,12 @@
             <xs:sequence>
                 <xs:element ref="multicast-group" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="multicast-port" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="accepted-interfaces" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="trusted-interfaces" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
         </xs:complexType>
     </xs:element>
-    <xs:element name="accepted-interfaces">
+    <xs:element name="trusted-interfaces">
     	<xs:complexType>
     		<xs:sequence>
     			<xs:element ref="interface" minOccurs="0" maxOccurs="unbounded" />

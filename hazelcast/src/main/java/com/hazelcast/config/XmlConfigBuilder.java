@@ -481,10 +481,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 join.getMulticastConfig().setMulticastPort(Integer.parseInt(value));
             } else if ("multicast-timeout-seconds".equals(cleanNodeName(n.getNodeName()))) {
                 join.getMulticastConfig().setMulticastTimeoutSeconds(Integer.parseInt(value));
-            } else if ("accepted-interfaces".equals(cleanNodeName(n.getNodeName()))) {
+            } else if ("trusted-interfaces".equals(cleanNodeName(n.getNodeName()))) {
             	 for (org.w3c.dom.Node child : new IterableNodeList(n.getChildNodes())) {
                      if ("interface".equalsIgnoreCase(cleanNodeName(child.getNodeName()))) {
-                         join.getMulticastConfig().addAcceptedInterface(getTextContent(child).trim());
+                         join.getMulticastConfig().addTrustedInterface(getTextContent(child).trim());
                      }
                  }
             }

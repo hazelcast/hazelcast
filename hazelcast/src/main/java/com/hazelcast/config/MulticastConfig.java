@@ -40,7 +40,7 @@ public class MulticastConfig implements DataSerializable {
 
     private int multicastTimeoutSeconds = DEFAULT_MULTICAST_TIMEOUT_SECONDS;
     
-    private final Set<String> acceptedInterfaces = new HashSet<String>();
+    private final Set<String> trustedInterfaces = new HashSet<String>();
 
     /**
      * @return the enabled
@@ -102,18 +102,18 @@ public class MulticastConfig implements DataSerializable {
         return this;
     }
 
-    public Set<String> getAcceptedInterfaces() {
-		return acceptedInterfaces;
+    public Set<String> getTrustedInterfaces() {
+		return trustedInterfaces;
 	}
     
-    public MulticastConfig setAcceptedInterfaces(Set<String> interfaces) {
-		acceptedInterfaces.clear();
-		acceptedInterfaces.addAll(interfaces);
+    public MulticastConfig setTrustedInterfaces(Set<String> interfaces) {
+		trustedInterfaces.clear();
+		trustedInterfaces.addAll(interfaces);
 		return this;
 	}
     
-    public MulticastConfig addAcceptedInterface(final String ip) {
-    	acceptedInterfaces.add(ip);
+    public MulticastConfig addTrustedInterface(final String ip) {
+    	trustedInterfaces.add(ip);
         return this;
     }
     
