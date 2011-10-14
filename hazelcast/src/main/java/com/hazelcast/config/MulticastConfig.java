@@ -20,6 +20,8 @@ package com.hazelcast.config;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.hazelcast.nio.DataSerializable;
 
@@ -37,6 +39,8 @@ public class MulticastConfig implements DataSerializable {
     private int multicastPort = DEFAULT_MULTICAST_PORT;
 
     private int multicastTimeoutSeconds = DEFAULT_MULTICAST_TIMEOUT_SECONDS;
+    
+    private final Set<String> acceptedInterfaces = new HashSet<String>();
 
     /**
      * @return the enabled
@@ -98,6 +102,21 @@ public class MulticastConfig implements DataSerializable {
         return this;
     }
 
+    public Set<String> getAcceptedInterfaces() {
+		return acceptedInterfaces;
+	}
+    
+    public MulticastConfig setAcceptedInterfaces(Set<String> interfaces) {
+		acceptedInterfaces.clear();
+		acceptedInterfaces.addAll(interfaces);
+		return this;
+	}
+    
+    public MulticastConfig addAcceptedInterface(final String ip) {
+    	acceptedInterfaces.add(ip);
+        return this;
+    }
+    
     public void writeData(DataOutput out) throws IOException {
         out.writeBoolean(enabled);
         out.writeUTF(multicastGroup);

@@ -17,14 +17,19 @@
 
 package com.hazelcast.impl;
 
+import java.util.Set;
+
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.nio.Address;
 
 public class NodeMulticastListener implements MulticastListener {
     final Node node;
+    final Set<String> acceptedInterfaces;
 
     public NodeMulticastListener(Node node) {
         this.node = node;
+        this.acceptedInterfaces = node.getConfig().getNetworkConfig()
+        	.getJoin().getMulticastConfig().getAcceptedInterfaces();
     }
 
     public void onMessage(Object msg) {
@@ -45,7 +50,11 @@ public class NodeMulticastListener implements MulticastListener {
                     } else {
                         if (!node.joined() && !joinInfo.isRequest()) {
                             if (node.masterAddress == null) {
-                                node.masterAddress = new Address(joinInfo.address);
+                            	final String masterHost = joinInfo.address.getHost();
+                            	if(acceptedInterfaces.isEmpty() || 
+                            			AddressPicker.matchAddress(masterHost, acceptedInterfaces)) {
+                            		node.masterAddress = new Address(joinInfo.address);
+                            	}
                             }
                         } else if (joinInfo.isRequest()) {
                             Joiner joiner = node.getJoiner();
