@@ -26,6 +26,8 @@ public interface NodeInitializer {
 	
 	void beforeInitialize(Node node);
 	
+	void printNodeInfo(Node node);
+	
 	void afterInitialize(Node node);
 	
 	String getBuild();

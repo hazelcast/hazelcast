@@ -208,7 +208,7 @@ public class Node {
         topicManager = new TopicManager(this);
         textCommandService = new TextCommandServiceImpl(this);
         clusterManager.addMember(false, localMember);
-        initializer.afterInitialize(this);
+        initializer.printNodeInfo(this);
         buildNumber = initializer.getBuildNumber();
         VersionCheck.check(this, initializer.getBuild(), initializer.getVersion());
         Join join = config.getNetworkConfig().getJoin();
@@ -411,6 +411,7 @@ public class Node {
             sb.append(". Some of the ports seem occupied!");
             logger.log(Level.WARNING, sb.toString());
         }
+        initializer.afterInitialize(this);
     }
 
     public ILogger getLogger(String name) {

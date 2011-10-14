@@ -45,10 +45,13 @@ public class DefaultNodeInitializer implements NodeInitializer {
         simpleRecord = node.groupProperties.CONCURRENT_MAP_SIMPLE_RECORD.getBoolean();
     }
 
-    public void afterInitialize(Node node) {
+    public void printNodeInfo(Node node) {
         systemLogger.log(Level.INFO, "Hazelcast Community Edition " + version + " ("
                 + build + ") starting at " + node.getThisAddress());
         systemLogger.log(Level.INFO, "Copyright (C) 2008-2011 Hazelcast.com");
+    }
+    
+    public void afterInitialize(Node node) {
     }
 
     protected void parseSystemProps() {
