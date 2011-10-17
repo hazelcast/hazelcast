@@ -3,8 +3,8 @@
 <para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
     xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg"
     xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml"
-    xmlns:db="http://docbook.org/ns/docbook"> Hazelcast can be configured through xml or
-    using configuration api or even mix of both. <orderedlist>
+    xmlns:db="http://docbook.org/ns/docbook"> Hazelcast can be configured through xml or using
+    configuration api or even mix of both. <orderedlist>
         <listitem>
             <para><emphasis role="bold">Xml Configuration</emphasis></para>
             <para>If you are using default Hazelcast instance
@@ -194,9 +194,9 @@
         </listitem>
         <listitem>
             <para><emphasis role="bold">Programmatic Configuration</emphasis></para>
-            <para>To configure Hazelcast programmatically, just instantiate a <literal>Config</literal>
-            object and set/change its properties/attributes due to your needs. 
-            <programlisting language="java"><![CDATA[Config cfg = new Config();
+            <para>To configure Hazelcast programmatically, just instantiate a
+                    <literal>Config</literal> object and set/change its properties/attributes due to
+                your needs. <programlisting language="java"><![CDATA[Config cfg = new Config();
 cfg.setPort(5900);
 cfg.setPortAutoIncrement(false);
         
@@ -223,10 +223,8 @@ mapCfg.setNearCacheConfig(nearCacheConfig);
 
 cfg.addMapConfig(mapCfg);]]></programlisting></para>
         </listitem>
-    </orderedlist>
-    
-    After creating <literal>Config</literal> object, you can use it to
-    initialize default Hazelcast instance or create a new Hazelcast instance.<itemizedlist>
+    </orderedlist> After creating <literal>Config</literal> object, you can use it to initialize
+    default Hazelcast instance or create a new Hazelcast instance.<itemizedlist>
         <listitem>
             <para><code language="java">Hazelcast.init(cfg);</code></para>
         </listitem>
@@ -234,4 +232,28 @@ cfg.addMapConfig(mapCfg);]]></programlisting></para>
             <para><code language="java">Hazelcast.newHazelcastInstance(cfg);</code></para>
         </listitem>
     </itemizedlist>
+    <anchor xml:id="NamedHazelcastInstance"/>
+    <itemizedlist>
+        <title>HazelcastInstance with a name:</title>
+        <listitem>
+            <para>To create a named <literal>HazelcastInstance</literal> you should set <code>instanceName</code>
+                of <literal>Config</literal> object.
+            </para>
+            <para><programlisting language="java"><![CDATA[Config cfg = new Config();
+config.setInstanceName('my-instance');
+Hazelcast.newHazelcastInstance(config);]]></programlisting></para>
+            <para><code language="java">config.setInstanceName('my-instance');</code></para>
+        </listitem>
+        <listitem>
+            <para>To retrieve an existing <literal>HazelcastInstance</literal> using its name, use; 
+            </para>
+            <para><code language="java">Hazelcast.getHazelcastInstanceByName('my-instance');</code></para>
+        </listitem>
+        <listitem>
+            <para>To retrieve all existing <literal>HazelcastInstance</literal>s, use; 
+            </para>
+            <para><code language="java">Hazelcast.getAllHazelcastInstances();</code></para>
+        </listitem>
+    </itemizedlist>
+    
 </para>

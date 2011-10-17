@@ -80,7 +80,7 @@
         <listitem>
             <para><link xlink:href="#MapNearCache">Near Cache Configuration</link></para>
         </listitem>
-    </itemizedlist>Hibernate has 4 cache concurrency
+    </itemizedlist>Hibernate has four cache concurrency
         strategies:<emphasis>read-only</emphasis>,<emphasis>read-write</emphasis>,
         <emphasis>nonstrict-read-write</emphasis> and<emphasis>transactional</emphasis>. But
     Hibernate does not forces cache providers to support all strategies. And Hazelcast supports
@@ -127,8 +127,43 @@ public class Cat implements Serializable {
 }
 ]]></programlisting></para>
         </listitem>
-    </itemizedlist> Accessing underlying <code>HazelcastInstance</code> is possible by using
-        <code>HazelcastAccessor</code>. <programlisting language="java"><![CDATA[SessionFactory sessionFactory = ...;
+    </itemizedlist>And now last thing you should be aware of is to drop
+    hazelcast-hibernate-&lt;version&gt;.jar into your classpath. 
+    
+    <itemizedlist>
+        <title>Additional Properties:</title>
+        <listitem>
+            <para><emphasis role="bold">Accessing underlying <code>HazelcastInstance</code></emphasis></para>
+            <para>Using <code>com.hazelcast.hibernate.instance.HazelcastAccessor</code> you can access underlying 
+                <code>HazelcastInstance</code> used by Hibernate SessionFactory.
+                <programlisting language="java"><![CDATA[SessionFactory sessionFactory = ...;
 HazelcastInstance hazelcastInstance = HazelcastAccessor.getHazelcastInstance(sessionFactory);        
-]]></programlisting> And now last thing you should be aware of is to drop
-        <literal>hazelcast-hibernate-&lt;version&gt;.jar</literal> into your classpath. </para>
+]]></programlisting></para>
+        </listitem>
+        
+        <listitem>
+            <para><emphasis role="bold">Changing/setting lock timeout value of <emphasis role="italic">read-write</emphasis> strategy</emphasis></para>
+            <para>Lock timeout value can be set using <literal>hibernate.cache.hazelcast.lock_timeout_in_seconds</literal> Hibernate property.
+                Value should be in seconds and default value is 300 seconds. 
+            </para>
+        </listitem>
+        
+        <listitem>
+            <para><emphasis role="bold">Using named <literal>HazelcastInstance</literal></emphasis></para>
+            <para>Instead of creating a new <literal>HazelcastInstance</literal> for each <literal>SessionFactory</literal>,
+                an existing instance can be used by setting <literal>hibernate.cache.hazelcast.instance_name</literal> Hibernate
+                property to <literal>HazelcastInstance</literal>'s name.
+                For more information see <link xlink:href="#NamedHazelcastInstance">Named HazelcastInstance</link>.
+            </para>
+        </listitem>
+        
+        <listitem>
+            <para><emphasis role="bold">Disabling shutdown during SessionFactory.close()</emphasis></para>
+            <para>Shutting down <literal>HazelcastInstance</literal> can be disabled during <code>SessionFactory.close()</code>
+                by setting <literal>hibernate.cache.hazelcast.shutdown_on_session_factory_close</literal> Hibernate property to false.
+                <emphasis role="italic">(In this case Hazelcast property <literal>hazelcast.shutdownhook.enabled</literal> should not
+                 be set to false.)</emphasis> Default value is <literal>true</literal>.
+            </para>
+        </listitem>
+    </itemizedlist>
+</para>
