@@ -5,7 +5,6 @@
     <xs:element name="hazelcast">
         <xs:complexType>
             <xs:sequence>
-            	<xs:element ref="instance-name" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="group" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
@@ -714,13 +713,6 @@
     <xs:simpleType name="ST_port">
         <xs:restriction base="xs:short"/>
     </xs:simpleType>
-    <xs:element name="instance-name">
-    	<xs:simpleType>
-    		<xs:restriction base="xs:string">
-    			<xs:pattern value="\S.*" />
-    		</xs:restriction>
-    	</xs:simpleType>
-    </xs:element>
     <xs:element name="security">
     	<xs:complexType>
     		<xs:sequence>

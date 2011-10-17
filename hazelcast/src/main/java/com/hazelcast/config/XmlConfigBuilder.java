@@ -209,8 +209,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleMergePolicies(node);
             } else if ("security".equals(nodeName)) {
                 handleSecurity(node);
-            } else if("instance-name".equals(nodeName)) {
-            	config.setInstanceName(getTextContent(node));
             }
         }
     }

@@ -187,6 +187,9 @@ public class FactoryImpl implements IHazelcastFactory {
             if (t instanceof RuntimeException) {
                 throw (RuntimeException) t;
             }
+            if(t instanceof Error) {
+            	throw (Error) t;
+            }
             throw new RuntimeException(t);
         }
     }
