@@ -75,10 +75,9 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 		}
 
 		if (StringHelper.isEmpty(configResourcePath)) {
-			// If HazelcastInstance will not be super-client
-			// then just return default instance. 
-			// We do not need to edit configuration. 
-			if(!useSuperClient) {
+			// If both useSuperClient and instanceName is not set
+			// then just use default instance. 
+			if(!useSuperClient && instanceName == null) {
 				staticInstance = true;
 			}
 		} else {
@@ -113,6 +112,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 			if(config == null) {
 				config = new XmlConfigBuilder().build();
 			}
+			config.setInstanceName(instanceName);
 			config.setSuperClient(useSuperClient);
 			instance = Hazelcast.newHazelcastInstance(config);
 		}
