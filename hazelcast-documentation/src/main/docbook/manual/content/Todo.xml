@@ -34,9 +34,6 @@
                 <para>Cluster-wide receive ordering for topics.</para>
             </listitem>
             <listitem>
-                <para>Security (JAAS).</para>
-            </listitem>
-            <listitem>
                 <para>Distributed Tree implementation.</para>
             </listitem>
             <listitem>

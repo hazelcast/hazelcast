@@ -179,11 +179,11 @@ public class GroupProperties {
 
     public final GroupProperty CONCURRENT_MAP_SIMPLE_RECORD;
 
-    public final GroupProperty OFFHEAP_ENABLED;
+    public final GroupProperty ELASTIC_MEMORY_ENABLED;
 
-    public final GroupProperty OFFHEAP_TOTAL_SIZE;
+    public final GroupProperty ELASTIC_MEMORY_TOTAL_SIZE;
 
-    public final GroupProperty OFFHEAP_CHUNK_SIZE;
+    public final GroupProperty ELASTIC_MEMORY_CHUNK_SIZE;
 
     public final GroupProperty LICENSE_PATH;
 
@@ -236,9 +236,9 @@ public class GroupProperties {
         MC_TOPIC_EXCLUDES = new GroupProperty(config, PROP_MC_TOPIC_EXCLUDES, null);
         MC_MAX_INSTANCE_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_INSTANCE_COUNT, "100");
         CONCURRENT_MAP_SIMPLE_RECORD = new GroupProperty(config, PROP_CONCURRENT_MAP_SIMPLE_RECORD, "false");
-        OFFHEAP_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_ENABLED, "false");
-        OFFHEAP_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
-        OFFHEAP_CHUNK_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_CHUNK_SIZE, "1K");
+        ELASTIC_MEMORY_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_ENABLED, "false");
+        ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
+        ELASTIC_MEMORY_CHUNK_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_CHUNK_SIZE, "1K");
         LICENSE_PATH = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_PATH, null);
     }
 

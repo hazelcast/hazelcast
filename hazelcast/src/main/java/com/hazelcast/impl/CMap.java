@@ -164,6 +164,9 @@ public class CMap {
         }
         this.mapIndexService = new MapIndexService(mapConfig.isValueIndexed());
         setRuntimeConfig(mapConfig);
+        if (mapForQueue || node.groupProperties.ELASTIC_MEMORY_ENABLED.getBoolean()) {
+            cacheValue = false;
+        }
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         int writeDelaySeconds = -1;
         if (!node.isSuperClient() && mapStoreConfig != null) {
@@ -1605,8 +1608,8 @@ public class CMap {
             throw new RuntimeException("Cannot create record from a 0 size key: " + key);
         }
         int blockId = concurrentMapManager.getBlockId(key);
-        return concurrentMapManager.recordFactory.createNewRecord(this, blockId, key, value, 
-        		ttl, maxIdle, concurrentMapManager.newRecordId());
+        return concurrentMapManager.recordFactory.createNewRecord(this, blockId, key, value,
+                ttl, maxIdle, concurrentMapManager.newRecordId());
     }
 
     public void addListener(Data key, Address address, boolean includeValue) {
