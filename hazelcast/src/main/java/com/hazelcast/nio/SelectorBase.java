@@ -140,9 +140,6 @@ public abstract class SelectorBase implements Runnable {
                     try {
                         it.remove();
                         if (sk.isValid()) {
-                            if (sk.readyOps() == 5) {
-                                System.out.println(Thread.currentThread().getName() + " selected " + sk.readyOps());
-                            }
                             if (sk.isReadable()) {
                                 Connection connection = (Connection) sk.attachment();
                                 connection.getReadHandler().handle();
