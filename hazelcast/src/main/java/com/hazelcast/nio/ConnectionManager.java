@@ -243,8 +243,12 @@ public class ConnectionManager {
                 logger.log(Level.FINEST, ignore.getMessage(), ignore);
             }
         }
+        for (int i = 0; i < selectors.length; i++) {
+        	selectors[i].shutdown();
+        }
         setConnectionInProgress.clear();
         mapConnections.clear();
+        
     }
 
     @Override
