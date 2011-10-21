@@ -35,9 +35,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected final Connection connection;
 
-    protected final InSelector inSelector;
-
-    protected final OutSelector outSelector;
+    protected final InOutSelector inOutSelector;
 
     protected final ClusterService clusterService;
 
@@ -45,14 +43,13 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected SelectionKey sk = null;
 
-    public AbstractSelectionHandler(final Connection connection) {
+    public AbstractSelectionHandler(final Connection connection, final InOutSelector inOutSelector) {
         super();
         this.connection = connection;
+        this.inOutSelector = inOutSelector;
         this.socketChannel = connection.getSocketChannel();
         this.node = connection.connectionManager.node;
         this.logger = node.getLogger(this.getClass().getName());
-        this.inSelector = node.inSelector;
-        this.outSelector = node.outSelector;
         this.clusterService = node.clusterService;
     }
 
@@ -87,9 +84,15 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
             if (!connection.live())
                 return;
             if (sk == null) {
-                sk = socketChannel.register(selector, operation, this);
+                sk = socketChannel.keyFor(selector);
+            }
+            if (sk == null) {
+                sk = socketChannel.register(selector, operation, connection);
             } else {
-                sk.interestOps(operation);
+                sk.interestOps(sk.interestOps() | operation);
+                if (sk.attachment() != connection) {
+                    sk.attach(connection);
+                }
             }
         } catch (Throwable e) {
             handleSocketException(e);

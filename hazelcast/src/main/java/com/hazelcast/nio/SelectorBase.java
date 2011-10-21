@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
@@ -141,11 +140,30 @@ public abstract class SelectorBase implements Runnable {
                     try {
                         it.remove();
                         if (sk.isValid()) {
-                            sk.interestOps(sk.interestOps() & ~sk.readyOps());
-                            SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
-                            selectionHandler.handle();
+                            if (sk.readyOps() == 5) {
+                                System.out.println(Thread.currentThread().getName() + " selected " + sk.readyOps());
+                            }
+                            if (sk.isReadable()) {
+                                Connection connection = (Connection) sk.attachment();
+                                connection.getReadHandler().handle();
+                            }
+                            if (sk.isWritable()) {
+                                sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
+                                Connection connection = (Connection) sk.attachment();
+                                connection.getWriteHandler().handle();
+                            }
+                            if (sk.isConnectable()) {
+                                sk.interestOps(sk.interestOps() & ~SelectionKey.OP_CONNECT);
+                                SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
+                                selectionHandler.handle();
+                            }
+                            if (sk.isAcceptable()) {
+                                SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
+                                selectionHandler.handle();
+                            }
                         }
                     } catch (Throwable e) {
+                        e.printStackTrace();
                         handleSelectorException(e);
                     }
                 }
@@ -176,9 +194,5 @@ public abstract class SelectorBase implements Runnable {
         socket.setTcpNoDelay(node.connectionManager.SOCKET_NO_DELAY);
         socket.setReceiveBufferSize(node.connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
         socket.setSendBufferSize(node.connectionManager.SOCKET_SEND_BUFFER_SIZE);
-    }
-
-    protected Connection createConnection(final SocketChannel socketChannel, final boolean acceptor) {
-        return node.connectionManager.createConnection(socketChannel, acceptor);
     }
 }

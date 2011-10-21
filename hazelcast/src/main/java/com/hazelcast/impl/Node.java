@@ -196,9 +196,9 @@ public class Node {
         //initialize managers..
         clusterService = new ClusterService(this);
         clusterService.start();
-        inSelector = new InSelector(this, serverSocketChannel);
-        outSelector = new OutSelector(this);
-        connectionManager = new ConnectionManager(this);
+        inSelector = null; //new InSelector(this, serverSocketChannel);
+        outSelector = null; //new OutSelector(this);
+        connectionManager = new ConnectionManager(this, serverSocketChannel);
         clusterManager = new ClusterManager(this);
         executorManager = new ExecutorManager(this);
         clientService = new ClientService(this);
@@ -339,10 +339,6 @@ public class Node {
             }
             logger.log(Level.FINEST, "Shutting down the clientService");
             clientService.shutdown();
-            logger.log(Level.FINEST, "Shutting down the NIO socket selector for input");
-            inSelector.shutdown();
-            logger.log(Level.FINEST, "Shutting down the NIO socket selector for output");
-            outSelector.shutdown();
             logger.log(Level.FINEST, "Shutting down the cluster service");
             concurrentMapManager.shutdown();
             clusterService.stop();
@@ -379,18 +375,19 @@ public class Node {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
         final String prefix = "hz." + this.id + ".";
-        Thread inThread = new Thread(threadGroup, inSelector, prefix + "InThread");
-        inThread.setPriority(groupProperties.IN_THREAD_PRIORITY.getInteger());
-        logger.log(Level.FINEST, "Starting thread " + inThread.getName());
-        inThread.start();
-        Thread outThread = new Thread(threadGroup, outSelector, prefix + "OutThread");
-        outThread.setPriority(groupProperties.OUT_THREAD_PRIORITY.getInteger());
-        logger.log(Level.FINEST, "Starting thread " + outThread.getName());
-        outThread.start();
+//        Thread inThread = new Thread(threadGroup, inSelector, prefix + "InThread");
+//        inThread.setPriority(groupProperties.IN_THREAD_PRIORITY.getInteger());
+//        logger.log(Level.FINEST, "Starting thread " + inThread.getName());
+//        inThread.start();
+//        Thread outThread = new Thread(threadGroup, outSelector, prefix + "OutThread");
+//        outThread.setPriority(groupProperties.OUT_THREAD_PRIORITY.getInteger());
+//        logger.log(Level.FINEST, "Starting thread " + outThread.getName());
+//        outThread.start();
         serviceThread = new Thread(threadGroup, clusterService, prefix + "ServiceThread");
         serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
         serviceThread.start();
+        connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(threadGroup, multicastService, prefix + "MulticastThread");
             multicastServiceThread.start();

@@ -32,21 +32,16 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     SocketReader socketReader = null;
 
-    long runCount = 0;
-
     volatile long lastRegistration = 0;
     volatile long lastHandle;
 
     public ReadHandler(Connection connection) {
-        super(connection);
+        super(connection, connection.inOutSelector);
         inBuffer = ByteBuffer.allocate(node.connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
     }
 
     public final void handle() {
         lastHandle = System.currentTimeMillis();
-//        if (runCount++ % 10000 == 0) {
-//            System.out.println("read count " + runCount);
-//        }
         if (!connection.live()) {
             logger.log(Level.FINEST, ">>>> We are being to asked to read, but connection is not live so we won't");
             return;
@@ -91,13 +86,11 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
             }
         } catch (Throwable t) {
             handleSocketException(t);
-        } finally {
-            run();
         }
     }
 
     public final void run() {
         lastRegistration = System.currentTimeMillis();
-        registerOp(inSelector.selector, SelectionKey.OP_READ);
+        registerOp(inOutSelector.selector, SelectionKey.OP_READ);
     }
 }

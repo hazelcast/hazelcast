@@ -23,6 +23,7 @@ import com.hazelcast.impl.Node;
 import com.hazelcast.impl.Processable;
 import com.hazelcast.logging.ILogger;
 
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.Set;
@@ -64,15 +65,30 @@ public class ConnectionManager {
     private volatile boolean live = true;
 
     final Node node;
+    private final ServerSocketChannel serverSocketChannel;
 
-    public ConnectionManager(Node node) {
+    private final InOutSelector[] selectors;
+
+    private final AtomicInteger nextSelectorIndex = new AtomicInteger();
+
+    public ConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         this.node = node;
+        this.serverSocketChannel = serverSocketChannel;
         this.logger = node.getLogger(ConnectionManager.class.getName());
         this.SOCKET_RECEIVE_BUFFER_SIZE = this.node.getGroupProperties().SOCKET_RECEIVE_BUFFER_SIZE.getInteger() * KILO_BYTE;
         this.SOCKET_SEND_BUFFER_SIZE = this.node.getGroupProperties().SOCKET_SEND_BUFFER_SIZE.getInteger() * KILO_BYTE;
         this.SOCKET_LINGER_SECONDS = this.node.getGroupProperties().SOCKET_LINGER_SECONDS.getInteger();
         this.SOCKET_KEEP_ALIVE = this.node.getGroupProperties().SOCKET_KEEP_ALIVE.getBoolean();
         this.SOCKET_NO_DELAY = this.node.getGroupProperties().SOCKET_NO_DELAY.getBoolean();
+        int selectorCount = 5;
+        selectors = new InOutSelector[selectorCount];
+    }
+
+    public InOutSelector nextSelector() {
+        if (nextSelectorIndex.get() > 1000000) {
+            nextSelectorIndex.set(0);
+        }
+        return selectors[Math.abs(nextSelectorIndex.incrementAndGet()) % selectors.length];
     }
 
     public void addConnectionListener(ConnectionListener listener) {
@@ -123,23 +139,19 @@ public class ConnectionManager {
         return true;
     }
 
-    public Connection createConnection(SocketChannel socketChannel,
-                                       boolean acceptor) {
-        final Connection connection = new Connection(this, connectionIdGen.incrementAndGet(), socketChannel);
+    public void assignSocketChannel(SocketChannel channel) {
+        InOutSelector selectorAssigned = nextSelector();
+        createConnection(channel, selectorAssigned);
+    }
+
+    Connection createConnection(SocketChannel channel, InOutSelector selectorAssigned) {
+        final Connection connection = new Connection(this, selectorAssigned, connectionIdGen.incrementAndGet(), channel);
         setActiveConnections.add(connection);
-        try {
-            if (acceptor) {
-                // do nothing. you will be registering for the
-                // write operation when you have something to
-                // write already in the outSelector thread.
-            } else {
-                node.inSelector.addTask(connection.getReadHandler());
-                // socketChannel.register(inSelector.selector,
-                // SelectionKey.OP_READ, readHandler);
-            }
-        } catch (final Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-        }
+        selectorAssigned.addTask(connection.getReadHandler());
+        selectorAssigned.selector.wakeup();
+        logger.log(Level.INFO, channel.socket().getLocalPort()
+                + " accepted socket connection from "
+                + channel.socket().getRemoteSocketAddress());
         return connection;
     }
 
@@ -162,7 +174,7 @@ public class ConnectionManager {
             if (setConnectionInProgress.add(address)) {
                 if (!node.clusterManager.shouldConnectTo(address))
                     throw new RuntimeException("Should not connect to " + address);
-                node.outSelector.connect(address);
+                nextSelector().connect(address);
             }
         }
         return connection;
@@ -193,6 +205,11 @@ public class ConnectionManager {
 
     public void start() {
         live = true;
+        for (int i = 0; i < selectors.length; i++) {
+            InOutSelector s = new InOutSelector(node, serverSocketChannel, (i == 0));
+            selectors[i] = s;
+            new Thread(s, node.getName() + ".IOThread" + i).start();
+        }
     }
 
     public void onRestart() {

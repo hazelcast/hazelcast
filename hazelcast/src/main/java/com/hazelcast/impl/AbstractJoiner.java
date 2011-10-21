@@ -62,7 +62,7 @@ public abstract class AbstractJoiner implements Joiner {
             boolean allConnected = false;
             int checkCount = 0;
             if (node.joined()) {
-                while (checkCount++ < 100 && !allConnected) {
+                while (checkCount++ < node.groupProperties.CONNECT_ALL_WAIT_SECONDS.getInteger() && !allConnected) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException ignored) {

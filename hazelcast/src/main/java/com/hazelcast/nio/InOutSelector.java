@@ -21,17 +21,46 @@ import com.hazelcast.impl.Node;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
-public final class OutSelector extends SelectorBase {
+public class InOutSelector extends SelectorBase {
 
-    AtomicLong writeQueueSize = new AtomicLong();
+    final ServerSocketChannel serverSocketChannel;
 
-    public OutSelector(Node node) {
+    final AtomicLong writeQueueSize = new AtomicLong();
+
+    public InOutSelector(Node node, final ServerSocketChannel serverSocketChannel, boolean accept) {
         super(node, 1);
+        this.serverSocketChannel = serverSocketChannel;
+        if (accept) {
+            addTask(new Runnable() {
+                public void run() {
+                    try {
+                        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, new Acceptor());
+                        selector.wakeup();
+                    } catch (final ClosedChannelException e) {
+                        logger.log(Level.WARNING, e.getMessage(), e);
+                    }
+                }
+            });
+        }
+        logger.log(Level.FINEST, "Started Selector at "
+                + serverSocketChannel.socket().getLocalPort());
+    }
+
+    @Override
+    public void threadLocalShutdown() {
+        try {
+            if (serverSocketChannel != null) {
+                serverSocketChannel.close();
+            }
+        } catch (IOException ignored) {
+        }
     }
 
     public void connect(final Address address) {
@@ -42,7 +71,6 @@ public final class OutSelector extends SelectorBase {
 
     @Override
     public void publishUtilization() {
-        node.getCpuUtilization().outThread = threadWatcher.publish(live);
     }
 
     public long getWriteQueueSize() {
@@ -80,9 +108,10 @@ public final class OutSelector extends SelectorBase {
                     return;
                 }
                 logger.log(Level.FINEST, "connected to " + address);
-//                final Connection connection = createConnection(socketChannel, false);
-//                node.connectionManager.bind(address, connection, false);
+                final Connection connection = node.connectionManager.createConnection(socketChannel, InOutSelector.this);
+                node.connectionManager.bind(address, connection, false);
             } catch (Throwable e) {
+                e.printStackTrace();
                 try {
                     final String msg = "Couldn't connect to " + address + ", cause: " + e.getMessage();
                     logger.log(Level.FINEST, msg, e);
@@ -104,11 +133,6 @@ public final class OutSelector extends SelectorBase {
                 boolean connected = socketChannel.connect(new InetSocketAddress(address.getInetAddress(),
                         address.getPort()));
                 logger.log(Level.FINEST, "connection check. connected: " + connected + ", " + address);
-//                if (connected) {
-//                    handle();
-//                    return;
-//                }
-//                socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);
                 handle();
             } catch (Throwable e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
@@ -119,6 +143,27 @@ public final class OutSelector extends SelectorBase {
                     }
                 }
                 node.connectionManager.failedConnection(address);
+            }
+        }
+    }
+
+    private class Acceptor implements SelectionHandler {
+        public void handle() {
+            try {
+                final SocketChannel channel = serverSocketChannel.accept();
+                logger.log(Level.INFO, channel.socket().getLocalPort()
+                        + " is accepting socket connection from "
+                        + channel.socket().getRemoteSocketAddress());
+                initSocket(channel.socket());
+                channel.configureBlocking(false);
+                node.connectionManager.assignSocketChannel(channel);
+            } catch (final Exception e) {
+                logger.log(Level.FINEST, e.getMessage(), e);
+                try {
+                    serverSocketChannel.close();
+                } catch (final Exception ignore) {
+                }
+                node.shutdown(false, false);
             }
         }
     }

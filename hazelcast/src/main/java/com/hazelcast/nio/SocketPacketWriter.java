@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.copyToDirectBuffer;
@@ -31,13 +30,11 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
 
     private final PacketWriter packetWriter;
     final Node node;
-    final SocketChannel socketChannel;
     final Connection connection;
     final ILogger logger;
 
-    SocketPacketWriter(Node node, SocketChannel socketChannel, Connection connection) {
+    SocketPacketWriter(Node node, Connection connection) {
         this.node = node;
-        this.socketChannel = socketChannel;
         this.connection = connection;
         this.logger = node.getLogger(SocketPacketWriter.class.getName());
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(node);

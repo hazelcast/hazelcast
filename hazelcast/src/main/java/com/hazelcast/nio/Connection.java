@@ -34,6 +34,8 @@ public final class Connection {
 
     final ConnectionManager connectionManager;
 
+    final InOutSelector inOutSelector;
+
     private volatile boolean live = true;
 
     private volatile Type type = Type.NONE;
@@ -44,7 +46,8 @@ public final class Connection {
 
     private final int connectionId;
 
-    public Connection(ConnectionManager connectionManager, int connectionId, SocketChannel socketChannel) {
+    public Connection(ConnectionManager connectionManager, InOutSelector inOutSelector, int connectionId, SocketChannel socketChannel) {
+        this.inOutSelector = inOutSelector;
         this.connectionId = connectionId;
         this.logger = connectionManager.node.getLogger(Connection.class.getName());
         this.connectionManager = connectionManager;

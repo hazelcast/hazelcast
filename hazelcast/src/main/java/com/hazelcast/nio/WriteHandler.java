@@ -46,16 +46,16 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     volatile long lastHandle = 0;
 
     WriteHandler(Connection connection) {
-        super(connection);
+        super(connection, connection.inOutSelector);
         socketBB = ByteBuffer.allocate(node.connectionManager.SOCKET_SEND_BUFFER_SIZE);
     }
 
     public void setProtocol(String protocol) {
         if (socketWriter == null) {
             if ("HZC".equals(protocol)) {
-                socketWriter = new SocketPacketWriter(node, socketChannel, connection);
+                socketWriter = new SocketPacketWriter(node, connection);
                 socketBB.put("HZC".getBytes());
-                outSelector.addTask(this);
+                inOutSelector.addTask(this);
             } else {
                 socketWriter = new SocketTextWriter(connection);
             }
@@ -69,21 +69,21 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     public void enqueueSocketWritable(SocketWritable socketWritable) {
         socketWritable.onEnqueue();
         writeQueue.offer(socketWritable);
-        outSelector.writeQueueSize.incrementAndGet();
+        inOutSelector.writeQueueSize.incrementAndGet();
         if (informSelector.compareAndSet(true, false)) {
             // we don't have to call wake up if this WriteHandler is
             // already in the task queue.
             // we can have a counter to check this later on.
             // for now, wake up regardless.
-            outSelector.addTask(this);
-            outSelector.selector.wakeup();
+            inOutSelector.addTask(this);
+            inOutSelector.selector.wakeup();
         }
     }
 
     SocketWritable poll() {
         SocketWritable sw = writeQueue.poll();
         if (sw != null) {
-            outSelector.writeQueueSize.decrementAndGet();
+            inOutSelector.writeQueueSize.decrementAndGet();
         }
         return sw;
     }
@@ -159,7 +159,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private void registerWrite() {
         lastRegistration = System.currentTimeMillis();
-        registerOp(outSelector.selector, SelectionKey.OP_WRITE);
+        registerOp(inOutSelector.selector, SelectionKey.OP_WRITE);
     }
 
     @Override

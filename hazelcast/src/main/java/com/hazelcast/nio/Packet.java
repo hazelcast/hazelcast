@@ -27,6 +27,8 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.nio.IOUtil.toObject;
+
 public final class Packet implements SocketWritable {
 
     public String name;
@@ -269,11 +271,16 @@ public final class Packet implements SocketWritable {
     public String toString() {
         int keySize = (key == null) ? 0 : key.size();
         int valueSize = (getValueData() == null) ? 0 : getValueData().size();
+        Object str = null;
+        if (operation == ClusterOperation.REMOTELY_PROCESS) {
+            str = toObject(value.toData());
+        }
         return "Packet [" + operation + "] name=" + name
                 + ", connection=" + conn
                 + ",blockId="
                 + blockId + ", keySize=" + keySize + ", valueSize=" + valueSize
                 + " client=" + client
+                + " obj=" + str
                 + " callId=" + callId;
     }
 
