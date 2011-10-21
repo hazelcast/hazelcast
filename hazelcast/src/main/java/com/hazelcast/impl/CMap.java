@@ -1274,7 +1274,7 @@ public class CMap {
         int backupPurgeCount = 0;
         for (Record record : records) {
             PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
-            Member owner = partition.getOwner();
+            Member owner = (partition == null) ? null : partition.getOwner();
             if (owner != null && !partition.isMigrating()) {
                 boolean owned = owner.localMember();
                 if (owned) {
