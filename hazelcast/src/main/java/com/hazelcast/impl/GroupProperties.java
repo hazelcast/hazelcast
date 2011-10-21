@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 public class GroupProperties {
 
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
+    public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
     public static final String PROP_CONNECT_ALL_WAIT_SECONDS = "hazelcast.connect.all.wait.seconds";
     public static final String PROP_TOPIC_FLOW_CONTROL_ENABLED = "hazelcast.topic.flow.control.enabled";
     public static final String PROP_MANCENTER_ENABLED = "hazelcast.mancenter.enabled";
@@ -83,6 +84,8 @@ public class GroupProperties {
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
 
     public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "6");
+
+    public final GroupProperty IO_THREAD_COUNT;
 
     public final GroupProperty TOPIC_FLOW_CONTROL_ENABLED;
 
@@ -192,6 +195,7 @@ public class GroupProperties {
 
     public GroupProperties(Config config) {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
+        IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
         TOPIC_FLOW_CONTROL_ENABLED = new GroupProperty(config, PROP_TOPIC_FLOW_CONTROL_ENABLED, "true");
         CONNECT_ALL_WAIT_SECONDS = new GroupProperty(config, PROP_CONNECT_ALL_WAIT_SECONDS, "120");
         MANCENTER_ENABLED = new GroupProperty(config, PROP_MANCENTER_ENABLED, "true");

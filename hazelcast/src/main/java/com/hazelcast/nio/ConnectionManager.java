@@ -80,7 +80,7 @@ public class ConnectionManager {
         this.SOCKET_LINGER_SECONDS = this.node.getGroupProperties().SOCKET_LINGER_SECONDS.getInteger();
         this.SOCKET_KEEP_ALIVE = this.node.getGroupProperties().SOCKET_KEEP_ALIVE.getBoolean();
         this.SOCKET_NO_DELAY = this.node.getGroupProperties().SOCKET_NO_DELAY.getBoolean();
-        int selectorCount = 5;
+        int selectorCount = node.groupProperties.IO_THREAD_COUNT.getInteger();
         selectors = new InOutSelector[selectorCount];
     }
 
