@@ -160,7 +160,6 @@ public abstract class SelectorBase implements Runnable {
                             }
                         }
                     } catch (Throwable e) {
-                        e.printStackTrace();
                         handleSelectorException(e);
                     }
                 }

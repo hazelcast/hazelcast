@@ -32,7 +32,7 @@ import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.*;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.util.NoneStrictObjectPool;
+import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
@@ -115,11 +115,11 @@ public class Node {
 
     public final LoggingServiceImpl loggingService;
 
-    private final NoneStrictObjectPool<Packet> packetPool;
-
     private final static AtomicInteger counter = new AtomicInteger();
 
     private final CpuUtilization cpuUtilization = new CpuUtilization();
+
+    final SimpleBoundedQueue<Packet> serviceThreadPacketQueue = new SimpleBoundedQueue<Packet>(1000);
 
     private final ServerSocketChannel serverSocketChannel;
 
@@ -162,29 +162,6 @@ public class Node {
         serverSocketChannel = serverSocketChannelTemp;
         address = localAddress;
         localMember = new MemberImpl(address, true, localNodeType);
-        packetPool = new NoneStrictObjectPool<Packet>(2000) {
-            @Override
-            public Packet obtain() {
-                return createNew();
-            }
-
-            @Override
-            public boolean release(Packet packet) {
-                return true;
-            }
-
-            @Override
-            public void onObtain(Packet packet) {
-            }
-
-            @Override
-            public void onRelease(Packet packet) {
-            }
-
-            public Packet createNew() {
-                return new Packet();
-            }
-        };
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         this.loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, localMember);
         this.logger = loggingService.getLogger(Node.class.getName());
@@ -353,7 +330,6 @@ public class Node {
             executorManager.stop();
             textCommandService.stop();
             masterAddress = null;
-            packetPool.clear();
             if (securityContext != null) {
                 securityContext.destroy();
             }
@@ -413,10 +389,6 @@ public class Node {
 
     public ILogger getLogger(String name) {
         return loggingService.getLogger(name);
-    }
-
-    public NoneStrictObjectPool<Packet> getPacketPool() {
-        return packetPool;
     }
 
     public GroupProperties getGroupProperties() {

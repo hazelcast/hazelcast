@@ -73,8 +73,6 @@ public final class Packet implements SocketWritable {
 
     public int totalSize = 0;
 
-    public volatile boolean released = false;
-
     boolean sizeRead = false;
 
     int totalWritten = 0;
@@ -265,6 +263,33 @@ public final class Packet implements SocketWritable {
         this.version = -1;
         this.indexes = null;
         this.indexTypes = null;
+    }
+
+    public void reset() {
+        name = null;
+        operation = ClusterOperation.NONE;
+        threadId = -1;
+        lockCount = 0;
+        lockAddress = null;
+        timeout = -1;
+        ttl = -1;
+        txnId = -1;
+        responseType = Constants.ResponseTypes.RESPONSE_NONE;
+        blockId = -1;
+        longValue = Long.MIN_VALUE;
+        version = -1;
+        callId = -1;
+        client = false;
+        bbSizes.clear();
+        bbHeader.clear();
+        key = null;
+        value = null;
+        conn = null;
+        totalSize = 0;
+        totalWritten = 0;
+        sizeRead = false;
+        indexes = null;
+        indexTypes = null;
     }
 
     @Override

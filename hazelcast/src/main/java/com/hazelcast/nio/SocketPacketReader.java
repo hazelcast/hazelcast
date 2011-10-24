@@ -212,6 +212,6 @@ class SocketPacketReader implements SocketReader {
     }
 
     public Packet obtainReadable() {
-        return node.getPacketPool().obtain();
+        return connection.obtainPacket();
     }
 }

@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -46,6 +47,8 @@ public final class Connection {
 
     private final int connectionId;
 
+    private final SimpleBoundedQueue<Packet> packetQueue = new SimpleBoundedQueue<Packet>(100);
+
     public Connection(ConnectionManager connectionManager, InOutSelector inOutSelector, int connectionId, SocketChannel socketChannel) {
         this.inOutSelector = inOutSelector;
         this.connectionId = connectionId;
@@ -58,6 +61,20 @@ public final class Connection {
 
     public Type getType() {
         return type;
+    }
+
+    public void releasePacket(Packet packet) {
+        packetQueue.offer(packet);
+    }
+
+    public Packet obtainPacket() {
+        Packet packet = packetQueue.poll();
+        if (packet == null) {
+            packet = new Packet();
+        } else {
+            packet.reset();
+        }
+        return packet;
     }
 
     public enum Type {

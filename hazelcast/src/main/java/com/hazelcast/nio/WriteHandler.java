@@ -112,7 +112,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                     boolean complete = socketWriter.write(lastWritable, socketBB);
                     if (complete) {
                         if (lastWritable instanceof Packet) {
-                            node.getPacketPool().release((Packet) lastWritable);
+                            connection.releasePacket((Packet) lastWritable);
                         }
                         lastWritable = null;
                     } else {

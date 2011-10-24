@@ -733,10 +733,11 @@ public abstract class BaseManager {
         }
 
         protected void doReleasePacket(Packet packet) {
+            releasePacket(packet);
         }
 
         protected Packet doObtainPacket() {
-            return new Packet();
+            return obtainPacket();
         }
 
         @Override
@@ -1250,11 +1251,21 @@ public abstract class BaseManager {
     }
 
     protected Packet obtainPacket() {
-        return node.getPacketPool().obtain();
+        if (Thread.currentThread() != node.serviceThread) {
+            return new Packet();
+        } else {
+            Packet packet = node.serviceThreadPacketQueue.poll();
+            if (packet == null) {
+                packet = new Packet();
+            } else {
+                packet.reset();
+            }
+            return packet;
+        }
     }
 
     protected boolean releasePacket(Packet packet) {
-        return node.getPacketPool().release(packet);
+        return Thread.currentThread() == node.serviceThread && node.serviceThreadPacketQueue.offer(packet);
     }
 
     protected boolean send(final String name, final ClusterOperation operation, final DataSerializable ds,
@@ -1265,12 +1276,6 @@ public abstract class BaseManager {
         if (!sent)
             releasePacket(packet);
         return sent;
-    }
-
-    protected boolean sendRedoResponse(final Packet packet) {
-        packet.responseType = RESPONSE_REDO;
-        packet.lockAddress = null;
-        return sendResponse(packet);
     }
 
     protected boolean sendResponse(final Packet packet) {
