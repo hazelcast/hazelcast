@@ -17,7 +17,10 @@
 
 package com.hazelcast.client;
 
+import static com.hazelcast.client.ProxyHelper.check;
+
 import com.hazelcast.core.ILock;
+import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.monitor.LocalLockStats;
 
@@ -27,37 +30,63 @@ import java.util.concurrent.locks.Condition;
 public class LockClientProxy implements ILock {
     final ProxyHelper proxyHelper;
     final Object lockObject;
-    final HazelcastClient client;
+//    final HazelcastClient client;
 
     public LockClientProxy(Object object, HazelcastClient client) {
         proxyHelper = new ProxyHelper("", client);
         lockObject = object;
-        this.client = client;
+//        this.client = client;
+        check(lockObject);
     }
 
     public Object getLockObject() {
         return lockObject;
     }
 
-    public void lock() {
-        client.mapLockProxy.lock(lockObject);
-    }
-
+//    public void lock() {
+//        client.mapLockProxy.lock(lockObject);
+//    }
+//
     public void lockInterruptibly() throws InterruptedException {
         throw new UnsupportedOperationException("lockInterruptibly is not implemented!");
     }
-
-    public boolean tryLock() {
-        return client.mapLockProxy.tryLock(lockObject);
+//
+//    public boolean tryLock() {
+//        return client.mapLockProxy.tryLock(lockObject);
+//    }
+//
+//    public boolean tryLock(long l, TimeUnit timeUnit) throws InterruptedException {
+//        ProxyHelper.checkTime(l, timeUnit);
+//        return client.mapLockProxy.tryLock(lockObject, l, timeUnit);
+//    }
+//
+//    public void unlock() {
+//        client.mapLockProxy.unlock(lockObject);
+//    }
+    
+    public void lock() {
+        doLock(-1, null);
     }
 
-    public boolean tryLock(long l, TimeUnit timeUnit) throws InterruptedException {
-        ProxyHelper.checkTime(l, timeUnit);
-        return client.mapLockProxy.tryLock(lockObject, l, timeUnit);
+    public boolean tryLock() {
+        return (Boolean) doLock(0, null);
+    }
+    
+    public boolean tryLock(long time, TimeUnit timeunit) {
+        ProxyHelper.checkTime(time, timeunit);
+        return (Boolean) doLock(time, timeunit);
     }
 
     public void unlock() {
-        client.mapLockProxy.unlock(lockObject);
+        proxyHelper.doOp(ClusterOperation.LOCK_UNLOCK, lockObject, null);
+    }
+    
+    private Object doLock(long timeout, TimeUnit timeUnit) {
+    	ClusterOperation operation = ClusterOperation.LOCK_LOCK;
+        Packet request = proxyHelper.prepareRequest(operation, lockObject, null);
+        request.setTimeout(timeUnit == null ? timeout : timeUnit.toMillis(timeout));
+        Packet response = proxyHelper.callAndGetResult(request);
+        return proxyHelper.getValue(response);
     }
 
     public Condition newCondition() {
