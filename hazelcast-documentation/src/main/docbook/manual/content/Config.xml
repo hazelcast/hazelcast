@@ -242,7 +242,6 @@ cfg.addMapConfig(mapCfg);]]></programlisting></para>
             <para><programlisting language="java"><![CDATA[Config cfg = new Config();
 config.setInstanceName('my-instance');
 Hazelcast.newHazelcastInstance(config);]]></programlisting></para>
-            <para><code language="java">config.setInstanceName('my-instance');</code></para>
         </listitem>
         <listitem>
             <para>To retrieve an existing <literal>HazelcastInstance</literal> using its name, use; 

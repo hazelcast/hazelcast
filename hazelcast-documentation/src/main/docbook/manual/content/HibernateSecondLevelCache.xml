@@ -45,9 +45,10 @@
                 Client property.)_ <programlisting language="xml"><![CDATA[<property name="hibernate.cache.hazelcast.use_native_client">true</property>
 ]]></programlisting> To setup Native Client properly, you should add Hazelcast<emphasis role="bold"
                     >group-name</emphasis>, <emphasis role="bold">group-password</emphasis> and
-                    <emphasis role="bold">cluster member hosts</emphasis> properties. Member hosts
-                are comma-seperated addresses. Additionally you can add port number at the end of
-                each address. <programlisting language="xml"><![CDATA[<property name="hibernate.cache.hazelcast.native_client_hosts">10.34.22.15,127.0.0.1:5703</property>
+                    <emphasis role="bold">cluster member address</emphasis> properties. Native Client
+                will connect to defined member and will get addresses of all members in the cluster.
+                If the connected member will die or leave the cluster, client will automatically
+                switch to another member in the cluster.<programlisting language="xml"><![CDATA[<property name="hibernate.cache.hazelcast.native_client_address">10.34.22.15</property>
 <property name="hibernate.cache.hazelcast.native_client_group">dev</property>
 <property name="hibernate.cache.hazelcast.native_client_password">dev-pass</property>
 ]]></programlisting><emphasis role="italic"> To use Native Client you should add

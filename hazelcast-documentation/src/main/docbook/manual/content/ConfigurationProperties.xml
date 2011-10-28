@@ -391,25 +391,26 @@ cfg.setProperty("hazelcast.property.foo", "value");
 			</tr>
 			<tr>
 				<td><db:literal>hazelcast.elastic.memory.enabled</db:literal></td>
-				<td>Enable Hazelcast Elastic Memory off-heap storage</td>
+				<td>Enable <link xlink:href="#ElasticMemory">Hazelcast Elastic Memory</link> off-heap storage</td>
 				<td>boolean</td>
 				<td>false</td>
 			</tr>
 			<tr>
 				<td><db:literal>hazelcast.elastic.memory.total.size</db:literal></td>
-				<td>Hazelcast Elastic Memory storage total size in MB</td>
+				<td><link xlink:href="#ElasticMemory">Hazelcast Elastic Memory</link> storage total size in MB</td>
 				<td>integer</td>
 				<td>128</td>
 			</tr>
 			<tr>
 				<td><db:literal>hazelcast.elastic.memory.chunk.size</db:literal></td>
-				<td>Hazelcast Elastic Memory storage chunk size in KB</td>
+				<td><link xlink:href="#ElasticMemory">Hazelcast Elastic Memory</link> storage chunk size in KB</td>
 				<td>integer</td>
 				<td>1</td>
 			</tr>
 			<tr>
 				<td><db:literal>hazelcast.enterprise.license.path</db:literal></td>
-				<td>Hazelcast Enterprise license path (filesystem, classpath, url)</td>
+				<td><link xlink:href="http://www.hazelcast.com/products.jsp">Hazelcast Enterprise</link> 
+				license path (filesystem, classpath, url)</td>
 				<td>string</td>
 				<td>null</td>
 			</tr>
