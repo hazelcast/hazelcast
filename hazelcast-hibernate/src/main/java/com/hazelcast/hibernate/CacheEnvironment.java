@@ -32,8 +32,11 @@ public final class CacheEnvironment {
 	public static final String USE_SUPER_CLIENT = "hibernate.cache.hazelcast.use_super_client";
 	
 	public static final String USE_NATIVE_CLIENT = "hibernate.cache.hazelcast.use_native_client";
-	
+
+	@Deprecated
 	public static final String NATIVE_CLIENT_HOSTS = "hibernate.cache.hazelcast.native_client_hosts";
+	
+	public static final String NATIVE_CLIENT_ADDRESS = "hibernate.cache.hazelcast.native_client_address";
 	
 	public static final String NATIVE_CLIENT_GROUP = "hibernate.cache.hazelcast.native_client_group";
 	

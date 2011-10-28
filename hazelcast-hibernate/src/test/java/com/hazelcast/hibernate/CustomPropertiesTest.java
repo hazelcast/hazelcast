@@ -39,6 +39,8 @@ import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CacheKey;
 import org.hibernate.cfg.Environment;
 import org.hibernate.engine.SessionFactoryImplementor;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -51,6 +53,12 @@ public class CustomPropertiesTest extends HibernateTestSupport {
     @BeforeClass
     public static void init() throws Exception {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        Hazelcast.shutdownAll();
+    }
+    
+    @Before
+    @After
+    public void start() {
         Hazelcast.shutdownAll();
     }
 
@@ -93,7 +101,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         props.setProperty(CacheEnvironment.USE_NATIVE_CLIENT, "true");
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_GROUP, "dev-custom");
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_PASSWORD, "dev-pass");
-        props.setProperty(CacheEnvironment.NATIVE_CLIENT_HOSTS, "localhost");
+        props.setProperty(CacheEnvironment.NATIVE_CLIENT_ADDRESS, "localhost");
         SessionFactory sf = createSessionFactory(props);
         HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
         assertTrue(hz instanceof HazelcastClient);
@@ -102,8 +110,13 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         ClientProperties cProps = client.getProperties();
         assertEquals("dev-custom", cProps.getProperty(ClientPropertyName.GROUP_NAME));
         assertEquals("dev-pass", cProps.getProperty(ClientPropertyName.GROUP_PASSWORD));
-        sf.close();
+        
+        Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
+        assertEquals(2, hz.getCluster().getMembers().size());
         main.getLifecycleService().shutdown();
+        assertEquals(1, hz.getCluster().getMembers().size());
+        sf.close();
+        Hazelcast.shutdownAll();
     }
     
     @Test
@@ -122,20 +135,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
 		sf.close();
 		assertTrue(hz.getLifecycleService().isRunning());
 		hz.getLifecycleService().shutdown();
-    }
-    
-    @Test
-    public void testNamedInstance2() {
-		Properties props = getDefaultProperties();
-		props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
-		props.remove(CacheEnvironment.CONFIG_FILE_PATH_LEGACY);
-		props.put(CacheEnvironment.HAZELCAST_INSTANCE_NAME, "hibernate");
-		props.put(CacheEnvironment.SHUTDOWN_ON_STOP, "true");
-		final SessionFactory sf = createSessionFactory(props);
-		final HazelcastInstance hz = Hazelcast.getDefaultInstance();
-		assertTrue(hz == HazelcastAccessor.getHazelcastInstance(sf));
-		sf.close();
-		assertFalse(hz.getLifecycleService().isRunning());
     }
     
     @Test(expected = CacheException.class)

@@ -50,27 +50,24 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
 			unloadInstance();
 		}
 		
-		String[] hosts = PropertiesHelper.toStringArray(CacheEnvironment.NATIVE_CLIENT_HOSTS, ",", props);
+		String address = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_ADDRESS, props, null);
+		if(address == null) {
+			String[] hosts = PropertiesHelper.toStringArray(CacheEnvironment.NATIVE_CLIENT_HOSTS, ",", props);
+			if(hosts != null && hosts.length > 0) {
+				address = hosts[0];
+				logger.log(Level.WARNING, "Hibernate property '" + CacheEnvironment.NATIVE_CLIENT_HOSTS + "' " +
+						"is deprecated, use '" + CacheEnvironment.NATIVE_CLIENT_ADDRESS + "' isntead!");
+			}
+		}
     	String group = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_GROUP, props, null);
     	String pass = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_PASSWORD, props, null);
     	
-    	if(hosts == null || hosts.length == 0 || group == null || pass == null) {
-    		throw new CacheException("Configuration properties " + CacheEnvironment.NATIVE_CLIENT_HOSTS + ", " 
+    	if(address == null || group == null || pass == null) {
+    		throw new CacheException("Configuration properties " + CacheEnvironment.NATIVE_CLIENT_ADDRESS + ", " 
     				+ CacheEnvironment.NATIVE_CLIENT_GROUP + " and " + CacheEnvironment.NATIVE_CLIENT_PASSWORD 
     				+ " are mandatory to use native client!");
     	}
-    	
-    	StringBuilder msg = new StringBuilder("Creating HazelcastClient for group: '");
-    	msg.append(group).append("' via hosts: '");
-    	
-    	for (int i = 0; i < hosts.length; i++) {
-			msg.append(hosts[i]).append("'").append(", ");
-		}
-    	msg.deleteCharAt(msg.length() -1).append(".");
-    	
-    	logger.log(Level.INFO, msg.toString());
-    	
-    	return (client = HazelcastClient.newHazelcastClient(group, pass, hosts));
+    	return (client = HazelcastClient.newHazelcastClient(group, pass, address));
 	}
 
 	public void unloadInstance() throws CacheException {
