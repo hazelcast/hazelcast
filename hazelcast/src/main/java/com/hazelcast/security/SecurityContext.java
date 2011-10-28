@@ -19,7 +19,8 @@ package com.hazelcast.security;
 
 import java.security.AccessControlException;
 import java.security.Permission;
-import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
+import java.util.concurrent.Callable;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -60,15 +61,24 @@ public interface SecurityContext {
 	 * @throws AccessControlException
 	 */
 	void checkPermission(Permission permission) throws AccessControlException;
-
+	
 	/**
-	 * Perform privileged work as a particular <code>Subject</code>.
+	 * Performs privileged work as a particular <code>Subject</code>.
 	 * @param subject
 	 * @param action
-	 * @return result returned by the PrivilegedAction's run method.
+	 * @return result returned by the PrivilegedExceptionAction run method.
 	 * @throws SecurityException
 	 */
-	<T> T doAsPrivileged(Subject subject, PrivilegedAction<T> action) throws SecurityException;
+	<T> T doAsPrivileged(Subject subject, PrivilegedExceptionAction<T> action) throws Exception, SecurityException;
+
+	/**
+	 * Creates secure callable that runs in a sandbox. 
+	 * @param <V> return type of callable
+	 * @param subject 
+	 * @param callable
+	 * @return result of callable
+	 */
+	<V> SecureCallable<V> createSecureCallable(Subject subject, Callable<V> callable);
 	
 	/**
 	 * Destroys {@link SecurityContext} and all security elements.

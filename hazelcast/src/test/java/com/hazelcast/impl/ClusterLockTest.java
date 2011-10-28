@@ -18,6 +18,8 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -34,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.impl.TestUtil.getCMap;
 import static junit.framework.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
@@ -249,4 +252,29 @@ public class ClusterLockTest {
         Assert.assertFalse("should not acquire lock", locked.get());
         tx.commit();
     }
+    
+	/**
+	 * Test for Issue 710
+	 */
+    @Test
+	public void testEvictedEntryNotNullAfterLockAndGet() throws Exception {
+		String mapName = "testLock";
+		Config config = new XmlConfigBuilder().build();
+		MapConfig mapConfig = new MapConfig();
+		mapConfig.setName(mapName);
+		mapConfig.setTimeToLiveSeconds(3);
+		config.addMapConfig(mapConfig);
+		HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+		IMap<Object, Object> m1 = h1.getMap(mapName);
+		
+		m1.put(1, 1);
+		assertEquals(1, m1.get(1));
+		Thread.sleep(3000);
+		assertEquals(null, m1.get(1));
+		m1.lock(1);
+		assertEquals(null, m1.get(1));
+		m1.put(1, 1);
+		assertEquals(1, m1.get(1));
+	}
 }
+

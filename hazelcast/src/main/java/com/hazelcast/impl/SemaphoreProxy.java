@@ -23,7 +23,7 @@ import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 
-public interface SemaphoreProxy extends ISemaphore, Instance {
+public interface SemaphoreProxy extends ISemaphore, Instance, HazelcastInstanceAwareInstance {
     public final static Data DATA_TRUE = IOUtil.toData(true);
 
     public final static int ACQUIRED = 0;

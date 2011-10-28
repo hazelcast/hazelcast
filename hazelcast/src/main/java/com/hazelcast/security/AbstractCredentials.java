@@ -30,7 +30,7 @@ public abstract class AbstractCredentials implements Credentials, DataSerializab
 
 	private static final long serialVersionUID = 3587995040707072446L;
 
-	private transient String endpoint;
+	private String endpoint;
 	private String principal;
 
 	public AbstractCredentials() {
@@ -85,11 +85,13 @@ public abstract class AbstractCredentials implements Credentials, DataSerializab
 
 	public final void writeData(DataOutput out) throws IOException {
 		out.writeUTF(principal);
+		out.writeUTF(endpoint);
 		writeDataInternal(out);
 	}
 	
 	public final void readData(DataInput in) throws IOException {
 		principal = in.readUTF();
+		endpoint = in.readUTF();
 		readDataInternal(in);
 	}
 	

@@ -25,6 +25,7 @@ import com.hazelcast.impl.executor.ParallelExecutorService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.security.SecureCallable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -205,6 +206,10 @@ public class ExecutorManager extends BaseManager {
                 running = true;
                 if (!cancelled) {
                     Callable callable = (Callable) toObject(request.value);
+                    if(callable instanceof SecureCallable) {
+                    	final SecureCallable secureCallable = (SecureCallable) callable;
+                    	secureCallable.setNode(node);
+                    }
                     result = callable.call();
                     result = toData(result);
                 }

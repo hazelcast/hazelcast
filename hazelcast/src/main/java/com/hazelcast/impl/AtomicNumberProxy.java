@@ -23,7 +23,7 @@ import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 
-public interface AtomicNumberProxy extends AtomicNumber, Instance {
+public interface AtomicNumberProxy extends AtomicNumber, Instance, HazelcastInstanceAwareInstance {
     public static final Data DATA_LONG_ZERO = IOUtil.toData(0L);
 
     AtomicNumberOperationsCounter getOperationsCounter();

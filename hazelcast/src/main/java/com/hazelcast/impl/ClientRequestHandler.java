@@ -21,7 +21,7 @@ import com.hazelcast.impl.ClientService.ClientOperationHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 
-import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 import java.util.logging.Level;
 
 import javax.security.auth.Subject;
@@ -53,7 +53,7 @@ public class ClientRequestHandler extends FallThroughRunnable {
         try {
             if (!valid) return;
             
-            final PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
+            final PrivilegedExceptionAction<Void> action = new PrivilegedExceptionAction<Void>() {
 				public Void run() {
 					clientOperationHandler.handle(node, packet);
 					node.clientService.getClientEndpoint(packet.conn).removeRequest(ClientRequestHandler.this);

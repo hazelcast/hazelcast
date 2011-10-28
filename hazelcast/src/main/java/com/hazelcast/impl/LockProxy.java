@@ -21,7 +21,7 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.core.Instance;
 import com.hazelcast.impl.monitor.LockOperationsCounter;
 
-public interface LockProxy extends ILock, Instance {
+public interface LockProxy extends ILock, Instance, HazelcastInstanceAwareInstance {
 
     LockOperationsCounter getLockOperationCounter();
 }

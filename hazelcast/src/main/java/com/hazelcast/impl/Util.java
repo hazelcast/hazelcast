@@ -33,6 +33,15 @@ import java.util.logging.Level;
 public class Util {
 
     final static ILogger logger = Logger.getLogger(Util.class.getName());
+    
+    public static void checkSerializable(Object obj) {
+        if (obj == null) {
+            throw new NullPointerException("Object cannot be null.");
+        }
+        if (!(obj instanceof Serializable)) {
+            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
+        }
+    }
 
     /**
      * -1 means infinite.

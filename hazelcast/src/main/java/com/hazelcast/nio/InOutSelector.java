@@ -111,7 +111,6 @@ public class InOutSelector extends SelectorBase {
                 final Connection connection = node.connectionManager.createConnection(socketChannel, InOutSelector.this);
                 node.connectionManager.bind(address, connection, false);
             } catch (Throwable e) {
-                e.printStackTrace();
                 try {
                     final String msg = "Couldn't connect to " + address + ", cause: " + e.getMessage();
                     logger.log(Level.FINEST, msg, e);

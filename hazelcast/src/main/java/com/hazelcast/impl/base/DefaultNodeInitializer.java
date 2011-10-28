@@ -17,7 +17,12 @@
 
 package com.hazelcast.impl.base;
 
-import com.hazelcast.impl.IHazelcastFactory;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.logging.Level;
+
+import com.hazelcast.impl.DefaultProxyFactory;
+import com.hazelcast.impl.ProxyFactory;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.concurrentmap.DefaultRecordFactory;
 import com.hazelcast.impl.concurrentmap.RecordFactory;
@@ -25,20 +30,18 @@ import com.hazelcast.impl.concurrentmap.SimpleRecordFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.logging.Level;
-
 public class DefaultNodeInitializer implements NodeInitializer {
 
     protected ILogger logger;
     protected ILogger systemLogger;
+    protected Node node;
     protected String version;
     protected String build;
     private int buildNumber;
     protected boolean simpleRecord = false;
 
     public void beforeInitialize(Node node) {
+    	this.node = node;
         systemLogger = node.getLogger("com.hazelcast.system");
         logger = node.getLogger("com.hazelcast.initializer");
         parseSystemProps();
@@ -94,13 +97,13 @@ public class DefaultNodeInitializer implements NodeInitializer {
         return build;
     }
 
-    public SecurityContext createSecurityContext() {
+    public ProxyFactory getProxyFactory() {
+    	return new DefaultProxyFactory(node.factory);
+    }
+    
+    public SecurityContext getSecurityContext() {
         logger.log(Level.WARNING, "Security features are only available on Hazelcast Enterprise Edition!");
         return null;
     }
 
-    public IHazelcastFactory getSecureHazelcastFactory() {
-        logger.log(Level.WARNING, "Security features are only available on Hazelcast Enterprise Edition!");
-        return null;
-    }
 }

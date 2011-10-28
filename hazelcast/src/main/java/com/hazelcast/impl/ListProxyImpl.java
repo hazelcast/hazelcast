@@ -30,7 +30,7 @@ import java.util.Set;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
-public class ListProxyImpl extends AbstractList implements IList, DataSerializable, HazelcastInstanceAwareInstance {
+public class ListProxyImpl extends AbstractList implements ListProxy, DataSerializable {
 	String actualName;
     String name;
     FactoryImpl factory;

@@ -167,7 +167,7 @@ public class Node {
         this.logger = loggingService.getLogger(Node.class.getName());
         initializer = NodeInitializerFactory.create();
         initializer.beforeInitialize(this);
-        securityContext = config.getSecurityConfig().isEnabled() ? initializer.createSecurityContext() : null;
+        securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         clusterImpl = new ClusterImpl(this, localMember);
         baseVariables = new NodeBaseVariables(address, localMember);
         //initialize managers..
@@ -416,7 +416,7 @@ public class Node {
         } finally {
             active = false;
             outOfMemory = true;
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
     }
 

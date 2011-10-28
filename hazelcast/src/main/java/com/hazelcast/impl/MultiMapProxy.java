@@ -19,6 +19,6 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.MultiMap;
 
-public interface MultiMapProxy extends MultiMap {
+public interface MultiMapProxy extends MultiMap, HazelcastInstanceAwareInstance {
     MProxy getMProxy();
 }

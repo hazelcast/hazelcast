@@ -22,7 +22,7 @@ import com.hazelcast.impl.monitor.MapOperationsCounter;
 
 import java.util.Set;
 
-public interface MProxy extends IMap, IRemoveAwareProxy, IGetAwareProxy {
+public interface MProxy extends IMap, IRemoveAwareProxy, IGetAwareProxy, HazelcastInstanceAwareInstance {
     String getLongName();
 
     void addGenericListener(Object listener, Object key, boolean includeValue, InstanceType instanceType);

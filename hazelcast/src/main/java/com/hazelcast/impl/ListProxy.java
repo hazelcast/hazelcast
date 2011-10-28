@@ -17,11 +17,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.IQueue;
-import com.hazelcast.impl.monitor.QueueOperationsCounter;
+import com.hazelcast.core.IList;
 
-public interface QProxy<E> extends IQueue<E>, HazelcastInstanceAwareInstance {
-    QueueOperationsCounter getQueueOperationCounter();
-
-    String getLongName();
+public interface ListProxy<E> extends IList<E>, HazelcastInstanceAwareInstance {
 }

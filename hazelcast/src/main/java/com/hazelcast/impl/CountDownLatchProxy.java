@@ -23,7 +23,7 @@ import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 
-public interface CountDownLatchProxy extends ICountDownLatch, Instance {
+public interface CountDownLatchProxy extends ICountDownLatch, Instance, HazelcastInstanceAwareInstance {
     public final static int AWAIT_DONE = 0;
     public final static int AWAIT_FAILED = 1;
     public final static int INSTANCE_DESTROYED = 2;

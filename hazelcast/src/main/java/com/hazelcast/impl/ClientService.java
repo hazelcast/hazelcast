@@ -20,8 +20,6 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
-import com.hazelcast.impl.FactoryImpl.SetProxyImpl;
-import com.hazelcast.impl.FactoryImpl.SetProxyImpl.SetProxyReal;
 import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.logging.ILogger;
@@ -57,7 +55,7 @@ public class ClientService implements ConnectionListener {
     private final ILogger logger;
     private final int THREAD_COUNT;
     final Worker[] workers;
-    private final IHazelcastFactory factory;
+    private final FactoryImpl factory;
 
     public ClientService(Node node) {
         this.node = node;
@@ -137,13 +135,15 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[SEMAPHORE_REDUCE_PERMITS.getValue()] = new SemaphoreReduceHandler();
         clientOperationHandlers[SEMAPHORE_RELEASE.getValue()] = new SemaphoreReleaseHandler();
         clientOperationHandlers[SEMAPHORE_TRY_ACQUIRE.getValue()] = new SemaphoreTryAcquireHandler();
+        clientOperationHandlers[LOCK_LOCK.getValue()] = new LockOperationHandler();
+        clientOperationHandlers[LOCK_UNLOCK.getValue()] = new UnlockOperationHandler();
         node.connectionManager.addConnectionListener(this);
         this.THREAD_COUNT = node.getGroupProperties().EXECUTOR_CLIENT_THREAD_COUNT.getInteger();
         workers = new Worker[THREAD_COUNT];
         for (int i = 0; i < THREAD_COUNT; i++) {
             workers[i] = new Worker();
         }
-        this.factory = node.securityContext == null ? node.factory : node.initializer.getSecureHazelcastFactory();
+        this.factory = node.factory;
     }
 
     boolean firstCall = true;
@@ -390,9 +390,8 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
             if (packet.getValueData() == null || packet.getValueData().size() == 0) {
-                FactoryImpl.MultiMapProxyImpl mmProxyImpl = (FactoryImpl.MultiMapProxyImpl) multiMap;
-                FactoryImpl.MultiMapProxyImpl.MultiMapReal real = mmProxyImpl.getBase();
-                MProxy mapProxy = real.mapProxy;
+                MultiMapProxy mmProxy = (MultiMapProxy) multiMap;
+                MProxy mapProxy = mmProxy.getMProxy();
                 packet.setValue((Data) mapProxy.remove(packet.getKeyData()));
             } else {
                 packet.setValue(toData(multiMap.remove(packet.getKeyData(), packet.getValueData())));
@@ -427,17 +426,20 @@ public class ClientService implements ConnectionListener {
                 String name = packet.name;
                 ExecutorService executorService = factory.getExecutorService(name);
                 ClientDistributedTask cdt = (ClientDistributedTask) toObject(packet.getKeyData());
-                DistributedTask task;
-                if (cdt.getKey() != null) {
-                    task = new DistributedTask(cdt.getCallable(), cdt.getKey());
-                } else if (cdt.getMember() != null) {
-                    task = new DistributedTask(cdt.getCallable(), cdt.getMember());
-                } else if (cdt.getMembers() != null) {
-                    task = new MultiTask(cdt.getCallable(), cdt.getMembers());
-                } else {
-                    task = new DistributedTask(cdt.getCallable());
-                }
                 final ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
+                final Callable callable = node.securityContext == null
+                	? cdt.getCallable()
+                	: node.securityContext.createSecureCallable(clientEndpoint.getSubject(), cdt.getCallable());
+                final DistributedTask task;
+                if (cdt.getKey() != null) {
+                    task = new DistributedTask(callable, cdt.getKey());
+                } else if (cdt.getMember() != null) {
+                    task = new DistributedTask(callable, cdt.getMember());
+                } else if (cdt.getMembers() != null) {
+                    task = new MultiTask(callable, cdt.getMembers());
+                } else {
+                    task = new DistributedTask(callable);
+                }
                 clientEndpoint.storeTask(packet.callId, task);
                 task.setExecutionCallback(new ExecutionCallback() {
                     public void done(Future future) {
@@ -462,6 +464,7 @@ public class ClientService implements ConnectionListener {
                         "exception during handling " + packet.operation + ": " + e.getMessage(), e);
                 packet.clearForResponse();
                 packet.setValue(toData(e));
+                sendResponse(packet);
             }
         }
     }
@@ -1000,9 +1003,8 @@ public class ClientService implements ConnectionListener {
                 packet.setKey(null);
                 packet.setValue((Data) map.get(key));
             } else if (instanceType == InstanceType.MULTIMAP) {
-                FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) factory.getOrCreateProxyByName(packet.name);
-                FactoryImpl.MultiMapProxyImpl.MultiMapReal real = multiMapImpl.getBase();
-                MProxy mapProxy = real.mapProxy;
+                MultiMapProxy multiMap = (MultiMapProxy) factory.getOrCreateProxyByName(packet.name);
+                MProxy mapProxy = multiMap.getMProxy();
                 packet.setKey(null);
                 packet.setValue((Data) mapProxy.get(key));
             }
@@ -1194,6 +1196,40 @@ public class ClientService implements ConnectionListener {
             packet.setValue(value);
         }
     }
+    
+    private class LockOperationHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+        	final Object key = toObject(packet.getKeyData());
+        	final ILock lock = (ILock) factory.getLock(key);
+        	final long timeout = packet.timeout;
+        	Data value = null;
+        	
+			if (timeout == -1) {
+				lock.lock();
+			} else if (timeout == 0) {
+				value = toData(lock.tryLock());
+			} else {
+				try {
+					value = toData(lock.tryLock(timeout, TimeUnit.MILLISECONDS));
+				} catch (InterruptedException e) {
+					logger.log(Level.FINEST, "Lock interrupted!");
+					value = toData(Boolean.FALSE);
+				}
+			}
+            packet.clearForResponse();
+            packet.setValue(value);
+        }
+    }
+    
+    private class UnlockOperationHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+        	final Object key = toObject(packet.getKeyData());
+        	final ILock lock = (ILock) factory.getLock(key);
+			lock.unlock();
+            packet.clearForResponse();
+            packet.setValue(null);
+        }
+    }
 
     private class TransactionBeginHandler extends ClientTransactionOperationHandler {
         public void processTransactionOp(Transaction transaction) {
@@ -1244,16 +1280,15 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void doSetOp(final Node node, final Packet packet) {
-            final FactoryImpl.SetProxyImpl collectionProxy = (FactoryImpl.SetProxyImpl) factory.getOrCreateProxyByName(packet.name);
-            final MProxy mapProxy = ((SetProxyReal) collectionProxy.getBase()).mapProxy;
+            final SetProxy collectionProxy = (SetProxy) factory.getOrCreateProxyByName(packet.name);
+            final MProxy mapProxy = collectionProxy.getMProxy();
             packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData()));
         }
 
         @Override
         public void doMultiMapOp(final Node node, final Packet packet) {
-            final FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) factory.getOrCreateProxyByName(packet.name);
-            final FactoryImpl.MultiMapProxyImpl.MultiMapReal real = multiMapImpl.getBase();
-            final MProxy mapProxy = real.mapProxy;
+            final MultiMapProxy multiMap = (MultiMapProxy) factory.getOrCreateProxyByName(packet.name);
+            final MProxy mapProxy = multiMap.getMProxy();
             final Data value = getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData());
             packet.clearForResponse();
             packet.setValue(value);
@@ -1296,15 +1331,14 @@ public class ClientService implements ConnectionListener {
 
         @Override
         public void doSetOp(Node node, Packet packet) {
-            FactoryImpl.SetProxyImpl collectionProxy = (SetProxyImpl) factory.getOrCreateProxyByName(packet.name);
-            MProxy mapProxy = ((SetProxyReal) collectionProxy.getBase()).mapProxy;
+            SetProxy collectionProxy = (SetProxy) factory.getOrCreateProxyByName(packet.name);
+            MProxy mapProxy =collectionProxy.getMProxy();
             packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>()));
         }
 
         public void doMultiMapOp(Node node, Packet packet) {
-            FactoryImpl.MultiMapProxyImpl multiMapImpl = (FactoryImpl.MultiMapProxyImpl) factory.getOrCreateProxyByName(packet.name);
-            FactoryImpl.MultiMapProxyImpl.MultiMapReal real = multiMapImpl.getBase();
-            MProxy mapProxy = real.mapProxy;
+            MultiMapProxy multiMap = (MultiMapProxy) factory.getOrCreateProxyByName(packet.name);
+            MProxy mapProxy = multiMap.getMProxy();
             Data value = getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>());
             packet.clearForResponse();
             packet.setValue(value);
@@ -1327,8 +1361,8 @@ public class ClientService implements ConnectionListener {
                 IMap map = (IMap) factory.getOrCreateProxyByName(Prefix.MAP + (String) listProxy.getId());
                 clientEndpoint.addThisAsListener(map, null, true);
             } else if (getInstanceType(packet.name).equals(InstanceType.SET)) {
-                FactoryImpl.SetProxyImpl collectionProxy = (FactoryImpl.SetProxyImpl) factory.getOrCreateProxyByName(packet.name);
-                IMap map = ((SetProxyReal) collectionProxy.getBase()).mapProxy;
+                SetProxy collectionProxy = (SetProxy) factory.getOrCreateProxyByName(packet.name);
+                IMap map = collectionProxy.getMProxy();
                 clientEndpoint.addThisAsListener(map, null, includeValue);
             } else if (getInstanceType(packet.name).equals(InstanceType.QUEUE)) {
                 IQueue<Object> queue = (IQueue) factory.getOrCreateProxyByName(packet.name);

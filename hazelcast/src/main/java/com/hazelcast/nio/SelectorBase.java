@@ -139,25 +139,23 @@ public abstract class SelectorBase implements Runnable {
                     final SelectionKey sk = it.next();
                     try {
                         it.remove();
-                        if (sk.isValid()) {
-                            if (sk.isReadable()) {
-                                Connection connection = (Connection) sk.attachment();
-                                connection.getReadHandler().handle();
-                            }
-                            if (sk.isWritable()) {
-                                sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
-                                Connection connection = (Connection) sk.attachment();
-                                connection.getWriteHandler().handle();
-                            }
-                            if (sk.isConnectable()) {
-                                sk.interestOps(sk.interestOps() & ~SelectionKey.OP_CONNECT);
-                                SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
-                                selectionHandler.handle();
-                            }
-                            if (sk.isAcceptable()) {
-                                SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
-                                selectionHandler.handle();
-                            }
+                        if (sk.isValid() && sk.isReadable()) {
+                            Connection connection = (Connection) sk.attachment();
+                            connection.getReadHandler().handle();
+                        }
+                        if (sk.isValid() && sk.isWritable()) {
+                            sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
+                            Connection connection = (Connection) sk.attachment();
+                            connection.getWriteHandler().handle();
+                        }
+                        if (sk.isValid() && sk.isConnectable()) {
+                            sk.interestOps(sk.interestOps() & ~SelectionKey.OP_CONNECT);
+                            SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
+                            selectionHandler.handle();
+                        }
+                        if (sk.isValid() && sk.isAcceptable()) {
+                            SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
+                            selectionHandler.handle();
                         }
                     } catch (Throwable e) {
                         handleSelectorException(e);

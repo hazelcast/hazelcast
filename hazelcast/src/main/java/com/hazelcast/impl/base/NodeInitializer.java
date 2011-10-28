@@ -17,7 +17,7 @@
 
 package com.hazelcast.impl.base;
 
-import com.hazelcast.impl.IHazelcastFactory;
+import com.hazelcast.impl.ProxyFactory;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.concurrentmap.RecordFactory;
 import com.hazelcast.security.SecurityContext;
@@ -36,9 +36,9 @@ public interface NodeInitializer {
 	
 	String getVersion() ;
 	
+	ProxyFactory getProxyFactory(); 
+	
 	RecordFactory getRecordFactory();
 	
-	SecurityContext createSecurityContext();
-	
-	IHazelcastFactory getSecureHazelcastFactory();
+	SecurityContext getSecurityContext();
 }

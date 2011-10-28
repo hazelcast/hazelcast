@@ -21,7 +21,7 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Instance;
 import com.hazelcast.impl.monitor.TopicOperationsCounter;
 
-public interface TopicProxy extends ITopic, Instance {
+public interface TopicProxy extends ITopic, Instance, HazelcastInstanceAwareInstance {
 
     TopicOperationsCounter getTopicOperationCounter();
 

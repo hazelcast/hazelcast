@@ -495,9 +495,7 @@
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="propertyNameString">
-	    <xs:restriction base="xs:string">
-	        <xs:pattern value="\S.*"/>
-	    </xs:restriction>
+	    <xs:restriction base="non-space-string" />
 	</xs:simpleType>
 	<xs:simpleType name="propertyName">
 		<xs:union memberTypes="propertyNameEnum propertyNameString" />
@@ -713,6 +711,11 @@
     <xs:simpleType name="ST_port">
         <xs:restriction base="xs:short"/>
     </xs:simpleType>
+    <xs:simpleType name="non-space-string">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="\S.*" />
+		</xs:restriction>
+	</xs:simpleType>
     <xs:element name="security">
     	<xs:complexType>
     		<xs:sequence>
@@ -730,13 +733,7 @@
     		<xs:sequence>
     			<xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
     		</xs:sequence>
-    		<xs:attribute name="class-name" use="required">
-    			<xs:simpleType>
-    				<xs:restriction base="xs:string">
-    					<xs:pattern value="\S.*" />
-    				</xs:restriction>
-    			</xs:simpleType>
-    		</xs:attribute>
+    		<xs:attribute name="class-name" type="non-space-string" use="required" />
     	</xs:complexType>
     </xs:element>
    	<xs:complexType name="login-modules">
@@ -751,13 +748,7 @@
     		<xs:sequence>
     			<xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
     		</xs:sequence>
-    		<xs:attribute name="class-name" use="required" >
-    			<xs:simpleType>
-    				<xs:restriction base="xs:string">
-    					<xs:pattern value="\S.*" />
-    				</xs:restriction>
-    			</xs:simpleType>
-    		</xs:attribute>
+    		<xs:attribute name="class-name" type="non-space-string" use="required" />
     		<xs:attribute name="usage" use="optional" default="required">
     			<xs:simpleType>
     				<xs:restriction base="xs:string">
@@ -775,13 +766,7 @@
     		<xs:sequence>
     			<xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
     		</xs:sequence>
-    		<xs:attribute name="class-name" use="required">
-    			<xs:simpleType>
-    				<xs:restriction base="xs:string">
-    					<xs:pattern value="\S.*" />
-    				</xs:restriction>
-    			</xs:simpleType>
-    		</xs:attribute>
+    		<xs:attribute name="class-name" type="non-space-string" use="required" />
     	</xs:complexType>
     </xs:element>
     <xs:element name="client-permissions">
@@ -799,8 +784,8 @@
 			    <xs:element ref="countdown-latch-permission" minOccurs="0" maxOccurs="unbounded"/>
 			    <xs:element ref="semaphore-permission" minOccurs="0" maxOccurs="unbounded"/>
 			    <xs:element ref="executor-service-permission" minOccurs="0" maxOccurs="unbounded"/>
-			    <xs:element ref="listener-permisson" minOccurs="0" maxOccurs="unbounded" />
 			    <xs:element ref="transaction-permission" minOccurs="0" maxOccurs="1" />
+			    <xs:element ref="listener-permisson" minOccurs="0" maxOccurs="unbounded" />
     		</xs:sequence>
     	</xs:complexType>
     </xs:element>

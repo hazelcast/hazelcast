@@ -17,23 +17,9 @@
 
 package com.hazelcast.impl;
 
-import java.util.concurrent.atomic.AtomicLong;
+import com.hazelcast.core.ISet;
 
-class TransactionFactory {
+public interface SetProxy<E> extends ISet<E>, HazelcastInstanceAwareInstance {
 
-    AtomicLong ids = new AtomicLong(0);
-
-    final FactoryImpl factory;
-
-    TransactionFactory(FactoryImpl factory) {
-        this.factory = factory;
-    }
-
-    public TransactionImpl newTransaction() {
-        return new TransactionImpl(factory, newTransactionId());
-    }
-
-    public long newTransactionId() {
-        return ids.incrementAndGet();
-    }
+	 MProxy getMProxy();
 }
