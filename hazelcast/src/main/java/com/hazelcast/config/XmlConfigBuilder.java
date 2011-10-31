@@ -178,12 +178,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         handleConfig(element);
     }
 
-    private boolean checkTrue(final String value) {
-        return "true".equalsIgnoreCase(value) ||
-                "yes".equalsIgnoreCase(value) ||
-                "on".equalsIgnoreCase(value);
-    }
-
     private void handleConfig(final Element docElement) throws Exception {
         for (org.w3c.dom.Node node : new IterableNodeList(docElement.getChildNodes())) {
             final String nodeName = cleanNodeName(node.getNodeName());

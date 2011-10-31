@@ -38,7 +38,7 @@ public class LoginModuleConfig {
 	public enum LoginModuleUsage {
 		REQUIRED, REQUISITE, SUFFICIENT, OPTIONAL;
 		
-		static LoginModuleUsage get(String v) {
+		public static LoginModuleUsage get(String v) {
 			try {
 				return LoginModuleUsage.valueOf(v.toUpperCase());
 			} catch (Exception ignore) {}

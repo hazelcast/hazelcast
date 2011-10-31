@@ -25,7 +25,7 @@ public class CredentialsFactoryConfig {
 	
 	private String className = null;
 	
-	private ICredentialsFactory factoryImpl = null;
+	private ICredentialsFactory implementation = null;
 	
 	private Properties properties = new Properties();
 
@@ -46,12 +46,12 @@ public class CredentialsFactoryConfig {
 		this.className = className;
 	}
 
-	public ICredentialsFactory getFactoryImpl() {
-		return factoryImpl;
+	public ICredentialsFactory getImplementation() {
+		return implementation;
 	}
 
-	public void setFactoryImpl(ICredentialsFactory factoryImpl) {
-		this.factoryImpl = factoryImpl;
+	public void setImplementation(ICredentialsFactory factoryImpl) {
+		this.implementation = factoryImpl;
 	}
 
 	public Properties getProperties() {

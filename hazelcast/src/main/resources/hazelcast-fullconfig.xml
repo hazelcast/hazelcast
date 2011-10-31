@@ -304,8 +304,8 @@
 					<action>poll</action>
 				</actions>
 			</queue-permission>
-			<listener-permisson name="instance"/>
 			<transaction-permission />
+			<listener-permisson name="instance"/>
 		</client-permissions>
 	</security>
 	   	

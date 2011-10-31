@@ -99,11 +99,11 @@ public class PermissionConfig {
 		this.principal = principal;
 	}
 
-	public void setEndpoint(String endpoint) {
-		addEndpoint(endpoint);
-	}
-
 	public void setActions(Set<String> actions) {
 		this.actions = actions;
+	}
+	
+	public void setEndpoints(Set<String> endpoints) {
+		this.endpoints = endpoints;
 	}
 }

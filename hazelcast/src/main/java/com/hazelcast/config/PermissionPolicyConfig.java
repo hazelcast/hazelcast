@@ -25,7 +25,7 @@ public class PermissionPolicyConfig {
 	
 	private String className = null;
 	
-	private IPermissionPolicy policyImpl = null;
+	private IPermissionPolicy implementation = null;
 	
 	private Properties properties = new Properties();
 
@@ -46,12 +46,12 @@ public class PermissionPolicyConfig {
 		this.className = className;
 	}
 
-	public IPermissionPolicy getPolicyImpl() {
-		return policyImpl;
+	public IPermissionPolicy getImplementation() {
+		return implementation;
 	}
 
-	public void setPolicyImpl(IPermissionPolicy policyImpl) {
-		this.policyImpl = policyImpl;
+	public void setImplementation(IPermissionPolicy policyImpl) {
+		this.implementation = policyImpl;
 	}
 
 	public Properties getProperties() {
