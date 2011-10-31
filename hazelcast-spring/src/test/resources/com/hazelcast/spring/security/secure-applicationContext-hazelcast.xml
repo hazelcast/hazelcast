@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:hz="http://www.hazelcast.com/schema/config"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+		http://www.hazelcast.com/schema/config
+		http://www.hazelcast.com/schema/config/hazelcast-spring.xsd">
+	
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+        <property name="locations">
+            <list>
+                <value>classpath:/hazelcast-default.properties</value>
+            </list>
+        </property>
+    </bean>
+    
+	<hz:config id="secure-config">
+		<hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+		<hz:network port="${cluster.port}" port-auto-increment="false">
+			<hz:join>
+				<hz:multicast enabled="${boolean.true}"
+					multicast-group="224.2.2.3" multicast-port="54327" />
+			</hz:join>
+		</hz:network>
+		
+		<hz:security enabled="${boolean.true}">
+			<hz:member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory" implementation="dummyCredentialsFactory">
+				<hz:properties>
+					<hz:property name="property">value</hz:property>
+				</hz:properties>
+			</hz:member-credentials-factory>
+			<hz:member-login-modules>
+				<hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="required">
+					<hz:properties>
+						<hz:property name="property">value</hz:property>
+					</hz:properties>
+				</hz:login-module>
+			</hz:member-login-modules>
+			<hz:client-login-modules>
+				<hz:login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="optional">
+					<hz:properties>
+						<hz:property name="property">value</hz:property>
+					</hz:properties>
+				</hz:login-module>
+				<hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="required">
+					<hz:properties>
+						<hz:property name="property">value</hz:property>
+					</hz:properties>
+				</hz:login-module>
+			</hz:client-login-modules>
+			<hz:client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy" implementation="dummyPermissionPolicy">
+				<hz:properties>
+					<hz:property name="property">value</hz:property>
+				</hz:properties>
+			</hz:client-permission-policy>
+			<hz:client-permissions>
+				<hz:all-permissions principal="admin" >
+					<hz:endpoints>
+						<hz:endpoint>127.0.0.1</hz:endpoint>
+					</hz:endpoints>
+				</hz:all-permissions>
+				<hz:map-permission name="customMap" principal="dev">
+					<hz:endpoints>
+						<hz:endpoint>127.0.0.1</hz:endpoint>
+					</hz:endpoints>
+					<hz:actions>
+						<hz:action>create</hz:action>
+						<hz:action>destroy</hz:action>
+						<hz:action>put</hz:action>
+						<hz:action>get</hz:action>
+					</hz:actions>
+				</hz:map-permission>
+				<hz:queue-permission name="customQ" principal="dev">
+					<hz:endpoints>
+						<hz:endpoint>127.0.0.1</hz:endpoint>
+					</hz:endpoints>
+					<hz:actions>
+						<hz:action>create</hz:action>
+						<hz:action>destroy</hz:action>
+						<hz:action>offer</hz:action>
+						<hz:action>poll</hz:action>
+					</hz:actions>
+				</hz:queue-permission>
+			</hz:client-permissions>
+		</hz:security>
+	</hz:config>
+	
+	<bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory" />
+	<bean id="dummyPermissionPolicy" class="com.hazelcast.spring.security.DummyPermissionPolicy" />
+</beans>

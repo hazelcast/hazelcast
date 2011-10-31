@@ -18,10 +18,15 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.*;
+import com.hazelcast.config.AbstractXmlConfigHelper.IterableNodeList;
+import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.config.PermissionConfig.PermissionType;
+
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.*;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
+import org.springframework.util.Assert;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -173,6 +178,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                     handleMergePolicies(node);
                 } else if ("wan-replication".equals(nodeName)) {
                 	handleWanReplication(node);
+                } else if ("security".equals(nodeName)) {
+                	handleSecurity(node);
                 } else if("instance-name".equals(nodeName)) {
                 	configBuilder.addPropertyValue(xmlToJavaName(nodeName), getValue(node));
                 }
@@ -455,6 +462,209 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             		mergePolicyConfigMap.put(name, beanDefinition);
             	}
             }
+        }
+        
+        private void handleSecurity(final Node node) {
+        	final BeanDefinitionBuilder securityConfigBuilder = createBeanBuilder(SecurityConfig.class, "securityConfig");
+            final AbstractBeanDefinition beanDefinition = securityConfigBuilder.getBeanDefinition();
+            fillAttributeValues(node, securityConfigBuilder);
+            
+            for (Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                if ("member-credentials-factory".equals(nodeName)) {
+                	handleCredentialsFactory(child, securityConfigBuilder);
+                } else if ("member-login-modules".equals(nodeName)) {
+                    handleLoginModules(child, securityConfigBuilder, true);
+                } else if ("client-login-modules".equals(nodeName)) {
+                    handleLoginModules(child, securityConfigBuilder, false);
+                } else if ("client-permission-policy".equals(nodeName)) {
+                    handlePermissionPolicy(child, securityConfigBuilder);
+                } else if ("client-permissions".equals(nodeName)) {
+                    handleSecurityPermissions(child, securityConfigBuilder);
+                }
+            }
+            configBuilder.addPropertyValue("securityConfig", beanDefinition);
+        }
+        
+        private void handleCredentialsFactory(final Node node, final BeanDefinitionBuilder securityConfigBuilder) {
+        	final BeanDefinitionBuilder credentialsConfigBuilder = createBeanBuilder(CredentialsFactoryConfig.class, "memberCredentialsConfig");
+            final AbstractBeanDefinition beanDefinition = credentialsConfigBuilder.getBeanDefinition();
+            
+            final NamedNodeMap attrs = node.getAttributes();
+        	Node classNameNode = attrs.getNamedItem("class-name");
+        	String className = classNameNode != null ? getValue(classNameNode) : null;
+        	Node implNode = attrs.getNamedItem("implementation");
+        	String implementation = implNode != null ? getValue(implNode) : null;
+        	credentialsConfigBuilder.addPropertyValue("className", className);
+        	if(implementation != null) {
+        		credentialsConfigBuilder.addPropertyReference("implementation", implementation);
+        	}
+        	Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' " +
+        			"attributes is required to create CredentialsFactory!");
+        	
+        	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                if ("properties".equals(nodeName)) {
+                    handleProperties(child, credentialsConfigBuilder);
+                    break;
+                }
+            }
+        	securityConfigBuilder.addPropertyValue("memberCredentialsConfig", beanDefinition);
+        }
+        
+        private void handleLoginModules(final Node node, final BeanDefinitionBuilder securityConfigBuilder, boolean member) {
+        	final String name = (member ? "member" : "client") + "LoginModuleConfigs"; 
+            final List lms = new ManagedList();
+            
+        	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                if ("login-module".equals(nodeName)) {
+                	handleLoginModule(child, lms, name);
+                }
+            }
+        	if(member) {
+        		securityConfigBuilder.addPropertyValue("memberLoginModuleConfigs", lms);
+        	} else {
+        		securityConfigBuilder.addPropertyValue("clientLoginModuleConfigs", lms);
+        	}
+        }
+        
+        private void handleLoginModule(final org.w3c.dom.Node node, List list, String name) {
+        	final BeanDefinitionBuilder lmConfigBuilder = createBeanBuilder(LoginModuleConfig.class, name);
+            final AbstractBeanDefinition beanDefinition = lmConfigBuilder.getBeanDefinition();
+            
+        	final NamedNodeMap attrs = node.getAttributes();
+        	Node classNameNode = attrs.getNamedItem("class-name");
+        	String className = getValue(classNameNode);
+        	Node usageNode = attrs.getNamedItem("usage");
+        	LoginModuleUsage usage = usageNode != null 
+        		? LoginModuleUsage.get(getValue(usageNode)) : LoginModuleUsage.REQUIRED;   
+        	
+        	lmConfigBuilder.addPropertyValue("className", className);	
+        	lmConfigBuilder.addPropertyValue("usage", usage);	
+        	
+        	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                if ("properties".equals(nodeName)) {
+                    handleProperties(child, lmConfigBuilder);
+                    break;
+                }
+            }
+        	list.add(beanDefinition);
+        }
+        
+        private void handlePermissionPolicy(final Node node, final BeanDefinitionBuilder securityConfigBuilder) {
+        	final BeanDefinitionBuilder permPolicyConfigBuilder = createBeanBuilder(PermissionPolicyConfig.class, "clientPolicyConfig");
+            final AbstractBeanDefinition beanDefinition = permPolicyConfigBuilder.getBeanDefinition();
+        	
+            final NamedNodeMap attrs = node.getAttributes();
+        	Node classNameNode = attrs.getNamedItem("class-name");
+        	String className = classNameNode != null ? getValue(classNameNode) : null;
+        	Node implNode = attrs.getNamedItem("implementation");
+        	String implementation = implNode != null ? getValue(implNode) : null;
+        	permPolicyConfigBuilder.addPropertyValue("className", className);
+        	if(implementation != null) {
+        		permPolicyConfigBuilder.addPropertyReference("implementation", implementation);
+        	}
+        	Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' " +
+        			"attributes is required to create PermissionPolicy!");
+            
+        	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                if ("properties".equals(nodeName)) {
+                    handleProperties(child, permPolicyConfigBuilder);
+                    break;
+                }
+            }
+        	securityConfigBuilder.addPropertyValue("clientPolicyConfig", beanDefinition);
+        }
+        
+        private void handleSecurityPermissions(final Node node, final BeanDefinitionBuilder securityConfigBuilder) {
+        	final Set permissions = new ManagedSet();
+            for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                PermissionType type ;
+                if("map-permission".equals(nodeName)) {
+                	type = PermissionType.MAP;
+                } else if("queue-permission".equals(nodeName)) {
+                	type = PermissionType.QUEUE;
+                } else if("multimap-permission".equals(nodeName)) {
+                	type = PermissionType.MULTIMAP;
+                } else if("topic-permission".equals(nodeName)) {
+                	type = PermissionType.TOPIC;
+                } else if("list-permission".equals(nodeName)) {
+                	type = PermissionType.LIST;
+                } else if("set-permission".equals(nodeName)) {
+                	type = PermissionType.SET;
+                } else if("lock-permission".equals(nodeName)) {
+                	type = PermissionType.LOCK;
+                } else if("atomic-number-permission".equals(nodeName)) {
+                	type = PermissionType.ATOMIC_NUMBER;
+                } else if("countdown-latch-permission".equals(nodeName)) {
+                	type = PermissionType.COUNTDOWN_LATCH;
+                } else if("semaphore-permission".equals(nodeName)) {
+                	type = PermissionType.SEMAPHORE;
+                } else if("executor-service-permission".equals(nodeName)) {
+                	type = PermissionType.EXECUTOR_SERVICE;
+                } else if("listener-permission".equals(nodeName)) {
+                	type = PermissionType.LISTENER;
+                } else if("transaction-permission".equals(nodeName)) {
+                	type = PermissionType.TRANSACTION;
+                } else if("all-permissions".equals(nodeName)) {
+                	type = PermissionType.ALL;
+                } else {
+                	continue;
+                }
+                handleSecurityPermission(child, permissions, type);
+            }
+            securityConfigBuilder.addPropertyValue("clientPermissionConfigs", permissions);
+        }
+        
+        private void handleSecurityPermission(final Node node, final Set permissions, PermissionType type) {
+        	final BeanDefinitionBuilder permissionConfigBuilder = createBeanBuilder(PermissionConfig.class, type + "PermissionConfig");
+            final AbstractBeanDefinition beanDefinition = permissionConfigBuilder.getBeanDefinition();
+            
+            permissionConfigBuilder.addPropertyValue("type", type);
+            final NamedNodeMap attrs = node.getAttributes();
+        	Node nameNode = attrs.getNamedItem("name");
+        	String name = nameNode != null ? getValue(nameNode) : "*";
+        	permissionConfigBuilder.addPropertyValue("name", name);
+        	Node principalNode = attrs.getNamedItem("principal");
+        	String principal = principalNode != null ? getValue(principalNode) : "*";
+        	permissionConfigBuilder.addPropertyValue("principal", principal);
+        	
+        	final List endpoints = new ManagedList();
+        	final List actions = new ManagedList();
+        	
+        	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+        		final String nodeName = cleanNodeName(child.getNodeName());
+        		if("endpoints".equals(nodeName)) {
+        			handleSecurityPermissionEndpoints(child, endpoints);
+        		} else if("actions".equals(nodeName)) {
+        			handleSecurityPermissionActions(child, actions);
+        		}
+        	}
+        	permissionConfigBuilder.addPropertyValue("endpoints", endpoints);
+        	permissionConfigBuilder.addPropertyValue("actions", actions);
+        	permissions.add(beanDefinition);
+        }
+        
+        private void handleSecurityPermissionEndpoints(final Node node, final List endpoints) {
+        	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+        		final String nodeName = cleanNodeName(child.getNodeName());
+        		if("endpoint".equals(nodeName)) {
+        			endpoints.add(getValue(child));
+        		}
+        	}
+        }
+        
+        private void handleSecurityPermissionActions(final Node node, final List actions) {
+        	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+        		final String nodeName = cleanNodeName(child.getNodeName());
+        		if("action".equals(nodeName)) {
+        			actions.add(getValue(child));
+        		}
+        	}
         }
     }
 

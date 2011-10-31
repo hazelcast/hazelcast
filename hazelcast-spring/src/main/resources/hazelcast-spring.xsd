@@ -84,6 +84,7 @@
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="merge-policies" type="merge-policies" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -108,8 +109,7 @@
                 <xs:extension base="beans:identifiedType">
                     <xs:sequence>
                         <xs:element name="client-properties" type="client-properties" minOccurs="0"/>
-                        <xs:element name="members" type="members" default="127.0.0.1" minOccurs="1"
-                                    maxOccurs="unbounded"/>
+                        <xs:element name="members" type="members" default="127.0.0.1" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                     <xs:attribute name="group-name" type="xs:string" use="required"/>
                     <xs:attribute name="group-password" type="xs:string" use="required"/>
@@ -306,9 +306,7 @@
         </xs:restriction>
     </xs:simpleType>
 	<xs:simpleType name="propertyNameString">
-	    <xs:restriction base="xs:string">
-	        <xs:pattern value="\S.*"/>
-	    </xs:restriction>
+	    <xs:restriction base="non-space-string" />
 	</xs:simpleType>
 	<xs:simpleType name="propertyName">
 		<xs:union memberTypes="propertyNameEnum propertyNameString" />
@@ -360,6 +358,12 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
+    
+    <xs:simpleType name="non-space-string">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="\S.*" />
+		</xs:restriction>
+	</xs:simpleType>
     
     <xs:complexType name="wan-replication">
         <xs:sequence>
@@ -413,5 +417,179 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
-	
+    
+    <xs:complexType name="security">
+    	<xs:sequence>
+   			<xs:element name="member-credentials-factory" minOccurs="0" maxOccurs="1">
+   				<xs:complexType>
+		    		<xs:sequence>
+		    			<xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+		    		</xs:sequence>
+		    		<xs:attribute name="class-name" type="non-space-string" use="optional" />
+		    		<xs:attribute name="implementation" type="non-space-string" use="optional" />
+		    	</xs:complexType>
+   			</xs:element>
+   			<xs:element name="member-login-modules" type="login-modules" minOccurs="0" maxOccurs="1" />
+   			<xs:element name="client-login-modules" type="login-modules" minOccurs="0" maxOccurs="1"/>
+   			<xs:element name="client-permission-policy" minOccurs="0" maxOccurs="1" >
+   				<xs:complexType>
+		    		<xs:sequence>
+		    			<xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+		    		</xs:sequence>
+		    		<xs:attribute name="class-name" type="non-space-string" use="optional" />
+		    		<xs:attribute name="implementation" type="non-space-string" use="optional" />
+		    	</xs:complexType>
+   			</xs:element>
+   			<xs:element name="client-permissions" minOccurs="0" maxOccurs="1">
+   				<xs:complexType>
+		    		<xs:sequence>
+		    			<xs:element name="all-permissions" type="base-permisson" minOccurs="0" maxOccurs="1" />
+		    			<xs:element name="map-permission" type="instance-permisson" minOccurs="0" maxOccurs="unbounded" />
+		    			<xs:element name="queue-permission" type="instance-permisson" minOccurs="0" maxOccurs="unbounded" />
+		    			<xs:element name="multimap-permission" type="instance-permisson" minOccurs="0" maxOccurs="unbounded"/>
+					    <xs:element name="topic-permission" type="instance-permisson" minOccurs="0" maxOccurs="unbounded"/>
+					    <xs:element name="list-permission" type="instance-permisson" minOccurs="0" maxOccurs="unbounded"/>
+					    <xs:element name="set-permission" type="instance-permisson" minOccurs="0" maxOccurs="unbounded"/>
+					    <xs:element name="lock-permission" type="instance-permisson" minOccurs="0" maxOccurs="unbounded"/>
+					    <xs:element name="atomic-number-permission" type="instance-permisson" minOccurs="0" maxOccurs="unbounded"/>
+					    <xs:element name="countdown-latch-permission" type="instance-permisson" minOccurs="0" maxOccurs="unbounded"/>
+					    <xs:element name="semaphore-permission" type="instance-permisson" minOccurs="0" maxOccurs="unbounded"/>
+					    <xs:element name="executor-service-permission" type="instance-permisson" minOccurs="0" maxOccurs="unbounded"/>
+					    <xs:element name="transaction-permission" type="base-permisson" minOccurs="0" maxOccurs="1" />
+					    <xs:element name="listener-permisson" minOccurs="0" maxOccurs="unbounded">
+						    <xs:complexType>
+						    	<xs:complexContent>
+						    		<xs:extension base="base-permisson">
+								    	<xs:attribute name="name" type="non-space-string" use="required" />
+						    		</xs:extension>
+						    	</xs:complexContent>
+						    </xs:complexType>
+					    </xs:element>
+		    		</xs:sequence>
+		    	</xs:complexType>
+   			</xs:element>
+   		</xs:sequence>
+   		<xs:attribute name="enabled" type="xs:string" default="false" />
+    </xs:complexType>
+    
+    <xs:complexType name="login-modules">
+   		<xs:sequence>
+   			<xs:element name="login-module" type="login-module" minOccurs="0" maxOccurs="unbounded"/>
+   		</xs:sequence>
+   	</xs:complexType>
+   	
+   	<xs:complexType name="login-module">
+   		<xs:sequence>
+   			<xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+   		</xs:sequence>
+   		<xs:attribute name="class-name" type="non-space-string" use="required" />
+   		<xs:attribute name="usage" use="optional" default="required">
+   			<xs:simpleType>
+   				<xs:union>
+   					<xs:simpleType>
+   						<xs:restriction base="xs:string">
+		   					<xs:enumeration value="required" />
+		   					<xs:enumeration value="optional" />
+		   					<xs:enumeration value="requisite" />
+		   					<xs:enumeration value="sufficient" />	
+		   				</xs:restriction>
+   					</xs:simpleType>
+   					<xs:simpleType>
+   						<xs:restriction base="non-space-string" />
+   					</xs:simpleType>
+   				</xs:union>
+   			</xs:simpleType>
+   		</xs:attribute>
+   	</xs:complexType>
+   	
+   	<xs:complexType name="base-permisson">
+    	<xs:sequence>
+    		<xs:element name="endpoints" type="endpoints" minOccurs="0" maxOccurs="1"/>
+    	</xs:sequence>
+    	<xs:attribute name="principal" type="xs:string" use="optional" default="*">
+    		<xs:annotation>
+    			<xs:documentation>
+    				Name of the principal. Wildcards(*) can be used.
+    			</xs:documentation>
+    		</xs:annotation>
+    	</xs:attribute>
+    </xs:complexType>
+    
+    <xs:complexType name="instance-permisson">
+    	<xs:complexContent>
+    		<xs:extension base="base-permisson">
+		    	<xs:sequence>
+		    		<xs:element name="actions" type="actions" minOccurs="1" maxOccurs="1"/>
+		    	</xs:sequence>
+		    	<xs:attribute name="name" type="xs:string" use="required">
+		    		<xs:annotation>
+		    			<xs:documentation>
+		    				Name of the permission. Wildcards(*) can be used.
+		    			</xs:documentation>
+		    		</xs:annotation>
+		    	</xs:attribute>
+    		</xs:extension>
+    	</xs:complexContent>
+    </xs:complexType>
+   	
+   	<xs:complexType name="endpoints">
+    	<xs:sequence>
+    		<xs:element name="endpoint" minOccurs="1" maxOccurs="unbounded" default="127.0.0.1">
+		    	<xs:annotation>
+		    		<xs:documentation>
+		    			Endpoint address of principal. Wildcards(*) can be used.
+		    		</xs:documentation>
+		    	</xs:annotation>
+		        <xs:simpleType>
+		            <xs:restriction base="xs:string" />
+		        </xs:simpleType>
+    		</xs:element>
+    	</xs:sequence>
+   	</xs:complexType>
+   	
+   	<xs:complexType name="actions">
+    	<xs:sequence>
+    		<xs:element name="action" minOccurs="1" maxOccurs="unbounded">
+		    	<xs:annotation>
+		    		<xs:documentation>
+		    			Permission actions that are permitted on Hazelcast instance objects.
+		    		</xs:documentation>
+		    	</xs:annotation>
+		    	<xs:simpleType>
+		    		<xs:union>
+				    	<xs:simpleType>
+				    		<xs:restriction base="xs:string" >
+				    			<xs:enumeration value="all" />
+								<xs:enumeration value="create" />
+								<xs:enumeration value="destroy" />
+								<xs:enumeration value="put" />
+								<xs:enumeration value="add" />
+								<xs:enumeration value="get" />
+								<xs:enumeration value="set" />
+								<xs:enumeration value="remove" />
+								<xs:enumeration value="offer" />
+								<xs:enumeration value="poll" />
+								<xs:enumeration value="take" />
+								<xs:enumeration value="lock" />
+								<xs:enumeration value="listen" />
+								<xs:enumeration value="publish" />
+								<xs:enumeration value="increment" />
+								<xs:enumeration value="decrement" />
+								<xs:enumeration value="execute" />
+								<xs:enumeration value="countdown" />
+								<xs:enumeration value="acquire" />
+								<xs:enumeration value="release" />
+								<xs:enumeration value="drain" />
+								<xs:enumeration value="statistics" />
+				    		</xs:restriction>
+				    	</xs:simpleType>
+		    			<xs:simpleType>
+		    				<xs:restriction base="non-space-string" />
+		    			</xs:simpleType>
+		    		</xs:union>
+		    	</xs:simpleType>
+    		</xs:element>
+    	</xs:sequence>
+   	</xs:complexType>
+
 </xs:schema>
