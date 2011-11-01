@@ -783,6 +783,7 @@
 			    <xs:element ref="atomic-number-permission" minOccurs="0" maxOccurs="unbounded"/>
 			    <xs:element ref="countdown-latch-permission" minOccurs="0" maxOccurs="unbounded"/>
 			    <xs:element ref="semaphore-permission" minOccurs="0" maxOccurs="unbounded"/>
+			    <xs:element ref="id-generator-permission" minOccurs="0" maxOccurs="unbounded"/>
 			    <xs:element ref="executor-service-permission" minOccurs="0" maxOccurs="unbounded"/>
 			    <xs:element ref="transaction-permission" minOccurs="0" maxOccurs="1" />
 			    <xs:element ref="listener-permisson" minOccurs="0" maxOccurs="unbounded" />
@@ -901,6 +902,7 @@
     <xs:element name="atomic-number-permission" type="instance-permisson"/>
     <xs:element name="countdown-latch-permission" type="instance-permisson"/>
     <xs:element name="semaphore-permission" type="instance-permisson"/>
+    <xs:element name="id-generator-permission" type="instance-permisson"/>
     <xs:element name="executor-service-permission" type="instance-permisson"/>
     <xs:element name="transaction-permission" type="base-permisson" />
     <xs:element name="all-permissions" type="base-permisson" />

@@ -121,6 +121,11 @@ public final class Prefix {
      * The Constant TOPIC_HAZELCAST: "t:__hz_"
      */
     public static final String TOPIC_HAZELCAST = TOPIC + HAZELCAST;
+    
+    /**
+     * The Constant ATOMIC_NUMBER_HAZELCAST: "a:__hz_"
+     */
+    public static final String ATOMIC_NUMBER_HAZELCAST = ATOMIC_NUMBER + HAZELCAST;
 
     /**
      * Private constructor to avoid instances of the class.

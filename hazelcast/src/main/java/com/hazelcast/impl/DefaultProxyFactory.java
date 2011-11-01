@@ -25,12 +25,11 @@ import com.hazelcast.impl.FactoryImpl.ProxyKey;
 public class DefaultProxyFactory implements ProxyFactory {
 	
 	private final FactoryImpl factory;
-	private final TransactionFactory transactionFactory;
+	private final TransactionFactory transactionFactory = new TransactionFactory();
 
 	public DefaultProxyFactory(FactoryImpl factory) {
 		super();
 		this.factory = factory;
-		this.transactionFactory = new TransactionFactory(factory);
 	}
 
 	public MProxy createMapProxy(String name) {
@@ -74,7 +73,7 @@ public class DefaultProxyFactory implements ProxyFactory {
 	}
 
 	public IdGeneratorProxy createIdGeneratorProxy(String name) {
-		return new IdGeneratorProxy(name, factory);
+		return new IdGeneratorProxyImpl(name, factory);
 	}
 	
 	public ExecutorService createExecutorServiceProxy(String name) {
@@ -89,18 +88,13 @@ public class DefaultProxyFactory implements ProxyFactory {
 	}
 	
 	private class TransactionFactory {
-	    AtomicLong ids = new AtomicLong(0);
-	    final FactoryImpl factory;
+	    final AtomicLong ids = new AtomicLong(0);
 
-	    TransactionFactory(FactoryImpl factory) {
-	        this.factory = factory;
-	    }
-
-	    public TransactionImpl newTransaction() {
+	    TransactionImpl newTransaction() {
 	        return new TransactionImpl(factory, newTransactionId());
 	    }
 
-	    public long newTransactionId() {
+	    long newTransactionId() {
 	        return ids.incrementAndGet();
 	    }
 	}

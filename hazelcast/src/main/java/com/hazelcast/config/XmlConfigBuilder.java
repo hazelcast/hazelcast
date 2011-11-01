@@ -831,6 +831,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             	type = PermissionType.COUNTDOWN_LATCH;
             } else if("semaphore-permission".equals(nodeName)) {
             	type = PermissionType.SEMAPHORE;
+            } else if("id-generator-permission".equals(nodeName)) {
+            	type = PermissionType.ID_GENERATOR;
             } else if("executor-service-permission".equals(nodeName)) {
             	type = PermissionType.EXECUTOR_SERVICE;
             } else if("listener-permission".equals(nodeName)) {
