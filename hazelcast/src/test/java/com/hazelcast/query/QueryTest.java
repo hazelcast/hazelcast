@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
@@ -793,6 +794,25 @@ public class QueryTest extends TestUtil {
         Collection<String> set = map.values(predicate);
         assertEquals(1, set.size());
         assertEquals(1, map.values(new SqlPredicate("this=15")).size());
+    }
+    
+    /**
+     * Test for issue 711
+     */
+    @Test
+    public void testPredicateWithEntryKeyObject() {
+    	IMap map = Hazelcast.getMap("test");
+		map.put("1", 11);
+		map.put("2", 22);
+		map.put("3", 33);
+
+		Predicate predicate = new PredicateBuilder().getEntryObject().key().equal("1");
+		assertEquals(1, map.values(predicate).size());
+
+		predicate = new PredicateBuilder().getEntryObject().key().in("2", "3");
+		assertEquals(2, map.keySet(predicate).size());
+		
+		Hazelcast.shutdownAll();
     }
 
     public void doFunctionalSQLQueryTest(IMap imap) {

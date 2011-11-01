@@ -262,11 +262,10 @@ public final class Predicates {
                 Index index = mapIndexes.get(first);
                 if (index != null) {
                     lsIndexPredicates.add(this);
-                } else {
-                    return false;
+                    return true;
                 }
             }
-            return true;
+            return false;
         }
 
         public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {
@@ -486,11 +485,10 @@ public final class Predicates {
                 Index index = mapIndexes.get(first);
                 if (index != null) {
                     lsIndexPredicates.add(this);
-                } else {
-                    return false;
+                    return true;
                 }
             }
-            return true;
+            return false;
         }
 
         public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {

@@ -2920,7 +2920,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class EvictOperationHandler extends SchedulableOperationHandler {
+    class EvictOperationHandler extends MTargetAwareOperationHandler {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
@@ -2944,8 +2944,12 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            request.response = cmap.evict(request);
+        	if(!testLock(request)) {
+        		request.response = Boolean.FALSE;
+        	} else {
+	            CMap cmap = getOrCreateMap(request.name);
+	            request.response = cmap.evict(request);
+        	}
         }
 
         class EvictStorer extends AbstractMapStoreOperation {
@@ -3628,7 +3632,7 @@ public class ConcurrentMapManager extends BaseManager {
         checkServiceThread();
         CMap cmap = getOrCreateMap(req.name);
         Record record = cmap.getRecord(req);
-        if (record == null) {
+        if (record == null || !record.isActive() || !record.isValid()) {
             record = cmap.createNewRecord(req.key, defaultValue);
             cmap.mapRecords.put(req.key, record);
         }
