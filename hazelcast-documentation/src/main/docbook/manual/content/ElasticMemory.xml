@@ -51,6 +51,27 @@
                     Default chunk size is 1. Chunk size has to be power of 2 such as 1, 2, 4 and 8.
                 </para>
             </listitem>
+            <listitem>
+                <para>
+                    Configure maps you want them to use Elastic Memory by setting <literal>StorageType</literal> to <code>OFFHEAP</code>.
+                    Default value is <code>HEAP</code>.
+                </para>
+                <para>
+                	Using XML configuration:
+                    <programlisting language="xml"><![CDATA[<hazelcast>
+    ...
+    <map name="default">
+        ...
+        <storage-type>OFFHEAP</storage-type>
+    </map>
+</hazelcast>]]></programlisting> 
+                </para>
+                <para>
+                	Using Config API:
+                    <programlisting language="java"><![CDATA[MapConfig mapConfig = new MapConfig();
+mapConfig.setStorageType(StorageType.OFFHEAP);]]></programlisting> 
+                </para>
+            </listitem>
         </itemizedlist>
     </para>
 
