@@ -17,21 +17,27 @@
 
 package com.hazelcast.impl.concurrentmap;
 
-import com.hazelcast.impl.CMap;
-import com.hazelcast.impl.DefaultNearCacheRecord;
-import com.hazelcast.impl.DefaultRecord;
-import com.hazelcast.impl.NearCacheRecord;
-import com.hazelcast.impl.Record;
+import com.hazelcast.impl.*;
 import com.hazelcast.nio.Data;
 
 public class DefaultRecordFactory implements RecordFactory {
 	
+	protected final boolean simple;
+	
+	public DefaultRecordFactory(boolean simple) {
+		super();
+		this.simple = simple;
+	}
+
 	public Record createNewRecord(CMap cmap, int blockId, Data key, Data value,
 			long ttl, long maxIdleMillis, long id) {
+		if(simple) {
+			return new SimpleRecord(blockId, cmap, id, key, value);
+		}
 		return new DefaultRecord(cmap, blockId, key, value, ttl, maxIdleMillis, id);
 	}
 
-	public NearCacheRecord createNewNearCacheRecord(Data key, Data value) {
+	public NearCacheRecord createNewNearCacheRecord(CMap cmap, Data key, Data value) {
 		return new DefaultNearCacheRecord(key, value);
 	}
 

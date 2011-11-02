@@ -79,6 +79,8 @@ public class CMap {
     final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
 
     final String name;
+    
+    final MapConfig mapConfig;
 
     final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
@@ -148,7 +150,6 @@ public class CMap {
         this.name = name;
         mapForQueue = name.startsWith(MAP_FOR_QUEUE);
         instanceType = ConcurrentMapManager.getInstanceType(name);
-        MapConfig mapConfig = null;
         String mapConfigName = name.substring(2);
         if (isMultiMap()
                 || mapConfigName.startsWith(HAZELCAST)
@@ -1651,6 +1652,10 @@ public class CMap {
             }
         }
     }
+    
+    public MapConfig getMapConfig() {
+		return mapConfig;
+	}
 
     public static class Values implements Collection, DataSerializable {
         Collection<Data> lsValues = null;

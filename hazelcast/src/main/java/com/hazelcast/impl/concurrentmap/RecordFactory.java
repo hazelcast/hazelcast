@@ -26,5 +26,5 @@ public interface RecordFactory {
 
 	Record createNewRecord(CMap cmap, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id);
 	
-	NearCacheRecord createNewNearCacheRecord(Data key, Data value);
+	NearCacheRecord createNewNearCacheRecord(CMap cmap, Data key, Data value);
 }

@@ -222,7 +222,7 @@ public class NearCache {
             if (keyData == null) {
                 throw new IllegalStateException("keyData cannot be null");
             }
-            this.record = recordFactory.createNewNearCacheRecord(keyData, valueData);
+            this.record = recordFactory.createNewNearCacheRecord(cmap, keyData, valueData);
             this.createTime = System.currentTimeMillis();
             touch(createTime);
         }

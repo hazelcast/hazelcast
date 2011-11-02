@@ -75,6 +75,12 @@ public class MapConfig implements DataSerializable {
     private String mergePolicy = DEFAULT_MERGE_POLICY;
 
     private WanReplicationRef wanReplicationRef;
+    
+    private StorageType storageType = StorageType.HEAP;
+    
+    public enum StorageType {
+    	HEAP, OFFHEAP
+    }
 
     public MapConfig(String name) {
         this.name = name;
@@ -361,6 +367,15 @@ public class MapConfig implements DataSerializable {
         this.wanReplicationRef = wanReplicationRef;
         return this;
     }
+    
+    public StorageType getStorageType() {
+		return storageType;
+	}
+    
+    public MapConfig setStorageType(StorageType storageType) {
+		this.storageType = storageType;
+		return this; 
+	}
 
     public boolean isCompatible(MapConfig other) {
         if (this == other)

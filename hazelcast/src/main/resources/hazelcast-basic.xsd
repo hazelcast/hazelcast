@@ -32,6 +32,16 @@
                 <xs:element ref="map-store" minOccurs="0" maxOccurs="1" />
 	            <xs:element ref="near-cache" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="storage-type" minOccurs="0" maxOccurs="1" >
+                	<xs:annotation>
+                		<xs:documentation>
+			    			Storage type for Hazelcast Enterprise map configuration.
+			    			Valid values are HEAP and OFFHEAP.
+			    			Default is HEAP.
+			    			Not configurable for Hazelcast Community Edition.
+			    		</xs:documentation>
+                	</xs:annotation>
+                </xs:element>
             </xs:sequence>
             <xs:attribute name="name" use="required">
                 <xs:simpleType>
@@ -707,6 +717,14 @@
 		        </xs:simpleType>
         	</xs:attribute>        
         </xs:complexType>
+    </xs:element>
+    <xs:element name="storage-type" default="HEAP">
+    	 <xs:simpleType>
+    	 	<xs:restriction base="non-space-string">
+    	 		<xs:enumeration value="HEAP" />
+    	 		<xs:enumeration value="OFFHEAP" />
+    	 	</xs:restriction>
+    	 </xs:simpleType>
     </xs:element>
     <xs:simpleType name="ST_port">
         <xs:restriction base="xs:short"/>

@@ -223,6 +223,9 @@
         <wan-replication-ref name="my-wan-cluster">
             <merge-policy>hz.PASS_THROUGH</merge-policy>
         </wan-replication-ref>
+        
+        <!-- HEAP or OFFHEAP -->
+        <storage-type>HEAP</storage-type>
     </map>
     
     <semaphore name="default">

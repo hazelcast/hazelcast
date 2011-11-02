@@ -26,7 +26,6 @@ import com.hazelcast.impl.ProxyFactory;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.concurrentmap.DefaultRecordFactory;
 import com.hazelcast.impl.concurrentmap.RecordFactory;
-import com.hazelcast.impl.concurrentmap.SimpleRecordFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 
@@ -82,7 +81,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
 
     public RecordFactory getRecordFactory() {
-        return simpleRecord ? new SimpleRecordFactory() : new DefaultRecordFactory();
+        return new DefaultRecordFactory(simpleRecord);
     }
 
     public int getBuildNumber() {

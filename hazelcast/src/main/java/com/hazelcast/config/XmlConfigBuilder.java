@@ -18,6 +18,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.impl.Util;
 import com.hazelcast.logging.ILogger;
@@ -636,6 +637,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     }
                 }
                 mapConfig.setWanReplicationRef(wanReplicationRef);
+            } else if("storage-type".equals(nodeName)) {
+            	mapConfig.setStorageType(StorageType.valueOf(value.toUpperCase()));
             }
         }
         this.config.addMapConfig(mapConfig);
