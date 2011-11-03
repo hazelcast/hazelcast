@@ -767,13 +767,13 @@
     			<xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
     		</xs:sequence>
     		<xs:attribute name="class-name" type="non-space-string" use="required" />
-    		<xs:attribute name="usage" use="optional" default="required">
+    		<xs:attribute name="usage" use="optional" default="REQUIRED">
     			<xs:simpleType>
     				<xs:restriction base="xs:string">
-    					<xs:enumeration value="required" />
-    					<xs:enumeration value="optional" />
-    					<xs:enumeration value="requisite" />
-    					<xs:enumeration value="sufficient" />	
+    					<xs:enumeration value="REQUIRED" />
+	   					<xs:enumeration value="OPTIONAL" />
+	   					<xs:enumeration value="REQUISITE" />
+	   					<xs:enumeration value="SUFFICIENT" />	
     				</xs:restriction>
     			</xs:simpleType>
     		</xs:attribute>

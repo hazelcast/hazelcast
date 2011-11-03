@@ -248,19 +248,19 @@
 			</properties>
 		</member-credentials-factory>
 		<member-login-modules>
-			<login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="required">
+			<login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
 				<properties>
 					<property name="property">value</property>
 				</properties>
 			</login-module>
 		</member-login-modules>
 		<client-login-modules>
-			<login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="optional">
+			<login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
 				<properties>
 					<property name="property">value</property>
 				</properties>
 			</login-module>
-			<login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="required">
+			<login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
 				<properties>
 					<property name="property">value</property>
 				</properties>
