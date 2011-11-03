@@ -208,7 +208,7 @@ public class ConnectionManager {
         for (int i = 0; i < selectors.length; i++) {
             InOutSelector s = new InOutSelector(node, serverSocketChannel, (i == 0));
             selectors[i] = s;
-            new Thread(s, node.getName() + ".IOThread" + i).start();
+            new Thread(s, "hz." + node.getName() + ".IOThread" + i).start();
         }
     }
 

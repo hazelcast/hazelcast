@@ -122,7 +122,6 @@ public final class Hazelcast {
 
     /**
      * Returns the distributed list instance with the specified name.
-     * Index based operations on the list are not supported.
      *
      * @param name name of the distributed list
      * @return distributed list instance with the specified name
