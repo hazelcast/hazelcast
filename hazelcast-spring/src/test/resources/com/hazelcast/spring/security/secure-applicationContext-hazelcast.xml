@@ -32,19 +32,19 @@
 				</hz:properties>
 			</hz:member-credentials-factory>
 			<hz:member-login-modules>
-				<hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="required">
+				<hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
 					<hz:properties>
 						<hz:property name="property">value</hz:property>
 					</hz:properties>
 				</hz:login-module>
 			</hz:member-login-modules>
 			<hz:client-login-modules>
-				<hz:login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="optional">
+				<hz:login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
 					<hz:properties>
 						<hz:property name="property">value</hz:property>
 					</hz:properties>
 				</hz:login-module>
-				<hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="required">
+				<hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
 					<hz:properties>
 						<hz:property name="property">value</hz:property>
 					</hz:properties>

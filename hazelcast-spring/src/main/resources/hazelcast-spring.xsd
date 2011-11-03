@@ -81,6 +81,7 @@
                                 <xs:attribute name="value-indexed" use="optional" type="xs:string"/>
                                 <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
                                 <xs:attribute name="cache-value" use="optional" type="xs:string"/>
+                                <xs:attribute name="storage-type" use="optional" type="xs:string" default="HEAP" />
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="merge-policies" type="merge-policies" minOccurs="0" maxOccurs="unbounded"/>
@@ -489,10 +490,10 @@
    				<xs:union>
    					<xs:simpleType>
    						<xs:restriction base="xs:string">
-		   					<xs:enumeration value="required" />
-		   					<xs:enumeration value="optional" />
-		   					<xs:enumeration value="requisite" />
-		   					<xs:enumeration value="sufficient" />	
+		   					<xs:enumeration value="REQUIRED" />
+		   					<xs:enumeration value="OPTIONAL" />
+		   					<xs:enumeration value="REQUISITE" />
+		   					<xs:enumeration value="SUFFICIENT" />	
 		   				</xs:restriction>
    					</xs:simpleType>
    					<xs:simpleType>

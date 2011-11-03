@@ -17,10 +17,8 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.*;
-import com.hazelcast.config.AbstractXmlConfigHelper.IterableNodeList;
-import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
-import com.hazelcast.config.PermissionConfig.PermissionType;
+import java.lang.reflect.Method;
+import java.util.*;
 
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.*;
@@ -31,8 +29,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-import java.lang.reflect.Method;
-import java.util.*;
+import com.hazelcast.config.*;
+import com.hazelcast.config.PermissionConfig.PermissionType;
 
 public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionParser  {
 
@@ -532,16 +530,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
         private void handleLoginModule(final org.w3c.dom.Node node, List list, String name) {
         	final BeanDefinitionBuilder lmConfigBuilder = createBeanBuilder(LoginModuleConfig.class, name);
             final AbstractBeanDefinition beanDefinition = lmConfigBuilder.getBeanDefinition();
-            
-        	final NamedNodeMap attrs = node.getAttributes();
-        	Node classNameNode = attrs.getNamedItem("class-name");
-        	String className = getValue(classNameNode);
-        	Node usageNode = attrs.getNamedItem("usage");
-        	LoginModuleUsage usage = usageNode != null 
-        		? LoginModuleUsage.get(getValue(usageNode)) : LoginModuleUsage.REQUIRED;   
-        	
-        	lmConfigBuilder.addPropertyValue("className", className);	
-        	lmConfigBuilder.addPropertyValue("usage", usage);	
+        	fillAttributeValues(node, lmConfigBuilder);
         	
         	for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
                 final String nodeName = cleanNodeName(child.getNodeName());

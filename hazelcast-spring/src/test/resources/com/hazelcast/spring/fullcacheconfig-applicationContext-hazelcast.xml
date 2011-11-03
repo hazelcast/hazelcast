@@ -94,7 +94,8 @@
                     read-backup-data="true"
                     cache-value="true"
                     eviction-policy="NONE"
-                    merge-policy="hz.ADD_NEW_ENTRY">
+                    merge-policy="hz.ADD_NEW_ENTRY"
+                    storage-type="HEAP">
                 <hz:map-store enabled="true" class-name="com.hazelcast.spring.DummyStore" write-delay-seconds="0"/>
                 <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60" eviction-policy="LRU" max-size="5000"
                                invalidate-on-change="true"/>

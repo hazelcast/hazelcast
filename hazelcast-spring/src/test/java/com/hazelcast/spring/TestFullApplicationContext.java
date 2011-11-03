@@ -18,6 +18,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.*;
+import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.wan.WanReplicationEndpoint;
@@ -124,6 +125,7 @@ public class TestFullApplicationContext {
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
         assertEquals("hz.ADD_NEW_ENTRY", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
+        assertEquals(StorageType.HEAP, testMapConfig.getStorageType());
         // Test that the testMapConfig has a mapStoreConfig and it is correct
         MapStoreConfig testMapStoreConfig = testMapConfig.getMapStoreConfig();
         assertNotNull(testMapStoreConfig);
