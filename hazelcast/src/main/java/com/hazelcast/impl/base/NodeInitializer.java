@@ -41,4 +41,6 @@ public interface NodeInitializer {
 	RecordFactory getRecordFactory();
 	
 	SecurityContext getSecurityContext();
+	
+	void destroy();
 }

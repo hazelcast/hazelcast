@@ -333,6 +333,7 @@ public class Node {
             if (securityContext != null) {
                 securityContext.destroy();
             }
+            initializer.destroy();
             logger.log(Level.FINEST, "Shutting down the cluster manager");
             int numThreads = threadGroup.activeCount();
             Thread[] threads = new Thread[numThreads * 2];

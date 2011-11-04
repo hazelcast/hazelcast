@@ -76,7 +76,7 @@ public class MapConfig implements DataSerializable {
 
     private WanReplicationRef wanReplicationRef;
     
-    private StorageType storageType = StorageType.HEAP;
+    private StorageType storageType = null;
     
     public enum StorageType {
     	HEAP, OFFHEAP

@@ -104,5 +104,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
         logger.log(Level.WARNING, "Security features are only available on Hazelcast Enterprise Edition!");
         return null;
     }
-
+    
+    public void destroy() {
+    }
 }
