@@ -30,7 +30,7 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public class MapIndexService {
     private final ConcurrentMap<Long, Record> records = new ConcurrentHashMap<Long, Record>(10000, 0.75f, 1);
     private final Index indexValue;
-    private final Map<Expression, Index> mapIndexes = new ConcurrentHashMap<Expression, Index>(4, 0.74f, 1);
+    private final Map<Expression, Index> mapIndexes = new ConcurrentHashMap<Expression, Index>(4, 0.75f, 1);
     private final Object indexTypesLock = new Object();
     private volatile boolean hasIndexedAttributes = false;
     private volatile byte[] indexTypes = null;

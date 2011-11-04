@@ -111,7 +111,7 @@ public class PartitionServiceImpl implements PartitionService {
             try {
                 while (partitionReal == null) {
                     partitionReal = responseQ.poll(5, TimeUnit.SECONDS);
-                    if (partitionVersion == null) {
+                    if (partitionReal == null) {
                         concurrentMapManager.node.checkNodeState();
                     }
                 }
