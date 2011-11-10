@@ -41,6 +41,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final byte[] CONTENT_TYPE = "Content-Type: ".getBytes();
     public static final byte[] CONTENT_LENGTH = "Content-Length: ".getBytes();
     public static final byte[] CONTENT_TYPE_PLAIN_TEXT = "text/plain".getBytes();
+    public static final byte[] CONTENT_TYPE_BINARY = "application/binary".getBytes();
 
     public HttpCommand(TextCommandType type, String uri) {
         super(type);
