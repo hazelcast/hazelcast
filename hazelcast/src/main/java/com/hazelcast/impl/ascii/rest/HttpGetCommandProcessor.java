@@ -70,7 +70,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             command.send204();
         } else {
             if (value instanceof byte[]) {
-                command.setResponse(null, (byte[]) value);
+                command.setResponse(HttpCommand.CONTENT_TYPE_BINARY, (byte[]) value);
             } else if (value instanceof RestValue) {
                 RestValue restValue = (RestValue) value;
                 command.setResponse(restValue.getContentType(), restValue.getValue());
