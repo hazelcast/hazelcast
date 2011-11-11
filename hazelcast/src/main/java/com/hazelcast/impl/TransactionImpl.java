@@ -170,10 +170,18 @@ public class TransactionImpl implements Transaction {
             if (transactionRecord.name.equals(name)) {
                 if (transactionRecord.key != null) {
                     if (transactionRecord.key.equals(key)) {
-                        if (value == null && transactionRecord.value == null) {
-                            return transactionRecord;
-                        } else if (value != null && value.equals(transactionRecord.value)) {
-                            return transactionRecord;
+                        if (transactionRecord.instanceType.isMultiMap()) {
+                            if (value == null && transactionRecord.value == null) {
+                                return transactionRecord;
+                            } else if (value != null && value.equals(transactionRecord.value)) {
+                                return transactionRecord;
+                            }
+                        } else {
+                            if (value == null) {
+                                return transactionRecord;
+                            } else if (value.equals(transactionRecord.value)) {
+                                return transactionRecord;
+                            }
                         }
                     }
                 }

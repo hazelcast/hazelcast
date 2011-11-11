@@ -243,11 +243,34 @@ public class TransactionTest {
         TransactionalMap txnMap2 = newTransactionalMapProxy("testMapPutWithTwoTxn");
         txnMap.begin();
         txnMap.put("1", "value");
+        assertEquals("value", txnMap.get("1"));
+        txnMap.put("1", "value1");
+        assertEquals("value1", txnMap.get("1"));
         txnMap.commit();
+        assertEquals("value1", txnMap.get("1"));
         txnMap2.begin();
-        txnMap2.put("1", "value2");
+        assertEquals("value1", txnMap2.put("1", "value2"));
+        assertEquals("value2", txnMap2.get("1"));
         txnMap2.commit();
+        assertEquals("value2", txnMap.get("1"));
+        assertEquals("value2", txnMap2.get("1"));
     }
+//    @Test
+//    public void testMapGetOnlyWithTwoTxn() {
+//        TransactionalMap txnMap = newTransactionalMapProxy("testMapGetOnlyWithTwoTxn");
+//        TransactionalMap txnMap2 = newTransactionalMapProxy("testMapGetOnlyWithTwoTxn");
+//        txnMap.begin();
+//        assertNull(txnMap.get("1"));
+//        txnMap2.begin();
+//        txnMap2.put("1", "value1");
+//        assertEquals("value1", txnMap2.get("1"));
+//        assertNull(txnMap.get("1"));
+//        txnMap2.commit();
+//        assertNull(txnMap.get("1"));
+//        txnMap.commit();
+//        assertEquals("value1", txnMap.get("1"));
+//        assertEquals("value1", txnMap2.get("1"));
+//    }
 
     /**
      * issue 455

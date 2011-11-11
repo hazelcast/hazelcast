@@ -21,8 +21,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
-import com.hazelcast.impl.concurrentmap.RecordFactory;
 import com.hazelcast.impl.concurrentmap.MultiData;
+import com.hazelcast.impl.concurrentmap.RecordFactory;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
@@ -67,7 +67,7 @@ public class ConcurrentMapManager extends BaseManager {
     final ParallelExecutor evictionExecutor;
     private static final String BATCH_OPS_EXECUTOR_NAME = "hz_batch";
     final RecordFactory recordFactory;
-    
+
     ConcurrentMapManager(Node node) {
         super(node);
         recordFactory = node.initializer.getRecordFactory();
@@ -892,6 +892,21 @@ public class ConcurrentMapManager extends BaseManager {
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (txn.has(name, key)) {
                     return txn.get(name, key);
+                } else {
+                    MLock mlock = new MLock();
+                    boolean locked = mlock
+                            .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
+                    if (!locked)
+                        throwCME(key);
+                    Object oldObject = null;
+                    Data oldValue = mlock.oldValue;
+                    if (oldValue != null) {
+                        oldObject = tc.isClient() ? oldValue : tc.toObject(oldValue);
+                        txn.attachPutOp(name, key, oldValue, false);
+                    } else {
+                        txn.attachPutOp(name, key, null, false);
+                    }
+                    return oldObject;
                 }
             }
             final CMap cMap = maps.get(name);
@@ -2944,12 +2959,12 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         void doOperation(Request request) {
-        	if(!testLock(request)) {
-        		request.response = Boolean.FALSE;
-        	} else {
-	            CMap cmap = getOrCreateMap(request.name);
-	            request.response = cmap.evict(request);
-        	}
+            if (!testLock(request)) {
+                request.response = Boolean.FALSE;
+            } else {
+                CMap cmap = getOrCreateMap(request.name);
+                request.response = cmap.evict(request);
+            }
         }
 
         class EvictStorer extends AbstractMapStoreOperation {
@@ -3344,25 +3359,25 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public void handle(Request request) {
-        	final CMap cmap = getOrCreateMap(request.name);
+            final CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
-	            if (shouldSchedule(request)) {
-	                if (request.hasEnoughTimeToSchedule()) {
-	                    schedule(request);
-	                } else {
-	                    onNoTimeToSchedule(request);
-	                }
-	            } else {
-	                Record record = cmap.getRecord(request.key);
-	                if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET
-	                        && cmap.loader != null
-	                        && (record == null || !record.hasValueData())) {
-	                    storeExecutor.execute(new LockLoader(cmap, request), request.key.hashCode());
-	                } else {
-	                    doOperation(request);
-	                    returnResponse(request);
-	                }
-	            }
+                if (shouldSchedule(request)) {
+                    if (request.hasEnoughTimeToSchedule()) {
+                        schedule(request);
+                    } else {
+                        onNoTimeToSchedule(request);
+                    }
+                } else {
+                    Record record = cmap.getRecord(request.key);
+                    if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET
+                            && cmap.loader != null
+                            && (record == null || !record.hasValueData())) {
+                        storeExecutor.execute(new LockLoader(cmap, request), request.key.hashCode());
+                    } else {
+                        doOperation(request);
+                        returnResponse(request);
+                    }
+                }
             } else {
                 request.response = OBJECT_REDO;
                 returnResponse(request);
