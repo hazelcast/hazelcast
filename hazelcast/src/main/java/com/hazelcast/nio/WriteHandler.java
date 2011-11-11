@@ -24,11 +24,37 @@ import java.nio.channels.SelectionKey;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
-    private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
+    private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>() {
+        final AtomicInteger size = new AtomicInteger();
+
+        @Override
+        public boolean offer(SocketWritable socketWritable) {
+            if (super.offer(socketWritable)) {
+                size.incrementAndGet();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public SocketWritable poll() {
+            final SocketWritable socketWritable = super.poll();
+            if (socketWritable != null) {
+                size.decrementAndGet();
+            }
+            return socketWritable;
+        }
+
+        @Override
+        public int size() {
+            return size.get();
+        }
+    };
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
@@ -69,7 +95,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     public void enqueueSocketWritable(SocketWritable socketWritable) {
         socketWritable.onEnqueue();
         writeQueue.offer(socketWritable);
-        inOutSelector.writeQueueSize.incrementAndGet();
         if (informSelector.compareAndSet(true, false)) {
             // we don't have to call wake up if this WriteHandler is
             // already in the task queue.
@@ -81,11 +106,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     SocketWritable poll() {
-        SocketWritable sw = writeQueue.poll();
-        if (sw != null) {
-            inOutSelector.writeQueueSize.decrementAndGet();
-        }
-        return sw;
+        return writeQueue.poll();
     }
 
     public void handle() {

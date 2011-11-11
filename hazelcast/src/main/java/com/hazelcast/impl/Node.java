@@ -29,7 +29,9 @@ import com.hazelcast.impl.base.VersionCheck;
 import com.hazelcast.impl.wan.WanReplicationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.util.SimpleBoundedQueue;
@@ -82,10 +84,6 @@ public class Node {
     public final ClusterService clusterService;
 
     public final ExecutorManager executorManager;
-
-    public final InSelector inSelector;
-
-    public final OutSelector outSelector;
 
     public final MulticastService multicastService;
 
@@ -173,8 +171,6 @@ public class Node {
         //initialize managers..
         clusterService = new ClusterService(this);
         clusterService.start();
-        inSelector = null; //new InSelector(this, serverSocketChannel);
-        outSelector = null; //new OutSelector(this);
         connectionManager = new ConnectionManager(this, serverSocketChannel);
         clusterManager = new ClusterManager(this);
         executorManager = new ExecutorManager(this);

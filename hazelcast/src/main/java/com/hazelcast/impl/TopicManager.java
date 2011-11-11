@@ -85,15 +85,10 @@ public class TopicManager extends BaseManager {
             throw new IllegalArgumentException(e);
         }
         if (FLOW_CONTROL_ENABLED) {
-            int loopCount = 0;
-            while (node.outSelector.getWriteQueueSize() > 10000) {
+            while (node.connectionManager.getTotalWriteQueueSize() > 10000) {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException ignored) {
-                }
-                if (loopCount++ > 100) {
-                    node.outSelector.resetWriteQueueSize();
-                    loopCount = 0;
                 }
             }
         }

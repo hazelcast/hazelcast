@@ -25,14 +25,11 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class InOutSelector extends SelectorBase {
 
     final ServerSocketChannel serverSocketChannel;
-
-    final AtomicLong writeQueueSize = new AtomicLong();
 
     public InOutSelector(Node node, final ServerSocketChannel serverSocketChannel, boolean accept) {
         super(node, 1);
@@ -71,14 +68,6 @@ public class InOutSelector extends SelectorBase {
 
     @Override
     public void publishUtilization() {
-    }
-
-    public long getWriteQueueSize() {
-        return writeQueueSize.get();
-    }
-
-    public void resetWriteQueueSize() {
-        writeQueueSize.set(node.connectionManager.getTotalWriteQueueSize());
     }
 
     private class Connector implements Runnable, SelectionHandler {
