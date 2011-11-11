@@ -17,16 +17,11 @@
 
 package com.hazelcast.impl.management;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.*;
-import com.hazelcast.impl.monitor.LocalAtomicNumberStatsImpl;
-import com.hazelcast.impl.monitor.LocalCountDownLatchStatsImpl;
-import com.hazelcast.impl.monitor.LocalMapStatsImpl;
-import com.hazelcast.impl.monitor.LocalQueueStatsImpl;
-import com.hazelcast.impl.monitor.LocalSemaphoreStatsImpl;
-import com.hazelcast.impl.monitor.LocalTopicStatsImpl;
-import com.hazelcast.impl.monitor.MemberStateImpl;
+import com.hazelcast.impl.monitor.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.TimedClusterState;
@@ -48,8 +43,8 @@ import java.util.zip.Deflater;
 import static com.hazelcast.core.Instance.InstanceType;
 
 public class ManagementCenterService implements MembershipListener {
-	
-	private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
+
+    private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
 
     private final Queue<ClientHandler> qClientHandlers = new LinkedBlockingQueue<ClientHandler>(100);
     private final FactoryImpl factory;
@@ -83,19 +78,20 @@ public class ManagementCenterService implements MembershipListener {
         this.instanceFilterAtomicNumber = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_ATOMIC_NUMBER_EXCLUDES.getString());
         this.instanceFilterCountDownLatch = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_COUNT_DOWN_LATCH_EXCLUDES.getString());
         this.instanceFilterSemaphore = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_SEMAPHORE_EXCLUDES.getString());
+        Config config = factory.node.config;
         thisAddress = ((MemberImpl) factory.getCluster().getLocalMember()).getAddress();
         updateMemberOrder();
         logger = factory.node.getLogger(ManagementCenterService.class.getName());
         for (int i = 0; i < 100; i++) {
             qClientHandlers.offer(new ClientHandler());
         }
-        maxVisibleInstanceCount = factory.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger(); 
+        maxVisibleInstanceCount = factory.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         factory.getCluster().addMembershipListener(this);
         MemberImpl memberLocal = (MemberImpl) factory.getCluster().getLocalMember();
-        int port = memberLocal.getInetSocketAddress().getPort() + 100;
+        int port = (memberLocal.getInetSocketAddress().getPort() - config.getPort()) + factoryImpl.node.getGroupProperties().MC_PORT.getInteger();
         datagramSocket = new DatagramSocket(port);
-        serverSocket = new SocketReadyServerSocket(port);
-        udpListener = new UDPListener(datagramSocket);
+        serverSocket = new SocketReadyServerSocket(port, 1000, factory.node.config.isReuseAddress());
+        udpListener = new UDPListener(datagramSocket, 1000, factory.node.config.isReuseAddress());
         udpListener.start();
         udpSender = new UDPSender(datagramSocket);
         udpSender.start();
@@ -170,10 +166,17 @@ public class ManagementCenterService implements MembershipListener {
             try {
                 while (running) {
                     ClientHandler clientHandler = qClientHandlers.poll();
-                    serverSocket.doAccept(clientHandler.getSocket());
+                    try {
+                        serverSocket.doAccept(clientHandler.getSocket());
+                    } catch (SocketTimeoutException e) {
+                        qClientHandlers.offer(clientHandler);
+                        continue;
+                    }
                     clientHandler.start();
                 }
-            } catch (IOException ignored) {
+            } catch (Throwable throwable) {
+                logger.log(Level.WARNING, "ManagementCenter will be closed due to exception.", throwable);
+                shutdown();
             }
         }
     }
@@ -182,18 +185,19 @@ public class ManagementCenterService implements MembershipListener {
         final DatagramSocket socket;
         final InflatingPipedBuffer buffer = PipedZipBufferFactory.createInflatingBuffer(DATAGRAM_BUFFER_SIZE);
         final DatagramPacket packet = new DatagramPacket(buffer.getInputBuffer().array(), DATAGRAM_BUFFER_SIZE);
-        
-        public UDPListener(DatagramSocket socket) throws SocketException {
+
+        public UDPListener(DatagramSocket socket, int timeout, boolean reuseAddress) throws SocketException {
             super("hz.UDP.Listener");
             this.socket = socket;
-            this.socket.setSoTimeout(1000);
+            this.socket.setSoTimeout(timeout);
+            this.socket.setReuseAddress(reuseAddress);
         }
 
         public void run() {
             try {
                 while (running) {
                     try {
-                    	buffer.reset();
+                        buffer.reset();
                         socket.receive(packet);
                         buffer.inflate(packet.getLength());
                         MemberStateImpl memberState = new MemberStateImpl();
@@ -223,7 +227,7 @@ public class ManagementCenterService implements MembershipListener {
         public void run() {
             try {
                 while (running) {
-                	updateLocalState();
+                    updateLocalState();
                     sendState();
                     Thread.sleep(5000);
                 }
@@ -242,10 +246,10 @@ public class ManagementCenterService implements MembershipListener {
                     final SocketAddress socketAddress = socketAddresses.get(address);
                     if (socketAddress != null) {
                         try {
-                        	if(!preparedStateData) {
-                        		compressedCount = prepareStateData();
-                        		preparedStateData = true;
-                        	} 
+                            if (!preparedStateData) {
+                                compressedCount = prepareStateData();
+                                preparedStateData = true;
+                            }
                             packet.setData(buffer.getOutputBuffer().array(), 0, compressedCount);
                             packet.setSocketAddress(socketAddress);
                             socket.send(packet);
@@ -258,9 +262,9 @@ public class ManagementCenterService implements MembershipListener {
                 }
             }
         }
-        
+
         int prepareStateData() throws IOException {
-        	final MemberState latestState = latestThisMemberState;
+            final MemberState latestState = latestThisMemberState;
             buffer.reset();
             latestState.writeData(buffer.getDataOutput());
             return buffer.deflate();
@@ -359,7 +363,7 @@ public class ManagementCenterService implements MembershipListener {
                             memberState.putLocalSemaphoreStats(semaphoreProxy.getName(), (LocalSemaphoreStatsImpl) semaphoreProxy.getLocalSemaphoreStats());
                             count++;
                         }
-                    } 
+                    }
                 }
                 it.remove();
             }
@@ -577,8 +581,10 @@ public class ManagementCenterService implements MembershipListener {
 
     public static class SocketReadyServerSocket extends ServerSocket {
 
-        public SocketReadyServerSocket(int port) throws IOException {
+        public SocketReadyServerSocket(int port, int timeout, boolean reuseAddress) throws IOException {
             super(port);
+            setSoTimeout(timeout);
+            setReuseAddress(reuseAddress);
         }
 
         public void doAccept(Socket socket) throws IOException {
