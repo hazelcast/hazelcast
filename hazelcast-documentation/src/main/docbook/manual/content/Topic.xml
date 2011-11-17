@@ -15,7 +15,10 @@
         listeners(subscribers) will process the messages in the order they are actually published.
         If cluster member M publishes messages m1, m2, m3...mn to a topic T, then Hazelcast makes
         sure that all of the subscribers of topic T will receive and process m1, m2, m3...mn in
-        order. <programlisting language="java"><![CDATA[import com.hazelcast.core.Topic;
+        order. Therefore there is only single thread invoking onMessage. The user shouldn't keep the
+        thread busy and preferably dispatch it via an Executor. This will increase the performance
+        of the topic
+        <programlisting language="java"><![CDATA[import com.hazelcast.core.Topic;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.MessageListener;
 
@@ -35,7 +38,7 @@ public class Sample implements MessageListener {
 
 ]]></programlisting>
     </para>
-    
-    
+
+
     <xi:include href="WildcardConfigurationLink.xml"/>
 </sect1>
