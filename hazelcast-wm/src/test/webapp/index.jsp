@@ -18,4 +18,5 @@ Key: <input type="text" name="key" />
 <br />
 Value:
 <input type="text" name="value" />
+<input type="submit" />
 </form>
