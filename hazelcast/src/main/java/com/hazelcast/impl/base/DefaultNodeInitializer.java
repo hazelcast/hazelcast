@@ -61,10 +61,11 @@ public class DefaultNodeInitializer implements NodeInitializer {
         build = System.getProperty("hazelcast.build", "unknown");
         if ("unknown".equals(version) || "unknown".equals(build)) {
             try {
-                InputStream inRuntimeProperties = NodeInitializer.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
+                final InputStream inRuntimeProperties = NodeInitializer.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
                 if (inRuntimeProperties != null) {
                     Properties runtimeProperties = new Properties();
                     runtimeProperties.load(inRuntimeProperties);
+                    inRuntimeProperties.close();
                     version = runtimeProperties.getProperty("hazelcast.version");
                     build = runtimeProperties.getProperty("hazelcast.build");
                 }
@@ -106,5 +107,6 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
     
     public void destroy() {
+    	logger.log(Level.INFO, "Destroying node initializer.");
     }
 }
