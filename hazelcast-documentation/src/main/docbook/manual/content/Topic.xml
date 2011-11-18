@@ -22,18 +22,29 @@
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.MessageListener;
 
-public class Sample implements MessageListener {
+public class Sample implements MessageListener<MyEvent> {
 
-    public static void main(String[] args) { 
+    public static void main(String[] args) {
         Sample sample = new Sample();
-        Topic topic = Hazelcast.getTopic ("default");  
-        topic.addMessageListener(sample);         
-        topic.publish ("my-message-object");
-    }  
-     
-    public void onMessage(Object msg) {
-        System.out.println("Message received = " + msg);
-    } 
+        ITopic topic = Hazelcast.getTopic ("default");
+        topic.addMessageListener(sample);
+        topic.publish (new MyEvent());
+    }
+
+    public void onMessage(MyEvent myEvent) {
+        System.out.println("Message received = " + myEvent.toString());
+        if (myEvent.isHeavyweight()) {
+            messageExecutor.execute(new Runnable() {
+                public void run() {
+                    doHeavyweightStuff(myEvent);
+                }
+            });
+        }
+    }
+
+    // ...
+
+    private static final Executor messageExecutor = Executors.newSingleThreadExecutor();
 }
 
 ]]></programlisting>
