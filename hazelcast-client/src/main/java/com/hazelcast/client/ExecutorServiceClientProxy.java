@@ -103,6 +103,7 @@ public class ExecutorServiceClientProxy implements ExecutorService {
                 if (dt.getExecutionCallback() != null) {
                     callBackExecutors.execute(new Runnable() {
                         public void run() {
+                            ((InnerFutureTask) dt.getInner()).innerDone();
                             dt.getExecutionCallback().done(dt);
                         }
                     });
@@ -111,13 +112,14 @@ public class ExecutorServiceClientProxy implements ExecutorService {
         };
         inner.setExecutionManagerCallback(new ExecutionManagerCallback() {
             private volatile boolean cancelled = false;
+
             public boolean cancel(boolean mayInterruptIfRunning) {
                 cancelled = (Boolean) proxyHelper.doOp(ClusterOperation.CANCEL_EXECUTION, call.getId(), mayInterruptIfRunning);
                 return cancelled;
             }
 
             public void get() throws InterruptedException, ExecutionException {
-                if(cancelled) throw new CancellationException();
+                if (cancelled) throw new CancellationException();
                 try {
                     Object response = call.getResponse();
                     handle(response);
@@ -127,7 +129,7 @@ public class ExecutorServiceClientProxy implements ExecutorService {
             }
 
             public void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
-                if(cancelled) throw new CancellationException();
+                if (cancelled) throw new CancellationException();
                 try {
                     Object response = call.getResponse(timeout, unit);
                     handle(response);

@@ -21,13 +21,14 @@ import com.hazelcast.core.*;
 import com.hazelcast.core.ExecutorServiceTest.BasicTestTask;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.DistributedMemberInfoCallable;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static junit.framework.Assert.*;
 
@@ -185,10 +186,11 @@ public class HazelcastClientExecutorServiceTest extends HazelcastClientTestBase 
     public void distributedTaskCallBack() throws ExecutionException, InterruptedException {
         ExecutorService ex = getExecutorService();
         Member member = getHazelcastClient().getCluster().getMembers().iterator().next();
-        DistributedTask task = new DistributedTask(new BasicTestTask(), member);
+        final DistributedTask task = new DistributedTask(new BasicTestTask(), member);
         final CountDownLatch latch = new CountDownLatch(1);
         task.setExecutionCallback(new ExecutionCallback() {
             public void done(Future future) {
+                assertTrue(future.isDone());
                 latch.countDown();
             }
         });
@@ -224,39 +226,27 @@ public class HazelcastClientExecutorServiceTest extends HazelcastClientTestBase 
         assertNotNull(result);
     }
 
-   @Test
-    public void testClientCancel() throws Exception
-    {
-
+    @Test
+    public void testClientCancel() throws Exception {
         Future<?> future = getExecutorService().submit(new SimpleTask());
-
         Thread.sleep(5000);
-
         assertTrue(future.cancel(true));
         assertTrue(future.isCancelled());
     }
 
-    static class SimpleTask implements Callable, Serializable
-{
+    static class SimpleTask implements Callable, Serializable {
 
-    public Object call()
-    {
-        System.out.println("*** Task has started...");
-
-        try
-        {
-            while (!Thread.currentThread().isInterrupted())
-            {
-                System.out.println("*** Task is running...");
-
-                Thread.sleep(1000);
+        public Object call() {
+            System.out.println("*** Task has started...");
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    System.out.println("*** Task is running...");
+                    Thread.sleep(1000);
+                }
+            } catch (Exception e) {
             }
+            System.out.println("*** Task has finished...");
+            return null;
         }
-        catch (Exception e) {}
-
-        System.out.println("*** Task has finished...");
-
-        return null;
     }
-}
 }
