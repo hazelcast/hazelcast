@@ -207,6 +207,9 @@ public class NearCache {
 
     public void reset() {
         sortedMap.clear();
+        for (CacheEntry entry : cache.values()) {
+			entry.invalidate();
+		}
         cache.clear();
     }
 

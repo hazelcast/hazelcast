@@ -597,7 +597,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 public void run() {
                     final ILogger logger = node.loggingService.getLogger("com.hazelcast.security");
                     logger.log(Level.SEVERE, "Authentication failed on master node! Node is going to shutdown now!");
-                    node.shutdown(true, false);
+                    node.shutdown(true, true);
                 }
             });
         }

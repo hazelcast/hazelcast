@@ -228,6 +228,7 @@ public class ConnectionManager {
     }
 
     public void shutdown() {
+    	if(!live) return;
         live = false;
         for (Connection conn : mapConnections.values()) {
             try {

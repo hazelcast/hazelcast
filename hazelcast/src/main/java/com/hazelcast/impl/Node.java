@@ -26,6 +26,7 @@ import com.hazelcast.impl.base.CpuUtilization;
 import com.hazelcast.impl.base.NodeInitializer;
 import com.hazelcast.impl.base.NodeInitializerFactory;
 import com.hazelcast.impl.base.VersionCheck;
+import com.hazelcast.impl.management.ManagementCenterService;
 import com.hazelcast.impl.wan.WanReplicationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -129,6 +130,8 @@ public class Node {
 
     public final NodeInitializer initializer;
 
+    private ManagementCenterService managementCenterService = null;
+    
     public SecurityContext securityContext = null;
 
     public Node(FactoryImpl factory, Config config) {
@@ -152,10 +155,7 @@ public class Node {
             localAddress = addressPicker.pickAddress();
             localAddress.setThisAddress(true);
         } catch (Throwable e) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            }
-            throw new RuntimeException(e);
+        	Util.throwUncheckedException(e);
         }
         serverSocketChannel = serverSocketChannelTemp;
         address = localAddress;
@@ -310,6 +310,9 @@ public class Node {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             } catch (Throwable ignored) {
             }
+            if(managementCenterService != null) {
+            	managementCenterService.shutdown();
+            }
             logger.log(Level.FINEST, "Shutting down the clientService");
             clientService.shutdown();
             logger.log(Level.FINEST, "Shutting down the cluster service");
@@ -348,14 +351,6 @@ public class Node {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
         final String prefix = "hz." + this.id + ".";
-//        Thread inThread = new Thread(threadGroup, inSelector, prefix + "InThread");
-//        inThread.setPriority(groupProperties.IN_THREAD_PRIORITY.getInteger());
-//        logger.log(Level.FINEST, "Starting thread " + inThread.getName());
-//        inThread.start();
-//        Thread outThread = new Thread(threadGroup, outSelector, prefix + "OutThread");
-//        outThread.setPriority(groupProperties.OUT_THREAD_PRIORITY.getInteger());
-//        logger.log(Level.FINEST, "Starting thread " + outThread.getName());
-//        outThread.start();
         serviceThread = new Thread(threadGroup, clusterService, prefix + "ServiceThread");
         serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
@@ -380,6 +375,13 @@ public class Node {
             sb.append(clusterSize);
             sb.append(". Some of the ports seem occupied!");
             logger.log(Level.WARNING, sb.toString());
+        }
+        if (groupProperties.MANCENTER_ENABLED.getBoolean()) {
+            try {
+            	managementCenterService = new ManagementCenterService(factory);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+            }
         }
         initializer.afterInitialize(this);
     }
@@ -411,7 +413,8 @@ public class Node {
                 }
             }
         } finally {
-            active = false;
+        	// Node.doShutdown sets active=false 
+        	// active = false;
             outOfMemory = true;
             logger.log(Level.SEVERE, e.getMessage(), e);
         }

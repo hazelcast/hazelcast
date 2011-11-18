@@ -63,6 +63,19 @@ public class CMap {
         SHOULD_CLEAN,
         CLEANING
     }
+    
+    enum InitializationState {
+    	NONE,
+    	INITIALIZING,
+    	INITIALIZED;
+    	
+    	boolean isInitialized() {
+    		return INITIALIZED == this;
+    	}
+    	boolean isInitializing() {
+    		return INITIALIZING == this;
+    	}
+    }
 
     final ILogger logger;
 
@@ -132,7 +145,7 @@ public class CMap {
 
     CleanupState cleanupState = CleanupState.NONE;
 
-    volatile boolean initialized = false;
+    volatile InitializationState initState = InitializationState.NONE;
 
     final Object initLock = new Object();
 
@@ -1518,8 +1531,8 @@ public class CMap {
             }
         }
     }
-
-    void reset() {
+    
+    void reset(boolean invalidate) {
         for (Record record : mapRecords.values()) {
             if (record.hasScheduledAction()) {
                 List<ScheduledAction> lsScheduledActions = record.getScheduledActions();
@@ -1529,20 +1542,29 @@ public class CMap {
                     }
                 }
             }
+            // invalidate records on destroy
+            // on restart invalidation occurs after merge
+            if(invalidate) {
+            	record.invalidate();
+            }
         }
         if (nearCache != null) {
             nearCache.reset();
         }
         mapRecords.clear();
         mapIndexService.clear();
-        node.listenerManager.removeAllRegisteredListeners(getName());
-        if (mapStoreWrapper != null) {
-            try {
-                mapStoreWrapper.destroy();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-            }
-        }
+    }
+    
+    void destroy() {
+    	reset(true);
+    	node.listenerManager.removeAllRegisteredListeners(getName());
+    	if (mapStoreWrapper != null) {
+    		try {
+    			mapStoreWrapper.destroy();
+    		} catch (Exception e) {
+    			logger.log(Level.WARNING, e.getMessage(), e);
+    		}
+    	}
     }
 
     void markAsDirty(Record record) {
@@ -1655,6 +1677,10 @@ public class CMap {
     
     public MapConfig getMapConfig() {
 		return mapConfig;
+	}
+    
+    public Node getNode() {
+		return node;
 	}
 
     public static class Values implements Collection, DataSerializable {

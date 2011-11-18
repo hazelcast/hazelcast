@@ -130,6 +130,8 @@ public class LifecycleServiceImpl implements LifecycleService {
                         try {
                             ConcurrentMapManager.MPut mput = node.concurrentMapManager.new MPut();
                             mput.merge(ownedRecord);
+                            // invalidate record now (skipped invalidation on restart)
+                            ownedRecord.invalidate();
                             latch.countDown();
                         } catch (Exception e) {
                             logger.log(Level.WARNING, e.getMessage(), e);

@@ -18,6 +18,7 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.Util;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
 
@@ -922,7 +923,8 @@ public final class Predicates {
                 }
                 return getter.getValue(obj);
             } catch (Throwable e) {
-                throw new RuntimeException(e);
+            	Util.throwUncheckedException(e);
+            	return null;
             }
         }
 

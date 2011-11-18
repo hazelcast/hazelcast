@@ -114,4 +114,9 @@ public final class DefaultRecord extends AbstractRecord {
     public boolean hasValueData() {
 		return value != null;
 	}
+    
+    public void invalidate() {
+    	invalidateValueCache();
+    	value = null;
+    }
 }

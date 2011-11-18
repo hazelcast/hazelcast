@@ -30,10 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.*;
-import java.util.Map.Entry;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
@@ -84,7 +81,6 @@ public class QueryTest extends TestUtil {
             map.put("0", v);
             fail();
         } catch (Throwable e) {
-            e = e.getCause();
             assertEquals("There is no suitable accessor for 'qwe'", e.getMessage());
         }
     }
@@ -627,6 +623,7 @@ public class QueryTest extends TestUtil {
             Employee c = (Employee) entry.getValue();
             assertNull(c.getName());
         }
+        System.out.println("TookWithIndex: " + tookWithIndex + ", TookWithout:  " + tookWithout);
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
@@ -895,5 +892,43 @@ public class QueryTest extends TestUtil {
             assertTrue(c.getAge() >= 30);
             assertTrue(c.getAge() <= 40);
         }
+    }
+    
+    @Test
+    public void testInvalidSqlPredicate() {
+    	IMap map = Hazelcast.getMap("employee");
+    	map.put(1, new Employee("e", 1, false, 0));
+    	map.put(2, new Employee("e2", 1, false, 0));
+    	try {
+    		map.values(new SqlPredicate("invalid_sql"));
+    		fail("Should fail because of invalid SQL!");
+		} catch (RuntimeException e) {
+			assertEquals("There is no suitable accessor for 'invalid_sql'", e.getMessage());
+		}
+		try {
+    		map.values(new SqlPredicate("invalid sql"));
+    		fail("Should fail because of invalid SQL!");
+		} catch (RuntimeException e) {
+			assertEquals("Invalid SQL: [invalid sql]", e.getMessage());
+		}
+		try {
+    		map.values(new SqlPredicate("invalid and sql"));
+    		fail("Should fail because of invalid SQL!");
+		} catch (RuntimeException e) {
+			assertEquals("There is no suitable accessor for 'invalid'", e.getMessage());
+		}
+		try {
+    		map.values(new SqlPredicate("invalid sql and"));
+    		fail("Should fail because of invalid SQL!");
+		} catch (RuntimeException e) {
+			assertEquals("There is no suitable accessor for 'invalid'", e.getMessage());
+		}
+		try {
+    		map.values(new SqlPredicate(""));
+    		fail("Should fail because of invalid SQL!");
+		} catch (RuntimeException e) {
+			assertEquals("Invalid SQL: []", e.getMessage());
+		}
+		assertEquals(2, map.values(new SqlPredicate("age=1 and name like 'e%'")).size());
     }
 }

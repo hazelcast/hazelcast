@@ -42,6 +42,16 @@ public class Util {
             throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
         }
     }
+    
+    public static void throwUncheckedException(Throwable t) {
+    	if(t instanceof Error) {
+			throw (Error) t;
+		} else if(t instanceof RuntimeException) {
+			throw (RuntimeException) t;
+		} else {
+			throw new RuntimeException((Throwable) t);
+		}
+    }
 
     /**
      * -1 means infinite.

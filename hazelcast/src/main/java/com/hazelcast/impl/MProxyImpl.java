@@ -71,11 +71,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
                 if (e instanceof InvocationTargetException) {
                     InvocationTargetException ite = (InvocationTargetException) e;
                     throw ite.getCause();
-                } else if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
-                } else {
-                    throw new RuntimeException(e);
-                }
+                } 
+                // FIXME
+                throw e;
             } finally {
                 afterCall();
             }
@@ -119,11 +117,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         } catch (Throwable e) {
             if (factory.restarted) {
                 return get(key);
-            } else if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else {
-                throw new RuntimeException(e);
-            }
+            } 
+            Util.throwUncheckedException(e);
+            return null;
         } finally {
             afterCall();
         }
@@ -179,12 +175,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             return mproxyReal.put(key, value, ttl, timeunit);
         } catch (Throwable e) {
             if (factory.restarted) {
-                return put(key, value);
-            } else if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else {
-                throw new RuntimeException(e);
-            }
+                return put(key, value, ttl, timeunit);
+            } 
+            Util.throwUncheckedException(e);
+            return null;
         } finally {
             afterCall();
         }
@@ -197,11 +191,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         } catch (Throwable e) {
             if (factory.restarted) {
                 return remove(key);
-            } else if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else {
-                throw new RuntimeException(e);
-            }
+            } 
+            Util.throwUncheckedException(e);
+            return null;
         } finally {
             afterCall();
         }
@@ -212,13 +204,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         try {
             return mproxyReal.tryRemove(key, time, timeunit);
         } catch (Throwable e) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else if (e instanceof TimeoutException) {
+            if (e instanceof TimeoutException) {
                 throw (TimeoutException) e;
-            } else {
-                throw new RuntimeException(e);
-            }
+            } 
+            Util.throwUncheckedException(e);
+            return null;
         } finally {
             afterCall();
         }

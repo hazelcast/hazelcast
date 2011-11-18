@@ -17,21 +17,22 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.base.DistributedLock;
-import com.hazelcast.impl.base.ScheduledAction;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 
+import com.hazelcast.impl.base.DistributedLock;
+import com.hazelcast.impl.base.ScheduledAction;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Data;
+
 public abstract class AbstractSimpleRecord implements Record {
-    protected final CMap cmap;
-    protected final long id;
-    protected final Data key;
-    protected final short blockId;
+	protected final CMap cmap;
+	protected final long id;
+	protected final Data key;
+	protected final short blockId;
     protected volatile boolean active = true;
 
     public AbstractSimpleRecord(int blockId, CMap cmap, long id, Data key) {
@@ -189,7 +190,7 @@ public abstract class AbstractSimpleRecord implements Record {
     }
 
     public void setActive(boolean active) {
-        this.active = active;
+    	this.active = active;
     }
 
     public String getName() {
@@ -304,13 +305,5 @@ public abstract class AbstractSimpleRecord implements Record {
 
     public boolean equals(Object obj) {
         return obj instanceof SimpleRecord && id == ((SimpleRecord) obj).id;
-    }
-
-    protected Node getNode() {
-        return cmap.node;
-    }
-
-    protected ConcurrentMapManager getConcurrentMapManager() {
-        return cmap.concurrentMapManager;
     }
 }

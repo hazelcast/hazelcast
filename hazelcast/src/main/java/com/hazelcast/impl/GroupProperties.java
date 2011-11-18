@@ -78,6 +78,7 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_ENABLED = "hazelcast.elastic.memory.enabled";
     public static final String PROP_ELASTIC_MEMORY_TOTAL_SIZE = "hazelcast.elastic.memory.total.size";
     public static final String PROP_ELASTIC_MEMORY_CHUNK_SIZE = "hazelcast.elastic.memory.chunk.size";
+    public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = "hazelcast.elastic.memory.shared.storage";
     public static final String PROP_ENTERPRISE_LICENSE_PATH = "hazelcast.enterprise.license.path";
 
     public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
@@ -193,6 +194,8 @@ public class GroupProperties {
     public final GroupProperty ELASTIC_MEMORY_TOTAL_SIZE;
 
     public final GroupProperty ELASTIC_MEMORY_CHUNK_SIZE;
+    
+    public final GroupProperty ELASTIC_MEMORY_SHARED_STORAGE;
 
     public final GroupProperty LICENSE_PATH;
 
@@ -251,6 +254,7 @@ public class GroupProperties {
         ELASTIC_MEMORY_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_ENABLED, "false");
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
         ELASTIC_MEMORY_CHUNK_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_CHUNK_SIZE, "1K");
+        ELASTIC_MEMORY_SHARED_STORAGE = new GroupProperty(config, PROP_ELASTIC_MEMORY_SHARED_STORAGE, "false");
         LICENSE_PATH = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_PATH, null);
     }
 

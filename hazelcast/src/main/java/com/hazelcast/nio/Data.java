@@ -20,7 +20,6 @@ package com.hazelcast.nio;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Arrays;
 
 public class Data implements DataSerializable {
 
@@ -33,7 +32,7 @@ public class Data implements DataSerializable {
     public Data(byte[] bytes) {
         this.buffer = bytes;
     }
-
+    
     public int size() {
         return (buffer == null) ? 0 : buffer.length;
     }
@@ -59,9 +58,19 @@ public class Data implements DataSerializable {
     @Override
     public int hashCode() {
         if (buffer == null) return Integer.MIN_VALUE;
-        return Arrays.hashCode(buffer);
-    }
-
+        
+        // FNV (Fowler/Noll/Vo) Hash "1a"
+	    final int prime = 0x01000193;
+	    int hash = 0x811c9dc5;
+	    final byte[] data = buffer;
+	
+	    // First two bytes are generally same, ignore them.
+	    for (int i = data.length-1; i > 1; i--) {
+	    	hash = (hash ^ data[i]) * prime;
+	    }
+	    return hash;
+	}
+    
     public int getPartitionHash() {
         if (partitionHash == -1) {
             if (buffer == null) {
@@ -83,7 +92,29 @@ public class Data implements DataSerializable {
         if (this == obj)
             return true;
         Data data = (Data) obj;
-        return size() == data.size() && Arrays.equals(buffer, data.buffer);
+        return size() == data.size() && equals(buffer, data.buffer);
+    }
+    
+    // Same as Arrays.equals(byte[] a, byte[] a2) but loop order is reversed.
+    private static boolean equals(final byte[] data1, final byte[] data2) {
+		if (data1 == data2) {
+			return true;
+		}
+		if (data1 == null || data2 == null) {
+			return false;
+		}
+
+		final int length = data1.length;
+		if (data2.length != length) {
+           return false;
+		}
+
+        for (int i = length - 1; i >= 0; i--) {
+            if (data1[i] != data2[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

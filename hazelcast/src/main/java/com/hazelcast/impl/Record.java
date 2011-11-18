@@ -197,4 +197,6 @@ public interface Record extends MapEntry {
     long getLastStoredTime();
     
     boolean hasValueData();
+    
+    void invalidate();
 }

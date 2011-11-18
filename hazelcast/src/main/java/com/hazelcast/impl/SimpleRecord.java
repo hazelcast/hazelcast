@@ -68,4 +68,8 @@ public class SimpleRecord extends AbstractSimpleRecord implements Record {
 
 	public void addValue(Data value) {
 	}
+	
+	public void invalidate() {
+		value = null;
+	}
 }

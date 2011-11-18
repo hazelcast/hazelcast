@@ -197,7 +197,9 @@ public class ConcurrentMapManager extends BaseManager {
             public void process() {
                 partitionManager.reset();
                 for (CMap cmap : maps.values()) {
-                    cmap.reset();
+                	// do not invalidate records, 
+                	// values will be invalidated after merge
+                    cmap.reset(false);
                 }
             }
         }, 5);
@@ -213,7 +215,7 @@ public class ConcurrentMapManager extends BaseManager {
         for (CMap cmap : maps.values()) {
             try {
                 flush(cmap.name);
-                cmap.reset();
+                cmap.destroy();
             } catch (Throwable e) {
                 if (node.isActive()) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
@@ -1121,7 +1123,7 @@ public class ConcurrentMapManager extends BaseManager {
     public void destroy(String name) {
         CMap cmap = maps.remove(name);
         if (cmap != null) {
-            cmap.reset();
+            cmap.destroy();
         }
         mapCaches.remove(name);
     }
@@ -2034,7 +2036,11 @@ public class ConcurrentMapManager extends BaseManager {
 
         public Set iterate() {
             Entries entries = new Entries(ConcurrentMapManager.this, name, CONCURRENT_MAP_ITERATE_KEYS, predicate);
-            Pairs pairs = (Pairs) getResultAsObject();
+            final Object response = getResultAsObject();
+            if(response instanceof Throwable) {
+            	Util.throwUncheckedException((Throwable) response);
+            }
+            Pairs pairs = (Pairs) response;
             entries.addEntries(pairs);
             return entries;
         }
@@ -2068,12 +2074,14 @@ public class ConcurrentMapManager extends BaseManager {
 
         boolean onResponse(Object response) {
             // If Caller Thread is client, then the response is in
-            // the form of Data so We need to deserialize ithere
+            // the form of Data so We need to deserialize it here
             Pairs pairs = null;
             if (response instanceof Data) {
                 pairs = (Pairs) toObject((Data) response);
             } else if (response instanceof Pairs) {
                 pairs = (Pairs) response;
+            } else if(response instanceof Throwable) {
+            	Util.throwUncheckedException((Throwable) response);
             } else {
                 // null
                 return true;
@@ -3566,27 +3574,28 @@ public class ConcurrentMapManager extends BaseManager {
                     if (request.value != null) {
                         predicate = (Predicate) toObject(request.value);
                     }
-                    QueryContext queryContext = new QueryContext(cmap.getName(), predicate, cmap.getMapIndexService());
-                    Set<MapEntry> results = cmap.getMapIndexService().doQuery(queryContext);
-                    boolean evaluateValues = (predicate != null && !queryContext.isStrong());
-                    createResultPairs(request, results, evaluateValues, predicate);
-                    enqueueAndReturn(new Processable() {
-                        public void process() {
-                            int callerPartitionHash = request.blockId;
-                            if (partitionManager.containsMigratingBlock() || callerPartitionHash != partitionManager.hashBlocks()) {
-                                request.response = OBJECT_REDO;
-                            }
-                            boolean sent = returnResponse(request);
-                            if (!sent) {
-                                Connection conn = node.connectionManager.getConnection(request.caller);
-                                logger.log(Level.WARNING, request + " !! response cannot be sent to "
-                                        + request.caller + " conn:" + conn);
-                            }
-                        }
-                    });
+                    final QueryContext queryContext = new QueryContext(cmap.getName(), predicate, cmap.getMapIndexService());
+                	Set<MapEntry> results = cmap.getMapIndexService().doQuery(queryContext);
+                	boolean evaluateValues = (predicate != null && !queryContext.isStrong());
+                	createResultPairs(request, results, evaluateValues, predicate);
                 } catch (Throwable e) {
                     logger.log(Level.SEVERE, request.toString(), e);
+                    request.response = e; 
                 }
+                enqueueAndReturn(new Processable() {
+                	public void process() {
+                		int callerPartitionHash = request.blockId;
+                		if (partitionManager.containsMigratingBlock() || callerPartitionHash != partitionManager.hashBlocks()) {
+                			request.response = OBJECT_REDO;
+                		}
+                		boolean sent = returnResponse(request);
+                		if (!sent) {
+                			Connection conn = node.connectionManager.getConnection(request.caller);
+                			logger.log(Level.WARNING, request + " !! response cannot be sent to "
+                					+ request.caller + " conn:" + conn);
+                		}
+                	}
+                });
             }
         }
 

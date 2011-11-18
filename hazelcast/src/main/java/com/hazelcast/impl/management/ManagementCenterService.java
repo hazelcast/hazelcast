@@ -102,6 +102,7 @@ public class ManagementCenterService implements MembershipListener {
     }
 
     public void shutdown() {
+    	if(!running) return;
         running = false;
         try {
             datagramSocket.close();

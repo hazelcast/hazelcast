@@ -19,9 +19,10 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.management.ManagementCenterService;
+import com.hazelcast.impl.CMap.InitializationState;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -70,8 +71,6 @@ public class FactoryImpl implements HazelcastInstance {
     final ILogger logger;
 
     final LifecycleServiceImpl lifecycleService;
-
-    final ManagementCenterService managementCenterService;
 
     public final Node node;
 
@@ -163,13 +162,8 @@ public class FactoryImpl implements HazelcastInstance {
             if (factory != null) {
                 factory.logger.log(Level.SEVERE, t.getMessage(), t);
             }
-            if (t instanceof RuntimeException) {
-                throw (RuntimeException) t;
-            }
-            if(t instanceof Error) {
-            	throw (Error) t;
-            }
-            throw new RuntimeException(t);
+            Util.throwUncheckedException(t);
+            return null;
         }
     }
 
@@ -336,9 +330,6 @@ public class FactoryImpl implements HazelcastInstance {
         FactoryImpl factory = hazelcastInstanceProxy.getFactory();
         factory.managementService.unregister();
         factory.proxies.clear();
-        if (factory.managementCenterService != null) {
-            factory.managementCenterService.shutdown();
-        }
         for (ExecutorService esp : factory.executorServiceProxies.values()) {
             esp.shutdown();
         }
@@ -419,15 +410,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
         managementService = new ManagementService(this);
         managementService.register();
-        ManagementCenterService managementCenterServiceTmp = null;
-        if (node.groupProperties.MANCENTER_ENABLED.getBoolean()) {
-            try {
-                managementCenterServiceTmp = new ManagementCenterService(FactoryImpl.this);
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
-            }
-        }
-        managementCenterService = managementCenterServiceTmp;
     }
 
     public Set<String> getLongInstanceNames() {
@@ -580,34 +562,40 @@ public class FactoryImpl implements HazelcastInstance {
                 logger.log(Level.WARNING, "CMap[" + mProxy.getLongName() + "] has not been created yet! Initialization attempt failed!");
                 return;
             }
-            if (!cmap.isMapForQueue() && !cmap.initialized) {
+            if (!cmap.isMapForQueue() && !cmap.initState.isInitialized()) {
                 synchronized (cmap.getInitLock()) {
-                    if (!cmap.initialized) {
-                        if (cmap.loader != null) {
+                    if (!cmap.initState.isInitialized()) {
+                    	final MapStoreConfig mapStoreConfig = cmap.mapConfig.getMapStoreConfig();
+                        if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
+                        	cmap.initState = InitializationState.INITIALIZING;
                             try {
-                                if (getAtomicNumber(name).compareAndSet(0, 1)) {
-                                    ExecutorService es = getExecutorService();
-                                    MultiTask task = new MultiTask(new InitializeMap(mProxy.getName()), getCluster().getMembers());
-                                    es.execute(task);
+                                ExecutorService es = getExecutorService();
+                                final Set<Member> members = new HashSet<Member>(getCluster().getMembers());
+                                members.remove(node.localMember);
+                                final MultiTask task = new MultiTask(new InitializeMap(mProxy.getName()), members);
+                                es.execute(task);
+                                
+                                if(cmap.loader != null) {
+	                                Set keys = cmap.loader.loadAllKeys();
+	                                if (keys != null) {
+	                                    int count = 0;
+	                                    PartitionService partitionService = getPartitionService();
+	                                    Set ownedKeys = new HashSet();
+	                                    for (Object key : keys) {
+	                                        if (partitionService.getPartition(key).getOwner().localMember()) {
+	                                            ownedKeys.add(key);
+	                                            count++;
+	                                            if (ownedKeys.size() >= node.groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger()) {
+	                                                loadKeys(mProxy, cmap, ownedKeys);
+	                                                ownedKeys.clear();
+	                                            }
+	                                        }
+	                                    }
+	                                    loadKeys(mProxy, cmap, ownedKeys);
+	                                    logger.log(Level.INFO, node.address + "[" + mProxy.getName() + "] loaded " + count);
+	                                }
                                 }
-                                Set keys = cmap.loader.loadAllKeys();
-                                if (keys != null) {
-                                    int count = 0;
-                                    PartitionService partitionService = getPartitionService();
-                                    Set ownedKeys = new HashSet();
-                                    for (Object key : keys) {
-                                        if (partitionService.getPartition(key).getOwner().localMember()) {
-                                            ownedKeys.add(key);
-                                            count++;
-                                            if (ownedKeys.size() >= node.groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger()) {
-                                                loadKeys(mProxy, cmap, ownedKeys);
-                                                ownedKeys.clear();
-                                            }
-                                        }
-                                    }
-                                    loadKeys(mProxy, cmap, ownedKeys);
-                                    logger.log(Level.INFO, node.address + "[" + mProxy.getName() + "] loaded " + count);
-                                }
+                                task.get();
                             } catch (Throwable e) {
                                 if (node.isActive()) {
                                     logger.log(Level.SEVERE, e.getMessage(), e);
@@ -615,7 +603,7 @@ public class FactoryImpl implements HazelcastInstance {
                             }
                         }
                     }
-                    cmap.initialized = true;
+                    cmap.initState = InitializationState.INITIALIZED;
                 }
             }
         }
@@ -635,7 +623,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     public static class InitializeMap implements Callable<Boolean>, DataSerializable, HazelcastInstanceAware {
         String name;
-        private transient HazelcastInstance hazelcast = null;
+        private transient FactoryImpl factory = null;
 
         public InitializeMap(String name) {
             this.name = name;
@@ -645,12 +633,15 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public Boolean call() throws Exception {
-            hazelcast.getMap(name).getName();
+        	final CMap cmap = factory.node.concurrentMapManager.getMap(Prefix.MAP + name);
+        	if (cmap == null || !cmap.initState.isInitializing()) {
+        		factory.getMap(name).getName();
+        	}
             return Boolean.TRUE;
         }
 
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.hazelcast = hazelcastInstance;
+            this.factory = (FactoryImpl) hazelcastInstance;
         }
 
         public void writeData(DataOutput out) throws IOException {
