@@ -60,7 +60,7 @@ public abstract class AbstractSerializer {
     public static Class<?> loadClass(final String className) throws ClassNotFoundException {
         return loadClass(null, className);
     }
-
+    
     public static Class<?> loadClass(final ClassLoader classLoader, final String className) throws ClassNotFoundException {
         if (className == null) {
             throw new IllegalArgumentException("ClassName cannot be null!");
@@ -80,7 +80,7 @@ public abstract class AbstractSerializer {
             theClassLoader = Thread.currentThread().getContextClassLoader();
         }
         if (theClassLoader != null) {
-            if (className.startsWith("[L")) {
+            if (className.startsWith("[")) {
                 return Class.forName(className, true, theClassLoader);
             } else {
                 return theClassLoader.loadClass(className);
