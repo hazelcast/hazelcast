@@ -408,6 +408,12 @@ cfg.setProperty("hazelcast.property.foo", "value");
 				<td>1</td>
 			</tr>
 			<tr>
+				<td><db:literal>hazelcast.elastic.memory.shared.storage</db:literal></td>
+				<td><link xlink:href="#ElasticMemory">Enable Hazelcast Elastic Memory</link> shared storage</td>
+				<td>boolean</td>
+				<td>false</td>
+			</tr>
+			<tr>
 				<td><db:literal>hazelcast.enterprise.license.path</db:literal></td>
 				<td><link xlink:href="http://www.hazelcast.com/products.jsp">Hazelcast Enterprise</link> 
 				license path (filesystem, classpath, url)</td>
