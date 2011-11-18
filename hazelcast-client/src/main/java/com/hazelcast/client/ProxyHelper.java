@@ -22,6 +22,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.impl.ClientServiceException;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.query.Predicate;
 
@@ -185,11 +186,7 @@ public class ProxyHelper {
             Object result = toObject(response.getValue());
             if (result instanceof ClientServiceException) {
             	final ClientServiceException ex = (ClientServiceException) result;
-            	if(ex.getThrowable() instanceof RuntimeException) {
-            		throw (RuntimeException) ex.getThrowable();
-            	} else {
-            		throw new RuntimeException(ex.getThrowable());
-            	}
+            	Util.throwUncheckedException(ex.getThrowable());
             }
             return result;
         }
