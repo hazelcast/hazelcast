@@ -131,7 +131,7 @@ public class Node {
     public final NodeInitializer initializer;
 
     private ManagementCenterService managementCenterService = null;
-    
+
     public SecurityContext securityContext = null;
 
     public Node(FactoryImpl factory, Config config) {
@@ -141,7 +141,7 @@ public class Node {
         this.config = config;
         this.groupProperties = new GroupProperties(config);
         this.superClient = config.isSuperClient();
-        this.localNodeType = (superClient) ? NodeType.SUPER_CLIENT : NodeType.MEMBER;
+        this.localNodeType = (superClient) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
         ServerSocketChannel serverSocketChannelTemp = null;
         Address localAddress = null;
         try {
@@ -155,7 +155,7 @@ public class Node {
             localAddress = addressPicker.pickAddress();
             localAddress.setThisAddress(true);
         } catch (Throwable e) {
-        	Util.throwUncheckedException(e);
+            Util.throwUncheckedException(e);
         }
         serverSocketChannel = serverSocketChannelTemp;
         address = localAddress;
@@ -310,8 +310,8 @@ public class Node {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             } catch (Throwable ignored) {
             }
-            if(managementCenterService != null) {
-            	managementCenterService.shutdown();
+            if (managementCenterService != null) {
+                managementCenterService.shutdown();
             }
             logger.log(Level.FINEST, "Shutting down the clientService");
             clientService.shutdown();
@@ -378,7 +378,7 @@ public class Node {
         }
         if (groupProperties.MANCENTER_ENABLED.getBoolean()) {
             try {
-            	managementCenterService = new ManagementCenterService(factory);
+                managementCenterService = new ManagementCenterService(factory);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
             }
@@ -413,8 +413,8 @@ public class Node {
                 }
             }
         } finally {
-        	// Node.doShutdown sets active=false 
-        	// active = false;
+            // Node.doShutdown sets active=false
+            // active = false;
             outOfMemory = true;
             logger.log(Level.SEVERE, e.getMessage(), e);
         }

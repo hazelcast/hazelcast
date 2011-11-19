@@ -43,9 +43,9 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BaseManager {
 
-    protected final static boolean zeroBackup = false;
+    protected final Map<Address, Integer> mapStorageMemberIndexes;
 
-    protected final LinkedList<MemberImpl> lsMembers;
+    protected final List<MemberImpl> lsMembers;
 
     protected final Map<Address, MemberImpl> mapMembers;
 
@@ -68,6 +68,7 @@ public abstract class BaseManager {
     protected BaseManager(Node node) {
         this.node = node;
         lsMembers = node.baseVariables.lsMembers;
+        mapStorageMemberIndexes = node.baseVariables.mapStorageMemberIndexes;
         mapMembers = node.baseVariables.mapMembers;
         mapCalls = node.baseVariables.mapCalls;
         thisAddress = node.baseVariables.thisAddress;
@@ -78,7 +79,7 @@ public abstract class BaseManager {
         this.redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
     }
 
-    public LinkedList<MemberImpl> getMembers() {
+    public List<MemberImpl> getMembers() {
         return lsMembers;
     }
 
@@ -1063,42 +1064,6 @@ public abstract class BaseManager {
         return node.clusterService.getPacketProcessor(operation);
     }
 
-    public void returnScheduledAsBoolean(Request request) {
-        if (request.local) {
-            final TargetAwareOp mop = (TargetAwareOp) request.attachment;
-            mop.setResult(request.response);
-        } else {
-            final Packet packet = obtainPacket();
-            request.setPacket(packet);
-            if (request.response == Boolean.TRUE) {
-                final boolean sent = sendResponse(packet, request.caller);
-                logger.log(Level.FINEST, request.local + " returning scheduled response " + sent);
-            } else {
-                sendResponseFailure(packet, request.caller);
-            }
-        }
-    }
-
-    public void returnScheduledAsSuccess(final Request request) {
-        if (request.local) {
-            final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
-            targetAwareOp.setResult(request.response);
-        } else {
-            final Packet packet = obtainPacket();
-            request.setPacket(packet);
-            final Object result = request.response;
-            if (result != null) {
-                if (result instanceof Data) {
-                    final Data data = (Data) result;
-                    if (data.size() > 0) {
-                        packet.setValue(data);
-                    }
-                }
-            }
-            sendResponse(packet, request.caller);
-        }
-    }
-
     public void sendEvents(int eventType, String name, Data key, Data value, Map<Address, Boolean> mapListeners, Address callerAddress) {
         if (mapListeners != null) {
             final Set<Map.Entry<Address, Boolean>> listeners = mapListeners.entrySet();
@@ -1156,13 +1121,45 @@ public abstract class BaseManager {
         return node.getMasterAddress();
     }
 
+    protected MemberImpl getBackupMember(final Address owner, final int distance) {
+        final int size = lsMembers.size();
+        if (size <= 1)
+            return null;
+        Integer indexOfMember = mapStorageMemberIndexes.get(owner);
+        if (indexOfMember == null) {
+            for (int i = 0; i < size; i++) {
+                final MemberImpl member = lsMembers.get(i);
+                if (member.getAddress().equals(owner)) {
+                    indexOfMember = Integer.valueOf(i);
+                    mapStorageMemberIndexes.put(owner, indexOfMember);
+                }
+            }
+        }
+        if (indexOfMember == null)
+            return null;
+        int foundDistance = 0;
+        for (int i = indexOfMember.intValue(); i < size + indexOfMember; i++) {
+            final MemberImpl member = lsMembers.get((1 + i) % size);
+            if (!member.isSuperClient()) {
+                foundDistance++;
+            }
+            if (foundDistance == distance) {
+                return member;
+            }
+        }
+        return null;
+    }
+
     protected MemberImpl getNextMemberAfter(final Address address,
-                                            final boolean skipSuperClient, final int distance) {
+                                            final boolean skipSuperClient,
+                                            final int distance) {
         return getNextMemberAfter(lsMembers, address, skipSuperClient, distance);
     }
 
     protected MemberImpl getNextMemberAfter(final List<MemberImpl> lsMembers,
-                                            final Address address, final boolean skipSuperClient, final int distance) {
+                                            final Address address,
+                                            final boolean skipSuperClient,
+                                            final int distance) {
         final int size = lsMembers.size();
         if (size <= 1)
             return null;
@@ -1213,33 +1210,6 @@ public abstract class BaseManager {
                                                  final boolean skipSuperClient, final int distance) {
         return getNextMemberAfter(node.clusterManager.getMembersBeforeSync(), address,
                 skipSuperClient, distance);
-    }
-
-    protected MemberImpl getPreviousMemberBefore(final List<MemberImpl> lsMembers,
-                                                 final Address address, final boolean skipSuperClient, final int distance) {
-        final int size = lsMembers.size();
-        if (size <= 1)
-            return null;
-        int indexOfMember = -1;
-        for (int i = 0; i < size; i++) {
-            final MemberImpl member = lsMembers.get(i);
-            if (member.getAddress().equals(address)) {
-                indexOfMember = i;
-            }
-        }
-        if (indexOfMember == -1)
-            return null;
-        indexOfMember += (size - 1);
-        int foundDistance = 0;
-        for (int i = 0; i < size; i++) {
-            final MemberImpl member = lsMembers.get((indexOfMember - i) % size);
-            if (!(skipSuperClient && member.isSuperClient())) {
-                foundDistance++;
-            }
-            if (foundDistance == distance)
-                return member;
-        }
-        return null;
     }
 
     protected boolean isMaster() {

@@ -26,7 +26,9 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class NodeBaseVariables {
-    final LinkedList<MemberImpl> lsMembers = new LinkedList<MemberImpl>();
+    final Map<Address, Integer> mapStorageMemberIndexes = new HashMap<Address, Integer>();
+
+    final List<MemberImpl> lsMembers = new ArrayList<MemberImpl>(10);
 
     final Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(200);
 

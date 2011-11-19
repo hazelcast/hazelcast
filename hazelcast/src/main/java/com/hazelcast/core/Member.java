@@ -23,7 +23,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 /**
- * Cluster member interface. The default implementation {@link MemberImpl} violates the Java Serialization contract. It
+ * Cluster member interface. The default implementation {@link MemberImpl} violates
+ * the Java Serialization contract. It
  * should be serialized/deserialized by Hazelcast.
  *
  * @see Cluster
@@ -67,12 +68,27 @@ public interface Member extends DataSerializable {
     InetSocketAddress getInetSocketAddress();
 
     /**
-     * Returns if this member is a super client.
-     * Super client is a cluster member which doesn't
+     * Returns if this member is a LiteMember.
+     * LiteMember is a cluster member which doesn't
+     * hold any data on it. We never use the term
+     * 'Super Client' as of version 2.0 as it is misleading.
+     *
+     * @return <tt>true</tt> if this member is a super
+     *         client, <tt>false</tt> otherwise
+     * @see #isLiteMember()
+     * @deprecated as of version 2.0
+     */
+    boolean isSuperClient();
+
+    /**
+     * Returns if this member is a LiteMember.
+     * LiteMember is a cluster member which doesn't
      * hold any data on it.
      *
      * @return <tt>true</tt> if this member is a super
      *         client, <tt>false</tt> otherwise
+     * @see #isLiteMember()
+     * @deprecated as of version 2.0
      */
-    boolean isSuperClient();
+    boolean isLiteMember();
 }

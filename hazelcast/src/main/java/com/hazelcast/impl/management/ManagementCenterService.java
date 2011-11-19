@@ -102,7 +102,7 @@ public class ManagementCenterService implements MembershipListener {
     }
 
     public void shutdown() {
-    	if(!running) return;
+        if (!running) return;
         running = false;
         try {
             datagramSocket.close();
@@ -176,7 +176,7 @@ public class ManagementCenterService implements MembershipListener {
                     clientHandler.start();
                 }
             } catch (Throwable throwable) {
-                logger.log(Level.WARNING, "ManagementCenter will be closed due to exception.", throwable);
+                logger.log(Level.FINEST, "ManagementCenter will be closed due to exception.", throwable);
                 shutdown();
             }
         }

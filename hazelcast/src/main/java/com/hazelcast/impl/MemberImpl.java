@@ -118,7 +118,11 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     }
 
     public boolean isSuperClient() {
-        return (nodeType == NodeType.SUPER_CLIENT);
+        return (nodeType == NodeType.LITE_MEMBER);
+    }
+
+    public boolean isLiteMember() {
+        return (nodeType == NodeType.LITE_MEMBER);
     }
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
@@ -157,7 +161,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         if (localMember) {
             sb.append(" this");
         }
-        if (nodeType == NodeType.SUPER_CLIENT) {
+        if (nodeType == NodeType.LITE_MEMBER) {
             sb.append(" lite");
         }
         return sb.toString();

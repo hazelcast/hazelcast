@@ -197,8 +197,8 @@ public class ConcurrentMapManager extends BaseManager {
             public void process() {
                 partitionManager.reset();
                 for (CMap cmap : maps.values()) {
-                	// do not invalidate records, 
-                	// values will be invalidated after merge
+                    // do not invalidate records,
+                    // values will be invalidated after merge
                     cmap.reset(false);
                 }
             }
@@ -1734,7 +1734,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void process() {
-            MemberImpl targetMember = getNextMemberAfter(owner, true, distance);
+            MemberImpl targetMember = getBackupMember(owner, distance);
             if (targetMember == null) {
                 setResult(Boolean.TRUE);
                 return;
@@ -2037,8 +2037,8 @@ public class ConcurrentMapManager extends BaseManager {
         public Set iterate() {
             Entries entries = new Entries(ConcurrentMapManager.this, name, CONCURRENT_MAP_ITERATE_KEYS, predicate);
             final Object response = getResultAsObject();
-            if(response instanceof Throwable) {
-            	Util.throwUncheckedException((Throwable) response);
+            if (response instanceof Throwable) {
+                Util.throwUncheckedException((Throwable) response);
             }
             Pairs pairs = (Pairs) response;
             entries.addEntries(pairs);
@@ -2080,8 +2080,8 @@ public class ConcurrentMapManager extends BaseManager {
                 pairs = (Pairs) toObject((Data) response);
             } else if (response instanceof Pairs) {
                 pairs = (Pairs) response;
-            } else if(response instanceof Throwable) {
-            	Util.throwUncheckedException((Throwable) response);
+            } else if (response instanceof Throwable) {
+                Util.throwUncheckedException((Throwable) response);
             } else {
                 // null
                 return true;
@@ -3575,26 +3575,26 @@ public class ConcurrentMapManager extends BaseManager {
                         predicate = (Predicate) toObject(request.value);
                     }
                     final QueryContext queryContext = new QueryContext(cmap.getName(), predicate, cmap.getMapIndexService());
-                	Set<MapEntry> results = cmap.getMapIndexService().doQuery(queryContext);
-                	boolean evaluateValues = (predicate != null && !queryContext.isStrong());
-                	createResultPairs(request, results, evaluateValues, predicate);
+                    Set<MapEntry> results = cmap.getMapIndexService().doQuery(queryContext);
+                    boolean evaluateValues = (predicate != null && !queryContext.isStrong());
+                    createResultPairs(request, results, evaluateValues, predicate);
                 } catch (Throwable e) {
                     logger.log(Level.SEVERE, request.toString(), e);
-                    request.response = e; 
+                    request.response = e;
                 }
                 enqueueAndReturn(new Processable() {
-                	public void process() {
-                		int callerPartitionHash = request.blockId;
-                		if (partitionManager.containsMigratingBlock() || callerPartitionHash != partitionManager.hashBlocks()) {
-                			request.response = OBJECT_REDO;
-                		}
-                		boolean sent = returnResponse(request);
-                		if (!sent) {
-                			Connection conn = node.connectionManager.getConnection(request.caller);
-                			logger.log(Level.WARNING, request + " !! response cannot be sent to "
-                					+ request.caller + " conn:" + conn);
-                		}
-                	}
+                    public void process() {
+                        int callerPartitionHash = request.blockId;
+                        if (partitionManager.containsMigratingBlock() || callerPartitionHash != partitionManager.hashBlocks()) {
+                            request.response = OBJECT_REDO;
+                        }
+                        boolean sent = returnResponse(request);
+                        if (!sent) {
+                            Connection conn = node.connectionManager.getConnection(request.caller);
+                            logger.log(Level.WARNING, request + " !! response cannot be sent to "
+                                    + request.caller + " conn:" + conn);
+                        }
+                    }
                 });
             }
         }

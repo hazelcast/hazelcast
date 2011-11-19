@@ -422,7 +422,7 @@
                 </para>
             </listitem>
             <listitem>
-                <para>Super Clients: Members with no storage. If
+                <para>Super Clients (a.k.a LiteMember): Members with no storage. If
                     <literal>-Dhazelcast.super.client=true</literal>
                     JVM parameter is set, that
                     JVM will join the cluster as a 'super client' which will not be a 'data

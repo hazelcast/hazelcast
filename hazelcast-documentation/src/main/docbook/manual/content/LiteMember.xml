@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sect1 xml:id="LiteMember" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xlink='http://www.w3.org/1999/xlink'
+       xmlns:xi='http://www.w3.org/2001/XInclude'
+       xmlns:ns5='http://www.w3.org/2000/svg'
+       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+       xmlns:ns3='http://www.w3.org/1999/xhtml'
+       xmlns:db='http://docbook.org/ns/docbook'>
+    <title>LiteMember</title>
+    <para>
+        LiteMembers are members with no storage. If
+        <literal>-Dhazelcast.lite.member=true</literal>
+        JVM parameter is set, then the JVM will join the cluster as a 'lite member' which will not be a 'data
+        partition' (no data on that node) but will have super fast access to the cluster
+        just like any regular member does.
+    </para>
+</sect1>

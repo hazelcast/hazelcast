@@ -1,159 +1,180 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
 <para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
-    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg"
-    xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml"
-    xmlns:db="http://docbook.org/ns/docbook">
+      xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg"
+      xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml"
+      xmlns:db="http://docbook.org/ns/docbook">
     <itemizedlist>
         <listitem>
-            <para>Add the following system properties to enable 
-                <link xlink:href="http://download.oracle.com/javase/1.5.0/docs/guide/management/agent.html">jmx agent</link></para>
+            <para>Add the following system properties to enable
+                <link xlink:href="http://download.oracle.com/javase/1.5.0/docs/guide/management/agent.html">jmx agent
+                </link>
+            </para>
             <db:itemizedlist>
                 <listitem>
                     <para>-Dcom.sun.management.jmxremote</para>
                 </listitem>
                 <listitem>
                     <para>-Dcom.sun.management.jmxremote.port=_portNo_ (to specify jmx port)
-                            <emphasis>optional</emphasis>
+                        <emphasis>optional</emphasis>
                     </para>
                 </listitem>
                 <listitem>
                     <para>-Dcom.sun.management.jmxremote.authenticate=false (to disable jmx auth)
-                            <emphasis>optional</emphasis>
+                        <emphasis>optional</emphasis>
                     </para>
                 </listitem>
             </db:itemizedlist>
         </listitem>
         <listitem>
-            <para>Enable Hazelcast property <emphasis>hazelcast.jmx</emphasis>
+            <para>Enable Hazelcast property
+                <emphasis>hazelcast.jmx</emphasis>
                 <db:itemizedlist>
                     <listitem>
-                        <para>using Hazelcast configuration (api, xml, spring) </para>
+                        <para>using Hazelcast configuration (api, xml, spring)</para>
                     </listitem>
                     <listitem>
-                        <para>or set system property -Dhazelcast.jmx=true </para>
-                    </listitem>
-                </db:itemizedlist></para>
-        </listitem>
-        <listitem>
-            <para>Use jconsole, jvisualvm (with mbean plugin) or another jmx-compliant monitoring
-                tool. </para>
-        </listitem>
-    </itemizedlist>
-    <emphasis role="bold">Following attributes can be monitored: </emphasis><itemizedlist>
-        <listitem>
-            <para>Cluster <db:itemizedlist>
-                    <listitem>
-                        <para>config </para>
-                    </listitem>
-                    <listitem>
-                        <para>group name </para>
-                    </listitem>
-                    <listitem>
-                        <para>count of members and their addresses (host:port) </para>
-                    </listitem>
-                    <listitem>
-                        <para>operations: restart, shutdown cluster </para>
-                    </listitem>
-                </db:itemizedlist></para>
-        </listitem>
-        <listitem>
-            <para>Member<db:itemizedlist>
-                    <listitem>
-                        <para>inet address </para>
-                    </listitem>
-                    <listitem>
-                        <para>port </para>
-                    </listitem>
-                    <listitem>
-                        <para>super client state </para>
+                        <para>or set system property -Dhazelcast.jmx=true</para>
                     </listitem>
                 </db:itemizedlist>
             </para>
         </listitem>
         <listitem>
-            <para>Statistics <db:itemizedlist>
+            <para>Use jconsole, jvisualvm (with mbean plugin) or another jmx-compliant monitoring
+                tool.
+            </para>
+        </listitem>
+    </itemizedlist>
+    <emphasis role="bold">Following attributes can be monitored:</emphasis>
+    <itemizedlist>
+        <listitem>
+            <para>Cluster
+                <db:itemizedlist>
                     <listitem>
-                        <para>count of instances </para>
+                        <para>config</para>
                     </listitem>
                     <listitem>
-                        <para>number of instances created, destroyed since startup </para>
+                        <para>group name</para>
                     </listitem>
                     <listitem>
-                        <para>max instances created, destroyed per second </para>
+                        <para>count of members and their addresses (host:port)</para>
                     </listitem>
-                </db:itemizedlist></para>
+                    <listitem>
+                        <para>operations: restart, shutdown cluster</para>
+                    </listitem>
+                </db:itemizedlist>
+            </para>
         </listitem>
         <listitem>
-            <para>AtomicNumber <db:itemizedlist>
+            <para>Member
+                <db:itemizedlist>
                     <listitem>
-                        <para>name </para>
+                        <para>inet address</para>
                     </listitem>
                     <listitem>
-                        <para>actual value </para>
+                        <para>port</para>
                     </listitem>
                     <listitem>
-                        <para>operations: add, set, compareAndSet, reset </para>
+                        <para>lite member state</para>
                     </listitem>
-                </db:itemizedlist></para>
+                </db:itemizedlist>
+            </para>
         </listitem>
         <listitem>
-            <para>List, Set <db:itemizedlist>
+            <para>Statistics
+                <db:itemizedlist>
                     <listitem>
-                        <para>name </para>
+                        <para>count of instances</para>
                     </listitem>
                     <listitem>
-                        <para>size </para>
+                        <para>number of instances created, destroyed since startup</para>
                     </listitem>
                     <listitem>
-                        <para>items (as strings) </para>
+                        <para>max instances created, destroyed per second</para>
                     </listitem>
-                    <listitem>
-                        <para>operations: clear, reset statistics </para>
-                    </listitem>
-                </db:itemizedlist></para>
+                </db:itemizedlist>
+            </para>
         </listitem>
         <listitem>
-            <para>Map<db:itemizedlist>
+            <para>AtomicNumber
+                <db:itemizedlist>
                     <listitem>
-                        <para>name </para>
+                        <para>name</para>
                     </listitem>
                     <listitem>
-                        <para>size </para>
+                        <para>actual value</para>
                     </listitem>
                     <listitem>
-                        <para>operations: clear </para>
+                        <para>operations: add, set, compareAndSet, reset</para>
                     </listitem>
-                </db:itemizedlist></para>
+                </db:itemizedlist>
+            </para>
         </listitem>
         <listitem>
-            <para>Queue <db:itemizedlist>
+            <para>List, Set
+                <db:itemizedlist>
                     <listitem>
-                        <para>name </para>
+                        <para>name</para>
                     </listitem>
                     <listitem>
-                        <para>size </para>
+                        <para>size</para>
                     </listitem>
                     <listitem>
-                        <para>received and served items </para>
+                        <para>items (as strings)</para>
                     </listitem>
                     <listitem>
-                        <para>operations: clear, reset statistics </para>
+                        <para>operations: clear, reset statistics</para>
                     </listitem>
-                </db:itemizedlist></para>
+                </db:itemizedlist>
+            </para>
         </listitem>
         <listitem>
-            <para>Topic <db:itemizedlist>
+            <para>Map
+                <db:itemizedlist>
                     <listitem>
-                        <para>name </para>
+                        <para>name</para>
                     </listitem>
                     <listitem>
-                        <para>number of messages dispatched since creation, in last second </para>
+                        <para>size</para>
                     </listitem>
                     <listitem>
-                        <para>max messages dispatched per second </para>
+                        <para>operations: clear</para>
                     </listitem>
-                </db:itemizedlist></para>
+                </db:itemizedlist>
+            </para>
+        </listitem>
+        <listitem>
+            <para>Queue
+                <db:itemizedlist>
+                    <listitem>
+                        <para>name</para>
+                    </listitem>
+                    <listitem>
+                        <para>size</para>
+                    </listitem>
+                    <listitem>
+                        <para>received and served items</para>
+                    </listitem>
+                    <listitem>
+                        <para>operations: clear, reset statistics</para>
+                    </listitem>
+                </db:itemizedlist>
+            </para>
+        </listitem>
+        <listitem>
+            <para>Topic
+                <db:itemizedlist>
+                    <listitem>
+                        <para>name</para>
+                    </listitem>
+                    <listitem>
+                        <para>number of messages dispatched since creation, in last second</para>
+                    </listitem>
+                    <listitem>
+                        <para>max messages dispatched per second</para>
+                    </listitem>
+                </db:itemizedlist>
+            </para>
         </listitem>
     </itemizedlist>
 </para>

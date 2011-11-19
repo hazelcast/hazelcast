@@ -72,7 +72,7 @@
         <title>Cluster Utilities</title>
         <xi:include href="ClusterInterface.xml"/>
         <xi:include href="IdGenerator.xml"/>
-        <xi:include href="SuperClient.xml"/>
+        <xi:include href="LiteMember.xml"/>
     </chapter>
     <chapter xml:id="Transactions">
         <title>Transactions</title>

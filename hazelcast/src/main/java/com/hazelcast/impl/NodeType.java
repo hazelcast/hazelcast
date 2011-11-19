@@ -19,7 +19,7 @@ package com.hazelcast.impl;
 
 public enum NodeType {
     MEMBER(1),
-    SUPER_CLIENT(2),
+    LITE_MEMBER(2),
     JAVA_CLIENT(3),
     CSHARP_CLIENT(4);
 
@@ -38,7 +38,7 @@ public enum NodeType {
             case 1:
                 return MEMBER;
             case 2:
-                return SUPER_CLIENT;
+                return LITE_MEMBER;
             case 3:
                 return JAVA_CLIENT;
             case 4:

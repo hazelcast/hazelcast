@@ -40,9 +40,9 @@ public class Config implements DataSerializable {
     public static final int DEFAULT_PORT = 5701;
 
     private String xmlConfig = null;
-    
+
     private String instanceName = null;
-    
+
     private GroupConfig groupConfig = new GroupConfig();
 
     private int port = DEFAULT_PORT;
@@ -71,7 +71,7 @@ public class Config implements DataSerializable {
 
     private NetworkConfig networkConfig = new NetworkConfig();
 
-    private boolean superClient = false;
+    private boolean liteMember = false;
 
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
@@ -80,13 +80,16 @@ public class Config implements DataSerializable {
     private Map<String, MergePolicyConfig> mapMergePolicyConfigs = new ConcurrentHashMap<String, MergePolicyConfig>();
 
     private Map<String, WanReplicationConfig> mapWanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
-    
+
     private SecurityConfig securityConfig = new SecurityConfig();
 
     public Config() {
-        final String superClientProp = System.getProperty("hazelcast.super.client");
-        if ("true".equalsIgnoreCase(superClientProp)) {
-            superClient = true;
+        String liteMemberProp = System.getProperty("hazelcast.super.client");
+        if (liteMemberProp == null) {
+            liteMemberProp = System.getProperty("hazelcast.lite.member");
+        }
+        if ("true".equalsIgnoreCase(liteMemberProp)) {
+            liteMember = true;
         }
         String os = System.getProperty("os.name").toLowerCase();
         reuseAddress = (os.indexOf("win") == -1);
@@ -107,7 +110,7 @@ public class Config implements DataSerializable {
     public Map<String, MergePolicyConfig> getMergePolicyConfigs() {
         return mapMergePolicyConfigs;
     }
-    
+
     public void setMergePolicyConfigs(Map<String, MergePolicyConfig> mapMergePolicyConfigs) {
         this.mapMergePolicyConfigs = mapMergePolicyConfigs;
     }
@@ -123,7 +126,7 @@ public class Config implements DataSerializable {
     public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
         return mapWanReplicationConfigs;
     }
-    
+
     public Config setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
         this.mapWanReplicationConfigs = wanReplicationConfigs;
         for (final Entry<String, WanReplicationConfig> entry : this.mapWanReplicationConfigs.entrySet()) {
@@ -565,22 +568,40 @@ public class Config implements DataSerializable {
         return this;
     }
 
+    /**
+     * @see #isLiteMember()
+     * @deprecated as of 2.0
+     */
+
     public boolean isSuperClient() {
-        return superClient;
+        return liteMember;
     }
 
-    public Config setSuperClient(boolean superClient) {
-        this.superClient = superClient;
+    public boolean isLiteMember() {
+        return liteMember;
+    }
+
+    /**
+     * @see #setLiteMember(boolean)
+     * @deprecated as of 2.0
+     */
+    public Config setSuperClient(boolean liteMember) {
+        this.liteMember = liteMember;
         return this;
     }
-    
+
+    public Config setLiteMember(boolean liteMember) {
+        this.liteMember = liteMember;
+        return this;
+    }
+
     public SecurityConfig getSecurityConfig() {
-		return securityConfig;
-	}
-    
+        return securityConfig;
+    }
+
     public void setSecurityConfig(SecurityConfig securityConfig) {
-		this.securityConfig = securityConfig;
-	}
+        this.securityConfig = securityConfig;
+    }
 
     /**
      * @param config
@@ -656,7 +677,7 @@ public class Config implements DataSerializable {
         checkCompatibility = b1[0];
         reuseAddress = b1[1];
         portAutoIncrement = b1[2];
-        superClient = b1[3];
+        liteMember = b1[3];
         boolean[] b2 = ByteUtil.fromByte(in.readByte());
         boolean hasMapConfigs = b2[0];
         boolean hasMapExecutors = b2[1];
@@ -741,7 +762,7 @@ public class Config implements DataSerializable {
         out.writeByte(ByteUtil.toByte(checkCompatibility,
                 reuseAddress,
                 portAutoIncrement,
-                superClient));
+                liteMember));
         out.writeByte(ByteUtil.toByte(
                 hasMapConfigs,
                 hasMapExecutors,
@@ -810,20 +831,20 @@ public class Config implements DataSerializable {
             }
         }
     }
-    
+
     public String getInstanceName() {
-		return instanceName;
-	}
-    
+        return instanceName;
+    }
+
     public void setInstanceName(String instanceName) {
-		this.instanceName = instanceName;
-	}
-    
+        this.instanceName = instanceName;
+    }
+
     @Override
     public String toString() {
         return "Config [groupConfig=" + this.groupConfig
                 + ", port=" + this.port
-                + ", superClient=" + this.superClient
+                + ", liteMember=" + this.liteMember
                 + ", reuseAddress=" + this.reuseAddress
                 + ", checkCompatibility=" + this.checkCompatibility
                 + ", portAutoIncrement=" + this.portAutoIncrement

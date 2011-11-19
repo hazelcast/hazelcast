@@ -33,7 +33,7 @@ public class ClusterImplTest {
         List<Member> lsMembers = new ArrayList<Member>();
         lsMembers.add(new MemberImpl(new Address("1.1.1.1", 1), true, NodeType.MEMBER));
         lsMembers.add(new MemberImpl(new Address("1.1.1.1", 2), true, NodeType.MEMBER));
-        lsMembers.add(new MemberImpl(new Address("1.1.1.1", 3), true, NodeType.SUPER_CLIENT));
+        lsMembers.add(new MemberImpl(new Address("1.1.1.1", 3), true, NodeType.LITE_MEMBER));
         assertEquals(1, ClusterImpl.calculateDistance(lsMembers, lsMembers.get(0), lsMembers.get(1), false));
         assertEquals(2, ClusterImpl.calculateDistance(lsMembers, lsMembers.get(0), lsMembers.get(2), false));
         assertEquals(2, ClusterImpl.calculateDistance(lsMembers, lsMembers.get(1), lsMembers.get(0), false));
@@ -46,7 +46,7 @@ public class ClusterImplTest {
         assertEquals(1, ClusterImpl.calculateDistance(lsMembers, lsMembers.get(2), lsMembers.get(1), true));
         lsMembers.clear();
         lsMembers.add(new MemberImpl(new Address("1.1.1.1", 1), true, NodeType.MEMBER));
-        lsMembers.add(new MemberImpl(new Address("1.1.1.1", 2), true, NodeType.SUPER_CLIENT));
+        lsMembers.add(new MemberImpl(new Address("1.1.1.1", 2), true, NodeType.LITE_MEMBER));
         lsMembers.add(new MemberImpl(new Address("1.1.1.1", 3), true, NodeType.MEMBER));
         assertEquals(1, ClusterImpl.calculateDistance(lsMembers, lsMembers.get(0), lsMembers.get(1), false));
         assertEquals(2, ClusterImpl.calculateDistance(lsMembers, lsMembers.get(0), lsMembers.get(2), false));
@@ -59,7 +59,7 @@ public class ClusterImplTest {
         assertEquals(1, ClusterImpl.calculateDistance(lsMembers, lsMembers.get(2), lsMembers.get(0), true));
         assertEquals(2, ClusterImpl.calculateDistance(lsMembers, lsMembers.get(2), lsMembers.get(1), true));
         lsMembers.clear();
-        lsMembers.add(new MemberImpl(new Address("1.1.1.1", 1), true, NodeType.SUPER_CLIENT));
+        lsMembers.add(new MemberImpl(new Address("1.1.1.1", 1), true, NodeType.LITE_MEMBER));
         lsMembers.add(new MemberImpl(new Address("1.1.1.1", 2), true, NodeType.MEMBER));
         lsMembers.add(new MemberImpl(new Address("1.1.1.1", 3), true, NodeType.MEMBER));
         assertEquals(1, ClusterImpl.calculateDistance(lsMembers, lsMembers.get(0), lsMembers.get(1), false));
