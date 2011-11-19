@@ -78,6 +78,7 @@ public interface Member extends DataSerializable {
      * @see #isLiteMember()
      * @deprecated as of version 2.0
      */
+    @Deprecated
     boolean isSuperClient();
 
     /**
@@ -85,10 +86,8 @@ public interface Member extends DataSerializable {
      * LiteMember is a cluster member which doesn't
      * hold any data on it.
      *
-     * @return <tt>true</tt> if this member is a super
-     *         client, <tt>false</tt> otherwise
-     * @see #isLiteMember()
-     * @deprecated as of version 2.0
+     * @return <tt>true</tt> if this member is a LiteMember,
+     *         tt>false</tt> otherwise
      */
     boolean isLiteMember();
 }
