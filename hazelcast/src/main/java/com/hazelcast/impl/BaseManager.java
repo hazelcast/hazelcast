@@ -357,6 +357,11 @@ public abstract class BaseManager {
         public void reset() {
             super.reset();
         }
+        
+        public void clearRequest() {
+        	request.response = null;
+        	request.value = null;
+        }
 
         public boolean getResultAsBoolean() {
             Object resultObj = getResult();

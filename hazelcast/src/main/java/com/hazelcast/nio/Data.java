@@ -64,11 +64,10 @@ public class Data implements DataSerializable {
 	    int hash = 0x811c9dc5;
 	    final byte[] data = buffer;
 	
-	    // First two bytes are generally same, ignore them.
-	    for (int i = data.length-1; i > 1; i--) {
+	    for (int i = data.length-1; i >= 0; i--) {
 	    	hash = (hash ^ data[i]) * prime;
 	    }
-	    return hash;
+	     return hash;
 	}
     
     public int getPartitionHash() {

@@ -385,7 +385,7 @@ public class ClusterQueueTest {
     @Test
     public void testSuperClientWithQueues() {
         Config configSuperClient = new Config();
-        configSuperClient.setSuperClient(true);
+        configSuperClient.setLiteMember(true);
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(new Config());
         final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(configSuperClient);
         final Queue qSuper = hSuper.getQueue("default");

@@ -145,15 +145,17 @@ public class MapStoreTest extends TestUtil {
                 }
             }).start();
         }
-        Assert.assertTrue(latch.await(100, TimeUnit.SECONDS));
-        assertEquals(15, testMapStore.callCount.get());
+        assertTrue(latch.await(100, TimeUnit.SECONDS));
+        assertTrue(testMapStore.callCount.get() >= 13);
+        assertTrue(testMapStore.callCount.get() <= 15);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
         IMap map3 = h3.getMap("default");
         for (int i = 0; i < size; i++) {
             assertEquals("value" + i, map3.get(i));
         }
-        assertEquals(15, testMapStore.callCount.get());
+        assertTrue(testMapStore.callCount.get() >= 13);
+        assertTrue(testMapStore.callCount.get() <= 15);
     }
 
     @Test
@@ -1337,7 +1339,7 @@ public class MapStoreTest extends TestUtil {
 		msConfig.setEnabled(true);
 		
 		Config configSuper = new Config();
-		configSuper.setSuperClient(true);
+		configSuper.setLiteMember(true);
 		configSuper.addMapConfig(mapConfig);
 
 		final int initialKeys = 5;

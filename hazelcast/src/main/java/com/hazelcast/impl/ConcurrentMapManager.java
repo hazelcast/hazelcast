@@ -420,6 +420,7 @@ public class ConcurrentMapManager extends BaseManager {
     void putAndUnlock(String name, Object key, Object value) {
         MPut mput = ThreadContext.get().getCallCache(node.factory).getMPut();
         mput.txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, -1, -1);
+        mput.clearRequest();
     }
 
     public void destroyEndpointThreads(Address endpoint, Set<Integer> threadIds) {

@@ -146,6 +146,8 @@ public abstract class AbstractSerializer {
             return null;
         }
         this.bbis.set(byteArray, byteArray.length);
-        return toObject(this.bbis);
+        final Object obj = toObject(this.bbis);
+        this.bbis.set(null, 0);
+        return obj;
     }
 }

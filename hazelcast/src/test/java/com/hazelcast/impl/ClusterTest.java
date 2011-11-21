@@ -249,7 +249,7 @@ public class ClusterTest {
     @Test(timeout = 100000)
     public void testSuperClientPartitionOwnership() throws Exception {
         Config configSuperClient = new Config();
-        configSuperClient.setSuperClient(true);
+        configSuperClient.setLiteMember(true);
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(new Config());
         final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(configSuperClient);
         IMap mapSuper = hSuper.getMap("default");
@@ -301,7 +301,7 @@ public class ClusterTest {
     @Test
     public void testSuperBeingMaster() throws Exception {
         Config config = new Config();
-        config.setSuperClient(true);
+        config.setLiteMember(true);
         final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance hSuper2 = Hazelcast.newHazelcastInstance(config);
         sleep(11000);
@@ -321,7 +321,7 @@ public class ClusterTest {
         new Thread(new Runnable() {
             public void run() {
                 Config config = new XmlConfigBuilder().build();
-                config.setSuperClient(true);
+                config.setLiteMember(true);
                 final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
                 latch.countDown();
                 Map map = hSuper.getMap("default");
@@ -380,7 +380,7 @@ public class ClusterTest {
             map1.put(i, new byte[1000]);
         }
         Config scconfig = new Config();
-        scconfig.setSuperClient(true);
+        scconfig.setLiteMember(true);
         HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         IMap map2 = h2.getMap("def");
@@ -393,6 +393,7 @@ public class ClusterTest {
                 latch.countDown();
             }
         });
+        
         assertTrue(latch.await(60, TimeUnit.SECONDS));
         System.out.println(map1.getLocalMapStats());
         System.out.println(map2.getLocalMapStats());
@@ -405,7 +406,7 @@ public class ClusterTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
         Config scconfig = new Config();
-        scconfig.setSuperClient(true);
+        scconfig.setLiteMember(true);
         HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
         IMap map1 = h1.getMap("def");
         IMap map2 = h2.getMap("def");
@@ -658,7 +659,7 @@ public class ClusterTest {
     public void shutdownSuperClient() {
         Config c1 = new Config();
         Config c2 = new Config();
-        c2.setSuperClient(true);
+        c2.setLiteMember(true);
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(c2);
         hNormal.getMap("default").put("1", "first");
@@ -672,7 +673,7 @@ public class ClusterTest {
     public void testSuperClientRestart() throws Exception {
         Config configNormal = new Config();
         Config configSuper = new Config();
-        configSuper.setSuperClient(true);
+        configSuper.setLiteMember(true);
         HazelcastInstance h = Hazelcast.newHazelcastInstance(configNormal);
         HazelcastInstance s = Hazelcast.newHazelcastInstance(configSuper);
         assertEquals(2, h.getCluster().getMembers().size());
@@ -723,7 +724,7 @@ public class ClusterTest {
     public void testSuperClientBeingOldestMember() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         Config superConfig = new Config();
-        superConfig.setSuperClient(true);
+        superConfig.setLiteMember(true);
         HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(superConfig);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map = h2.getMap("default");

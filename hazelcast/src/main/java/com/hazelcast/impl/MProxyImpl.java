@@ -543,13 +543,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public Object put(Object key, Object value) {
-            long begin = System.currentTimeMillis();
-            check(key);
-            check(value);
-            MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
-            Object result = mput.put(name, key, value, -1, -1);
-            mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
-            return result;
+           return put(key, value, 0, TimeUnit.SECONDS);
         }
 
         public void putForSync(Object key, Object value) {
@@ -558,6 +552,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(value);
             MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
             mput.putForSync(name, key, value);
+            mput.clearRequest();
             mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
         }
 
@@ -566,6 +561,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(key);
             MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
             mremove.removeForSync(name, key);
+            mremove.clearRequest();
             mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
         }
 
@@ -618,6 +614,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(value);
             MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
             Object result = mput.put(name, key, value, timeout, ttl);
+            mput.clearRequest();
             mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
             return result;
         }
@@ -636,6 +633,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(value);
             MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
             Boolean result = mput.tryPut(name, key, value, timeout, -1);
+            mput.clearRequest();
             mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
             return result;
         }
@@ -682,6 +680,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(value);
             MPut mput = concurrentMapManager.new MPut();
             Object result = mput.putIfAbsent(name, key, value, timeout, ttl);
+            mput.clearRequest();
             mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
             return result;
         }
@@ -691,6 +690,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             long begin = System.currentTimeMillis();
             MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
             Object result = mget.get(name, key, -1);
+            mget.clearRequest();
             if (result == null && name.contains("testConcurrentLockPrimitive")) {
                 boolean isClient = ThreadContext.get().isClient();
                 Object txn = ThreadContext.get().getTransaction();
@@ -705,6 +705,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(key);
             MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
             Object result = mremove.remove(name, key, -1);
+            mremove.clearRequest();
             mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
             return result;
         }
@@ -714,6 +715,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(key);
             MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
             Object result = mremove.tryRemove(name, key, toMillis(timeout, timeunit));
+            mremove.clearRequest();
             mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
             return result;
         }

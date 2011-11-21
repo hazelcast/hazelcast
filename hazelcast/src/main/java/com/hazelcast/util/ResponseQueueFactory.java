@@ -28,7 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class ResponseQueueFactory {
     public static BlockingQueue newResponseQueue() {
-        return new LockBasedResponseQueue();
+         return new LockBasedResponseQueue();
     }
 
     private final static class LockBasedResponseQueue extends AbstractQueue implements BlockingQueue {
@@ -42,7 +42,7 @@ public class ResponseQueueFactory {
                 while (response == null) {
                     noValue.await();
                 }
-                return response;
+                return getAndRemoveResponse();
             } finally {
                 lock.unlock();
             }
@@ -63,12 +63,12 @@ public class ResponseQueueFactory {
                     noValue.await(remaining, TimeUnit.MILLISECONDS);
                     remaining -= (System.currentTimeMillis() - start);
                 }
-                return response;
+                return getAndRemoveResponse();
             } finally {
                 lock.unlock();
             }
         }
-
+        
         public void put(Object o) throws InterruptedException {
             offer(o);
         }
@@ -90,10 +90,20 @@ public class ResponseQueueFactory {
         public Object poll() {
             lock.lock();
             try {
-                return response;
+                return getAndRemoveResponse();
             } finally {
                 lock.unlock();
             }
+        }
+        
+        /**
+         * Internal method, should be called under lock.
+         * @return response
+         */
+        private Object getAndRemoveResponse() {
+        	final Object value = response;
+            response = null;
+            return value;
         }
 
         public int remainingCapacity() {
