@@ -17,8 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.Node;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -31,10 +29,10 @@ public class InOutSelector extends SelectorBase {
 
     final ServerSocketChannel serverSocketChannel;
 
-    public InOutSelector(Node node, final ServerSocketChannel serverSocketChannel, boolean accept) {
-        super(node, 1);
+    public InOutSelector(ConnectionManager connectionManager, final ServerSocketChannel serverSocketChannel) {
+        super(connectionManager, 1);
         this.serverSocketChannel = serverSocketChannel;
-        if (accept) {
+        if (serverSocketChannel != null) {
             addTask(new Runnable() {
                 public void run() {
                     try {
@@ -46,8 +44,9 @@ public class InOutSelector extends SelectorBase {
                 }
             });
         }
-        logger.log(Level.FINEST, "Started Selector at "
-                + serverSocketChannel.socket().getLocalPort());
+        if (serverSocketChannel != null) {
+            logger.log(Level.FINEST, "Started Selector at " + serverSocketChannel.socket().getLocalPort());
+        }
     }
 
     @Override
@@ -97,14 +96,14 @@ public class InOutSelector extends SelectorBase {
                     return;
                 }
                 logger.log(Level.FINEST, "connected to " + address);
-                final Connection connection = node.connectionManager.createConnection(socketChannel, InOutSelector.this);
-                node.connectionManager.bind(address, connection, false);
+                final Connection connection = connectionManager.createConnection(socketChannel, InOutSelector.this);
+                connectionManager.bind(address, connection, false);
             } catch (Throwable e) {
                 try {
                     final String msg = "Couldn't connect to " + address + ", cause: " + e.getMessage();
                     logger.log(Level.FINEST, msg, e);
                     socketChannel.close();
-                    node.connectionManager.failedConnection(address);
+                    connectionManager.failedConnection(address);
                 } catch (final Exception ignored) {
                 }
             }
@@ -114,7 +113,7 @@ public class InOutSelector extends SelectorBase {
             try {
                 socketChannel = SocketChannel.open();
                 initSocket(socketChannel.socket());
-                final Address thisAddress = node.getThisAddress();
+                final Address thisAddress = connectionManager.ioService.getThisAddress();
                 socketChannel.configureBlocking(false);
                 socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
                 logger.log(Level.FINEST, "connecting to " + address);
@@ -130,7 +129,7 @@ public class InOutSelector extends SelectorBase {
                     } catch (final IOException ignored) {
                     }
                 }
-                node.connectionManager.failedConnection(address);
+                connectionManager.failedConnection(address);
             }
         }
     }
@@ -144,14 +143,14 @@ public class InOutSelector extends SelectorBase {
                         + channel.socket().getRemoteSocketAddress());
                 initSocket(channel.socket());
                 channel.configureBlocking(false);
-                node.connectionManager.assignSocketChannel(channel);
+                connectionManager.assignSocketChannel(channel);
             } catch (final Exception e) {
                 logger.log(Level.FINEST, e.getMessage(), e);
                 try {
                     serverSocketChannel.close();
                 } catch (final Exception ignore) {
                 }
-                node.shutdown(false, false);
+                connectionManager.ioService.onFatalError(e);
             }
         }
     }

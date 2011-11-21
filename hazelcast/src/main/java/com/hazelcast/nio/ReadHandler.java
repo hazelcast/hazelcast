@@ -37,7 +37,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     public ReadHandler(Connection connection) {
         super(connection, connection.inOutSelector);
-        inBuffer = ByteBuffer.allocate(node.connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
+        inBuffer = ByteBuffer.allocate(connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
     }
 
     public final void handle() {
@@ -57,11 +57,11 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                     WriteHandler writeHandler = connection.getWriteHandler();
                     if ("HZC".equals(protocol)) {
                         writeHandler.setProtocol("HZC");
-                        socketReader = new SocketPacketReader(node, socketChannel, connection);
+                        socketReader = new SocketPacketReader(socketChannel, connection);
                     } else {
                         writeHandler.setProtocol("TEXT");
                         inBuffer.put(protocolBuffer.array());
-                        socketReader = new SocketTextReader(node, connection);
+                        socketReader = new SocketTextReader(connection);
                         connection.connectionManager.incrementTextConnections();
                     }
                 }

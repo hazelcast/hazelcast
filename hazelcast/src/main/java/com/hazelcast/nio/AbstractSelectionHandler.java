@@ -17,8 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
@@ -37,9 +35,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected final InOutSelector inOutSelector;
 
-    protected final ClusterService clusterService;
-
-    protected final Node node;
+    protected final ConnectionManager connectionManager;
 
     protected SelectionKey sk = null;
 
@@ -48,9 +44,8 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         this.connection = connection;
         this.inOutSelector = inOutSelector;
         this.socketChannel = connection.getSocketChannel();
-        this.node = connection.connectionManager.node;
-        this.logger = node.getLogger(this.getClass().getName());
-        this.clusterService = node.clusterService;
+        this.connectionManager = connection.connectionManager;
+        this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
     }
 
     protected void shutdown() {
@@ -58,7 +53,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     final void handleSocketException(Throwable e) {
         if (e instanceof OutOfMemoryError) {
-            node.onOutOfMemory((OutOfMemoryError) e);
+            connectionManager.ioService.onOutOfMemory((OutOfMemoryError) e);
         }
         if (sk != null) {
             sk.cancel();

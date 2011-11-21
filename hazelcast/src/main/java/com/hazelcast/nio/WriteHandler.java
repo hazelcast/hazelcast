@@ -66,20 +66,19 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private volatile SocketWriter socketWriter = null;
 
-    private long runCount = 0;
-
     volatile long lastRegistration = 0;
+
     volatile long lastHandle = 0;
 
     WriteHandler(Connection connection) {
         super(connection, connection.inOutSelector);
-        socketBB = ByteBuffer.allocate(node.connectionManager.SOCKET_SEND_BUFFER_SIZE);
+        socketBB = ByteBuffer.allocate(connectionManager.SOCKET_SEND_BUFFER_SIZE);
     }
 
     public void setProtocol(String protocol) {
         if (socketWriter == null) {
             if ("HZC".equals(protocol)) {
-                socketWriter = new SocketPacketWriter(node, connection);
+                socketWriter = new SocketPacketWriter(connection);
                 socketBB.put("HZC".getBytes());
                 inOutSelector.addTask(this);
             } else {
@@ -111,7 +110,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     public void handle() {
         lastHandle = System.currentTimeMillis();
-        runCount++;
         if (socketWriter == null) {
             setProtocol("HZC");
         }

@@ -17,8 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ThreadWatcher;
 
@@ -42,7 +40,7 @@ public abstract class SelectorBase implements Runnable {
 
     protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
 
-    protected final Node node;
+    protected final ConnectionManager connectionManager;
 
     private final int waitTime;
 
@@ -54,9 +52,9 @@ public abstract class SelectorBase implements Runnable {
 
     private long lastPublish = 0;
 
-    public SelectorBase(Node node, int waitTime) {
-        this.node = node;
-        logger = node.getLogger(this.getClass().getName());
+    public SelectorBase(ConnectionManager connectionManager, int waitTime) {
+        this.connectionManager = connectionManager;
+        logger = connectionManager.ioService.getLogger(this.getClass().getName());
         this.waitTime = waitTime;
         Selector selectorTemp = null;
         try {
@@ -107,7 +105,7 @@ public abstract class SelectorBase implements Runnable {
 
     public final void run() {
         try {
-            ThreadContext.get().setCurrentFactory(node.factory);
+            connectionManager.ioService.onIOThreadStart();
             while (live) {
                 threadWatcher.incrementRunCount();
                 long currentMillis = System.currentTimeMillis();
@@ -124,7 +122,7 @@ public abstract class SelectorBase implements Runnable {
                     long now = System.nanoTime();
                     threadWatcher.addWait((now - startWait), now);
                     if (Thread.interrupted()) {
-                        node.handleInterruptedException(Thread.currentThread(), new RuntimeException());
+                        connectionManager.ioService.handleInterruptedException(Thread.currentThread(), new RuntimeException());
                         return;
                     }
                 } catch (Throwable exp) {
@@ -163,7 +161,7 @@ public abstract class SelectorBase implements Runnable {
                 }
             }
         } catch (OutOfMemoryError e) {
-            node.onOutOfMemory(e);
+            connectionManager.ioService.onOutOfMemory(e);
         } catch (Throwable e) {
             logger.log(Level.WARNING, "unhandled exception in " + Thread.currentThread().getName(), e);
         } finally {
@@ -181,12 +179,12 @@ public abstract class SelectorBase implements Runnable {
     }
 
     protected void initSocket(Socket socket) throws Exception {
-        if (node.connectionManager.SOCKET_LINGER_SECONDS > 0) {
-            socket.setSoLinger(true, node.connectionManager.SOCKET_LINGER_SECONDS);
+        if (connectionManager.SOCKET_LINGER_SECONDS > 0) {
+            socket.setSoLinger(true, connectionManager.SOCKET_LINGER_SECONDS);
         }
-        socket.setKeepAlive(node.connectionManager.SOCKET_KEEP_ALIVE);
-        socket.setTcpNoDelay(node.connectionManager.SOCKET_NO_DELAY);
-        socket.setReceiveBufferSize(node.connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
-        socket.setSendBufferSize(node.connectionManager.SOCKET_SEND_BUFFER_SIZE);
+        socket.setKeepAlive(connectionManager.SOCKET_KEEP_ALIVE);
+        socket.setTcpNoDelay(connectionManager.SOCKET_NO_DELAY);
+        socket.setReceiveBufferSize(connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
+        socket.setSendBufferSize(connectionManager.SOCKET_SEND_BUFFER_SIZE);
     }
 }

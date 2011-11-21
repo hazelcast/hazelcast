@@ -17,7 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
 
 import javax.crypto.Cipher;
@@ -34,17 +33,17 @@ class SocketPacketReader implements SocketReader {
 
     final PacketReader packetReader;
     final Connection connection;
-    final Node node;
+    final IOService ioService;
     final SocketChannel socketChannel;
     final ILogger logger;
 
-    public SocketPacketReader(Node node, SocketChannel socketChannel, Connection connection) {
-        this.node = node;
+    public SocketPacketReader(SocketChannel socketChannel, Connection connection) {
         this.connection = connection;
+        this.ioService = connection.connectionManager.ioService;
         this.socketChannel = socketChannel;
-        this.logger = node.getLogger(SocketPacketReader.class.getName());
-        boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(node);
-        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(node);
+        this.logger = ioService.getLogger(SocketPacketReader.class.getName());
+        boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(ioService);
+        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(ioService);
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
                 packetReader = new ComplexCipherPacketReader();
@@ -69,12 +68,13 @@ class SocketPacketReader implements SocketReader {
         p.flipBuffers();
         p.read();
         p.setFromConnection(connection);
+        System.out.println("connection is client " + p.client);
         if (p.client) {
             connection.setType(Connection.Type.JAVA_CLIENT);
-            node.clientService.handle(p);
+            ioService.handleClientPacket(p);
         } else {
             connection.setType(Connection.Type.MEMBER);
-            node.clusterService.enqueuePacket(p);
+            ioService.handleMemberPacket(p);
         }
     }
 
@@ -126,7 +126,7 @@ class SocketPacketReader implements SocketReader {
                 if (!bbAlias.hasRemaining()) {
                     bbAlias.flip();
                     String remoteAlias = new String(bbAlias.array(), 0, bbAlias.limit());
-                    cipher = CipherHelper.createAsymmetricReaderCipher(node, remoteAlias);
+                    cipher = CipherHelper.createAsymmetricReaderCipher(connection.connectionManager.ioService, remoteAlias);
                 }
             }
             while (inBuffer.remaining() >= 128) {
@@ -163,7 +163,7 @@ class SocketPacketReader implements SocketReader {
         Cipher init() {
             Cipher c = null;
             try {
-                c = CipherHelper.createSymmetricReaderCipher(node);
+                c = CipherHelper.createSymmetricReaderCipher(connection.connectionManager.ioService);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Symmetric Cipher for ReadHandler cannot be initialized.", e);
             }

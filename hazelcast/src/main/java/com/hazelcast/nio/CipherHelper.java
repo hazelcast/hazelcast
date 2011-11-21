@@ -19,7 +19,6 @@ package com.hazelcast.nio;
 
 import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -49,46 +48,46 @@ final class CipherHelper {
         }
     }
 
-    public static synchronized Cipher createAsymmetricReaderCipher(Node node, String remoteAlias) throws Exception {
+    public static synchronized Cipher createAsymmetricReaderCipher(IOService ioService, String remoteAlias) throws Exception {
         if (asymmetricCipherBuilder == null) {
-            asymmetricCipherBuilder = new AsymmetricCipherBuilder(node);
+            asymmetricCipherBuilder = new AsymmetricCipherBuilder(ioService);
         }
         return asymmetricCipherBuilder.getReaderCipher(remoteAlias);
     }
 
-    public static synchronized Cipher createAsymmetricWriterCipher(Node node) throws Exception {
+    public static synchronized Cipher createAsymmetricWriterCipher(IOService ioService) throws Exception {
         if (asymmetricCipherBuilder == null) {
-            asymmetricCipherBuilder = new AsymmetricCipherBuilder(node);
+            asymmetricCipherBuilder = new AsymmetricCipherBuilder(ioService);
         }
         return asymmetricCipherBuilder.getWriterCipher();
     }
 
-    public static synchronized Cipher createSymmetricReaderCipher(Node node) throws Exception {
+    public static synchronized Cipher createSymmetricReaderCipher(IOService ioService) throws Exception {
         if (symmetricCipherBuilder == null) {
-            symmetricCipherBuilder = new SymmetricCipherBuilder(node);
+            symmetricCipherBuilder = new SymmetricCipherBuilder(ioService.getSymmetricEncryptionConfig());
         }
         return symmetricCipherBuilder.getReaderCipher(null);
     }
 
-    public static synchronized Cipher createSymmetricWriterCipher(Node node) throws Exception {
+    public static synchronized Cipher createSymmetricWriterCipher(IOService ioService) throws Exception {
         if (symmetricCipherBuilder == null) {
-            symmetricCipherBuilder = new SymmetricCipherBuilder(node);
+            symmetricCipherBuilder = new SymmetricCipherBuilder(ioService.getSymmetricEncryptionConfig());
         }
         return symmetricCipherBuilder.getWriterCipher();
     }
 
-    public static boolean isAsymmetricEncryptionEnabled(Node node) {
-        AsymmetricEncryptionConfig aec = node.getConfig().getNetworkConfig().getAsymmetricEncryptionConfig();
+    public static boolean isAsymmetricEncryptionEnabled(IOService ioService) {
+        AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
         return (aec != null && aec.isEnabled());
     }
 
-    public static boolean isSymmetricEncryptionEnabled(Node node) {
-        SymmetricEncryptionConfig sec = node.getConfig().getNetworkConfig().getSymmetricEncryptionConfig();
+    public static boolean isSymmetricEncryptionEnabled(IOService ioService) {
+        SymmetricEncryptionConfig sec = ioService.getSymmetricEncryptionConfig();
         return (sec != null && sec.isEnabled());
     }
 
-    public static String getKeyAlias(Node node) {
-        AsymmetricEncryptionConfig aec = node.getConfig().getNetworkConfig().getAsymmetricEncryptionConfig();
+    public static String getKeyAlias(IOService ioService) {
+        AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
         return aec.getKeyAlias();
     }
 
@@ -103,12 +102,12 @@ final class CipherHelper {
     static class AsymmetricCipherBuilder implements CipherBuilder {
         String algorithm = "RSA/NONE/PKCS1PADDING";
         KeyStore keyStore;
-        final Node node;
+        private final IOService ioService;
 
-        AsymmetricCipherBuilder(Node node) {
-            this.node = node;
+        AsymmetricCipherBuilder(IOService ioService) {
+            this.ioService = ioService;
             try {
-                AsymmetricEncryptionConfig aec = node.getConfig().getNetworkConfig().getAsymmetricEncryptionConfig();
+                AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
                 algorithm = aec.getAlgorithm();
                 keyStore = KeyStore.getInstance(aec.getStoreType());
                 // get user password and file input stream
@@ -131,7 +130,7 @@ final class CipherHelper {
         }
 
         public Cipher getWriterCipher() throws Exception {
-            AsymmetricEncryptionConfig aec = node.getConfig().getNetworkConfig().getAsymmetricEncryptionConfig();
+            AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
             Cipher cipher = Cipher.getInstance(algorithm);
             KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
                     keyStore.getEntry(aec.getKeyAlias(), new KeyStore.PasswordProtection(aec.getKeyPassword().toCharArray()));
@@ -153,8 +152,7 @@ final class CipherHelper {
         final int iterationCount;
         byte[] keyBytes;
 
-        SymmetricCipherBuilder(Node node) {
-            SymmetricEncryptionConfig sec = node.getConfig().getNetworkConfig().getSymmetricEncryptionConfig();
+        SymmetricCipherBuilder(SymmetricEncryptionConfig sec) {
             algorithm = sec.getAlgorithm();
             passPhrase = sec.getPassword();
             salt = createSalt(sec.getSalt());

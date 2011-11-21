@@ -17,7 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.SimpleBoundedQueue;
 
@@ -52,7 +51,7 @@ public final class Connection {
     public Connection(ConnectionManager connectionManager, InOutSelector inOutSelector, int connectionId, SocketChannel socketChannel) {
         this.inOutSelector = inOutSelector;
         this.connectionId = connectionId;
-        this.logger = connectionManager.node.getLogger(Connection.class.getName());
+        this.logger = connectionManager.ioService.getLogger(Connection.class.getName());
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
         this.writeHandler = new WriteHandler(this);
@@ -75,6 +74,10 @@ public final class Connection {
             packet.reset();
         }
         return packet;
+    }
+
+    public ConnectionManager getConnectionManager() {
+        return connectionManager;
     }
 
     public enum Type {
@@ -121,10 +124,6 @@ public final class Connection {
 
     public WriteHandler getWriteHandler() {
         return writeHandler;
-    }
-
-    public void setLive(boolean live) {
-        this.live = live;
     }
 
     public boolean live() {
@@ -179,9 +178,7 @@ public final class Connection {
         }
         logger.log(Level.INFO, "Connection lost " + this.socketChannel.socket().getRemoteSocketAddress());
         connectionManager.destroyConnection(this);
-        AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
-        addOrRemoveConnection.setNode(connectionManager.node);
-        connectionManager.node.clusterManager.enqueueAndReturn(addOrRemoveConnection);
+        connectionManager.ioService.onConnectionClose(endPoint);
     }
 
     @Override

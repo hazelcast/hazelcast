@@ -17,7 +17,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
 
 import javax.crypto.Cipher;
@@ -29,16 +28,15 @@ import static com.hazelcast.nio.IOUtil.copyToDirectBuffer;
 public class SocketPacketWriter implements SocketWriter<Packet> {
 
     private final PacketWriter packetWriter;
-    final Node node;
     final Connection connection;
     final ILogger logger;
 
-    SocketPacketWriter(Node node, Connection connection) {
-        this.node = node;
+    SocketPacketWriter(Connection connection) {
         this.connection = connection;
-        this.logger = node.getLogger(SocketPacketWriter.class.getName());
-        boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(node);
-        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(node);
+        final IOService ioService = connection.connectionManager.ioService;
+        this.logger = ioService.getLogger(SocketPacketWriter.class.getName());
+        boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(ioService);
+        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(ioService);
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
                 logger.log(Level.INFO, "Incorrect encryption configuration.");
@@ -80,7 +78,7 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
         AsymmetricCipherPacketWriter() {
             Cipher c = null;
             try {
-                c = CipherHelper.createAsymmetricWriterCipher(node);
+                c = CipherHelper.createAsymmetricWriterCipher(connection.connectionManager.ioService);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Asymmetric Cipher for WriteHandler cannot be initialized.", e);
                 cipher = null;
@@ -94,7 +92,7 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
 
         public boolean writePacket(Packet packet, ByteBuffer socketBB) throws Exception {
             if (!aliasWritten) {
-                String localAlias = CipherHelper.getKeyAlias(node);
+                String localAlias = CipherHelper.getKeyAlias(connection.connectionManager.ioService);
                 byte[] localAliasBytes = localAlias.getBytes();
                 socketBB.putInt(localAliasBytes.length);
                 socketBB.put(localAliasBytes);
@@ -167,7 +165,7 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
         SymmetricCipherPacketWriter() {
             Cipher c = null;
             try {
-                c = CipherHelper.createSymmetricWriterCipher(node);
+                c = CipherHelper.createSymmetricWriterCipher(connection.connectionManager.ioService);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Symmetric Cipher for WriteHandler cannot be initialized.", e);
                 CipherHelper.handleCipherException(e, connection);

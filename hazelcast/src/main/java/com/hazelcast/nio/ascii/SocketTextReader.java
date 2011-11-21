@@ -17,7 +17,6 @@
 
 package com.hazelcast.nio.ascii;
 
-import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ascii.CommandParser;
 import com.hazelcast.impl.ascii.TextCommand;
 import com.hazelcast.impl.ascii.TextCommandConstants;
@@ -29,6 +28,7 @@ import com.hazelcast.impl.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.impl.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.SocketReader;
 
 import java.nio.ByteBuffer;
@@ -71,13 +71,14 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
     long requestIdGen;
     private final ILogger logger;
 
-    public SocketTextReader(Node node, Connection connection) {
-        this.textCommandService = node.getTextCommandService();
+    public SocketTextReader(Connection connection) {
+        IOService ioService = connection.getConnectionManager().getIOHandler();
+        this.textCommandService = ioService.getTextCommandService();
         this.socketTextWriter = (SocketTextWriter) connection.getWriteHandler().getSocketWriter();
         this.connection = connection;
-        this.memcacheEnabled = node.getGroupProperties().MEMCACHE_ENABLED.getBoolean();
-        this.restEnabled = node.getGroupProperties().REST_ENABLED.getBoolean();
-        this.logger = node.getLogger(this.getClass().getName());
+        this.memcacheEnabled = ioService.isMemcacheEnabled();
+        this.restEnabled = ioService.isRestEnabled();
+        this.logger = ioService.getLogger(this.getClass().getName());
     }
 
     public void sendResponse(TextCommand command) {

@@ -32,6 +32,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -171,7 +172,7 @@ public class Node {
         //initialize managers..
         clusterService = new ClusterService(this);
         clusterService.start();
-        connectionManager = new ConnectionManager(this, serverSocketChannel);
+        connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterManager = new ClusterManager(this);
         executorManager = new ExecutorManager(this);
         clientService = new ClientService(this);

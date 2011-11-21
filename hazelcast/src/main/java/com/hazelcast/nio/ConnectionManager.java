@@ -18,9 +18,8 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.Bind;
-import com.hazelcast.cluster.ClusterManager;
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.Processable;
+import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 
 import java.nio.channels.ServerSocketChannel;
@@ -64,23 +63,24 @@ public class ConnectionManager {
 
     private volatile boolean live = true;
 
-    final Node node;
+    final IOService ioService;
+
     private final ServerSocketChannel serverSocketChannel;
 
     private final InOutSelector[] selectors;
 
     private final AtomicInteger nextSelectorIndex = new AtomicInteger();
 
-    public ConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-        this.node = node;
+    public ConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
+        this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
-        this.logger = node.getLogger(ConnectionManager.class.getName());
-        this.SOCKET_RECEIVE_BUFFER_SIZE = this.node.getGroupProperties().SOCKET_RECEIVE_BUFFER_SIZE.getInteger() * KILO_BYTE;
-        this.SOCKET_SEND_BUFFER_SIZE = this.node.getGroupProperties().SOCKET_SEND_BUFFER_SIZE.getInteger() * KILO_BYTE;
-        this.SOCKET_LINGER_SECONDS = this.node.getGroupProperties().SOCKET_LINGER_SECONDS.getInteger();
-        this.SOCKET_KEEP_ALIVE = this.node.getGroupProperties().SOCKET_KEEP_ALIVE.getBoolean();
-        this.SOCKET_NO_DELAY = this.node.getGroupProperties().SOCKET_NO_DELAY.getBoolean();
-        int selectorCount = node.groupProperties.IO_THREAD_COUNT.getInteger();
+        this.logger = ioService.getLogger(ConnectionManager.class.getName());
+        this.SOCKET_RECEIVE_BUFFER_SIZE = ioService.getSocketReceiveBufferSize() * KILO_BYTE;
+        this.SOCKET_SEND_BUFFER_SIZE = ioService.getSocketSendBufferSize() * KILO_BYTE;
+        this.SOCKET_LINGER_SECONDS = ioService.getSocketLingerSeconds();
+        this.SOCKET_KEEP_ALIVE = ioService.getSocketKeepAlive();
+        this.SOCKET_NO_DELAY = ioService.getSocketNoDelay();
+        int selectorCount = ioService.getSelectorThreadCount();
         selectors = new InOutSelector[selectorCount];
     }
 
@@ -100,31 +100,13 @@ public class ConnectionManager {
         connection.setEndPoint(endPoint);
         final Connection connExisting = mapConnections.get(endPoint);
         if (connExisting != null && connExisting != connection) {
-            final String msg = "Two connections from the same endpoint " + endPoint
-                    + ", acceptTypeConnection=" + acceptTypeConnection + ",  now accept="
-                    + accept;
-            if (node.joined() && node.isMaster()) {
-                logger.log(Level.WARNING, msg);
-                connExisting.closeSilently();
-                final Address deadEndpoint = connExisting.getEndPoint();
-                if (deadEndpoint != null) {
-                    node.clusterManager.enqueueAndReturn(new Processable() {
-                        public void process() {
-                            node.clusterManager.disconnectExistingCalls(deadEndpoint);
-                        }
-                    });
-                }
-            } else {
-                logger.log(Level.FINEST, msg);
-                return true;
-            }
+            return ioService.onDuplicateConnection(endPoint, acceptTypeConnection, accept, connExisting);
         }
-        if (!endPoint.equals(node.getThisAddress())) {
+        if (!endPoint.equals(ioService.getThisAddress())) {
             acceptTypeConnection = accept;
             if (!accept) {
                 //make sure bind packet is the first packet sent to the end point.
-                ClusterManager clusterManager = node.clusterManager;
-                Packet bindPacket = clusterManager.createRemotelyProcessablePacket(new Bind(clusterManager.getThisAddress()));
+                Packet bindPacket = createBindPacket(new Bind(ioService.getThisAddress()));
                 connection.writeHandler.enqueueSocketWritable(bindPacket);
                 //now you can send anything...
             }
@@ -137,6 +119,14 @@ public class ConnectionManager {
             return false;
         }
         return true;
+    }
+
+    public Packet createBindPacket(Bind rp) {
+        Data value = ThreadContext.get().toData(rp);
+        Packet packet = new Packet();
+        packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
+        packet.client = ioService.isClient();
+        return packet;
     }
 
     public void assignSocketChannel(SocketChannel channel) {
@@ -157,9 +147,7 @@ public class ConnectionManager {
 
     public void failedConnection(Address address) {
         setConnectionInProgress.remove(address);
-        if (!node.joined()) {
-            node.failedConnection(address);
-        }
+        ioService.onFailedConnection(address);
     }
 
     public Connection getConnection(Address address) {
@@ -167,13 +155,10 @@ public class ConnectionManager {
     }
 
     public Connection getOrConnect(Address address) {
-        if (address.equals(node.getThisAddress()))
-            throw new RuntimeException("Connecting to self! " + address);
         Connection connection = mapConnections.get(address);
         if (connection == null) {
             if (setConnectionInProgress.add(address)) {
-                if (!node.clusterManager.shouldConnectTo(address))
-                    throw new RuntimeException("Should not connect to " + address);
+                ioService.shouldConnectTo(address);
                 nextSelector().connect(address);
             }
         }
@@ -206,9 +191,9 @@ public class ConnectionManager {
     public void start() {
         live = true;
         for (int i = 0; i < selectors.length; i++) {
-            InOutSelector s = new InOutSelector(node, serverSocketChannel, (i == 0));
+            InOutSelector s = new InOutSelector(this, (i == 0 ? serverSocketChannel : null));
             selectors[i] = s;
-            new Thread(s, "hz." + node.getName() + ".IOThread" + i).start();
+            new Thread(s, "hz." + ioService.getThreadPrefix() + ".IOThread" + i).start();
         }
     }
 
@@ -228,7 +213,7 @@ public class ConnectionManager {
     }
 
     public void shutdown() {
-    	if(!live) return;
+        if (!live) return;
         live = false;
         for (Connection conn : mapConnections.values()) {
             try {
@@ -245,11 +230,10 @@ public class ConnectionManager {
             }
         }
         for (int i = 0; i < selectors.length; i++) {
-        	selectors[i].shutdown();
+            selectors[i].shutdown();
         }
         setConnectionInProgress.clear();
         mapConnections.clear();
-        
     }
 
     @Override
@@ -300,5 +284,9 @@ public class ConnectionManager {
             sbState.append("  r:").append(rr).append("/").append(rh);
         }
         sbState.append("\n}");
+    }
+
+    public IOService getIOHandler() {
+        return ioService;
     }
 }
