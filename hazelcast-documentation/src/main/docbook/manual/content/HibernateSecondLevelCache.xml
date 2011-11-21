@@ -50,7 +50,7 @@
             <para>You can set up Hazelcast to connect cluster as LiteMember. LiteMember is a
                 member of the cluster, it has socket connection to every member in the cluster and
                 it knows where the data, but does not contain any data.
-                <programlisting language="xml"><![CDATA[<property name="hibernate.cache.hazelcast.use_super_client">true</property>
+                <programlisting language="xml"><![CDATA[<property name="hibernate.cache.hazelcast.use_lite_member">true</property>
 ]]></programlisting>
             </para>
         </listitem>

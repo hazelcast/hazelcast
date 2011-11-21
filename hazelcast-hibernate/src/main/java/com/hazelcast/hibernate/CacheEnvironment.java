@@ -29,7 +29,10 @@ public final class CacheEnvironment {
 	
 	public static final String CONFIG_FILE_PATH = "hibernate.cache.hazelcast.configuration_file_path";
 	
+	@Deprecated
 	public static final String USE_SUPER_CLIENT = "hibernate.cache.hazelcast.use_super_client";
+	
+	public static final String USE_LITE_MEMBER = "hibernate.cache.hazelcast.use_lite_member";
 	
 	public static final String USE_NATIVE_CLIENT = "hibernate.cache.hazelcast.use_native_client";
 
@@ -68,6 +71,11 @@ public final class CacheEnvironment {
 		return PropertiesHelper.getBoolean(CacheEnvironment.USE_NATIVE_CLIENT, props, false);
 	}
 	
+	public static boolean isLiteMember(Properties props) {
+		return PropertiesHelper.getBoolean(CacheEnvironment.USE_LITE_MEMBER, props, false);
+	}
+	
+	@Deprecated
 	public static boolean isSuperClient(Properties props) {
 		return PropertiesHelper.getBoolean(CacheEnvironment.USE_SUPER_CLIENT, props, false);
 	}

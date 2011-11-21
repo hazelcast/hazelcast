@@ -42,7 +42,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 	private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class.getName());
 	
 	private final Properties props = new Properties();
-	private boolean useSuperClient = false;
+	private boolean useLiteMember = false;
 	private boolean staticInstance = false;
 	private String instanceName = null;
 	private HazelcastInstance instance;
@@ -63,21 +63,26 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 
 		if (props != null) {
 			instanceName = CacheEnvironment.getInstanceName(props);
-			useSuperClient = CacheEnvironment.isSuperClient(props);
+			useLiteMember = CacheEnvironment.isLiteMember(props);
+			if(!useLiteMember && props.contains(CacheEnvironment.USE_SUPER_CLIENT)) {
+				useLiteMember = CacheEnvironment.isSuperClient(props);
+				logger.log(Level.WARNING, "'" + CacheEnvironment.USE_SUPER_CLIENT + "' property is deprecated!" +
+						" Please use '" + CacheEnvironment.USE_LITE_MEMBER + "' instead...");
+			}
 			configResourcePath = CacheEnvironment.getConfigFilePath(props);
 		}
 		
 
-		if (useSuperClient) {
+		if (useLiteMember) {
 			logger.log(Level.WARNING,
-					"Creating Hazelcast node as Super-Client. "
+					"Creating Hazelcast node as Lite-Member. "
 					+ "Be sure this node has access to an already running cluster...");
 		}
 
 		if (StringHelper.isEmpty(configResourcePath)) {
-			// If both useSuperClient and instanceName is not set
+			// If both useLiteMember and instanceName is not set
 			// then just use default instance. 
-			if(!useSuperClient && instanceName == null) {
+			if(!useLiteMember && instanceName == null) {
 				staticInstance = true;
 			}
 		} else {
@@ -113,7 +118,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 				config = new XmlConfigBuilder().build();
 			}
 			config.setInstanceName(instanceName);
-			config.setSuperClient(useSuperClient);
+			config.setLiteMember(useLiteMember);
 			instance = Hazelcast.newHazelcastInstance(config);
 		}
 	}
