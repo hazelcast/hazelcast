@@ -64,7 +64,7 @@ public class TestHibernatelApplicationContext {
         assertEquals(1, members.size());
         final Member member = members.iterator().next();
         final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
-        assertEquals(5800, inetSocketAddress.getPort());
+        assertEquals(5700, inetSocketAddress.getPort());
     }
 
     @Test

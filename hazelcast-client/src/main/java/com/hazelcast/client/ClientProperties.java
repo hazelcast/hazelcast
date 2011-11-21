@@ -67,13 +67,13 @@ public final class ClientProperties {
         return this.properties;
     }
 
-    public ClientProperties setProperties(final Map<String, String> properties) {
-        for (final Entry<String, String> entry : properties.entrySet()) {
+    public ClientProperties setProperties(final Map<ClientPropertyName, String> properties) {
+        for (final Entry<ClientPropertyName, String> entry : properties.entrySet()) {
             setPropertyValue(entry.getKey(), entry.getValue());
         }
         return this;
     }
-
+    
     public ClientProperties setPropertyValue(final String name, final String value) {
         return setPropertyValue(ClientPropertyName.fromValue(name), value);
     }

@@ -209,7 +209,7 @@ public class TestFullApplicationContext {
     public void testNetworkConfig() {
         NetworkConfig networkConfig = config.getNetworkConfig();
         assertNotNull(networkConfig);
-        assertEquals(5800, config.getPort());
+        assertEquals(5700, config.getPort());
         assertFalse(config.isPortAutoIncrement());
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
         assertFalse(networkConfig.getInterfaces().isEnabled());
@@ -221,9 +221,9 @@ public class TestFullApplicationContext {
         assertTrue(networkConfig.getSymmetricEncryptionConfig().isEnabled());
         final List<String> members = tcp.getMembers();
         assertEquals(members.toString(), 2, members.size());
-        assertEquals("127.0.0.1:5800", members.get(0));
-        assertEquals("127.0.0.1:5801", members.get(1));
-        assertEquals("127.0.0.1:5800", tcp.getRequiredMember());
+        assertEquals("127.0.0.1:5700", members.get(0));
+        assertEquals("127.0.0.1:5701", members.get(1));
+        assertEquals("127.0.0.1:5700", tcp.getRequiredMember());
         
         AwsConfig aws = networkConfig.getJoin().getAwsConfig();
         assertFalse(aws.isEnabled());
@@ -264,7 +264,7 @@ public class TestFullApplicationContext {
         assertEquals(1, members.size());
         final Member member = members.iterator().next();
         final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
-        assertEquals(5800, inetSocketAddress.getPort());
+        assertEquals(5700, inetSocketAddress.getPort());
         assertEquals("test-instance", config.getInstanceName());
     }
 

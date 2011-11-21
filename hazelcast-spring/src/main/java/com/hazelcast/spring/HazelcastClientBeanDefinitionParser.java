@@ -78,16 +78,16 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
                 for (int a = 0; a < atts.getLength(); a++) {
                     final org.w3c.dom.Node att = atts.item(a);
                     String name = att.getNodeName();
+                    ClientProperties.ClientPropertyName key ;
                     final String value = att.getNodeValue();
                     if ("group-name".equals(name)){
-                        name = ClientProperties.ClientPropertyName.GROUP_NAME.getName();
+                        key = ClientProperties.ClientPropertyName.GROUP_NAME;
                     } else if ("group-password".equals(name)){
-                        name = ClientProperties.ClientPropertyName.GROUP_PASSWORD.getName();
+                        key = ClientProperties.ClientPropertyName.GROUP_PASSWORD;
                     } else {
                         continue;
                     }
-                    
-                    properties.put(name, value);
+                    properties.put(key, value);
                 }
             }
             

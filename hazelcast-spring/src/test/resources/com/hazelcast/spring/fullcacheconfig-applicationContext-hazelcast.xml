@@ -49,10 +49,10 @@
                                   multicast-group="224.2.2.3"
                                   multicast-port="54327"/>
                     <hz:tcp-ip enabled="${boolean.true}">
-                    	<hz:required-member>127.0.0.1:5800</hz:required-member>
+                    	<hz:required-member>127.0.0.1:5700</hz:required-member>
 <!--                         <hz:members>${cluster.members}</hz:members> -->
-                        <hz:interface>127.0.0.1:5800</hz:interface>
-                        <hz:interface>127.0.0.1:5801</hz:interface>
+                        <hz:interface>127.0.0.1:5700</hz:interface>
+                        <hz:interface>127.0.0.1:5701</hz:interface>
                     </hz:tcp-ip>
                     <hz:aws enabled="false" access-key="sample-access-key" secret-key="sample-secret-key" 
                     	region="sample-region" security-group-name="sample-group"
