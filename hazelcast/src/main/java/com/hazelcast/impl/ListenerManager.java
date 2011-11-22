@@ -311,7 +311,11 @@ public class ListenerManager extends BaseManager {
         List<ListenerItem> listeners = getOrCreateListenerList(dataAwareEntryEvent.getLongName());
         for (ListenerItem listenerItem : listeners) {
             if (listenerItem.listens(dataAwareEntryEvent)) {
-                callListener(listenerItem, dataAwareEntryEvent);
+            	try {
+            		callListener(listenerItem, dataAwareEntryEvent);
+				} catch (Throwable e) {
+					logger.log(Level.SEVERE, "Caught error while calling event listener; cause: " + e.getMessage(), e);
+				}
             }
         }
     }
@@ -361,6 +365,7 @@ public class ListenerManager extends BaseManager {
             case MAP:
             case MULTIMAP:
                 EntryListener entryListener = (EntryListener) listener;
+//                System.err.println(">>>>>> " + entryListener.getClass() + " ::: " + event2);
                 switch (entryEventType) {
                     case ADDED:
                         entryListener.entryAdded(event2);

@@ -1,10 +1,10 @@
 package com.hazelcast.impl;
 
-import com.hazelcast.core.*;
-import junit.framework.Assert;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.*;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import com.hazelcast.core.*;
 
 public class MapEntryListenerTest {
 
@@ -118,7 +118,7 @@ public class MapEntryListenerTest {
     	globalListenerTest();
     	destroyMaps();
     }
-
+    
     private void putDummyData(int k) {
         for (int i = 0; i < k; i++) {
             map1.put("foo" + i, "bar");

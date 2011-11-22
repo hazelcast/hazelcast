@@ -72,7 +72,9 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         boolean hasCredentials = in.readBoolean();
         if(hasCredentials) {
         	credentials = (Credentials) SerializationHelper.readObject(in);
-        	credentials.setEndpoint(address.getHost());
+        	if(credentials != null) {
+        		credentials.setEndpoint(address.getHost());
+        	}
         }
     }
 
