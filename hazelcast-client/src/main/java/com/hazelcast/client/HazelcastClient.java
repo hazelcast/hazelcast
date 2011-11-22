@@ -61,7 +61,6 @@ public class HazelcastClient implements HazelcastInstance {
     final ConnectionManager connectionManager;
     final Map<Object, Object> mapProxies = new ConcurrentHashMap<Object, Object>(100);
     final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
-//    final IMap mapLockProxy;
     final ClusterClientProxy clusterClientProxy;
     final PartitionClientProxy partitionClientProxy;
     final LifecycleServiceClientImpl lifecycleService;
@@ -96,9 +95,11 @@ public class HazelcastClient implements HazelcastInstance {
         try {
     		final Connection c = connectionManager.getInitConnection();
     		if (c == null) {
+        		connectionManager.shutdown();
     			throw new IllegalStateException("Unable to connect to cluster");
     		}
     	} catch (IOException e) {
+    		connectionManager.shutdown();
     		throw new ClusterClientException(e.getMessage(), e);
     	}
     	
@@ -106,7 +107,6 @@ public class HazelcastClient implements HazelcastInstance {
     	new Thread(out, prefix + "OutThread").start();
     	new Thread(in, prefix + "InThread").start();
     	new Thread(listenerManager, prefix + "Listener").start();
-//    	mapLockProxy = getMap(Prefix.HAZELCAST + "Locks");
     	clusterClientProxy = new ClusterClientProxy(this);
     	partitionClientProxy = new PartitionClientProxy(this);
     	if (automatic) {

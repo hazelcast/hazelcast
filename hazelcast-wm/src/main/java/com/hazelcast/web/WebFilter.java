@@ -106,7 +106,6 @@ public class WebFilter implements Filter {
     }
 
     void markSessionDirty(String sessionId) {
-    	System.out.println("Marking session: " + sessionId + " dirty...");
         HazelcastHttpSession hazelSession = mapSessions.get(sessionId);
         if (hazelSession != null) {
             hazelSession.setDirty(true);

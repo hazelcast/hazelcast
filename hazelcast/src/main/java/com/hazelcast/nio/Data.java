@@ -21,6 +21,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import com.hazelcast.impl.Util;
+
 public class Data implements DataSerializable {
 
     public byte[] buffer = null;
@@ -57,17 +59,7 @@ public class Data implements DataSerializable {
 
     @Override
     public int hashCode() {
-        if (buffer == null) return Integer.MIN_VALUE;
-        
-        // FNV (Fowler/Noll/Vo) Hash "1a"
-	    final int prime = 0x01000193;
-	    int hash = 0x811c9dc5;
-	    final byte[] data = buffer;
-	
-	    for (int i = data.length-1; i >= 0; i--) {
-	    	hash = (hash ^ data[i]) * prime;
-	    }
-	     return hash;
+        return Util.hashCode(buffer);
 	}
     
     public int getPartitionHash() {

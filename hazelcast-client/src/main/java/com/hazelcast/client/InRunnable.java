@@ -45,7 +45,7 @@ public class InRunnable extends IORunnable implements Runnable {
         try {
             Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
-            if (oldConnection == null || restoredConnection(oldConnection, connection)) {
+            if (restoredConnection(oldConnection, connection)) {
                 if (outRunnable.sendReconnectCall(connection)) {
                     logger.log(Level.FINEST, "restoredConnection");
                     if (oldConnection != null) {
@@ -75,7 +75,7 @@ public class InRunnable extends IORunnable implements Runnable {
                 }
             }
         } catch (Throwable e) {
-            logger.log(Level.FINE, "InRunnable [" + connection + "] got an exception:" + e.toString(), e);
+            logger.log(Level.FINEST, "InRunnable [" + connection + "] got an exception:" + e.toString(), e);
             outRunnable.clusterIsDown(connection);
         }
     }

@@ -846,13 +846,8 @@ public class ClientService implements ConnectionListener {
                     "successfully authenticated" : "authentication failed"));
             packet.clearForResponse();
             packet.setValue(toData(authenticated));
-        }
-
-        @Override
-        public void postHandle(Packet packet) {
-            boolean authenticated = (Boolean) toObject(packet.getValueData());
             if (!authenticated) {
-                node.clientService.removeClientEndpoint(packet.conn);
+            	node.clientService.removeClientEndpoint(packet.conn);
             }
         }
     }

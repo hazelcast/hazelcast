@@ -105,7 +105,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         assertTrue(clusterTime > 0);
     }
 
-    @Test
+    @Ignore
     public void testProxySerialization() {
         IMap<Object, Object> mapProxy = getHazelcastClient().getMap("proxySerialization");
         ILock mapLock = getHazelcastClient().getLock(mapProxy);

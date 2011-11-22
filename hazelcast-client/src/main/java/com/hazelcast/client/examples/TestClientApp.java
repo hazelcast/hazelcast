@@ -77,13 +77,16 @@ public class TestClientApp {
     }
 
     private void connect(String[] args) {
+    	String ip = "localhost";
         String groupName = "dev";
         String pass = "dev-pass";
-        if (args.length > 2) {
+        if (args.length > 1) {
+        	ip = args[1];
+        }
+        if (args.length > 3) {
             groupName = args[2];
             pass = args[3];
         }
-        String ip = args[1];
         System.out.println("Connecting to " + ip);
         String[] ips = null;
         if (ip.indexOf(':') == -1) {
