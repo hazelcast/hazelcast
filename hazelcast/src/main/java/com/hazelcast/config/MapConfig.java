@@ -297,6 +297,10 @@ public class MapConfig implements DataSerializable {
     public MaxSizeConfig getMaxSizeConfig() {
         return maxSizeConfig;
     }
+    
+    public void setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
+		this.maxSizeConfig = maxSizeConfig;
+	}
 
     /**
      * @return the evictionPolicy

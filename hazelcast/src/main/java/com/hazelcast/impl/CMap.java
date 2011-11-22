@@ -271,7 +271,9 @@ public class CMap {
         backupCount = mapConfig.getBackupCount();
         ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
         maxIdle = mapConfig.getMaxIdleSeconds() * 1000L;
-        evictionPolicy = EvictionPolicy.valueOf(mapConfig.getEvictionPolicy());
+        evictionPolicy = mapConfig.getEvictionPolicy() != null 
+        			? EvictionPolicy.valueOf(mapConfig.getEvictionPolicy())
+        			: EvictionPolicy.NONE;
         readBackupData = mapConfig.isReadBackupData();
         cacheValue = mapConfig.isCacheValue();
         MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();

@@ -61,7 +61,6 @@
                                             <xs:attribute name="invalidate-on-change" use="required" type="xs:string"/>
                                         </xs:complexType>
                                     </xs:element>
-                                    
                                     <xs:element name="wan-replication-ref" minOccurs="0" maxOccurs="1">
 								        <xs:complexType>
 								        	<xs:attribute name="name" use="required" type="xs:string"/>
@@ -73,6 +72,7 @@
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
                                 <xs:attribute name="max-size" use="optional" type="xs:string"/>
+                                <xs:attribute name="max-size-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="max-idle-seconds" use="optional" type="xs:string"/>
                                 <xs:attribute name="eviction-delay-seconds" use="optional" type="xs:string"/>
                                 <xs:attribute name="eviction-percentage" use="optional" type="xs:string"/>

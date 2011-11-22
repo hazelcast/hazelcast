@@ -146,6 +146,8 @@ public class TestFullApplicationContext {
         assertEquals(dummyMapStore, testMapConfig2.getMapStoreConfig().getImplementation());
         assertEquals("testWan", testMapConfig2.getWanReplicationRef().getName());
         assertEquals("hz.ADD_NEW_ENTRY", testMapConfig2.getWanReplicationRef().getMergePolicy());
+        assertEquals(1000, testMapConfig2.getMaxSizeConfig().getSize());
+        assertEquals("LRU", testMapConfig2.getMaxSizeConfig().getMaxSizePolicy());
         MapConfig simpleMapConfig = config.getMapConfig("simpleMap");
         assertNotNull(simpleMapConfig);
         assertEquals("simpleMap", simpleMapConfig.getName());

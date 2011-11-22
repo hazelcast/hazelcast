@@ -324,7 +324,19 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             final String name = getValue(attName);
             mapConfigBuilder.addPropertyValue("name", name);
 
-            fillValues(node, mapConfigBuilder, "mapStore", "nearCache");
+            fillAttributeValues(node, mapConfigBuilder, "maxSize", "maxSizePolicy");
+            final BeanDefinitionBuilder maxSizeConfigBuilder = createBeanBuilder(MaxSizeConfig.class, "maxSizeConfig");
+            final AbstractBeanDefinition maxSizeConfigBeanDefinition = maxSizeConfigBuilder.getBeanDefinition();
+            mapConfigBuilder.addPropertyValue("maxSizeConfig", maxSizeConfigBeanDefinition);
+            final Node maxSizeNode = node.getAttributes().getNamedItem("max-size");
+            if(maxSizeNode != null) {
+            	maxSizeConfigBuilder.addPropertyValue("size", getValue(maxSizeNode));
+            }
+            final Node maxSizePolicyNode = node.getAttributes().getNamedItem("max-size-policy");
+            if(maxSizePolicyNode != null) {
+            	maxSizeConfigBuilder.addPropertyValue(xmlToJavaName(cleanNodeName(maxSizePolicyNode)), getValue(maxSizePolicyNode));
+            }
+            
             for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 final String nname = cleanNodeName(n.getNodeName());
                 if ("map-store".equals(nname)){

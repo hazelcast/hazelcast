@@ -102,7 +102,8 @@
             </hz:map>
             <hz:map name="testMap2"
                     backup-count="2"
-                    max-size="0"
+                    max-size="1000"
+                    max-size-policy="LRU"
                     eviction-percentage="30"
                     read-backup-data="true"
                     cache-value="true"
@@ -114,6 +115,7 @@
             <hz:map name="testMap3"
                     backup-count="2"
                     max-size="0"
+                    max-size-policy="LFU"
                     eviction-percentage="30"
                     read-backup-data="true"
                     cache-value="true"
