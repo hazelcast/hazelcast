@@ -24,6 +24,7 @@ import com.hazelcast.nio.PipedZipBufferFactory;
 import com.hazelcast.nio.PipedZipBufferFactory.DeflatingPipedBuffer;
 import com.hazelcast.nio.PipedZipBufferFactory.InflatingPipedBuffer;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -121,15 +122,18 @@ public class MulticastService implements Runnable {
                 } catch (SocketTimeoutException ignore) {
                     return null;
                 }
-                
                 try {
                 	inflatingBuffer.inflate(datagramPacketReceive.getLength());
                 	JoinInfo joinInfo = new JoinInfo();
                 	joinInfo.readData(inflatingBuffer.getDataInput());
                 	return joinInfo;
-				} catch (DataFormatException e) {
-					logger.log(Level.FINEST, "Received data format is invalid." +
+				} catch (Exception e) {
+					if(e instanceof EOFException || e instanceof DataFormatException) {
+						logger.log(Level.FINEST, "Received data format is invalid." +
 							" (An old version of Hazelcast may be running here.)", e);
+					} else {
+						throw e;
+					}
 				}
             } catch (Exception e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
