@@ -338,7 +338,6 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
 			}
 		}
     	assertTrue("Error on client EntryListener!", latch.await(10, TimeUnit.SECONDS));
-    	single.shutdownHazelcastClient();
     }
 
     @Test
