@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentMap;
 
 public final class ClientThreadContext {
     private static final ConcurrentMap<Thread, ClientThreadContext> mapContexts = new ConcurrentHashMap<Thread, ClientThreadContext>(100);
-    private static final Object lock = new Object();
     TransactionClientProxy transactionProxy;
     final ClientSerializer serializer = new ClientSerializer();
     final Thread thread;
@@ -57,11 +56,7 @@ public final class ClientThreadContext {
 
     public Transaction getTransaction(HazelcastClient client) {
         if (transactionProxy == null) {
-            synchronized (lock) {
-                if (transactionProxy == null) {
-                    transactionProxy = new TransactionClientProxy(null, client);
-                }
-            }
+            transactionProxy = new TransactionClientProxy(null, client);
         }
         return transactionProxy;
     }
