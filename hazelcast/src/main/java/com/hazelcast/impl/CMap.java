@@ -63,18 +63,19 @@ public class CMap {
         SHOULD_CLEAN,
         CLEANING
     }
-    
+
     enum InitializationState {
-    	NONE,
-    	INITIALIZING,
-    	INITIALIZED;
-    	
-    	boolean isInitialized() {
-    		return INITIALIZED == this;
-    	}
-    	boolean isInitializing() {
-    		return INITIALIZING == this;
-    	}
+        NONE,
+        INITIALIZING,
+        INITIALIZED;
+
+        boolean isInitialized() {
+            return INITIALIZED == this;
+        }
+
+        boolean isInitializing() {
+            return INITIALIZING == this;
+        }
     }
 
     final ILogger logger;
@@ -92,7 +93,7 @@ public class CMap {
     final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
 
     final String name;
-    
+
     final MapConfig mapConfig;
 
     final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
@@ -271,9 +272,9 @@ public class CMap {
         backupCount = mapConfig.getBackupCount();
         ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
         maxIdle = mapConfig.getMaxIdleSeconds() * 1000L;
-        evictionPolicy = mapConfig.getEvictionPolicy() != null 
-        			? EvictionPolicy.valueOf(mapConfig.getEvictionPolicy())
-        			: EvictionPolicy.NONE;
+        evictionPolicy = mapConfig.getEvictionPolicy() != null
+                ? EvictionPolicy.valueOf(mapConfig.getEvictionPolicy())
+                : EvictionPolicy.NONE;
         readBackupData = mapConfig.isReadBackupData();
         cacheValue = mapConfig.isCacheValue();
         MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
@@ -994,12 +995,13 @@ public class CMap {
     void sendKeyToMaster(Data key) {
         String queueName = name.substring(2);
         if (concurrentMapManager.isMaster()) {
-            node.blockingQueueManager.doAddKey(queueName, key, Integer.MAX_VALUE);
+            node.blockingQueueManager.doAddKey(queueName, key, 0);
         } else {
             Packet packet = concurrentMapManager.obtainPacket();
             packet.name = queueName;
             packet.setKey(key);
             packet.operation = ClusterOperation.BLOCKING_OFFER_KEY;
+            packet.longValue = 0;
             boolean sent = concurrentMapManager.send(packet, concurrentMapManager.getMasterAddress());
         }
     }
@@ -1533,7 +1535,7 @@ public class CMap {
             }
         }
     }
-    
+
     void reset(boolean invalidate) {
         for (Record record : mapRecords.values()) {
             if (record.hasScheduledAction()) {
@@ -1546,8 +1548,8 @@ public class CMap {
             }
             // invalidate records on destroy
             // on restart invalidation occurs after merge
-            if(invalidate) {
-            	record.invalidate();
+            if (invalidate) {
+                record.invalidate();
             }
         }
         if (nearCache != null) {
@@ -1556,17 +1558,17 @@ public class CMap {
         mapRecords.clear();
         mapIndexService.clear();
     }
-    
+
     void destroy() {
-    	reset(true);
-    	node.listenerManager.removeAllRegisteredListeners(getName());
-    	if (mapStoreWrapper != null) {
-    		try {
-    			mapStoreWrapper.destroy();
-    		} catch (Exception e) {
-    			logger.log(Level.WARNING, e.getMessage(), e);
-    		}
-    	}
+        reset(true);
+        node.listenerManager.removeAllRegisteredListeners(getName());
+        if (mapStoreWrapper != null) {
+            try {
+                mapStoreWrapper.destroy();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, e.getMessage(), e);
+            }
+        }
     }
 
     void markAsDirty(Record record) {
@@ -1676,14 +1678,14 @@ public class CMap {
             }
         }
     }
-    
+
     public MapConfig getMapConfig() {
-		return mapConfig;
-	}
-    
+        return mapConfig;
+    }
+
     public Node getNode() {
-		return node;
-	}
+        return node;
+    }
 
     public static class Values implements Collection, DataSerializable {
         Collection<Data> lsValues = null;

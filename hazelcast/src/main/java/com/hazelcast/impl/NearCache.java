@@ -25,6 +25,7 @@ import com.hazelcast.util.SortedHashMap;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
 
 public class NearCache {
     private final ILogger logger;
@@ -135,7 +136,7 @@ public class NearCache {
     public void put(Object key, Data keyData, Data value) {
         checkThread();
         if (cache.size() != sortedMap.size()) {
-            throw new IllegalStateException("cache and sorted map size should be the same: "
+            logger.log(Level.WARNING, cmap.getName() + " cache and sorted map size should be the same: "
                     + cache.size() + " vs. " + sortedMap.size());
         }
         if (cache.size() + 1 >= maxSize) {
@@ -179,7 +180,7 @@ public class NearCache {
         if (theKey != null) {
             CacheEntry removedCacheEntry = cache.remove(theKey);
             if (removedCacheEntry == null) {
-                throw new IllegalStateException("Removed CacheEntry cannot be null");
+                logger.log(Level.WARNING, cmap.name + " removed CacheEntry cannot be null");
             }
             removedCacheEntry.invalidate();
         }
@@ -208,8 +209,8 @@ public class NearCache {
     public void reset() {
         sortedMap.clear();
         for (CacheEntry entry : cache.values()) {
-			entry.invalidate();
-		}
+            entry.invalidate();
+        }
         cache.clear();
     }
 
@@ -249,7 +250,7 @@ public class NearCache {
         }
 
         public void setValue(Data valueData) {
-        	record.setValueData(valueData);
+            record.setValueData(valueData);
         }
 
         public Object getValue() {
@@ -263,9 +264,9 @@ public class NearCache {
         public void process() {
             sortedMap.get(record.getKeyData());
         }
-        
+
         public void invalidate() {
-        	record.invalidate();
+            record.invalidate();
         }
     }
 }

@@ -25,7 +25,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.StringTokenizer;
 
 public final class Address implements DataSerializable {
 
@@ -64,23 +63,8 @@ public final class Address implements DataSerializable {
     }
 
     public Address(String address, int port) throws UnknownHostException {
-        this(address, port, false);
-    }
-
-    public Address(String address, int port, boolean ipAddress) throws UnknownHostException {
         this.port = port;
-        if (!ipAddress) {
-            this.ip = InetAddress.getByName(address).getAddress();
-        } else {
-            ip = new byte[4];
-            StringTokenizer stringTokenizer = new StringTokenizer(address, ".");
-            int index = 0;
-            while (stringTokenizer.hasMoreTokens()) {
-                String token = stringTokenizer.nextToken();
-                int addressByte = Integer.parseInt(token);
-                ip[index++] = (byte) addressByte;
-            }
-        }
+        this.ip = InetAddress.getByName(address).getAddress();
     }
 
     public boolean isThisAddress() {

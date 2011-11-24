@@ -254,7 +254,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         final boolean ip = isIP(host);
         try {
             if (ip) {
-                return new Address(host, port, true);
+                return new Address(host, port);
             } else {
                 final InetAddress[] allAddresses = InetAddress.getAllByName(host);
                 for (final InetAddress inetAddress : allAddresses) {
@@ -288,11 +288,11 @@ public class TcpIpJoiner extends AbstractJoiner {
             throws UnknownHostException {
         final List<Address> list;
         if (portSet) {
-            list = Collections.singletonList(new Address(host, port, true));
+            list = Collections.singletonList(new Address(host, port));
         } else {
             list = new ArrayList<Address>(3);
             for (int i = 0; i < 3; i++) {
-                list.add(new Address(host, port + i, true));
+                list.add(new Address(host, port + i));
             }
         }
         return list;
