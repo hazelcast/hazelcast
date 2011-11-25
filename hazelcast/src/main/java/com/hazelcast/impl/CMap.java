@@ -63,7 +63,7 @@ public class CMap {
         SHOULD_CLEAN,
         CLEANING
     }
-
+    
     enum InitializationState {
         NONE,
         INITIALIZING,
@@ -93,7 +93,7 @@ public class CMap {
     final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
 
     final String name;
-
+    
     final MapConfig mapConfig;
 
     final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
@@ -184,7 +184,7 @@ public class CMap {
         }
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         int writeDelaySeconds = -1;
-        if (!node.isSuperClient() && mapStoreConfig != null) {
+        if (!node.isLiteMember() && mapStoreConfig != null) {
             try {
                 MapStoreFactory factory = (MapStoreFactory) mapStoreConfig.getFactoryImplementation();
                 if (factory == null) {
@@ -1535,7 +1535,7 @@ public class CMap {
             }
         }
     }
-
+    
     void reset(boolean invalidate) {
         for (Record record : mapRecords.values()) {
             if (record.hasScheduledAction()) {
@@ -1558,7 +1558,7 @@ public class CMap {
         mapRecords.clear();
         mapIndexService.clear();
     }
-
+    
     void destroy() {
         reset(true);
         node.listenerManager.removeAllRegisteredListeners(getName());
@@ -1678,11 +1678,11 @@ public class CMap {
             }
         }
     }
-
+    
     public MapConfig getMapConfig() {
         return mapConfig;
     }
-
+    
     public Node getNode() {
         return node;
     }

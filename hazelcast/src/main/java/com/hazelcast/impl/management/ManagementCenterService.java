@@ -31,6 +31,7 @@ import com.hazelcast.nio.PipedZipBufferFactory.DeflatingPipedBuffer;
 import com.hazelcast.nio.PipedZipBufferFactory.InflatingPipedBuffer;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.util.ConcurrentHashSet;
 
 import java.io.*;
 import java.net.*;
@@ -58,7 +59,7 @@ public class ManagementCenterService implements MembershipListener {
     private final ILogger logger;
     private final ConcurrentMap<Address, MemberState> memberStates = new ConcurrentHashMap<Address, MemberState>(1000);
     private final ConcurrentMap<Address, SocketAddress> socketAddresses = new ConcurrentHashMap<Address, SocketAddress>(1000);
-    private final Set<Address> addresses = new CopyOnWriteArraySet<Address>();
+    private final Set<Address> addresses = new ConcurrentHashSet<Address>();
     private volatile MemberStateImpl latestThisMemberState = null;
     private final Address thisAddress;
     private final ConsoleCommandHandler commandHandler;

@@ -22,6 +22,7 @@ import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 
+import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
@@ -198,7 +199,7 @@ public class ConnectionManager {
     }
 
     public void onRestart() {
-        shutdown();
+        stop();
         start();
     }
 
@@ -213,8 +214,19 @@ public class ConnectionManager {
     }
 
     public void shutdown() {
-        if (!live) return;
+    	if (!live) return;
         live = false;
+    	if (serverSocketChannel != null) {
+	        try {
+	        	serverSocketChannel.close();
+	        } catch (IOException ignore) {
+	        	logger.log(Level.FINEST, ignore.getMessage(), ignore);
+	        }
+        }
+    	stop();
+    }
+    
+    private void stop() {
         for (Connection conn : mapConnections.values()) {
             try {
                 destroyConnection(conn);

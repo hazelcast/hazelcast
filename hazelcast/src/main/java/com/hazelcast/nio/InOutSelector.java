@@ -43,19 +43,7 @@ public class InOutSelector extends SelectorBase {
                     }
                 }
             });
-        }
-        if (serverSocketChannel != null) {
             logger.log(Level.FINEST, "Started Selector at " + serverSocketChannel.socket().getLocalPort());
-        }
-    }
-
-    @Override
-    public void threadLocalShutdown() {
-        try {
-            if (serverSocketChannel != null) {
-                serverSocketChannel.close();
-            }
-        } catch (IOException ignored) {
         }
     }
 

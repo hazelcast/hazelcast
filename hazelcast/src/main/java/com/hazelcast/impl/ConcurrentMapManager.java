@@ -2111,7 +2111,7 @@ public class ConcurrentMapManager extends BaseManager {
         checkServiceThread();
         Block block = blocks[blockId];
         if (block == null) {
-            if (isMaster() && !isSuperClient()) {
+            if (isMaster() && !isLiteMember()) {
                 block = partitionManager.getOrCreateBlock(blockId);
                 block.setOwner(thisAddress);
                 block.setMigrationAddress(null);
@@ -2120,7 +2120,7 @@ public class ConcurrentMapManager extends BaseManager {
             } else {
                 return null;
             }
-        } else if (block.getOwner() == null && isMaster() && !isSuperClient()) {
+        } else if (block.getOwner() == null && isMaster() && !isLiteMember()) {
             block.setOwner(thisAddress);
             block.setMigrationAddress(null);
             partitionManager.lsBlocksToMigrate.clear();

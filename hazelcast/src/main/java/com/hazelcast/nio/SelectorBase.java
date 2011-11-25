@@ -166,7 +166,7 @@ public abstract class SelectorBase implements Runnable {
             logger.log(Level.WARNING, "unhandled exception in " + Thread.currentThread().getName(), e);
         } finally {
             try {
-                logger.log(Level.FINE, "closing selector " + Thread.currentThread().getName());
+                logger.log(Level.FINEST, "closing selector " + Thread.currentThread().getName());
                 selector.close();
             } catch (final Exception ignored) {
             }

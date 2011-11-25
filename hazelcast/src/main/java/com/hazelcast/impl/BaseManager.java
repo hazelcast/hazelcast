@@ -1221,8 +1221,8 @@ public abstract class BaseManager {
         return node.isMaster();
     }
 
-    protected boolean isSuperClient() {
-        return node.isSuperClient();
+    protected boolean isLiteMember() {
+        return node.isLiteMember();
     }
 
     protected Packet obtainPacket() {

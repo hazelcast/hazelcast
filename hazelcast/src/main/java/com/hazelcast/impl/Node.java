@@ -36,6 +36,7 @@ import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.lang.reflect.Constructor;
@@ -44,7 +45,6 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -63,11 +63,11 @@ public class Node {
 
     private final ClusterImpl clusterImpl;
 
-    private final Set<Address> failedConnections = new CopyOnWriteArraySet<Address>();
+    private final Set<Address> failedConnections = new ConcurrentHashSet<Address>();
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 
-    private final boolean superClient;
+    private final boolean liteMember;
 
     private final NodeType localNodeType;
 
@@ -121,8 +121,6 @@ public class Node {
 
     final SimpleBoundedQueue<Packet> serviceThreadPacketQueue = new SimpleBoundedQueue<Packet>(1000);
 
-    private final ServerSocketChannel serverSocketChannel;
-
     final int id;
 
     final WanReplicationService wanReplicationService;
@@ -133,7 +131,7 @@ public class Node {
 
     private ManagementCenterService managementCenterService = null;
 
-    public SecurityContext securityContext = null;
+    public final SecurityContext securityContext ;
 
     public Node(FactoryImpl factory, Config config) {
         this.id = counter.incrementAndGet();
@@ -141,9 +139,9 @@ public class Node {
         this.factory = factory;
         this.config = config;
         this.groupProperties = new GroupProperties(config);
-        this.superClient = config.isSuperClient();
-        this.localNodeType = (superClient) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
-        ServerSocketChannel serverSocketChannelTemp = null;
+        this.liteMember = config.isLiteMember();
+        this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
+        ServerSocketChannel serverSocketChannel = null;
         Address localAddress = null;
         try {
             final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
@@ -151,14 +149,13 @@ public class Node {
             if (preferIPv6Address == null && preferIPv4Stack == null) {
                 System.setProperty("java.net.preferIPv4Stack", "true");
             }
-            serverSocketChannelTemp = ServerSocketChannel.open();
-            AddressPicker addressPicker = new AddressPicker(this, serverSocketChannelTemp);
+            serverSocketChannel = ServerSocketChannel.open();
+            AddressPicker addressPicker = new AddressPicker(this, serverSocketChannel);
             localAddress = addressPicker.pickAddress();
             localAddress.setThisAddress(true);
         } catch (Throwable e) {
             Util.throwUncheckedException(e);
         }
-        serverSocketChannel = serverSocketChannelTemp;
         address = localAddress;
         localMember = new MemberImpl(address, true, localNodeType);
         String loggingType = groupProperties.LOGGING_TYPE.getString();
@@ -254,8 +251,8 @@ public class Node {
         }
     }
 
-    public final boolean isSuperClient() {
-        return superClient;
+    public final boolean isLiteMember() {
+        return liteMember;
     }
 
     public boolean joined() {
@@ -405,14 +402,12 @@ public class Node {
 
     public void onOutOfMemory(OutOfMemoryError e) {
         try {
-            if (serverSocketChannel != null) {
-                try {
-                    serverSocketChannel.close();
-                    connectionManager.shutdown();
-                    shutdown(true, false);
-                } catch (Throwable ignored) {
-                }
-            }
+        	if(connectionManager != null) {
+	            connectionManager.shutdown();
+	            shutdown(true, false);
+        	}
+        } catch (Throwable ignored) {
+        	logger.log(Level.FINEST, ignored.getMessage(), ignored);
         } finally {
             // Node.doShutdown sets active=false
             // active = false;

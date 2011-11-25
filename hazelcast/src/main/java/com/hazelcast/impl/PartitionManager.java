@@ -213,7 +213,7 @@ public class PartitionManager implements Runnable {
             if (block == null) {
                 block = getOrCreateBlock(i);
             }
-            if (block.getOwner() == null && !concurrentMapManager.isSuperClient()) {
+            if (block.getOwner() == null && !concurrentMapManager.isLiteMember()) {
                 block.setOwner(thisAddress);
             }
         }
@@ -286,7 +286,7 @@ public class PartitionManager implements Runnable {
     public void syncForAdd() {
         invalidateBlocksHash();
         if (concurrentMapManager.isMaster()) {
-            if (concurrentMapManager.isSuperClient()) {
+            if (concurrentMapManager.isLiteMember()) {
                 MemberImpl nonSuperMember = null;
                 for (MemberImpl member : concurrentMapManager.getMembers()) {
                     if (!member.isSuperClient()) {
@@ -359,7 +359,7 @@ public class PartitionManager implements Runnable {
             if (block == null) {
                 block = getOrCreateBlock(i);
             }
-            if (block.getOwner() == null && !concurrentMapManager.isSuperClient()) {
+            if (block.getOwner() == null && !concurrentMapManager.isLiteMember()) {
                 block.setOwner(thisAddress);
             } else if (block.getOwner() != null && block.getOwner().equals(block.getMigrationAddress())) {
                 block.setMigrationAddress(null);
@@ -438,7 +438,7 @@ public class PartitionManager implements Runnable {
         if (deadAddress.equals(block.getOwner())) {
             MemberImpl member = concurrentMapManager.getNextMemberBeforeSync(deadAddress, true, 1);
             if (member == null) {
-                if (!concurrentMapManager.isSuperClient()) {
+                if (!concurrentMapManager.isLiteMember()) {
                     block.setOwner(thisAddress);
                 } else {
                     block.setOwner(null);
@@ -464,7 +464,7 @@ public class PartitionManager implements Runnable {
             if (deadAddress.equals(block.getMigrationAddress())) {
                 MemberImpl member = concurrentMapManager.getNextMemberBeforeSync(deadAddress, true, 1);
                 if (member == null) {
-                    if (!concurrentMapManager.isSuperClient()) {
+                    if (!concurrentMapManager.isLiteMember()) {
                         block.setMigrationAddress(thisAddress);
                     } else {
                         block.setMigrationAddress(null);
@@ -551,7 +551,7 @@ public class PartitionManager implements Runnable {
         if (!node.isActive() || node.factory.restarted) {
             return null;
         }
-        if (concurrentMapManager.isSuperClient()) {
+        if (concurrentMapManager.isLiteMember()) {
             return null;
         }
         if (blockReal.isMigrationStarted()) return null;
@@ -666,7 +666,7 @@ public class PartitionManager implements Runnable {
             block = new Block(blockId, null);
             blocks[blockId] = block;
             invalidateBlocksHash();
-            if (concurrentMapManager.isMaster() && !concurrentMapManager.isSuperClient()) {
+            if (concurrentMapManager.isMaster() && !concurrentMapManager.isLiteMember()) {
                 block.setOwner(thisAddress);
             }
         }
