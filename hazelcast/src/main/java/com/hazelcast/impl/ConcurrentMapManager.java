@@ -23,6 +23,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.impl.concurrentmap.RecordFactory;
+import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
@@ -31,8 +32,11 @@ import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
 import com.hazelcast.merge.MergePolicy;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.query.Index;
+import com.hazelcast.query.MapIndexService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
+import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.DistributedTimeoutException;
 
 import java.io.DataInput;
@@ -116,11 +120,11 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_PUT_TRANSIENT, new PutTransientOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_IF_ABSENT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, new PutOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_SAME, new PutOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_SAME, new ReplaceOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_MULTI, new PutMultiOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE, new RemoveOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_EVICT, new EvictOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_REMOVE_IF_SAME, new RemoveOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_REMOVE_IF_SAME, new RemoveIfSameOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_ITEM, new RemoveItemOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_PUT, new BackupPacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_ADD, new BackupPacketProcessor());
@@ -142,7 +146,7 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_ADD_TO_SET, new AddOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_SIZE, new SizeOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_CONTAINS_KEY, new ContainsKeyOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_CONTAINS_ENTRY, new ContainsOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_CONTAINS_ENTRY, new ContainsEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_CONTAINS_VALUE, new ContainsValueOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_BLOCK_INFO, new BlockInfoOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_BLOCKS, new BlocksOperationHandler());
@@ -331,12 +335,12 @@ public class ConcurrentMapManager extends BaseManager {
 
     void backupRecord(final Record rec) {
         if (rec.getMultiValues() != null) {
-            Set<Data> values = rec.getMultiValues();
+            Set<ValueHolder> values = rec.getMultiValues();
             int initialVersion = ((int) rec.getVersion() - values.size());
             int version = (initialVersion < 0) ? 0 : initialVersion;
-            for (Data value : values) {
+            for (ValueHolder valueHolder : values) {
                 Record record = rec.copy();
-                record.setValue(value);
+                record.setValue(valueHolder.getData());
                 record.setVersion(++version);
                 MBackupOp backupOp = new MBackupOp();
                 backupOp.backup(record);
@@ -376,12 +380,12 @@ public class ConcurrentMapManager extends BaseManager {
         if (!node.isActive() || node.factory.restarted) return;
         MMigrate mmigrate = new MMigrate();
         if (cmap.isMultiMap()) {
-            Set<Data> values = rec.getMultiValues();
+            Set<ValueHolder> values = rec.getMultiValues();
             if (values == null || values.size() == 0) {
                 mmigrate.migrateMulti(rec, null);
             } else {
-                for (Data value : values) {
-                    mmigrate.migrateMulti(rec, value);
+                for (ValueHolder valueHolder : values) {
+                    mmigrate.migrateMulti(rec, valueHolder.getData());
                 }
             }
         } else {
@@ -734,16 +738,10 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     Pairs getAllPairs(String name, Set keys) {
-        while (true) {
-            node.checkNodeState();
-            try {
-                return doGetAll(name, keys);
-            } catch (Throwable e) {
-                TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
-                if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                    throw new RuntimeException(e);
-                }
-            }
+        try {
+            return doGetAll(name, keys);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -789,17 +787,10 @@ public class ConcurrentMapManager extends BaseManager {
             Object value = entries.get(key);
             pairs.addKeyValue(new KeyValue(toData(key), toData(value)));
         }
-        while (true) {
-            node.checkNodeState();
-            try {
-                doPutAll(name, pairs);
-                return;
-            } catch (Throwable e) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e1) {
-                }
-            }
+        try {
+            doPutAll(name, pairs);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -1047,8 +1038,8 @@ public class ConcurrentMapManager extends BaseManager {
             return txnalRemove(CONCURRENT_MAP_REMOVE, name, key, null, timeout, -1L);
         }
 
-        public Object removeIfSame(String name, Object key, Object value, long timeout) {
-            return txnalRemove(CONCURRENT_MAP_REMOVE_IF_SAME, name, key, value, timeout, -1L);
+        public boolean removeIfSame(String name, Object key, Object value, long timeout) {
+            return txnalRemove(CONCURRENT_MAP_REMOVE_IF_SAME, name, key, value, timeout, -1L) == Boolean.TRUE;
         }
 
         public Object tryRemove(String name, Object key, long timeout) throws TimeoutException {
@@ -1098,16 +1089,24 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             } else {
                 request.txnId = txnId;
-                Object oldValue = objectCall(operation, name, key, value, timeout, -1);
-                if (oldValue != null) {
-                    if (oldValue instanceof AddressAwareException) {
-                        rethrowException(operation, (AddressAwareException) oldValue);
+                if (operation == CONCURRENT_MAP_REMOVE) {
+                    Object oldValue = objectCall(operation, name, key, value, timeout, -1);
+                    if (oldValue != null) {
+                        if (oldValue instanceof AddressAwareException) {
+                            rethrowException(operation, (AddressAwareException) oldValue);
+                        }
+                        if (!(oldValue instanceof DistributedTimeoutException)) {
+                            backup(CONCURRENT_MAP_BACKUP_REMOVE);
+                        }
                     }
-                    if (!(oldValue instanceof DistributedTimeoutException)) {
+                    return oldValue;
+                } else {
+                    boolean success = booleanCall(operation, name, key, value, timeout, -1);
+                    if (success) {
                         backup(CONCURRENT_MAP_BACKUP_REMOVE);
                     }
+                    return success;
                 }
-                return oldValue;
             }
         }
 
@@ -1468,10 +1467,10 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void merge(Record record) {
             if (getInstanceType(record.getName()).isMultiMap()) {
-                Set<Data> values = record.getMultiValues();
+                Set<ValueHolder> values = record.getMultiValues();
                 if (values != null && values.size() > 0) {
-                    for (Data value : values) {
-                        mergeOne(record, value);
+                    for (ValueHolder valueHolder : values) {
+                        mergeOne(record, valueHolder.getData());
                     }
                 }
             } else {
@@ -2193,7 +2192,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     @Override
-    void handleListenerRegistrations(boolean add, String name, Data key, Address address, boolean includeValue) {
+    void registerListener(boolean add, String name, Data key, Address address, boolean includeValue) {
         CMap cmap = getOrCreateMap(name);
         if (add) {
             cmap.addListener(key, address, includeValue);
@@ -2413,16 +2412,239 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class RemoveMultiOperationHandler extends SchedulableOperationHandler {
+
+        public void handle(Request request) {
+            if (shouldSchedule(request)) {
+                if (request.hasEnoughTimeToSchedule()) {
+                    schedule(request);
+                } else {
+                    onNoTimeToSchedule(request);
+                }
+            } else {
+                doOperation(request);
+            }
+        }
+
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            request.response = cmap.removeMulti(request);
+            Record record = cmap.toRecord(request);
+            record.lock(request.lockThreadId, request.caller);
+            node.executorManager.executeQueryTask(new RemoveMultiSetMapTask(request, record, cmap));
+        }
+
+        class RemoveMultiSetMapTask implements Runnable, Processable {
+            final CMap cmap;
+            final Request request;
+            final Record record;
+
+            RemoveMultiSetMapTask(Request request, Record record, CMap cmap) {
+                this.request = request;
+                this.record = record;
+                this.cmap = cmap;
+            }
+
+            public void run() {
+                if (record.getMultiValues() == null) {
+                    record.setMultiValues(new ConcurrentHashSet<ValueHolder>() {
+                        @Override
+                        public boolean add(ValueHolder e) {
+                            return e != null && super.add(e);
+                        }
+                    });
+                }
+                request.response = record.getMultiValues().remove(new ValueHolder(request.value));
+                enqueueAndReturn(RemoveMultiSetMapTask.this);
+            }
+
+            public void process() {
+                if (request.response == Boolean.TRUE) {
+                    cmap.onRemoveMulti(request, record);
+                }
+                record.getLock().decrementAndGetLockCount();
+                request.value = null;
+                returnResponse(request);
+            }
         }
     }
 
     class PutMultiOperationHandler extends SchedulableOperationHandler {
+
+        public void handle(Request request) {
+            if (shouldSchedule(request)) {
+                if (request.hasEnoughTimeToSchedule()) {
+                    schedule(request);
+                } else {
+                    onNoTimeToSchedule(request);
+                }
+            } else {
+                doOperation(request);
+            }
+        }
+
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            request.response = cmap.putMulti(request);
+            if (!cmap.multiMapSet) {
+                cmap.putMulti(request);
+                request.response = Boolean.TRUE;
+                returnResponse(request);
+            } else {
+                Record record = cmap.getRecord(request);
+                if (record == null) {
+                    cmap.putMulti(request);
+                    request.response = Boolean.TRUE;
+                    returnResponse(request);
+                } else {
+                    record = cmap.toRecord(request);
+                    record.lock(request.lockThreadId, request.caller);
+                    node.executorManager.executeQueryTask(new PutMultiSetMapTask(request, record, cmap));
+                }
+            }
+        }
+
+        class PutMultiSetMapTask implements Runnable, Processable {
+            final CMap cmap;
+            final Request request;
+            final Record record;
+
+            PutMultiSetMapTask(Request request, Record record, CMap cmap) {
+                this.request = request;
+                this.record = record;
+                this.cmap = cmap;
+            }
+
+            public void run() {
+                if (record.getMultiValues() == null) {
+                    record.setMultiValues(new ConcurrentHashSet<ValueHolder>() {
+                        @Override
+                        public boolean add(ValueHolder e) {
+                            return e != null && super.add(e);
+                        }
+                    });
+                }
+                request.response = !record.getMultiValues().contains(new ValueHolder(request.value));
+                enqueueAndReturn(PutMultiSetMapTask.this);
+            }
+
+            public void process() {
+                if (request.response == Boolean.TRUE) {
+                    cmap.putMulti(request);
+                }
+                record.getLock().decrementAndGetLockCount();
+                request.value = null;
+                returnResponse(request);
+            }
+        }
+    }
+
+    class ReplaceOperationHandler extends SchedulableOperationHandler {
+
+        public void handle(Request request) {
+            if (shouldSchedule(request)) {
+                if (request.hasEnoughTimeToSchedule()) {
+                    schedule(request);
+                } else {
+                    onNoTimeToSchedule(request);
+                }
+            } else {
+                doOperation(request);
+            }
+        }
+
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            Record record = cmap.getRecord(request);
+            if (record == null) {
+                request.response = Boolean.FALSE;
+                returnResponse(request);
+            } else {
+                record.lock(request.lockThreadId, request.caller);
+                node.executorManager.executeQueryTask(new ReplaceTask(request, record, cmap));
+            }
+        }
+
+        class ReplaceTask implements Runnable, Processable {
+            final CMap cmap;
+            final Request request;
+            final Record record;
+
+            ReplaceTask(Request request, Record record, CMap cmap) {
+                this.request = request;
+                this.record = record;
+                this.cmap = cmap;
+            }
+
+            public void run() {
+                MultiData multiData = (MultiData) toObject(request.value);
+                Object expectedValue = toObject(multiData.getData(0));
+                request.value = multiData.getData(1); // new value
+                request.response = expectedValue.equals(record.getValue());
+                enqueueAndReturn(ReplaceTask.this);
+            }
+
+            public void process() {
+                if (request.response == Boolean.TRUE) {
+                    cmap.put(request);
+                    request.response = Boolean.TRUE;
+                }
+                record.getLock().decrementAndGetLockCount();
+                request.value = null;
+                returnResponse(request);
+            }
+        }
+    }
+
+    class RemoveIfSameOperationHandler extends SchedulableOperationHandler {
+
+        public void handle(Request request) {
+            if (shouldSchedule(request)) {
+                if (request.hasEnoughTimeToSchedule()) {
+                    schedule(request);
+                } else {
+                    onNoTimeToSchedule(request);
+                }
+            } else {
+                doOperation(request);
+            }
+        }
+
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            Record record = cmap.getRecord(request);
+            if (record == null) {
+                request.response = Boolean.FALSE;
+                returnResponse(request);
+            } else {
+                record.lock(request.lockThreadId, request.caller);
+                node.executorManager.executeQueryTask(new RemoveIfSameTask(request, record, cmap));
+            }
+        }
+
+        class RemoveIfSameTask implements Runnable, Processable {
+            final CMap cmap;
+            final Request request;
+            final Record record;
+
+            RemoveIfSameTask(Request request, Record record, CMap cmap) {
+                this.request = request;
+                this.record = record;
+                this.cmap = cmap;
+            }
+
+            public void run() {
+                Object expectedValue = toObject(request.value);
+                request.response = expectedValue.equals(record.getValue());
+                enqueueAndReturn(RemoveIfSameTask.this);
+            }
+
+            public void process() {
+                request.value = null;
+                if (request.response == Boolean.TRUE) {
+                    cmap.remove(request);
+                    request.response = Boolean.TRUE;
+                }
+                record.getLock().decrementAndGetLockCount();
+                returnResponse(request);
+            }
         }
     }
 
@@ -3308,20 +3530,6 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class ContainsOperationHandler extends MigrationAwareOperationHandler {
-        void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            if (request.key != null) {
-                boolean callerKnownMember = (request.local || getMember(request.caller) != null);
-                if (!callerKnownMember) {
-                    request.response = OBJECT_REDO;
-                    return;
-                }
-            }
-            request.response = cmap.contains(request);
-        }
-    }
-
     class MigrationOperationHandler extends AbstractOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
@@ -3476,17 +3684,111 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class ContainsValueOperationHandler extends AbstractOperationHandler {
+    class ContainsEntryOperationHandler extends ResponsiveOperationHandler {
 
-        @Override
-        public void process(Packet packet) {
-            processMigrationAware(packet);
+        public void handle(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request) && !isMigrating(request)) {
+                Record record = cmap.getRecord(request);
+                if (record == null || !record.isActive() || !record.isValid()) {
+                    request.response = Boolean.FALSE;
+                    returnResponse(request);
+                } else {
+                    node.executorManager.executeQueryTask(new ContainsEntryTask(request, record));
+                }
+            } else {
+                request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
         }
 
+        class ContainsEntryTask implements Runnable {
+            final Request request;
+            final Record record;
+
+            ContainsEntryTask(Request request, Record record) {
+                this.request = request;
+                this.record = record;
+            }
+
+            public void run() {
+                CMap cmap = getMap(request.name);
+                Data value = request.value;
+                request.response = Boolean.FALSE;
+                if (cmap.isMultiMap()) {
+                    Collection<ValueHolder> multiValues = record.getMultiValues();
+                    if (multiValues != null) {
+                        ValueHolder theValueHolder = new ValueHolder(value);
+                        request.response = multiValues.contains(theValueHolder);
+                    }
+                } else {
+                    Object obj = toObject(value);
+                    request.response = obj.equals(record.getValue());
+                }
+                returnResponse(request);
+            }
+        }
+    }
+
+    class ContainsValueOperationHandler extends MigrationAwareExecutedOperationHandler {
+
         @Override
-        void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            cmap.containsValue(request);
+        Runnable createRunnable(final Request request) {
+            return new ContainsValueTask(request);
+        }
+
+        class ContainsValueTask implements Runnable {
+            final Request request;
+
+            ContainsValueTask(Request request) {
+                this.request = request;
+            }
+
+            public void run() {
+                CMap cmap = getMap(request.name);
+                Data value = request.value;
+                request.response = Boolean.FALSE;
+                if (cmap != null) {
+                    MapIndexService mapIndexService = cmap.getMapIndexService();
+                    long now = System.currentTimeMillis();
+                    if (cmap.isMultiMap()) {
+                        Collection<Record> records = mapIndexService.getOwnedRecords();
+                        ValueHolder theValueHolder = new ValueHolder(value);
+                        for (Record record : records) {
+                            if (record.isActive() && record.isValid(now)) {
+                                Collection<ValueHolder> multiValues = record.getMultiValues();
+                                if (multiValues != null) {
+                                    if (multiValues.contains(theValueHolder)) {
+                                        request.response = Boolean.TRUE;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Collection<? extends MapEntry> results = null;
+                        Index index = mapIndexService.getValueIndex();
+                        if (index != null) {
+                            results = index.getRecords((long) value.hashCode());
+                        } else {
+                            results = mapIndexService.getOwnedRecords();
+                        }
+                        if (results != null) {
+                            Object obj = toObject(value);
+                            for (MapEntry entry : results) {
+                                Record record = (Record) entry;
+                                if (record.isActive() && record.isValid(now)) {
+                                    if (obj.equals(record.getValue())) {
+                                        request.response = Boolean.TRUE;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                returnResponse(request);
+            }
         }
     }
 
@@ -3504,7 +3806,7 @@ public class ConcurrentMapManager extends BaseManager {
         abstract Runnable createRunnable(Request request);
     }
 
-    class SizeOperationHandler extends ExecutedOperationHandler {
+    abstract class MigrationAwareExecutedOperationHandler extends ExecutedOperationHandler {
         @Override
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
@@ -3515,6 +3817,9 @@ public class ConcurrentMapManager extends BaseManager {
                 returnResponse(request);
             }
         }
+    }
+
+    class SizeOperationHandler extends MigrationAwareExecutedOperationHandler {
 
         @Override
         Runnable createRunnable(final Request request) {
@@ -3542,18 +3847,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class QueryOperationHandler extends ExecutedOperationHandler {
-
-        @Override
-        public void handle(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            if (cmap.isNotLocked(request) && !isMigrating(request)) {
-                super.handle(request);
-            } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
-            }
-        }
+    class QueryOperationHandler extends MigrationAwareExecutedOperationHandler {
 
         Runnable createRunnable(Request request) {
             final CMap cmap = getOrCreateMap(request.name);
@@ -3624,9 +3918,9 @@ public class ConcurrentMapManager extends BaseManager {
                                     if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
                                         pairs.addKeyValue(new KeyValue(key, null));
                                     } else {
-                                        Set<Data> values = record.getMultiValues();
-                                        for (Data value : values) {
-                                            pairs.addKeyValue(new KeyValue(key, value));
+                                        Set<ValueHolder> values = record.getMultiValues();
+                                        for (ValueHolder valueHolder : values) {
+                                            pairs.addKeyValue(new KeyValue(key, valueHolder.getData()));
                                         }
                                     }
                                 }

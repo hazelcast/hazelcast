@@ -357,10 +357,10 @@ public abstract class BaseManager {
         public void reset() {
             super.reset();
         }
-        
+
         public void clearRequest() {
-        	request.response = null;
-        	request.value = null;
+            request.response = null;
+            request.value = null;
         }
 
         public boolean getResultAsBoolean() {
@@ -1404,16 +1404,14 @@ public abstract class BaseManager {
         return node.clusterManager.getMember(address);
     }
 
-    void handleListenerRegistrations(boolean add, String name, Data key,
-                                     Address address, boolean includeValue) {
+    void registerListener(boolean add, String name, Data key, Address address, boolean includeValue) {
+        System.out.println("listener name " + name);
         if (name.startsWith(Prefix.QUEUE)) {
-            node.blockingQueueManager.handleListenerRegistrations(add, name, key, address,
-                    includeValue);
+            node.blockingQueueManager.registerListener(add, name, key, address, includeValue);
         } else if (name.startsWith(Prefix.TOPIC)) {
-            node.topicManager.handleListenerRegistrations(add, name, key, address, includeValue);
+            node.topicManager.registerListener(add, name, key, address, includeValue);
         } else {
-            node.concurrentMapManager.handleListenerRegistrations(add, name, key, address,
-                    includeValue);
+            node.concurrentMapManager.registerListener(add, name, key, address, includeValue);
         }
     }
 

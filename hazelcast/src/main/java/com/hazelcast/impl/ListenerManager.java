@@ -72,7 +72,7 @@ public class ListenerManager extends BaseManager {
         String name = packet.name;
         Address address = packet.conn.getEndPoint();
         releasePacket(packet);
-        handleListenerRegistrations(add, name, key, address, returnValue);
+        registerListener(add, name, key, address, returnValue);
     }
 
     public void syncForDead(Address deadAddress) {
@@ -114,7 +114,7 @@ public class ListenerManager extends BaseManager {
             if (from == null) throw new RuntimeException("Listener origin is not known!");
             boolean add = (request.operation == ADD_LISTENER);
             boolean includeValue = (request.longValue == 1);
-            handleListenerRegistrations(add, request.name, request.key, request.caller, includeValue);
+            registerListener(add, request.name, request.key, request.caller, includeValue);
             request.response = Boolean.TRUE;
         }
     }
@@ -193,7 +193,7 @@ public class ListenerManager extends BaseManager {
         private void processWithKey() {
             Address owner = node.concurrentMapManager.getKeyOwner(key);
             if (owner.equals(thisAddress)) {
-                handleListenerRegistrations(true, name, key, thisAddress, includeValue);
+                registerListener(true, name, key, thisAddress, includeValue);
             } else {
                 Packet packet = obtainPacket();
                 packet.set(name, ADD_LISTENER_NO_RESPONSE, key, null);
@@ -208,7 +208,7 @@ public class ListenerManager extends BaseManager {
         private void processWithoutKey() {
             for (MemberImpl member : lsMembers) {
                 if (member.localMember()) {
-                    handleListenerRegistrations(true, name, null, thisAddress, includeValue);
+                    registerListener(true, name, null, thisAddress, includeValue);
                 } else {
                     sendAddListener(member.getAddress(), name, null, includeValue);
                 }
@@ -311,11 +311,11 @@ public class ListenerManager extends BaseManager {
         List<ListenerItem> listeners = getOrCreateListenerList(dataAwareEntryEvent.getLongName());
         for (ListenerItem listenerItem : listeners) {
             if (listenerItem.listens(dataAwareEntryEvent)) {
-            	try {
-            		callListener(listenerItem, dataAwareEntryEvent);
-				} catch (Throwable e) {
-					logger.log(Level.SEVERE, "Caught error while calling event listener; cause: " + e.getMessage(), e);
-				}
+                try {
+                    callListener(listenerItem, dataAwareEntryEvent);
+                } catch (Throwable e) {
+                    logger.log(Level.SEVERE, "Caught error while calling event listener; cause: " + e.getMessage(), e);
+                }
             }
         }
     }
@@ -456,7 +456,7 @@ public class ListenerManager extends BaseManager {
         }
 
         public void process() {
-            getNode().listenerManager.handleListenerRegistrations(true, name, toData(key), getConnection().getEndPoint(), includeValue);
+            getNode().listenerManager.registerListener(true, name, toData(key), getConnection().getEndPoint(), includeValue);
         }
     }
 }

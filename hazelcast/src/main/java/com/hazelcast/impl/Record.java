@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
+import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
@@ -146,9 +147,9 @@ public interface Record extends MapEntry {
 
     void setLock(DistributedLock lock);
 
-    Set<Data> getMultiValues();
+    Set<ValueHolder> getMultiValues();
 
-    void setMultiValues(Set<Data> lsValues);
+    void setMultiValues(Set<ValueHolder> lsValues);
 
     int getBackupOpCount();
 
@@ -195,8 +196,8 @@ public interface Record extends MapEntry {
     void setLastStoredTime(long lastStoredTime);
 
     long getLastStoredTime();
-    
+
     boolean hasValueData();
-    
+
     void invalidate();
 }

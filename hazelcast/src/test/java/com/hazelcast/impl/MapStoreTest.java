@@ -26,7 +26,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.SqlPredicate;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -233,6 +232,24 @@ public class MapStoreTest extends TestUtil {
             fail("Should not commit the txn");
         } catch (Exception e) {
         }
+        assertEquals(2, map.size());
+        assertEquals(2, testMapStore.dbSize());
+        map.evict("1");
+        map.evict("2");
+        assertEquals(0, map.size());
+        assertEquals(2, testMapStore.dbSize());
+        Set keys = new HashSet();
+        keys.add("1");
+        keys.add("2");
+        try {
+            map.getAll(keys);
+            fail();
+        } catch (Exception e) {
+        }
+        assertEquals(0, map.size());
+        assertEquals(2, testMapStore.dbSize());
+        testMapStore.setFail(false);
+        map.getAll(keys);
         assertEquals(2, map.size());
         assertEquals(2, testMapStore.dbSize());
     }
@@ -1329,52 +1346,46 @@ public class MapStoreTest extends TestUtil {
             }
         }
     }
-    
+
     @Test
-	public void testInitialization() {
-		Config config = new Config();
-		MapConfig mapConfig = config.getMapConfig("default");
-		MapStoreConfig msConfig = new MapStoreConfig();
-		mapConfig.setMapStoreConfig(msConfig);
-		msConfig.setEnabled(true);
-		
-		Config configSuper = new Config();
-		configSuper.setLiteMember(true);
-		configSuper.addMapConfig(mapConfig);
+    public void testInitialization() {
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig("default");
+        MapStoreConfig msConfig = new MapStoreConfig();
+        mapConfig.setMapStoreConfig(msConfig);
+        msConfig.setEnabled(true);
+        Config configSuper = new Config();
+        configSuper.setLiteMember(true);
+        configSuper.addMapConfig(mapConfig);
+        final int initialKeys = 5;
+        msConfig.setImplementation(new MapLoader() {
+            public Object load(Object key) {
+                return "Value: " + key;
+            }
 
-		final int initialKeys = 5;
-		msConfig.setImplementation(new MapLoader() {
-			public Object load(Object key) {
-				return "Value: " + key;
-			}
+            public Map loadAll(Collection keys) {
+                Map map = new HashMap(keys.size());
+                for (Object key : keys) {
+                    map.put(key, load(key));
+                }
+                return map;
+            }
 
-			public Map loadAll(Collection keys) {
-				Map map = new HashMap(keys.size());
-				for (Object key : keys) {
-					map.put(key, load(key));
-				}
-				return map;
-			}
-
-			public Set loadAllKeys() {
-				Set keys = new HashSet(3);
-				for (int i = 0; i < initialKeys; i++) {
-					keys.add(i);
-				}
-				return keys;
-			}
-		});
-		
-		final HazelcastInstance member = Hazelcast.newHazelcastInstance(config);
-		final HazelcastInstance superClient = Hazelcast.newHazelcastInstance(configSuper);
-		Hazelcast.newHazelcastInstance(config);
-		
-		assertEquals(initialKeys, member.getMap("test").size());
-		assertEquals(initialKeys, superClient.getMap("test").size());
-		
-		assertEquals(initialKeys, superClient.getMap("test2").size());
-		assertEquals(initialKeys, member.getMap("test2").size());
-		
-		Hazelcast.shutdownAll();
-	}
+            public Set loadAllKeys() {
+                Set keys = new HashSet(3);
+                for (int i = 0; i < initialKeys; i++) {
+                    keys.add(i);
+                }
+                return keys;
+            }
+        });
+        final HazelcastInstance member = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance superClient = Hazelcast.newHazelcastInstance(configSuper);
+        Hazelcast.newHazelcastInstance(config);
+        assertEquals(initialKeys, member.getMap("test").size());
+        assertEquals(initialKeys, superClient.getMap("test").size());
+        assertEquals(initialKeys, superClient.getMap("test2").size());
+        assertEquals(initialKeys, member.getMap("test2").size());
+        Hazelcast.shutdownAll();
+    }
 }

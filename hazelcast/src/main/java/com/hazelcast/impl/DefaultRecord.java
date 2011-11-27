@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.base.DistributedLock;
+import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.nio.Data;
 
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -102,9 +103,9 @@ public final class DefaultRecord extends AbstractRecord {
                 cost += dataValue.size();
             }
         } else if (getMultiValues() != null && getMultiValues().size() > 0) {
-            for (Data data : getMultiValues()) {
-                if (data != null) {
-                    cost += data.size();
+            for (ValueHolder valueHolder : getMultiValues()) {
+                if (valueHolder != null) {
+                    cost += valueHolder.getData().size();
                 }
             }
         }
@@ -112,11 +113,11 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     public boolean hasValueData() {
-		return value != null;
-	}
-    
+        return value != null;
+    }
+
     public void invalidate() {
-    	invalidateValueCache();
-    	value = null;
+        invalidateValueCache();
+        value = null;
     }
 }

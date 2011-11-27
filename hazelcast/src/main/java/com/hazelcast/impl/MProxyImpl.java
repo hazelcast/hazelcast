@@ -17,8 +17,18 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.impl.Util.toMillis;
-import static com.hazelcast.nio.IOUtil.toData;
+import com.hazelcast.core.*;
+import com.hazelcast.impl.ConcurrentMapManager.*;
+import com.hazelcast.impl.base.FactoryAwareNamedProxy;
+import com.hazelcast.impl.concurrentmap.AddMapIndex;
+import com.hazelcast.impl.monitor.LocalMapStatsImpl;
+import com.hazelcast.impl.monitor.MapOperationsCounter;
+import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.query.Expression;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -32,22 +42,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.core.Prefix;
-import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.ConcurrentMapManager.*;
-import com.hazelcast.impl.base.FactoryAwareNamedProxy;
-import com.hazelcast.impl.concurrentmap.AddMapIndex;
-import com.hazelcast.impl.monitor.LocalMapStatsImpl;
-import com.hazelcast.impl.monitor.MapOperationsCounter;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.query.Expression;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.Predicates;
+import static com.hazelcast.impl.Util.toMillis;
+import static com.hazelcast.nio.IOUtil.toData;
 
 public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSerializable {
 
@@ -71,7 +67,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
                 if (e instanceof InvocationTargetException) {
                     InvocationTargetException ite = (InvocationTargetException) e;
                     throw ite.getCause();
-                } 
+                }
                 // FIXME
                 throw e;
             } finally {
@@ -117,7 +113,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         } catch (Throwable e) {
             if (factory.restarted) {
                 return get(key);
-            } 
+            }
             Util.throwUncheckedException(e);
             return null;
         } finally {
@@ -176,7 +172,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         } catch (Throwable e) {
             if (factory.restarted) {
                 return put(key, value, ttl, timeunit);
-            } 
+            }
             Util.throwUncheckedException(e);
             return null;
         } finally {
@@ -191,7 +187,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         } catch (Throwable e) {
             if (factory.restarted) {
                 return remove(key);
-            } 
+            }
             Util.throwUncheckedException(e);
             return null;
         } finally {
@@ -206,7 +202,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         } catch (Throwable e) {
             if (e instanceof TimeoutException) {
                 throw (TimeoutException) e;
-            } 
+            }
             Util.throwUncheckedException(e);
             return null;
         } finally {
@@ -462,9 +458,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     }
 
     private static void check(Object obj) {
-    	Util.checkSerializable(obj);
+        Util.checkSerializable(obj);
     }
-    
+
     private class MProxyReal implements MProxy {
         private final transient MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
 
@@ -543,7 +539,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public Object put(Object key, Object value) {
-           return put(key, value, 0, TimeUnit.SECONDS);
+            return put(key, value, 0, TimeUnit.SECONDS);
         }
 
         public void putForSync(Object key, Object value) {
@@ -746,7 +742,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(key);
             check(value);
             MRemove mremove = concurrentMapManager.new MRemove();
-            boolean result = (mremove.removeIfSame(name, key, value, -1) != null);
+            boolean result = mremove.removeIfSame(name, key, value, -1);
             mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
             return result;
         }
@@ -1009,7 +1005,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             return mevict.evict(name, key);
         }
 
-		public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		}
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        }
     }
 }

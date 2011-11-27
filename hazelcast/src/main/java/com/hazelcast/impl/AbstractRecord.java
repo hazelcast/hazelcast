@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
+import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.util.ConcurrentHashSet;
@@ -43,7 +44,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
 
     protected volatile DistributedLock lock = null;
 
-    protected OptionalInfo optionalInfo = null;
+    protected volatile OptionalInfo optionalInfo = null;
 
     public AbstractRecord(CMap cmap, int blockId, Data key, long ttl, long maxIdleMillis, long id) {
         super(blockId, cmap, id, key);
@@ -130,14 +131,14 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     public void addValue(Data value) {
         if (value != null) {
             if (getMultiValues() == null) {
-                setMultiValues(new ConcurrentHashSet<Data>() {
+                setMultiValues(new ConcurrentHashSet<ValueHolder>() {
                     @Override
-                    public boolean add(Data e) {
+                    public boolean add(ValueHolder e) {
                         return e != null && super.add(e);
                     }
                 });
             }
-            getMultiValues().add(value);
+            getMultiValues().add(new ValueHolder(value));
         }
     }
 
@@ -341,12 +342,12 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         this.lock = lock;
     }
 
-    public Set<Data> getMultiValues() {
+    public Set<ValueHolder> getMultiValues() {
         if (optionalInfo == null) return null;
         return getOptionalInfo().lsMultiValues;
     }
 
-    public void setMultiValues(Set<Data> lsValues) {
+    public void setMultiValues(Set<ValueHolder> lsValues) {
         if (lsValues != null || optionalInfo != null) {
             this.getOptionalInfo().lsMultiValues = lsValues;
         }
@@ -431,9 +432,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public void clearLock() {
-        if (lock != null) {
-            lock.clear();
-        }
+        lock = null;
     }
 
     public Address getLockAddress() {
@@ -454,13 +453,13 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     public long getLastStoredTime() {
         return lastStoredTime;
     }
-    
+
     class OptionalInfo {
+        volatile Set<ValueHolder> lsMultiValues = null; // multimap values
         Long[] indexes; // indexes of the current value;
         byte[] indexTypes; // index types of the current value;
         List<ScheduledAction> lsScheduledActions = null;
-        Map<Address, Boolean> mapListeners = null;
-        Set<Data> lsMultiValues = null; // multimap values
         SortedSet<VersionedBackupOp> backupOps = null;
+        Map<Address, Boolean> mapListeners = null;
     }
 }

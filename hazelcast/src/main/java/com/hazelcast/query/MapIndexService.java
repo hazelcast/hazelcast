@@ -239,6 +239,10 @@ public class MapIndexService {
         return hasIndexedAttributes;
     }
 
+    public Index getValueIndex() {
+        return indexValue;
+    }
+
     public boolean containsValue(Data value) {
         if (indexValue != null) {
             Set<MapEntry> results = indexValue.getRecords((long) value.hashCode());

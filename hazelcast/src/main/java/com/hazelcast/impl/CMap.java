@@ -25,7 +25,7 @@ import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.LFUMapEntryComparator;
 import com.hazelcast.impl.concurrentmap.LRUMapEntryComparator;
 import com.hazelcast.impl.concurrentmap.MapStoreWrapper;
-import com.hazelcast.impl.concurrentmap.MultiData;
+import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.merge.MergePolicy;
@@ -63,7 +63,7 @@ public class CMap {
         SHOULD_CLEAN,
         CLEANING
     }
-    
+
     enum InitializationState {
         NONE,
         INITIALIZING,
@@ -93,7 +93,7 @@ public class CMap {
     final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
 
     final String name;
-    
+
     final MapConfig mapConfig;
 
     final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
@@ -131,6 +131,8 @@ public class CMap {
     final NearCache nearCache;
 
     final long creationTime;
+
+    final boolean multiMapSet;
 
     boolean readBackupData;
 
@@ -246,6 +248,11 @@ public class CMap {
         } else {
             this.localUpdateListener = null;
             this.wanMergePolicy = null;
+        }
+        if (instanceType.isMultiMap()) {
+            multiMapSet = true;
+        } else {
+            multiMapSet = false;
         }
     }
 
@@ -524,7 +531,7 @@ public class CMap {
                     markAsEvicted(record);
                 } else {
                     if (record.containsValue(req.value)) {
-                        Set<Data> multiValues = record.getMultiValues();
+                        Set<ValueHolder> multiValues = record.getMultiValues();
                         if (multiValues != null) {
                             multiValues.remove(req.value);
                         }
@@ -833,32 +840,16 @@ public class CMap {
         }
     }
 
-    public boolean removeMulti(Request req) {
-        Record record = getRecord(req);
-        if (record == null) return false;
-        boolean removed = false;
-        if (req.value == null) {
-            removed = true;
-            markAsRemoved(record);
-        } else {
-            if (record.containsValue(req.value)) {
-                if (record.getMultiValues() != null) {
-                    removed = record.getMultiValues().remove(req.value);
-                }
-            }
-        }
+    public void onRemoveMulti(Request req, Record record) {
         if (req.txnId != -1) {
             unlock(record, req);
         }
-        if (removed) {
-            record.incrementVersion();
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKeyData(), null, req.value, record.getListeners(), req.caller);
-        }
+        record.incrementVersion();
+        concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKeyData(), null, req.value, record.getListeners(), req.caller);
         req.version = record.getVersion();
         if (record.valueCount() == 0) {
             markAsRemoved(record);
         }
-        return removed;
     }
 
     public boolean putMulti(Request req) {
@@ -870,17 +861,12 @@ public class CMap {
             if (!record.isActive()) {
                 markAsActive(record);
             }
-            if (record.containsValue(req.value)) {
-                added = false;
-            }
         }
-        if (added) {
-            Data value = req.value;
-            updateIndexes(record);
-            record.addValue(value);
-            record.incrementVersion();
-            concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKeyData(), null, value, record.getListeners(), req.caller);
-        }
+        Data value = req.value;
+        updateIndexes(record);
+        record.addValue(value);
+        record.incrementVersion();
+        concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKeyData(), null, value, record.getListeners(), req.caller);
         if (req.txnId != -1) {
             unlock(record, req);
         }
@@ -895,17 +881,6 @@ public class CMap {
             return record == null || !record.isActive() || !record.isValid(now) || !record.hasValueData();
         } else if (ClusterOperation.CONCURRENT_MAP_REPLACE_IF_NOT_NULL.equals(operation)) {
             return record != null && record.isActive() && record.isValid(now) && record.hasValueData();
-        } else if (ClusterOperation.CONCURRENT_MAP_REPLACE_IF_SAME.equals(operation)) {
-            if (record != null && record.isActive() && record.isValid(now)) {
-                MultiData multiData = (MultiData) toObject(req.value);
-                if (multiData == null || multiData.size() != 2) {
-                    throw new RuntimeException("Illegal replaceIfSame argument: " + multiData);
-                }
-                Data expectedOldValue = multiData.getData(0);
-                return expectedOldValue.equals(record.getValueData());
-            } else {
-                return false;
-            }
         }
         return true;
     }
@@ -938,13 +913,6 @@ public class CMap {
                 req.value = null;
                 return;
             }
-        } else if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
-            if (!isApplicable(CONCURRENT_MAP_REPLACE_IF_SAME, req, now)) {
-                req.response = Boolean.FALSE;
-                return;
-            }
-            MultiData multiData = (MultiData) toObject(req.value);
-            req.value = multiData.getData(1);
         }
         Data oldValue = null;
         if (record == null) {
@@ -1427,7 +1395,7 @@ public class CMap {
             if (isMultiMap()) {
                 record = createNewRecord(req.key, null);
                 if (req.value != null) {
-                    record.addValue(req.value);
+//                    record.addValue(req.value);
                 }
             } else {
                 record = createNewRecord(req.key, req.value);
@@ -1436,7 +1404,7 @@ public class CMap {
         } else {
             if (req.value != null) {
                 if (isMultiMap()) {
-                    record.addValue(req.value);
+//                    record.addValue(req.value);
                 } else {
                     record.setValue(req.value);
                 }
@@ -1535,7 +1503,7 @@ public class CMap {
             }
         }
     }
-    
+
     void reset(boolean invalidate) {
         for (Record record : mapRecords.values()) {
             if (record.hasScheduledAction()) {
@@ -1558,7 +1526,7 @@ public class CMap {
         mapRecords.clear();
         mapIndexService.clear();
     }
-    
+
     void destroy() {
         reset(true);
         node.listenerManager.removeAllRegisteredListeners(getName());
@@ -1678,11 +1646,11 @@ public class CMap {
             }
         }
     }
-    
+
     public MapConfig getMapConfig() {
         return mapConfig;
     }
-    
+
     public Node getNode() {
         return node;
     }
@@ -1693,13 +1661,13 @@ public class CMap {
         public Values() {
         }
 
-        public Values(Collection<Data> values) {
+        public Values(Collection<ValueHolder> values) {
             super();
             if (values != null) {
                 this.lsValues = new ArrayList<Data>(values.size());
-                for (Data data : values) {
-                    if (data != null) {
-                        lsValues.add(data);
+                for (ValueHolder valueHolder : values) {
+                    if (valueHolder != null) {
+                        lsValues.add(valueHolder.getData());
                     }
                 }
             }

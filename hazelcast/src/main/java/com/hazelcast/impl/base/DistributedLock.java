@@ -104,6 +104,15 @@ public class DistributedLock {
         return lockCount;
     }
 
+    public int decrementAndGetLockCount() {
+        this.lockCount--;
+        if (lockCount == 0) {
+            this.lockAddress = null;
+            this.lockThreadId = -1;
+        }
+        return lockCount;
+    }
+
     @Override
     public String toString() {
         return "Lock{" +

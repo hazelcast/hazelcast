@@ -152,8 +152,9 @@ public class BlockingQueueManager extends BaseManager {
         return size;
     }
 
-    public boolean remove(String name, Object obj) {
-        Set<Long> keys = getValueKeys(name, toData(obj));
+    public boolean remove(final String name, Object obj) {
+        final Data dataValue = toData(obj);
+        Set<Long> keys = getValueKeys(name, dataValue);
         if (keys != null) {
             for (Long key : keys) {
                 Data keyData = toData(key);
@@ -161,6 +162,14 @@ public class BlockingQueueManager extends BaseManager {
                     try {
                         getStorageMap(name).tryRemove(keyData, 0, TimeUnit.SECONDS);
                     } catch (TimeoutException ignored) {
+                    }
+                    final BQ bq = getBQ(name);
+                    if (bq != null && bq.mapListeners.size() > 0) {
+                        enqueueAndReturn(new Processable() {
+                            public void process() {
+                                fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_REMOVED, dataValue, thisAddress);
+                            }
+                        });
                     }
                     return true;
                 }
@@ -181,7 +190,7 @@ public class BlockingQueueManager extends BaseManager {
         return offer(name, obj, Integer.MAX_VALUE, timeout);
     }
 
-    public boolean offer(String name, Object obj, int index, long timeout) throws InterruptedException {
+    public boolean offer(final String name, Object obj, int index, long timeout) throws InterruptedException {
         Long key = generateKey(name, timeout);
         ThreadContext threadContext = ThreadContext.get();
         TransactionImpl txn = threadContext.getCallContext().getTransaction();
@@ -189,7 +198,16 @@ public class BlockingQueueManager extends BaseManager {
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 txn.attachPutOp(name, key, obj, timeout, true);
             } else {
-                storeQueueItem(name, key, obj, index);
+                final Data dataItem = toData(obj);
+                storeQueueItem(name, key, dataItem, index);
+                final BQ bq = getBQ(name);
+                if (bq != null && bq.mapListeners.size() > 0) {
+                    enqueueAndReturn(new Processable() {
+                        public void process() {
+                            fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_ADDED, dataItem, thisAddress);
+                        }
+                    });
+                }
             }
             return true;
         }
@@ -252,7 +270,7 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    public Object poll(String name, long timeout) throws InterruptedException {
+    public Object poll(final String name, long timeout) throws InterruptedException {
         if (timeout == -1) {
             timeout = Long.MAX_VALUE;
         }
@@ -271,6 +289,15 @@ public class BlockingQueueManager extends BaseManager {
                     TransactionImpl txn = threadContext.getCallContext().getTransaction();
                     if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                         txn.attachRemoveOp(name, key, removedItem, true);
+                    }
+                    final Data removedItemData = toData(removedItem);
+                    final BQ bq = getBQ(name);
+                    if (bq != null && bq.mapListeners.size() > 0) {
+                        enqueueAndReturn(new Processable() {
+                            public void process() {
+                                fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_REMOVED, removedItemData, thisAddress);
+                            }
+                        });
                     }
                 }
             } catch (TimeoutException e) {
@@ -614,7 +641,7 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    final Map<String, BQ> mapBQ = new HashMap<String, BQ>();
+    final Map<String, BQ> mapBQ = new ConcurrentHashMap<String, BQ>();
 
     BQ getOrCreateBQ(String name) {
         BQ bq = mapBQ.get(name);
@@ -623,6 +650,10 @@ public class BlockingQueueManager extends BaseManager {
             mapBQ.put(name, bq);
         }
         return bq;
+    }
+
+    BQ getBQ(String name) {
+        return mapBQ.get(name);
     }
 
     final void handlePeekKey(Request req) {
@@ -727,8 +758,7 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     public void addItemListener(final String name, final ItemListener listener, final boolean includeValue) {
-        IMap map = getStorageMap(name);
-        map.addEntryListener(new QueueItemListener(listener, includeValue), includeValue);
+        node.listenerManager.addListener(name, listener, null, includeValue, Instance.InstanceType.QUEUE);
     }
 
     class QueueItemListener implements EntryListener {
@@ -770,7 +800,17 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
+    void registerListener(boolean add, String name, Data key, Address address, boolean includeValue) {
+        BQ queue = getOrCreateBQ(name);
+        if (add) {
+            queue.mapListeners.put(address, includeValue);
+        } else {
+            queue.mapListeners.remove(address);
+        }
+    }
+
     class BQ {
+        final Map<Address, Boolean> mapListeners = new ConcurrentHashMap<Address, Boolean>(1);
         final LinkedList<ScheduledAction> offerWaitList = new LinkedList<ScheduledAction>();
         final LinkedList<PollAction> pollWaitList = new LinkedList<PollAction>();
         final LinkedList<Lease> leases = new LinkedList<Lease>();

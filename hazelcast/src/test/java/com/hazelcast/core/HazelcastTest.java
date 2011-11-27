@@ -931,6 +931,40 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testContains() throws Exception {
+        IMap<String, ComplexValue> map = Hazelcast.getMap("testContains");
+        MultiMap<String, ComplexValue> multiMap = Hazelcast.getMultiMap("testContains");
+        assertNull(map.put("1", new ComplexValue("text", 1)));
+        assertTrue(map.containsValue(new ComplexValue("text", 2)));
+        assertFalse(map.replace("1", new ComplexValue("text1", 1), new ComplexValue("text3", 5)));
+        ComplexValue v = map.get("1");
+        assertTrue(v.name.equals("text"));
+        assertTrue(v.time == 1);
+        assertTrue(map.replace("1", new ComplexValue("text", 2), new ComplexValue("text2", 5)));
+        v = map.get("1");
+        assertTrue(v.name.equals("text2"));
+        assertTrue(v.time == 5);
+        assertFalse(map.remove("1", new ComplexValue("text1", 5)));
+        v = map.get("1");
+        assertTrue(v.name.equals("text2"));
+        assertTrue(v.time == 5);
+        assertTrue(map.remove("1", new ComplexValue("text2", 6)));
+        assertNull(map.get("1"));
+        // Now MultiMap
+        assertTrue(multiMap.put("1", new ComplexValue("text", 1)));
+        assertFalse(multiMap.put("1", new ComplexValue("text", 1)));
+        assertFalse(multiMap.put("1", new ComplexValue("text", 2)));
+        assertTrue(multiMap.containsValue(new ComplexValue("text", 1)));
+        assertTrue(multiMap.containsValue(new ComplexValue("text", 2)));
+        assertTrue(multiMap.remove("1", new ComplexValue("text", 3)));
+        assertFalse(multiMap.remove("1", new ComplexValue("text", 1)));
+        assertTrue(multiMap.put("1", new ComplexValue("text", 1)));
+        assertTrue(multiMap.containsEntry("1", new ComplexValue("text", 1)));
+        assertTrue(multiMap.containsEntry("1", new ComplexValue("text", 2)));
+        assertTrue(multiMap.remove("1", new ComplexValue("text", 1)));
+    }
+
+    @Test
     public void testMultiMapKeySet() {
         MultiMap<String, String> map = Hazelcast.getMultiMap("testMultiMapKeySet");
         map.put("Hello", "World");
