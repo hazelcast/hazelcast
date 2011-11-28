@@ -1405,7 +1405,6 @@ public abstract class BaseManager {
     }
 
     void registerListener(boolean add, String name, Data key, Address address, boolean includeValue) {
-        System.out.println("listener name " + name);
         if (name.startsWith(Prefix.QUEUE)) {
             node.blockingQueueManager.registerListener(add, name, key, address, includeValue);
         } else if (name.startsWith(Prefix.TOPIC)) {

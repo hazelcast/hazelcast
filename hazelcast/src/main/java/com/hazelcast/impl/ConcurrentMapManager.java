@@ -2460,9 +2460,9 @@ public class ConcurrentMapManager extends BaseManager {
                 if (request.response == Boolean.TRUE) {
                     cmap.onRemoveMulti(request, record);
                 }
-                record.getLock().decrementAndGetLockCount();
                 request.value = null;
                 returnResponse(request);
+                decrementLockAndFireScheduledActions(cmap, record);
             }
         }
     }
@@ -2494,7 +2494,6 @@ public class ConcurrentMapManager extends BaseManager {
                     request.response = Boolean.TRUE;
                     returnResponse(request);
                 } else {
-                    record = cmap.toRecord(request);
                     record.lock(request.lockThreadId, request.caller);
                     node.executorManager.executeQueryTask(new PutMultiSetMapTask(request, record, cmap));
                 }
@@ -2529,11 +2528,16 @@ public class ConcurrentMapManager extends BaseManager {
                 if (request.response == Boolean.TRUE) {
                     cmap.putMulti(request);
                 }
-                record.getLock().decrementAndGetLockCount();
                 request.value = null;
                 returnResponse(request);
+                decrementLockAndFireScheduledActions(cmap, record);
             }
         }
+    }
+
+    void decrementLockAndFireScheduledActions(CMap cmap, Record record) {
+        record.getLock().decrementAndGetLockCount();
+        cmap.fireScheduledActions(record);
     }
 
     class ReplaceOperationHandler extends SchedulableOperationHandler {
@@ -2586,9 +2590,9 @@ public class ConcurrentMapManager extends BaseManager {
                     cmap.put(request);
                     request.response = Boolean.TRUE;
                 }
-                record.getLock().decrementAndGetLockCount();
                 request.value = null;
                 returnResponse(request);
+                decrementLockAndFireScheduledActions(cmap, record);
             }
         }
     }
@@ -2642,8 +2646,8 @@ public class ConcurrentMapManager extends BaseManager {
                     cmap.remove(request);
                     request.response = Boolean.TRUE;
                 }
-                record.getLock().decrementAndGetLockCount();
                 returnResponse(request);
+                decrementLockAndFireScheduledActions(cmap, record);
             }
         }
     }

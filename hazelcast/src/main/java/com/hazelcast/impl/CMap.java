@@ -1394,18 +1394,13 @@ public class CMap {
         if (record == null) {
             if (isMultiMap()) {
                 record = createNewRecord(req.key, null);
-                if (req.value != null) {
-//                    record.addValue(req.value);
-                }
             } else {
                 record = createNewRecord(req.key, req.value);
             }
             mapRecords.put(req.key, record);
         } else {
             if (req.value != null) {
-                if (isMultiMap()) {
-//                    record.addValue(req.value);
-                } else {
+                if (!isMultiMap()) {
                     record.setValue(req.value);
                 }
             }
