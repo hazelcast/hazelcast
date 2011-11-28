@@ -335,7 +335,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     void backupRecord(final Record rec) {
         if (rec.getMultiValues() != null) {
-            Set<ValueHolder> values = rec.getMultiValues();
+            Collection<ValueHolder> values = rec.getMultiValues();
             int initialVersion = ((int) rec.getVersion() - values.size());
             int version = (initialVersion < 0) ? 0 : initialVersion;
             for (ValueHolder valueHolder : values) {
@@ -380,7 +380,7 @@ public class ConcurrentMapManager extends BaseManager {
         if (!node.isActive() || node.factory.restarted) return;
         MMigrate mmigrate = new MMigrate();
         if (cmap.isMultiMap()) {
-            Set<ValueHolder> values = rec.getMultiValues();
+            Collection<ValueHolder> values = rec.getMultiValues();
             if (values == null || values.size() == 0) {
                 mmigrate.migrateMulti(rec, null);
             } else {
@@ -1467,7 +1467,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void merge(Record record) {
             if (getInstanceType(record.getName()).isMultiMap()) {
-                Set<ValueHolder> values = record.getMultiValues();
+                Collection<ValueHolder> values = record.getMultiValues();
                 if (values != null && values.size() > 0) {
                     for (ValueHolder valueHolder : values) {
                         mergeOne(record, valueHolder.getData());
@@ -2484,13 +2484,30 @@ public class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             if (!cmap.multiMapSet) {
+                Record record = cmap.getRecord(request);
+                if (record == null) {
+                    record = cmap.toRecord(request);
+                }
+                cmap.markAsActive(record);
+                if (record.getMultiValues() == null) {
+                    record.setMultiValues(new CopyOnWriteArrayList<ValueHolder>());
+                }
                 cmap.putMulti(request);
+                request.value = null;
                 request.response = Boolean.TRUE;
                 returnResponse(request);
             } else {
                 Record record = cmap.getRecord(request);
-                if (record == null) {
+                if (record == null || record.getMultiValues() == null || !record.isValid()) {
+                    if (record == null) {
+                        record = cmap.toRecord(request);
+                    }
+                    cmap.markAsActive(record);
+                    if (record.getMultiValues() == null) {
+                        record.setMultiValues(new ConcurrentHashSet<ValueHolder>());
+                    }
                     cmap.putMulti(request);
+                    request.value = null;
                     request.response = Boolean.TRUE;
                     returnResponse(request);
                 } else {
@@ -2512,14 +2529,6 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void run() {
-                if (record.getMultiValues() == null) {
-                    record.setMultiValues(new ConcurrentHashSet<ValueHolder>() {
-                        @Override
-                        public boolean add(ValueHolder e) {
-                            return e != null && super.add(e);
-                        }
-                    });
-                }
                 request.response = !record.getMultiValues().contains(new ValueHolder(request.value));
                 enqueueAndReturn(PutMultiSetMapTask.this);
             }
@@ -3922,7 +3931,7 @@ public class ConcurrentMapManager extends BaseManager {
                                     if (request.operation == CONCURRENT_MAP_ITERATE_KEYS) {
                                         pairs.addKeyValue(new KeyValue(key, null));
                                     } else {
-                                        Set<ValueHolder> values = record.getMultiValues();
+                                        Collection<ValueHolder> values = record.getMultiValues();
                                         for (ValueHolder valueHolder : values) {
                                             pairs.addKeyValue(new KeyValue(key, valueHolder.getData()));
                                         }

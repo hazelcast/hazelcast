@@ -63,6 +63,8 @@ public class Config implements DataSerializable {
 
     private Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
+    private Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
+
     private Map<String, SemaphoreConfig> mapSemaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
 
     private URL configurationUrl;
@@ -194,6 +196,21 @@ public class Config implements DataSerializable {
         config = new MapConfig(defConfig);
         config.setName(name);
         addMapConfig(config);
+        return config;
+    }
+
+    public MultiMapConfig getMultiMapConfig(final String name) {
+        MultiMapConfig config;
+        if ((config = lookupByPattern(multiMapConfigs, name)) != null) return config;
+        MultiMapConfig defConfig = multiMapConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new MultiMapConfig();
+            defConfig.setName("default");
+            addMultiMapConfig(defConfig);
+        }
+        config = new MultiMapConfig(defConfig);
+        config.setName(name);
+        addMultiMapConfig(config);
         return config;
     }
 
@@ -466,6 +483,10 @@ public class Config implements DataSerializable {
 
     public void addMapConfig(MapConfig mapConfig) {
         mapConfigs.put(mapConfig.getName(), mapConfig);
+    }
+
+    public void addMultiMapConfig(MultiMapConfig multiMapConfig) {
+        multiMapConfigs.put(multiMapConfig.getName(), multiMapConfig);
     }
 
     /**

@@ -23,9 +23,9 @@ import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 
 public abstract class AbstractSimpleRecord implements Record {
@@ -208,11 +208,11 @@ public abstract class AbstractSimpleRecord implements Record {
     public void setLock(DistributedLock lock) {
     }
 
-    public Set<ValueHolder> getMultiValues() {
+    public Collection<ValueHolder> getMultiValues() {
         return null;
     }
 
-    public void setMultiValues(Set<ValueHolder> lsValues) {
+    public void setMultiValues(Collection<ValueHolder> lsValues) {
     }
 
     public int getBackupOpCount() {

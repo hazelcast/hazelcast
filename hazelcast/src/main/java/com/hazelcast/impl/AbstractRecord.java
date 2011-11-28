@@ -22,7 +22,6 @@ import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
 
@@ -126,20 +125,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
             }
         }
         return false;
-    }
-
-    public void addValue(Data value) {
-        if (value != null) {
-            if (getMultiValues() == null) {
-                setMultiValues(new ConcurrentHashSet<ValueHolder>() {
-                    @Override
-                    public boolean add(ValueHolder e) {
-                        return e != null && super.add(e);
-                    }
-                });
-            }
-            getMultiValues().add(new ValueHolder(value));
-        }
     }
 
     public boolean unlock(int threadId, Address address) {
@@ -342,12 +327,12 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         this.lock = lock;
     }
 
-    public Set<ValueHolder> getMultiValues() {
+    public Collection<ValueHolder> getMultiValues() {
         if (optionalInfo == null) return null;
         return getOptionalInfo().lsMultiValues;
     }
 
-    public void setMultiValues(Set<ValueHolder> lsValues) {
+    public void setMultiValues(Collection<ValueHolder> lsValues) {
         if (lsValues != null || optionalInfo != null) {
             this.getOptionalInfo().lsMultiValues = lsValues;
         }
@@ -455,7 +440,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     class OptionalInfo {
-        volatile Set<ValueHolder> lsMultiValues = null; // multimap values
+        volatile Collection<ValueHolder> lsMultiValues = null; // multimap values
         Long[] indexes; // indexes of the current value;
         byte[] indexTypes; // index types of the current value;
         List<ScheduledAction> lsScheduledActions = null;

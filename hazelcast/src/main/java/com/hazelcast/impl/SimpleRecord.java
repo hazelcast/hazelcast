@@ -17,23 +17,23 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.nio.IOUtil.toObject;
-
 import com.hazelcast.nio.Data;
 
+import static com.hazelcast.nio.IOUtil.toObject;
+
 public class SimpleRecord extends AbstractSimpleRecord implements Record {
-   
-	Data value;
+
+    Data value;
 
     public SimpleRecord(int blockId, CMap cmap, long id, Data key, Data value) {
-    	super(blockId, cmap, id, key);
-    	this.value = value;
+        super(blockId, cmap, id, key);
+        this.value = value;
     }
 
     public Record copy() {
         return new SimpleRecord(blockId, cmap, id, key, value);
     }
-    
+
     public Object getValue() {
         return toObject(getValueData());
     }
@@ -50,26 +50,23 @@ public class SimpleRecord extends AbstractSimpleRecord implements Record {
         return key.size() + value.size() + 30;
     }
 
-	public boolean hasValueData() {
-		return value != null;
-	}
+    public boolean hasValueData() {
+        return value != null;
+    }
 
-	public Object setValue(Object value) {
-		return null;
-	}
+    public Object setValue(Object value) {
+        return null;
+    }
 
-	public int valueCount() {
-		return 1;
-	}
+    public int valueCount() {
+        return 1;
+    }
 
-	public boolean containsValue(Data value) {
-		return false;
-	}
+    public boolean containsValue(Data value) {
+        return false;
+    }
 
-	public void addValue(Data value) {
-	}
-	
-	public void invalidate() {
-		value = null;
-	}
+    public void invalidate() {
+        value = null;
+    }
 }

@@ -17,6 +17,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.impl.GroupProperties;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -962,6 +963,18 @@ public class HazelcastTest {
         assertTrue(multiMap.containsEntry("1", new ComplexValue("text", 1)));
         assertTrue(multiMap.containsEntry("1", new ComplexValue("text", 2)));
         assertTrue(multiMap.remove("1", new ComplexValue("text", 1)));
+        //Now MultiMap List
+        MultiMapConfig multiMapConfigList = new MultiMapConfig();
+        multiMapConfigList.setName("testContains.list");
+        multiMapConfigList.setValueCollectionType("LIST");
+        Hazelcast.getConfig().addMultiMapConfig(multiMapConfigList);
+        MultiMap<String, ComplexValue> mmList = Hazelcast.getMultiMap("testContains.list");
+        assertTrue(mmList.put("1", new ComplexValue("text", 1)));
+        assertTrue(mmList.put("1", new ComplexValue("text", 1)));
+        assertTrue(mmList.put("1", new ComplexValue("text", 2)));
+        assertEquals(3, mmList.size());
+        assertTrue(mmList.remove("1", new ComplexValue("text", 4)));
+        assertEquals(2, mmList.size());
     }
 
     @Test

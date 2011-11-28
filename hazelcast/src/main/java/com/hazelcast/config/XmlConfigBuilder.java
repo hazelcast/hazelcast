@@ -196,6 +196,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleQueue(node);
             } else if ("map".equals(nodeName)) {
                 handleMap(node);
+            } else if ("multimap".equals(nodeName)) {
+                handleMultiMap(node);
             } else if ("topic".equals(nodeName)) {
                 handleTopic(node);
             } else if ("semaphore".equals(nodeName)) {
@@ -557,6 +559,21 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         this.config.addQueueConfig(qConfig);
+    }
+
+    private void handleMultiMap(final org.w3c.dom.Node node) {
+        final Node attName = node.getAttributes().getNamedItem("name");
+        final String name = getTextContent(attName);
+        final MultiMapConfig multiMapConfig = new MultiMapConfig();
+        multiMapConfig.setName(name);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            final String value = getTextContent(n).trim();
+            if ("value-collection-type".equals(nodeName)) {
+                multiMapConfig.setValueCollectionType(value);
+            }
+        }
+        this.config.addMultiMapConfig(multiMapConfig);
     }
 
     String getAttribute(Node node, String attName) {

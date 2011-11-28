@@ -24,9 +24,9 @@ import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 
 public interface Record extends MapEntry {
@@ -62,8 +62,6 @@ public interface Record extends MapEntry {
     long getCost();
 
     boolean containsValue(Data value);
-
-    void addValue(Data value);
 
     boolean unlock(int threadId, Address address);
 
@@ -147,9 +145,9 @@ public interface Record extends MapEntry {
 
     void setLock(DistributedLock lock);
 
-    Set<ValueHolder> getMultiValues();
+    Collection<ValueHolder> getMultiValues();
 
-    void setMultiValues(Set<ValueHolder> lsValues);
+    void setMultiValues(Collection<ValueHolder> lsValues);
 
     int getBackupOpCount();
 

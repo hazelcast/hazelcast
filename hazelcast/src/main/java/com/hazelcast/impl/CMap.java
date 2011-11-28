@@ -250,7 +250,13 @@ public class CMap {
             this.wanMergePolicy = null;
         }
         if (instanceType.isMultiMap()) {
-            multiMapSet = true;
+            String shortMultiMapName = name.substring(4);
+            MultiMapConfig multiMapConfig = node.getConfig().getMultiMapConfig(shortMultiMapName);
+            if (multiMapConfig.getValueCollectionType() == MultiMapConfig.ValueCollectionType.SET) {
+                multiMapSet = true;
+            } else {
+                multiMapSet = false;
+            }
         } else {
             multiMapSet = false;
         }
@@ -531,9 +537,9 @@ public class CMap {
                     markAsEvicted(record);
                 } else {
                     if (record.containsValue(req.value)) {
-                        Set<ValueHolder> multiValues = record.getMultiValues();
+                        Collection<ValueHolder> multiValues = record.getMultiValues();
                         if (multiValues != null) {
-                            multiValues.remove(req.value);
+                            multiValues.remove(new ValueHolder(req.value));
                         }
                     }
                     if (record.valueCount() == 0) {
@@ -852,9 +858,8 @@ public class CMap {
         }
     }
 
-    public boolean putMulti(Request req) {
+    public void putMulti(Request req) {
         Record record = getRecord(req);
-        boolean added = true;
         if (record == null) {
             record = toRecord(req);
         } else {
@@ -864,7 +869,7 @@ public class CMap {
         }
         Data value = req.value;
         updateIndexes(record);
-        record.addValue(value);
+        record.getMultiValues().add(new ValueHolder(req.value));
         record.incrementVersion();
         concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKeyData(), null, value, record.getListeners(), req.caller);
         if (req.txnId != -1) {
@@ -872,7 +877,6 @@ public class CMap {
         }
         req.clearForResponse();
         req.version = record.getVersion();
-        return added;
     }
 
     boolean isApplicable(ClusterOperation operation, Request req, long now) {
