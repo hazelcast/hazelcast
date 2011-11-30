@@ -98,14 +98,17 @@ public class MapIndexService {
                 int attributedIndex = index.getAttributeIndex();
                 newIndexes[attributedIndex] = index.extractLongValue(value);
             }
-            if (indexTypes == null || indexTypes.length != indexCount) {
+            byte[] _indexTypes = indexTypes;
+            if (_indexTypes == null || _indexTypes.length != indexCount) {
                 synchronized (indexTypesLock) {
-                    if (indexTypes == null || indexTypes.length != indexCount) {
-                        indexTypes = new byte[indexCount];
+                    _indexTypes = indexTypes;
+                    if (_indexTypes == null || _indexTypes.length != indexCount) {
+                        _indexTypes = new byte[indexCount];
                         for (Index index : indexes) {
                             int attributedIndex = index.getAttributeIndex();
-                            indexTypes[attributedIndex] = index.getIndexType();
+                            _indexTypes[attributedIndex] = index.getIndexType();
                         }
+                        indexTypes = _indexTypes;
                     }
                 }
             }
@@ -273,8 +276,9 @@ public class MapIndexService {
     }
 
     public void appendState(StringBuffer sbState) {
+        byte[] _indexTypes = indexTypes;
         sbState.append("\nIndex- records: " + records.size() + ", mapIndexes:"
-                + mapIndexes.size() + ", indexTypes:" + ((indexTypes == null) ? 0 : indexTypes.length));
+                + mapIndexes.size() + ", indexTypes:" + ((_indexTypes == null) ? 0 : _indexTypes.length));
         for (Index index : mapIndexes.values()) {
             index.appendState(sbState);
         }
