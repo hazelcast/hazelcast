@@ -18,7 +18,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.Prefix;
-import com.hazelcast.merge.LatestUpdateMergePolicy;
+import com.hazelcast.merge.AddNewEntryMergePolicy;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.util.ByteUtil;
 
@@ -43,7 +43,7 @@ public class MapConfig implements DataSerializable {
     public final static String COUNT_DOWN_LATCH_MAP_NAME = Prefix.MAP_HAZELCAST + "CountDownLatcheMap";
     public final static String SEMAPHORE_MAP_NAME = Prefix.MAP_HAZELCAST + "SemaphoreMap";
     public final static String DEFAULT_EVICTION_POLICY = "NONE";
-    public final static String DEFAULT_MERGE_POLICY = LatestUpdateMergePolicy.NAME;
+    public final static String DEFAULT_MERGE_POLICY = AddNewEntryMergePolicy.NAME;
     public final static boolean DEFAULT_CACHE_VALUE = true;
 
     private String name = null;
@@ -75,11 +75,11 @@ public class MapConfig implements DataSerializable {
     private String mergePolicy = DEFAULT_MERGE_POLICY;
 
     private WanReplicationRef wanReplicationRef;
-    
+
     private StorageType storageType = null;
-    
+
     public enum StorageType {
-    	HEAP, OFFHEAP
+        HEAP, OFFHEAP
     }
 
     public MapConfig(String name) {
@@ -297,10 +297,10 @@ public class MapConfig implements DataSerializable {
     public MaxSizeConfig getMaxSizeConfig() {
         return maxSizeConfig;
     }
-    
+
     public void setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
-		this.maxSizeConfig = maxSizeConfig;
-	}
+        this.maxSizeConfig = maxSizeConfig;
+    }
 
     /**
      * @return the evictionPolicy
@@ -371,15 +371,15 @@ public class MapConfig implements DataSerializable {
         this.wanReplicationRef = wanReplicationRef;
         return this;
     }
-    
+
     public StorageType getStorageType() {
-		return storageType;
-	}
-    
+        return storageType;
+    }
+
     public MapConfig setStorageType(StorageType storageType) {
-		this.storageType = storageType;
-		return this; 
-	}
+        this.storageType = storageType;
+        return this;
+    }
 
     public boolean isCompatible(MapConfig other) {
         if (this == other)

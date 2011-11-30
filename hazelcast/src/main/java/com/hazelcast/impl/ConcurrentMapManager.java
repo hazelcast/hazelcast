@@ -2445,22 +2445,18 @@ public class ConcurrentMapManager extends BaseManager {
 
             public void run() {
                 if (record.getMultiValues() == null) {
-                    record.setMultiValues(new ConcurrentHashSet<ValueHolder>() {
-                        @Override
-                        public boolean add(ValueHolder e) {
-                            return e != null && super.add(e);
-                        }
-                    });
+                    request.response = Boolean.FALSE;
+                    returnResponse(request);
+                } else {
+                    request.response = record.getMultiValues().remove(new ValueHolder(request.value));
+                    enqueueAndReturn(RemoveMultiSetMapTask.this);
                 }
-                request.response = record.getMultiValues().remove(new ValueHolder(request.value));
-                enqueueAndReturn(RemoveMultiSetMapTask.this);
             }
 
             public void process() {
                 if (request.response == Boolean.TRUE) {
                     cmap.onRemoveMulti(request, record);
                 }
-                request.value = null;
                 returnResponse(request);
                 decrementLockAndFireScheduledActions(cmap, record);
             }
@@ -2493,7 +2489,6 @@ public class ConcurrentMapManager extends BaseManager {
                     record.setMultiValues(new CopyOnWriteArrayList<ValueHolder>());
                 }
                 cmap.putMulti(request);
-                request.value = null;
                 request.response = Boolean.TRUE;
                 returnResponse(request);
             } else {
@@ -2507,7 +2502,6 @@ public class ConcurrentMapManager extends BaseManager {
                         record.setMultiValues(new ConcurrentHashSet<ValueHolder>());
                     }
                     cmap.putMulti(request);
-                    request.value = null;
                     request.response = Boolean.TRUE;
                     returnResponse(request);
                 } else {
@@ -2537,7 +2531,6 @@ public class ConcurrentMapManager extends BaseManager {
                 if (request.response == Boolean.TRUE) {
                     cmap.putMulti(request);
                 }
-                request.value = null;
                 returnResponse(request);
                 decrementLockAndFireScheduledActions(cmap, record);
             }
