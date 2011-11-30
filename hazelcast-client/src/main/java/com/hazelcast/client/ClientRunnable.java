@@ -19,25 +19,33 @@ package com.hazelcast.client;
 
 public abstract class ClientRunnable implements Runnable {
     protected volatile boolean running = true;
+    protected volatile boolean terminated = false;
     protected final Object monitor = new Object();
 
     protected abstract void customRun() throws InterruptedException;
 
     public void run() {
-        while (running) {
-            try {
-                customRun();
-            } catch (InterruptedException e) {
-                return;
+        try {
+            while (running) {
+                try {
+                    customRun();
+                } catch (InterruptedException e) {
+                    return;
+                }
             }
+        } finally {
+            terminate();
         }
-        notifyMonitor();
     }
 
     public void shutdown() {
+        if(terminated){
+            return;
+        }
+
         synchronized (monitor) {
-            if (running) {
-                this.running = false;
+            running = false;
+            while (!terminated) {
                 try {
                     monitor.wait();
                 } catch (InterruptedException ignored) {
@@ -46,8 +54,9 @@ public abstract class ClientRunnable implements Runnable {
         }
     }
 
-    protected void notifyMonitor() {
+    protected void terminate() {
         synchronized (monitor) {
+            terminated = true;
             monitor.notifyAll();
         }
     }

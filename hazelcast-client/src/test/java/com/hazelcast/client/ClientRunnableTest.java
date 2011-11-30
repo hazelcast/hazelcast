@@ -21,7 +21,6 @@ import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -78,7 +77,7 @@ public class ClientRunnableTest {
         latch1.countDown();
         latch2.await();
         Thread.sleep(10);
-        clientRunnable.notifyMonitor();
+        clientRunnable.terminate();
         assertTrue(latchShutDown.await(5, TimeUnit.SECONDS));
         assertFalse(clientRunnable.running);
     }
