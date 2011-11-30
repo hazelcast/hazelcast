@@ -29,7 +29,7 @@ abstract class OperationsCounterSupport<T extends LocalInstanceOperationStats> {
 	final Object lock = new Object();
 	long startTime = now();
 	long endTime = Long.MAX_VALUE;
-	transient T published = null;
+	transient volatile T published = null;
 
 	final List listOfSubCounters = new ArrayList();
 
