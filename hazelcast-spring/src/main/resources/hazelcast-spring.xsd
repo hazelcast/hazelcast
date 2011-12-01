@@ -29,7 +29,15 @@
                         </xs:element>
                         <xs:element name="queue" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
-                                <xs:sequence/>
+                                <xs:sequence>
+                                	<xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
+                                		<xs:complexType>
+                                			<xs:sequence>
+                                				<xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                                			</xs:sequence>
+                                		</xs:complexType>
+                                	</xs:element>
+                                </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="max-size-per-jvm" use="required" type="xs:string"/>
                                 <xs:attribute name="backing-map-ref" use="optional" type="xs:string"/>
@@ -67,6 +75,25 @@
 								        	<xs:attribute name="merge-policy" use="required" type="xs:string"/>
 								        </xs:complexType>
 								    </xs:element>
+								    <xs:element name="indexes" minOccurs="0" maxOccurs="1">
+								    	<xs:complexType>
+								    		<xs:sequence>
+								    			<xs:element name="index" minOccurs="0" maxOccurs="unbounded">
+								    				<xs:complexType>
+								    					<xs:attribute name="attribute" type="xs:string" use="required" />
+								    					<xs:attribute name="ordered" type="xs:string" use="optional" default="false" />
+								    				</xs:complexType>
+								    			</xs:element>
+								    		</xs:sequence>
+								    	</xs:complexType>
+								    </xs:element>
+								    <xs:element name="entry-listeners" minOccurs="0" maxOccurs="1">
+								    	<xs:complexType>
+								    		<xs:sequence>
+								    			<xs:element name="entry-listener" type="entry-listener" minOccurs="0" maxOccurs="unbounded" />
+								    		</xs:sequence>
+								    	</xs:complexType>
+								    </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
@@ -84,7 +111,43 @@
                                 <xs:attribute name="storage-type" use="optional" type="xs:string" default="HEAP" />
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="multimap" minOccurs="0" maxOccurs="unbounded">
+					        <xs:complexType>
+					            <xs:sequence>
+					                <xs:element name="entry-listeners" minOccurs="0" maxOccurs="1">
+								    	<xs:complexType>
+								    		<xs:sequence>
+								    			<xs:element name="entry-listener" type="entry-listener" minOccurs="0" maxOccurs="unbounded" />
+								    		</xs:sequence>
+								    	</xs:complexType>
+								    </xs:element>
+					            </xs:sequence>
+					            <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
+					            <xs:attribute name="value-collection-type" type="xs:string" use="optional" default="SET"/>
+					        </xs:complexType>
+					    </xs:element>
+					    <xs:element name="topic" minOccurs="0" maxOccurs="unbounded">
+					        <xs:complexType>
+					            <xs:sequence>
+					                <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
+					                	<xs:complexType>
+								    		<xs:sequence>
+								    			<xs:element name="message-listener" type="listener" minOccurs="0" maxOccurs="unbounded" />
+								    		</xs:sequence>
+								    	</xs:complexType>
+					                </xs:element>
+					            </xs:sequence>
+					            <xs:attribute name="name" type="xs:string" use="optional" default="default" />
+					        </xs:complexType>
+					    </xs:element>
                         <xs:element name="merge-policies" type="merge-policies" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="listeners" minOccurs="0" maxOccurs="1">
+                        	<xs:complexType>
+                        		 <xs:sequence>
+                        		 	<xs:element name="listener" type="listener" minOccurs="0" maxOccurs="unbounded" />
+                        		 </xs:sequence>
+                        	</xs:complexType>
+                        </xs:element>
                         <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                 </xs:extension>
@@ -418,6 +481,25 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+    
+    <xs:complexType name="listener">
+		<xs:attribute name="class-name" type="xs:string" use="optional" />
+		<xs:attribute name="implementation" type="xs:string" use="optional" />
+	</xs:complexType>
+	<xs:complexType name="item-listener">
+		<xs:complexContent>
+			<xs:extension base="listener">
+		    	<xs:attribute name="include-value" type="xs:string" use="optional" default="true"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="entry-listener">
+		<xs:complexContent>
+		    <xs:extension base="item-listener">
+		    	<xs:attribute name="local" type="xs:string" use="optional" default="false"/>
+		    </xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
     
     <xs:complexType name="security">
     	<xs:sequence>

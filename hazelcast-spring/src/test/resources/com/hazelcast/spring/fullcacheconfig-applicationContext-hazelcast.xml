@@ -83,7 +83,12 @@
                                  keep-alive-seconds="20"/>
             <hz:queue name="testQ"
                       max-size-per-jvm="1000"
-                      backing-map-ref="testQMap"/>
+                      backing-map-ref="testQMap">
+                      
+                      <hz:item-listeners>
+                      	<hz:item-listener class-name="com.hazelcast.spring.DummyItemListener" include-value="true" />
+                      </hz:item-listeners>
+            </hz:queue>
             <hz:queue name="q"
                       max-size-per-jvm="2500"
                       backing-map-ref="qMap"/>
@@ -99,6 +104,11 @@
                 <hz:map-store enabled="true" class-name="com.hazelcast.spring.DummyStore" write-delay-seconds="0"/>
                 <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60" eviction-policy="LRU" max-size="5000"
                                invalidate-on-change="true"/>
+                               
+                <hz:indexes>
+                	<hz:index attribute="name" />
+                	<hz:index attribute="age" ordered="true" />
+                </hz:indexes>               
             </hz:map>
             <hz:map name="testMap2"
                     backup-count="2"
@@ -111,6 +121,11 @@
                     merge-policy="hz.ADD_NEW_ENTRY">
                 <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0"/>
                 <hz:wan-replication-ref name="testWan" merge-policy="hz.ADD_NEW_ENTRY"/>
+                
+                <hz:entry-listeners>
+                	<hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true" />
+                	<hz:entry-listener implementation="dummyEntryListener" local="true" />
+                </hz:entry-listeners>
             </hz:map>
             <hz:map name="testMap3"
                     backup-count="2"
@@ -145,20 +160,41 @@
                     eviction-percentage="50"
                     eviction-policy="LRU"
                     merge-policy="hz.LATEST_UPDATE"/>
+            
+             <hz:multimap name="testMultimap"
+                    value-collection-type="LIST">
+                
+                <hz:entry-listeners>
+                	<hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true" />
+                	<hz:entry-listener implementation="dummyEntryListener" local="true" />
+                </hz:entry-listeners>
+            </hz:multimap>
+                    
+            <hz:topic name="testTopic">
+            	<hz:message-listeners>
+					<hz:message-listener class-name="com.hazelcast.spring.DummyMessageListener" />   
+         		</hz:message-listeners>
+            </hz:topic>        
                     
          	<hz:merge-policies>
          		<hz:map-merge-policy name="hz.MERGE_POLICY_TEST" 
          			class-name="com.hazelcast.spring.TestMapMergePolicy" 
          			implementation="dummyMergePolicy"/>
-         	</hz:merge-policies>           
+         	</hz:merge-policies>  
+         	
+         	<hz:listeners>
+				<hz:listener class-name="com.hazelcast.spring.DummyMembershipListener" />   
+				<hz:listener implementation="dummyMembershipListener" />         		
+         	</hz:listeners>
+         	         	
         </hz:config>
     </hz:hazelcast>
 
     <hz:map id="map1" instance-ref="instance" name="map1"/>
     <hz:map id="map2" instance-ref="instance" name="map2"/>
-    <hz:multiMap id="multiMap" instance-ref="instance" name="multiMap"/>
-    <hz:queue id="queue" instance-ref="instance" name="queue"/>
-    <hz:topic id="topic" instance-ref="instance" name="topic"/>
+    <hz:multiMap id="multiMap" instance-ref="instance" name="testMultimap"/>
+    <hz:queue id="queue" instance-ref="instance" name="testQ"/>
+    <hz:topic id="topic" instance-ref="instance" name="testTopic"/>
     <hz:set id="set" instance-ref="instance" name="set"/>
     <hz:list id="list" instance-ref="instance" name="list"/>
     <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
@@ -171,4 +207,6 @@
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>
     <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
     <bean id="dummyMergePolicy" class="com.hazelcast.spring.DummyMergePolicy"/>
+    <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
+    <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>
 </beans>

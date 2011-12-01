@@ -49,6 +49,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
         private ManagedMap mapConfigManagedMap;
         private ManagedMap queueManagedMap;
         private ManagedMap topicManagedMap;
+        private ManagedMap multiMapManagedMap;
         private ManagedMap executorManagedMap;
         private ManagedMap wanReplicationManagedMap;
         private ManagedMap mergePolicyConfigMap;
@@ -62,6 +63,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             this.mapConfigManagedMap = new ManagedMap();
             this.queueManagedMap = new ManagedMap();
             this.topicManagedMap = new ManagedMap();
+            this.multiMapManagedMap = new ManagedMap();
             this.executorManagedMap = new ManagedMap();
             this.wanReplicationManagedMap = new ManagedMap();
             this.mergePolicyConfigMap = new ManagedMap();
@@ -69,6 +71,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             this.configBuilder.addPropertyValue("mapConfigs", mapConfigManagedMap);
             this.configBuilder.addPropertyValue("QConfigs", queueManagedMap);
             this.configBuilder.addPropertyValue("topicConfigs", topicManagedMap);
+            this.configBuilder.addPropertyValue("multiMapConfigs", multiMapManagedMap);
             this.configBuilder.addPropertyValue("executorConfigMap", executorManagedMap);
             this.configBuilder.addPropertyValue("wanReplicationConfigs", wanReplicationManagedMap);
             this.configBuilder.addPropertyValue("mergePolicyConfigs", mergePolicyConfigMap);
@@ -170,6 +173,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                     handleQueue(node);
                 } else if ("map".equals(nodeName)) {
                     handleMap(node);
+                } else if ("multimap".equals(nodeName)) {
+                    handleMultiMap(node);
                 } else if ("topic".equals(nodeName)) {
                     handleTopic(node);
                 } else if ("merge-policies".equals(nodeName)) {
@@ -180,6 +185,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                 	handleSecurity(node);
                 } else if("instance-name".equals(nodeName)) {
                 	configBuilder.addPropertyValue(xmlToJavaName(nodeName), getValue(node));
+                } else if ("listeners".equals(nodeName)) {
+                	final List listeners = parseListeners(node, "listenerConfig", ListenerConfig.class);
+        			configBuilder.addPropertyValue("listenerConfigs", listeners);
                 }
             }
         }
@@ -313,7 +321,18 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
         }
 
         public void handleQueue(Node node) {
-            createAndFillListedBean(node, QueueConfig.class, "queueConfig", queueManagedMap);
+        	BeanDefinitionBuilder queueConfigBuilder = createBeanBuilder(QueueConfig.class, "queueConfig");
+            final Node attName = node.getAttributes().getNamedItem("name");
+            final String name = getValue(attName);
+            fillAttributeValues(node, queueConfigBuilder);
+            
+            for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+            	if("item-listeners".equals(cleanNodeName(childNode))) {
+                	ManagedList listeners = parseListeners(childNode, "itemListenerConfig", ItemListenerConfig.class);
+                	queueConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
+                }
+            }
+            queueManagedMap.put(name, queueConfigBuilder.getBeanDefinition());
         }
 
         public void handleMap(Node node) {
@@ -337,21 +356,31 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             	maxSizeConfigBuilder.addPropertyValue(xmlToJavaName(cleanNodeName(maxSizePolicyNode)), getValue(maxSizePolicyNode));
             }
             
-            for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
-                final String nname = cleanNodeName(n.getNodeName());
-                if ("map-store".equals(nname)){
-                    handleMapStoreConfig(n, mapConfigBuilder);
-                } else if ("near-cache".equals(nname)){
-                    handleNearCacheConfig(n, mapConfigBuilder);
-                } else if ("wan-replication-ref".equals(nname)) {
+            for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                final String nodeName = cleanNodeName(childNode.getNodeName());
+                if ("map-store".equals(nodeName)){
+                    handleMapStoreConfig(childNode, mapConfigBuilder);
+                } else if ("near-cache".equals(nodeName)){
+                    handleNearCacheConfig(childNode, mapConfigBuilder);
+                } else if ("wan-replication-ref".equals(nodeName)) {
                 	final BeanDefinitionBuilder wanReplicationRefBuilder = createBeanBuilder(WanReplicationRef.class, "wanReplicationRef");
                     final AbstractBeanDefinition wanReplicationRefBeanDefinition = wanReplicationRefBuilder.getBeanDefinition();
-                    fillValues(n, wanReplicationRefBuilder);
+                    fillValues(childNode, wanReplicationRefBuilder);
                     mapConfigBuilder.addPropertyValue("wanReplicationRef", wanReplicationRefBeanDefinition);
+                } else if("indexes".equals(nodeName)) {
+                	ManagedList indexes = new ManagedList();
+                	for (Node indexNode : new IterableNodeList(childNode.getChildNodes(), Node.ELEMENT_NODE)) {
+                		final BeanDefinitionBuilder indexConfBuilder = createBeanBuilder(MapIndexConfig.class, "mapIndexConfig");
+                		fillAttributeValues(indexNode, indexConfBuilder);
+                		indexes.add(indexConfBuilder.getBeanDefinition());
+                	}
+                	mapConfigBuilder.addPropertyValue("mapIndexConfigs", indexes);
+                } else if("entry-listeners".equals(nodeName)) {
+                	ManagedList listeners = parseListeners(childNode, "entryListenerConfig", EntryListenerConfig.class);
+                	mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
-            mapConfigBuilder = null;
         }
         
         public void handleWanReplication(Node node) {
@@ -452,9 +481,35 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             }
             beanDefinitionBuilder.addPropertyValue("properties", properties);
         }
+        
+        public void handleMultiMap(Node node) {
+        	BeanDefinitionBuilder multiMapConfigBuilder = createBeanBuilder(MultiMapConfig.class, "multiMapConfig");
+            final Node attName = node.getAttributes().getNamedItem("name");
+            final String name = getValue(attName);
+            fillAttributeValues(node, multiMapConfigBuilder);
+            
+            for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+            	if("entry-listeners".equals(cleanNodeName(childNode))) {
+                	ManagedList listeners = parseListeners(childNode, "entryListenerConfig", EntryListenerConfig.class);
+                	multiMapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
+                }
+            }
+            multiMapManagedMap.put(name, multiMapConfigBuilder.getBeanDefinition());
+        }
 
         public void handleTopic(Node node) {
-            createAndFillListedBean(node, TopicConfig.class, "topicConfig", topicManagedMap);
+        	BeanDefinitionBuilder topicConfigBuilder = createBeanBuilder(TopicConfig.class, "topicConfig");
+            final Node attName = node.getAttributes().getNamedItem("name");
+            final String name = getValue(attName);
+            fillAttributeValues(node, topicConfigBuilder);
+            
+            for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+            	if("message-listeners".equals(cleanNodeName(childNode))) {
+                	ManagedList listeners = parseListeners(childNode, "messageListenerConfig", ListenerConfig.class);
+                	topicConfigBuilder.addPropertyValue("messageListenerConfigs", listeners);
+                }
+            }
+            topicManagedMap.put(name, topicConfigBuilder.getBeanDefinition());
         }
 
         public void handleMergePolicies(Node node) {
@@ -669,6 +724,21 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
         		}
         	}
         }
+        
+		private ManagedList parseListeners(Node node, String listenerBeanName, Class listenerConfigClass) {
+			ManagedList listeners = new ManagedList();
+        	final String implementationAttr = "implementation";
+        	for (Node listenerNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+        		final BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(listenerConfigClass, listenerBeanName);
+        		fillAttributeValues(listenerNode, listenerConfBuilder, implementationAttr);
+        		Node implementationNode = null;
+        		if((implementationNode = listenerNode.getAttributes().getNamedItem(implementationAttr)) != null) {
+        			listenerConfBuilder.addPropertyReference(implementationAttr, getValue(implementationNode));
+        		}
+        		listeners.add(listenerConfBuilder.getBeanDefinition());
+        	}
+        	return listeners;
+		}
     }
 
 }

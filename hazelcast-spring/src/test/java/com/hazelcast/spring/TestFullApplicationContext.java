@@ -99,6 +99,12 @@ public class TestFullApplicationContext {
     
     @Autowired
     private MergePolicy dummyMergePolicy;
+    
+    @Autowired
+    private MembershipListener membershipListener;
+    
+    @Autowired
+    private EntryListener entryListener;
 
     @BeforeClass
     @AfterClass
@@ -126,6 +132,16 @@ public class TestFullApplicationContext {
         assertEquals("hz.ADD_NEW_ENTRY", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
         assertEquals(StorageType.HEAP, testMapConfig.getStorageType());
+        assertEquals(2, testMapConfig.getMapIndexConfigs().size());
+        for (MapIndexConfig index : testMapConfig.getMapIndexConfigs()) {
+			if("name".equals(index.getAttribute())) {
+				assertFalse(index.isOrdered());
+			} else if("age".equals(index.getAttribute())) {
+				assertTrue(index.isOrdered());
+			} else {
+				fail("unknown index!");
+			}
+		}
         // Test that the testMapConfig has a mapStoreConfig and it is correct
         MapStoreConfig testMapStoreConfig = testMapConfig.getMapStoreConfig();
         assertNotNull(testMapStoreConfig);
@@ -148,6 +164,19 @@ public class TestFullApplicationContext {
         assertEquals("hz.ADD_NEW_ENTRY", testMapConfig2.getWanReplicationRef().getMergePolicy());
         assertEquals(1000, testMapConfig2.getMaxSizeConfig().getSize());
         assertEquals("LRU", testMapConfig2.getMaxSizeConfig().getMaxSizePolicy());
+        assertEquals(2, testMapConfig2.getEntryListenerConfigs().size());
+        for (EntryListenerConfig listener : testMapConfig2.getEntryListenerConfigs()) {
+			if(listener.getClassName() != null) {
+				assertNull(listener.getImplementation());
+				assertTrue(listener.isIncludeValue());
+				assertFalse(listener.isLocal());
+			} else {
+				assertNotNull(listener.getImplementation());
+				assertEquals(entryListener, listener.getImplementation());
+				assertTrue(listener.isLocal());
+				assertTrue(listener.isIncludeValue());
+			}
+		}
         MapConfig simpleMapConfig = config.getMapConfig("simpleMap");
         assertNotNull(simpleMapConfig);
         assertEquals("simpleMap", simpleMapConfig.getName());
@@ -181,6 +210,39 @@ public class TestFullApplicationContext {
         assertNotNull(qConfig);
         assertEquals("q", qConfig.getName());
         assertEquals(2500, qConfig.getMaxSizePerJVM());
+        assertEquals(1, testQConfig.getItemListenerConfigs().size());
+        ItemListenerConfig listenerConfig = testQConfig.getItemListenerConfigs().get(0);
+        assertEquals("com.hazelcast.spring.DummyItemListener", listenerConfig.getClassName());
+        assertTrue(listenerConfig.isIncludeValue());
+    }
+    
+    @Test
+    public void testMultimapConfig() {
+    	MultiMapConfig testMultiMapConfig = config.getMultiMapConfig("testMultimap");
+    	assertEquals(MultiMapConfig.ValueCollectionType.LIST, testMultiMapConfig.getValueCollectionType());
+        assertEquals(2, testMultiMapConfig.getEntryListenerConfigs().size());
+        for (EntryListenerConfig listener : testMultiMapConfig.getEntryListenerConfigs()) {
+			if(listener.getClassName() != null) {
+				assertNull(listener.getImplementation());
+				assertTrue(listener.isIncludeValue());
+				assertFalse(listener.isLocal());
+			} else {
+				assertNotNull(listener.getImplementation());
+				assertEquals(entryListener, listener.getImplementation());
+				assertTrue(listener.isLocal());
+				assertTrue(listener.isIncludeValue());
+			}
+		}
+    }
+    
+    @Test
+    public void testTopicConfig() {
+        TopicConfig testTopicConfig = config.getTopicConfig("testTopic");
+        assertNotNull(testTopicConfig);
+        assertEquals("testTopic", testTopicConfig.getName());
+        assertEquals(1, testTopicConfig.getMessageListenerConfigs().size());
+        ListenerConfig listenerConfig = testTopicConfig.getMessageListenerConfigs().get(0);
+        assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
     }
 
     @Test
@@ -286,9 +348,9 @@ public class TestFullApplicationContext {
         assertNotNull(semaphore);
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());
-        assertEquals("multiMap", multiMap.getName());
-        assertEquals("queue", queue.getName());
-        assertEquals("topic", topic.getName());
+        assertEquals("testMultimap", multiMap.getName());
+        assertEquals("testQ", queue.getName());
+        assertEquals("testTopic", topic.getName());
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
@@ -323,5 +385,21 @@ public class TestFullApplicationContext {
     	assertEquals("hz.MERGE_POLICY_TEST", cfg.getName());
     	assertEquals("com.hazelcast.spring.TestMapMergePolicy", cfg.getClassName());
     	assertEquals(dummyMergePolicy, cfg.getImplementation());
+    }
+    
+    @Test
+    public void testConfigListeners() {
+    	assertNotNull(membershipListener);
+    	List<ListenerConfig> list = config.getListenerConfigs();
+    	assertEquals(2, list.size());
+    	for (ListenerConfig lc : list) {
+			if(lc.getClassName() != null) {
+				assertNull(lc.getImplementation());
+				assertEquals(DummyMembershipListener.class.getName(), lc.getClassName());
+			} else {
+				assertNotNull(lc.getImplementation());
+				assertEquals(membershipListener, lc.getImplementation());
+			}
+		}
     }
 }
