@@ -651,7 +651,6 @@ public class CMap {
                     size += record.valueCount();
                 }
             }
-            System.err.println("All\t: " + mapRecords.size() + "\t\tOwned\t: " + records.size() + "\t\tSize:\t" + size);
             return size;
         } else {
             return mapIndexService.size();
