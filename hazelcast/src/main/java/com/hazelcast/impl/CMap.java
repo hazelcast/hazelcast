@@ -578,13 +578,13 @@ public class CMap {
                 if (req.value == null) {
                     markAsEvicted(record);
                 } else {
-                	// FIXME
-                    if (record.containsValue(req.value)) {
-                        Collection<ValueHolder> multiValues = record.getMultiValues();
-                        if (multiValues != null) {
-                            multiValues.remove(new ValueHolder(req.value));
-                        }
+                	// FIXME: This should be done out of ClientService  
+					// if (record.containsValue(req.value)) {
+                    Collection<ValueHolder> multiValues = record.getMultiValues();
+                    if (multiValues != null) {
+                        multiValues.remove(new ValueHolder(req.value));
                     }
+					// }
                     if (record.valueCount() == 0) {
                         markAsEvicted(record);
                     }
