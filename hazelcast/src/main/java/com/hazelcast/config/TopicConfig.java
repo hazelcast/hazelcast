@@ -20,6 +20,8 @@ package com.hazelcast.config;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.hazelcast.nio.DataSerializable;
 
@@ -30,6 +32,8 @@ public final class TopicConfig  implements DataSerializable{
     private String name;
 
     private boolean globalOrderingEnabled = DEFAULT_GLOBAL_ORDERING_ENABLED;
+    
+    private List<ListenerConfig> listenerConfigs;
 
     public TopicConfig() {
     }
@@ -69,6 +73,22 @@ public final class TopicConfig  implements DataSerializable{
         this.globalOrderingEnabled = globalOrderingEnabled;
         return this;
     }
+    
+    public TopicConfig addMessageListenerConfig(ListenerConfig listenerConfig) {
+    	getMessageListenerConfigs().add(listenerConfig);
+    	return this;
+    }
+    
+    public List<ListenerConfig> getMessageListenerConfigs() {
+    	if (listenerConfigs == null) {
+    		listenerConfigs = new ArrayList<ListenerConfig>();
+    	}
+		return listenerConfigs;
+	}
+    
+    public void setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
+		this.listenerConfigs = listenerConfigs;
+	}
     
     @Override
     public int hashCode() {

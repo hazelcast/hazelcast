@@ -50,6 +50,7 @@ public class ListProxyImpl extends AbstractList implements ListProxy, DataSerial
 
     public void destroy() {
     	factory.destroyInstanceClusterWide(actualName, null);
+    	factory.destroyInstanceClusterWide(name, null);
         factory.destroyInstanceClusterWide(Prefix.MAP + name, null);
     }
 

@@ -142,7 +142,7 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     protected String getValue(org.w3c.dom.Node node) {
-        return getTextContent(node).trim();
+        return node != null ? getTextContent(node).trim() : "";
     }
 
     protected final boolean hasTextContent(final Node child) {

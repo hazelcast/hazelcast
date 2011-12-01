@@ -19,9 +19,11 @@ package com.hazelcast.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.impl.CMap;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.TestUtil;
 import org.junit.After;
@@ -30,6 +32,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 import static org.junit.Assert.*;
 
@@ -931,4 +934,30 @@ public class QueryTest extends TestUtil {
 		}
 		assertEquals(2, map.values(new SqlPredicate("age=1 and name like 'e%'")).size());
     }
+    
+    @Test
+	public void testMapIndexInitialization() {
+		Config config = new Config();
+		MapConfig mapConfig = config.getMapConfig("testMapIndexInitialization");
+		mapConfig.addMapIndexConfig(new MapIndexConfig("name", false));
+		mapConfig.addMapIndexConfig(new MapIndexConfig("age", true));
+		
+		HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+		IMap map = hz.getMap(mapConfig.getName());
+		CMap cmap = TestUtil.getCMap(hz, mapConfig.getName());
+		Map<Expression, Index> indexes = cmap.getMapIndexService().getIndexes();
+		assertEquals(2, indexes.size());
+		
+		for (Entry<Expression, Index> e : indexes.entrySet()) {
+			Index index = e.getValue();
+			if("name".equals(e.getKey().toString())) {
+				assertFalse(index.isOrdered());
+			} else if("age".equals(e.getKey().toString())) {
+				assertTrue(index.isOrdered());
+			} else {
+				fail("Unknown expression: " + e.getKey() 
+						+ "! Has toString() of GetExpressionImpl changed?");
+			}
+		}
+	}
 }

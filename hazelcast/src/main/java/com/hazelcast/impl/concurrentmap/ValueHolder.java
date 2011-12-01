@@ -53,6 +53,7 @@ public class ValueHolder {
 
     @Override
     public int hashCode() {
-        return getValue().hashCode();
+    	final Object v = getValue(); 
+        return v != null ? v.hashCode() : Integer.MIN_VALUE;
     }
 }

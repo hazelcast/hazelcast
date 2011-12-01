@@ -32,6 +32,8 @@ import com.hazelcast.merge.MergePolicy;
 import com.hazelcast.nio.*;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.MapIndexService;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.SortedHashMap;
 
 import java.io.DataInput;
@@ -40,6 +42,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.Prefix.*;
@@ -69,12 +72,8 @@ public class CMap {
         INITIALIZING,
         INITIALIZED;
 
-        boolean isInitialized() {
-            return INITIALIZED == this;
-        }
-
-        boolean isInitializing() {
-            return INITIALIZING == this;
+        boolean notInitialized() {
+            return NONE == this;
         }
     }
 
@@ -95,6 +94,8 @@ public class CMap {
     final String name;
 
     final MapConfig mapConfig;
+    
+    final MultiMapConfig multiMapConfig;
 
     final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
@@ -251,17 +252,58 @@ public class CMap {
         }
         if (instanceType.isMultiMap()) {
             String shortMultiMapName = name.substring(4);
-            MultiMapConfig multiMapConfig = node.getConfig().getMultiMapConfig(shortMultiMapName);
+            multiMapConfig = node.getConfig().getMultiMapConfig(shortMultiMapName);
             if (multiMapConfig.getValueCollectionType() == MultiMapConfig.ValueCollectionType.SET) {
                 multiMapSet = true;
             } else {
                 multiMapSet = false;
             }
         } else {
+        	multiMapConfig = null;
             multiMapSet = false;
         }
+        if (!mapForQueue) {
+        	initializeIndexes();
+        	initializeListeners();
+        }
     }
-
+    
+    private void initializeIndexes() {
+    	for (MapIndexConfig index : mapConfig.getMapIndexConfigs()) {
+    		if(index.getAttribute() != null) {
+    			addIndex(Predicates.get(index.getAttribute()), index.isOrdered(), -1);
+    		} else if(index.getExpression() != null) {
+    			addIndex(index.getExpression(), index.isOrdered(), -1);
+    		}
+		}
+    }
+    
+    private void initializeListeners() {
+    	List<EntryListenerConfig> listenerConfigs = null;
+    	if(isMultiMap()) {
+    		listenerConfigs = multiMapConfig.getEntryListenerConfigs();
+    	} else {
+    		listenerConfigs = mapConfig.getEntryListenerConfigs();
+    	}
+    	
+    	if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
+			for (EntryListenerConfig lc : listenerConfigs) {
+				try {
+					node.listenerManager.createAndAddListenerItem(name, lc, instanceType);
+					if (lc.isLocal()) {
+						addListener(null, thisAddress, lc.isIncludeValue());
+					} else {
+						for (MemberImpl member : node.clusterManager.getMembers()) {
+							addListener(null, member.getAddress(), lc.isIncludeValue());
+						}
+					}
+				} catch (Throwable e) {
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
+			}
+    	}
+    }
+    
     MergePolicy getMergePolicy(String mergePolicyName) {
         MergePolicy mergePolicyTemp = null;
         if (mergePolicyName != null && !"hz.NO_MERGE".equalsIgnoreCase(mergePolicyName)) {
@@ -475,7 +517,7 @@ public class CMap {
      * @return
      */
     private boolean backupMultiValue(Request req) {
-        Record record = getRecord(req);
+    	Record record = getRecord(req);
         if (record != null) {
             record.setActive();
             if (req.version > record.getVersion() + 1) {
@@ -536,6 +578,7 @@ public class CMap {
                 if (req.value == null) {
                     markAsEvicted(record);
                 } else {
+                	// FIXME
                     if (record.containsValue(req.value)) {
                         Collection<ValueHolder> multiValues = record.getMultiValues();
                         if (multiValues != null) {
@@ -608,6 +651,7 @@ public class CMap {
                     size += record.valueCount();
                 }
             }
+            System.err.println("All\t: " + mapRecords.size() + "\t\tOwned\t: " + records.size() + "\t\tSize:\t" + size);
             return size;
         } else {
             return mapIndexService.size();
@@ -1398,14 +1442,23 @@ public class CMap {
         if (record == null) {
             if (isMultiMap()) {
                 record = createNewRecord(req.key, null);
+                record.setMultiValues(createMultiValuesCollection());
+            	if(req.value != null) {
+            		record.getMultiValues().add(new ValueHolder(req.value));
+            	}
             } else {
                 record = createNewRecord(req.key, req.value);
             }
             mapRecords.put(req.key, record);
         } else {
             if (req.value != null) {
-                if (!isMultiMap()) {
-                    record.setValue(req.value);
+                if (isMultiMap()) {
+                	if (record.getMultiValues() == null) {
+                		record.setMultiValues(createMultiValuesCollection());
+                	}
+                	record.getMultiValues().add(new ValueHolder(req.value));
+                } else {
+                	record.setValue(req.value);
                 }
             }
         }
@@ -1513,8 +1566,8 @@ public class CMap {
                     }
                 }
             }
-            // invalidate records on destroy
-            // on restart invalidation occurs after merge
+            // on destroy; invalidate all records
+            // on restart; invalidation occurs after merge
             if (invalidate) {
                 record.invalidate();
             }
@@ -1973,5 +2026,13 @@ public class CMap {
 
     public MapIndexService getMapIndexService() {
         return mapIndexService;
+    }
+    
+    private Collection<ValueHolder> createMultiValuesCollection() {
+    	if(multiMapSet) {
+    		return new ConcurrentHashSet<ValueHolder>();
+    	} else {
+    		return new CopyOnWriteArrayList<ValueHolder>();
+    	}
     }
 }

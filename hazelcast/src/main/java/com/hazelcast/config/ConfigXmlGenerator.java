@@ -67,6 +67,13 @@ public class ConfigXmlGenerator {
         xml.append("<multicast-group>").append(mcast.getMulticastGroup()).append("</multicast-group>");
         xml.append("<multicast-port>").append(mcast.getMulticastPort()).append("</multicast-port>");
         xml.append("<multicast-timeout-seconds>").append(mcast.getMulticastTimeoutSeconds()).append("</multicast-timeout-seconds>");
+        if(!mcast.getTrustedInterfaces().isEmpty()) {
+        	xml.append("<trusted-interfaces>");
+	        for (String trustedInterface : mcast.getTrustedInterfaces()) {
+	        	xml.append("<interface>").append(trustedInterface).append("</interface>");
+			}
+	        xml.append("</trusted-interfaces>");
+        }
         xml.append("</multicast>");
         final TcpIpConfig tcpCfg = join.getTcpIpConfig();
         xml.append("<tcp-ip enabled=\"").append(tcpCfg.isEnabled()).append("\">");
@@ -82,6 +89,15 @@ public class ConfigXmlGenerator {
             xml.append("<required-member>").append(tcpCfg.getRequiredMember()).append("</required-member>");
         }
         xml.append("</tcp-ip>");
+        final AwsConfig awsConfig = join.getAwsConfig();
+        xml.append("<aws enabled=\"").append(awsConfig.isEnabled()).append("\">");
+        xml.append("<access-key>").append(awsConfig.getAccessKey()).append("</access-key>");
+        xml.append("<secret-key>").append(awsConfig.getSecretKey()).append("</secret-key>");
+        xml.append("<region>").append(awsConfig.getRegion()).append("</region>");
+        xml.append("<security-group-name>").append(awsConfig.getSecurityGroupName()).append("</security-group-name>");
+        xml.append("<tag-key>").append(awsConfig.getTagKey()).append("</tag-key>");
+        xml.append("<tag-value>").append(awsConfig.getTagValue()).append("</tag-value>");
+        xml.append("</aws>");
         xml.append("</join>");
         final Interfaces interfaces = netCfg.getInterfaces();
         xml.append("<interfaces enabled=\"").append(interfaces.isEnabled()).append("\">");
@@ -124,13 +140,16 @@ public class ConfigXmlGenerator {
             xml.append("<queue name=\"").append(q.getName()).append("\">");
             xml.append("<max-size-per-jvm>").append(q.getMaxSizePerJVM()).append("</max-size-per-jvm>");
             xml.append("<backing-map-ref>").append(q.getBackingMapRef()).append("</backing-map-ref>");
+            if(!q.getItemListenerConfigs().isEmpty()) {
+            	xml.append("<item-listeners>");
+            	for (ItemListenerConfig lc : q.getItemListenerConfigs()) {
+					xml.append("<item-listener include-value=\"").append(lc.isIncludeValue()).append("\">");
+					xml.append(lc.getClassName());
+					xml.append("</item-listener>"); 
+				}	
+            	xml.append("</item-listeners>");
+            }
             xml.append("</queue>");
-        }
-        final Collection<TopicConfig> tCfgs = config.getTopicConfigs().values();
-        for (TopicConfig t : tCfgs) {
-            xml.append("<topic name=\"").append(t.getName()).append("\">");
-            xml.append("<global-ordering-enabled>").append(t.isGlobalOrderingEnabled()).append("</global-ordering-enabled>");
-            xml.append("</TopicConfig>");
         }
         final Collection<MapConfig> mCfgs = config.getMapConfigs().values();
         for (MapConfig m : mCfgs) {
@@ -169,7 +188,58 @@ public class ConfigXmlGenerator {
                 xml.append("<merge-policy>").append(wan.getMergePolicy()).append("</merge-policy>");
                 xml.append("</wan-replication-ref>");
             }
+            if(!m.getMapIndexConfigs().isEmpty()) {
+            	xml.append("<indexes>");
+            	for (MapIndexConfig indexCfg : m.getMapIndexConfigs()) {
+					xml.append("<index ordered=\"").append(indexCfg.isOrdered()).append("\">");
+					xml.append(indexCfg.getAttribute());
+					xml.append("</index>"); 
+				}	
+            	xml.append("</indexes>");
+            }
+            if(!m.getEntryListenerConfigs().isEmpty()) {
+            	xml.append("<entry-listeners>");
+            	for (EntryListenerConfig lc : m.getEntryListenerConfigs()) {
+					xml.append("<entry-listener include-value=\"").append(lc.isIncludeValue()).append("\" local=\"").append(lc.isLocal()).append("\">");
+					xml.append(lc.getClassName());
+					xml.append("</entry-listener>"); 
+				}	
+            	xml.append("</entry-listeners>");
+            }
+            if(m.getStorageType() != null) {
+            	xml.append("<storage-type>").append(m.getStorageType().toString()).append("</storage-type>");
+            }
             xml.append("</map>");
+        }
+        final Collection<MultiMapConfig> mmCfgs = config.getMultiMapConfigs().values();
+        for (MultiMapConfig mm : mmCfgs) {
+            xml.append("<multimap name=\"").append(mm.getName()).append("\">");
+            xml.append("<value-collection-type>").append(mm.getValueCollectionType()).append("</value-collection-type>");
+            if(!mm.getEntryListenerConfigs().isEmpty()) {
+            	xml.append("<entry-listeners>");
+            	for (EntryListenerConfig lc : mm.getEntryListenerConfigs()) {
+					xml.append("<entry-listener include-value=\"").append(lc.isIncludeValue()).append("\" local=\"").append(lc.isLocal()).append("\">");
+					xml.append(lc.getClassName());
+					xml.append("</entry-listener>"); 
+				}	
+            	xml.append("</entry-listeners>");
+            }
+            xml.append("</multimap>");
+        }
+        final Collection<TopicConfig> tCfgs = config.getTopicConfigs().values();
+        for (TopicConfig t : tCfgs) {
+            xml.append("<topic name=\"").append(t.getName()).append("\">");
+            xml.append("<global-ordering-enabled>").append(t.isGlobalOrderingEnabled()).append("</global-ordering-enabled>");
+            if(!t.getMessageListenerConfigs().isEmpty()) {
+            	xml.append("<message-listeners>");
+            	for (ListenerConfig lc : t.getMessageListenerConfigs()) {
+					xml.append("<message-listener>");
+					xml.append(lc.getClassName());
+					xml.append("</message-listener>"); 
+				}	
+            	xml.append("</message-listeners>");
+            }
+            xml.append("</TopicConfig>");
         }
         final Collection<SemaphoreConfig> semaphoreCfgs = config.getSemaphoreConfigs();
         for (SemaphoreConfig sc : semaphoreCfgs) {
@@ -189,6 +259,15 @@ public class ConfigXmlGenerator {
             xml.append("</map-merge-policy>");
         }
         xml.append("</merge-policies>");
+        if (!config.getListenerConfigs().isEmpty()) {
+        	xml.append("<listeners>");
+        	for (ListenerConfig lc : config.getListenerConfigs()) {
+				xml.append("<listener>");
+				xml.append(lc.getClassName());
+				xml.append("</listener>"); 
+			}	
+        	xml.append("</listeners>");
+        }
         xml.append("</hazelcast>");
         return format(xml.toString(), 5);
     }

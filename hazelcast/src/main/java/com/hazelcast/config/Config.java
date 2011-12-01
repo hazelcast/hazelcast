@@ -84,6 +84,8 @@ public class Config implements DataSerializable {
     private Map<String, WanReplicationConfig> mapWanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
     private SecurityConfig securityConfig = new SecurityConfig();
+    
+    private List<ListenerConfig> listenerConfigs;
 
     public Config() {
         String liteMemberProp = System.getProperty("hazelcast.super.client");
@@ -241,7 +243,7 @@ public class Config implements DataSerializable {
         }
         config = new TopicConfig(defConfig);
         config.setName(name);
-        addTopicConfig(defConfig);
+        addTopicConfig(config);
         return config;
     }
 
@@ -495,6 +497,10 @@ public class Config implements DataSerializable {
     public Map<String, MapConfig> getMapConfigs() {
         return Collections.unmodifiableMap(mapConfigs);
     }
+    
+    public Map<String, MultiMapConfig> getMultiMapConfigs() {
+		return Collections.unmodifiableMap(multiMapConfigs);
+	}
 
     /**
      * @param mapConfigs the mapConfigs to set
@@ -502,6 +508,14 @@ public class Config implements DataSerializable {
     public Config setMapConfigs(Map<String, MapConfig> mapConfigs) {
         this.mapConfigs = mapConfigs;
         for (final Entry<String, MapConfig> entry : this.mapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+    
+    public Config setMultiMapConfigs(Map<String, MultiMapConfig> multiMapConfigs) {
+        this.multiMapConfigs = multiMapConfigs;
+        for (final Entry<String, MultiMapConfig> entry : this.multiMapConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
@@ -624,6 +638,22 @@ public class Config implements DataSerializable {
         this.securityConfig = securityConfig;
     }
 
+    public Config addListenerConfig(ListenerConfig listenerConfig) {
+    	getListenerConfigs().add(listenerConfig);
+    	return this;
+    }
+    
+    public List<ListenerConfig> getListenerConfigs() {
+    	if (listenerConfigs == null) {
+    		listenerConfigs = new ArrayList<ListenerConfig>();
+    	}
+		return listenerConfigs;
+	}
+    
+    public void setListenerConfigs(List<ListenerConfig> listenerConfigs) {
+		this.listenerConfigs = listenerConfigs;
+	}
+    
     /**
      * @param config
      * @return true if config is compatible with this one,

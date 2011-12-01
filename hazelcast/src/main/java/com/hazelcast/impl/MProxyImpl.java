@@ -68,7 +68,6 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
                     InvocationTargetException ite = (InvocationTargetException) e;
                     throw ite.getCause();
                 }
-                // FIXME
                 throw e;
             } finally {
                 afterCall();
@@ -460,7 +459,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     private static void check(Object obj) {
         Util.checkSerializable(obj);
     }
-
+    
     private class MProxyReal implements MProxy {
         private final transient MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
 

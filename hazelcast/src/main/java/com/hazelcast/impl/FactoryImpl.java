@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
@@ -28,6 +29,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.nio.Serializer;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.util.ResponseQueueFactory;
 
@@ -166,7 +169,7 @@ public class FactoryImpl implements HazelcastInstance {
             return null;
         }
     }
-
+    
     public int hashCode() {
         return name.hashCode();
     }
@@ -410,6 +413,31 @@ public class FactoryImpl implements HazelcastInstance {
         }
         managementService = new ManagementService(this);
         managementService.register();
+        initializeListeners(config);
+    }
+    
+    private void initializeListeners(Config config) {
+    	for (final ListenerConfig listenerCfg : config.getListenerConfigs()) {
+			Object listener = listenerCfg.getImplementation();
+			if (listener == null) {
+				try {
+					listener = Serializer.newInstance(Serializer.loadClass(listenerCfg.getClassName()));
+				} catch (Exception e) {
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
+			}
+			if (listener instanceof InstanceListener) {
+				addInstanceListener((InstanceListener) listener);
+			} else if (listener instanceof MembershipListener) {
+				getCluster().addMembershipListener((MembershipListener) listener);
+			} else if (listener instanceof MigrationListener) {
+				getPartitionService().addMigrationListener((MigrationListener) listener);
+			} else if(listener != null) {
+				final String error = "Unknown listener type: " + listener.getClass();
+				Throwable t = new IllegalArgumentException(error);
+				logger.log(Level.WARNING, error, t);
+			}
+		}
     }
 
     public Set<String> getLongInstanceNames() {
@@ -562,9 +590,9 @@ public class FactoryImpl implements HazelcastInstance {
                 logger.log(Level.WARNING, "CMap[" + mProxy.getLongName() + "] has not been created yet! Initialization attempt failed!");
                 return;
             }
-            if (!cmap.isMapForQueue() && !cmap.initState.isInitialized()) {
+            if (!cmap.isMapForQueue() && cmap.initState.notInitialized()) {
                 synchronized (cmap.getInitLock()) {
-                    if (!cmap.initState.isInitialized()) {
+                    if (cmap.initState.notInitialized()) {
                     	final MapStoreConfig mapStoreConfig = cmap.mapConfig.getMapStoreConfig();
                         if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
                         	cmap.initState = InitializationState.INITIALIZING;
@@ -620,7 +648,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
     }
-
+    
     public static class InitializeMap implements Callable<Boolean>, DataSerializable, HazelcastInstanceAware {
         String name;
         private transient FactoryImpl factory = null;
@@ -633,10 +661,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public Boolean call() throws Exception {
-        	final CMap cmap = factory.node.concurrentMapManager.getMap(Prefix.MAP + name);
-        	if (cmap == null || !cmap.initState.isInitializing()) {
-        		factory.getMap(name).getName();
-        	}
+    		factory.getMap(name).getName();
             return Boolean.TRUE;
         }
 
@@ -692,8 +717,10 @@ public class FactoryImpl implements HazelcastInstance {
             String name = proxyKey.name;
             if (name.startsWith(Prefix.QUEUE)) {
                 proxy = proxyFactory.createQueueProxy(name);
+                node.blockingQueueManager.getOrCreateBQ(name);
             } else if (name.startsWith(Prefix.TOPIC)) {
                 proxy = proxyFactory.createTopicProxy(name);
+                node.topicManager.getTopicInstance(name);
             } else if (name.startsWith(Prefix.MAP)) {
                 proxy = proxyFactory.createMapProxy(name);
                 node.concurrentMapManager.getOrCreateMap(name);
@@ -701,6 +728,7 @@ public class FactoryImpl implements HazelcastInstance {
                 proxy = proxyFactory.createListProxy(name);
             } else if (name.startsWith(Prefix.MULTIMAP)) {
                 proxy = proxyFactory.createMultiMapProxy(name);
+                node.concurrentMapManager.getOrCreateMap(name);
             } else if (name.startsWith(Prefix.SET)) {
                 proxy = proxyFactory.createSetProxy(name);
             } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {

@@ -18,12 +18,10 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.PacketProcessor;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -306,6 +304,21 @@ public class ListenerManager extends BaseManager {
     void removeAllRegisteredListeners(String name) {
         namedListeners.remove(name);
     }
+    
+    /**
+     *  Create and add ListenerItem during initialization of CMap, BQ and TopicInstance.
+     */
+    void createAndAddListenerItem(String name, ListenerConfig lc, Instance.InstanceType instanceType) throws Exception {
+    	Object listener = lc.getImplementation();
+		if (listener == null) {
+			listener = Serializer.newInstance(Serializer.loadClass(lc.getClassName()));
+		}
+		if (listener != null) {
+			final ListenerItem listenerItem = new ListenerItem(name, null, listener, 
+					lc.isIncludeValue(), instanceType, lc.isLocal());
+			getOrCreateListenerList(name).add(listenerItem);
+		}
+    }
 
     void callListeners(DataAwareEntryEvent dataAwareEntryEvent) {
         List<ListenerItem> listeners = getOrCreateListenerList(dataAwareEntryEvent.getLongName());
@@ -320,8 +333,8 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    private void callListener(final ListenerItem listenerItem, final EntryEvent event) {
-        if (listenerItem.localListener && !((DataAwareEntryEvent) event).firedLocally) {
+    private void callListener(final ListenerItem listenerItem, final DataAwareEntryEvent event) {
+        if (listenerItem.localListener && !event.firedLocally) {
             return;
         }
         final Object listener = listenerItem.listener;

@@ -216,6 +216,7 @@ public class ConnectionManager {
     public void shutdown() {
     	if (!live) return;
         live = false;
+        stop();
     	if (serverSocketChannel != null) {
 	        try {
 	        	serverSocketChannel.close();
@@ -223,7 +224,6 @@ public class ConnectionManager {
 	        	logger.log(Level.FINEST, ignore.getMessage(), ignore);
 	        }
         }
-    	stop();
     }
     
     private void stop() {

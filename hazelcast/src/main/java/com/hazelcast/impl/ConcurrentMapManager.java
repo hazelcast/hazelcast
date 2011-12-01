@@ -2485,9 +2485,6 @@ public class ConcurrentMapManager extends BaseManager {
                     record = cmap.toRecord(request);
                 }
                 cmap.markAsActive(record);
-                if (record.getMultiValues() == null) {
-                    record.setMultiValues(new CopyOnWriteArrayList<ValueHolder>());
-                }
                 cmap.putMulti(request);
                 request.response = Boolean.TRUE;
                 returnResponse(request);
@@ -2498,9 +2495,6 @@ public class ConcurrentMapManager extends BaseManager {
                         record = cmap.toRecord(request);
                     }
                     cmap.markAsActive(record);
-                    if (record.getMultiValues() == null) {
-                        record.setMultiValues(new ConcurrentHashSet<ValueHolder>());
-                    }
                     cmap.putMulti(request);
                     request.response = Boolean.TRUE;
                     returnResponse(request);

@@ -142,6 +142,10 @@
             map for this queue.
         -->
         <backing-map-ref>default</backing-map-ref>
+        
+        <item-listeners>
+        	<item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
 
     </queue>
     <map name="default">
@@ -224,9 +228,31 @@
             <merge-policy>hz.PASS_THROUGH</merge-policy>
         </wan-replication-ref>
         
+        <indexes>
+        	<index ordered="false">name</index>
+        	<index ordered="true">age</index>
+        </indexes>
+        
+        <entry-listeners>
+       		<entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
+        </entry-listeners>
+        
         <!-- HEAP or OFFHEAP -->
         <storage-type>HEAP</storage-type>
     </map>
+	
+	<multimap name="default">
+    	<value-collection-type>SET</value-collection-type>
+    	<entry-listeners>
+    		<entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
+    	</entry-listeners>
+    </multimap>
+        
+    <topic name="default">
+    	<message-listeners>
+    		<message-listener>com.hazelcast.examples.MessageListener</message-listener>
+    	</message-listeners>
+    </topic>
     
     <semaphore name="default">
         <initial-permits>10</initial-permits>
@@ -240,6 +266,12 @@
            	<class-name>com.hazelcast.examples.MyOwnMergePolicy</class-name>
        	</map-merge-policy>
    	</merge-policies>
+   	
+   	<listeners>
+   		<listener>com.hazelcast.examples.MembershipListener</listener>
+   		<listener>com.hazelcast.examples.InstanceListener</listener>
+   		<listener>com.hazelcast.examples.MigrationListenerListener</listener>
+   	</listeners>
 	
 	<security enabled="false">
 		<member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">

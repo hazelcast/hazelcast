@@ -17,7 +17,10 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.monitor.LocalTopicStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -25,6 +28,7 @@ import com.hazelcast.nio.Data;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
@@ -125,6 +129,21 @@ public class TopicManager extends BaseManager {
             }
             this.topicManager = topicManager;
             this.name = name;
+            initializeListeners();
+        }
+        
+        private void initializeListeners() {
+			final TopicConfig topicConfig = node.config.findMatchingTopicConfig(name);
+			for (ListenerConfig lc : topicConfig.getMessageListenerConfigs()) {
+				try {
+					node.listenerManager.createAndAddListenerItem(name, lc, InstanceType.TOPIC);
+					for (MemberImpl member : node.clusterManager.getMembers()) {
+						addListener(member.getAddress(), true);
+					}
+				} catch (Exception e) {
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
+			}
         }
 
         public void addListener(final Address address, final boolean includeValue) {

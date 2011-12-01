@@ -84,7 +84,7 @@ public final class DefaultRecord extends AbstractRecord {
 
     public int valueCount() {
         int count = 0;
-        if (getValueData() != null) {
+        if (hasValueData()) {
             count = 1;
         } else if (getMultiValues() != null) {
             count = getMultiValues().size();

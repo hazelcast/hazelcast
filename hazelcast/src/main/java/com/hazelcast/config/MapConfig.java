@@ -25,6 +25,8 @@ import com.hazelcast.util.ByteUtil;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MapConfig implements DataSerializable {
 
@@ -75,6 +77,10 @@ public class MapConfig implements DataSerializable {
     private String mergePolicy = DEFAULT_MERGE_POLICY;
 
     private WanReplicationRef wanReplicationRef;
+
+    private List<EntryListenerConfig> listenerConfigs;
+
+    private List<MapIndexConfig> mapIndexConfigs;
 
     private StorageType storageType = null;
 
@@ -375,11 +381,43 @@ public class MapConfig implements DataSerializable {
     public StorageType getStorageType() {
         return storageType;
     }
-
+    
     public MapConfig setStorageType(StorageType storageType) {
         this.storageType = storageType;
         return this;
     }
+    
+    public MapConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
+    	getEntryListenerConfigs().add(listenerConfig);
+    	return this;
+    }
+    
+    public List<EntryListenerConfig> getEntryListenerConfigs() {
+    	if (listenerConfigs == null) {
+    		listenerConfigs = new ArrayList<EntryListenerConfig>();
+    	}
+		return listenerConfigs;
+	}
+
+    public void setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
+		this.listenerConfigs = listenerConfigs;
+	}
+
+    public MapConfig addMapIndexConfig(MapIndexConfig mapIndexConfig) {
+    	getMapIndexConfigs().add(mapIndexConfig);
+    	return this;
+    }
+
+    public List<MapIndexConfig> getMapIndexConfigs() {
+    	if (mapIndexConfigs == null) {
+    		mapIndexConfigs = new ArrayList<MapIndexConfig>();
+    	}
+		return mapIndexConfigs;
+	}
+    
+    public void setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
+		this.mapIndexConfigs = mapIndexConfigs;
+	}
 
     public boolean isCompatible(MapConfig other) {
         if (this == other)

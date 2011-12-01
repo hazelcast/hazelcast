@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
@@ -24,16 +25,14 @@ import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.monitor.LocalQueueStatsImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -108,6 +107,7 @@ public class BlockingQueueManager extends BaseManager {
 
     public void destroy(String name) {
         mapBQ.remove(name);
+        node.listenerManager.removeAllRegisteredListeners(name);
     }
 
     abstract class InitializationAwareOperationHandler extends ResponsiveOperationHandler {
@@ -761,41 +761,12 @@ public class BlockingQueueManager extends BaseManager {
         node.listenerManager.addListener(name, listener, null, includeValue, Instance.InstanceType.QUEUE);
     }
 
-    class QueueItemListener implements EntryListener {
-        final ItemListener itemListener;
-        final boolean includeValue;
-
-        QueueItemListener(ItemListener itemListener, boolean includeValue) {
-            this.itemListener = itemListener;
-            this.includeValue = includeValue;
-        }
-
-        public void entryAdded(EntryEvent entryEvent) {
-            Object item = (includeValue) ? entryEvent.getValue() : null;
-            itemListener.itemAdded(item);
-        }
-
-        public void entryRemoved(EntryEvent entryEvent) {
-            Object item = (includeValue) ? entryEvent.getValue() : null;
-            itemListener.itemRemoved(item);
-        }
-
-        public void entryUpdated(EntryEvent entryEvent) {
-        }
-
-        public void entryEvicted(EntryEvent entryEvent) {
-        }
-    }
-
     public void removeItemListener(final String name, final ItemListener listener) {
         List<ListenerManager.ListenerItem> lsListenerItems = node.listenerManager.getOrCreateListenerList(name);
         for (ListenerManager.ListenerItem listenerItem : lsListenerItems) {
-            if (listenerItem.listener instanceof QueueItemListener) {
-                QueueItemListener queueListener = (QueueItemListener) listenerItem.listener;
-                if (queueListener.itemListener == listener) {
-                    lsListenerItems.remove(listenerItem);
-                    return;
-                }
+            if (listenerItem.listener == listener) {
+                lsListenerItems.remove(listenerItem);
+                return;
             }
         }
     }
@@ -819,17 +790,32 @@ public class BlockingQueueManager extends BaseManager {
         final int maxSizePerJVM;
         final long ttl;
         final String name;
+        final QueueConfig queueConfig;
         long nextKey = 0;
         volatile MasterState state = MasterState.NOT_INITIALIZED;
 
         BQ(String name) {
             this.name = name;
             String shortName = name.substring(Prefix.QUEUE.length());
-            QueueConfig qConfig = node.getConfig().findMatchingQueueConfig(shortName);
-            MapConfig backingMapConfig = node.getConfig().findMatchingMapConfig(qConfig.getBackingMapRef());
+            queueConfig = node.getConfig().findMatchingQueueConfig(shortName);
+            MapConfig backingMapConfig = node.getConfig().findMatchingMapConfig(queueConfig.getBackingMapRef());
             int backingMapTTL = backingMapConfig.getTimeToLiveSeconds();
-            this.maxSizePerJVM = (qConfig.getMaxSizePerJVM() == 0) ? Integer.MAX_VALUE : qConfig.getMaxSizePerJVM();
+            this.maxSizePerJVM = (queueConfig.getMaxSizePerJVM() == 0) ? Integer.MAX_VALUE : queueConfig.getMaxSizePerJVM();
             this.ttl = (backingMapTTL == 0) ? Integer.MAX_VALUE : TimeUnit.SECONDS.toMillis(backingMapTTL);
+            initializeListeners();
+        }
+        
+        private void initializeListeners() {
+			for (ItemListenerConfig lc : queueConfig.getItemListenerConfigs()) {
+				try {
+					node.listenerManager.createAndAddListenerItem(name, lc, Instance.InstanceType.QUEUE);
+					for (MemberImpl member : node.clusterManager.getMembers()) {
+						mapListeners.put(member.getAddress(), lc.isIncludeValue());
+					}
+				} catch (Exception e) {
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
+			}
         }
 
         int maxSize() {
