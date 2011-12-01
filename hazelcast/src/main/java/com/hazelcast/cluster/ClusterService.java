@@ -59,7 +59,7 @@ public final class ClusterService implements Runnable, Constants {
 
     private long lastCheck = 0;
 
-    private boolean running = true;
+    private volatile boolean running = true;
 
     private final ThreadWatcher threadWatcher = new ThreadWatcher();
 
