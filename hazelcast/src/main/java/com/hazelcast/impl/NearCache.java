@@ -177,13 +177,14 @@ public class NearCache {
 
     public void invalidate(Data key) {
         checkThread();
-        Object theKey = sortedMap.remove(key);
+        final Object theKey = sortedMap.remove(key);
         if (theKey != null) {
-            CacheEntry removedCacheEntry = cache.remove(theKey);
-            if (removedCacheEntry == null) {
-                logger.log(Level.WARNING, cmap.name + " removed CacheEntry cannot be null");
+            final CacheEntry removedCacheEntry = cache.remove(theKey);
+            if (removedCacheEntry != null) {
+            	removedCacheEntry.invalidate();
+            } else {
+            	logger.log(Level.WARNING, cmap.name + " removed CacheEntry cannot be null");
             }
-            removedCacheEntry.invalidate();
         }
     }
 
