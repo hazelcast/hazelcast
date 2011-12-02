@@ -56,7 +56,7 @@ public class OutRunnable extends IORunnable {
         try {
             boolean written = false;
             if (queue.size() > 0 || q.size() > 0) {
-                queue.drainTo(q);
+                queue.drainTo(q, q.available());
                 Call call = q.poll();
                 while (call != null) {
                     writeCall(call);

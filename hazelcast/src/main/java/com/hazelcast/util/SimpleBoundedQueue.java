@@ -39,8 +39,9 @@ public final class SimpleBoundedQueue<E> extends AbstractQueue<E> {
 
     @Override
     public boolean add(E obj) {
-        if (size == maxSize)
+        if (size == maxSize) {
             return false;
+        }
         objects[add] = obj;
         add++;
         size++;
@@ -64,6 +65,10 @@ public final class SimpleBoundedQueue<E> extends AbstractQueue<E> {
     @Override
     public int size() {
         return size;
+    }
+    
+    public int available() {
+    	return maxSize - size;
     }
 
     public boolean offer(E o) {
