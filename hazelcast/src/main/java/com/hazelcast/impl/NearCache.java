@@ -196,8 +196,8 @@ public class NearCache {
     }
 
     public void appendState(StringBuffer sbState) {
-        sbState.append(", n.sorted:" + sortedMap.size());
-        sbState.append(", n.cache:" + cache.size());
+        sbState.append(", n.sorted:").append(sortedMap.size());
+        sbState.append(", n.cache:").append(cache.size());
     }
 
     public int getMaxSize() {
