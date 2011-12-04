@@ -38,11 +38,12 @@ class ThreadDumpGeneratorImpl_15 extends ThreadDumpGenerator {
                 " Id=" + info.getThreadId() + " " +
                 info.getThreadState());
         if (info.getLockName() != null) {
-            sb.append(" on " + info.getLockName());
+            sb.append(" on ").append(info.getLockName());
         }
         if (info.getLockOwnerName() != null) {
-            sb.append(" owned by \"" + info.getLockOwnerName() +
-                    "\" Id=" + info.getLockOwnerId());
+            sb.append(" owned by \"")
+                .append(info.getLockOwnerName())
+                .append("\" Id=").append(info.getLockOwnerId());
         }
         if (info.isSuspended()) {
             sb.append(" (suspended)");
@@ -54,7 +55,7 @@ class ThreadDumpGeneratorImpl_15 extends ThreadDumpGenerator {
         StackTraceElement[] stackTrace = info.getStackTrace();
         for (int i = 0; i < stackTrace.length; i++) {
             StackTraceElement ste = stackTrace[i];
-            sb.append("\tat " + ste.toString());
+            sb.append("\tat ").append(ste.toString());
             sb.append('\n');
         }
         sb.append('\n');
