@@ -306,7 +306,7 @@ public class ConcurrentMapManager extends BaseManager {
 //                    sbState.append(call);
 //                }
 //            }
-            sbState.append("\nCall Count:" + calls.size());
+            sbState.append("\nCall Count:").append(calls.size());
             for (Block block : blocks) {
                 if (block != null && block.isMigrating()) {
                     sbState.append("\n");
@@ -323,8 +323,8 @@ public class ConcurrentMapManager extends BaseManager {
             node.clusterManager.appendState(sbState);
             long total = Runtime.getRuntime().totalMemory();
             long free = Runtime.getRuntime().freeMemory();
-            sbState.append("\nCluster Size:" + lsMembers.size());
-            sbState.append("\n" + cpuUtilization);
+            sbState.append("\nCluster Size:").append(lsMembers.size());
+            sbState.append("\n").append(cpuUtilization);
             sbState.append("\nUsed Memory:");
             sbState.append((total - free) / 1024 / 1024);
             sbState.append("MB");
