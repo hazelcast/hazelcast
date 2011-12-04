@@ -50,9 +50,9 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             StringBuilder res = new StringBuilder(node.getClusterImpl().toString());
             res.append("\n");
             ConnectionManager connectionManager = node.getConnectionManager();
-            res.append("ConnectionCount: " + connectionManager.getCurrentClientConnections());
+            res.append("ConnectionCount: ").append(connectionManager.getCurrentClientConnections());
             res.append("\n");
-            res.append("AllConnectionCount: " + connectionManager.getAllTextConnections());
+            res.append("AllConnectionCount: ").append(connectionManager.getAllTextConnections());
             res.append("\n");
             command.setResponse(null, res.toString().getBytes());
         } else {
