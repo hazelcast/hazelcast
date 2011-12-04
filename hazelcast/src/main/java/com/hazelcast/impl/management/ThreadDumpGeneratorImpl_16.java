@@ -73,15 +73,16 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
      * copied from JDK 1.6 {@link ThreadInfo} toString()
      */
     protected void appendThreadInfo(ThreadInfo info, StringBuilder sb) {
-        sb.append("\"" + info.getThreadName() + "\"" +
-                " Id=" + info.getThreadId() + " " +
+        sb.append("\"").append(info.getThreadName()).append( "\"").append(
+                " Id=").append(info.getThreadId()).append(" ").append(
                 info.getThreadState());
+        
         if (info.getLockName() != null) {
-            sb.append(" on " + info.getLockName());
+            sb.append(" on ").append(info.getLockName());
         }
         if (info.getLockOwnerName() != null) {
-            sb.append(" owned by \"" + info.getLockOwnerName() +
-                    "\" Id=" + info.getLockOwnerId());
+            sb.append(" owned by \"").append(info.getLockOwnerName()).
+                    append("\" Id=").append( + info.getLockOwnerId());
         }
         if (info.isSuspended()) {
             sb.append(" (suspended)");
@@ -97,22 +98,22 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
         
         for (int i = 0; i < stackTrace.length; i++) {
             StackTraceElement ste = stackTrace[i];
-            sb.append("\tat " + ste.toString());
+            sb.append("\tat ").append(ste.toString());
             sb.append('\n');
             
             if (i == 0 && lockInfo != null) {
                 Thread.State ts = info.getThreadState();
                 switch (ts) {
                     case BLOCKED:
-                        sb.append("\t-  blocked on " + lockInfo);
+                        sb.append("\t-  blocked on ").append(lockInfo);
                         sb.append('\n');
                         break;
                     case WAITING:
-                        sb.append("\t-  waiting on " + lockInfo);
+                        sb.append("\t-  waiting on ").append(lockInfo);
                         sb.append('\n');
                         break;
                     case TIMED_WAITING:
-                        sb.append("\t-  waiting on " + lockInfo);
+                        sb.append("\t-  waiting on ").append(lockInfo);
                         sb.append('\n');
                         break;
                     default:
@@ -122,7 +123,7 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
             for (Object mi : monitorInfo) {
                 Integer depth = objectCall(mi, MonitorInfo_getLockedStackDepth);
                 if (depth == i) {
-                    sb.append("\t-  locked " + mi);
+                    sb.append("\t-  locked ").append(mi);
                     sb.append('\n');
                 }
             }
@@ -130,10 +131,10 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
         
         final Object[] locks = objectCall(info, ThreadInfo_getLockedSynchronizers);
         if (locks.length > 0) {
-            sb.append("\n\tNumber of locked synchronizers = " + locks.length);
+            sb.append("\n\tNumber of locked synchronizers = ").append(locks.length);
             sb.append('\n');
             for (Object li : locks) {
-                sb.append("\t- " + li);
+                sb.append("\t- ").append(li);
                 sb.append('\n');
             }
         }
