@@ -261,15 +261,17 @@ public final class ClusterService implements Runnable, Constants {
     private void checkPeriodics() {
         final long now = System.currentTimeMillis();
         if (RESTART_ON_MAX_IDLE && (now - lastCheck) > MAX_IDLE_MILLIS) {
-            final StringBuilder sb = new StringBuilder("Hazelcast ServiceThread is blocked for ");
-            sb.append((now - lastCheck));
-            sb.append(" ms. Restarting Hazelcast!");
-            sb.append("\n\tnow:" + now);
-            sb.append("\n\tlastCheck:" + lastCheck);
-            sb.append("\n\tmaxIdleMillis:" + MAX_IDLE_MILLIS);
-            sb.append("\n\tRESTART_ON_MAX_IDLE:" + RESTART_ON_MAX_IDLE);
-            sb.append("\n");
-            logger.log(Level.INFO, sb.toString());
+            if(logger.isLoggable(Level.INFO)){
+                final StringBuilder sb = new StringBuilder("Hazelcast ServiceThread is blocked for ");
+                sb.append((now - lastCheck));
+                sb.append(" ms. Restarting Hazelcast!");
+                sb.append("\n\tnow:").append(now);
+                sb.append("\n\tlastCheck:").append(lastCheck);
+                sb.append("\n\tmaxIdleMillis:").append(MAX_IDLE_MILLIS);
+                sb.append("\n\tRESTART_ON_MAX_IDLE:").append(RESTART_ON_MAX_IDLE);
+                sb.append("\n");
+                logger.log(Level.INFO, sb.toString());
+            }
             new Thread(new Runnable() {
                 public void run() {
                     node.factory.restart();
