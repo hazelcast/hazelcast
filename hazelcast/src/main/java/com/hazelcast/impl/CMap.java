@@ -1693,7 +1693,7 @@ public class CMap {
         mapIndexService.appendState(sbState);
         for (Record record : mapRecords.values()) {
             if (record.isLocked()) {
-                sbState.append("\nLocked Record by " + record.getLock());
+                sbState.append("\nLocked Record by ").append(record.getLock());
             }
         }
     }
