@@ -34,7 +34,7 @@ public class EC2RequestSigner {
     public void sign(DescribeInstances request, String endpoint) {
         String canonicalizedQueryString = getCanonicalizedQueryString(request);
         String stringToSign = new StringBuilder().append(HTTP_VERB)
-                .append(endpoint + "\n")
+                .append(endpoint).append("\n")
                 .append(HTTP_REQUEST_URI)
                 .append(canonicalizedQueryString).toString();
         String signature = signTheString(stringToSign);
