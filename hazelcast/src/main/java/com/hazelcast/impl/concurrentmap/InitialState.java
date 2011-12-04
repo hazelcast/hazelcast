@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InitialState extends AbstractRemotelyProcessable {
-    List<MapState> lsMapStates = new ArrayList();
+    List<MapState> lsMapStates = new ArrayList<MapState>();
 
     public InitialState() {
     }
