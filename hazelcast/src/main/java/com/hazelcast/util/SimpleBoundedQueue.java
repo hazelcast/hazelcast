@@ -67,7 +67,7 @@ public final class SimpleBoundedQueue<E> extends AbstractQueue<E> {
         return size;
     }
     
-    public int available() {
+    public int remainingCapacity() {
     	return maxSize - size;
     }
 
