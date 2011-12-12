@@ -537,7 +537,7 @@ public class FactoryImpl implements HazelcastInstance {
             MProxy mProxy = (MProxy) proxy;
             CMap cmap = node.concurrentMapManager.getMap(mProxy.getLongName());
             if (cmap == null) {
-                logger.log(Level.WARNING, "Cmap[" + mProxy.getLongName() + "] has not been created yet! Initialization attemp failed!");
+                logger.log(Level.WARNING, "Cmap[" + mProxy.getLongName() + "] has not been created yet! Initialization attempt failed!");
                 return;
             }
             if (!cmap.isMapForQueue() && !cmap.initialized) {
@@ -554,18 +554,20 @@ public class FactoryImpl implements HazelcastInstance {
                                 if (keys != null) {
                                     int count = 0;
                                     PartitionService partitionService = getPartitionService();
+                                    Queue<Set> chunks = new ConcurrentLinkedQueue<Set>();
                                     Set ownedKeys = new HashSet();
                                     for (Object key : keys) {
                                         if (partitionService.getPartition(key).getOwner().localMember()) {
                                             ownedKeys.add(key);
                                             count++;
                                             if (ownedKeys.size() >= node.groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger()) {
-                                                loadKeys(mProxy, cmap, ownedKeys);
-                                                ownedKeys.clear();
+                                                chunks.add(ownedKeys);
+                                                ownedKeys = new HashSet();
                                             }
                                         }
                                     }
-                                    loadKeys(mProxy, cmap, ownedKeys);
+                                    chunks.add(ownedKeys);
+                                    loadChunks(mProxy, cmap, chunks);
                                     logger.log(Level.INFO, node.address + "[" + mProxy.getName() + "] loaded " + count);
                                 }
                             } catch (Throwable e) {
@@ -578,6 +580,30 @@ public class FactoryImpl implements HazelcastInstance {
                     cmap.initialized = true;
                 }
             }
+        }
+    }
+
+    private void loadChunks(final MProxy mProxy, final CMap cmap, final Queue<Set> chunks) throws InterruptedException {
+        if (chunks.size() > 0) {
+            int threadCount = node.groupProperties.MAP_LOAD_THREAD_COUNT.getInteger();
+            ExecutorService es = Executors.newFixedThreadPool(threadCount);
+            final CountDownLatch latch = new CountDownLatch(chunks.size());
+            for (int i = 0; i < threadCount; i++) {
+                es.execute(new Runnable() {
+                    public void run() {
+                        final Set chunk = chunks.poll();
+                        if (chunk == null) return;
+                        try {
+                            loadKeys(mProxy, cmap, chunk);
+                        } catch (Exception e) {
+                            logger.log(Level.SEVERE, "Initial loading failed.", e);
+                        } finally {
+                            latch.countDown();
+                        }
+                    }
+                });
+            }
+            latch.await();
         }
     }
 
@@ -3501,6 +3527,7 @@ public class FactoryImpl implements HazelcastInstance {
                 } else {
                     ttl = toMillis(ttl, timeunit);
                 }
+                mapOperationCounter.incrementOtherOperations();
                 concurrentMapManager.putTransient(name, key, value, -1, ttl);
             }
 
