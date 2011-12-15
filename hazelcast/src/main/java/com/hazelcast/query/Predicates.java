@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.Timestamp;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -36,10 +37,10 @@ import java.util.regex.Pattern;
 
 public final class Predicates {
 
-    private static final SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
-    private static final SimpleDateFormat sqlDateFormat = new SimpleDateFormat("yyyy-mm-dd");
-
+    private static final String timestampFormat = "yyyy-MM-dd hh:mm:ss.SSS";
+    private static final String dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
+    private static final String sqlDateFormat = "yyyy-mm-dd";
+    
     public static class GreaterLessPredicate extends EqualPredicate {
         boolean equal = false;
         boolean less = false;
@@ -246,7 +247,7 @@ public final class Predicates {
                 } else if (firstValueObject instanceof String) {
                     convertedInValues = new HashSet(inValues.size());
                     for (Object objValue : inValues) {
-                        convertedInValues.add(getRealObject(entryValue, (String) objValue));
+                        convertedInValues.add(getRealObject(entryValue, objValue));
                     }
                     return in(entryValue, convertedInValues);
                 }
@@ -473,7 +474,7 @@ public final class Predicates {
             if (firstValue.getClass() == value.getClass()) {
                 return value;
             } else {
-                return getRealObject(firstValue, String.valueOf(value));
+                return getRealObject(firstValue, value);
             }
         }
 
@@ -539,40 +540,73 @@ public final class Predicates {
     }
 
     public static abstract class AbstractPredicate extends SerializationHelper implements Predicate, DataSerializable {
-        public static Object getRealObject(Object type, String value) {
+        public static Object getRealObject(Object type, Object value) {
+            String valueString = String.valueOf(value);
             Object result = null;
             if (type instanceof Boolean) {
-                result = "true".equalsIgnoreCase(value) ? true : false;
+                result = "true".equalsIgnoreCase(valueString) ? true : false;
             } else if (type instanceof Integer) {
-                result = Integer.valueOf(value);
+                if (value instanceof Number) {
+                    result = ((Number) value).intValue();
+                } else {
+                    result = Integer.valueOf(valueString);
+                }
             } else if (type instanceof Long) {
-                result = Long.valueOf(value);
+                if (value instanceof Number) {
+                    result = ((Number) value).longValue();
+                } else {
+                    result = Long.valueOf(valueString);
+                }
             } else if (type instanceof Double) {
-                result = Double.valueOf(value);
+                if (value instanceof Number) {
+                    result = ((Number) value).doubleValue();
+                } else {
+                    result = Double.valueOf(valueString);
+                }
             } else if (type instanceof Float) {
-                result = Float.valueOf(value);
+                if (value instanceof Number) {
+                    result = ((Number) value).floatValue();
+                } else {
+                    result = Float.valueOf(valueString);
+                }
             } else if (type instanceof Byte) {
-                result = Byte.valueOf(value);
+                if (value instanceof Number) {
+                    result = ((Number) value).byteValue();
+                } else {
+                    result = Byte.valueOf(valueString);
+                }
             } else if (type instanceof Timestamp) {
-                try {
-                    result = new Timestamp(timestampFormat.parse(value).getTime());
-                } catch (ParseException e) {
-                    e.printStackTrace();
+                if (value instanceof Date) { // one of java.util.Date or java.sql.Date
+                    result = (Date) value;
+                } else {
+                    try {
+                        result = new Timestamp(getTimestampFormat().parse(valueString).getTime());
+                    } catch (ParseException e) {
+                        Util.throwUncheckedException(e);
+                    }
                 }
             } else if (type instanceof java.sql.Date) {
-                try {
-                    result = sqlDateFormat.parse(value);
-                } catch (ParseException e) {
-                    e.printStackTrace();
+                if (value instanceof Date) { // one of java.util.Date or java.sql.Timestamp
+                    result = (Date) value;
+                } else {
+                    try {
+                        result = getSqlDateFormat().parse(valueString);
+                    } catch (ParseException e) {
+                        Util.throwUncheckedException(e);
+                    }
                 }
             } else if (type instanceof Date) {
-                try {
-                    result = dateFormat.parse(value);
-                } catch (ParseException e) {
-                    e.printStackTrace();
+                if (value instanceof Date) { // one of java.sql.Date or java.sql.Timestamp
+                    result = (Date) value;
+                } else {
+                    try {
+                        result = getUtilDateFormat().parse(valueString);
+                    } catch (ParseException e) {
+                        Util.throwUncheckedException(e);
+                    }
                 }
             } else {
-                throw new RuntimeException("Unknown type " + type + " value=" + value);
+                throw new RuntimeException("Unknown type " + type + " value=" + valueString);
             }
             return result;
         }
@@ -1030,5 +1064,17 @@ public final class Predicates {
         public String toString() {
             return input;
         }
+    }
+    
+    private static DateFormat getTimestampFormat() {
+        return new SimpleDateFormat(timestampFormat);
+    }
+    
+    private static DateFormat getSqlDateFormat() {
+        return new SimpleDateFormat(sqlDateFormat);
+    }
+    
+    private static DateFormat getUtilDateFormat() {
+        return new SimpleDateFormat(dateFormat);
     }
 }
