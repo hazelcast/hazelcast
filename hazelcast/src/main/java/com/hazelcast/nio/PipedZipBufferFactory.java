@@ -72,11 +72,20 @@ public final class PipedZipBufferFactory {
 	    }
 	    
 	    public int deflate() {
-	        deflater.setInput(uncompressedBuffer.array(), 0, uncompressedBuffer.position());
-	        deflater.finish();
-	        final int count = deflater.deflate(compressedBuffer.array());
+	        try {
+	            deflater.setInput(uncompressedBuffer.array(), 0, uncompressedBuffer.position());
+	            deflater.finish();
+	            final int count = deflater.deflate(compressedBuffer.array());
+	            return count;
+            } finally {
+                deflater.reset();
+            }
+	    }
+	    
+	    @Override
+	    public void reset() {
+	        super.reset();
 	        deflater.reset();
-	    	return count;
 	    }
 	    
 		public ByteBuffer getInputBuffer() {
@@ -106,12 +115,21 @@ public final class PipedZipBufferFactory {
 	    }
 	    
 	    public int inflate(int length) throws DataFormatException {
-	    	inflater.setInput(compressedBuffer.array(), 0, length);
-	        final int count = inflater.inflate(uncompressedBuffer.array());
-	        uncompressedBuffer.limit(count);
-	        uncompressedBuffer.position(0);
+	        try {
+	            inflater.setInput(compressedBuffer.array(), 0, length);
+	            final int count = inflater.inflate(uncompressedBuffer.array());
+	            uncompressedBuffer.limit(count);
+	            uncompressedBuffer.position(0);
+	            return count;
+            } finally {
+                inflater.reset();
+            }
+	    }
+	    
+	    @Override
+	    public void reset() {
 	        inflater.reset();
-	        return count;
+	        super.reset();
 	    }
 	    
 		public ByteBuffer getInputBuffer() {
