@@ -87,5 +87,36 @@ public class PipedZipBufferTest {
 		System.arraycopy(infBuffer.getOutputBuffer().array(), 0, data2, 0, k2);
 		Assert.assertTrue("Inflated data should be equal to actual data!", Arrays.equals(data, data2));
 	}
+	
+	@Test
+	public void invalidDataTest() throws Exception {
+	    DeflatingPipedBuffer defBuffer = PipedZipBufferFactory.createDeflatingBuffer(data.length);
+        defBuffer.getInputBuffer().put(data);
+        final int compressedDataLength = defBuffer.deflate();
+        final byte[] compressedData = defBuffer.getOutputBuffer().array();
+        
+        InflatingPipedBuffer infBuffer = PipedZipBufferFactory.createInflatingBuffer(data.length);
+        
+        for (int i = 0; i < 13; i++) {
+            infBuffer.reset();
+            if (i % 2 == 0) {
+                infBuffer.getInputBuffer().put(compressedData);
+            } else {
+                infBuffer.getInputBuffer().put(data);
+            }
+            try {
+                int k2 = infBuffer.inflate(compressedDataLength);
+                if (i % 2 == 0) {
+                    Assert.assertEquals(data.length, k2);
+                } else {
+                    Assert.fail("Should fail here !!!");
+                }
+            } catch (Exception e) {
+                if (i % 2 == 0) {
+                    throw e;
+                }
+            }
+        }
+    }
 
 }
