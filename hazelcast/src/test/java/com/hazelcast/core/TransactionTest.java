@@ -336,11 +336,24 @@ public class TransactionTest {
         assertFalse(txnMap2.tryLock("1", 2, TimeUnit.SECONDS));
         long end = System.currentTimeMillis();
         long took = (end - start);
-        System.out.println("Took " + took);
         assertTrue((took > 1000) ? (took < 4000) : false);
         assertFalse(txnMap2.tryLock("1"));
         txnMap.unlock("1");
         assertTrue(txnMap2.tryLock("1", 2, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testReentrantLock() {
+        Hazelcast.getMap("testReentrantLock").put("1", "value");
+        TransactionalMap txnMap = newTransactionalMapProxy("testReentrantLock");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testReentrantLock");
+        txnMap.lock("1");
+        txnMap.lock("1");
+        assertFalse(txnMap2.tryLock("1"));
+        txnMap.unlock("1");
+        assertFalse(txnMap2.tryLock("1"));
+        txnMap.unlock("1");
+        assertTrue(txnMap2.tryLock("1"));
     }
 
     @Test

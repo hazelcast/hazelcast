@@ -43,6 +43,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.Instance.InstanceType;
@@ -441,33 +442,55 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    public boolean lock(String name, Object key, long timeout) {
+        MLock mlock = new MLock();
+        return mlock.lock(name, key, timeout);
+    }
+
     class MLock extends MBackupAndMigrationAwareOp {
         volatile Data oldValue = null;
 
         public boolean unlock(String name, Object key, long timeout) {
-            boolean unlocked = booleanCall(CONCURRENT_MAP_UNLOCK, name, key, null, timeout, -1);
-            if (unlocked) {
-                backup(CONCURRENT_MAP_BACKUP_LOCK);
+            Data dataKey = toData(key);
+            CMap cmap = getMap(name);
+            AtomicInteger lockCount = cmap.mapLocalLocks.get(dataKey);
+            if (lockCount == null || lockCount.decrementAndGet() == 0) {
+                boolean unlocked = booleanCall(CONCURRENT_MAP_UNLOCK, name, dataKey, null, timeout, -1);
+                if (unlocked) {
+                    cmap.mapLocalLocks.remove(dataKey);
+                    backup(CONCURRENT_MAP_BACKUP_LOCK);
+                }
+                return unlocked;
+            } else {
+                return true;
             }
-            return unlocked;
         }
 
         public boolean lock(String name, Object key, long timeout) {
-            boolean locked = booleanCall(CONCURRENT_MAP_LOCK, name, key, null, timeout, -1);
-            if (locked) {
-                backup(CONCURRENT_MAP_BACKUP_LOCK);
-            }
-            return locked;
+            return lock(CONCURRENT_MAP_LOCK, name, key, null, timeout);
         }
 
         public boolean lockAndGetValue(String name, Object key, long timeout) {
-            return lockAndGetValue(name, key, null, timeout);
+            return lock(CONCURRENT_MAP_TRY_LOCK_AND_GET, name, key, null, timeout);
         }
 
         public boolean lockAndGetValue(String name, Object key, Object value, long timeout) {
-            boolean locked = booleanCall(CONCURRENT_MAP_TRY_LOCK_AND_GET, name, key, value, timeout, -1);
+            return lock(CONCURRENT_MAP_TRY_LOCK_AND_GET, name, key, value, timeout);
+        }
+
+        public boolean lock(ClusterOperation op, String name, Object key, Object value, long timeout) {
+            Data dataKey = toData(key);
+            boolean locked = booleanCall(op, name, dataKey, value, timeout, -1);
             if (locked) {
-                backup(CONCURRENT_MAP_BACKUP_LOCK);
+                CMap cmap = getMap(name);
+                AtomicInteger lockCount = cmap.mapLocalLocks.get(dataKey);
+                if (lockCount == null) {
+                    lockCount = new AtomicInteger(0);
+                    cmap.mapLocalLocks.put(dataKey, lockCount);
+                }
+                if (lockCount.incrementAndGet() == 1) {
+                    backup(CONCURRENT_MAP_BACKUP_LOCK);
+                }
             }
             return locked;
         }
@@ -691,7 +714,7 @@ public class ConcurrentMapManager extends BaseManager {
         CMap cmap = getMap(name);
         if (cmap != null && cmap.nearCache != null) {
             theKeys = new HashSet(keys);
-            for (Iterator iterator = theKeys.iterator(); iterator.hasNext();) {
+            for (Iterator iterator = theKeys.iterator(); iterator.hasNext(); ) {
                 Object key = iterator.next();
                 Object value = cmap.nearCache.get(key);
                 if (value != null) {

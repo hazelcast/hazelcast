@@ -43,6 +43,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.Prefix.*;
@@ -156,6 +157,8 @@ public class CMap {
     final LocalUpdateListener localUpdateListener;
 
     final MergePolicy wanMergePolicy;
+
+    final Map<Data, AtomicInteger> mapLocalLocks = new ConcurrentHashMap<Data, AtomicInteger>(10000);
 
     CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
@@ -1869,7 +1872,7 @@ public class CMap {
                 return "[]";
             StringBuilder sb = new StringBuilder();
             sb.append('[');
-            for (; ;) {
+            for (; ; ) {
                 Object e = i.next();
                 sb.append(e == this ? "(this Collection)" : e);
                 if (!i.hasNext())

@@ -59,10 +59,10 @@ public class DistributedLock implements Serializable {
         if (this.lockCount == 0) {
             this.lockAddress = address;
             this.lockThreadId = threadId;
-            this.lockCount++;
+            this.lockCount = 1;
             return true;
         } else if (isLockedBy(address, threadId)) {
-            this.lockCount++;
+            this.lockCount = 1;
             return true;
         }
         return false;

@@ -646,6 +646,49 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             return result;
         }
 
+        public boolean lockMap(long time, TimeUnit timeunit) {
+            if (factory.locksMapProxy.tryLock("map_lock_" + name, time, timeunit)) {
+                MLockMap mLockMap = concurrentMapManager.new MLockMap(name, true);
+                mLockMap.call();
+                return true;
+            }
+            return false;
+        }
+
+        public void unlockMap() {
+            MLockMap mLockMap = concurrentMapManager.new MLockMap(name, false);
+            mLockMap.call();
+            factory.locksMapProxy.unlock("map_lock_" + name);
+        }
+
+        public void lock(Object key) {
+            check(key);
+            mapOperationCounter.incrementOtherOperations();
+            concurrentMapManager.lock(name, key, -1);
+        }
+
+        public boolean tryLock(Object key) {
+            check(key);
+            mapOperationCounter.incrementOtherOperations();
+            return concurrentMapManager.lock(name, key, 0);
+        }
+
+        public boolean tryLock(Object key, long time, TimeUnit timeunit) {
+            check(key);
+            if (time < 0)
+                throw new IllegalArgumentException("Time cannot be negative. time = " + time);
+            mapOperationCounter.incrementOtherOperations();
+            long timeoutMillis = timeunit.toMillis(time);
+            return concurrentMapManager.lock(name, key, (timeoutMillis < 0 || timeoutMillis == Long.MAX_VALUE) ? -1 : timeoutMillis);
+        }
+
+        public void unlock(Object key) {
+            check(key);
+            mapOperationCounter.incrementOtherOperations();
+            MLock mlock = concurrentMapManager.new MLock();
+            mlock.unlock(name, key, 0);
+        }
+
         public void putAndUnlock(Object key, Object value) {
             long begin = System.currentTimeMillis();
             check(key);
@@ -766,52 +809,6 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             Boolean result = mput.replace(name, key, oldValue, newValue, -1);
             mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
             return result;
-        }
-
-        public boolean lockMap(long time, TimeUnit timeunit) {
-            if (factory.locksMapProxy.tryLock("map_lock_" + name, time, timeunit)) {
-                MLockMap mLockMap = concurrentMapManager.new MLockMap(name, true);
-                mLockMap.call();
-                return true;
-            }
-            return false;
-        }
-
-        public void unlockMap() {
-            MLockMap mLockMap = concurrentMapManager.new MLockMap(name, false);
-            mLockMap.call();
-            factory.locksMapProxy.unlock("map_lock_" + name);
-        }
-
-        public void lock(Object key) {
-            check(key);
-            mapOperationCounter.incrementOtherOperations();
-            MLock mlock = concurrentMapManager.new MLock();
-            mlock.lock(name, key, -1);
-        }
-
-        public boolean tryLock(Object key) {
-            check(key);
-            mapOperationCounter.incrementOtherOperations();
-            MLock mlock = concurrentMapManager.new MLock();
-            return mlock.lock(name, key, 0);
-        }
-
-        public boolean tryLock(Object key, long time, TimeUnit timeunit) {
-            check(key);
-            if (time < 0)
-                throw new IllegalArgumentException("Time cannot be negative. time = " + time);
-            mapOperationCounter.incrementOtherOperations();
-            long timeoutMillis = timeunit.toMillis(time);
-            MLock mlock = concurrentMapManager.new MLock();
-            return mlock.lock(name, key, (timeoutMillis < 0 || timeoutMillis == Long.MAX_VALUE) ? -1 : timeoutMillis);
-        }
-
-        public void unlock(Object key) {
-            check(key);
-            mapOperationCounter.incrementOtherOperations();
-            MLock mlock = concurrentMapManager.new MLock();
-            mlock.unlock(name, key, 0);
         }
 
         public LocalMapStats getLocalMapStats() {
