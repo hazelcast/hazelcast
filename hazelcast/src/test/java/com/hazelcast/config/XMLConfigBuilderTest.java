@@ -42,7 +42,7 @@ public class XMLConfigBuilderTest {
                         "            </multicast>\n" +
                         "            <tcp-ip enabled=\"false\">\n" +
                         "                <interface>127.0.0.1</interface>\n" +
-                        "            `</tcp-ip>\n" +
+                        "            </tcp-ip>\n" +
                         "            <aws enabled=\"true\">\n" +
                         "                <access-key>access</access-key>\n" +
                         "                <secret-key>secret</secret-key>\n" +
@@ -91,14 +91,13 @@ public class XMLConfigBuilderTest {
 
     @Test
     public void testConfig2Xml2Config() {
-    	final Config config = new ClasspathXmlConfig("hazelcast-fullconfig.xml");
-    	final String xml = new ConfigXmlGenerator().generate(config);
-    	final Config config2 = new InMemoryXmlConfig(xml);
-    	
-    	assertTrue(config.isCompatible(config2));
-    	assertTrue(config2.isCompatible(config));
+        final Config config = new ClasspathXmlConfig("hazelcast-fullconfig.xml");
+        final String xml = new ConfigXmlGenerator().generate(config);
+        final Config config2 = new InMemoryXmlConfig(xml);
+        assertTrue(config.isCompatible(config2));
+        assertTrue(config2.isCompatible(config));
     }
-    
+
     @Test
     public void testXSDDefaultXML() throws SAXException, IOException {
         testXSDConfigXML("hazelcast-default.xml");
