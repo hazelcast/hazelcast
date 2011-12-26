@@ -21,6 +21,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.*;
+import com.hazelcast.impl.management.DetectDeadlockRequest.Edge;
+import com.hazelcast.impl.management.DetectDeadlockRequest.Vertex;
+import com.hazelcast.impl.management.LockInformationCallable.MapLockState;
 import com.hazelcast.impl.monitor.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.MemberState;
@@ -154,6 +157,48 @@ public class ManagementCenterService implements MembershipListener {
         logger.log(Level.INFO, "Management Center Client is trying to login.");
         GroupConfig groupConfig = factory.getConfig().getGroupConfig();
         return groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(password);
+    }
+
+    public List<Edge> detectDeadlock() {
+        Collection<Map<String, MapLockState>> collection =
+                (Collection<Map<String, MapLockState>>) callOnAllMembers(new LockInformationCallable());
+        List<Vertex> graph = new ArrayList<Vertex>();
+        for (Map<String, MapLockState> mapLockStateMap : collection) {
+            for (MapLockState map : mapLockStateMap.values()) {
+                for (Object key : map.getLockOwners().keySet()) {
+                    Vertex owner = new Vertex(map.getLockOwners().get(key));
+                    Vertex requester = new Vertex(map.getLockRequested().get(key));
+                    int index = graph.indexOf(owner);
+                    if (index >= 0) {
+                        owner = graph.get(index);
+                    } else {
+                        graph.add(owner);
+                    }
+                    index = graph.indexOf(requester);
+                    if (index >= 0) {
+                        requester = graph.get(index);
+                    } else {
+                        graph.add(requester);
+                    }
+                    Edge edge = new Edge();
+                    edge.from = requester;
+                    edge.to = owner;
+                    edge.key = key;
+                    edge.mapName = map.getMapName();
+                    edge.globalLock = map.isGlobalLock();
+                    owner.addIncoming(edge);
+                    requester.addOutgoing(edge);
+                }
+            }
+        }
+        List<Edge> list = new ArrayList<Edge>();
+        if (graph != null && graph.size() > 0) {
+            try {
+                graph.get(0).visit(list);
+            } catch (RuntimeException e) {
+            }
+        }
+        return list;
     }
 
     class TCPListener extends Thread {
@@ -460,6 +505,7 @@ public class ManagementCenterService implements MembershipListener {
             register(new EvictLocalMapRequest());
             register(new ConsoleCommandRequest());
             register(new MapConfigRequest());
+            register(new DetectDeadlockRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {

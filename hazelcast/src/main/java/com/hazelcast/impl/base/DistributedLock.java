@@ -19,7 +19,9 @@ package com.hazelcast.impl.base;
 
 import com.hazelcast.nio.Address;
 
-public class DistributedLock {
+import java.io.Serializable;
+
+public class DistributedLock implements Serializable {
     Address lockAddress = null;
     int lockThreadId = -1;
     int lockCount;

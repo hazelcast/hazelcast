@@ -12,6 +12,7 @@ public final class ConsoleRequestConstants {
     public static final int REQUEST_TYPE_EVICT_LOCAL_MAP = 4;
     public static final int REQUEST_TYPE_CONSOLE_COMMAND = 5;
     public static final int REQUEST_TYPE_MAP_CONFIG = 6;
+    public static final int REQUEST_TYPE_DETECT_DEADLOCK = 7;
 
     private ConsoleRequestConstants() {
     }

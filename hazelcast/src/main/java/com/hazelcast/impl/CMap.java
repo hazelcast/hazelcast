@@ -94,7 +94,7 @@ public class CMap {
     final String name;
 
     final MapConfig mapConfig;
-    
+
     final MultiMapConfig multiMapConfig;
 
     final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
@@ -259,51 +259,50 @@ public class CMap {
                 multiMapSet = false;
             }
         } else {
-        	multiMapConfig = null;
+            multiMapConfig = null;
             multiMapSet = false;
         }
         if (!mapForQueue) {
-        	initializeIndexes();
-        	initializeListeners();
+            initializeIndexes();
+            initializeListeners();
         }
     }
-    
+
     private void initializeIndexes() {
-    	for (MapIndexConfig index : mapConfig.getMapIndexConfigs()) {
-    		if(index.getAttribute() != null) {
-    			addIndex(Predicates.get(index.getAttribute()), index.isOrdered(), -1);
-    		} else if(index.getExpression() != null) {
-    			addIndex(index.getExpression(), index.isOrdered(), -1);
-    		}
-		}
+        for (MapIndexConfig index : mapConfig.getMapIndexConfigs()) {
+            if (index.getAttribute() != null) {
+                addIndex(Predicates.get(index.getAttribute()), index.isOrdered(), -1);
+            } else if (index.getExpression() != null) {
+                addIndex(index.getExpression(), index.isOrdered(), -1);
+            }
+        }
     }
-    
+
     private void initializeListeners() {
-    	List<EntryListenerConfig> listenerConfigs = null;
-    	if(isMultiMap()) {
-    		listenerConfigs = multiMapConfig.getEntryListenerConfigs();
-    	} else {
-    		listenerConfigs = mapConfig.getEntryListenerConfigs();
-    	}
-    	
-    	if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
-			for (EntryListenerConfig lc : listenerConfigs) {
-				try {
-					node.listenerManager.createAndAddListenerItem(name, lc, instanceType);
-					if (lc.isLocal()) {
-						addListener(null, thisAddress, lc.isIncludeValue());
-					} else {
-						for (MemberImpl member : node.clusterManager.getMembers()) {
-							addListener(null, member.getAddress(), lc.isIncludeValue());
-						}
-					}
-				} catch (Throwable e) {
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
-			}
-    	}
+        List<EntryListenerConfig> listenerConfigs = null;
+        if (isMultiMap()) {
+            listenerConfigs = multiMapConfig.getEntryListenerConfigs();
+        } else {
+            listenerConfigs = mapConfig.getEntryListenerConfigs();
+        }
+        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
+            for (EntryListenerConfig lc : listenerConfigs) {
+                try {
+                    node.listenerManager.createAndAddListenerItem(name, lc, instanceType);
+                    if (lc.isLocal()) {
+                        addListener(null, thisAddress, lc.isIncludeValue());
+                    } else {
+                        for (MemberImpl member : node.clusterManager.getMembers()) {
+                            addListener(null, member.getAddress(), lc.isIncludeValue());
+                        }
+                    }
+                } catch (Throwable e) {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                }
+            }
+        }
     }
-    
+
     MergePolicy getMergePolicy(String mergePolicyName) {
         MergePolicy mergePolicyTemp = null;
         if (mergePolicyName != null && !"hz.NO_MERGE".equalsIgnoreCase(mergePolicyName)) {
@@ -517,7 +516,7 @@ public class CMap {
      * @return
      */
     private boolean backupMultiValue(Request req) {
-    	Record record = getRecord(req);
+        Record record = getRecord(req);
         if (record != null) {
             record.setActive();
             if (req.version > record.getVersion() + 1) {
@@ -578,13 +577,13 @@ public class CMap {
                 if (req.value == null) {
                     markAsEvicted(record);
                 } else {
-                	// FIXME: This should be done out of ClientService  
-					// if (record.containsValue(req.value)) {
+                    // FIXME: This should be done out of ClientService
+                    // if (record.containsValue(req.value)) {
                     Collection<ValueHolder> multiValues = record.getMultiValues();
                     if (multiValues != null) {
                         multiValues.remove(new ValueHolder(req.value));
                     }
-					// }
+                    // }
                     if (record.valueCount() == 0) {
                         markAsEvicted(record);
                     }
@@ -665,6 +664,25 @@ public class CMap {
             }
         }
         return false;
+    }
+
+    public void collectScheduledLocks(Map<Object, DistributedLock> lockOwners, Map<Object, DistributedLock> lockRequested) {
+        Collection<Record> records = mapRecords.values();
+        for (Record record : records) {
+            DistributedLock dLock = record.getLock();
+            if (dLock != null && dLock.isLocked()) {
+                List<ScheduledAction> scheduledActions = record.getScheduledActions();
+                if (scheduledActions != null) {
+                    for (ScheduledAction scheduledAction : scheduledActions) {
+                        Request request = scheduledAction.getRequest();
+                        if (ClusterOperation.CONCURRENT_MAP_LOCK.equals(request.operation)) {
+                            lockOwners.put(record.getKey(), dLock);
+                            lockRequested.put(record.getKey(), new DistributedLock(request.lockAddress, request.lockThreadId));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public int valueCount(Data key) {
@@ -1442,9 +1460,9 @@ public class CMap {
             if (isMultiMap()) {
                 record = createNewRecord(req.key, null);
                 record.setMultiValues(createMultiValuesCollection());
-            	if(req.value != null) {
-            		record.getMultiValues().add(new ValueHolder(req.value));
-            	}
+                if (req.value != null) {
+                    record.getMultiValues().add(new ValueHolder(req.value));
+                }
             } else {
                 record = createNewRecord(req.key, req.value);
             }
@@ -1452,12 +1470,12 @@ public class CMap {
         } else {
             if (req.value != null) {
                 if (isMultiMap()) {
-                	if (record.getMultiValues() == null) {
-                		record.setMultiValues(createMultiValuesCollection());
-                	}
-                	record.getMultiValues().add(new ValueHolder(req.value));
+                    if (record.getMultiValues() == null) {
+                        record.setMultiValues(createMultiValuesCollection());
+                    }
+                    record.getMultiValues().add(new ValueHolder(req.value));
                 } else {
-                	record.setValue(req.value);
+                    record.setValue(req.value);
                 }
             }
         }
@@ -1849,7 +1867,7 @@ public class CMap {
                 return "[]";
             StringBuilder sb = new StringBuilder();
             sb.append('[');
-            for (; ;) {
+            for (; ; ) {
                 Object e = i.next();
                 sb.append(e == this ? "(this Collection)" : e);
                 if (!i.hasNext())
@@ -2026,12 +2044,12 @@ public class CMap {
     public MapIndexService getMapIndexService() {
         return mapIndexService;
     }
-    
+
     private Collection<ValueHolder> createMultiValuesCollection() {
-    	if(multiMapSet) {
-    		return new ConcurrentHashSet<ValueHolder>();
-    	} else {
-    		return new CopyOnWriteArrayList<ValueHolder>();
-    	}
+        if (multiMapSet) {
+            return new ConcurrentHashSet<ValueHolder>();
+        } else {
+            return new CopyOnWriteArrayList<ValueHolder>();
+        }
     }
 }
