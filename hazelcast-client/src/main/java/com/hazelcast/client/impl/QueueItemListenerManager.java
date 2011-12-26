@@ -21,8 +21,11 @@ import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
 import com.hazelcast.client.ProxyHelper;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.DataAwareItemEvent;
+import com.hazelcast.nio.Data;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,20 +53,18 @@ public class QueueItemListenerManager {
     public Call createNewAddItemListenerCall(ProxyHelper proxyHelper) {
         Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
         request.setLongValue(1);
-        Call c = proxyHelper.createCall(request);
-        return c;
+        return proxyHelper.createCall(request);
     }
 
     public void notifyListeners(Packet packet) {
         List<ItemListener> list = queueItemListeners.get(packet.getName());
         if (list != null) {
             for (ItemListener<Object> listener : list) {
-                Object item = toObject(packet.getKey());
                 Boolean added = (Boolean) toObject(packet.getValue());
                 if (added) {
-                    listener.itemAdded(item);
+                    listener.itemAdded(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED, new Data(packet.getKey())));
                 } else {
-                    listener.itemRemoved(item);
+                    listener.itemRemoved(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED, new Data(packet.getKey())));
                 }
             }
         }

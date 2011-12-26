@@ -34,7 +34,9 @@ import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.util.ResponseQueueFactory;
 
-import java.io.*;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -169,7 +171,7 @@ public class FactoryImpl implements HazelcastInstance {
             return null;
         }
     }
-    
+
     public int hashCode() {
         return name.hashCode();
     }
@@ -415,29 +417,29 @@ public class FactoryImpl implements HazelcastInstance {
         managementService.register();
         initializeListeners(config);
     }
-    
+
     private void initializeListeners(Config config) {
-    	for (final ListenerConfig listenerCfg : config.getListenerConfigs()) {
-			Object listener = listenerCfg.getImplementation();
-			if (listener == null) {
-				try {
-					listener = Serializer.newInstance(Serializer.loadClass(listenerCfg.getClassName()));
-				} catch (Exception e) {
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
-			}
-			if (listener instanceof InstanceListener) {
-				addInstanceListener((InstanceListener) listener);
-			} else if (listener instanceof MembershipListener) {
-				getCluster().addMembershipListener((MembershipListener) listener);
-			} else if (listener instanceof MigrationListener) {
-				getPartitionService().addMigrationListener((MigrationListener) listener);
-			} else if(listener != null) {
-				final String error = "Unknown listener type: " + listener.getClass();
-				Throwable t = new IllegalArgumentException(error);
-				logger.log(Level.WARNING, error, t);
-			}
-		}
+        for (final ListenerConfig listenerCfg : config.getListenerConfigs()) {
+            Object listener = listenerCfg.getImplementation();
+            if (listener == null) {
+                try {
+                    listener = Serializer.newInstance(Serializer.loadClass(listenerCfg.getClassName()));
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                }
+            }
+            if (listener instanceof InstanceListener) {
+                addInstanceListener((InstanceListener) listener);
+            } else if (listener instanceof MembershipListener) {
+                getCluster().addMembershipListener((MembershipListener) listener);
+            } else if (listener instanceof MigrationListener) {
+                getPartitionService().addMigrationListener((MigrationListener) listener);
+            } else if (listener != null) {
+                final String error = "Unknown listener type: " + listener.getClass();
+                Throwable t = new IllegalArgumentException(error);
+                logger.log(Level.WARNING, error, t);
+            }
+        }
     }
 
     public Set<String> getLongInstanceNames() {
@@ -461,7 +463,7 @@ public class FactoryImpl implements HazelcastInstance {
         initialChecks();
         return proxies.values();
     }
-    
+
     public ExecutorService getExecutorService() {
         initialChecks();
         return getExecutorService("default");
@@ -481,7 +483,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
         return executorServiceProxy;
     }
-    
+
     public ClusterImpl getCluster() {
         initialChecks();
         return node.getClusterImpl();
@@ -576,7 +578,7 @@ public class FactoryImpl implements HazelcastInstance {
         initialChecks();
         Object proxy = proxies.get(proxyKey);
         if (proxy == null) {
-        	proxyFactory.checkProxy(proxyKey);
+            proxyFactory.checkProxy(proxyKey);
             proxy = createInstanceClusterWide(proxyKey);
         }
         return proxy;
@@ -593,35 +595,36 @@ public class FactoryImpl implements HazelcastInstance {
             if (!cmap.isMapForQueue() && cmap.initState.notInitialized()) {
                 synchronized (cmap.getInitLock()) {
                     if (cmap.initState.notInitialized()) {
-                    	final MapStoreConfig mapStoreConfig = cmap.mapConfig.getMapStoreConfig();
+                        final MapStoreConfig mapStoreConfig = cmap.mapConfig.getMapStoreConfig();
                         if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
-                        	cmap.initState = InitializationState.INITIALIZING;
+                            cmap.initState = InitializationState.INITIALIZING;
                             try {
                                 ExecutorService es = getExecutorService();
                                 final Set<Member> members = new HashSet<Member>(getCluster().getMembers());
                                 members.remove(node.localMember);
                                 final MultiTask task = new MultiTask(new InitializeMap(mProxy.getName()), members);
                                 es.execute(task);
-                                
-                                if(cmap.loader != null) {
-	                                Set keys = cmap.loader.loadAllKeys();
-	                                if (keys != null) {
-	                                    int count = 0;
-	                                    PartitionService partitionService = getPartitionService();
-	                                    Set ownedKeys = new HashSet();
-	                                    for (Object key : keys) {
-	                                        if (partitionService.getPartition(key).getOwner().localMember()) {
-	                                            ownedKeys.add(key);
-	                                            count++;
-	                                            if (ownedKeys.size() >= node.groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger()) {
-	                                                loadKeys(mProxy, cmap, ownedKeys);
-	                                                ownedKeys.clear();
-	                                            }
-	                                        }
-	                                    }
-	                                    loadKeys(mProxy, cmap, ownedKeys);
-	                                    logger.log(Level.INFO, node.address + "[" + mProxy.getName() + "] loaded " + count);
-	                                }
+                                if (cmap.loader != null) {
+                                    Set keys = cmap.loader.loadAllKeys();
+                                    if (keys != null) {
+                                        int count = 0;
+                                        PartitionService partitionService = getPartitionService();
+                                        Queue<Set> chunks = new ConcurrentLinkedQueue<Set>();
+                                        Set ownedKeys = new HashSet();
+                                        for (Object key : keys) {
+                                            if (partitionService.getPartition(key).getOwner().localMember()) {
+                                                ownedKeys.add(key);
+                                                count++;
+                                                if (ownedKeys.size() >= node.groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger()) {
+                                                    chunks.add(ownedKeys);
+                                                    ownedKeys = new HashSet();
+                                                }
+                                            }
+                                        }
+                                        chunks.add(ownedKeys);
+                                        loadChunks(mProxy, cmap, chunks);
+                                        logger.log(Level.INFO, node.address + "[" + mProxy.getName() + "] loaded " + count + " in total.");
+                                    }
                                 }
                                 task.get();
                             } catch (Throwable e) {
@@ -637,6 +640,30 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
+    private void loadChunks(final MProxy mProxy, final CMap cmap, final Queue<Set> chunks) throws InterruptedException {
+        if (chunks.size() > 0) {
+            int threadCount = node.groupProperties.MAP_LOAD_THREAD_COUNT.getInteger();
+            ExecutorService es = Executors.newFixedThreadPool(threadCount);
+            final CountDownLatch latch = new CountDownLatch(chunks.size());
+            for (int i = 0; i < threadCount; i++) {
+                es.execute(new Runnable() {
+                    public void run() {
+                        final Set chunk = chunks.poll();
+                        if (chunk == null) return;
+                        try {
+                            loadKeys(mProxy, cmap, chunk);
+                        } catch (Exception e) {
+                            logger.log(Level.SEVERE, "Initial loading failed.", e);
+                        } finally {
+                            latch.countDown();
+                        }
+                    }
+                });
+            }
+            latch.await();
+        }
+    }
+
     private void loadKeys(MProxy mProxy, CMap cmap, Set keys) {
         if (keys.size() > 0) {
             Map map = cmap.loader.loadAll(keys);
@@ -648,7 +675,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
     }
-    
+
     public static class InitializeMap implements Callable<Boolean>, DataSerializable, HazelcastInstanceAware {
         String name;
         private transient FactoryImpl factory = null;
@@ -661,7 +688,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
 
         public Boolean call() throws Exception {
-    		factory.getMap(name).getName();
+            factory.getMap(name).getName();
             return Boolean.TRUE;
         }
 
@@ -740,7 +767,7 @@ public class FactoryImpl implements HazelcastInstance {
             } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
                 proxy = proxyFactory.createCountDownLatchProxy(name);
             } else if (name.equals("lock")) {
-            	proxy = proxyFactory.createLockProxy(proxyKey.key);
+                proxy = proxyFactory.createLockProxy(proxyKey.key);
             }
             final HazelcastInstanceAwareInstance anotherProxy = proxies.putIfAbsent(proxyKey, proxy);
             if (anotherProxy != null) {
@@ -790,7 +817,6 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
     }
-
 
     Object createInstanceClusterWide(final ProxyKey proxyKey) {
         final BlockingQueue<Object> result = ResponseQueueFactory.newResponseQueue();

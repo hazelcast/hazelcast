@@ -422,7 +422,7 @@ public class RedoTestService extends TestUtil {
             addRunnable(es, lsFutureTasks, new Callable() {
                 public Object call() throws Exception {
                     topic.addMessageListener(new MessageListener() {
-                        public void onMessage(Object message) {
+                        public void onMessage(Message message) {
                         }
                     });
                     return Boolean.TRUE;

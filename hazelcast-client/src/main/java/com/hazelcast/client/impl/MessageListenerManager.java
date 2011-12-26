@@ -23,14 +23,14 @@ import com.hazelcast.client.Packet;
 import com.hazelcast.client.ProxyHelper;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.DataMessage;
+import com.hazelcast.nio.Data;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import static com.hazelcast.client.IOUtil.toObject;
 
 public class MessageListenerManager {
     final private ConcurrentHashMap<String, List<MessageListener>> messageListeners = new ConcurrentHashMap<String, List<MessageListener>>();
@@ -65,8 +65,7 @@ public class MessageListenerManager {
         List<MessageListener> list = messageListeners.get(packet.getName());
         if (list != null) {
             for (MessageListener<Object> messageListener : list) {
-                Object message = toObject(packet.getKey());
-                messageListener.onMessage(message);
+                messageListener.onMessage(new DataMessage(packet.getName(), new Data(packet.getKey())));
             }
         }
     }

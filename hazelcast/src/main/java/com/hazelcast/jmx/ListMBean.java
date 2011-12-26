@@ -18,6 +18,7 @@
 package com.hazelcast.jmx;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 
 import java.util.ArrayList;
@@ -58,14 +59,14 @@ public class ListMBean extends AbstractMBean<IList<?>> {
             servedStats = ManagementService.newStatisticsCollector();
             listener = new ItemListener() {
 
-                public void itemAdded(Object item) {
+                public void itemAdded(ItemEvent itemEvent) {
                     receivedStats.addEvent();
-                    addItem(item);
+                    addItem(itemEvent.getItem());
                 }
 
-                public void itemRemoved(Object item) {
+                public void itemRemoved(ItemEvent itemEvent) {
                     servedStats.addEvent();
-                    removeItem(item);
+                    removeItem(itemEvent.getItem());
                 }
             };
             getManagedObject().addItemListener(listener, false);
@@ -93,7 +94,7 @@ public class ListMBean extends AbstractMBean<IList<?>> {
         }
         super.preDeregister();
     }
-    
+
     protected void addItem(Object item) {
         // Manage items?
     }

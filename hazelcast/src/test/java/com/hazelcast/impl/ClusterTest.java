@@ -27,7 +27,10 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -44,6 +47,9 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Run these tests with
@@ -393,7 +399,6 @@ public class ClusterTest {
                 latch.countDown();
             }
         });
-        
         assertTrue(latch.await(60, TimeUnit.SECONDS));
         System.out.println(map1.getLocalMapStats());
         System.out.println(map2.getLocalMapStats());
@@ -1350,16 +1355,16 @@ public class ClusterTest {
         ITopic<String> topic1 = h1.getTopic(topicName);
         final CountDownLatch latch1 = new CountDownLatch(1);
         topic1.addMessageListener(new MessageListener<String>() {
-            public void onMessage(String msg) {
-                assertEquals("Test1", msg);
+            public void onMessage(Message msg) {
+                assertEquals("Test1", msg.getMessageObject());
                 latch1.countDown();
             }
         });
         ITopic<String> topic2 = h2.getTopic(topicName);
         final CountDownLatch latch2 = new CountDownLatch(2);
         topic2.addMessageListener(new MessageListener<String>() {
-            public void onMessage(String msg) {
-                assertEquals("Test1", msg);
+            public void onMessage(Message msg) {
+                assertEquals("Test1", msg.getMessageObject());
                 latch2.countDown();
             }
         });
@@ -1373,7 +1378,6 @@ public class ClusterTest {
         }
     }
 
-   
     /**
      * Fix for the issue 275.
      *
@@ -1642,14 +1646,14 @@ public class ClusterTest {
         ITopic topic2 = (ITopic) h2.getMap("amap").get("5");
         final CountDownLatch latch = new CountDownLatch(2);
         topic1.addMessageListener(new MessageListener() {
-            public void onMessage(Object msg) {
-                assertEquals("message5", msg);
+            public void onMessage(Message msg) {
+                assertEquals("message5", msg.getMessageObject());
                 latch.countDown();
             }
         });
         topic2.addMessageListener(new MessageListener() {
-            public void onMessage(Object msg) {
-                assertEquals("message5", msg);
+            public void onMessage(Message msg) {
+                assertEquals("message5", msg.getMessageObject());
                 latch.countDown();
             }
         });
@@ -1818,8 +1822,8 @@ public class ClusterTest {
     public void testTopicListenersWithMultiple() throws Exception {
         final CountDownLatch latch = new CountDownLatch(3);
         final MessageListener<Object> ml = new MessageListener<Object>() {
-            public void onMessage(Object msg) {
-                assertEquals("message1", msg);
+            public void onMessage(Message msg) {
+                assertEquals("message1", msg.getMessageObject());
                 latch.countDown();
             }
         };
@@ -1838,8 +1842,8 @@ public class ClusterTest {
     public void testTopicListenersWithMultiple2() throws Exception {
         final CountDownLatch latch = new CountDownLatch(4);
         final MessageListener<Object> ml = new MessageListener<Object>() {
-            public void onMessage(Object msg) {
-                assertEquals("message2", msg);
+            public void onMessage(Message msg) {
+                assertEquals("message2", msg.getMessageObject());
                 latch.countDown();
             }
         };
@@ -2848,25 +2852,24 @@ public class ClusterTest {
         hc1.getLifecycleService().shutdown();
         junit.framework.Assert.assertEquals(STORE.size(), m2.keySet().size());
     }
-    
+
     @Test
     public void testNewInstanceByName() {
-    	Config config = new Config();
-    	config.setInstanceName("test");
-    	HazelcastInstance hc1 = Hazelcast.newHazelcastInstance(config);
-    	HazelcastInstance hc2 = Hazelcast.getHazelcastInstanceByName("test");
-    	HazelcastInstance hc3 = Hazelcast.getHazelcastInstanceByName(hc1.getName());
-    	
-    	assertTrue(hc1 == hc2);
-    	assertTrue(hc1 == hc3);
-    	hc1.getLifecycleService().shutdown();
+        Config config = new Config();
+        config.setInstanceName("test");
+        HazelcastInstance hc1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hc2 = Hazelcast.getHazelcastInstanceByName("test");
+        HazelcastInstance hc3 = Hazelcast.getHazelcastInstanceByName(hc1.getName());
+        assertTrue(hc1 == hc2);
+        assertTrue(hc1 == hc3);
+        hc1.getLifecycleService().shutdown();
     }
-    
+
     @Test(expected = DuplicateInstanceNameException.class)
     public void testNewInstanceByNameFail() {
-    	Config config = new Config();
-    	config.setInstanceName("test");
-    	HazelcastInstance hc1 = Hazelcast.newHazelcastInstance(config);
-    	HazelcastInstance hc2 = Hazelcast.newHazelcastInstance(config);
+        Config config = new Config();
+        config.setInstanceName("test");
+        HazelcastInstance hc1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hc2 = Hazelcast.newHazelcastInstance(config);
     }
 }

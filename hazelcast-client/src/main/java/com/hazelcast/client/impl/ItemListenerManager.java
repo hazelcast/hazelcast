@@ -21,11 +21,10 @@ import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
 import com.hazelcast.client.ProxyHelper;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.DataAwareEntryEvent;
+import com.hazelcast.impl.DataAwareItemEvent;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -41,14 +40,16 @@ public class ItemListenerManager {
         this.entryListenerManager = entryListenerManager;
     }
 
-    public synchronized <E, V> void registerListener(String name, final ItemListener<V> itemListener) {
+    public synchronized <E, V> void registerListener(final String name, final ItemListener<V> itemListener) {
         EntryListener<E, V> e = new EntryAdapter<E, V>() {
             public void entryAdded(EntryEvent<E, V> event) {
-                itemListener.itemAdded(event.getValue());
+                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+                itemListener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, dataAwareEntryEvent.getNewValueData()));
             }
 
             public void entryRemoved(EntryEvent<E, V> event) {
-                itemListener.itemRemoved(event.getValue());
+                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+                itemListener.itemAdded(new DataAwareItemEvent(name, ItemEventType.REMOVED, dataAwareEntryEvent.getNewValueData()));
             }
         };
         entryListenerManager.registerListener(name, null, true, e);

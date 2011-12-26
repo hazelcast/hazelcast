@@ -293,51 +293,54 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
             assertFalse(e.getMessage(), true);
         }
     }
-    
+
     @Test
     /**
      * Test for Issue 686
      */
     public void testMapEntryListenerThrowsException() throws InterruptedException {
-    	final String mapName = "testMapListenerThrowException";
-    	IMap c = getHazelcastClient().getMap(mapName);
-    	IMap m = getHazelcastInstance().getMap(mapName);
-    	
-    	m.addEntryListener(new EntryListener() {
-			public void entryAdded(EntryEvent event) {
-				throw new RuntimeException("dummy exception");
-			}
-			public void entryRemoved(EntryEvent event) {
-			}
-			public void entryUpdated(EntryEvent event) {
-			}
-			public void entryEvicted(EntryEvent event) {
-			}
-		}, false);
-    	
-    	final int k = 5;
-    	final CountDownLatch latch = new CountDownLatch(k);
-    	c.addEntryListener(new EntryListener() {
-			public void entryAdded(EntryEvent event) {
-				System.out.println(event);
-				latch.countDown();
-			}
-			public void entryRemoved(EntryEvent event) {
-			}
-			public void entryUpdated(EntryEvent event) {
-			}
-			public void entryEvicted(EntryEvent event) {
-			}
-		}, false);
-    	
-    	for (int i = 0; i < k; i++) {
-			if(i % 2 == 0) {
-				m.put(i, i);
-			} else {
-				c.put(i, i);
-			}
-		}
-    	assertTrue("Error on client EntryListener!", latch.await(10, TimeUnit.SECONDS));
+        final String mapName = "testMapListenerThrowException";
+        IMap c = getHazelcastClient().getMap(mapName);
+        IMap m = getHazelcastInstance().getMap(mapName);
+        m.addEntryListener(new EntryListener() {
+            public void entryAdded(EntryEvent event) {
+                throw new RuntimeException("dummy exception");
+            }
+
+            public void entryRemoved(EntryEvent event) {
+            }
+
+            public void entryUpdated(EntryEvent event) {
+            }
+
+            public void entryEvicted(EntryEvent event) {
+            }
+        }, false);
+        final int k = 5;
+        final CountDownLatch latch = new CountDownLatch(k);
+        c.addEntryListener(new EntryListener() {
+            public void entryAdded(EntryEvent event) {
+                System.out.println(event);
+                latch.countDown();
+            }
+
+            public void entryRemoved(EntryEvent event) {
+            }
+
+            public void entryUpdated(EntryEvent event) {
+            }
+
+            public void entryEvicted(EntryEvent event) {
+            }
+        }, false);
+        for (int i = 0; i < k; i++) {
+            if (i % 2 == 0) {
+                m.put(i, i);
+            } else {
+                c.put(i, i);
+            }
+        }
+        assertTrue("Error on client EntryListener!", latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -409,13 +412,13 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         final CountDownLatch latch = new CountDownLatch(2);
         IList<String> list = getHazelcastClient().getList("testListListener");
         list.addItemListener(new ItemListener<String>() {
-            public void itemAdded(String item) {
-                assertEquals("hello", item);
+            public void itemAdded(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
 
-            public void itemRemoved(String item) {
-                assertEquals("hello", item);
+            public void itemRemoved(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
         }, true);
@@ -433,13 +436,13 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         final CountDownLatch latch = new CountDownLatch(2);
         ISet<String> set = getHazelcastClient().getSet("testSetListener");
         set.addItemListener(new ItemListener<String>() {
-            public void itemAdded(String item) {
-                assertEquals("hello", item);
+            public void itemAdded(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
 
-            public void itemRemoved(String item) {
-                assertEquals("hello", item);
+            public void itemRemoved(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
         }, true);
@@ -456,13 +459,13 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         final CountDownLatch latch = new CountDownLatch(2);
         IQueue<String> queue = getHazelcastClient().getQueue("testQueueListener");
         queue.addItemListener(new ItemListener<String>() {
-            public void itemAdded(String item) {
-                assertEquals("hello", item);
+            public void itemAdded(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
 
-            public void itemRemoved(String item) {
-                assertEquals("hello", item);
+            public void itemRemoved(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
         }, true);

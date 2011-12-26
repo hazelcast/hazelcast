@@ -15,28 +15,28 @@
  *
  */
 
-package com.hazelcast.core;
+package com.hazelcast.impl;
 
-import java.util.EventListener;
+import com.hazelcast.core.Message;
+import com.hazelcast.nio.Data;
 
-/**
- * Item listener for {@link IQueue}, {@link ISet} and {@link IList}
- *
- * @param <E> item
- */
-public interface ItemListener<E> extends EventListener {
+import static com.hazelcast.nio.IOUtil.toObject;
 
-    /**
-     * Invoked when an item is added.
-     *
-     * @param item added item
-     */
-    void itemAdded(ItemEvent<E> item);
+public class DataMessage<E> extends Message {
 
-    /**
-     * Invoked when an item is removed.
-     *
-     * @param item removed item.
-     */
-    void itemRemoved(ItemEvent<E> item);
+    final Data data;
+
+    public DataMessage(String topicName, Data data) {
+        super(topicName, null);
+        this.data = data;
+    }
+
+    @Override
+    public E getMessageObject() {
+        return (E) toObject(data);
+    }
+
+    public Data getMessageData() {
+        return data;
+    }
 }

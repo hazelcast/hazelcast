@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.impl.ItemListenerManager;
 import com.hazelcast.client.impl.ListenerManager;
+import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.impl.ClusterOperation;
 import org.hamcrest.BaseMatcher;
@@ -57,12 +58,10 @@ public class CollectionClientProxyTest {
         CollectionClientProxy proxy = new SetClientProxy(proxyHelper, name);
         ItemListener listener = new ItemListener() {
 
-            public void itemAdded(Object item) {
-                //To change body of implemented methods use File | Settings | File Templates.
+            public void itemAdded(ItemEvent itemEvent) {
             }
 
-            public void itemRemoved(Object item) {
-                //To change body of implemented methods use File | Settings | File Templates.
+            public void itemRemoved(ItemEvent itemEvent) {
             }
         };
         proxy.addItemListener(listener, includeValue);
@@ -73,7 +72,6 @@ public class CollectionClientProxyTest {
 
     class CallMatcher extends BaseMatcher<Call> {
         public void describeTo(Description description) {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         public boolean matches(Object o) {

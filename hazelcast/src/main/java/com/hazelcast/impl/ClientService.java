@@ -428,8 +428,8 @@ public class ClientService implements ConnectionListener {
                 ClientDistributedTask cdt = (ClientDistributedTask) toObject(packet.getKeyData());
                 final ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
                 final Callable callable = node.securityContext == null
-                	? cdt.getCallable()
-                	: node.securityContext.createSecureCallable(clientEndpoint.getSubject(), cdt.getCallable());
+                        ? cdt.getCallable()
+                        : node.securityContext.createSecureCallable(clientEndpoint.getSubject(), cdt.getCallable());
                 final DistributedTask task;
                 if (cdt.getKey() != null) {
                     task = new DistributedTask(callable, cdt.getKey());
@@ -810,11 +810,10 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             final Credentials credentials = (Credentials) toObject(packet.getValueData());
             boolean authenticated = false;
-            if(credentials == null) {
-            	authenticated = false;
-            	logger.log(Level.SEVERE, "Could not retrieve Credentials object!");
-            }
-            else if (node.securityContext != null) {
+            if (credentials == null) {
+                authenticated = false;
+                logger.log(Level.SEVERE, "Could not retrieve Credentials object!");
+            } else if (node.securityContext != null) {
                 final Socket endpointSocket = packet.conn.getSocketChannel().socket();
                 credentials.setEndpoint(Address.toString(endpointSocket.getInetAddress().getAddress()));
                 try {
@@ -827,18 +826,18 @@ public class ClientService implements ConnectionListener {
                     authenticated = false;
                 }
             } else {
-            	if(credentials instanceof UsernamePasswordCredentials) {
-            		final UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
-            		final String nodeGroupName = factory.getConfig().getGroupConfig().getName();
-            		final String nodeGroupPassword = factory.getConfig().getGroupConfig().getPassword();
-            		authenticated = (nodeGroupName.equals(usernamePasswordCredentials.getUsername())
-            				&& nodeGroupPassword.equals(new String(usernamePasswordCredentials.getPassword())));
-            	} else {
-            		authenticated = false;
-            		logger.log(Level.SEVERE, "Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster group-name" +
-            				" and group-password should be used for authentication!\n" +
-            				"Current credentials type is: " + credentials.getClass().getName());
-            	}
+                if (credentials instanceof UsernamePasswordCredentials) {
+                    final UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
+                    final String nodeGroupName = factory.getConfig().getGroupConfig().getName();
+                    final String nodeGroupPassword = factory.getConfig().getGroupConfig().getPassword();
+                    authenticated = (nodeGroupName.equals(usernamePasswordCredentials.getUsername())
+                            && nodeGroupPassword.equals(new String(usernamePasswordCredentials.getPassword())));
+                } else {
+                    authenticated = false;
+                    logger.log(Level.SEVERE, "Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster group-name" +
+                            " and group-password should be used for authentication!\n" +
+                            "Current credentials type is: " + credentials.getClass().getName());
+                }
             }
             logger.log((authenticated ? Level.INFO : Level.WARNING), "received auth from " + packet.conn
 //            		+ ", this group name:" + nodeGroupName + ", auth group name:" + groupName
@@ -847,7 +846,7 @@ public class ClientService implements ConnectionListener {
             packet.clearForResponse();
             packet.setValue(toData(authenticated));
             if (!authenticated) {
-            	node.clientService.removeClientEndpoint(packet.conn);
+                node.clientService.removeClientEndpoint(packet.conn);
             }
         }
     }
@@ -1191,36 +1190,35 @@ public class ClientService implements ConnectionListener {
             packet.setValue(value);
         }
     }
-    
+
     private class LockOperationHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-        	final Object key = toObject(packet.getKeyData());
-        	final ILock lock = (ILock) factory.getLock(key);
-        	final long timeout = packet.timeout;
-        	Data value = null;
-        	
-			if (timeout == -1) {
-				lock.lock();
-			} else if (timeout == 0) {
-				value = toData(lock.tryLock());
-			} else {
-				try {
-					value = toData(lock.tryLock(timeout, TimeUnit.MILLISECONDS));
-				} catch (InterruptedException e) {
-					logger.log(Level.FINEST, "Lock interrupted!");
-					value = toData(Boolean.FALSE);
-				}
-			}
+            final Object key = toObject(packet.getKeyData());
+            final ILock lock = (ILock) factory.getLock(key);
+            final long timeout = packet.timeout;
+            Data value = null;
+            if (timeout == -1) {
+                lock.lock();
+            } else if (timeout == 0) {
+                value = toData(lock.tryLock());
+            } else {
+                try {
+                    value = toData(lock.tryLock(timeout, TimeUnit.MILLISECONDS));
+                } catch (InterruptedException e) {
+                    logger.log(Level.FINEST, "Lock interrupted!");
+                    value = toData(Boolean.FALSE);
+                }
+            }
             packet.clearForResponse();
             packet.setValue(value);
         }
     }
-    
+
     private class UnlockOperationHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-        	final Object key = toObject(packet.getKeyData());
-        	final ILock lock = (ILock) factory.getLock(key);
-			lock.unlock();
+            final Object key = toObject(packet.getKeyData());
+            final ILock lock = (ILock) factory.getLock(key);
+            lock.unlock();
             packet.clearForResponse();
             packet.setValue(null);
         }
@@ -1327,7 +1325,7 @@ public class ClientService implements ConnectionListener {
         @Override
         public void doSetOp(Node node, Packet packet) {
             SetProxy collectionProxy = (SetProxy) factory.getOrCreateProxyByName(packet.name);
-            MProxy mapProxy =collectionProxy.getMProxy();
+            MProxy mapProxy = collectionProxy.getMProxy();
             packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>()));
         }
 
@@ -1368,7 +1366,7 @@ public class ClientService implements ConnectionListener {
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
                 ITopic<Object> topic = (ITopic) factory.getOrCreateProxyByName(packet.name);
                 final String packetName = packet.name;
-                MessageListener<Object> messageListener = new ClientMessageListener<Object>(clientEndpoint, packetName);
+                MessageListener messageListener = new ClientMessageListener(clientEndpoint, packetName);
                 topic.addMessageListener(messageListener);
                 clientEndpoint.messageListeners.put(topic, messageListener);
             }
@@ -1389,20 +1387,22 @@ public class ClientService implements ConnectionListener {
             this.name = name;
         }
 
-        public void itemAdded(Object item) {
+        public void itemAdded(ItemEvent itemEvent) {
             Packet p = new Packet();
-            p.set(name, ClusterOperation.EVENT, item, true);
+            DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) itemEvent;
+            p.set(name, ClusterOperation.EVENT, dataAwareItemEvent.getItemData(), true);
             clientEndpoint.sendPacket(p);
         }
 
-        public void itemRemoved(Object item) {
+        public void itemRemoved(ItemEvent itemEvent) {
             Packet p = new Packet();
-            p.set(name, ClusterOperation.EVENT, item, false);
+            DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) itemEvent;
+            p.set(name, ClusterOperation.EVENT, dataAwareItemEvent.getItemData(), false);
             clientEndpoint.sendPacket(p);
         }
     }
 
-    public class ClientMessageListener<T> implements MessageListener<T>, ClientListener {
+    public class ClientMessageListener implements MessageListener, ClientListener {
         final ClientEndpoint clientEndpoint;
         final String name;
 
@@ -1411,9 +1411,10 @@ public class ClientService implements ConnectionListener {
             this.name = name;
         }
 
-        public void onMessage(T msg) {
+        public void onMessage(Message msg) {
             Packet p = new Packet();
-            p.set(name, ClusterOperation.EVENT, msg, null);
+            DataMessage dataMessage = (DataMessage) msg;
+            p.set(name, ClusterOperation.EVENT, dataMessage.getMessageData(), null);
             clientEndpoint.sendPacket(p);
         }
     }

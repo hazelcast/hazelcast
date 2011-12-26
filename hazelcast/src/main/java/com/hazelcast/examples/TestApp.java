@@ -1090,16 +1090,16 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println(event);
     }
 
-    public void itemAdded(Object item) {
-        println("Item added = " + item);
+    public void itemAdded(ItemEvent itemEvent) {
+        println("Item added = " + itemEvent.getItem());
     }
 
-    public void itemRemoved(Object item) {
-        println("Item removed = " + item);
+    public void itemRemoved(ItemEvent itemEvent) {
+        println("Item removed = " + itemEvent.getItem());
     }
 
-    public void onMessage(Object msg) {
-        println("Topic received = " + msg);
+    public void onMessage(Message msg) {
+        println("Topic received = " + msg.getMessageObject());
     }
 
     public static class LongTask extends HazelcastInstanceAwareObject implements Callable<String>, Serializable {

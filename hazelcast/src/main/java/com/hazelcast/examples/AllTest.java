@@ -147,7 +147,7 @@ public class AllTest {
     private List<Runnable> loadTopicOperations() {
         ITopic topic = Hazelcast.getTopic("myTopic");
         topic.addMessageListener(new MessageListener() {
-            public void onMessage(Object message) {
+            public void onMessage(Message message) {
                 messagesReceived.incrementAndGet();
             }
         });

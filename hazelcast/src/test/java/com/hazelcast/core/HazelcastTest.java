@@ -599,13 +599,13 @@ public class HazelcastTest {
         final CountDownLatch latch = new CountDownLatch(2);
         IList<String> list = Hazelcast.getList("testListListener");
         list.addItemListener(new ItemListener<String>() {
-            public void itemAdded(String item) {
-                assertEquals("hello", item);
+            public void itemAdded(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
 
-            public void itemRemoved(String item) {
-                assertEquals("hello", item);
+            public void itemRemoved(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
         }, true);
@@ -622,13 +622,13 @@ public class HazelcastTest {
         final CountDownLatch latch = new CountDownLatch(2);
         ISet<String> set = Hazelcast.getSet("testSetListener");
         set.addItemListener(new ItemListener<String>() {
-            public void itemAdded(String item) {
-                assertEquals("hello", item);
+            public void itemAdded(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
 
-            public void itemRemoved(String item) {
-                assertEquals("hello", item);
+            public void itemRemoved(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
         }, true);
@@ -645,13 +645,13 @@ public class HazelcastTest {
         final CountDownLatch latch = new CountDownLatch(2);
         IQueue<String> queue = Hazelcast.getQueue("testQueueListener");
         queue.addItemListener(new ItemListener<String>() {
-            public void itemAdded(String item) {
-                assertEquals("hello", item);
+            public void itemAdded(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
 
-            public void itemRemoved(String item) {
-                assertEquals("hello", item);
+            public void itemRemoved(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
         }, true);
@@ -738,8 +738,8 @@ public class HazelcastTest {
         ITopic<String> topic = Hazelcast.getTopic("testTopicPublish");
         final CountDownLatch latch = new CountDownLatch(1);
         topic.addMessageListener(new MessageListener<String>() {
-            public void onMessage(String msg) {
-                assertEquals("Hello World", msg);
+            public void onMessage(Message msg) {
+                assertEquals("Hello World", msg.getMessageObject());
                 latch.countDown();
             }
         });

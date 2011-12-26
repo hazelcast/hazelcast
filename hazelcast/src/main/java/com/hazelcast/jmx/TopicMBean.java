@@ -17,9 +17,9 @@
 
 package com.hazelcast.jmx;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.ITopic;
+import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 
 /**
@@ -55,7 +55,7 @@ public class TopicMBean extends AbstractMBean<ITopic<?>> {
             servedStats = ManagementService.newStatisticsCollector();
             listener = new MessageListener() {
 
-                public void onMessage(Object msg) {
+                public void onMessage(Message msg) {
                     servedStats.addEvent();
                 }
             };
@@ -94,7 +94,7 @@ public class TopicMBean extends AbstractMBean<ITopic<?>> {
 
     @JMXAttribute("Config")
     @JMXDescription("Topic configuration")
-    public String getConfig(){
+    public String getConfig() {
         final TopicConfig config = managementService.instance.getConfig().getTopicConfig(getName());
         return config.toString();
     }

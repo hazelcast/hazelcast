@@ -32,5 +32,5 @@ public interface MessageListener<E> extends EventListener {
      *
      * @param message received message
      */
-    void onMessage(E message);
+    void onMessage(Message<E> message);
 }

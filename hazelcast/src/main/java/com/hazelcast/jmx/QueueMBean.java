@@ -17,9 +17,9 @@
 
 package com.hazelcast.jmx;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 
 /**
@@ -57,11 +57,11 @@ public class QueueMBean extends AbstractMBean<IQueue<?>> {
             servedStats = ManagementService.newStatisticsCollector();
             listener = new ItemListener() {
 
-                public void itemAdded(Object item) {
+                public void itemAdded(ItemEvent item) {
                     receivedStats.addEvent();
                 }
 
-                public void itemRemoved(Object item) {
+                public void itemRemoved(ItemEvent item) {
                     servedStats.addEvent();
                 }
             };
@@ -97,7 +97,7 @@ public class QueueMBean extends AbstractMBean<IQueue<?>> {
         if (servedStats != null)
             servedStats.reset();
     }
-    
+
     /**
      * Clear queue
      */
@@ -111,10 +111,10 @@ public class QueueMBean extends AbstractMBean<IQueue<?>> {
     public String getName() {
         return getManagedObject().getName();
     }
-    
+
     @JMXAttribute("Config")
     @JMXDescription("Queue configuration")
-    public String getConfig(){
+    public String getConfig() {
         final QueueConfig config = managementService.instance.getConfig().getQueueConfig(getName());
         return config.toString();
     }

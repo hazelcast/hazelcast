@@ -304,20 +304,20 @@ public class ListenerManager extends BaseManager {
     void removeAllRegisteredListeners(String name) {
         namedListeners.remove(name);
     }
-    
+
     /**
-     *  Create and add ListenerItem during initialization of CMap, BQ and TopicInstance.
+     * Create and add ListenerItem during initialization of CMap, BQ and TopicInstance.
      */
     void createAndAddListenerItem(String name, ListenerConfig lc, Instance.InstanceType instanceType) throws Exception {
-    	Object listener = lc.getImplementation();
-		if (listener == null) {
-			listener = Serializer.newInstance(Serializer.loadClass(lc.getClassName()));
-		}
-		if (listener != null) {
-			final ListenerItem listenerItem = new ListenerItem(name, null, listener, 
-					lc.isIncludeValue(), instanceType, lc.isLocal());
-			getOrCreateListenerList(name).add(listenerItem);
-		}
+        Object listener = lc.getImplementation();
+        if (listener == null) {
+            listener = Serializer.newInstance(Serializer.loadClass(lc.getClassName()));
+        }
+        if (listener != null) {
+            final ListenerItem listenerItem = new ListenerItem(name, null, listener,
+                    lc.isIncludeValue(), instanceType, lc.isLocal());
+            getOrCreateListenerList(name).add(listenerItem);
+        }
     }
 
     void callListeners(DataAwareEntryEvent dataAwareEntryEvent) {
@@ -378,7 +378,6 @@ public class ListenerManager extends BaseManager {
             case MAP:
             case MULTIMAP:
                 EntryListener entryListener = (EntryListener) listener;
-//                System.err.println(">>>>>> " + entryListener.getClass() + " ::: " + event2);
                 switch (entryEventType) {
                     case ADDED:
                         entryListener.entryAdded(event2);
@@ -399,25 +398,26 @@ public class ListenerManager extends BaseManager {
                 ItemListener itemListener = (ItemListener) listener;
                 switch (entryEventType) {
                     case ADDED:
-                        itemListener.itemAdded(event2.getKey());
+                        itemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED, event.getKeyData()));
                         break;
                     case REMOVED:
-                        itemListener.itemRemoved(event2.getKey());
+                        itemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED, event.getKeyData()));
                         break;
                 }
                 break;
             case TOPIC:
                 MessageListener messageListener = (MessageListener) listener;
-                messageListener.onMessage(event2.getValue());
+                messageListener.onMessage(new DataMessage(listenerItem.name, event.getNewValueData()));
                 break;
             case QUEUE:
                 ItemListener queueItemListener = (ItemListener) listener;
+                System.out.println(event);
                 switch (entryEventType) {
                     case ADDED:
-                        queueItemListener.itemAdded(event2.getValue());
+                        queueItemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED, event.getNewValueData()));
                         break;
                     case REMOVED:
-                        queueItemListener.itemRemoved(event2.getValue());
+                        queueItemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED, event.getNewValueData()));
                         break;
                 }
                 break;

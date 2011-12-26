@@ -36,7 +36,6 @@ import com.hazelcast.query.Index;
 import com.hazelcast.query.MapIndexService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
-import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.DistributedTimeoutException;
 
 import java.io.DataInput;
@@ -2427,9 +2426,14 @@ public class ConcurrentMapManager extends BaseManager {
 
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            Record record = cmap.toRecord(request);
-            record.lock(request.lockThreadId, request.caller);
-            node.executorManager.executeQueryTask(new RemoveMultiSetMapTask(request, record, cmap));
+            Record record = cmap.getRecord(request);
+            if (record == null || record.getMultiValues() == null) {
+                request.response = Boolean.FALSE;
+                returnResponse(request);
+            } else {
+                record.lock(request.lockThreadId, request.caller);
+                node.executorManager.executeQueryTask(new RemoveMultiSetMapTask(request, record, cmap));
+            }
         }
 
         class RemoveMultiSetMapTask implements Runnable, Processable {
@@ -2480,11 +2484,6 @@ public class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             if (!cmap.multiMapSet) {
-                Record record = cmap.getRecord(request);
-                if (record == null) {
-                    record = cmap.toRecord(request);
-                }
-                cmap.markAsActive(record);
                 cmap.putMulti(request);
                 request.response = Boolean.TRUE;
                 returnResponse(request);

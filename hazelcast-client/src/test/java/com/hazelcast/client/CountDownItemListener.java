@@ -17,6 +17,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 
 import java.util.concurrent.CountDownLatch;
@@ -30,11 +31,11 @@ public class CountDownItemListener<E> implements ItemListener<E> {
         this.itemRemovedLatch = itemRemovedLatch;
     }
 
-    public void itemAdded(E item) {
+    public void itemAdded(ItemEvent<E> itemEvent) {
         itemAddLatch.countDown();
     }
 
-    public void itemRemoved(E item) {
+    public void itemRemoved(ItemEvent<E> itemEvent) {
         itemRemovedLatch.countDown();
     }
 }

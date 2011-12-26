@@ -459,7 +459,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     private static void check(Object obj) {
         Util.checkSerializable(obj);
     }
-    
+
     private class MProxyReal implements MProxy {
         private final transient MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
 
@@ -600,6 +600,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             } else {
                 ttl = toMillis(ttl, timeunit);
             }
+            mapOperationCounter.incrementOtherOperations();
             concurrentMapManager.putTransient(name, key, value, -1, ttl);
         }
 

@@ -927,12 +927,14 @@ public class CMap {
             if (!record.isActive()) {
                 markAsActive(record);
             }
+            if (record.getMultiValues() == null) {
+                record.setMultiValues(createMultiValuesCollection());
+            }
+            record.getMultiValues().add(new ValueHolder(req.value));
         }
-        Data value = req.value;
         updateIndexes(record);
-        record.getMultiValues().add(new ValueHolder(req.value));
         record.incrementVersion();
-        concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKeyData(), null, value, record.getListeners(), req.caller);
+        concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKeyData(), null, req.value, record.getListeners(), req.caller);
         if (req.txnId != -1) {
             unlock(record, req);
         }
@@ -1867,7 +1869,7 @@ public class CMap {
                 return "[]";
             StringBuilder sb = new StringBuilder();
             sb.append('[');
-            for (; ; ) {
+            for (; ;) {
                 Object e = i.next();
                 sb.append(e == this ? "(this Collection)" : e);
                 if (!i.hasNext())

@@ -29,6 +29,7 @@ public class GroupProperties {
     public static final String PROP_MEMCACHE_ENABLED = "hazelcast.memcache.enabled";
     public static final String PROP_REST_ENABLED = "hazelcast.rest.enabled";
     public static final String PROP_MAP_LOAD_CHUNK_SIZE = "hazelcast.map.load.chunk.size";
+    public static final String PROP_MAP_LOAD_THREAD_COUNT = "hazelcast.map.load.thread.count";
     public static final String PROP_IN_THREAD_PRIORITY = "hazelcast.in.thread.priority";
     public static final String PROP_OUT_THREAD_PRIORITY = "hazelcast.out.thread.priority";
     public static final String PROP_SERVICE_THREAD_PRIORITY = "hazelcast.service.thread.priority";
@@ -108,6 +109,8 @@ public class GroupProperties {
     public final GroupProperty SERVICE_THREAD_PRIORITY;
 
     public final GroupProperty MAP_LOAD_CHUNK_SIZE;
+
+    public final GroupProperty MAP_LOAD_THREAD_COUNT;
 
     public final GroupProperty MERGE_FIRST_RUN_DELAY_SECONDS;
 
@@ -194,7 +197,7 @@ public class GroupProperties {
     public final GroupProperty ELASTIC_MEMORY_TOTAL_SIZE;
 
     public final GroupProperty ELASTIC_MEMORY_CHUNK_SIZE;
-    
+
     public final GroupProperty ELASTIC_MEMORY_SHARED_STORAGE;
 
     public final GroupProperty LICENSE_PATH;
@@ -208,6 +211,7 @@ public class GroupProperties {
         MEMCACHE_ENABLED = new GroupProperty(config, PROP_MEMCACHE_ENABLED, "true");
         REST_ENABLED = new GroupProperty(config, PROP_REST_ENABLED, "true");
         MAP_LOAD_CHUNK_SIZE = new GroupProperty(config, PROP_MAP_LOAD_CHUNK_SIZE, "1000");
+        MAP_LOAD_THREAD_COUNT = new GroupProperty(config, PROP_MAP_LOAD_THREAD_COUNT, "40");
         IN_THREAD_PRIORITY = new GroupProperty(config, PROP_IN_THREAD_PRIORITY, "7");
         OUT_THREAD_PRIORITY = new GroupProperty(config, PROP_OUT_THREAD_PRIORITY, "7");
         SERVICE_THREAD_PRIORITY = new GroupProperty(config, PROP_SERVICE_THREAD_PRIORITY, "8");

@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -232,13 +233,13 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         System.out.println(qOperation.getName());
         System.out.println(qListener.getName());
         qListener.addItemListener(new ItemListener<String>() {
-            public void itemAdded(String item) {
-                assertEquals("hello", item);
+            public void itemAdded(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
 
-            public void itemRemoved(String item) {
-                assertEquals("hello", item);
+            public void itemRemoved(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
         }, true);
@@ -256,13 +257,13 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         IQueue<String> queue = hClient.getQueue("testQueueListener");
         queue.addItemListener(new ItemListener<String>() {
-            public void itemAdded(String item) {
-                assertEquals("hello", item);
+            public void itemAdded(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
 
-            public void itemRemoved(String item) {
-                assertEquals("hello", item);
+            public void itemRemoved(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
         }, true);

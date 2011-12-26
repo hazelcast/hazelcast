@@ -53,23 +53,18 @@ public class EntryEvent<K, V> extends EventObject {
 
     protected boolean collection;
 
-    public EntryEvent(Object source) {
-        super(source);
-        this.name = (String) source;
-        collection = !(name.startsWith(Prefix.MAP) || name.startsWith(Prefix.MULTIMAP));
-    }
-
     public EntryEvent(Object source, Member member, int eventType, K key, V value) {
         this(source, member, eventType, key, null, value);
     }
 
     public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value) {
-        this(source);
+        super(source);
+        this.name = (String) source;
         this.member = member;
         this.key = key;
         this.oldValue = oldValue;
         this.value = value;
-        this.entryEventType = entryEventType.getByType(eventType);
+        this.entryEventType = EntryEventType.getByType(eventType);
     }
 
     @Override

@@ -17,26 +17,26 @@
 
 package com.hazelcast.core;
 
-import java.util.EventListener;
+public enum ItemEventType {
+    ADDED(1),
+    REMOVED(2);
 
-/**
- * Item listener for {@link IQueue}, {@link ISet} and {@link IList}
- *
- * @param <E> item
- */
-public interface ItemListener<E> extends EventListener {
+    private int type;
 
-    /**
-     * Invoked when an item is added.
-     *
-     * @param item added item
-     */
-    void itemAdded(ItemEvent<E> item);
+    private ItemEventType(final int type) {
+        this.type = type;
+    }
 
-    /**
-     * Invoked when an item is removed.
-     *
-     * @param item removed item.
-     */
-    void itemRemoved(ItemEvent<E> item);
+    public int getType() {
+        return type;
+    }
+
+    public static ItemEventType getByType(final int eventType) {
+        for (ItemEventType entryEventType : values()) {
+            if (entryEventType.type == eventType) {
+                return entryEventType;
+            }
+        }
+        return null;
+    }
 }

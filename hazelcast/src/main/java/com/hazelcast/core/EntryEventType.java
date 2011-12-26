@@ -33,7 +33,7 @@ public enum EntryEventType {
         return type;
     }
 
-    public EntryEventType getByType(final int eventType) {
+    public static EntryEventType getByType(final int eventType) {
         for (EntryEventType entryEventType : values()) {
             if (entryEventType.type == eventType) {
                 return entryEventType;

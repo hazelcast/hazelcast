@@ -19,6 +19,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
+import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -86,13 +87,13 @@ public class HazelcastClientListTest extends HazelcastClientTestBase {
 
     private void listener(final CountDownLatch latch, IList<String> listOperation, IList<String> listListener) {
         listListener.addItemListener(new ItemListener<String>() {
-            public void itemAdded(String item) {
-                assertEquals("hello", item);
+            public void itemAdded(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
 
-            public void itemRemoved(String item) {
-                assertEquals("hello", item);
+            public void itemRemoved(ItemEvent<String> itemEvent) {
+                assertEquals("hello", itemEvent.getItem());
                 latch.countDown();
             }
         }, true);
