@@ -22,10 +22,7 @@ import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
-import com.hazelcast.impl.concurrentmap.LFUMapEntryComparator;
-import com.hazelcast.impl.concurrentmap.LRUMapEntryComparator;
-import com.hazelcast.impl.concurrentmap.MapStoreWrapper;
-import com.hazelcast.impl.concurrentmap.ValueHolder;
+import com.hazelcast.impl.concurrentmap.*;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.merge.MergePolicy;
@@ -43,7 +40,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.Prefix.*;
@@ -158,7 +154,7 @@ public class CMap {
 
     final MergePolicy wanMergePolicy;
 
-    final Map<Data, AtomicInteger> mapLocalLocks = new ConcurrentHashMap<Data, AtomicInteger>(10000);
+    final Map<Data, LocalLock> mapLocalLocks = new ConcurrentHashMap<Data, LocalLock>(10000);
 
     CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
@@ -804,7 +800,6 @@ public class CMap {
 
     void lock(Request request) {
         Data reqValue = request.value;
-        request.value = null;
         Record rec = concurrentMapManager.ensureRecord(request);
         if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET) {
             if (reqValue == null) {
@@ -812,13 +807,6 @@ public class CMap {
                 if (rec.getMultiValues() != null) {
                     Values values = new Values(rec.getMultiValues());
                     request.value = toData(values);
-                }
-            } else {
-                // multimap txn put operation
-                if (!rec.containsValue(reqValue)) {
-                    request.value = null;
-                } else {
-                    request.value = reqValue;
                 }
             }
         }

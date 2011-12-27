@@ -347,13 +347,31 @@ public class TransactionTest {
         Hazelcast.getMap("testReentrantLock").put("1", "value");
         TransactionalMap txnMap = newTransactionalMapProxy("testReentrantLock");
         TransactionalMap txnMap2 = newTransactionalMapProxy("testReentrantLock");
-        txnMap.lock("1");
+        try {
+            assertEquals("value", txnMap.tryLockAndGet("1", 5, TimeUnit.SECONDS));
+        } catch (TimeoutException e) {
+            fail();
+        }
         txnMap.lock("1");
         assertFalse(txnMap2.tryLock("1"));
         txnMap.unlock("1");
         assertFalse(txnMap2.tryLock("1"));
         txnMap.unlock("1");
         assertTrue(txnMap2.tryLock("1"));
+    }
+
+    @Test(timeout = 100000)
+    public void testTransactionCommitRespectLockCount() throws InterruptedException {
+        Hazelcast.getMap("testTransactionCommitRespectLockCount").put("1", "value");
+        TransactionalMap txnMap = newTransactionalMapProxy("testTransactionCommitRespectLockCount");
+        TransactionalMap txnMap2 = newTransactionalMapProxy("testTransactionCommitRespectLockCount");
+        txnMap.lock(1);
+        txnMap.begin();
+        txnMap.put(1, "value");
+        txnMap.commit();
+        assertFalse("Shouldn't acquire lock", txnMap2.tryLock(1));
+        txnMap.unlock(1);
+        Assert.assertTrue(txnMap2.tryLock(1));
     }
 
     @Test

@@ -30,14 +30,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.impl.TestUtil.getCMap;
-import static junit.framework.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ClusterLockTest {
@@ -156,31 +157,6 @@ public class ClusterLockTest {
     }
 
     @Test(timeout = 100000)
-    public void testTransactionCommitRespectLockCount() throws InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-        final IMap map1 = h1.getMap("default");
-        Transaction tx = h1.getTransaction();
-        map1.lock(1);
-        tx.begin();
-        map1.put(1, 1);
-        tx.commit();
-        final AtomicBoolean locked = new AtomicBoolean(false);
-        new Thread(new Runnable() {
-
-            public void run() {
-                try {
-                    map1.lock(1);
-                    locked.set(true);
-                } catch (Throwable e) {
-                }
-            }
-        }).start();
-        Thread.sleep(2000);
-        Assert.assertFalse("should not acquire lock", locked.get());
-        map1.unlock(1);
-    }
-
-    @Test(timeout = 100000)
     public void testTransactionRollbackRespectLockCount() throws InterruptedException {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map1 = h1.getMap("default");
@@ -189,42 +165,19 @@ public class ClusterLockTest {
         tx.begin();
         map1.put(1, 1);
         tx.rollback();
-        final AtomicBoolean locked = new AtomicBoolean(false);
+        final BlockingQueue<Boolean> q = new LinkedBlockingQueue<Boolean>();
         new Thread(new Runnable() {
 
             public void run() {
                 try {
-                    map1.lock(1);
-                    locked.set(true);
+                    q.put(map1.tryLock(1));
                 } catch (Throwable e) {
                 }
             }
         }).start();
-        Thread.sleep(2000);
-        Assert.assertFalse("should not acquire lock", locked.get());
-        map1.unlock(1);
-    }
-
-    @Test(timeout = 100000)
-    public void testPutAndUnlockRespectLockCount() throws InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-        final IMap map1 = h1.getMap("default");
-        map1.lock(1);
-        map1.lock(1);
-        map1.putAndUnlock(1, 1);
-        final AtomicBoolean locked = new AtomicBoolean(false);
-        new Thread(new Runnable() {
-
-            public void run() {
-                try {
-                    map1.lock(1);
-                    locked.set(true);
-                } catch (Throwable e) {
-                }
-            }
-        }).start();
-        Thread.sleep(2000);
-        Assert.assertFalse("should not acquire lock", locked.get());
+        Boolean locked = q.poll(5, TimeUnit.SECONDS);
+        assertNotNull(locked);
+        Assert.assertFalse("should not acquire lock", locked);
         map1.unlock(1);
     }
 
@@ -237,44 +190,43 @@ public class ClusterLockTest {
         map1.put(1, 1);
         map1.lock(1);
         map1.unlock(1);
-        final AtomicBoolean locked = new AtomicBoolean(false);
+        final BlockingQueue<Boolean> q = new LinkedBlockingQueue<Boolean>();
         new Thread(new Runnable() {
 
             public void run() {
                 try {
-                    map1.lock(1);
-                    locked.set(true);
+                    q.put(map1.tryLock(1));
                 } catch (Throwable e) {
                 }
             }
         }).start();
-        Thread.sleep(2000);
-        Assert.assertFalse("should not acquire lock", locked.get());
+        Boolean locked = q.poll(5, TimeUnit.SECONDS);
+        assertNotNull(locked);
+        Assert.assertFalse("should not acquire lock", locked);
         tx.commit();
     }
-    
-	/**
-	 * Test for Issue 710
-	 */
+
+    /**
+     * Test for Issue 710
+     */
     @Test
-	public void testEvictedEntryNotNullAfterLockAndGet() throws Exception {
-		String mapName = "testLock";
-		Config config = new XmlConfigBuilder().build();
-		MapConfig mapConfig = new MapConfig();
-		mapConfig.setName(mapName);
-		mapConfig.setTimeToLiveSeconds(3);
-		config.addMapConfig(mapConfig);
-		HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-		IMap<Object, Object> m1 = h1.getMap(mapName);
-		
-		m1.put(1, 1);
-		assertEquals(1, m1.get(1));
-		Thread.sleep(5000);
-		assertEquals(null, m1.get(1));
-		m1.lock(1);
-		assertEquals(null, m1.get(1));
-		m1.put(1, 1);
-		assertEquals(1, m1.get(1));
-	}
+    public void testEvictedEntryNotNullAfterLockAndGet() throws Exception {
+        String mapName = "testLock";
+        Config config = new XmlConfigBuilder().build();
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setName(mapName);
+        mapConfig.setTimeToLiveSeconds(3);
+        config.addMapConfig(mapConfig);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap<Object, Object> m1 = h1.getMap(mapName);
+        m1.put(1, 1);
+        assertEquals(1, m1.get(1));
+        Thread.sleep(5000);
+        assertEquals(null, m1.get(1));
+        m1.lock(1);
+        assertEquals(null, m1.get(1));
+        m1.put(1, 1);
+        assertEquals(1, m1.get(1));
+    }
 }
 

@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
+import com.hazelcast.impl.concurrentmap.LocalLock;
 import com.hazelcast.impl.concurrentmap.MultiData;
 import com.hazelcast.impl.concurrentmap.RecordFactory;
 import com.hazelcast.impl.concurrentmap.ValueHolder;
@@ -43,7 +44,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.Instance.InstanceType;
@@ -422,8 +422,21 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     void putAndUnlock(String name, Object key, Object value) {
-        MPut mput = ThreadContext.get().getCallCache(node.factory).getMPut();
-        mput.txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, -1, -1);
+        ThreadContext tc = ThreadContext.get();
+        Data dataKey = toData(key);
+        CMap cmap = getMap(name);
+        LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
+        boolean shouldUnlock = localLock != null
+                && localLock.getThreadId() == tc.getThreadId()
+                && localLock.getCount() == 1;
+        MPut mput = tc.getCallCache(node.factory).getMPut();
+        if (shouldUnlock) {
+            mput.txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, -1, -1);
+            cmap.mapLocalLocks.remove(dataKey);
+        } else {
+            mput.txnalPut(CONCURRENT_MAP_PUT, name, key, value, -1, -1);
+            localLock.decrementAndGet();
+        }
         mput.clearRequest();
     }
 
@@ -453,17 +466,18 @@ public class ConcurrentMapManager extends BaseManager {
         public boolean unlock(String name, Object key, long timeout) {
             Data dataKey = toData(key);
             CMap cmap = getMap(name);
-            AtomicInteger lockCount = cmap.mapLocalLocks.get(dataKey);
-            if (lockCount == null || lockCount.decrementAndGet() == 0) {
-                boolean unlocked = booleanCall(CONCURRENT_MAP_UNLOCK, name, dataKey, null, timeout, -1);
-                if (unlocked) {
-                    cmap.mapLocalLocks.remove(dataKey);
-                    backup(CONCURRENT_MAP_BACKUP_LOCK);
-                }
-                return unlocked;
-            } else {
-                return true;
+            if (cmap == null) return false;
+            LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
+            if (localLock == null || localLock.getThreadId() != ThreadContext.get().getThreadId()) {
+                return false;
             }
+            if (localLock.decrementAndGet() > 0) return true;
+            boolean unlocked = booleanCall(CONCURRENT_MAP_UNLOCK, name, dataKey, null, timeout, -1);
+            if (unlocked) {
+                cmap.mapLocalLocks.remove(dataKey);
+                backup(CONCURRENT_MAP_BACKUP_LOCK);
+            }
+            return unlocked;
         }
 
         public boolean lock(String name, Object key, long timeout) {
@@ -483,12 +497,12 @@ public class ConcurrentMapManager extends BaseManager {
             boolean locked = booleanCall(op, name, dataKey, value, timeout, -1);
             if (locked) {
                 CMap cmap = getMap(name);
-                AtomicInteger lockCount = cmap.mapLocalLocks.get(dataKey);
-                if (lockCount == null) {
-                    lockCount = new AtomicInteger(0);
-                    cmap.mapLocalLocks.put(dataKey, lockCount);
+                LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
+                if (localLock == null) {
+                    localLock = new LocalLock(ThreadContext.get().getThreadId());
+                    cmap.mapLocalLocks.put(dataKey, localLock);
                 }
-                if (lockCount.incrementAndGet() == 1) {
+                if (localLock.incrementAndGet() == 1) {
                     backup(CONCURRENT_MAP_BACKUP_LOCK);
                 }
             }
@@ -1470,7 +1484,24 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public Object put(String name, Object key, Object value, long timeout, long ttl, long txnId) {
-            return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl, txnId);
+            Object result = null;
+            if (txnId != -1) {
+                ThreadContext tc = ThreadContext.get();
+                Data dataKey = toData(key);
+                CMap cmap = getMap(name);
+                LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
+                boolean shouldUnlock = localLock != null
+                        && localLock.getThreadId() == tc.getThreadId()
+                        && localLock.getCount() == 1;
+                if (shouldUnlock) {
+                    result = txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, timeout, ttl, -1);
+                    cmap.mapLocalLocks.remove(dataKey);
+                } else {
+                    result = txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl, -1);
+                    localLock.decrementAndGet();
+                }
+            }
+            return result;
         }
 
         public Object putForSync(String name, Object key, Object value) {
@@ -1685,6 +1716,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (!locked) throwCME(key);
                     Data oldValue = mlock.oldValue;
                     boolean existingRecord = (oldValue != null);
+                    System.out.println(value + "  exist " + existingRecord);
                     txn.attachRemoveOp(name, key, value, !existingRecord);
                     return existingRecord;
                 } else {
@@ -2554,7 +2586,10 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     void decrementLockAndFireScheduledActions(CMap cmap, Record record) {
-        record.getLock().decrementAndGetLockCount();
+        DistributedLock lock = record.getLock();
+        if (lock != null) {
+            lock.decrementAndGetLockCount();
+        }
         cmap.fireScheduledActions(record);
     }
 
@@ -3612,6 +3647,14 @@ public class ConcurrentMapManager extends BaseManager {
                             && cmap.loader != null
                             && (record == null || !record.hasValueData())) {
                         storeExecutor.execute(new LockLoader(cmap, request), request.key.hashCode());
+                    } else if (cmap.isMultiMap() && request.value != null) {
+                        Collection<ValueHolder> col = record.getMultiValues();
+                        if (col != null && col.size() > 0) {
+                            storeExecutor.execute(new MultiMapContainsTask(request, col), request.key.hashCode());
+                        } else {
+                            doOperation(request);
+                            returnResponse(request);
+                        }
                     } else {
                         doOperation(request);
                         returnResponse(request);
@@ -3619,6 +3662,28 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             } else {
                 request.response = OBJECT_REDO;
+                returnResponse(request);
+            }
+        }
+
+        class MultiMapContainsTask implements Runnable, Processable {
+            private final Request request;
+            private final Collection<ValueHolder> values;
+
+            MultiMapContainsTask(Request request, Collection<ValueHolder> values) {
+                this.request = request;
+                this.values = values;
+            }
+
+            public void run() {
+                if (!values.contains(new ValueHolder(request.value))) {
+                    request.value = null;
+                }
+                enqueueAndReturn(MultiMapContainsTask.this);
+            }
+
+            public void process() {
+                doOperation(request);
                 returnResponse(request);
             }
         }
