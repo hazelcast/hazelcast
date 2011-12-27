@@ -809,8 +809,7 @@ public class MapStoreTest extends TestUtil {
             }
 
             public Set<K> loadAllKeys() {
-                Set<K> keys = store.keySet();
-                return keys;
+                return store.keySet();
             }
             //
             // MapStore methods
@@ -1346,46 +1345,46 @@ public class MapStoreTest extends TestUtil {
             }
         }
     }
-    
+
     @Test
-	public void testMapLoaderInitialization() {
-		Config config = new Config();
-		MapConfig mapConfig = config.getMapConfig("testMapLoader-*");
-		MapStoreConfig msConfig = new MapStoreConfig();
-		mapConfig.setMapStoreConfig(msConfig);
-		msConfig.setEnabled(true);
-		Config configSuper = new Config();
-		configSuper.setLiteMember(true);
-		configSuper.addMapConfig(mapConfig);
-		final int initialKeys = 5;
-		msConfig.setImplementation(new MapLoader() {
-			public Object load(Object key) {
-				return "Value: " + key;
-			}
+    public void testMapLoaderInitialization() {
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig("testMapLoader-*");
+        MapStoreConfig msConfig = new MapStoreConfig();
+        mapConfig.setMapStoreConfig(msConfig);
+        msConfig.setEnabled(true);
+        Config configSuper = new Config();
+        configSuper.setLiteMember(true);
+        configSuper.addMapConfig(mapConfig);
+        final int initialKeys = 5;
+        msConfig.setImplementation(new MapLoader() {
+            public Object load(Object key) {
+                return "Value: " + key;
+            }
 
-			public Map loadAll(Collection keys) {
-				Map map = new HashMap(keys.size());
-				for (Object key : keys) {
-					map.put(key, load(key));
-				}
-				return map;
-			}
+            public Map loadAll(Collection keys) {
+                Map map = new HashMap(keys.size());
+                for (Object key : keys) {
+                    map.put(key, load(key));
+                }
+                return map;
+            }
 
-			public Set loadAllKeys() {
-				Set keys = new HashSet(3);
-				for (int i = 0; i < initialKeys; i++) {
-					keys.add(i);
-				}
-				return keys;
-			}
-		});
-		final HazelcastInstance member = Hazelcast.newHazelcastInstance(config);
-		final HazelcastInstance superClient = Hazelcast.newHazelcastInstance(configSuper);
-		Hazelcast.newHazelcastInstance(config);
-		assertEquals(initialKeys, member.getMap("testMapLoader-1").size());
-		assertEquals(initialKeys, superClient.getMap("testMapLoader-1").size());
-		assertEquals(initialKeys, superClient.getMap("testMapLoader-2").size());
-		assertEquals(initialKeys, member.getMap("testMapLoader-2").size());
-		Hazelcast.shutdownAll();
-	}
+            public Set loadAllKeys() {
+                Set keys = new HashSet(3);
+                for (int i = 0; i < initialKeys; i++) {
+                    keys.add(i);
+                }
+                return keys;
+            }
+        });
+        final HazelcastInstance member = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance superClient = Hazelcast.newHazelcastInstance(configSuper);
+        Hazelcast.newHazelcastInstance(config);
+        assertEquals(initialKeys, member.getMap("testMapLoader-1").size());
+        assertEquals(initialKeys, superClient.getMap("testMapLoader-1").size());
+        assertEquals(initialKeys, superClient.getMap("testMapLoader-2").size());
+        assertEquals(initialKeys, member.getMap("testMapLoader-2").size());
+        Hazelcast.shutdownAll();
+    }
 }

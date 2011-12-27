@@ -508,21 +508,21 @@ public class HazelcastTest {
         final List<String> newList = new CopyOnWriteArrayList<String>();
         final CountDownLatch latch = new CountDownLatch(list.size());
         map.addEntryListener(new EntryListener<String, String>() {
-            public void entryAdded(EntryEvent<String, String> stringStringEntryEvent) {
-                System.out.println(stringStringEntryEvent);
+            public void entryAdded(EntryEvent<String, String> event) {
+                System.out.println(event);
             }
 
-            public void entryRemoved(EntryEvent<String, String> stringStringEntryEvent) {
-                System.out.println(stringStringEntryEvent);
+            public void entryRemoved(EntryEvent<String, String> event) {
+                System.out.println(event);
             }
 
-            public void entryUpdated(EntryEvent<String, String> stringStringEntryEvent) {
-                System.out.println(stringStringEntryEvent);
+            public void entryUpdated(EntryEvent<String, String> event) {
+                System.out.println(event);
             }
 
-            public void entryEvicted(EntryEvent<String, String> stringStringEntryEvent) {
-                System.out.println(stringStringEntryEvent);
-                newList.add(stringStringEntryEvent.getValue());
+            public void entryEvicted(EntryEvent<String, String> event) {
+                System.out.println(event);
+                newList.add(event.getValue());
                 latch.countDown();
             }
         }, true);

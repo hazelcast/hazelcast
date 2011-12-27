@@ -239,7 +239,6 @@ public class HazelcastClusterTest {
                         HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
                         mapOfInstances.put(seed, h);
                         latch.countDown();
-                        System.out.println(config.getPort() + " COUNTDOWN" + latch.getCount());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

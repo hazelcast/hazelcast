@@ -1716,7 +1716,6 @@ public class ConcurrentMapManager extends BaseManager {
                     if (!locked) throwCME(key);
                     Data oldValue = mlock.oldValue;
                     boolean existingRecord = (oldValue != null);
-                    System.out.println(value + "  exist " + existingRecord);
                     txn.attachRemoveOp(name, key, value, !existingRecord);
                     return existingRecord;
                 } else {
@@ -2635,7 +2634,15 @@ public class ConcurrentMapManager extends BaseManager {
                 Object expectedValue = toObject(multiData.getData(0));
                 request.value = multiData.getData(1); // new value
                 request.response = expectedValue.equals(record.getValue());
-                enqueueAndReturn(ReplaceTask.this);
+                try {
+                    if (cmap.store != null && cmap.writeDelayMillis == 0) {
+                        cmap.store.store(toObject(request.key), toObject(request.value));
+                    }
+                } catch (Exception e) {
+                    request.response = e;
+                } finally {
+                    enqueueAndReturn(ReplaceTask.this);
+                }
             }
 
             public void process() {
@@ -2690,7 +2697,15 @@ public class ConcurrentMapManager extends BaseManager {
             public void run() {
                 Object expectedValue = toObject(request.value);
                 request.response = expectedValue.equals(record.getValue());
-                enqueueAndReturn(RemoveIfSameTask.this);
+                try {
+                    if (cmap.store != null && cmap.writeDelayMillis == 0) {
+                        cmap.store.delete(toObject(request.key));
+                    }
+                } catch (Exception e) {
+                    request.response = e;
+                } finally {
+                    enqueueAndReturn(RemoveIfSameTask.this);
+                }
             }
 
             public void process() {

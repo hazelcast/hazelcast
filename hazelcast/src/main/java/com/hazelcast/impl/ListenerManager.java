@@ -411,7 +411,6 @@ public class ListenerManager extends BaseManager {
                 break;
             case QUEUE:
                 ItemListener queueItemListener = (ItemListener) listener;
-                System.out.println(event);
                 switch (entryEventType) {
                     case ADDED:
                         queueItemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED, event.getNewValueData()));

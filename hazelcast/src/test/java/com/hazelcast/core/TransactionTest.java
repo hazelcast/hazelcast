@@ -859,11 +859,9 @@ public class TransactionTest {
         TransactionalMap txnMap2 = newTransactionalMapProxy("testMapEntryLastAccessTime");
         txnMap.put("1", "value1");
         MapEntry mapEntry = txnMap.getMapEntry("1");
-        System.out.println("txn test time " + mapEntry.getLastAccessTime());
         txnMap.begin();
         txnMap.get("1");
         mapEntry = txnMap.getMapEntry("1");
-        System.out.println("txn test time2 " + mapEntry.getLastAccessTime());
         txnMap.commit();
     }
 

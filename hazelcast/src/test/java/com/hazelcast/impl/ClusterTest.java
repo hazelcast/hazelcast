@@ -400,8 +400,6 @@ public class ClusterTest {
             }
         });
         assertTrue(latch.await(60, TimeUnit.SECONDS));
-        System.out.println(map1.getLocalMapStats());
-        System.out.println(map2.getLocalMapStats());
         assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
         assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
     }
@@ -416,7 +414,7 @@ public class ClusterTest {
         IMap map1 = h1.getMap("def");
         IMap map2 = h2.getMap("def");
         IMap map3 = sc.getMap("def");
-        for (int i = 0; i < 300;) {
+        for (int i = 0; i < 300; ) {
             map1.put(i++, new byte[1000]);
             map2.put(i++, new byte[1000]);
             map3.put(i++, new byte[1000]);
@@ -1971,8 +1969,6 @@ public class ClusterTest {
                 sleep(1000);
             }
             sleep(1000);
-            System.out.println(mapStats1);
-            System.out.println(mapStats2);
             assertEquals(mapStats1.getOwnedEntryCount(), mapStats2.getBackupEntryCount());
             assertEquals("Migrated blocks are not backed up", mapStats2.getOwnedEntryCount(), mapStats1.getBackupEntryCount());
         }
@@ -2259,22 +2255,16 @@ public class ClusterTest {
                         return;
                     }
                     while (latch.getCount() > 0) {
-//                        System.out.println("Attempting to lock.");
                         if (!map.lockMap(1, TimeUnit.SECONDS)) {
-//                            System.out.println("Failed to lock. Retrying.");
                             continue;
                         }
                         try {
-//                            System.out.println("Locked :" + h.getCluster().getLocalMember());
                             Integer value = map.get(KEY);
                             if (value == null)
                                 value = 0;
                             map.put(KEY, value + 1);
-//                            System.out.println("Put: " + (value + 1));
                         } finally {
-//                            System.out.println("Unlocking");
                             map.unlockMap();
-//                            System.out.println("Unlocked");
                             latch.countDown();
                         }
                     }
@@ -2349,7 +2339,6 @@ public class ClusterTest {
         }).start();
         acquireLock.await();
         map2.put(2, 2);
-        System.out.println("Put to the map");
         boolean lockMap2 = map2.lockMap(10,
                 TimeUnit.SECONDS);
         assertTrue(lockMap2);
