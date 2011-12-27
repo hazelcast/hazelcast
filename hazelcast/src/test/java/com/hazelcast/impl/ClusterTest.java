@@ -27,6 +27,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.util.ConcurrentHashSet;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -1995,14 +1996,15 @@ public class ClusterTest {
     @Test
     public void testConcurrentLockPrimitive() throws Exception {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(new Config());
-        int threads = 5;
+        final int threads = 10;
         final IMap<Object, Object> testMap = instance.getMap("testConcurrentLockPrimitive");
         assertNull(testMap.putIfAbsent(1L, 0L));
         assertEquals(0L, testMap.get(1L));
         final AtomicLong count = new AtomicLong(0);
-        ExecutorService pool = Executors.newFixedThreadPool(threads);
+        final ExecutorService pool = Executors.newFixedThreadPool(threads);
         final int total = 50000;
         final CountDownLatch countDownLatch = new CountDownLatch(total);
+        final Set<Long> values = new ConcurrentHashSet<Long>();
         for (int i = 0; i < threads; i++) {
             pool.execute(new Runnable() {
                 public void run() {
@@ -2012,6 +2014,9 @@ public class ClusterTest {
                         testMap.lock(1L);
                         try {
                             Long value = (Long) testMap.get(1L);
+                            if (!values.add(value)) {
+                                fail(value + " already exist!");
+                            }
                             assertNotNull(value);
                             testMap.put(1L, value + 1);
                         } finally {

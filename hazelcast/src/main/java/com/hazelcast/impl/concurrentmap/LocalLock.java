@@ -18,8 +18,8 @@
 package com.hazelcast.impl.concurrentmap;
 
 public class LocalLock {
-    int threadId;
-    int count = 0;
+    final int threadId;
+    volatile int count = 0;
 
     public LocalLock(int threadId) {
         this.threadId = threadId;
@@ -39,6 +39,20 @@ public class LocalLock {
 
     public int decrementAndGet() {
         return --count;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LocalLock localLock = (LocalLock) o;
+        if (threadId != localLock.threadId) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return threadId;
     }
 
     @Override

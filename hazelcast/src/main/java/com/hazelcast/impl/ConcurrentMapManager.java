@@ -465,16 +465,17 @@ public class ConcurrentMapManager extends BaseManager {
 
         public boolean unlock(String name, Object key, long timeout) {
             Data dataKey = toData(key);
+            ThreadContext tc = ThreadContext.get();
             CMap cmap = getMap(name);
             if (cmap == null) return false;
             LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
-            if (localLock == null || localLock.getThreadId() != ThreadContext.get().getThreadId()) {
+            if (localLock == null || localLock.getThreadId() != tc.getThreadId()) {
                 return false;
             }
             if (localLock.decrementAndGet() > 0) return true;
             boolean unlocked = booleanCall(CONCURRENT_MAP_UNLOCK, name, dataKey, null, timeout, -1);
             if (unlocked) {
-                cmap.mapLocalLocks.remove(dataKey);
+                cmap.mapLocalLocks.remove(dataKey, localLock);
                 backup(CONCURRENT_MAP_BACKUP_LOCK);
             }
             return unlocked;
@@ -494,12 +495,13 @@ public class ConcurrentMapManager extends BaseManager {
 
         public boolean lock(ClusterOperation op, String name, Object key, Object value, long timeout) {
             Data dataKey = toData(key);
+            ThreadContext tc = ThreadContext.get();
             boolean locked = booleanCall(op, name, dataKey, value, timeout, -1);
             if (locked) {
                 CMap cmap = getMap(name);
                 LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
-                if (localLock == null) {
-                    localLock = new LocalLock(ThreadContext.get().getThreadId());
+                if (localLock == null || localLock.getThreadId() != tc.getThreadId()) {
+                    localLock = new LocalLock(tc.getThreadId());
                     cmap.mapLocalLocks.put(dataKey, localLock);
                 }
                 if (localLock.incrementAndGet() == 1) {
