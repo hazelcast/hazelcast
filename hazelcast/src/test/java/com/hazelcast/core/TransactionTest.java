@@ -862,6 +862,7 @@ public class TransactionTest {
         txnMap.begin();
         txnMap.get("1");
         mapEntry = txnMap.getMapEntry("1");
+        System.out.println("txn test time2 " + mapEntry.getLastAccessTime());
         txnMap.commit();
     }
 
@@ -943,7 +944,7 @@ public class TransactionTest {
         Hazelcast.shutdownAll();
     }
 
-    List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();
+    final List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();
 
     TransactionalMap newTransactionalMapProxy(String name) {
         return (TransactionalMap) newTransactionalProxy(Hazelcast.getMap(name), TransactionalMap.class);
@@ -975,20 +976,32 @@ public class TransactionTest {
     }
 
     IMap newMapProxy(String name) {
-        IMap imap = Hazelcast.getMap(name);
+        return newMapProxy(Hazelcast.getDefaultInstance(), name, mapsUsed);
+    }
+
+    public static IMap newMapProxy(HazelcastInstance hz, String name, List listToAdd) {
+        IMap imap = hz.getMap(name);
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Class[] interfaces = new Class[]{IMap.class};
         IMap proxy = (IMap) Proxy.newProxyInstance(classLoader, interfaces, new ThreadBoundInvocationHandler(imap));
-        mapsUsed.add(proxy);
+        if (listToAdd != null) {
+            listToAdd.add(proxy);
+        }
         return proxy;
     }
 
     IQueue newQueueProxy(String name) {
-        IQueue queue = Hazelcast.getQueue(name);
+        return newQueueProxy(Hazelcast.getDefaultInstance(), name, mapsUsed);
+    }
+
+    public static IQueue newQueueProxy(HazelcastInstance hz, String name, List listToAdd) {
+        IQueue queue = hz.getQueue(name);
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Class[] interfaces = new Class[]{IQueue.class};
         IQueue proxy = (IQueue) Proxy.newProxyInstance(classLoader, interfaces, new ThreadBoundInvocationHandler(queue));
-        mapsUsed.add(proxy);
+        if (listToAdd != null) {
+            listToAdd.add(proxy);
+        }
         return proxy;
     }
 

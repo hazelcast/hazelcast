@@ -23,6 +23,8 @@ package com.hazelcast.core;
  */
 public interface LifecycleService {
 
+    void kill();
+
     void shutdown();
 
     boolean pause();

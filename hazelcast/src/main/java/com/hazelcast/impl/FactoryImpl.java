@@ -331,6 +331,20 @@ public class FactoryImpl implements HazelcastInstance {
         ThreadContext.shutdownAll();
     }
 
+    public static void kill(HazelcastInstanceProxy hazelcastInstanceProxy) {
+        FactoryImpl factory = hazelcastInstanceProxy.getFactory();
+        factory.managementService.unregister();
+        factory.proxies.clear();
+        for (ExecutorService esp : factory.executorServiceProxies.values()) {
+            esp.shutdown();
+        }
+        factory.node.shutdown(true, true);
+        factories.remove(factory.getName());
+        if (factories.size() == 0) {
+            shutdownManagementService();
+        }
+    }
+
     public static void shutdown(HazelcastInstanceProxy hazelcastInstanceProxy) {
         FactoryImpl factory = hazelcastInstanceProxy.getFactory();
         factory.managementService.unregister();

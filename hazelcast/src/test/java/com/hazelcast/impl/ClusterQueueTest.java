@@ -65,6 +65,39 @@ public class ClusterQueueTest {
     }
 
     @Test
+    public void testDeadTaker() throws Exception {
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        final IQueue q1 = h1.getQueue("default");
+        final IQueue q2 = h2.getQueue("default");
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    q2.take();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                    h2.getLifecycleService().kill();
+                    shutdownLatch.countDown();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        shutdownLatch.await(5, TimeUnit.SECONDS);
+        q1.offer("item");
+        assertEquals(1, q1.size());
+        assertEquals("item", q1.poll());
+    }
+
+    @Test
     public void testPollTxn() throws Exception {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
@@ -112,12 +145,12 @@ public class ClusterQueueTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final IQueue q1 = h1.getQueue("default");
         final IQueue q2 = h2.getQueue("default");
-        for (int i = 0; i < 40;) {
+        for (int i = 0; i < 40; ) {
             assertTrue(q1.offer("item" + i++, 100, TimeUnit.SECONDS));
             assertTrue(q2.offer("item" + i++, 100, TimeUnit.SECONDS));
         }
         h1.getLifecycleService().shutdown();
-        for (int i = 40; i < 100;) {
+        for (int i = 40; i < 100; ) {
             assertTrue(q2.offer("item" + i++, 100, TimeUnit.SECONDS));
         }
         for (int i = 0; i < 100; i++) {

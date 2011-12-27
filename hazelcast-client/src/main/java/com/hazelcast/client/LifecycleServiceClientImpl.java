@@ -116,6 +116,10 @@ public class LifecycleServiceClientImpl implements LifecycleService {
         hazelcastClient.callAsyncAndWait(callable);
     }
 
+    public void kill() {
+        shutdown();
+    }
+
     public void restart() {
         throw new UnsupportedOperationException();
     }

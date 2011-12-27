@@ -25,7 +25,10 @@ import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.monitor.LocalQueueStatsImpl;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.Packet;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -108,6 +111,12 @@ public class BlockingQueueManager extends BaseManager {
     public void destroy(String name) {
         mapBQ.remove(name);
         node.listenerManager.removeAllRegisteredListeners(name);
+    }
+
+    public void syncForDead(MemberImpl deadMember) {
+        for (BQ queue : mapBQ.values()) {
+            queue.invalidateScheduledActionsFor(deadMember);
+        }
     }
 
     abstract class InitializationAwareOperationHandler extends ResponsiveOperationHandler {
@@ -804,18 +813,18 @@ public class BlockingQueueManager extends BaseManager {
             this.ttl = (backingMapTTL == 0) ? Integer.MAX_VALUE : TimeUnit.SECONDS.toMillis(backingMapTTL);
             initializeListeners();
         }
-        
+
         private void initializeListeners() {
-			for (ItemListenerConfig lc : queueConfig.getItemListenerConfigs()) {
-				try {
-					node.listenerManager.createAndAddListenerItem(name, lc, Instance.InstanceType.QUEUE);
-					for (MemberImpl member : node.clusterManager.getMembers()) {
-						mapListeners.put(member.getAddress(), lc.isIncludeValue());
-					}
-				} catch (Exception e) {
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
-			}
+            for (ItemListenerConfig lc : queueConfig.getItemListenerConfigs()) {
+                try {
+                    node.listenerManager.createAndAddListenerItem(name, lc, Instance.InstanceType.QUEUE);
+                    for (MemberImpl member : node.clusterManager.getMembers()) {
+                        mapListeners.put(member.getAddress(), lc.isIncludeValue());
+                    }
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                }
+            }
         }
 
         int maxSize() {
@@ -1082,6 +1091,21 @@ public class BlockingQueueManager extends BaseManager {
             }
             long aveAge = (ownedCount == 0) ? 0 : (totalAge / ownedCount);
             return new LocalQueueStatsImpl(ownedCount, backupCount, minAge, maxAge, aveAge);
+        }
+
+        public void invalidateScheduledActionsFor(MemberImpl deadMember) {
+            for (PollAction pollAction : pollWaitList) {
+                if (deadMember.address.equals(pollAction.getRequest().caller)) {
+                    pollAction.setValid(false);
+                    node.clusterManager.deregisterScheduledAction(pollAction);
+                }
+            }
+            for (ScheduledAction offerAction : offerWaitList) {
+                if (deadMember.address.equals(offerAction.getRequest().caller)) {
+                    offerAction.setValid(false);
+                    node.clusterManager.deregisterScheduledAction(offerAction);
+                }
+            }
         }
 
         public class OfferAction extends ScheduledAction {
