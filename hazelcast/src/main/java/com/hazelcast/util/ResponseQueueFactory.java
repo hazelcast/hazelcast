@@ -39,6 +39,7 @@ public class ResponseQueueFactory {
         public Object take() throws InterruptedException {
             lock.lock();
             try {
+                //noinspection WhileLoopSpinsOnField
                 while (response == null) {
                     noValue.await();
                 }
@@ -68,7 +69,7 @@ public class ResponseQueueFactory {
                 lock.unlock();
             }
         }
-        
+
         public void put(Object o) throws InterruptedException {
             offer(o);
         }
@@ -80,6 +81,7 @@ public class ResponseQueueFactory {
                     return false;
                 }
                 response = obj;
+                //noinspection CallToSignalInsteadOfSignalAll
                 noValue.signal();
                 return true;
             } finally {
@@ -95,7 +97,7 @@ public class ResponseQueueFactory {
                 lock.unlock();
             }
         }
-        
+
         /**
          * Internal method, should be called under lock.
          * @return response
@@ -159,7 +161,8 @@ public class ResponseQueueFactory {
         public Object take() throws InterruptedException {
             while (response == null) {
                 synchronized (lock) {
-                    if (response == null) {
+                    while (response == null) {
+                        //noinspection WaitOrAwaitWithoutTimeout
                         lock.wait();
                     }
                 }
@@ -171,6 +174,7 @@ public class ResponseQueueFactory {
             return offer(o);
         }
 
+        @SuppressWarnings("CallToNativeMethodWhileLocked")
         public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
             if (timeout < 0) throw new IllegalArgumentException();
             if (timeout == 0) return response;
@@ -195,8 +199,13 @@ public class ResponseQueueFactory {
             if (this.response != null) {
                 return false;
             }
-            this.response = obj;
+
             synchronized (lock) {
+                if (this.response != null) {
+                    return false;
+                }
+                this.response = obj;
+                //noinspection CallToNotifyInsteadOfNotifyAll
                 lock.notify();
             }
             return true;
