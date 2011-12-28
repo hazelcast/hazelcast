@@ -92,6 +92,7 @@ public class SimpleFunctionalMapTest {
             public void run() {
                 while (true) {
                     try {
+                        //noinspection BusyWait
                         Thread.sleep(STATS_SECONDS * 1000);
                         System.out.println("cluster size:"
                                 + Hazelcast.getCluster().getMembers().size());

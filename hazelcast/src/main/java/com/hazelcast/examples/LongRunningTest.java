@@ -79,6 +79,7 @@ public class LongRunningTest {
                 int nextSeconds = random(60, 260);
                 log("Next Action after " + nextSeconds + " seconds.");
                 log("members:" + nodes.size() + ", starts: " + starts + ", stops:" + stops + ", restart:" + restarts);
+                //noinspection BusyWait
                 Thread.sleep(nextSeconds * 1000);
             } catch (InterruptedException e) {
             }
@@ -192,6 +193,7 @@ public class LongRunningTest {
                 public void run() {
                     while (running) {
                         try {
+                            //noinspection BusyWait
                             Thread.sleep(STATS_SECONDS * 1000);
                             int clusterSize = hazelcast.getCluster().getMembers().size();
                             Stats currentStats = stats.getAndReset();

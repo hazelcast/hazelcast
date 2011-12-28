@@ -86,6 +86,7 @@ public class LongRunningTransactionTest {
                 log("Next Action after " + nextSeconds + " seconds.");
                 log("members:" + nodes.size() + ", starts: " + starts + ", stops:" + stops + ", restart:" + restarts);
                 log("transaction count: " + ids.get());
+                //noinspection BusyWait
                 Thread.sleep(nextSeconds * 1000);
             } catch (InterruptedException e) {
             }
@@ -125,6 +126,7 @@ public class LongRunningTransactionTest {
                                     log("Consuming outOfOrders " + outOfOrderIds.size());
                                 }
                                 if (outOfOrderIds.size() > 1000) {
+                                    //noinspection BusyWait
                                     Thread.sleep(1000);
                                     System.exit(0);
                                 }
@@ -247,6 +249,7 @@ public class LongRunningTransactionTest {
                                     Integer id2 = map2.put(2, id);
                                     Integer id3 = map3.put(3, id);
                                     Integer id4 = map4.put(key, id);
+                                    //noinspection BusyWait
                                     Thread.sleep(random.nextInt(5));
                                     txn.commit();
                                     processedIds.put(id);
@@ -264,6 +267,7 @@ public class LongRunningTransactionTest {
                 public void run() {
                     while (running) {
                         try {
+                            //noinspection BusyWait
                             Thread.sleep(STATS_SECONDS * 1000);
                             int clusterSize = hazelcast.getCluster().getMembers().size();
                             Stats currentStats = stats.getAndReset();

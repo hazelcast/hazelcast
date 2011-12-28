@@ -50,6 +50,7 @@ public class SimpleQueueTest {
             });
         }
         Executors.newSingleThreadExecutor().submit(new Runnable() {
+            @SuppressWarnings("BusyWait")
             public void run() {
                 while (true) {
                     try {

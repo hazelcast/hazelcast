@@ -106,6 +106,7 @@ public class SimpleMapTest {
             public void run() {
                 while (true) {
                     try {
+                        //noinspection BusyWait
                         Thread.sleep(STATS_SECONDS * 1000);
                         logger.log(Level.INFO, "cluster size:" + Hazelcast.getCluster().getMembers().size());
                         LocalMapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();

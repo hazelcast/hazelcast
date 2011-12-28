@@ -585,6 +585,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("true");
     }
 
+    @SuppressWarnings("LockAcquiredButNotSafelyReleased")
     protected void handleLock(String[] args) {
         String lockStr = args[0];
         String key = args[1];
