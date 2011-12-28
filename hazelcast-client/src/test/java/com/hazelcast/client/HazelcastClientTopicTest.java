@@ -18,6 +18,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.ITopic;
+import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -53,8 +54,8 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
         final CountDownLatch latch = new CountDownLatch(1);
         final String message = "Hazelcast Rocks!";
         topic.addMessageListener(new MessageListener<String>() {
-            public void onMessage(String msg) {
-                if (msg.equals(message)) {
+            public void onMessage(Message<String> msg) {
+                if (msg.getMessageObject().equals(message)) {
                     latch.countDown();
                 }
             }
@@ -70,15 +71,15 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
         final CountDownLatch latch = new CountDownLatch(2);
         final String message = "Hazelcast Rocks!";
         topic.addMessageListener(new MessageListener<String>() {
-            public void onMessage(String msg) {
-                if (msg.equals(message)) {
+            public void onMessage(Message<String> msg) {
+                if (msg.getMessageObject().equals(message)) {
                     latch.countDown();
                 }
             }
         });
         topic.addMessageListener(new MessageListener<String>() {
-            public void onMessage(String msg) {
-                if (msg.equals(message)) {
+            public void onMessage(Message<String> msg) {
+                if (msg.getMessageObject().equals(message)) {
                     latch.countDown();
                 }
             }
@@ -95,7 +96,7 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
         final CountDownLatch cp = new CountDownLatch(1);
 //        final String message = "Hazelcast Rocks!";
         MessageListener<String> messageListener = new MessageListener<String>() {
-            public void onMessage(String msg) {
+            public void onMessage(Message<String> msg) {
 //                if (msg.startsWith(message)) {
                 System.out.println("Received " + msg + " at " + this);
                 latch.countDown();
@@ -161,8 +162,8 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
         final CountDownLatch cp = new CountDownLatch(2);
         final String message = "Hazelcast Rocks!";
         MessageListener<String> messageListener1 = new MessageListener<String>() {
-            public void onMessage(String msg) {
-                if (msg.startsWith(message)) {
+            public void onMessage(Message<String> msg) {
+                if (msg.getMessageObject().startsWith(message)) {
 //                    System.out.println("Received "+msg+" at "+ this);
                     latch.countDown();
                     cp.countDown();
@@ -170,8 +171,8 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
             }
         };
         MessageListener<String> messageListener2 = new MessageListener<String>() {
-            public void onMessage(String msg) {
-                if (msg.startsWith(message)) {
+            public void onMessage(Message<String> msg) {
+                if (msg.getMessageObject().startsWith(message)) {
 //                    System.out.println("Received "+msg+" at "+ this);
                     latch.countDown();
                     cp.countDown();
