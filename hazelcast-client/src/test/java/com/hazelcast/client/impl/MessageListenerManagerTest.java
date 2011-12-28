@@ -18,6 +18,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Packet;
+import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import org.junit.Test;
 
@@ -34,9 +35,9 @@ public class MessageListenerManagerTest {
         MessageListenerManager manager = new MessageListenerManager();
         String name = "default";
         assertTrue(manager.noListenerRegistered(name));
-        MessageListener listener = new MessageListener() {
+        MessageListener listener = new MessageListener<Object>() {
 
-            public void onMessage(Object message) {
+            public void onMessage(Message<Object> message) {
             }
         };
         manager.registerListener(name, listener);
@@ -48,9 +49,9 @@ public class MessageListenerManagerTest {
         MessageListenerManager manager = new MessageListenerManager();
         String name = "default";
         assertTrue(manager.noListenerRegistered(name));
-        MessageListener listener = new MessageListener() {
+        MessageListener listener = new MessageListener<Object>() {
 
-            public void onMessage(Object message) {
+            public void onMessage(Message<Object> message) {
             }
         };
         manager.registerListener(name, listener);
@@ -68,10 +69,10 @@ public class MessageListenerManagerTest {
         assertTrue(manager.noListenerRegistered(name));
         final String myMessage = "my myMessage";
         final CountDownLatch latch = new CountDownLatch(1);
-        MessageListener listener = new MessageListener() {
+        MessageListener listener = new MessageListener<Object>() {
 
-            public void onMessage(Object message) {
-                if (message.equals(myMessage)) {
+            public void onMessage(Message<Object> message) {
+                if (message.getMessageObject().equals(myMessage)) {
                     latch.countDown();
                 }
             }
