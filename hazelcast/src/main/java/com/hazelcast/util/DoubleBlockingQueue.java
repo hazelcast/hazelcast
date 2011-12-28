@@ -33,6 +33,7 @@ public class DoubleBlockingQueue<E> extends AbstractQueue<E> implements Blocking
     public void put(E e) throws InterruptedException {
         defaultQueue.offer(e);
         synchronized (notEmptyLock) {
+            //noinspection CallToNotifyInsteadOfNotifyAll
             notEmptyLock.notify();
         }
     }
