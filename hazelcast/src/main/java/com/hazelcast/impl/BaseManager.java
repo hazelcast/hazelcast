@@ -365,6 +365,12 @@ public abstract class BaseManager {
 
         public boolean getResultAsBoolean() {
             Object resultObj = getResult();
+            if (resultObj instanceof Data) {
+                resultObj = toObject((Data) resultObj);
+                if (resultObj instanceof AddressAwareException) {
+                    rethrowException(request.operation, (AddressAwareException) resultObj);
+                }
+            }
             boolean result = Boolean.TRUE.equals(resultObj);
             afterGettingResult(request);
             return result;
@@ -518,7 +524,7 @@ public abstract class BaseManager {
         }
 
         protected final Object getRedoAwareResult() {
-            for (; ;) {
+            for (; ; ) {
                 Object result = waitAndGetResult();
                 if (Thread.interrupted()) {
                     handleInterruptedException();

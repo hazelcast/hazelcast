@@ -2487,8 +2487,7 @@ public class ConcurrentMapManager extends BaseManager {
                 request.response = Boolean.FALSE;
                 returnResponse(request);
             } else {
-                record.lock(request.lockThreadId, request.caller);
-                node.executorManager.executeQueryTask(new RemoveMultiSetMapTask(request, record, cmap));
+                storeExecutor.execute(new RemoveMultiSetMapTask(request, record, cmap), request.key.hashCode());
             }
         }
 
@@ -2518,7 +2517,6 @@ public class ConcurrentMapManager extends BaseManager {
                     cmap.onRemoveMulti(request, record);
                 }
                 returnResponse(request);
-                decrementLockAndFireScheduledActions(cmap, record);
             }
         }
     }
@@ -2554,8 +2552,7 @@ public class ConcurrentMapManager extends BaseManager {
                     request.response = Boolean.TRUE;
                     returnResponse(request);
                 } else {
-                    record.lock(request.lockThreadId, request.caller);
-                    node.executorManager.executeQueryTask(new PutMultiSetMapTask(request, record, cmap));
+                    storeExecutor.execute(new PutMultiSetMapTask(request, record, cmap), request.key.hashCode());
                 }
             }
         }
@@ -2581,17 +2578,8 @@ public class ConcurrentMapManager extends BaseManager {
                     cmap.putMulti(request);
                 }
                 returnResponse(request);
-                decrementLockAndFireScheduledActions(cmap, record);
             }
         }
-    }
-
-    void decrementLockAndFireScheduledActions(CMap cmap, Record record) {
-        DistributedLock lock = record.getLock();
-        if (lock != null) {
-            lock.decrementAndGetLockCount();
-        }
-        cmap.fireScheduledActions(record);
     }
 
     class ReplaceOperationHandler extends SchedulableOperationHandler {
@@ -2615,35 +2603,25 @@ public class ConcurrentMapManager extends BaseManager {
                 request.response = Boolean.FALSE;
                 returnResponse(request);
             } else {
-                record.lock(request.lockThreadId, request.caller);
-                node.executorManager.executeQueryTask(new ReplaceTask(request, record, cmap));
+                storeExecutor.execute(new ReplaceTask(request, record, cmap), request.key.hashCode());
             }
         }
 
-        class ReplaceTask implements Runnable, Processable {
-            final CMap cmap;
-            final Request request;
+        class ReplaceTask extends AbstractMapStoreOperation {
             final Record record;
 
             ReplaceTask(Request request, Record record, CMap cmap) {
-                this.request = request;
+                super(cmap, request);
                 this.record = record;
-                this.cmap = cmap;
             }
 
-            public void run() {
+            public void doMapStoreOperation() {
                 MultiData multiData = (MultiData) toObject(request.value);
                 Object expectedValue = toObject(multiData.getData(0));
                 request.value = multiData.getData(1); // new value
                 request.response = expectedValue.equals(record.getValue());
-                try {
-                    if (cmap.store != null && cmap.writeDelayMillis == 0) {
-                        cmap.store.store(toObject(request.key), toObject(request.value));
-                    }
-                } catch (Exception e) {
-                    request.response = e;
-                } finally {
-                    enqueueAndReturn(ReplaceTask.this);
+                if (cmap.store != null && cmap.writeDelayMillis == 0) {
+                    cmap.store.store(toObject(request.key), toObject(request.value));
                 }
             }
 
@@ -2654,7 +2632,6 @@ public class ConcurrentMapManager extends BaseManager {
                 }
                 request.value = null;
                 returnResponse(request);
-                decrementLockAndFireScheduledActions(cmap, record);
             }
         }
     }
@@ -2680,33 +2657,23 @@ public class ConcurrentMapManager extends BaseManager {
                 request.response = Boolean.FALSE;
                 returnResponse(request);
             } else {
-                record.lock(request.lockThreadId, request.caller);
-                node.executorManager.executeQueryTask(new RemoveIfSameTask(request, record, cmap));
+                storeExecutor.execute(new RemoveIfSameTask(request, record, cmap), request.key.hashCode());
             }
         }
 
-        class RemoveIfSameTask implements Runnable, Processable {
-            final CMap cmap;
-            final Request request;
+        class RemoveIfSameTask extends AbstractMapStoreOperation {
             final Record record;
 
             RemoveIfSameTask(Request request, Record record, CMap cmap) {
-                this.request = request;
+                super(cmap, request);
                 this.record = record;
-                this.cmap = cmap;
             }
 
-            public void run() {
+            public void doMapStoreOperation() {
                 Object expectedValue = toObject(request.value);
                 request.response = expectedValue.equals(record.getValue());
-                try {
-                    if (cmap.store != null && cmap.writeDelayMillis == 0) {
-                        cmap.store.delete(toObject(request.key));
-                    }
-                } catch (Exception e) {
-                    request.response = e;
-                } finally {
-                    enqueueAndReturn(RemoveIfSameTask.this);
+                if (cmap.store != null && cmap.writeDelayMillis == 0) {
+                    cmap.store.delete(toObject(request.key));
                 }
             }
 
@@ -2717,7 +2684,6 @@ public class ConcurrentMapManager extends BaseManager {
                     request.response = Boolean.TRUE;
                 }
                 returnResponse(request);
-                decrementLockAndFireScheduledActions(cmap, record);
             }
         }
     }
