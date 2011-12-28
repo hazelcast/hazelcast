@@ -92,6 +92,7 @@ public abstract class SelectorBase implements Runnable {
     }
 
     private void processSelectionQueue() {
+        //noinspection WhileLoopSpinsOnField
         while (live) {
             final Runnable runnable = selectorQueue.poll();
             if (runnable == null) {
@@ -106,6 +107,7 @@ public abstract class SelectorBase implements Runnable {
     public final void run() {
         try {
             connectionManager.ioService.onIOThreadStart();
+            //noinspection WhileLoopSpinsOnField
             while (live) {
                 threadWatcher.incrementRunCount();
                 long currentMillis = System.currentTimeMillis();
