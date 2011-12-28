@@ -553,8 +553,8 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         ITopic<String> topic = getHazelcastClient().getTopic("testTopicPublish");
         final CountDownLatch latch = new CountDownLatch(1);
         topic.addMessageListener(new MessageListener<String>() {
-            public void onMessage(String msg) {
-                assertEquals("Hello World", msg);
+            public void onMessage(Message<String> msg) {
+                assertEquals("Hello World", msg.getMessageObject());
                 latch.countDown();
             }
         });
