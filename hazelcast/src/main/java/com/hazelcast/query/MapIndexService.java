@@ -24,6 +24,7 @@ import com.hazelcast.nio.Data;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -33,8 +34,9 @@ public class MapIndexService {
     private final Map<Expression, Index> mapIndexes = new ConcurrentHashMap<Expression, Index>(4, 0.75f, 1);
     private final Object indexTypesLock = new Object();
     private volatile boolean hasIndexedAttributes = false;
+    @SuppressWarnings("VolatileArrayField")
     private volatile byte[] indexTypes = null;
-    private volatile int size = 0;
+    private final AtomicInteger size = new AtomicInteger(0);
 
     public MapIndexService(boolean valueIndexed) {
         indexValue = (valueIndexed) ? new Index(null, false, -1) : null;
@@ -43,7 +45,7 @@ public class MapIndexService {
     public void remove(Record record) {
         Record existingRecord = records.remove(record.getId());
         if (existingRecord != null) {
-            size--;
+            size.decrementAndGet();
         }
     }
 
@@ -54,7 +56,7 @@ public class MapIndexService {
             if (anotherRecord != null) {
                 record = anotherRecord;
             } else {
-                size++;
+                size.incrementAndGet();
             }
         } else {
             remove(record);
@@ -144,7 +146,7 @@ public class MapIndexService {
 
     public Set<MapEntry> doQuery(QueryContext queryContext) {
         boolean strong = false;
-        Set<MapEntry> results = null;
+        Set<MapEntry> results;
         Predicate predicate = queryContext.getPredicate();
         try {
             if (predicate != null && mapIndexes != null && predicate instanceof IndexAwarePredicate) {
@@ -287,10 +289,10 @@ public class MapIndexService {
     public void clear() {
         mapIndexes.clear();
         records.clear();
-        size = 0;
+        size.set(0);
     }
 
     public int size() {
-        return size;
+        return size.get();
     }
 }
