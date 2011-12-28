@@ -91,7 +91,7 @@ public abstract class SelectorBase implements Runnable {
         selectorQueue.offer(runnable);
     }
 
-    public void processSelectionQueue() {
+    private void processSelectionQueue() {
         while (live) {
             final Runnable runnable = selectorQueue.poll();
             if (runnable == null) {
