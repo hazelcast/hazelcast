@@ -33,8 +33,9 @@ import java.security.spec.KeySpec;
 import java.util.logging.Level;
 
 final class CipherHelper {
-    static AsymmetricCipherBuilder asymmetricCipherBuilder = null;
-    static SymmetricCipherBuilder symmetricCipherBuilder = null;
+    private static AsymmetricCipherBuilder asymmetricCipherBuilder = null;
+    private static SymmetricCipherBuilder symmetricCipherBuilder = null;
+
     final static ILogger logger = Logger.getLogger(CipherHelper.class.getName());
 
     static {
@@ -48,6 +49,7 @@ final class CipherHelper {
         }
     }
 
+    @SuppressWarnings("SynchronizedMethod")
     public static synchronized Cipher createAsymmetricReaderCipher(IOService ioService, String remoteAlias) throws Exception {
         if (asymmetricCipherBuilder == null) {
             asymmetricCipherBuilder = new AsymmetricCipherBuilder(ioService);
@@ -55,6 +57,7 @@ final class CipherHelper {
         return asymmetricCipherBuilder.getReaderCipher(remoteAlias);
     }
 
+    @SuppressWarnings("SynchronizedMethod")
     public static synchronized Cipher createAsymmetricWriterCipher(IOService ioService) throws Exception {
         if (asymmetricCipherBuilder == null) {
             asymmetricCipherBuilder = new AsymmetricCipherBuilder(ioService);
@@ -62,6 +65,7 @@ final class CipherHelper {
         return asymmetricCipherBuilder.getWriterCipher();
     }
 
+    @SuppressWarnings("SynchronizedMethod")
     public static synchronized Cipher createSymmetricReaderCipher(IOService ioService) throws Exception {
         if (symmetricCipherBuilder == null) {
             symmetricCipherBuilder = new SymmetricCipherBuilder(ioService.getSymmetricEncryptionConfig());
@@ -69,6 +73,7 @@ final class CipherHelper {
         return symmetricCipherBuilder.getReaderCipher(null);
     }
 
+    @SuppressWarnings("SynchronizedMethod")
     public static synchronized Cipher createSymmetricWriterCipher(IOService ioService) throws Exception {
         if (symmetricCipherBuilder == null) {
             symmetricCipherBuilder = new SymmetricCipherBuilder(ioService.getSymmetricEncryptionConfig());
