@@ -32,7 +32,9 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     SocketReader socketReader = null;
 
+    @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long lastRegistration = 0;
+    @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long lastHandle;
 
     public ReadHandler(Connection connection) {
