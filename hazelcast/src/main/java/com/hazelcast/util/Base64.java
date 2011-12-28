@@ -81,6 +81,7 @@ import java.lang.*;
  * @author Sandy Gao
  * @version $Id$
  */
+@SuppressWarnings({"SynchronizedMethod", "CallToNativeMethodWhileLocked"})
 public final class  Base64 {
     static private final int  BASELENGTH         = 255;
     static private final int  LOOKUPLENGTH       = 64;
@@ -92,6 +93,7 @@ public final class  Base64 {
     static private final int  SIGN               = -128;
     static private final byte PAD                = ( byte ) '=';
     static private final boolean fDebug          = false;
+    @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
     static private byte [] base64Alphabet       = new byte[BASELENGTH];
     static private byte [] lookUpBase64Alphabet = new byte[LOOKUPLENGTH];
 
