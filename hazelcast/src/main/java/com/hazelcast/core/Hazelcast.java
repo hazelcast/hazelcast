@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * If not started already, Hazelcast member (HazelcastInstance) will start
  * automatically if any of the functions is called on Hazelcast.
  */
+@SuppressWarnings("SynchronizationOnStaticField")
 public final class Hazelcast {
     private static final AtomicReference<HazelcastInstance> defaultInstance = new AtomicReference<HazelcastInstance>();
     private final static Object initLock = new Object();
