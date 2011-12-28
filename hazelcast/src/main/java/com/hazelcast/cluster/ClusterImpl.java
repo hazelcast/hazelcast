@@ -37,6 +37,7 @@ public class ClusterImpl implements Cluster {
     final Map<Member, Member> clusterMembers = new ConcurrentHashMap<Member, Member>();
     final Map<Member, Integer> distances = new ConcurrentHashMap<Member, Integer>();
     final Map<Member, Integer> distancesWithoutSuper = new ConcurrentHashMap<Member, Integer>();
+    @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long clusterTimeDiff = Long.MAX_VALUE;
     final Node node;
 
