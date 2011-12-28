@@ -50,6 +50,7 @@ public class SimpleBlockingQueue<E> extends AbstractQueue<E> implements Blocking
             } else {
                 items.add(e);
             }
+            //noinspection CallToNotifyInsteadOfNotifyAll
             lock.notify();
         }
     }
@@ -88,6 +89,7 @@ public class SimpleBlockingQueue<E> extends AbstractQueue<E> implements Blocking
         return items.size() + ((prioritizedItems == null) ? 0 : prioritizedItems.size());
     }
 
+    @SuppressWarnings("CallToNativeMethodWhileLocked")
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         long timeLeft = unit.toMillis(timeout);
         long start = System.currentTimeMillis();
