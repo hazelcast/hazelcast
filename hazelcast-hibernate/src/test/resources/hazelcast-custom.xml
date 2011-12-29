@@ -79,11 +79,11 @@
 <!--        </near-cache> -->
     </map>
 
-<!--     <map name="com.hazelcast.hibernate.entity.*"> -->
-<!--         <backup-count>1</backup-count> -->
-<!--         <time-to-live-seconds>30</time-to-live-seconds> -->
-<!--         <max-idle-seconds>30</max-idle-seconds> -->
-<!--         <eviction-policy>LRU</eviction-policy> -->
-<!--         <max-size>50</max-size> -->
-<!--     </map> -->
+    <map name="com.hazelcast.hibernate.entity.*">
+        <backup-count>1</backup-count>
+        <time-to-live-seconds>30</time-to-live-seconds>
+        <max-idle-seconds>30</max-idle-seconds>
+        <eviction-policy>LRU</eviction-policy>
+        <max-size>50</max-size>
+    </map>
 </hazelcast>
