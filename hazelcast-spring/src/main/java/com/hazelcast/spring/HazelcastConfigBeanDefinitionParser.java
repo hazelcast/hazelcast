@@ -188,6 +188,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                 } else if ("listeners".equals(nodeName)) {
                 	final List listeners = parseListeners(node, "listenerConfig", ListenerConfig.class);
         			configBuilder.addPropertyValue("listenerConfigs", listeners);
+                } else if ("lite-member".equals(nodeName)) {
+                    configBuilder.addPropertyValue(xmlToJavaName(nodeName), getValue(node));
                 }
             }
         }

@@ -105,6 +105,9 @@ public class TestFullApplicationContext {
     
     @Autowired
     private EntryListener entryListener;
+    
+    @Resource(name = "liteConfig")
+    private Config liteConfig;
 
     @BeforeClass
     @AfterClass
@@ -401,5 +404,11 @@ public class TestFullApplicationContext {
 				assertEquals(membershipListener, lc.getImplementation());
 			}
 		}
+    }
+    
+    @Test
+    public void testLiteMember() {
+        assertNotNull(liteConfig);
+        assertTrue(liteConfig.isLiteMember());
     }
 }

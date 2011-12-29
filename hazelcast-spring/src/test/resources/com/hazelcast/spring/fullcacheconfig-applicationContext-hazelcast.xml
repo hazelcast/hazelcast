@@ -209,4 +209,8 @@
     <bean id="dummyMergePolicy" class="com.hazelcast.spring.DummyMergePolicy"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>
+    
+    <hz:config id="liteConfig">
+    	<hz:lite-member>true</hz:lite-member>
+    </hz:config>
 </beans>
