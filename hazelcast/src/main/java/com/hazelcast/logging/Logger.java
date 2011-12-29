@@ -24,7 +24,9 @@ public class Logger {
     static private final Object factoryLock = new Object();
 
     public static ILogger getLogger(String name) {
+        //noinspection DoubleCheckedLocking
         if (loggerFactory == null) {
+            //noinspection SynchronizationOnStaticField
             synchronized (factoryLock) {
                 if (loggerFactory == null) {
                     String loggerType = System.getProperty("hazelcast.logging.type");
