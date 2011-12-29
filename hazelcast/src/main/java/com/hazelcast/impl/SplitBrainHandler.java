@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 public class SplitBrainHandler implements Runnable {
     final Node node;
     final ILogger logger;
+    @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long lastRun = 0;
     volatile boolean inProgress = false;
     final long FIRST_RUN_DELAY_MILLIS;

@@ -67,6 +67,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 tryCount = 0;
             }
             try {
+                //noinspection BusyWait
                 Thread.sleep(500L);
             } catch (InterruptedException ignored) {
             }
@@ -132,6 +133,7 @@ public class MulticastJoiner extends AbstractJoiner {
                     joinInfo.setTryCount(currentTryCount.get());
                     node.multicastService.send(joinInfo);
                     if (node.getMasterAddress() == null) {
+                        //noinspection BusyWait
                         Thread.sleep(10);
                     } else {
                         return node.getMasterAddress();

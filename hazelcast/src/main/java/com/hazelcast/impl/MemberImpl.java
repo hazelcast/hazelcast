@@ -37,6 +37,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     protected NodeType nodeType;
     protected transient long lastRead = 0;
     protected transient long lastWrite = 0;
+    @SuppressWarnings("VolatileLongOrDoubleField")
     protected transient volatile long lastPing = 0;
     private volatile transient ILogger logger;
 

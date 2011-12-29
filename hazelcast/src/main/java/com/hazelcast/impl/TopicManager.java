@@ -91,6 +91,7 @@ public class TopicManager extends BaseManager {
         if (FLOW_CONTROL_ENABLED) {
             while (node.connectionManager.getTotalWriteQueueSize() > 10000) {
                 try {
+                    //noinspection BusyWait
                     Thread.sleep(10);
                 } catch (InterruptedException ignored) {
                 }

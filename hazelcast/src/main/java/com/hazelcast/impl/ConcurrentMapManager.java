@@ -66,6 +66,7 @@ public class ConcurrentMapManager extends BaseManager {
     final ConcurrentMap<String, NearCache> mapCaches;
     final PartitionManager partitionManager;
     long newRecordId = 0;
+    @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long nextCleanup = 0;
     final ParallelExecutor storeExecutor;
     final ParallelExecutor evictionExecutor;

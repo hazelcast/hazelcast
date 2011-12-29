@@ -219,6 +219,7 @@ public class NearCache {
     private class CacheEntry implements Processable {
         private final NearCacheRecord record;
         private final long createTime;
+        @SuppressWarnings("VolatileLongOrDoubleField")
         private volatile long lastAccessTime;
 
         private CacheEntry(Object key, Data keyData, Data valueData) {

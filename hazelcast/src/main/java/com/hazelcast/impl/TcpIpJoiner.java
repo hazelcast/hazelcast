@@ -61,6 +61,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             Connection conn = null;
             while (conn == null) {
                 conn = node.connectionManager.getOrConnect(requiredAddress);
+                //noinspection BusyWait
                 Thread.sleep(2000L);
             }
             while (node.isActive() && !joined.get()) {
@@ -70,6 +71,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 }
                 logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
                 node.clusterManager.sendJoinRequest(requiredAddress, true);
+                //noinspection BusyWait
                 Thread.sleep(3000L);
             }
         } catch (final Exception e) {
@@ -142,6 +144,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (colPossibleAddresses.size() == 0) {
                     break;
                 }
+                //noinspection BusyWait
                 Thread.sleep(1000L);
                 numberOfSeconds++;
                 logger.log(Level.FINEST, "we are going to try to connect to each address");
@@ -189,6 +192,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                             }
                             int waitCount = 0;
                             while (node.isActive() && waitCount++ < 10) {
+                                //noinspection BusyWait
                                 Thread.sleep(1000L);
                                 if (responseCounter.get() == 0) {
                                     if (approved) {
@@ -218,6 +222,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         int tryCount = 0;
         while (!node.joined() && tryCount++ < 20 && (node.getMasterAddress() == null)) {
             connectAndSendJoinRequest(colPossibleAddresses);
+            //noinspection BusyWait
             Thread.sleep(1000L);
         }
         int requestCount = 0;
@@ -229,6 +234,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
         logger.log(Level.FINEST, node.getThisAddress() + " joining to master " + node.getMasterAddress() + ", group " + node.getConfig().getGroupConfig().getName());
         while (node.isActive() && !node.joined()) {
+            //noinspection BusyWait
             Thread.sleep(1000L);
             final Address master = node.getMasterAddress();
             if (master != null) {
@@ -418,6 +424,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
         for (Address possibleAddress : colPossibleAddresses) {
             try {
+                //noinspection BusyWait
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 return;

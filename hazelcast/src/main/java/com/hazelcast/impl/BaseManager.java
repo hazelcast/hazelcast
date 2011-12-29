@@ -583,6 +583,7 @@ public abstract class BaseManager {
                         }
                     }
                     try {
+                        //noinspection BusyWait
                         Thread.sleep(redoWaitMillis);
                     } catch (InterruptedException e) {
                         handleInterruptedException();
@@ -944,6 +945,7 @@ public abstract class BaseManager {
                         if (result == OBJECT_REDO) {
                             logRedo(call);
                             onRedo();
+                            //noinspection BusyWait
                             Thread.sleep(redoWaitMillis);
                             return call();
                         } else {

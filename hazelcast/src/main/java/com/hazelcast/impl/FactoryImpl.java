@@ -144,6 +144,7 @@ public class FactoryImpl implements HazelcastInstance {
             int initialMinClusterSize = factory.node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger();
             while (factory.node.getClusterImpl().getMembers().size() < initialMinClusterSize) {
                 try {
+                    //noinspection BusyWait
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
                 }
@@ -723,6 +724,7 @@ public class FactoryImpl implements HazelcastInstance {
     public void initialChecks() {
         while (node.isActive() && lifecycleService.paused.get()) {
             try {
+                //noinspection BusyWait
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 return;

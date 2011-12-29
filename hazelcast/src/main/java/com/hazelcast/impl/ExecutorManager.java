@@ -473,6 +473,7 @@ public class ExecutorManager extends BaseManager {
         final InnerFutureTask innerFutureTask;
         final boolean singleTask;
         final ExecutionListener executionListener;
+        @SuppressWarnings("VolatileLongOrDoubleField")
         volatile long executionId;
 
         MemberCall(String name, MemberImpl member, Data callable, DistributedTask dtask) {

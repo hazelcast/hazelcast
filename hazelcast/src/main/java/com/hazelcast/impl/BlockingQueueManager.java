@@ -369,6 +369,7 @@ public class BlockingQueueManager extends BaseManager {
                 return doGetValueKeys(name, item);
             } catch (Throwable e) {
                 try {
+                    //noinspection BusyWait
                     Thread.sleep(500);
                 } catch (InterruptedException e1) {
                 }

@@ -294,6 +294,7 @@ public class Node {
         logger.log(Level.FINE, "** we are being asked to shutdown when active = " + String.valueOf(active));
         while (!force && isActive() && concurrentMapManager.partitionManager.hasActiveBackupTask()) {
             try {
+                //noinspection BusyWait
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
             }

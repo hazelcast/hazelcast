@@ -140,6 +140,7 @@ public class CMap {
 
     volatile boolean ttlPerRecord = false;
 
+    @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long lastEvictionTime = 0;
 
     DistributedLock lockEntireMap = null;
