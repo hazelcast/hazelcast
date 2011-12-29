@@ -46,6 +46,7 @@ import java.util.logging.Level;
  *
  * @author Marco Ferrante, DISI - University of Genoa
  */
+@SuppressWarnings("SynchronizedMethod")
 public class ManagementService {
 
     private static final AtomicInteger counter = new AtomicInteger(0);
@@ -185,6 +186,7 @@ public class ManagementService {
         return instance.node.groupProperties.ENABLE_JMX_DETAILED.getBoolean();
     }
 
+    @SuppressWarnings("VolatileLongOrDoubleField")
     protected static class ScheduledCollector implements Runnable, StatisticsCollector {
 
         private final long interval;  // sec
@@ -200,13 +202,12 @@ public class ManagementService {
             this.interval = interval;
         }
 
-        public void run() {
-            synchronized (this) {
-                average = (double) events / interval;
-                events = 0;
-                min = average < min ? average : min;
-                max = average > max ? average : max;
-            }
+        public synchronized void run() {
+            //noinspection SynchronizeOnThis
+            average = (double) events / interval;
+            events = 0;
+            min = average < min ? average : min;
+            max = average > max ? average : max;
         }
 
         private void setScheduledFuture(ScheduledFuture<StatisticsCollector> future) {

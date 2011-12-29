@@ -148,6 +148,7 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
                 ObjectName name = mbean.getObjectName();
                 logger.log(Level.FINEST, "Register MBean {0}", name);
                 MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+                //noinspection SynchronizeOnThis
                 synchronized (this) {
                     if (!mbs.isRegistered(name)) {
                         mbs.registerMBean(mbean, name);
@@ -170,6 +171,7 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
                 ObjectName name = mbean.getObjectName();
                 logger.log(Level.FINEST, "Unregister MBean {0}", name);
                 MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+                //noinspection SynchronizeOnThis
                 synchronized (this) {
                     if (mbs.isRegistered(name)) {
                         mbs.unregisterMBean(name);
