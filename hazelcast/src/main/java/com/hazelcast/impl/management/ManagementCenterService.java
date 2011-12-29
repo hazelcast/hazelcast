@@ -17,9 +17,17 @@
 
 package com.hazelcast.impl.management;
 
-import com.hazelcast.config.Config;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.logging.Level;
+import java.util.regex.Pattern;
+import java.util.zip.Deflater;
+
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.management.DetectDeadlockRequest.Edge;
 import com.hazelcast.impl.management.DetectDeadlockRequest.Vertex;
@@ -34,17 +42,6 @@ import com.hazelcast.nio.PipedZipBufferFactory.DeflatingPipedBuffer;
 import com.hazelcast.nio.PipedZipBufferFactory.InflatingPipedBuffer;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.util.ConcurrentHashSet;
-
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.logging.Level;
-import java.util.regex.Pattern;
-import java.util.zip.Deflater;
-
-import static com.hazelcast.core.Instance.InstanceType;
 
 public class ManagementCenterService implements MembershipListener {
 
@@ -62,7 +59,7 @@ public class ManagementCenterService implements MembershipListener {
     private final ILogger logger;
     private final ConcurrentMap<Address, MemberState> memberStates = new ConcurrentHashMap<Address, MemberState>(1000);
     private final ConcurrentMap<Address, SocketAddress> socketAddresses = new ConcurrentHashMap<Address, SocketAddress>(1000);
-    private final Set<Address> addresses = new ConcurrentHashSet<Address>();
+    private final Set<Address> addresses = new CopyOnWriteArraySet<Address>(); // should be ordered, thread-safe Set
     private volatile MemberStateImpl latestThisMemberState = null;
     private final Address thisAddress;
     private final ConsoleCommandHandler commandHandler;
@@ -83,8 +80,6 @@ public class ManagementCenterService implements MembershipListener {
         this.instanceFilterAtomicNumber = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_ATOMIC_NUMBER_EXCLUDES.getString());
         this.instanceFilterCountDownLatch = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_COUNT_DOWN_LATCH_EXCLUDES.getString());
         this.instanceFilterSemaphore = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_SEMAPHORE_EXCLUDES.getString());
-        Config config = factory.node.config;
-        thisAddress = ((MemberImpl) factory.getCluster().getLocalMember()).getAddress();
         updateMemberOrder();
         logger = factory.node.getLogger(ManagementCenterService.class.getName());
         for (int i = 0; i < 100; i++) {
@@ -92,8 +87,9 @@ public class ManagementCenterService implements MembershipListener {
         }
         maxVisibleInstanceCount = factory.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         factory.getCluster().addMembershipListener(this);
-        MemberImpl memberLocal = (MemberImpl) factory.getCluster().getLocalMember();
-        int port = (memberLocal.getInetSocketAddress().getPort() - config.getPort()) + factoryImpl.node.getGroupProperties().MC_PORT.getInteger();
+        final MemberImpl memberLocal = (MemberImpl) factory.getCluster().getLocalMember();
+        thisAddress = memberLocal.getAddress();
+        int port = calculatePort(thisAddress);
         datagramSocket = new DatagramSocket(port);
         serverSocket = new SocketReadyServerSocket(port, 1000, factory.node.config.isReuseAddress());
         udpListener = new UDPListener(datagramSocket, 1000, factory.node.config.isReuseAddress());
@@ -128,7 +124,7 @@ public class ManagementCenterService implements MembershipListener {
         Address address = ((MemberImpl) membershipEvent.getMember()).getAddress();
         memberStates.remove(address);
         socketAddresses.remove(address);
-        addresses.remove(address);
+		addresses.remove(address);
     }
 
     void updateMemberOrder() {
@@ -139,10 +135,10 @@ public class ManagementCenterService implements MembershipListener {
                 Address address = memberImpl.getAddress();
                 try {
                     if (!socketAddresses.containsKey(address)) {
-                        SocketAddress socketAddress = new InetSocketAddress(address.getInetAddress(), address.getPort() + 100);
+                        SocketAddress socketAddress = new InetSocketAddress(address.getInetAddress(), calculatePort(address));
                         socketAddresses.putIfAbsent(address, socketAddress);
                     }
-                    addresses.add(address);
+					addresses.add(address);
                 } catch (UnknownHostException e) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }
@@ -152,6 +148,12 @@ public class ManagementCenterService implements MembershipListener {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
+    }
+    
+    private int calculatePort(final Address address) {
+        int port = (address.getPort() - factory.node.config.getPort()) 
+            + factory.node.getGroupProperties().MC_PORT.getInteger();
+        return port;
     }
 
     public boolean login(String groupName, String password) {
@@ -213,7 +215,11 @@ public class ManagementCenterService implements MembershipListener {
         public void run() {
             try {
                 while (running) {
-                    ClientHandler clientHandler = qClientHandlers.poll();
+                    final ClientHandler clientHandler = qClientHandlers.poll();
+                    if(clientHandler == null) {
+                        logger.log(Level.SEVERE, "ClientHandler pool exhausted! Try to connect another node...");
+                        break;
+                    }
                     try {
                         serverSocket.doAccept(clientHandler.getSocket());
                     } catch (SocketTimeoutException e) {
@@ -344,11 +350,11 @@ public class ManagementCenterService implements MembershipListener {
 
     public void createMemberState(MemberStateImpl memberState) {
         final Node node = factory.node;
-        memberState.setAddress(((MemberImpl) node.getClusterImpl().getLocalMember()).getAddress());
+        memberState.setAddress(thisAddress);
         memberState.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
         memberState.getMemberHealthStats().setActive(node.isActive());
         memberState.getMemberHealthStats().setServiceThreadStats(node.getCpuUtilization().serviceThread);
-        memberState.getMemberHealthStats().setOutThreadStats(node.getCpuUtilization().outThread);
+                memberState.getMemberHealthStats().setOutThreadStats(node.getCpuUtilization().outThread);
         memberState.getMemberHealthStats().setInThreadStats(node.getCpuUtilization().inThread);
         PartitionService partitionService = factory.getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();
@@ -412,7 +418,7 @@ public class ManagementCenterService implements MembershipListener {
                             memberState.putLocalSemaphoreStats(semaphoreProxy.getName(), (LocalSemaphoreStatsImpl) semaphoreProxy.getLocalSemaphoreStats());
                             count++;
                         }
-                    }
+                    } 
                 }
                 it.remove();
             }
@@ -525,6 +531,8 @@ public class ManagementCenterService implements MembershipListener {
                 while (running) {
                     int requestType = socketIn.read();
                     if (requestType == -1) {
+                        logger.log(Level.WARNING, "Management Center Client connection [" 
+                                + socket.getInetAddress() + "] is closed!");
                         return;
                     }
                     ConsoleRequest consoleRequest = consoleRequests[requestType];
@@ -541,6 +549,8 @@ public class ManagementCenterService implements MembershipListener {
                 if (running && factory.node.isActive()) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }
+            } finally {
+                shutdown();
             }
         }
 
@@ -611,7 +621,7 @@ public class ManagementCenterService implements MembershipListener {
             updateLocalState();
         }
         TimedClusterState timedClusterState = new TimedClusterState();
-        for (Address address : addresses) {
+		for (Address address : addresses) {
             MemberState memberState = memberStates.get(address);
             if (memberState != null) {
                 timedClusterState.addMemberState(memberState);
@@ -628,7 +638,7 @@ public class ManagementCenterService implements MembershipListener {
     ConsoleCommandHandler getCommandHandler() {
         return commandHandler;
     }
-
+    
     public static class SocketReadyServerSocket extends ServerSocket {
 
         public SocketReadyServerSocket(int port, int timeout, boolean reuseAddress) throws IOException {
