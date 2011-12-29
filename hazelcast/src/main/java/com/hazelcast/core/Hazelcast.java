@@ -326,7 +326,9 @@ public final class Hazelcast {
      */
     public static void shutdownAll() {
         com.hazelcast.impl.FactoryImpl.shutdownAll();
-        defaultInstance.set(null);
+        synchronized (initLock) {
+            defaultInstance.set(null);
+        }
     }
 
     /**
@@ -392,7 +394,7 @@ public final class Hazelcast {
     public static HazelcastInstance newHazelcastInstance(Config config) {
         return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
     }
-    
+
     /**
      * Returns an existing HazelcastInstance with instanceName.
      * <p/>
@@ -407,7 +409,7 @@ public final class Hazelcast {
     public static HazelcastInstance getHazelcastInstanceByName(String instanceName) {
         return com.hazelcast.impl.FactoryImpl.getHazelcastInstanceProxy(instanceName);
     }
-    
+
     /**
      * Returns all active/running HazelcastInstances on this JVM.
      * <p/>
