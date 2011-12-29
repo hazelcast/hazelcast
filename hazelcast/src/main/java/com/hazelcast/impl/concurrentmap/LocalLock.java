@@ -17,9 +17,11 @@
 
 package com.hazelcast.impl.concurrentmap;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class LocalLock {
-    final int threadId;
-    volatile int count = 0;
+    private final int threadId;
+    private final AtomicInteger count = new AtomicInteger();
 
     public LocalLock(int threadId) {
         this.threadId = threadId;
@@ -30,15 +32,15 @@ public class LocalLock {
     }
 
     public int getCount() {
-        return count;
+        return count.get();
     }
 
     public int incrementAndGet() {
-        return ++count;
+        return count.incrementAndGet();
     }
 
     public int decrementAndGet() {
-        return --count;
+        return count.decrementAndGet();
     }
 
     @Override
@@ -59,7 +61,7 @@ public class LocalLock {
     public String toString() {
         return "LocalLock{" +
                 "threadId=" + threadId +
-                ", count=" + count +
+                ", count=" + count.get() +
                 '}';
     }
 }
