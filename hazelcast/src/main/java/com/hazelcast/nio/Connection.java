@@ -17,13 +17,14 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.SimpleBoundedQueue;
-
+import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
+
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.SimpleBoundedQueue;
 
 public final class Connection {
     final SocketChannel socketChannel;
@@ -47,6 +48,8 @@ public final class Connection {
     private final int connectionId;
 
     private final SimpleBoundedQueue<Packet> packetQueue = new SimpleBoundedQueue<Packet>(100);
+    
+    private ConnectionMonitor monitor;
 
     public Connection(ConnectionManager connectionManager, InOutSelector inOutSelector, int connectionId, SocketChannel socketChannel) {
         this.inOutSelector = inOutSelector;
@@ -103,7 +106,7 @@ public final class Connection {
             return !member;
         }
     }
-
+    
     public boolean isClient() {
         return (type != null) && type != Type.NONE && type.isClient();
     }
@@ -125,6 +128,10 @@ public final class Connection {
     public WriteHandler getWriteHandler() {
         return writeHandler;
     }
+    
+    public InOutSelector getInOutSelector() {
+        return inOutSelector;
+    }
 
     public boolean live() {
         return live;
@@ -137,50 +144,61 @@ public final class Connection {
     public void setEndPoint(Address endPoint) {
         this.endPoint = endPoint;
     }
+    
+    public void setMonitor(ConnectionMonitor monitor) {
+        this.monitor = monitor;
+    }
+    
+    public ConnectionMonitor getMonitor() {
+        return monitor;
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Connection)) return false;
         Connection that = (Connection) o;
-        return connectionId == that.connectionId;
+        return connectionId == that.getConnectionId();
     }
 
     @Override
     public int hashCode() {
         return connectionId;
     }
-
-    public void closeSilently() {
+    
+    private void close0() throws IOException {
         if (!live)
             return;
         live = false;
-        try {
-            if (socketChannel != null && socketChannel.isOpen())
-                socketChannel.close();
-            writeHandler.shutdown();
-        } catch (Throwable ignored) {
+        if (socketChannel != null && socketChannel.isOpen()) {
+            socketChannel.close();
         }
-        logger.log(Level.INFO, "Connection silently closed " + this.socketChannel.socket().getRemoteSocketAddress());
+        readHandler.shutdown();
+        writeHandler.shutdown();
     }
 
     public void close() {
-        if (!live)
-            return;
-        live = false;
+        close(null);
+    }
+    
+    public void close(Throwable t) {
         try {
-            if (socketChannel != null && socketChannel.isOpen())
-                socketChannel.close();
-            readHandler.shutdown();
-            writeHandler.shutdown();
+            close0();
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
         }
         logger.log(Level.INFO, "Connection lost " + this.socketChannel.socket().getRemoteSocketAddress());
         connectionManager.destroyConnection(this);
-        connectionManager.ioService.onConnectionClose(endPoint);
+        connectionManager.ioService.disconnectExistingCalls(endPoint);
+        if (t != null && monitor != null) {
+            monitor.onError(t);
+        }
     }
-
+    
+    public int getConnectionId() {
+        return connectionId;
+    }
+    
     @Override
     public String toString() {
         final Socket socket = this.socketChannel.socket();

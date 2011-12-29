@@ -818,7 +818,7 @@ public abstract class BaseManager {
                 request.setPacket(packet);
                 packet.callId = getCallId();
                 request.callId = getCallId();
-                targetConnection = node.connectionManager.getConnection(target);
+                targetConnection = node.connectionManager.getOrConnect(target);
                 boolean sent = send(packet, targetConnection);
                 if (!sent) {
                     targetConnection = null;
@@ -1276,7 +1276,7 @@ public abstract class BaseManager {
     }
 
     protected boolean sendResponse(final Packet packet, final Address address) {
-        packet.conn = node.connectionManager.getConnection(address);
+        packet.conn = node.connectionManager.getOrConnect(address);
         return sendResponse(packet);
     }
 
@@ -1291,7 +1291,7 @@ public abstract class BaseManager {
     }
 
     protected boolean sendResponseFailure(final Packet packet, final Address address) {
-        packet.conn = node.connectionManager.getConnection(address);
+        packet.conn = node.connectionManager.getOrConnect(address);
         return sendResponseFailure(packet);
     }
 
@@ -1434,7 +1434,7 @@ public abstract class BaseManager {
 
     protected boolean send(Packet packet, Address address) {
         if (address == null) return false;
-        final Connection conn = node.connectionManager.getConnection(address);
+        final Connection conn = node.connectionManager.getOrConnect(address);
         return conn != null && conn.live() && writePacket(conn, packet);
     }
 

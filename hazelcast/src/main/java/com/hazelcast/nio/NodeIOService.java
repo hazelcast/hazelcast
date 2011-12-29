@@ -26,8 +26,6 @@ import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
 
-import java.util.logging.Level;
-
 public class NodeIOService implements IOService {
 
     final Node node;
@@ -88,7 +86,7 @@ public class NodeIOService implements IOService {
         return node.groupProperties.REST_ENABLED.getBoolean();
     }
 
-    public void onConnectionClose(Address endPoint) {
+    public void removeEndpoint(Address endPoint) {
         AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
         addOrRemoveConnection.setNode(node);
         node.clusterManager.enqueueAndReturn(addOrRemoveConnection);
@@ -108,8 +106,6 @@ public class NodeIOService implements IOService {
         if (node.getThisAddress().equals(address)) {
             throw new RuntimeException("Connecting to self! " + address);
         }
-        if (!node.clusterManager.shouldConnectTo(address))
-            throw new RuntimeException("Should not connect to " + address);
     }
 
     public int getSocketReceiveBufferSize() {
@@ -131,38 +127,35 @@ public class NodeIOService implements IOService {
     public boolean getSocketNoDelay() {
         return this.node.getGroupProperties().SOCKET_NO_DELAY.getBoolean();
     }
+    
+    public int getSocketTimeoutSeconds() {
+        return this.node.getGroupProperties().SOCKET_TIMEOUT_SECONDS.getInteger();
+    }
 
     public int getSelectorThreadCount() {
         return node.groupProperties.IO_THREAD_COUNT.getInteger();
     }
 
-    public boolean onDuplicateConnection(Address endPoint,
-                                         boolean acceptTypeConnection,
-                                         boolean accept,
-                                         Connection connExisting) {
-        final String msg = "Two connections from the same endpoint " + endPoint
-                + ", acceptTypeConnection=" + acceptTypeConnection + ",  now accept="
-                + accept;
-        if (node.joined() && node.isMaster()) {
-            node.getLogger(ConnectionManager.class.getName()).log(Level.WARNING, msg);
-            connExisting.closeSilently();
-            final Address deadEndpoint = connExisting.getEndPoint();
-            if (deadEndpoint != null) {
-                node.clusterManager.enqueueAndReturn(new Processable() {
-                    public void process() {
-                        node.clusterManager.disconnectExistingCalls(deadEndpoint);
-                    }
-                });
-            }
-        } else {
-            node.getLogger(ConnectionManager.class.getName()).log(Level.FINEST, msg);
-            return true;
+    public void disconnectExistingCalls(final Address deadEndpoint) {
+        if (deadEndpoint != null) {
+            node.clusterManager.enqueueAndReturn(new Processable() {
+                public void process() {
+                    node.clusterManager.disconnectExistingCalls(deadEndpoint);
+                }
+            });
         }
-        return false;
     }
 
     public boolean isClient() {
         return false;
+    }
+
+    public long getConnectionMonitorInterval() {
+        return node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong();
+    }
+
+    public int getConnectionMonitorMaxFaults() {
+        return node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger();
     }
 }
 

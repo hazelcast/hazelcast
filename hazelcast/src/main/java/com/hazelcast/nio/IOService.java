@@ -50,7 +50,7 @@ public interface IOService {
 
     boolean isRestEnabled();
 
-    void onConnectionClose(Address endPoint);
+    void removeEndpoint(Address endpoint);
 
     String getThreadPrefix();
 
@@ -67,13 +67,16 @@ public interface IOService {
     boolean getSocketKeepAlive();
 
     boolean getSocketNoDelay();
+    
+    int getSocketTimeoutSeconds();
 
     int getSelectorThreadCount();
-
-    boolean onDuplicateConnection(Address endPoint,
-                                  boolean acceptTypeConnection,
-                                  boolean accept,
-                                  Connection connExisting);
+    
+    long getConnectionMonitorInterval();
+    
+    int getConnectionMonitorMaxFaults();
+    
+    void disconnectExistingCalls(Address deadEndpoint);
 
     boolean isClient();
 }

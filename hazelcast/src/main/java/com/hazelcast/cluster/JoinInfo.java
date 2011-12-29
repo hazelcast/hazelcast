@@ -41,8 +41,8 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
     }
 
     public JoinInfo(ILogger logger, boolean request, Address address, Config config,
-                    NodeType type, byte packetVersion, int buildNumber, int memberCount, int tryCount) {
-        super(address, config, type, packetVersion, buildNumber);
+                    NodeType type, byte packetVersion, int buildNumber, int memberCount, int tryCount, String nodeUuid) {
+        super(address, config, type, packetVersion, buildNumber, nodeUuid);
         this.request = request;
         this.memberCount = memberCount;
         this.tryCount = tryCount;
@@ -51,7 +51,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
 
     public JoinInfo copy(boolean newRequest, Address newAddress, int memberCount) {
         return new JoinInfo(logger, newRequest, newAddress, config,
-                nodeType, packetVersion, buildNumber, memberCount, tryCount);
+                nodeType, packetVersion, buildNumber, memberCount, tryCount, uuid);
     }
 
     @Override
@@ -73,29 +73,6 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
             logger.log(Level.FINEST, e.getMessage(), e);
         }
     }
-
-//    public void writeToPacket(DatagramPacket packet) {
-//        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//        DataOutputStream dos = new DataOutputStream(bos);
-//        try {
-//            writeData(dos);
-//            dos.flush();
-//            packet.setData(bos.toByteArray());
-//            packet.setLength(bos.size());
-//        } catch (IOException e) {
-//            logger.log(Level.FINEST, e.getMessage(), e);
-//        }
-//    }
-//
-//    public void readFromPacket(DatagramPacket packet) {
-//        ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData(), 0, packet.getLength());
-//        DataInputStream dis = new DataInputStream(bis);
-//        try {
-//            readData(dis);
-//        } catch (IOException e) {
-//            logger.log(Level.FINEST, e.getMessage(), e);
-//        }
-//    }
 
     /**
      * @param request the request to set

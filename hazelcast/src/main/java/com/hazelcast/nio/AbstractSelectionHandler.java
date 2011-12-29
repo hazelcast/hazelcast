@@ -44,7 +44,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         this.connection = connection;
         this.inOutSelector = inOutSelector;
         this.socketChannel = connection.getSocketChannel();
-        this.connectionManager = connection.connectionManager;
+        this.connectionManager = connection.getConnectionManager();
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
     }
 
@@ -58,7 +58,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         if (sk != null) {
             sk.cancel();
         }
-        connection.close();
+        connection.close(e);
         if (connection.getType().isClient() && !connection.getType().isBinary()) {
             return;
         }

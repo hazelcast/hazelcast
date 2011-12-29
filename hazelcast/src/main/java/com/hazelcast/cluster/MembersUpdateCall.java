@@ -42,7 +42,7 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
         this.masterTime = masterTime;
         memberInfos = new ArrayList<MemberInfo>(lsMembers.size());
         for (MemberImpl member : lsMembers) {
-            memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType()));
+            memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType(), member.getUuid()));
         }
     }
 

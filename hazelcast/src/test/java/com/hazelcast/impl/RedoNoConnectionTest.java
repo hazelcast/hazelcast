@@ -17,6 +17,9 @@
 
 package com.hazelcast.impl;
 
+import java.util.Arrays;
+
+import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -139,56 +142,67 @@ public class RedoNoConnectionTest extends RedoTestService {
                 new QueueCallBuilder(h2));
         t.run();
     }
-
+    
     @Ignore
-    class NoConnectionBehavior extends BeforeAfterBehavior {
+    abstract class AbstractConnectionBehavior extends BeforeAfterBehavior {
         final HazelcastInstance caller;
         final HazelcastInstance target;
-        final Connection connTarget;
         final Node callerNode;
+        final Connection targetConn;
+        final MemberImpl targetMember;
+        final MemberImpl callerMember;
 
-        NoConnectionBehavior(HazelcastInstance caller, HazelcastInstance target) {
+        AbstractConnectionBehavior(HazelcastInstance caller, HazelcastInstance target) {
             this.caller = caller;
             this.target = target;
             this.callerNode = getNode(caller);
-            Address targetAddress = ((MemberImpl) target.getCluster().getLocalMember()).getAddress();
-            connTarget = callerNode.getConnectionManager().getConnection(targetAddress);
+            targetMember = (MemberImpl) target.getCluster().getLocalMember();
+            targetConn = callerNode.getConnectionManager().getConnection(targetMember.getAddress());
+            callerMember = (MemberImpl) caller.getCluster().getLocalMember();
         }
 
         @Override
         void before() throws Exception {
-            callerNode.getConnectionManager().detachAndGetConnection(connTarget.getEndPoint());
-        }
-
-        @Override
-        void after() {
-            callerNode.getConnectionManager().attachConnection(connTarget.getEndPoint(), connTarget);
+            callerNode.getConnectionManager().detachAndGetConnection(targetConn.getEndPoint());
+            callerNode.clusterManager.enqueueAndWait(new Processable() {
+                public void process() {
+                    callerNode.clusterManager.removeMember(targetMember);
+                }
+            }, 3);
         }
     }
 
     @Ignore
-    class DisconnectionBehavior extends BeforeAfterBehavior {
-        final HazelcastInstance caller;
-        final HazelcastInstance target;
-        final Connection connTarget;
-        final Node callerNode;
-
-        DisconnectionBehavior(HazelcastInstance caller, HazelcastInstance target) {
-            this.caller = caller;
-            this.target = target;
-            this.callerNode = getNode(caller);
-            Address targetAddress = ((MemberImpl) target.getCluster().getLocalMember()).getAddress();
-            connTarget = callerNode.getConnectionManager().getConnection(targetAddress);
+    class NoConnectionBehavior extends AbstractConnectionBehavior {
+        NoConnectionBehavior(HazelcastInstance caller, HazelcastInstance target) {
+            super(caller, target);
         }
-
         @Override
-        void before() throws Exception {
-            callerNode.getConnectionManager().detachAndGetConnection(connTarget.getEndPoint());
+        void after() {
+            callerNode.getConnectionManager().attachConnection(targetConn.getEndPoint(), targetConn);
+            callerNode.clusterManager.enqueueAndWait(new Processable() {
+                public void process() {
+                    callerNode.clusterManager.addMember(targetMember);
+                }
+            }, 3);
+        }
+    }
+
+    @Ignore
+    class DisconnectionBehavior extends AbstractConnectionBehavior {
+        DisconnectionBehavior(HazelcastInstance caller, HazelcastInstance target) {
+            super(caller, target);
         }
 
         @Override
         void after() {
-            callerNode.getConnectionManager().destroyConnection(connTarget);
+            callerNode.clusterManager.enqueueAndWait(new Processable() {
+                public void process() {
+                    callerNode.clusterManager.addMember(targetMember);
+                }
+            }, 3);
+            callerNode.connectionManager.destroyConnection(targetConn);
+            callerNode.connectionManager.getIOHandler().removeEndpoint(targetConn.getEndPoint());
         }
     }
 }

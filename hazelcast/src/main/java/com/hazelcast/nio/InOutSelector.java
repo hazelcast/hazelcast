@@ -19,6 +19,8 @@ package com.hazelcast.nio;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
@@ -91,7 +93,7 @@ public class InOutSelector extends SelectorBase {
                     final String msg = "Couldn't connect to " + address + ", cause: " + e.getMessage();
                     logger.log(Level.FINEST, msg, e);
                     socketChannel.close();
-                    connectionManager.failedConnection(address);
+                    connectionManager.failedConnection(address, e);
                 } catch (final Exception ignored) {
                 }
             }
@@ -117,7 +119,14 @@ public class InOutSelector extends SelectorBase {
                     } catch (final IOException ignored) {
                     }
                 }
-                connectionManager.failedConnection(address);
+                connectionManager.failedConnection(address, e);
+            }
+        }
+        
+        private void initSocket(Socket socket) throws Exception {
+            InOutSelector.this.initSocket(socket);
+            if (connectionManager.SOCKET_TIMEOUT > 0) {
+                socket.setSoTimeout(connectionManager.SOCKET_TIMEOUT);
             }
         }
     }

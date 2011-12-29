@@ -39,7 +39,7 @@ class SocketPacketReader implements SocketReader {
 
     public SocketPacketReader(SocketChannel socketChannel, Connection connection) {
         this.connection = connection;
-        this.ioService = connection.connectionManager.ioService;
+        this.ioService = connection.getConnectionManager().ioService;
         this.socketChannel = socketChannel;
         this.logger = ioService.getLogger(SocketPacketReader.class.getName());
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(ioService);
@@ -125,7 +125,7 @@ class SocketPacketReader implements SocketReader {
                 if (!bbAlias.hasRemaining()) {
                     bbAlias.flip();
                     String remoteAlias = new String(bbAlias.array(), 0, bbAlias.limit());
-                    cipher = CipherHelper.createAsymmetricReaderCipher(connection.connectionManager.ioService, remoteAlias);
+                    cipher = CipherHelper.createAsymmetricReaderCipher(connection.getConnectionManager().ioService, remoteAlias);
                 }
             }
             while (inBuffer.remaining() >= 128) {
@@ -162,7 +162,7 @@ class SocketPacketReader implements SocketReader {
         Cipher init() {
             Cipher c = null;
             try {
-                c = CipherHelper.createSymmetricReaderCipher(connection.connectionManager.ioService);
+                c = CipherHelper.createSymmetricReaderCipher(connection.getConnectionManager().ioService);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Symmetric Cipher for ReadHandler cannot be initialized.", e);
             }

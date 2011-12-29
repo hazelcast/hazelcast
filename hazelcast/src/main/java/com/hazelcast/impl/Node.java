@@ -45,6 +45,7 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -132,7 +133,7 @@ public class Node {
     private ManagementCenterService managementCenterService = null;
 
     public final SecurityContext securityContext ;
-
+    
     public Node(FactoryImpl factory, Config config) {
         this.id = counter.incrementAndGet();
         this.threadGroup = new ThreadGroup(factory.getName());
@@ -276,6 +277,12 @@ public class Node {
         concurrentMapManager.reset();
         clusterManager.stop();
     }
+    
+    private void generateMemberUuid() {
+        final String uuid = UUID.randomUUID().toString();
+        logger.log(Level.FINEST, "Generated new UUID for local member: " + uuid);
+        localMember.setUuid(uuid);
+    }
 
     public void shutdown(final boolean force, final boolean now) {
         if (now) {
@@ -349,6 +356,7 @@ public class Node {
     public void start() {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
+        generateMemberUuid();
         final String prefix = "hz." + this.id + ".";
         serviceThread = new Thread(threadGroup, clusterService, prefix + "ServiceThread");
         serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
@@ -379,10 +387,14 @@ public class Node {
             try {
                 managementCenterService = new ManagementCenterService(factory);
             } catch (Exception e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                logger.log(Level.SEVERE, "ManagementCenterService could not be started!", e);
             }
         }
         initializer.afterInitialize(this);
+    }
+    
+    public void onRestart() {
+        generateMemberUuid();
     }
 
     public ILogger getLogger(String name) {
@@ -454,7 +466,7 @@ public class Node {
 
     public JoinInfo createJoinInfo(boolean withCredentials) {
         final JoinInfo jr = new JoinInfo(this.getLogger(JoinInfo.class.getName()), true, address, config, getLocalNodeType(),
-                Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size(), 0);
+                Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size(), 0, localMember.getUuid());
         if (withCredentials && securityContext != null) {
             Credentials c = securityContext.getCredentialsFactory().newCredentials();
             jr.setCredentials(c);
@@ -527,7 +539,7 @@ public class Node {
         logger.log(Level.FINEST, "adding member myself");
         clusterManager.enqueueAndWait(new Processable() {
             public void process() {
-                clusterManager.addMember(address, getLocalNodeType()); // add
+                clusterManager.addMember(address, getLocalNodeType(), localMember.getUuid()); // add
                 // myself
                 clusterImpl.setMembers(baseVariables.lsMembers);
             }

@@ -232,7 +232,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     public void logAtMaster(Level level, String msg) {
         Address master = getMasterAddress();
         if (!isMaster() && master != null) {
-            Connection connMaster = node.connectionManager.getConnection(getMasterAddress());
+            Connection connMaster = node.connectionManager.getOrConnect(getMasterAddress());
             if (connMaster != null) {
                 Packet packet = obtainPacket(level.toString(), null, toData(msg), ClusterOperation.LOG, 0);
                 sendOrReleasePacket(packet, connMaster);
@@ -251,7 +251,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 final Address address = memberImpl.getAddress();
                 if (!thisAddress.equals(address)) {
                     try {
-                        Connection conn = node.connectionManager.getConnection(address);
+                        Connection conn = node.connectionManager.getOrConnect(address);
                         if (conn != null && conn.live()) {
                             if ((now - memberImpl.getLastRead()) >= (MAX_NO_HEARTBEAT_MILLIS)) {
                                 conn = null;
@@ -262,7 +262,10 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 lsDeadAddresses.add(address);
                             } else if ((now - memberImpl.getLastRead()) >= 5000 && (now - memberImpl.getLastPing()) >= 5000) {
                                 ping(memberImpl);
+                            } else if ((now - memberImpl.getLastRead()) >= 10000) {
+                                node.connectionManager.destroyConnection(conn);
                             }
+                            
                             if ((now - memberImpl.getLastWrite()) > 500) {
                                 sendHeartbeat(conn);
                             }
@@ -285,6 +288,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             // send heartbeat to master
             Address masterAddress = getMasterAddress();
             if (masterAddress != null) {
+                final Connection connMaster = node.connectionManager.getOrConnect(masterAddress);
                 MemberImpl masterMember = getMember(masterAddress);
                 boolean removed = false;
                 if (masterMember != null) {
@@ -294,36 +298,22 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         removed = true;
                     } else if ((now - masterMember.getLastRead()) >= 5000 && (now - masterMember.getLastPing()) >= 5000) {
                         ping(masterMember);
+                    } else if ((now - masterMember.getLastRead()) >= 10000) {
+                        node.connectionManager.destroyConnection(connMaster);
                     }
                 }
                 if (!removed) {
-                    Connection connMaster = node.connectionManager.getOrConnect(getMasterAddress());
                     sendHeartbeat(connMaster);
                 }
             }
             for (MemberImpl member : lsMembers) {
                 if (!member.localMember()) {
                     Address address = member.getAddress();
-                    if (shouldConnectTo(address)) {
-                        Connection conn = node.connectionManager.getOrConnect(address);
-                        if (conn != null) {
-                            sendHeartbeat(conn);
-                        } else {
-                            logger.log(Level.FINEST, "could not connect to " + address + " to send heartbeat");
-                        }
+                    Connection conn = node.connectionManager.getOrConnect(address);
+                    if (conn != null) {
+                        sendHeartbeat(conn);
                     } else {
-                        Connection conn = node.connectionManager.getConnection(address);
-                        if (conn != null && conn.live()) {
-                            if ((now - member.getLastWrite()) > 500) {
-                                sendHeartbeat(conn);
-                            }
-                        } else {
-                            logger.log(Level.FINEST, "not sending heartbeat because connection is null or not live " + address);
-                            if (conn == null && (now - member.getLastRead()) > 5000) {
-                                logMissingConnection(address);
-                                member.didRead();
-                            }
-                        }
+                        logger.log(Level.FINEST, "could not connect to " + address + " to send heartbeat");
                     }
                 }
             }
@@ -368,10 +358,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         sendOrReleasePacket(packet, conn);
     }
 
-    public boolean shouldConnectTo(Address address) {
-        return !node.joined() || (lsMembers.indexOf(getMember(thisAddress)) > lsMembers.indexOf(getMember(address)));
-    }
-
     private void sendRemoveMemberToOthers(final Address deadAddress) {
         for (MemberImpl member : lsMembers) {
             Address address = member.getAddress();
@@ -403,8 +389,12 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
         } // end of REMOVE CONNECTION
     }
-
+    
     void doRemoveAddress(Address deadAddress) {
+        doRemoveAddress(deadAddress, true);
+    }
+    
+    void doRemoveAddress(Address deadAddress, boolean destroyConnection) {
         mapStorageMemberIndexes.clear();
         logger.log(Level.INFO, "Removing Address " + deadAddress);
         if (!node.joined()) {
@@ -428,8 +418,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (isMaster()) {
             setJoins.remove(new MemberInfo(deadAddress));
         }
-        Connection conn = node.connectionManager.getConnection(deadAddress);
-        if (conn != null) {
+        final Connection conn = node.connectionManager.getConnection(deadAddress);
+        if (destroyConnection && conn != null) {
             node.connectionManager.destroyConnection(conn);
         }
         MemberImpl deadMember = getMember(deadAddress);
@@ -482,8 +472,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             } else if (before == null
                     || now == null
                     || !now.equals(before)
-                    || now.isSuperClient()
-                    || before.isSuperClient()) {
+                    || now.isLiteMember()
+                    || before.isLiteMember()) {
                 return true;
             }
         }
@@ -508,8 +498,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             } else if ((before == null)
                     || (now == null)
                     || !now.equals(before)
-                    || now.isSuperClient()
-                    || before.isSuperClient()) {
+                    || now.isLiteMember()
+                    || before.isLiteMember()) {
                 return true;
             }
         }
@@ -524,12 +514,25 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void handleJoinRequest(JoinRequest joinRequest) {
-        logger.log(Level.FINEST, joinInProgress + " Handling join from " + joinRequest.address + " timeToStart: "
-                + (timeToStartJoin - System.currentTimeMillis()));
-        if (getMember(joinRequest.address) != null) {
-            return;
+        final long now = System.currentTimeMillis();
+        logger.log(Level.INFO, joinInProgress + " Handling join from " + joinRequest.address + " timeToStart: "
+                + (timeToStartJoin - now));
+        final MemberImpl member = getMember(joinRequest.address);
+        final Connection conn = joinRequest.getConnection();
+        if (member != null) {
+            if (joinRequest.getUuid().equals(member.getUuid())) {
+                logger.log(Level.FINEST, "Ignoring join request, member already exists.. => " + joinRequest);
+                return;
+            }
+            logger.log(Level.WARNING, "New join request has been received from an existing endpoint! => " + member 
+                    + " Removing old member and processing join request...");
+            
+            // If existing connection of endpoint is different from current connection
+            // destroy it, otherwise keep it.
+            final Connection existingConnection = node.connectionManager.getConnection(joinRequest.address);
+            final boolean destroyExistingConnection = existingConnection != conn;
+            doRemoveAddress(member.getAddress(), destroyExistingConnection);
         }
-        Connection conn = joinRequest.getConnection();
         boolean validateJoinRequest;
         try {
             validateJoinRequest = node.validateJoinRequest(joinRequest);
@@ -543,7 +546,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 }
             }
             if (isMaster() && node.joined() && node.isActive()) {
-                final MemberInfo newMemberInfo = new MemberInfo(joinRequest.address, joinRequest.nodeType);
+                final MemberInfo newMemberInfo = new MemberInfo(joinRequest.address, joinRequest.nodeType, joinRequest.getUuid());
                 if (node.securityContext != null && !setJoins.contains(newMemberInfo)) {
                     final Credentials cr = joinRequest.getCredentials();
                     if (cr == null) {
@@ -568,7 +571,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
                     return;
                 }
-                long now = System.currentTimeMillis();
                 if (!joinInProgress) {
                     if (firstJoinRequest != 0 && now - firstJoinRequest >= MAX_WAIT_SECONDS_BEFORE_JOIN * 1000) {
                         startJoin();
@@ -714,14 +716,14 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
         }
 
-        @Override
-        public void process() {
-            if (!thisAddress.equals(target) && node.connectionManager.getConnection(target) == null) {
-                setResult(Boolean.FALSE);
-            } else {
-                super.process();
-            }
-        }
+//        @Override
+//        public void process() {
+//            if (!thisAddress.equals(target) && node.connectionManager.getConnection(target) == null) {
+//                setResult(Boolean.FALSE);
+//            } else {
+//                super.process();
+//            }
+//        }
 
         @Override
         public void doLocalOp() {
@@ -854,7 +856,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         for (MemberInfo memberInfo : lsMemberInfos) {
             MemberImpl member = mapOldMembers.get(memberInfo.address);
             if (member == null) {
-                member = addMember(memberInfo.address, memberInfo.nodeType);
+                member = addMember(memberInfo.address, memberInfo.nodeType, memberInfo.uuid);
             } else {
                 addMember(member);
             }
@@ -973,8 +975,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         lsMembers.remove(member);
     }
 
-    protected MemberImpl createMember(Address address, NodeType nodeType) {
-        return new MemberImpl(address, thisAddress.equals(address), nodeType);
+    protected MemberImpl createMember(Address address, NodeType nodeType, String nodeUuid) {
+        return new MemberImpl(address, thisAddress.equals(address), nodeType, nodeUuid);
     }
 
     public MemberImpl getMember(Address address) {
@@ -984,7 +986,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         return mapMembers.get(address);
     }
 
-    final public MemberImpl addMember(Address address, NodeType nodeType) {
+    final public MemberImpl addMember(Address address, NodeType nodeType, String nodeUuid) {
         checkServiceThread();
         if (address == null) {
             logger.log(Level.FINEST, "Address cannot be null");
@@ -992,7 +994,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
         MemberImpl member = getMember(address);
         if (member == null) {
-            member = createMember(address, nodeType);
+            member = createMember(address, nodeType, nodeUuid);
         }
         addMember(member);
         return member;

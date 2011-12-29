@@ -35,6 +35,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     protected boolean localMember;
     protected Address address;
     protected NodeType nodeType;
+    protected String uuid;
     protected transient long lastRead = 0;
     protected transient long lastWrite = 0;
     @SuppressWarnings("VolatileLongOrDoubleField")
@@ -54,6 +55,11 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         this.localMember = localMember;
         this.address = address;
         this.lastRead = System.currentTimeMillis();
+    }
+    
+    public MemberImpl(Address address, boolean localMember, NodeType nodeType, String uuid) {
+        this(address, localMember, nodeType);
+        this.uuid = uuid;
     }
 
     public Address getAddress() {
@@ -125,6 +131,14 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     public boolean isLiteMember() {
         return (nodeType == NodeType.LITE_MEMBER);
     }
+    
+    void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+    
+    public String getUuid() {
+        return uuid;
+    }
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         FactoryImpl factoryImpl = (FactoryImpl) hazelcastInstance;
@@ -144,12 +158,20 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         address = new Address();
         address.readData(in);
         nodeType = NodeType.create(in.readInt());
-        this.lastRead = System.currentTimeMillis();
+        lastRead = System.currentTimeMillis();
+        if (in.readBoolean()) {
+            uuid = in.readUTF();
+        }
     }
 
     public void writeData(DataOutput out) throws IOException {
         address.writeData(out);
         out.writeInt(nodeType.getValue());
+        boolean hasUuid = uuid != null;
+        out.writeBoolean(hasUuid);
+        if (hasUuid) {
+            out.writeUTF(uuid);
+        }
     }
 
     @Override

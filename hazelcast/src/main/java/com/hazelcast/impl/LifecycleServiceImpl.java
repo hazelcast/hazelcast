@@ -125,6 +125,7 @@ public class LifecycleServiceImpl implements LifecycleService {
                     lsOwnedRecords.addAll(cmap.getMapIndexService().getOwnedRecords());
                 }
             }
+            node.onRestart();
             node.clientService.restart();
             node.connectionManager.onRestart();
             node.clusterManager.onRestart();

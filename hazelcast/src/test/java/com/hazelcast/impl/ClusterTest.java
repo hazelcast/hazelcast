@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.examples.TestApp;
@@ -48,9 +49,6 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * Run these tests with
@@ -676,14 +674,18 @@ public class ClusterTest {
     @Test(timeout = 60000)
     public void testSuperClientRestart() throws Exception {
         Config configNormal = new Config();
+        configNormal.setProperty(GroupProperties.PROP_CONNECTION_MONITOR_INTERVAL, "1");
+        configNormal.setProperty(GroupProperties.PROP_CONNECTION_MONITOR_MAX_FAULTS, "1");
         Config configSuper = new Config();
+        configSuper.setProperty(GroupProperties.PROP_CONNECTION_MONITOR_INTERVAL, "1");
+        configSuper.setProperty(GroupProperties.PROP_CONNECTION_MONITOR_MAX_FAULTS, "1");
         configSuper.setLiteMember(true);
         HazelcastInstance h = Hazelcast.newHazelcastInstance(configNormal);
         HazelcastInstance s = Hazelcast.newHazelcastInstance(configSuper);
         assertEquals(2, h.getCluster().getMembers().size());
         assertEquals(2, s.getCluster().getMembers().size());
-        assertFalse(h.getCluster().getLocalMember().isSuperClient());
-        assertTrue(s.getCluster().getLocalMember().isSuperClient());
+        assertFalse(h.getCluster().getLocalMember().isLiteMember());
+        assertTrue(s.getCluster().getLocalMember().isLiteMember());
         IMap map = h.getMap("default");
         final IMap maps = s.getMap("default");
         assertNull(map.put("1", "value1"));
@@ -707,8 +709,8 @@ public class ClusterTest {
         latch.await();
         assertEquals(2, h.getCluster().getMembers().size());
         assertEquals(2, s.getCluster().getMembers().size());
-        assertFalse(h.getCluster().getLocalMember().isSuperClient());
-        assertTrue(s.getCluster().getLocalMember().isSuperClient());
+        assertFalse(h.getCluster().getLocalMember().isLiteMember());
+        assertTrue(s.getCluster().getLocalMember().isLiteMember());
         map = h.getMap("default");
         assertEquals("value3", map.put("1", "value2"));
         assertEquals("value2", map.get("1"));
@@ -2600,11 +2602,16 @@ public class ClusterTest {
     private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
         if (h1 == null) return;
         if (h2 == null) return;
-        FactoryImpl f1 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h1).getHazelcastInstance();
-        FactoryImpl f2 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h2).getHazelcastInstance();
-        Connection connection = f1.node.connectionManager.getConnection(f2.node.address);
-        if (connection == null) return;
-        connection.close();
+        final FactoryImpl f1 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h1).getHazelcastInstance();
+        final FactoryImpl f2 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h2).getHazelcastInstance();
+
+        AddOrRemoveConnection addOrRemoveConnection1 = new AddOrRemoveConnection(f2.node.address, false);
+        addOrRemoveConnection1.setNode(f1.node);
+        f1.node.clusterManager.enqueueAndWait(addOrRemoveConnection1, 5);
+        
+        AddOrRemoveConnection addOrRemoveConnection2 = new AddOrRemoveConnection(f1.node.address, false);
+        addOrRemoveConnection2.setNode(f2.node);
+        f2.node.clusterManager.enqueueAndWait(addOrRemoveConnection2, 5);
     }
 
     @Test

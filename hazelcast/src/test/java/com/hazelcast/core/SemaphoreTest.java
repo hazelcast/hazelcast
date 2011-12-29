@@ -18,6 +18,8 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SemaphoreConfig;
+import com.hazelcast.impl.GroupProperties;
+
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -122,9 +124,11 @@ public class SemaphoreTest {
     }
 
     @Test
-    public void testSemaphoreDisconnect() {
+    public void testSemaphoreDisconnect() throws InterruptedException {
         SemaphoreConfig semaphoreConfig = new SemaphoreConfig("default", 10);
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_CONNECTION_MONITOR_INTERVAL, "1");
+        config.setProperty(GroupProperties.PROP_CONNECTION_MONITOR_MAX_FAULTS, "1");
         config.addSemaphoreConfig(semaphoreConfig);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
@@ -133,7 +137,8 @@ public class SemaphoreTest {
         assertEquals(10, semaphore1.availablePermits());
         semaphore1.tryAcquireAttach(5);
         semaphore1.reducePermits(1);
-        instance1.shutdown();
+        instance1.getLifecycleService().kill();
+        Thread.sleep(500);
         assertEquals(9, semaphore2.availablePermits());
     }
 

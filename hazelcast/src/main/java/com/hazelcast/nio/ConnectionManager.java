@@ -21,6 +21,7 @@ import com.hazelcast.cluster.Bind;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.ConcurrentHashSet;
 
 import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
@@ -28,6 +29,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -47,20 +49,22 @@ public class ConnectionManager {
     final boolean SOCKET_KEEP_ALIVE;
 
     final boolean SOCKET_NO_DELAY;
+    
+    final int SOCKET_TIMEOUT;
 
     private final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
+    
+    private final ConcurrentMap<Address, ConnectionMonitor> mapMonitors = new ConcurrentHashMap<Address, ConnectionMonitor>(100);
 
-    private final Set<Address> setConnectionInProgress = new CopyOnWriteArraySet<Address>();
+    private final Set<Address> setConnectionInProgress = new ConcurrentHashSet<Address>();
 
     private final Set<ConnectionListener> setConnectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
 
-    private final Set<Connection> setActiveConnections = new CopyOnWriteArraySet<Connection>();
+    private final Set<Connection> setActiveConnections = new ConcurrentHashSet<Connection>();
 
     private final AtomicInteger allTextConnections = new AtomicInteger();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
-
-    private boolean acceptTypeConnection = false;
 
     private volatile boolean live = true;
 
@@ -81,6 +85,7 @@ public class ConnectionManager {
         this.SOCKET_LINGER_SECONDS = ioService.getSocketLingerSeconds();
         this.SOCKET_KEEP_ALIVE = ioService.getSocketKeepAlive();
         this.SOCKET_NO_DELAY = ioService.getSocketNoDelay();
+        this.SOCKET_TIMEOUT = ioService.getSocketTimeoutSeconds() * 1000;
         int selectorCount = ioService.getSelectorThreadCount();
         selectors = new InOutSelector[selectorCount];
     }
@@ -99,16 +104,15 @@ public class ConnectionManager {
     public boolean bind(Address endPoint, Connection connection,
                         boolean accept) {
         connection.setEndPoint(endPoint);
-        final Connection connExisting = mapConnections.get(endPoint);
-        if (connExisting != null && connExisting != connection) {
-            return ioService.onDuplicateConnection(endPoint, acceptTypeConnection, accept, connExisting);
+        if (mapConnections.containsKey(endPoint)) {
+            return false;
         }
         if (!endPoint.equals(ioService.getThisAddress())) {
-            acceptTypeConnection = accept;
+            connection.setMonitor(getConnectionMonitor(endPoint, true));
             if (!accept) {
                 //make sure bind packet is the first packet sent to the end point.
                 Packet bindPacket = createBindPacket(new Bind(ioService.getThisAddress()));
-                connection.writeHandler.enqueueSocketWritable(bindPacket);
+                connection.getWriteHandler().enqueueSocketWritable(bindPacket);
                 //now you can send anything...
             }
             mapConnections.put(endPoint, connection);
@@ -146,9 +150,10 @@ public class ConnectionManager {
         return connection;
     }
 
-    public void failedConnection(Address address) {
+    public void failedConnection(Address address, Throwable t) {
         setConnectionInProgress.remove(address);
         ioService.onFailedConnection(address);
+        getConnectionMonitor(address, false).onError(t);
     }
 
     public Connection getConnection(Address address) {
@@ -165,6 +170,21 @@ public class ConnectionManager {
         }
         return connection;
     }
+    
+    private ConnectionMonitor getConnectionMonitor(Address endpoint, boolean reset) {
+        ConnectionMonitor monitor = mapMonitors.get(endpoint);
+        if (monitor == null) {
+            monitor = new ConnectionMonitor(this, endpoint);
+            final ConnectionMonitor monitorOld = mapMonitors.putIfAbsent(endpoint, monitor);
+            if (monitorOld != null) {
+                monitor = monitorOld;
+            }
+        }
+        if (reset) {
+            monitor.reset();
+        }
+        return monitor;
+    }
 
     public Connection detachAndGetConnection(Address address) {
         return mapConnections.remove(address);
@@ -178,15 +198,20 @@ public class ConnectionManager {
         if (connection == null)
             return;
         setActiveConnections.remove(connection);
-        if (connection.getEndPoint() != null) {
-            mapConnections.remove(connection.getEndPoint());
-            setConnectionInProgress.remove(connection.getEndPoint());
-            for (ConnectionListener listener : setConnectionListeners) {
-                listener.connectionRemoved(connection);
+        final Address endPoint = connection.getEndPoint();
+        if (endPoint != null) {
+            setConnectionInProgress.remove(endPoint);
+            final Connection existingConn = mapConnections.get(endPoint);
+            if (existingConn == connection) {
+                mapConnections.remove(endPoint);
+                for (ConnectionListener listener : setConnectionListeners) {
+                    listener.connectionRemoved(connection);
+                }
             }
         }
-        if (connection.live())
+        if (connection.live()) {
             connection.close();
+        }
     }
 
     public void start() {
@@ -301,4 +326,5 @@ public class ConnectionManager {
     public IOService getIOHandler() {
         return ioService;
     }
+    
 }

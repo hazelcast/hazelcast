@@ -33,7 +33,7 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
 
     SocketPacketWriter(Connection connection) {
         this.connection = connection;
-        final IOService ioService = connection.connectionManager.ioService;
+        final IOService ioService = connection.getConnectionManager().ioService;
         this.logger = ioService.getLogger(SocketPacketWriter.class.getName());
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(ioService);
         boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(ioService);
@@ -78,7 +78,7 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
         AsymmetricCipherPacketWriter() {
             Cipher c = null;
             try {
-                c = CipherHelper.createAsymmetricWriterCipher(connection.connectionManager.ioService);
+                c = CipherHelper.createAsymmetricWriterCipher(connection.getConnectionManager().ioService);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Asymmetric Cipher for WriteHandler cannot be initialized.", e);
                 cipher = null;
@@ -92,7 +92,7 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
 
         public boolean writePacket(Packet packet, ByteBuffer socketBB) throws Exception {
             if (!aliasWritten) {
-                String localAlias = CipherHelper.getKeyAlias(connection.connectionManager.ioService);
+                String localAlias = CipherHelper.getKeyAlias(connection.getConnectionManager().ioService);
                 byte[] localAliasBytes = localAlias.getBytes();
                 socketBB.putInt(localAliasBytes.length);
                 socketBB.put(localAliasBytes);
@@ -165,7 +165,7 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
         SymmetricCipherPacketWriter() {
             Cipher c = null;
             try {
-                c = CipherHelper.createSymmetricWriterCipher(connection.connectionManager.ioService);
+                c = CipherHelper.createSymmetricWriterCipher(connection.getConnectionManager().ioService);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Symmetric Cipher for WriteHandler cannot be initialized.", e);
                 CipherHelper.handleCipherException(e, connection);

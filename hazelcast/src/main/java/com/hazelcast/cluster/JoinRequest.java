@@ -35,17 +35,18 @@ public class JoinRequest extends AbstractRemotelyProcessable {
     public byte packetVersion;
     public int buildNumber;
     public Config config;
+    public String uuid;
     private Credentials credentials;
 
     public JoinRequest() {
         super();
     }
 
-    public JoinRequest(Address address, Config config, NodeType type, byte packetVersion, int buildNumber) {
-        this(null, address, config, type, packetVersion, buildNumber);
+    public JoinRequest(Address address, Config config, NodeType type, byte packetVersion, int buildNumber, String nodeUuid) {
+        this(null, address, config, type, packetVersion, buildNumber, nodeUuid);
     }
 
-    public JoinRequest(Address to, Address address, Config config, NodeType type, byte packetVersion, int buildNumber) {
+    public JoinRequest(Address to, Address address, Config config, NodeType type, byte packetVersion, int buildNumber, String nodeUuid) {
         super();
         this.to = to;
         this.address = address;
@@ -53,6 +54,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         this.nodeType = type;
         this.packetVersion = packetVersion;
         this.buildNumber = buildNumber;
+        this.uuid = nodeUuid;
     }
 
     @Override
@@ -69,6 +71,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         nodeType = NodeType.create(in.readInt());
         config = new Config();
         config.readData(in);
+        uuid = in.readUTF();
         boolean hasCredentials = in.readBoolean();
         if(hasCredentials) {
         	credentials = (Credentials) SerializationHelper.readObject(in);
@@ -90,6 +93,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         address.writeData(out);
         out.writeInt(nodeType.getValue());
         config.writeData(out);
+        out.writeUTF(uuid);
         boolean hasCredentials = credentials != null;
         out.writeBoolean(hasCredentials);
         if(hasCredentials) {
@@ -105,6 +109,10 @@ public class JoinRequest extends AbstractRemotelyProcessable {
 		return credentials;
 	}
 
+    public String getUuid() {
+        return uuid;
+    }
+    
     @Override
     public String toString() {
         return "JoinRequest{" 

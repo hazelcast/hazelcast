@@ -28,6 +28,7 @@ import java.io.IOException;
 public class MemberInfo implements DataSerializable {
     Address address = null;
     NodeType nodeType = NodeType.MEMBER;
+    String uuid;
 
     public MemberInfo() {
     }
@@ -37,21 +38,30 @@ public class MemberInfo implements DataSerializable {
         this.address = address;
     }
 
-    public MemberInfo(Address address, NodeType nodeType) {
+    public MemberInfo(Address address, NodeType nodeType, String uuid) {
         super();
         this.address = address;
         this.nodeType = nodeType;
+        this.uuid = uuid;
     }
 
     public void readData(DataInput in) throws IOException {
         address = new Address();
         address.readData(in);
         nodeType = NodeType.create(in.readInt());
+        if (in.readBoolean()) {
+            uuid = in.readUTF();
+        }
     }
 
     public void writeData(DataOutput out) throws IOException {
         address.writeData(out);
         out.writeInt(nodeType.getValue());
+        boolean hasUuid = uuid != null;
+        out.writeBoolean(hasUuid);
+        if (hasUuid) {
+            out.writeUTF(uuid);
+        }
     }
 
     @Override

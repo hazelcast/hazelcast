@@ -71,7 +71,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     volatile long lastHandle = 0;
 
     WriteHandler(Connection connection) {
-        super(connection, connection.inOutSelector);
+        super(connection, connection.getInOutSelector());
         socketBB = ByteBuffer.allocate(connectionManager.SOCKET_SEND_BUFFER_SIZE);
     }
 
@@ -146,7 +146,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             if (socketBB.position() > 0) {
                 socketBB.flip();
                 try {
-                    int written = socketChannel.write(socketBB);
+                    socketChannel.write(socketBB);
                 } catch (Exception e) {
                     lastWritable = null;
                     handleSocketException(e);
