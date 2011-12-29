@@ -32,6 +32,7 @@ import com.hazelcast.monitor.LocalLockStats;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
 
+@SuppressWarnings("LockAcquiredButNotSafelyReleased")
 public class LockProxyImpl extends SerializationHelper implements HazelcastInstanceAwareInstance, LockProxy, DataSerializable {
 
     private Object key = null;

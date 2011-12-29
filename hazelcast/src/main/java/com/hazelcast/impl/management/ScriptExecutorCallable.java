@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
+@SuppressWarnings("SynchronizationOnStaticField")
 public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>, HazelcastInstanceAware {
 
     private static final long serialVersionUID = -4729129143589252665L;
@@ -57,6 +58,7 @@ public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>,
         scriptEngineManagerClass = clazz;
     }
 
+    @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
     private String engineName;
     private String script;
     private Map<String, Object> bindings;

@@ -158,11 +158,12 @@ public class ParallelExecutorService {
         protected void afterRun() {
         }
 
-        class ExecutionSegment implements Runnable {
-            final Queue<Runnable> q = new LinkedBlockingQueue<Runnable>();
-            final int segmentIndex;
-            int size = 0;
-            boolean executing = false;
+        @SuppressWarnings("SynchronizedMethod")
+        private class ExecutionSegment implements Runnable {
+            private final Queue<Runnable> q = new LinkedBlockingQueue<Runnable>();
+            private final int segmentIndex;
+            private int size = 0;
+            private boolean executing = false;
 
             ExecutionSegment(int segmentIndex) {
                 this.segmentIndex = segmentIndex;

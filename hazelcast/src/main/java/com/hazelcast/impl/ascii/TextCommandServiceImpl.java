@@ -243,6 +243,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
                             return true;
                         }
                     });
+                    //noinspection WaitNotInLoop
                     stopObject.wait(1000);
                 } catch (Exception ignored) {
                 }

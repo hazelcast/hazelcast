@@ -23,6 +23,7 @@ import com.hazelcast.nio.Data;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
+@SuppressWarnings("SynchronizeOnThis")
 public final class DefaultRecord extends AbstractRecord {
 
     private volatile Object valueObject = null;

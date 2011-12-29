@@ -45,6 +45,7 @@ import java.util.logging.Level;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
+@SuppressWarnings("SynchronizationOnStaticField")
 public class FactoryImpl implements HazelcastInstance {
 
     final static ConcurrentMap<String, FactoryImpl> factories = new ConcurrentHashMap<String, FactoryImpl>(5);

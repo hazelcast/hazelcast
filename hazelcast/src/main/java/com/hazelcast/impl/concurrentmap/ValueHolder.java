@@ -33,9 +33,11 @@ public class ValueHolder {
         return data;
     }
 
+    @SuppressWarnings("NonPrivateFieldAccessedInSynchronizedContext")
     public Object getValue() {
         Object v = value;
         if (v != null) return v;
+        //noinspection SynchronizeOnThis
         synchronized (ValueHolder.this) {
             value = toObject(data);
             return value;

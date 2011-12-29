@@ -33,6 +33,7 @@ public class WanReplicationService {
         this.node = node;
     }
 
+    @SuppressWarnings("SynchronizeOnThis")
     public WanReplication getWanReplication(String name) {
         WanReplication wr = mapWanReplications.get(name);
         if (wr != null) return wr;

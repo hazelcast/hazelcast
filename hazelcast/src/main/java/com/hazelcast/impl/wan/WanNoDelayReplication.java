@@ -100,6 +100,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         }
     }
 
+    @SuppressWarnings("BusyWait")
     Connection getConnection() throws InterruptedException {
         while (true) {
             String targetStr = addressQueue.take();

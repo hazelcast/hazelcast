@@ -74,6 +74,7 @@ public class ManagementCenterService implements MembershipListener {
     private final StatsInstanceFilter instanceFilterSemaphore;
     private final int maxVisibleInstanceCount;
 
+    @SuppressWarnings("CallToThreadStartDuringObjectConstruction")
     public ManagementCenterService(FactoryImpl factoryImpl) throws Exception {
         this.factory = factoryImpl;
         this.instanceFilterMap = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_MAP_EXCLUDES.getString());
@@ -276,6 +277,7 @@ public class ManagementCenterService implements MembershipListener {
                 while (running) {
                     updateLocalState();
                     sendState();
+                    //noinspection BusyWait
                     Thread.sleep(5000);
                 }
             } catch (Throwable e) {

@@ -63,7 +63,7 @@ public class MapStoreWrapper implements MapStore {
 		this.enabled.set(enabled);
 	}
 
-	void checkInit() {
+    void checkInit() {
 		if (shouldInitialize && !initialized) {
 			synchronized (initLock) {
 				if (!initialized) {

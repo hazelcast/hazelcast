@@ -27,6 +27,7 @@ import java.util.*;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
+@SuppressWarnings("VolatileLongOrDoubleField")
 public abstract class AbstractRecord extends AbstractSimpleRecord implements Record {
 
     protected volatile int hits = 0;

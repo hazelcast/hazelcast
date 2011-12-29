@@ -87,6 +87,7 @@ public class IdGeneratorProxyImpl extends FactoryAwareNamedProxy implements IdGe
         return base.newId();
     }
 
+    @SuppressWarnings("SynchronizeOnThis")
     private class IdGeneratorBase implements IdGeneratorProxy {
 
         private static final long MILLION = 1000L * 1000L;

@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+@SuppressWarnings("SynchronizationOnStaticField")
 public final class ReplicatedMapFactory {
 
     private static final ConcurrentHashMap<String, IMap> maps = new ConcurrentHashMap<String, IMap>(100);

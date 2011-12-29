@@ -43,7 +43,8 @@ abstract class OperationsCounterSupport<T extends LocalInstanceOperationStats> {
 	}
 
 	public final T getPublishedStats() {
-		if (published == null) {
+        //noinspection DoubleCheckedLocking
+        if (published == null) {
 			synchronized (lock) {
 				if (published == null) {
 					published = getThis();

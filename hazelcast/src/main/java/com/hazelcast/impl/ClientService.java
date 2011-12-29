@@ -1191,10 +1191,11 @@ public class ClientService implements ConnectionListener {
         }
     }
 
+    @SuppressWarnings("LockAcquiredButNotSafelyReleased")
     private class LockOperationHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             final Object key = toObject(packet.getKeyData());
-            final ILock lock = (ILock) factory.getLock(key);
+            final ILock lock =  factory.getLock(key);
             final long timeout = packet.timeout;
             Data value = null;
             if (timeout == -1) {
@@ -1217,7 +1218,7 @@ public class ClientService implements ConnectionListener {
     private class UnlockOperationHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             final Object key = toObject(packet.getKeyData());
-            final ILock lock = (ILock) factory.getLock(key);
+            final ILock lock = factory.getLock(key);
             lock.unlock();
             packet.clearForResponse();
             packet.setValue(null);
