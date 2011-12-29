@@ -33,7 +33,7 @@ public class ObjectNameSpec {
     /**
      * MBean name domain
      */
-    static String NAME_DOMAIN = "com.hazelcast:";
+    final static String NAME_DOMAIN = "com.hazelcast:";
 
     private String type = null;
     private String cluster = null;
