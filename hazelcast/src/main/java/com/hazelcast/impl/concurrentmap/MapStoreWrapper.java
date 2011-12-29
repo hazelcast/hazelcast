@@ -39,7 +39,7 @@ public class MapStoreWrapper implements MapStore {
 	private final Properties properties;
 	private final String mapName;
 
-	volatile boolean initialized = false;
+	private volatile boolean initialized = false;
 
 	private final AtomicBoolean enabled = new AtomicBoolean(false);
 
