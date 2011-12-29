@@ -577,7 +577,7 @@ public class CMap {
                 if (req.value == null) {
                     markAsEvicted(record);
                 } else {
-                    // FIXME: This should be done out of ClientService
+                    // FIXME: This should be done out of service thread
                     // if (record.containsValue(req.value)) {
                     Collection<ValueHolder> multiValues = record.getMultiValues();
                     if (multiValues != null) {

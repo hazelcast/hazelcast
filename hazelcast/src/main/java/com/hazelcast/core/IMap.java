@@ -181,7 +181,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @param value    value of the entry
      * @param ttl      maximum time for this entry to stay in the map
      * @param timeunit time unit for the ttl
-     * @return old value of the entry
      */
     void putTransient(K key, V value, long ttl, TimeUnit timeunit);
 
