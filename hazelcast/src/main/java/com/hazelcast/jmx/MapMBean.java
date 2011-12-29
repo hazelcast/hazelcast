@@ -144,7 +144,7 @@ public class MapMBean extends AbstractMBean<IMap> {
     @JMXAttribute("Config")
     @JMXDescription("Map configuration")
     public String getConfig(){
-        final MapConfig config = managementService.instance.getConfig().getMapConfig(getName());
+        final MapConfig config = managementService.getInstance().getConfig().getMapConfig(getName());
         return config.toString();
     }
 

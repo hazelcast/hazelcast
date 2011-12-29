@@ -17,6 +17,7 @@
 
 package com.hazelcast.jmx;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.ExecutorThreadFactory;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.logging.ILogger;
@@ -53,17 +54,21 @@ public class ManagementService {
 
     private volatile static ScheduledThreadPoolExecutor statCollectors;
 
-    final ILogger logger;
+    private final ILogger logger;
 
-    final FactoryImpl instance;
+    private final FactoryImpl instance;
 
-    String name;
+    private String name;
 
-    boolean started = false;
+    private boolean started = false;
 
     public ManagementService(FactoryImpl instance) {
         this.instance = instance;
         this.logger = instance.node.getLogger(ManagementService.class.getName());
+    }
+
+    public HazelcastInstance getInstance(){
+        return instance;
     }
 
     private synchronized void start() {

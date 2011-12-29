@@ -115,7 +115,7 @@ public class QueueMBean extends AbstractMBean<IQueue<?>> {
     @JMXAttribute("Config")
     @JMXDescription("Queue configuration")
     public String getConfig() {
-        final QueueConfig config = managementService.instance.getConfig().getQueueConfig(getName());
+        final QueueConfig config = managementService.getInstance().getConfig().getQueueConfig(getName());
         return config.toString();
     }
 

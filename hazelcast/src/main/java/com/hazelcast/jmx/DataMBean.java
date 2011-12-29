@@ -82,7 +82,7 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
     }
 
     protected DataMBean(ManagementService managementService) {
-        super(managementService.instance, managementService);
+        super(managementService.getInstance(), managementService);
     }
 
     @Override

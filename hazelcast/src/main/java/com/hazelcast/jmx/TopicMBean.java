@@ -95,7 +95,7 @@ public class TopicMBean extends AbstractMBean<ITopic<?>> {
     @JMXAttribute("Config")
     @JMXDescription("Topic configuration")
     public String getConfig() {
-        final TopicConfig config = managementService.instance.getConfig().getTopicConfig(getName());
+        final TopicConfig config = managementService.getInstance().getConfig().getTopicConfig(getName());
         return config.toString();
     }
 

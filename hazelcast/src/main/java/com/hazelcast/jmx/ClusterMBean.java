@@ -47,10 +47,10 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
     private final String name;
 
     public ClusterMBean(ManagementService service, String name) {
-        super(service.instance, service);
+        super(service.getInstance(), service);
         this.name = name;
-        this.config = service.instance.getConfig();
-        this.cluster = service.instance.getCluster();
+        this.config = service.getInstance().getConfig();
+        this.cluster = service.getInstance().getCluster();
         clusterObjectNames = new ObjectNameSpec(name);
     }
 
