@@ -113,9 +113,13 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
 
     public void processRequest(TextCommand command) {
         if (responseThreadRunnable == null) {
-            responseThreadRunnable = new ResponseThreadRunnable();
-            Thread thread = new Thread(responseThreadRunnable, "hz.ascii.service.response.thread");
-            thread.start();
+            synchronized (this) {
+                if (responseThreadRunnable == null) {
+                    responseThreadRunnable = new ResponseThreadRunnable();
+                    Thread thread = new Thread(responseThreadRunnable, "hz.ascii.service.response.thread");
+                    thread.start();
+                }
+            }
         }
         parallelExecutor.execute(new CommandExecutor(command));
     }
