@@ -80,12 +80,10 @@ public class MapEntryIterator<K, V> implements Iterator<java.util.Map.Entry<K, V
         }
 
         public K getKey() {
-            // TODO Auto-generated method stub
             return key;
         }
 
         public V getValue() {
-            // TODO Auto-generated method stub
             return value;
         }
 
