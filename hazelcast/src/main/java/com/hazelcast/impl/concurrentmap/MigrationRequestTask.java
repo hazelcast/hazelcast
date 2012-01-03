@@ -70,7 +70,7 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
             }
             DistributedTask task = new DistributedTask(new MigrationTask(partitionId, toData(recordSet)), target);
             Future future = node.factory.getExecutorService().submit(task);
-            return (Boolean) future.get(8, TimeUnit.MINUTES);
+            return (Boolean) future.get(400, TimeUnit.SECONDS);
         } catch (Throwable e) {
             e.printStackTrace();
             return Boolean.FALSE;

@@ -181,7 +181,7 @@ public class ResponseQueueFactory {
             long remaining = unit.toMillis(timeout);
             while (response == null && remaining > 0) {
                 synchronized (lock) {
-                    if (response == null) {
+                    while (response == null) {
                         long start = System.currentTimeMillis();
                         lock.wait(remaining);
                         remaining -= (System.currentTimeMillis() - start);

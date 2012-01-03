@@ -84,7 +84,7 @@ public class ClusterPartitionManager {
                     Member fromMember = getMember(from);
                     DistributedTask task = new DistributedTask(new MigrationRequestTask(partitionId, from, to), fromMember);
                     Future future = concurrentMapManager.node.factory.getExecutorService().submit(task);
-                    if (future.get(10, TimeUnit.MINUTES) == Boolean.TRUE) {
+                    if (future.get(600, TimeUnit.SECONDS) == Boolean.TRUE) {
                         concurrentMapManager.enqueueAndReturn(new Processable() {
                             public void process() {
                                 PartitionInfo partitionInfo = partitions[partitionId];
