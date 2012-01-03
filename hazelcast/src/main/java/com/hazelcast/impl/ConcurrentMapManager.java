@@ -65,6 +65,7 @@ public class ConcurrentMapManager extends BaseManager {
     final ConcurrentMap<String, CMap> maps;
     final ConcurrentMap<String, NearCache> mapCaches;
     final PartitionManager partitionManager;
+    final ClusterPartitionManager clusterPartitionManager;
     long newRecordId = 0;
     @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long nextCleanup = 0;
@@ -86,6 +87,7 @@ public class ConcurrentMapManager extends BaseManager {
         blocks = new Block[PARTITION_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
+        clusterPartitionManager = new ClusterPartitionManager(this);
         partitionManager = new PartitionManager(this);
         node.clusterService.registerPeriodicRunnable(new FallThroughRunnable() {
             public void doRun() {
@@ -173,6 +175,14 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(SEMAPHORE_REDUCE_PERMITS, new SemaphoreReduceOperationHandler());
         registerPacketProcessor(SEMAPHORE_RELEASE, new SemaphoreReleaseOperationHandler());
         registerPacketProcessor(SEMAPHORE_TRY_ACQUIRE, new SemaphoreTryAcquireOperationHandler());
+    }
+
+    public PartitionManager getPartitionManager() {
+        return partitionManager;
+    }
+
+    public ClusterPartitionManager getClusterPartitionManager() {
+        return clusterPartitionManager;
     }
 
     private void executeCleanup(final CMap cmap, final boolean forced) {
@@ -1114,8 +1124,8 @@ public class ConcurrentMapManager extends BaseManager {
                         if (oldObject instanceof DistributedTimeoutException) {
                             return oldObject;
                         }
-                        if (oldObject instanceof CMap.Values) {
-                            CMap.Values values = (CMap.Values) oldObject;
+                        if (oldObject instanceof Values) {
+                            Values values = (Values) oldObject;
                             removedValueCount = values.size();
                         } else {
                             removedValueCount = 1;

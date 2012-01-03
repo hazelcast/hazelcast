@@ -196,4 +196,12 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     public Data getValueData() {
         return valueData;
     }
+
+    public Long[] getIndexes() {
+        return indexes;
+    }
+
+    public byte[] getIndexTypes() {
+        return indexTypes;
+    }
 }

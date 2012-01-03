@@ -272,6 +272,7 @@ public class PartitionManager implements Runnable {
                 hasMigrating = true;
             }
         }
+        System.out.println(hasMigrating + " has migrating " + lsBlocksToMigrate.size());
         if (!hasMigrating && lsBlocksToMigrate.size() == 0) {
             reArrangeBlocks();
         }
@@ -349,6 +350,13 @@ public class PartitionManager implements Runnable {
         }
         return addressBlocks;
     }
+//    void sendBlocks(Block blockInfo) {
+//        if (blockInfo == null) {
+//            sendBlocks2(null);
+//        } else {
+//            concurrentMapManager.getClusterPartitionManager().initMigration(blockInfo.getBlockId(), 0, blockInfo.getOwner(), blockInfo.getMigrationAddress());
+//        }
+//    }
 
     void sendBlocks(Block blockInfo) {
         if (blockInfo != null && blockInfo.isMigrating() && blockInfo.getMigrationAddress().equals(blockInfo.getOwner())) {

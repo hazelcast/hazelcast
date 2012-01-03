@@ -20,8 +20,10 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
+import com.hazelcast.impl.base.Values;
 import com.hazelcast.impl.concurrentmap.*;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.logging.ILogger;
@@ -45,7 +47,6 @@ import java.util.logging.Level;
 import static com.hazelcast.core.Prefix.*;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class CMap {
 
@@ -433,6 +434,17 @@ public class CMap {
 
     public int getBackupCount() {
         return backupCount;
+    }
+
+    public void own(DataRecordEntry dataRecordEntry) {
+        Record record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
+        record.setIndexes(dataRecordEntry.getIndexes(), dataRecordEntry.getIndexTypes());
+        record.setVersion(dataRecordEntry.getVersion());
+        // TODO lock owner should migrate
+        markAsActive(record);
+        if (record.getValueData() != null) {
+            updateIndexes(record);
+        }
     }
 
     public void own(Request req) {
@@ -1716,159 +1728,6 @@ public class CMap {
 
     public Node getNode() {
         return node;
-    }
-
-    public static class Values implements Collection, DataSerializable {
-        Collection<Data> lsValues = null;
-
-        public Values() {
-        }
-
-        public Values(Collection<ValueHolder> values) {
-            super();
-            if (values != null) {
-                this.lsValues = new ArrayList<Data>(values.size());
-                for (ValueHolder valueHolder : values) {
-                    if (valueHolder != null) {
-                        lsValues.add(valueHolder.getData());
-                    }
-                }
-            }
-        }
-
-        public boolean add(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean addAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public void clear() {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean contains(Object o) {
-            if (o == null) {
-                throw new IllegalArgumentException("Contains cannot have null argument.");
-            }
-            Iterator it = iterator();
-            while (it.hasNext()) {
-                Object v = it.next();
-                if (o.equals(v)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public boolean containsAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean isEmpty() {
-            return (size() == 0);
-        }
-
-        public Iterator iterator() {
-            return new ValueIterator(lsValues.iterator());
-        }
-
-        class ValueIterator implements Iterator {
-            final Iterator<Data> it;
-
-            public ValueIterator(Iterator<Data> it) {
-                super();
-                this.it = it;
-            }
-
-            public boolean hasNext() {
-                return it.hasNext();
-            }
-
-            public Object next() {
-                Data value = it.next();
-                return toObject(value);
-            }
-
-            public void remove() {
-                it.remove();
-            }
-        }
-
-        public boolean remove(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean removeAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean retainAll(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public int size() {
-            return (lsValues == null) ? 0 : lsValues.size();
-        }
-
-        public Object[] toArray() {
-            if (size() == 0) {
-                return null;
-            }
-            return toArray(new Object[size()]);
-        }
-
-        public Object[] toArray(Object[] a) {
-            int size = size();
-            if (size == 0) {
-                return null;
-            }
-            if (a == null || a.length < size) {
-                a = new Object[size];
-            }
-            Iterator<Data> it = lsValues.iterator();
-            int index = 0;
-            while (it.hasNext()) {
-                a[index++] = toObject(it.next());
-            }
-            return a;
-        }
-
-        public void readData(DataInput in) throws IOException {
-            int size = in.readInt();
-            lsValues = new ArrayList<Data>(size);
-            for (int i = 0; i < size; i++) {
-                Data data = new Data();
-                data.readData(in);
-                lsValues.add(data);
-            }
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            int size = (lsValues == null) ? 0 : lsValues.size();
-            out.writeInt(size);
-            if (size > 0) {
-                for (Data data : lsValues) {
-                    data.writeData(out);
-                }
-            }
-        }
-
-        public String toString() {
-            Iterator i = iterator();
-            if (!i.hasNext())
-                return "[]";
-            StringBuilder sb = new StringBuilder();
-            sb.append('[');
-            for (; ; ) {
-                Object e = i.next();
-                sb.append(e == this ? "(this Collection)" : e);
-                if (!i.hasNext())
-                    return sb.append(']').toString();
-                sb.append(", ");
-            }
-        }
     }
 
     public static class CMapEntry implements HazelcastInstanceAware, MapEntry, DataSerializable {

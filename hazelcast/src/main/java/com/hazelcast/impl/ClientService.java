@@ -495,7 +495,7 @@ public class ClientService implements ConnectionListener {
             Set<Member> members = cluster.getMembers();
             Set<Data> setData = new LinkedHashSet<Data>();
             if (members != null) {
-                for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
+                for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
                     Member member = iterator.next();
                     setData.add(toData(member));
                 }
@@ -516,7 +516,7 @@ public class ClientService implements ConnectionListener {
             } else {
                 Set<Partition> partitions = partitionService.getPartitions();
                 Set<Data> setData = new LinkedHashSet<Data>();
-                for (Iterator<Partition> iterator = partitions.iterator(); iterator.hasNext();) {
+                for (Iterator<Partition> iterator = partitions.iterator(); iterator.hasNext(); ) {
                     Partition partition = iterator.next();
                     setData.add(toData(new PartitionImpl(partition.getPartitionId(), (MemberImpl) partition.getOwner())));
                 }
@@ -814,7 +814,7 @@ public class ClientService implements ConnectionListener {
                 authenticated = false;
                 logger.log(Level.SEVERE, "Could not retrieve Credentials object!");
             } else if (node.securityContext != null) {
-                final Socket endpointSocket = packet.conn.getSocketChannel().socket();
+                final Socket endpointSocket = packet.conn.getSocketChannelWrapper().socket();
                 credentials.setEndpoint(Address.toString(endpointSocket.getInetAddress().getAddress()));
                 try {
                     LoginContext lc = node.securityContext.createClientLoginContext(credentials);
@@ -1195,7 +1195,7 @@ public class ClientService implements ConnectionListener {
     private class LockOperationHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             final Object key = toObject(packet.getKeyData());
-            final ILock lock =  factory.getLock(key);
+            final ILock lock = factory.getLock(key);
             final long timeout = packet.timeout;
             Data value = null;
             if (timeout == -1) {
