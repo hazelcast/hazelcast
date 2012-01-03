@@ -90,7 +90,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
             handleSocketException(t);
         }
     }
-    
+
     public final void run() {
         lastRegistration = System.currentTimeMillis();
         registerOp(inOutSelector.selector, SelectionKey.OP_READ);

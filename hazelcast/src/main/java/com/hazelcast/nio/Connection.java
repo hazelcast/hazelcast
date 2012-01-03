@@ -17,17 +17,16 @@
 
 package com.hazelcast.nio;
 
-import java.io.IOException;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.nio.channels.SocketChannel;
-import java.util.logging.Level;
-
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.SimpleBoundedQueue;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.util.logging.Level;
+
 public final class Connection {
-    final SocketChannel socketChannel;
+    final SocketChannelWrapper socketChannel;
 
     final ReadHandler readHandler;
 
@@ -48,10 +47,10 @@ public final class Connection {
     private final int connectionId;
 
     private final SimpleBoundedQueue<Packet> packetQueue = new SimpleBoundedQueue<Packet>(100);
-    
+
     private ConnectionMonitor monitor;
 
-    public Connection(ConnectionManager connectionManager, InOutSelector inOutSelector, int connectionId, SocketChannel socketChannel) {
+    public Connection(ConnectionManager connectionManager, InOutSelector inOutSelector, int connectionId, SocketChannelWrapper socketChannel) {
         this.inOutSelector = inOutSelector;
         this.connectionId = connectionId;
         this.logger = connectionManager.ioService.getLogger(Connection.class.getName());
@@ -106,7 +105,7 @@ public final class Connection {
             return !member;
         }
     }
-    
+
     public boolean isClient() {
         return (type != null) && type != Type.NONE && type.isClient();
     }
@@ -117,7 +116,7 @@ public final class Connection {
         }
     }
 
-    public SocketChannel getSocketChannel() {
+    public SocketChannelWrapper getSocketChannelWrapper() {
         return socketChannel;
     }
 
@@ -128,7 +127,7 @@ public final class Connection {
     public WriteHandler getWriteHandler() {
         return writeHandler;
     }
-    
+
     public InOutSelector getInOutSelector() {
         return inOutSelector;
     }
@@ -144,11 +143,11 @@ public final class Connection {
     public void setEndPoint(Address endPoint) {
         this.endPoint = endPoint;
     }
-    
+
     public void setMonitor(ConnectionMonitor monitor) {
         this.monitor = monitor;
     }
-    
+
     public ConnectionMonitor getMonitor() {
         return monitor;
     }
@@ -165,7 +164,7 @@ public final class Connection {
     public int hashCode() {
         return connectionId;
     }
-    
+
     private void close0() throws IOException {
         if (!live)
             return;
@@ -180,7 +179,7 @@ public final class Connection {
     public void close() {
         close(null);
     }
-    
+
     public void close(Throwable t) {
         try {
             close0();
@@ -194,11 +193,11 @@ public final class Connection {
             monitor.onError(t);
         }
     }
-    
+
     public int getConnectionId() {
         return connectionId;
     }
-    
+
     @Override
     public String toString() {
         final Socket socket = this.socketChannel.socket();

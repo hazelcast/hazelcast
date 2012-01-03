@@ -49,11 +49,11 @@ public class ConnectionManager {
     final boolean SOCKET_KEEP_ALIVE;
 
     final boolean SOCKET_NO_DELAY;
-    
+
     final int SOCKET_TIMEOUT;
 
     private final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
-    
+
     private final ConcurrentMap<Address, ConnectionMonitor> mapMonitors = new ConcurrentHashMap<Address, ConnectionMonitor>(100);
 
     private final Set<Address> setConnectionInProgress = new ConcurrentHashSet<Address>();
@@ -134,12 +134,12 @@ public class ConnectionManager {
         return packet;
     }
 
-    public void assignSocketChannel(SocketChannel channel) {
+    public void assignSocketChannel(SocketChannelWrapper channel) {
         InOutSelector selectorAssigned = nextSelector();
         createConnection(channel, selectorAssigned);
     }
 
-    Connection createConnection(SocketChannel channel, InOutSelector selectorAssigned) {
+    Connection createConnection(SocketChannelWrapper channel, InOutSelector selectorAssigned) {
         final Connection connection = new Connection(this, selectorAssigned, connectionIdGen.incrementAndGet(), channel);
         setActiveConnections.add(connection);
         selectorAssigned.addTask(connection.getReadHandler());
@@ -148,6 +148,11 @@ public class ConnectionManager {
                 + " accepted socket connection from "
                 + channel.socket().getRemoteSocketAddress());
         return connection;
+    }
+
+    public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
+        return new DefaultSocketChannelWrapper(socketChannel);
+//        return new SSLSocketChannelWrapper(socketChannel, client);
     }
 
     public void failedConnection(Address address, Throwable t) {
@@ -170,7 +175,7 @@ public class ConnectionManager {
         }
         return connection;
     }
-    
+
     private ConnectionMonitor getConnectionMonitor(Address endpoint, boolean reset) {
         ConnectionMonitor monitor = mapMonitors.get(endpoint);
         if (monitor == null) {
@@ -239,18 +244,18 @@ public class ConnectionManager {
     }
 
     public void shutdown() {
-    	if (!live) return;
+        if (!live) return;
         live = false;
         stop();
-    	if (serverSocketChannel != null) {
-	        try {
-	        	serverSocketChannel.close();
-	        } catch (IOException ignore) {
-	        	logger.log(Level.FINEST, ignore.getMessage(), ignore);
-	        }
+        if (serverSocketChannel != null) {
+            try {
+                serverSocketChannel.close();
+            } catch (IOException ignore) {
+                logger.log(Level.FINEST, ignore.getMessage(), ignore);
+            }
         }
     }
-    
+
     private void stop() {
         for (Connection conn : mapConnections.values()) {
             try {
@@ -326,5 +331,4 @@ public class ConnectionManager {
     public IOService getIOHandler() {
         return ioService;
     }
-    
 }

@@ -20,7 +20,6 @@ package com.hazelcast.nio;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
@@ -86,7 +85,8 @@ public class InOutSelector extends SelectorBase {
                     return;
                 }
                 logger.log(Level.FINEST, "connected to " + address);
-                final Connection connection = connectionManager.createConnection(socketChannel, InOutSelector.this);
+                final SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
+                final Connection connection = connectionManager.createConnection(socketChannelWrapper, InOutSelector.this);
                 connectionManager.bind(address, connection, false);
             } catch (Throwable e) {
                 try {
@@ -122,7 +122,7 @@ public class InOutSelector extends SelectorBase {
                 connectionManager.failedConnection(address, e);
             }
         }
-        
+
         private void initSocket(Socket socket) throws Exception {
             InOutSelector.this.initSocket(socket);
             if (connectionManager.SOCKET_TIMEOUT > 0) {
@@ -134,7 +134,7 @@ public class InOutSelector extends SelectorBase {
     private class Acceptor implements SelectionHandler {
         public void handle() {
             try {
-                final SocketChannel channel = serverSocketChannel.accept();
+                final SocketChannelWrapper channel = connectionManager.wrapSocketChannel(serverSocketChannel.accept(), false);
                 logger.log(Level.INFO, channel.socket().getLocalPort()
                         + " is accepting socket connection from "
                         + channel.socket().getRemoteSocketAddress());

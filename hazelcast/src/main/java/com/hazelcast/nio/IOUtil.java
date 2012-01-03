@@ -21,6 +21,9 @@ import com.hazelcast.impl.ThreadContext;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 public final class IOUtil {
 
@@ -166,6 +169,43 @@ public final class IOUtil {
         ObjectOutputStream out = new ObjectOutputStream(bos);
         out.writeObject(object);
         out.close();
+        return bos.toByteArray();
+    }
+
+    public static byte[] compress(byte[] input) {
+        Deflater compressor = new Deflater();
+        compressor.setLevel(Deflater.BEST_COMPRESSION);
+        compressor.setInput(input);
+        compressor.finish();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(input.length);
+        byte[] buf = new byte[1024];
+        while (!compressor.finished()) {
+            int count = compressor.deflate(buf);
+            bos.write(buf, 0, count);
+        }
+        try {
+            bos.close();
+        } catch (IOException e) {
+        }
+        return bos.toByteArray();
+    }
+
+    public static byte[] decompress(byte[] compressedData) {
+        Inflater inflater = new Inflater();
+        inflater.setInput(compressedData);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedData.length);
+        byte[] buf = new byte[1024];
+        while (!inflater.finished()) {
+            try {
+                int count = inflater.inflate(buf);
+                bos.write(buf, 0, count);
+            } catch (DataFormatException e) {
+            }
+        }
+        try {
+            bos.close();
+        } catch (IOException e) {
+        }
         return bos.toByteArray();
     }
 }

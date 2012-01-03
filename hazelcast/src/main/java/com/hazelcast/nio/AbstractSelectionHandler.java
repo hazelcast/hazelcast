@@ -22,14 +22,13 @@ import com.hazelcast.logging.ILogger;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 
 abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected final ILogger logger;
 
-    protected final SocketChannel socketChannel;
+    protected final SocketChannelWrapper socketChannel;
 
     protected final Connection connection;
 
@@ -43,7 +42,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         super();
         this.connection = connection;
         this.inOutSelector = inOutSelector;
-        this.socketChannel = connection.getSocketChannel();
+        this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
     }

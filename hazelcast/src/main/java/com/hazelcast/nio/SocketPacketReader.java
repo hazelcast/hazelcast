@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
@@ -34,10 +33,10 @@ class SocketPacketReader implements SocketReader {
     final PacketReader packetReader;
     final Connection connection;
     final IOService ioService;
-    final SocketChannel socketChannel;
+    final SocketChannelWrapper socketChannel;
     final ILogger logger;
 
-    public SocketPacketReader(SocketChannel socketChannel, Connection connection) {
+    public SocketPacketReader(SocketChannelWrapper socketChannel, Connection connection) {
         this.connection = connection;
         this.ioService = connection.getConnectionManager().ioService;
         this.socketChannel = socketChannel;
