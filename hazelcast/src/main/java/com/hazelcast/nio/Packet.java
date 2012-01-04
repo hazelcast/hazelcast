@@ -345,10 +345,18 @@ public final class Packet implements SocketWritable {
         this.name = name;
         this.operation = operation;
         if (objKey != null) {
-            key = new DataHolder(ThreadContext.get().toData(objKey));
+            if (objKey instanceof Data) {
+                setKey((Data) objKey);
+            } else {
+                key = new DataHolder(ThreadContext.get().toData(objKey));
+            }
         }
         if (objValue != null) {
-            value = new DataHolder(ThreadContext.get().toData(objValue));
+            if (objValue instanceof Data) {
+                setValue((Data) objValue);
+            } else {
+                value = new DataHolder(ThreadContext.get().toData(objValue));
+            }
         }
     }
 
