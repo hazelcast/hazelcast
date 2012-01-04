@@ -229,7 +229,9 @@ public class ManagementCenterService implements MembershipListener {
                     clientHandler.start();
                 }
             } catch (Throwable throwable) {
-                logger.log(Level.FINEST, "ManagementCenter will be closed due to exception.", throwable);
+                if (running) {
+                    logger.log(Level.FINEST, "ManagementCenter will be closed due to exception.", throwable);
+                }
                 shutdown();
             }
         }

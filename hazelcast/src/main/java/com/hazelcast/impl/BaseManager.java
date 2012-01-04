@@ -1084,7 +1084,12 @@ public abstract class BaseManager {
                 final Address toAddress = listener.getKey();
                 final boolean includeValue = listener.getValue();
                 if (toAddress.isThisAddress()) {
-                    enqueueEvent(eventType, name, key, (includeValue) ? value : null, callerAddress, true);
+                    // During local event listener calls, no need to check for include value flag.
+                    // ListenerManager checks internally include value flag for each listener.
+                    // By this way we can handle scenario of successively registered 
+                    // a LocalEntryListener (which sets implicitly include-value to true) 
+                    // and an EntryListener whose include-value is false. 
+                    enqueueEvent(eventType, name, key, /*(includeValue) ? value : null*/ value, callerAddress, true);
                 } else {
                     final Packet packet = obtainPacket();
                     packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);

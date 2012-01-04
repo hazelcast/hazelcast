@@ -17,6 +17,7 @@ public class MapEntryListenerTest {
 
     AtomicInteger globalCount = new AtomicInteger();
     AtomicInteger localCount = new AtomicInteger();
+    AtomicInteger valueCount = new AtomicInteger();
 
     @BeforeClass
     @AfterClass
@@ -41,6 +42,7 @@ public class MapEntryListenerTest {
     private void createMaps() {
     	globalCount.set(0);
         localCount.set(0);
+        valueCount.set(0);
     	map1 = h1.getMap(n);
     	map2 = h2.getMap(n);
     }
@@ -52,11 +54,12 @@ public class MapEntryListenerTest {
 
     @Test
     public void globalListenerTest() throws InterruptedException {
+        map1.addEntryListener(createEntryListener(false), false);
         map1.addEntryListener(createEntryListener(false), true);
         map2.addEntryListener(createEntryListener(false), true);
         int k = 3;
         putDummyData(k);
-        checkCountWithExpected(k * 2, 0);
+        checkCountWithExpected(k * 3, 0, k * 2);
     }
 
     @Test
@@ -65,36 +68,38 @@ public class MapEntryListenerTest {
         map2.addLocalEntryListener(createEntryListener(true));
         int k = 4;
         putDummyData(k);
-        checkCountWithExpected(0, k);
+        checkCountWithExpected(0, k, k);
     }
 
     @Test
     /**
-     * Test for issue 584
+     * Test for issue 584 and 756
      */
     public void globalAndLocalListenerTest() throws InterruptedException {
         map1.addLocalEntryListener(createEntryListener(true));
         map2.addLocalEntryListener(createEntryListener(true));
-        map1.addEntryListener(createEntryListener(false), true);
+        map1.addEntryListener(createEntryListener(false), false);
+        map2.addEntryListener(createEntryListener(false), false);
         map2.addEntryListener(createEntryListener(false), true);
         int k = 1;
         putDummyData(k);
-        checkCountWithExpected(k * 2, k);
+        checkCountWithExpected(k * 3, k, k * 2);
     }
 
     @Test
     /**
-     * Test for issue 584
+     * Test for issue 584 and 756
      */
     public void globalAndLocalListenerTest2() throws InterruptedException {
         // changed listener order
-        map1.addEntryListener(createEntryListener(false), true);
+        map1.addEntryListener(createEntryListener(false), false);
         map1.addLocalEntryListener(createEntryListener(true));
         map2.addEntryListener(createEntryListener(false), true);
         map2.addLocalEntryListener(createEntryListener(true));
+        map2.addEntryListener(createEntryListener(false), false);
         int k = 3;
         putDummyData(k);
-        checkCountWithExpected(k * 2, k);
+        checkCountWithExpected(k * 3, k, k * 2);
     }
     
     @Test
@@ -125,11 +130,12 @@ public class MapEntryListenerTest {
         }
     }
 
-    private void checkCountWithExpected(int expectedGlobal, int expectedLocal) throws InterruptedException {
+    private void checkCountWithExpected(int expectedGlobal, int expectedLocal, int expectedValue) throws InterruptedException {
         // wait for entry listener execution
         Thread.sleep(1000 * 3);
         Assert.assertEquals(expectedLocal, localCount.get());
         Assert.assertEquals(expectedGlobal, globalCount.get());
+        Assert.assertEquals(expectedValue, valueCount.get());
     }
 
     private EntryListener<String, String> createEntryListener(final boolean isLocal) {
@@ -150,6 +156,9 @@ public class MapEntryListenerTest {
                     localCount.incrementAndGet();
                 } else {
                     globalCount.incrementAndGet();
+                }
+                if (event.getValue() != null) {
+                    valueCount.incrementAndGet();
                 }
             }
         };

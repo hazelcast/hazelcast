@@ -147,7 +147,7 @@ public class ManagementService {
                 }
             }
         } catch (Exception e) {
-            logger.log(Level.FINE, "Error unregistering MBeans", e);
+            logger.log(Level.FINEST, "Error unregistering MBeans", e);
         }
         counter.decrementAndGet();
     }
@@ -174,7 +174,7 @@ public class ManagementService {
                 }
             }
         } catch (Exception e) {
-            Logger.getLogger("hz.ManagementCenter").log(Level.FINE, "Error unregistering MBeans", e);
+            Logger.getLogger("hz.ManagementCenter").log(Level.FINEST, "Error unregistering MBeans", e);
         }
         if (statCollectors != null) {
             statCollectors.shutdownNow();
