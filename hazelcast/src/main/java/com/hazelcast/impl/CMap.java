@@ -1347,8 +1347,6 @@ public class CMap {
                     } else if (evictionAware && record.isActive() && record.isEvictable()) {
                         sortedRecords.add(record);   // sorting for eviction
                         recordsStillOwned++;
-                    } else {
-                        recordsStillOwned++;
                     }
                 } else {
                     Member ownerEventual = partition.getEventualOwner();
