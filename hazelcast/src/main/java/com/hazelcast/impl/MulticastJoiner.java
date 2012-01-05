@@ -112,15 +112,16 @@ public class MulticastJoiner extends AbstractJoiner {
         }
     }
 
-    private void connectAndSendJoinRequest(Address masterAddress) {
+    private boolean connectAndSendJoinRequest(Address masterAddress) {
         if (masterAddress == null || masterAddress.equals(node.address)) {
             throw new IllegalArgumentException();
         }
         Connection conn = node.connectionManager.getOrConnect(masterAddress);
         logger.log(Level.FINEST, "Master connection " + conn);
         if (conn != null) {
-            node.clusterManager.sendJoinRequest(masterAddress);
+            return node.clusterManager.sendJoinRequest(masterAddress);
         }
+        return false;
     }
 
     private Address findMasterWithMulticast() {
@@ -128,7 +129,7 @@ public class MulticastJoiner extends AbstractJoiner {
             final String ip = System.getProperty("join.ip");
             if (ip == null) {
                 JoinInfo joinInfo = node.createJoinInfo();
-                for (; currentTryCount.incrementAndGet() <= tryCount.get();) {
+                for (; currentTryCount.incrementAndGet() <= tryCount.get(); ) {
                     joinInfo.setTryCount(currentTryCount.get());
                     node.multicastService.send(joinInfo);
                     if (node.getMasterAddress() == null) {

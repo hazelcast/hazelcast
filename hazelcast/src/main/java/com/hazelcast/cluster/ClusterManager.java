@@ -758,7 +758,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>();
         for (Member m : members) {
             MemberImpl member = (MemberImpl) m;
-            if (!member.localMember()) {
+            if (!member.localMember() && !member.isSuperClient()) {
                 AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
                 rrp.executeProcess(member.getAddress(), new FinalizeJoin());
                 calls.add(rrp);
@@ -784,40 +784,24 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             for (final MemberInfo memberInfo : lsMemberInfos) {
                 newMemberList.add(memberInfo.address);
             }
-            List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>(lsMemberInfos.size());
-            for (final Address target : newMemberList) {
-                if (!thisAddress.equals(target)) {
-                    AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
-                    rrp.executeProcess(target, membersUpdate);
-                    calls.add(rrp);
+            doCall(membersUpdate, newMemberList, true);
+            doCall(new SyncProcess(), newMemberList, false);
+            doCall(new ConnectionCheckCall(), newMemberList, false);
+        }
+
+        void doCall(AbstractRemotelyCallable callable, List<Address> targets, boolean ignoreThis) {
+            List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>(targets.size());
+            for (final Address target : targets) {
+                boolean skip = ignoreThis && thisAddress.equals(target);
+                if (!skip) {
+                    AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
+                    call.executeProcess(target, callable);
+                    calls.add(call);
                 }
             }
             for (AsyncRemotelyBooleanCallable call : calls) {
-                if (!call.getResultAsBoolean()) {
-                    newMemberList.remove(call.getTarget());
-                }
-            }
-            calls.clear();
-            for (final Address target : newMemberList) {
-                AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
-                call.executeProcess(target, new SyncProcess());
-                calls.add(call);
-            }
-            for (AsyncRemotelyBooleanCallable call : calls) {
-                if (!call.getResultAsBoolean()) {
-                    newMemberList.remove(call.getTarget());
-                }
-            }
-            calls.clear();
-            AbstractRemotelyCallable<Boolean> connCheckCallable = new ConnectionCheckCall();
-            for (final Address target : newMemberList) {
-                AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
-                call.executeProcess(target, connCheckCallable);
-                calls.add(call);
-            }
-            for (AsyncRemotelyBooleanCallable call : calls) {
-                if (!call.getResultAsBoolean()) {
-                    newMemberList.remove(call.getTarget());
+                if (!call.getResultAsBoolean(5)) {
+                    targets.remove(call.getTarget());
                 }
             }
         }
@@ -867,11 +851,11 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         logger.log(Level.INFO, this.toString());
     }
 
-    public void sendJoinRequest(Address toAddress) {
+    public boolean sendJoinRequest(Address toAddress) {
         if (toAddress == null) {
             toAddress = node.getMasterAddress();
         }
-        sendProcessableTo(node.createJoinInfo(), toAddress);
+        return sendProcessableTo(node.createJoinInfo(), toAddress);
     }
 
     public void registerScheduledAction(ScheduledAction scheduledAction) {

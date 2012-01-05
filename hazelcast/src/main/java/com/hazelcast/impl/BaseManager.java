@@ -474,6 +474,18 @@ public abstract class BaseManager {
             return responses.poll(time, unit);
         }
 
+        public boolean getResultAsBoolean(int timeoutSeconds) {
+            Object resultObj = null;
+            try {
+                resultObj = getResult(timeoutSeconds, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                handleInterruptedException();
+            }
+            boolean result = Boolean.TRUE.equals(resultObj);
+            afterGettingResult(request);
+            return result;
+        }
+
         protected void onStillWaiting() {
         }
 
@@ -512,7 +524,7 @@ public abstract class BaseManager {
         }
 
         protected final Object getRedoAwareResult() {
-            for (; ;) {
+            for (; ; ) {
                 Object result = waitAndGetResult();
                 if (Thread.interrupted()) {
                     handleInterruptedException();
@@ -854,6 +866,7 @@ public abstract class BaseManager {
 
     abstract class MultiCall<T> {
         int redoCount = 0;
+        boolean excludeSuperClient = true;
 
         private void logRedo(SubCall subCall) {
             redoCount++;
@@ -906,21 +919,28 @@ public abstract class BaseManager {
                 node.checkNodeState();
                 onCall();
                 //local call first
-                SubCall localCall = createNewTargetAwareOp(getFirstAddressToMakeCall());
-                localCall.doOp();
-                Object result = localCall.getResultAsObject();
-                if (result == OBJECT_REDO) {
-                    logRedo(localCall);
-                    onRedo();
-                    Thread.sleep(redoWaitMillis);
-                    return call();
+                Object result = null;
+                boolean excludeThisMember = excludeSuperClient && thisMember.isSuperClient();
+                if (!excludeThisMember) {
+                    SubCall localCall = createNewTargetAwareOp(getFirstAddressToMakeCall());
+                    localCall.doOp();
+                    result = localCall.getResultAsObject();
+                    if (result == OBJECT_REDO) {
+                        logRedo(localCall);
+                        onRedo();
+                        Thread.sleep(redoWaitMillis);
+                        return call();
+                    }
                 }
-                if (onResponse(result)) {
+                // now other members
+                boolean runOnOtherMembers = excludeThisMember || onResponse(result);
+                if (runOnOtherMembers) {
                     Set<Member> members = node.getClusterImpl().getMembers();
                     List<SubCall> lsCalls = new ArrayList<SubCall>();
                     for (Member member : members) {
                         MemberImpl cMember = (MemberImpl) member;
-                        if (!cMember.getAddress().equals(getFirstAddressToMakeCall())) { // now other members
+                        boolean excludeMember = excludeSuperClient && cMember.isSuperClient();
+                        if (!excludeMember && !cMember.getAddress().equals(getFirstAddressToMakeCall())) {
                             SubCall subCall = createNewTargetAwareOp(cMember.getAddress());
                             subCall.doOp();
                             lsCalls.add(subCall);
@@ -1119,7 +1139,7 @@ public abstract class BaseManager {
         }
     }
 
-    public void sendProcessableTo(final RemotelyProcessable rp, final Address address) {
+    public boolean sendProcessableTo(final RemotelyProcessable rp, final Address address) {
         final Data value = toData(rp);
         final Packet packet = obtainPacket();
         packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
@@ -1127,6 +1147,7 @@ public abstract class BaseManager {
         if (!sent) {
             releasePacket(packet);
         }
+        return sent;
     }
 
     public void sendProcessableToAll(RemotelyProcessable rp, boolean processLocally) {
