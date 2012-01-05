@@ -54,9 +54,8 @@ public class ConnectionManager implements MembershipListener {
     private final LifecycleServiceClientImpl lifecycleService;
     Timer heartbeatTimer = new Timer();
 
-
-    public ConnectionManager(HazelcastClient client, Credentials credentials, LifecycleServiceClientImpl lifecycleService, 
-    		InetSocketAddress[] clusterMembers, boolean shuffle, long timeout) {
+    public ConnectionManager(HazelcastClient client, Credentials credentials, LifecycleServiceClientImpl lifecycleService,
+                             InetSocketAddress[] clusterMembers, boolean shuffle, long timeout) {
         this.TIMEOUT = timeout;
         this.client = client;
         this.lifecycleService = lifecycleService;
@@ -67,8 +66,8 @@ public class ConnectionManager implements MembershipListener {
         this.credentials = credentials;
     }
 
-    public ConnectionManager(final HazelcastClient client, Credentials credentials, LifecycleServiceClientImpl lifecycleService, 
-    		InetSocketAddress address, long timeout) {
+    public ConnectionManager(final HazelcastClient client, Credentials credentials, LifecycleServiceClientImpl lifecycleService,
+                             InetSocketAddress address, long timeout) {
         this.TIMEOUT = timeout;
         this.client = client;
         this.lifecycleService = lifecycleService;
@@ -245,6 +244,11 @@ public class ConnectionManager implements MembershipListener {
                 logger.log(Level.WARNING, "Connection to " + currentConnection + " is lost");
                 currentConnection = null;
                 lost = true;
+                try {
+                    connection.close();
+                } catch (IOException e) {
+                    logger.log(Level.FINEST, e.getMessage(), e);
+                }
             }
         }
         if (lost) {
@@ -316,7 +320,7 @@ public class ConnectionManager implements MembershipListener {
     List<InetSocketAddress> getClusterMembers() {
         return clusterMembers;
     }
-    
+
     public void shutdown() {
         logger.log(Level.INFO, getClass().getSimpleName() + " shutdown");
         running = false;
