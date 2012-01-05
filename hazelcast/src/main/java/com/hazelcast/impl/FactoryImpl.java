@@ -25,6 +25,7 @@ import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
+import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.impl.management.ManagementCenterService;
 import com.hazelcast.impl.monitor.*;
 import com.hazelcast.jmx.ManagementService;
@@ -554,7 +555,7 @@ public class FactoryImpl implements HazelcastInstance {
                                 if (keys != null) {
                                     int count = 0;
                                     PartitionService partitionService = getPartitionService();
-                                    Queue<Set> chunks = new ConcurrentLinkedQueue<Set>();
+                                    Queue<Set> chunks = new LinkedList<Set>();
                                     Set ownedKeys = new HashSet();
                                     for (Object key : keys) {
                                         if (partitionService.getPartition(key).getOwner().localMember()) {
@@ -585,13 +586,11 @@ public class FactoryImpl implements HazelcastInstance {
 
     private void loadChunks(final MProxy mProxy, final CMap cmap, final Queue<Set> chunks) throws InterruptedException {
         if (chunks.size() > 0) {
-            int threadCount = node.groupProperties.MAP_LOAD_THREAD_COUNT.getInteger();
-            ExecutorService es = Executors.newFixedThreadPool(threadCount);
+            ParallelExecutor es = node.executorManager.getMapLoaderExecutorService();
             final CountDownLatch latch = new CountDownLatch(chunks.size());
-            for (int i = 0; i < threadCount; i++) {
+            for (final Set chunk : chunks) {
                 es.execute(new Runnable() {
                     public void run() {
-                        final Set chunk = chunks.poll();
                         if (chunk == null) return;
                         try {
                             loadKeys(mProxy, cmap, chunk);

@@ -47,6 +47,7 @@ public class ExecutorManager extends BaseManager {
     private final ConcurrentMap<Thread, CallContext> mapThreadCallContexts = new ConcurrentHashMap<Thread, CallContext>(100);
 
     private final ParallelExecutor asyncExecutorService;
+    private final ParallelExecutor mapLoaderExecutorService;
     private final NamedExecutorService defaultExecutorService;
     private final NamedExecutorService queryExecutorService;
     private final NamedExecutorService eventExecutorService;
@@ -90,6 +91,7 @@ public class ExecutorManager extends BaseManager {
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
         eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
         asyncExecutorService = parallelExecutorService.newBlockingParallelExecutor(24, 1000);
+        mapLoaderExecutorService = parallelExecutorService.newParallelExecutor(gp.MAP_LOAD_THREAD_COUNT.getInteger());
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         registerPacketProcessor(CANCEL_EXECUTION, new ExecutionCancelOperationHandler());
         started = true;
@@ -97,6 +99,10 @@ public class ExecutorManager extends BaseManager {
 
     public NamedExecutorService getOrCreateNamedExecutorService(String name) {
         return getOrCreateNamedExecutorService(name, null);
+    }
+
+    public ParallelExecutor getMapLoaderExecutorService() {
+        return mapLoaderExecutorService;
     }
 
     private NamedExecutorService getOrCreateNamedExecutorService(String name, GroupProperties.GroupProperty groupProperty) {

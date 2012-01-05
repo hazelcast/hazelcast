@@ -90,6 +90,28 @@ public class MapStoreTest extends TestUtil {
     }
 
     @Test
+    public void testGetAllKeys2() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        Map store = testMapStore.getStore();
+        Set keys = new HashSet();
+        int size = 10000;
+        for (int i = 0; i < size; i++) {
+            store.put(i, "value" + i);
+            keys.add(i);
+        }
+        Config config = newConfig(testMapStore, 2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        assertEquals("value1", map1.get(1));
+        assertEquals("value1", map2.get(1));
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
+        Thread.sleep(100000);
+    }
+
+    @Test
     public void testGetAllKeys() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Map store = testMapStore.getStore();
