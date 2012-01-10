@@ -21,9 +21,9 @@ import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
-import com.hazelcast.impl.ClusterPartitionManager;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.PartitionManager;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.base.RecordSet;
@@ -44,31 +44,50 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
     private int partitionId;
     private Address from;
     private Address to;
+    private int replicaIndex;
+    private boolean migration; //
     private HazelcastInstance hazelcast;
 
     public MigrationRequestTask() {
     }
 
-    public MigrationRequestTask(int partitionId, Address from, Address to) {
+    public MigrationRequestTask(int partitionId, Address from, Address to, int replicaIndex, boolean migration) {
         this.partitionId = partitionId;
         this.from = from;
         this.to = to;
+        this.replicaIndex = replicaIndex;
+        this.migration = migration;
+    }
+
+    public Address getFromAddress() {
+        return from;
+    }
+
+    public Address getToAddress() {
+        return to;
+    }
+
+    public int getReplicaIndex() {
+        return replicaIndex;
+    }
+
+    public boolean isMigration() {
+        return migration;
     }
 
     public Boolean call() throws Exception {
+        if (from.equals(to)) return Boolean.TRUE;
         Node node = ((FactoryImpl) hazelcast).node;
-        ClusterPartitionManager pm = node.concurrentMapManager.getClusterPartitionManager();
-        MigrationRequestTask existing = pm.addActiveMigration(this);
-        if (existing != null) return Boolean.FALSE;
+        PartitionManager pm = node.concurrentMapManager.getClusterPartitionManager();
         try {
             Member target = pm.getMember(to);
             if (target == null) return Boolean.FALSE;
-            List<Record> lsRecordsToMigrate = pm.getActivePartitionRecords(partitionId);
+            List<Record> lsRecordsToMigrate = pm.getActivePartitionRecords(partitionId, replicaIndex, to);
             RecordSet recordSet = new RecordSet();
             for (Record record : lsRecordsToMigrate) {
                 recordSet.addDataRecordEntry(new DataRecordEntry(record));
             }
-            DistributedTask task = new DistributedTask(new MigrationTask(partitionId, toData(recordSet)), target);
+            DistributedTask task = new DistributedTask(new MigrationTask(partitionId, toData(recordSet), replicaIndex), target);
             Future future = node.factory.getExecutorService().submit(task);
             return (Boolean) future.get(400, TimeUnit.SECONDS);
         } catch (Throwable e) {
@@ -79,12 +98,16 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
 
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(partitionId);
+        out.writeInt(replicaIndex);
+        out.writeBoolean(migration);
         from.writeData(out);
         to.writeData(out);
     }
 
     public void readData(DataInput in) throws IOException {
         partitionId = in.readInt();
+        replicaIndex = in.readInt();
+        migration = in.readBoolean();
         from = new Address();
         from.readData(in);
         to = new Address();
@@ -97,5 +120,16 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcast = hazelcastInstance;
+    }
+
+    @Override
+    public String toString() {
+        return "MigrationRequestTask{" +
+                "partitionId=" + partitionId +
+                ", from=" + from +
+                ", to=" + to +
+                ", replicaIndex=" + replicaIndex +
+                ", migration=" + migration +
+                '}';
     }
 }

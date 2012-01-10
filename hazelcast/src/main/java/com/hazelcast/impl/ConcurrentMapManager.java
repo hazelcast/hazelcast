@@ -21,10 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
-import com.hazelcast.impl.concurrentmap.LocalLock;
-import com.hazelcast.impl.concurrentmap.MultiData;
-import com.hazelcast.impl.concurrentmap.RecordFactory;
-import com.hazelcast.impl.concurrentmap.ValueHolder;
+import com.hazelcast.impl.concurrentmap.*;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
@@ -61,11 +58,10 @@ public class ConcurrentMapManager extends BaseManager {
     final long CLEANUP_DELAY_MILLIS;
     final boolean LOG_STATE;
     long lastLogStateTime = currentTimeMillis();
-    final Block[] blocks;
     final ConcurrentMap<String, CMap> maps;
     final ConcurrentMap<String, NearCache> mapCaches;
+    final PartitionServiceImpl partitionServiceImpl;
     final PartitionManager partitionManager;
-    final ClusterPartitionManager clusterPartitionManager;
     long newRecordId = 0;
     @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long nextCleanup = 0;
@@ -84,11 +80,10 @@ public class ConcurrentMapManager extends BaseManager {
         GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
         CLEANUP_DELAY_MILLIS = node.groupProperties.CLEANUP_DELAY_SECONDS.getLong() * 1000L;
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
-        blocks = new Block[PARTITION_COUNT];
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
-        clusterPartitionManager = new ClusterPartitionManager(this);
         partitionManager = new PartitionManager(this);
+        partitionServiceImpl = new PartitionServiceImpl(this);
         node.clusterService.registerPeriodicRunnable(new FallThroughRunnable() {
             public void doRun() {
                 logState();
@@ -109,7 +104,6 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
         });
-        node.clusterService.registerPeriodicRunnable(partitionManager);
         registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET_DATA_RECORD_ENTRY, new GetDataRecordEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET, new GetOperationHandler());
@@ -151,9 +145,6 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_CONTAINS_KEY, new ContainsKeyOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_CONTAINS_ENTRY, new ContainsEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_CONTAINS_VALUE, new ContainsValueOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_BLOCK_INFO, new BlockInfoOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_BLOCKS, new BlocksOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_BLOCK_MIGRATION_CHECK, new BlockMigrationCheckHandler());
         registerPacketProcessor(CONCURRENT_MAP_VALUE_COUNT, new ValueCountOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_INVALIDATE, new InvalidateOperationHandler());
         registerPacketProcessor(ATOMIC_NUMBER_ADD_AND_GET, new AtomicNumberAddAndGetOperationHandler());
@@ -177,12 +168,8 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(SEMAPHORE_TRY_ACQUIRE, new SemaphoreTryAcquireOperationHandler());
     }
 
-    public PartitionManager getPartitionManager() {
+    public PartitionManager getClusterPartitionManager() {
         return partitionManager;
-    }
-
-    public ClusterPartitionManager getClusterPartitionManager() {
-        return clusterPartitionManager;
     }
 
     private void executeCleanup(final CMap cmap, final boolean forced) {
@@ -318,12 +305,7 @@ public class ConcurrentMapManager extends BaseManager {
 //                }
 //            }
             sbState.append("\nCall Count:").append(calls.size());
-            for (Block block : blocks) {
-                if (block != null && block.isMigrating()) {
-                    sbState.append("\n");
-                    sbState.append(block);
-                }
-            }
+            sbState.append(partitionManager.toString());
             Collection<CMap> cmaps = maps.values();
             for (CMap cmap : cmaps) {
                 cmap.appendState(sbState);
@@ -407,17 +389,8 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public boolean isOwned(Record record) {
-        Block block = partitionManager.getOrCreateBlock(record.getBlockId());
-        return thisAddress.equals(block.getOwner());
-    }
-
     public int getPartitionCount() {
         return PARTITION_COUNT;
-    }
-
-    public Block[] getBlocks() {
-        return blocks;
     }
 
     public Map<String, CMap> getCMaps() {
@@ -469,6 +442,10 @@ public class ConcurrentMapManager extends BaseManager {
     public boolean lock(String name, Object key, long timeout) {
         MLock mlock = new MLock();
         return mlock.lock(name, key, timeout);
+    }
+
+    public PartitionInfo getPartitionInfo(int partitionId) {
+        return partitionManager.getPartition(partitionId);
     }
 
     class MLock extends MBackupAndMigrationAwareOp {
@@ -568,7 +545,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (cMap.readBackupData) {
                         return true;
                     } else {
-                        PartitionServiceImpl.PartitionProxy partition = partitionManager.partitionServiceImpl.getPartition(record.getBlockId());
+                        PartitionServiceImpl.PartitionProxy partition = partitionServiceImpl.getPartition(record.getBlockId());
                         if (partition != null && !partition.isMigrating() && partition.getOwner() != null && partition.getOwner().localMember()) {
                             return true;
                         }
@@ -656,10 +633,7 @@ public class ConcurrentMapManager extends BaseManager {
         public void setTarget() {
             target = getKeyOwner(request);
             if (target == null) {
-                Block block = blocks[(request.blockId)];
-                if (block != null) {
-                    target = block.getMigrationAddress();
-                }
+                partitionManager.getPartition(request.blockId).getOwner();
             }
         }
     }
@@ -797,10 +771,9 @@ public class ConcurrentMapManager extends BaseManager {
     Pairs doGetAll(String name, Set keys) throws ExecutionException, InterruptedException {
         Pairs results = new Pairs(keys.size());
         final Map<Member, Keys> targetMembers = new HashMap<Member, Keys>(10);
-        PartitionServiceImpl partitionService = partitionManager.partitionServiceImpl;
         for (Object key : keys) {
             Data dKey = toData(key);
-            Member owner = partitionService.getPartition(dKey).getOwner();
+            Member owner = partitionServiceImpl.getPartition(dKey).getOwner();
             if (owner == null) {
                 owner = thisMember;
             }
@@ -830,6 +803,44 @@ public class ConcurrentMapManager extends BaseManager {
         return results;
     }
 
+    int size(String name) {
+        for (int i = 0; i < 10; i++) {
+            try {
+                return trySize(name);
+            } catch (ExecutionException e) {
+                try {
+                    Thread.sleep(redoWaitMillis);
+                } catch (InterruptedException e1) {
+                    handleInterruptedException();
+                }
+            } catch (InterruptedException e) {
+                handleInterruptedException();
+            }
+        }
+        throw new RuntimeException("Couldn't finalized the size operation[" + name + "]");
+    }
+
+    int trySize(String name) throws ExecutionException, InterruptedException {
+        int totalSize = 0;
+        Set<Member> members = node.getClusterImpl().getMembers();
+        List<Future<Integer>> lsFutures = new ArrayList<Future<Integer>>();
+        for (Member member : members) {
+            if (!member.isLiteMember()) {
+                MapSizeCallable callable = new MapSizeCallable(name);
+                DistributedTask<Integer> dt = new DistributedTask<Integer>(callable, member);
+                lsFutures.add(dt);
+                node.factory.getExecutorService(BATCH_OPS_EXECUTOR_NAME).execute(dt);
+            }
+        }
+        for (Future<Integer> future : lsFutures) {
+            Integer partialSize = future.get();
+            if (partialSize != null) {
+                totalSize += partialSize;
+            }
+        }
+        return totalSize;
+    }
+
     void doPutAll(String name, Map entries) {
         Pairs pairs = new Pairs(entries.size());
         for (Object key : entries.keySet()) {
@@ -845,9 +856,8 @@ public class ConcurrentMapManager extends BaseManager {
 
     void doPutAll(String name, Pairs pairs) throws ExecutionException, InterruptedException {
         final Map<Member, Pairs> targetMembers = new HashMap<Member, Pairs>(10);
-        PartitionServiceImpl partitionService = partitionManager.partitionServiceImpl;
         for (KeyValue keyValue : pairs.getKeyValues()) {
-            Member owner = partitionService.getPartition(keyValue.getKeyData()).getOwner();
+            Member owner = partitionServiceImpl.getPartition(keyValue.getKeyData()).getOwner();
             if (owner == null) {
                 owner = thisMember;
             }
@@ -1476,6 +1486,67 @@ public class ConcurrentMapManager extends BaseManager {
             return responseValue;
         }
     }
+//    public Object doPut(String name, Object key, Object value, long timeout) throws Exception {
+//        Request request = new Request();
+//        Data dKey = toData(key);
+//        Data dValue = toData(value);
+//        int blockId = getBlockId(dKey);
+//        request.setLocal(ClusterOperation.CONCURRENT_MAP_PUT, name, dKey, dValue, blockId, timeout, -1, thisAddress);
+//        return doPut0(request);
+//    }
+//
+//    public final ConcurrentMap<Long, BlockingQueue<Request>> calls = new ConcurrentHashMap<Long, BlockingQueue<Request>>(1000);
+//    public final AtomicLong callIds = new AtomicLong();
+//
+//    public Object doPut0(Request request) throws Exception {
+//        PartitionInfo partition = partitionManager.getPartition(request.blockId);
+//        Address owner = partition.getOwner();
+//        while (owner == null) {
+//            System.out.println("sleeping");
+//            Thread.sleep(500);
+//            owner = partitionManager.getOwner(request.blockId);
+//        }
+//        System.out.println(owner.isThisAddress() + " found owner  " + owner);
+//        if (owner.isThisAddress()) {
+//            System.out.println("handling locally");
+//            handlePutRequest(request);
+//            return toObject((Data) request.response);
+//        } else {
+//            request.callId = callIds.incrementAndGet();
+//            BlockingQueue<Request> responseQ = ResponseQueueFactory.newResponseQueue();
+//            calls.put(request.callId, responseQ);
+//            Packet packet = new Packet();
+//            request.setPacket(packet);
+//            System.out.println("sending remote");
+//            if (!send(packet, owner)) {
+//                System.out.println("failed to send.. will redo");
+//                Thread.sleep(500);
+//                doPut0(request);
+//            }
+//            Request response = responseQ.take();
+//            return toObject(response.value);
+//        }
+//    }
+//
+//    public void handlePutRequest(Request request) {
+//        CMap cmap = getMap(request.name);
+//        if (cmap == null) {
+//            synchronized (this) {
+//                cmap = getMap(request.name);
+//                if (cmap == null) {
+//                    cmap = new CMap(this, request.name);
+//                    maps.put(request.name, cmap);
+//                }
+//            }
+//        }
+//        cmap.put(request);
+//        System.out.println("caller " + request.caller);
+//        if (request.caller.isThisAddress()) {
+//            return;
+//        } else {
+//            returnResponse(request);
+//        }
+//    }
 
     class MPut extends MBackupAndMigrationAwareOp {
 
@@ -1777,6 +1848,10 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    protected Address getBackupMember(final int partitionId, final int distance) {
+        return partitionManager.getPartition(partitionId).getReplicaAddress(distance);
+    }
+
     class MBackup extends MTargetAwareOp {
         protected Address owner = null;
         protected int distance = 0;
@@ -1800,16 +1875,15 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void process() {
-            MemberImpl targetMember = getBackupMember(owner, distance);
-            if (targetMember == null) {
-                setResult(Boolean.TRUE);
-                return;
-            }
-            target = targetMember.getAddress();
-            if (target.equals(thisAddress)) {
-                doLocalOp();
+            target = getBackupMember(request.blockId, distance);
+            if (target == null) {
+                setResult(Boolean.FALSE);
             } else {
-                invoke();
+                if (target.equals(thisAddress)) {
+                    doLocalOp();
+                } else {
+                    invoke();
+                }
             }
         }
     }
@@ -1882,6 +1956,7 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         public void process() {
             prepareForBackup();
+            request.blockId = getBlockId(request.key);
             super.process();
         }
 
@@ -1907,7 +1982,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void process() {
-            request.blockId = partitionManager.hashBlocks();
+            request.blockId = -1;
             super.process();
         }
 
@@ -1922,7 +1997,6 @@ public class ConcurrentMapManager extends BaseManager {
         if (record.getListeners() == null && (mapListeners == null || mapListeners.size() == 0)) {
             return;
         }
-        checkServiceThread();
         fireMapEvent(mapListeners, record.getName(), eventType, record.getKeyData(),
                 oldValue, record.getValueData(), record.getListeners(), callerAddress);
     }
@@ -2068,7 +2142,7 @@ public class ConcurrentMapManager extends BaseManager {
                         if (cMap.readBackupData) {
                             return false;
                         } else {
-                            Partition partition = partitionManager.partitionServiceImpl.getPartition(record.getBlockId());
+                            Partition partition = partitionServiceImpl.getPartition(record.getBlockId());
                             if (partition != null && partition.getOwner() != null && partition.getOwner().localMember()) {
                                 return false;
                             }
@@ -2174,27 +2248,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     private Address getKeyOwner(int blockId) {
         checkServiceThread();
-        Block block = blocks[blockId];
-        if (block == null) {
-            if (isMaster() && !isLiteMember()) {
-                block = partitionManager.getOrCreateBlock(blockId);
-                block.setOwner(thisAddress);
-                block.setMigrationAddress(null);
-                partitionManager.lsBlocksToMigrate.clear();
-                partitionManager.invalidateBlocksHash();
-            } else {
-                return null;
-            }
-        } else if (block.getOwner() == null && isMaster() && !isLiteMember()) {
-            block.setOwner(thisAddress);
-            block.setMigrationAddress(null);
-            partitionManager.lsBlocksToMigrate.clear();
-            partitionManager.invalidateBlocksHash();
-        }
-        if (block.isMigrating()) {
-            return null;
-        }
-        return block.getOwner();
+        return partitionManager.getOwner(blockId);
     }
 
     public Address getKeyOwner(Data key) {
@@ -2204,7 +2258,8 @@ public class ConcurrentMapManager extends BaseManager {
 
     @Override
     public boolean isMigrating(Request req) {
-        return partitionManager.isMigrating(req);
+        final Data key = req.key;
+        return key != null && partitionManager.isMigrating(getBlockId(key));
     }
 
     public int getBlockId(Request req) {
@@ -2214,7 +2269,7 @@ public class ConcurrentMapManager extends BaseManager {
         return req.blockId;
     }
 
-    public int getBlockId(Data key) {
+    public final int getBlockId(Data key) {
         int hash = key.getPartitionHash();
         return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % PARTITION_COUNT;
     }
@@ -2223,8 +2278,8 @@ public class ConcurrentMapManager extends BaseManager {
         return newRecordId++;
     }
 
-    Block getOrCreateBlock(Request req) {
-        return partitionManager.getOrCreateBlock(getBlockId(req));
+    PartitionInfo getOrCreateBlock(Request req) {
+        return partitionManager.getPartition(getBlockId(req));
     }
 
     void evict(final String name, final Data key) {
@@ -2243,7 +2298,7 @@ public class ConcurrentMapManager extends BaseManager {
         });
     }
 
-    CMap getMap(String name) {
+    public CMap getMap(String name) {
         return maps.get(name);
     }
 
@@ -2264,46 +2319,6 @@ public class ConcurrentMapManager extends BaseManager {
             cmap.addListener(key, address, includeValue);
         } else {
             cmap.removeListener(key, address);
-        }
-    }
-    // isMaster should call this method
-
-    boolean sendBlockInfo(Block block, Address address) {
-        return send("mapblock", CONCURRENT_MAP_BLOCK_INFO, block, address);
-    }
-
-    class BlockMigrationCheckHandler extends AbstractOperationHandler {
-        @Override
-        void doOperation(Request request) {
-            request.response = partitionManager.containsMigratingBlock();
-        }
-    }
-
-    class BlocksOperationHandler extends BlockInfoOperationHandler {
-
-        @Override
-        public void process(Packet packet) {
-            Blocks blocks = (Blocks) toObject(packet.getValueData());
-            partitionManager.handleBlocks(blocks);
-            releasePacket(packet);
-        }
-    }
-
-    class BlockInfoOperationHandler implements PacketProcessor {
-
-        public void process(Packet packet) {
-            Block blockInfo = (Block) toObject(packet.getValueData());
-            partitionManager.completeMigration(blockInfo.getBlockId());
-            if (isMaster() && !blockInfo.isMigrating()) {
-                for (MemberImpl member : lsMembers) {
-                    if (!member.localMember()) {
-                        if (!member.getAddress().equals(packet.conn.getEndPoint())) {
-                            sendBlockInfo(new Block(blockInfo), member.getAddress());
-                        }
-                    }
-                }
-            }
-            releasePacket(packet);
         }
     }
 
@@ -3911,10 +3926,6 @@ public class ConcurrentMapManager extends BaseManager {
                     enqueueAndReturn(new Processable() {
                         public void process() {
                             int callerPartitionHash = request.blockId;
-                            int myPartitionHashNow = partitionManager.hashBlocks();
-                            if (callerPartitionHash != myPartitionHashNow) {
-                                request.response = OBJECT_REDO;
-                            }
                             boolean sent = returnResponse(request);
                             if (!sent) {
                                 Connection conn = node.connectionManager.getConnection(request.caller);
@@ -3960,10 +3971,6 @@ public class ConcurrentMapManager extends BaseManager {
                 }
                 enqueueAndReturn(new Processable() {
                     public void process() {
-                        int callerPartitionHash = request.blockId;
-                        if (partitionManager.containsMigratingBlock() || callerPartitionHash != partitionManager.hashBlocks()) {
-                            request.response = OBJECT_REDO;
-                        }
                         boolean sent = returnResponse(request);
                         if (!sent) {
                             Connection conn = node.connectionManager.getConnection(request.caller);

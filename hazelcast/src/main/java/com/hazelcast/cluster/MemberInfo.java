@@ -64,6 +64,10 @@ public class MemberInfo implements DataSerializable {
         }
     }
 
+    public Address getAddress() {
+        return address;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;

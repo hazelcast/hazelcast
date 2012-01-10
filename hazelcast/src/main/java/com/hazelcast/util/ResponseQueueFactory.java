@@ -28,13 +28,14 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class ResponseQueueFactory {
     public static BlockingQueue newResponseQueue() {
-         return new LockBasedResponseQueue();
+        return new LockBasedResponseQueue();
     }
 
     private final static class LockBasedResponseQueue extends AbstractQueue implements BlockingQueue {
         private Object response = null;
         private final Lock lock = new ReentrantLock();
         private final Condition noValue = lock.newCondition();
+        private final static Object NULL = new Object();
 
         public Object take() throws InterruptedException {
             lock.lock();
@@ -75,6 +76,9 @@ public class ResponseQueueFactory {
         }
 
         public boolean offer(Object obj) {
+            if (obj == null) {
+                obj = NULL;
+            }
             lock.lock();
             try {
                 if (response != null) {
@@ -100,12 +104,13 @@ public class ResponseQueueFactory {
 
         /**
          * Internal method, should be called under lock.
+         *
          * @return response
          */
         private Object getAndRemoveResponse() {
-        	final Object value = response;
+            final Object value = response;
             response = null;
-            return value;
+            return (value == NULL) ? null : value;
         }
 
         public int remainingCapacity() {
@@ -199,7 +204,6 @@ public class ResponseQueueFactory {
             if (this.response != null) {
                 return false;
             }
-
             synchronized (lock) {
                 if (this.response != null) {
                     return false;

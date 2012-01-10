@@ -761,8 +761,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
         public int size() {
             mapOperationCounter.incrementOtherOperations();
-            MSize msize = concurrentMapManager.new MSize(name);
-            return msize.getSize();
+//            MSize msize = concurrentMapManager.new MSize(name);
+//            return msize.getSize();
+            return concurrentMapManager.size(name);
         }
 
         public int valueCount(Object key) {

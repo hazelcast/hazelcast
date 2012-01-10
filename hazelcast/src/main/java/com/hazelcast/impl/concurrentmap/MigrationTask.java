@@ -34,27 +34,29 @@ import static com.hazelcast.nio.IOUtil.*;
 
 public class MigrationTask implements Callable<Boolean>, DataSerializable, HazelcastInstanceAware {
     private int partitionId;
+    private int replicaIndex;
     private Data dataRecordSet;
     private HazelcastInstance hazelcast;
 
     public MigrationTask() {
     }
 
-    public MigrationTask(int partitionId, Data dataRecordSet) {
+    public MigrationTask(int partitionId, Data dataRecordSet, int replicaIndex) {
         this.partitionId = partitionId;
         this.dataRecordSet = dataRecordSet;
+        this.replicaIndex = replicaIndex;
     }
 
     public Boolean call() throws Exception {
         Node node = ((FactoryImpl) hazelcast).node;
         RecordSet recordSet = (RecordSet) toObject(dataRecordSet);
-        System.out.println("Owning " + recordSet);
-        node.concurrentMapManager.getClusterPartitionManager().doMigrate(partitionId, recordSet);
+        node.concurrentMapManager.getClusterPartitionManager().doMigrate(replicaIndex, recordSet);
         return Boolean.TRUE;
     }
 
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(partitionId);
+        out.writeInt(replicaIndex);
         byte[] compressed = compress(dataRecordSet.buffer);
         out.writeInt(compressed.length);
         out.write(compressed);
@@ -62,6 +64,7 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
 
     public void readData(DataInput in) throws IOException {
         partitionId = in.readInt();
+        replicaIndex = in.readInt();
         int size = in.readInt();
         byte[] compressed = new byte[size];
         in.readFully(compressed);

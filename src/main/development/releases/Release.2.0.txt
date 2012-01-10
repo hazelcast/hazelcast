@@ -1,0 +1,3 @@
+* New Distributed Partitions
+* Create connection when needed. Disconnection is not a death of member.
+*

@@ -47,12 +47,13 @@ public class ExecutorManager extends BaseManager {
 
     private final ConcurrentMap<Thread, CallContext> mapThreadCallContexts = new ConcurrentHashMap<Thread, CallContext>(100);
 
+    private final ParallelExecutor mapLoaderExecutorService;
     private final ParallelExecutor asyncExecutorService;
     private final NamedExecutorService defaultExecutorService;
     private final NamedExecutorService queryExecutorService;
     private final NamedExecutorService eventExecutorService;
-    private volatile boolean started = false;
 
+    private volatile boolean started = false;
     private static final String DEFAULT_EXECUTOR_SERVICE = "x:default";
     private static final String QUERY_EXECUTOR_SERVICE = "x:hz.query";
     private static final String STORE_EXECUTOR_SERVICE = "x:hz.store";
@@ -90,6 +91,7 @@ public class ExecutorManager extends BaseManager {
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
         eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
+        mapLoaderExecutorService = parallelExecutorService.newParallelExecutor(gp.MAP_LOAD_THREAD_COUNT.getInteger());
         asyncExecutorService = parallelExecutorService.newBlockingParallelExecutor(24, 1000);
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         registerPacketProcessor(CANCEL_EXECUTION, new ExecutionCancelOperationHandler());
@@ -98,6 +100,10 @@ public class ExecutorManager extends BaseManager {
 
     public NamedExecutorService getOrCreateNamedExecutorService(String name) {
         return getOrCreateNamedExecutorService(name, null);
+    }
+
+    public ParallelExecutor getMapLoaderExecutorService() {
+        return mapLoaderExecutorService;
     }
 
     private NamedExecutorService getOrCreateNamedExecutorService(String name, GroupProperties.GroupProperty groupProperty) {
@@ -206,9 +212,9 @@ public class ExecutorManager extends BaseManager {
                 running = true;
                 if (!cancelled) {
                     Callable callable = (Callable) toObject(request.value);
-                    if(callable instanceof SecureCallable) {
-                    	final SecureCallable secureCallable = (SecureCallable) callable;
-                    	secureCallable.setNode(node);
+                    if (callable instanceof SecureCallable) {
+                        final SecureCallable secureCallable = (SecureCallable) callable;
+                        secureCallable.setNode(node);
                     }
                     result = callable.call();
                     result = toData(result);

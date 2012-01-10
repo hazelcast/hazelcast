@@ -19,11 +19,13 @@ package com.hazelcast.impl;
 
 import com.hazelcast.nio.Address;
 
+import java.util.concurrent.atomic.AtomicReferenceArray;
+
 public class PartitionInfo {
-    public static int MAX_REPLICA_COUNT = 7;
-    
-    final int partitionId;
-    final Address[] addresses = new Address[MAX_REPLICA_COUNT];
+    public static final int MAX_REPLICA_COUNT = 7;
+
+    private final int partitionId;
+    private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
 
     public PartitionInfo(int partitionId) {
         this.partitionId = partitionId;
@@ -33,22 +35,78 @@ public class PartitionInfo {
         return partitionId;
     }
 
-    public Address[] getAddresses() {
-        return addresses;
+    public Address getOwner() {
+        return addresses.get(0);
     }
-    
+
+    public void setOwner(Address ownerAddress) {
+        addresses.set(0, ownerAddress);
+    }
+
     public void setReplicaAddress(int index, Address address) {
-        addresses[index] = address;
+        addresses.set(index, address);
     }
-    
+
     public Address getReplicaAddress(int index) {
-        return (addresses != null && addresses.length > index)
-            ? addresses[index] : null;
+        return (addresses != null && addresses.length() > index)
+                ? addresses.get(index) : null;
     }
-    
+
     public PartitionInfo copy() {
         PartitionInfo p = new PartitionInfo(partitionId);
-        System.arraycopy(this.addresses, 0, p.addresses, 0, addresses.length);
+        p.setPartitionInfo(this);
         return p;
+    }
+
+    public void setPartitionInfo(PartitionInfo partitionInfo) {
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            addresses.set(i, partitionInfo.getReplicaAddress(i));
+        }
+    }
+
+    public boolean isBackup(Address address, int backupCount) {
+        int backup = Math.min(backupCount + 1, MAX_REPLICA_COUNT);
+        for (int i = 1; i < backup; i++) {
+            if (address.equals(getReplicaAddress(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isOwnerOrBackup(Address address, int backupCount) {
+        int backup = Math.min(backupCount + 1, MAX_REPLICA_COUNT);
+        for (int i = 0; i < backup; i++) {
+            if (address.equals(getReplicaAddress(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Partition [" + partitionId + "]{\n");
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            Address address = addresses.get(i);
+            if (address != null) {
+                sb.append(i + ":" + address);
+                sb.append("\n");
+            }
+        }
+        sb.append("\n}");
+        return sb.toString();
+    }
+
+    public void onDeadAddress(Address deadAddress) {
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            if (deadAddress.equals(addresses.get(i))) {
+                addresses.set(i, null); // to guarantee that last guy is set to null
+                for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
+                    addresses.set(a, addresses.get(a + 1));
+                }
+                return;
+            }
+        }
     }
 }

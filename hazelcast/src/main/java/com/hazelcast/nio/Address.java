@@ -62,6 +62,10 @@ public final class Address implements DataSerializable {
         port = address.getPort();
     }
 
+    public Address hardCopy() {
+        return new Address(this);
+    }
+
     public Address(String address, int port) throws UnknownHostException {
         this.port = port;
         this.ip = InetAddress.getByName(address).getAddress();

@@ -67,9 +67,9 @@ public class TestUtil {
         to.getPartitionService().addMigrationListener(migrationListener);
         concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
             public void process() {
-                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
-                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
-                concurrentMapManagerOldest.partitionManager.initiateMigration();
+//                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
+//                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
+//                concurrentMapManagerOldest.partitionManager.initiateMigration();
             }
         });
         if (!migrationLatch.await(30, TimeUnit.SECONDS)) {
@@ -104,15 +104,15 @@ public class TestUtil {
         to.getPartitionService().addMigrationListener(migrationListener);
         concurrentMapManagerFrom.enqueueAndReturn(new Processable() {
             public void process() {
-                concurrentMapManagerFrom.partitionManager.MIGRATION_COMPLETE_WAIT_SECONDS = completeWaitSeconds;
+//                concurrentMapManagerFrom.partitionManager.MIGRATION_COMPLETE_WAIT_SECONDS = completeWaitSeconds;
             }
         });
         concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
             public void process() {
-                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
-                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.clear();
-                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
-                concurrentMapManagerOldest.partitionManager.initiateMigration();
+//                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
+//                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.clear();
+//                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
+//                concurrentMapManagerOldest.partitionManager.initiateMigration();
             }
         });
         if (!migrationLatch.await(20, TimeUnit.SECONDS)) {
@@ -153,9 +153,9 @@ public class TestUtil {
         to.getPartitionService().addMigrationListener(migrationListener);
         concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
             public void process() {
-                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
-                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
-                concurrentMapManagerOldest.partitionManager.initiateMigration();
+//                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
+//                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
+//                concurrentMapManagerOldest.partitionManager.initiateMigration();
             }
         });
         if (!migrationLatch.await(20, TimeUnit.SECONDS)) {

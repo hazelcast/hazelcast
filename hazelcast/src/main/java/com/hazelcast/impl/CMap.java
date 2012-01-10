@@ -47,6 +47,7 @@ import java.util.logging.Level;
 import static com.hazelcast.core.Prefix.*;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class CMap {
 
@@ -82,8 +83,6 @@ public class CMap {
     final Node node;
 
     final int PARTITION_COUNT;
-
-    final Block[] blocks;
 
     final Address thisAddress;
 
@@ -162,7 +161,6 @@ public class CMap {
         this.concurrentMapManager = concurrentMapManager;
         this.logger = concurrentMapManager.node.getLogger(CMap.class.getName());
         this.PARTITION_COUNT = concurrentMapManager.PARTITION_COUNT;
-        this.blocks = concurrentMapManager.blocks;
         this.node = concurrentMapManager.node;
         this.thisAddress = concurrentMapManager.thisAddress;
         this.name = name;
@@ -437,14 +435,25 @@ public class CMap {
     }
 
     public void own(DataRecordEntry dataRecordEntry) {
+        System.out.println(thisAddress + "  " + dataRecordEntry.getName() + " owning " + toObject(dataRecordEntry.getKeyData()));
         Record record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
         record.setIndexes(dataRecordEntry.getIndexes(), dataRecordEntry.getIndexTypes());
         record.setVersion(dataRecordEntry.getVersion());
+        mapRecords.put(dataRecordEntry.getKeyData(), record);
         // TODO lock owner should migrate
         markAsActive(record);
         if (record.getValueData() != null) {
             updateIndexes(record);
         }
+    }
+
+    public void storeAsBackup(DataRecordEntry dataRecordEntry) {
+        System.out.println(thisAddress + "  " + dataRecordEntry.getName() + " backup " + toObject(dataRecordEntry.getKeyData()));
+        Record record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
+        record.setVersion(dataRecordEntry.getVersion());
+        mapRecords.put(dataRecordEntry.getKeyData(), record);
+        // TODO lock owner should migrate
+        markAsActive(record);
     }
 
     public void own(Request req) {
@@ -606,107 +615,6 @@ public class CMap {
         }
     }
 
-    private void purgeIfNotOwnedOrBackup(Collection<Record> records) {
-        Map<Address, Integer> mapMemberDistances = new HashMap<Address, Integer>();
-        for (Record record : records) {
-            Block block = blocks[record.getBlockId()];
-            boolean owned = thisAddress.equals(block.getOwner());
-            if (!owned && !block.isMigrating()) {
-                Address owner = (block.isMigrating()) ? block.getMigrationAddress() : block.getOwner();
-                if (owner != null && !thisAddress.equals(owner)) {
-                    int distance;
-                    Integer d = mapMemberDistances.get(owner);
-                    if (d == null) {
-                        distance = concurrentMapManager.getDistance(owner, thisAddress);
-                        mapMemberDistances.put(owner, distance);
-                    } else {
-                        distance = d;
-                    }
-                    if (distance > getBackupCount()) {
-                        mapRecords.remove(record.getKeyData());
-                    }
-                }
-            }
-        }
-    }
-
-    Record getOwnedRecord(Data key) {
-        PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
-        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(concurrentMapManager.getBlockId(key));
-        Member ownerNow = partition.getOwner();
-        if (ownerNow != null && !partition.isMigrating() && ownerNow.localMember()) {
-            return getRecord(key);
-        }
-        return null;
-    }
-
-    boolean isBackup(Record record) {
-        PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
-        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
-        Member ownerNow = partition.getOwner();
-        Member ownerEventual = partition.getEventualOwner();
-        if (ownerEventual != null && ownerNow != null && !ownerNow.localMember()) {
-            int distance = node.getClusterImpl().getDistanceFrom(ownerEventual);
-            return (distance != -1 && distance <= getBackupCount());
-        }
-        return false;
-    }
-
-    public int size() {
-        if (maxIdle > 0 || ttl > 0 || ttlPerRecord || isList() || isMultiMap()) {
-            long now = System.currentTimeMillis();
-            int size = 0;
-            Collection<Record> records = mapIndexService.getOwnedRecords();
-            for (Record record : records) {
-                if (record.isActive() && record.isValid(now)) {
-                    size += record.valueCount();
-                }
-            }
-            return size;
-        } else {
-            return mapIndexService.size();
-        }
-    }
-
-    public boolean hasOwned(long blockId) {
-        Collection<Record> records = mapRecords.values();
-        for (Record record : records) {
-            if (record.getBlockId() == blockId && record.isActive()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void collectScheduledLocks(Map<Object, DistributedLock> lockOwners, Map<Object, DistributedLock> lockRequested) {
-        Collection<Record> records = mapRecords.values();
-        for (Record record : records) {
-            DistributedLock dLock = record.getLock();
-            if (dLock != null && dLock.isLocked()) {
-                List<ScheduledAction> scheduledActions = record.getScheduledActions();
-                if (scheduledActions != null) {
-                    for (ScheduledAction scheduledAction : scheduledActions) {
-                        Request request = scheduledAction.getRequest();
-                        if (ClusterOperation.CONCURRENT_MAP_LOCK.equals(request.operation)) {
-                            lockOwners.put(record.getKey(), dLock);
-                            lockRequested.put(record.getKey(), new DistributedLock(request.lockAddress, request.lockThreadId));
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public int valueCount(Data key) {
-        long now = System.currentTimeMillis();
-        int count = 0;
-        Record record = mapRecords.get(key);
-        if (record != null && record.isValid(now)) {
-            count = record.valueCount();
-        }
-        return count;
-    }
-
     public boolean contains(Request req) {
         Data key = req.key;
         Data value = req.value;
@@ -728,7 +636,7 @@ public class CMap {
             for (Record record : records) {
                 long now = System.currentTimeMillis();
                 if (record.isActive() && record.isValid(now)) {
-                    Block block = blocks[record.getBlockId()];
+                    PartitionInfo block = concurrentMapManager.getPartitionInfo(record.getBlockId());
                     if (thisAddress.equals(block.getOwner())) {
                         if (record.containsValue(value)) {
                             return true;
@@ -747,7 +655,7 @@ public class CMap {
             for (Record record : records) {
                 long now = System.currentTimeMillis();
                 if (record.isActive() && record.isValid(now)) {
-                    Block block = blocks[record.getBlockId()];
+                    PartitionInfo block = concurrentMapManager.getPartitionInfo(record.getBlockId());
                     if (thisAddress.equals(block.getOwner())) {
                         if (record.containsValue(request.value)) {
                             found = true;
@@ -1085,6 +993,107 @@ public class CMap {
         }
     }
 
+    private void purgeIfNotOwnedOrBackup(Collection<Record> records) {
+        PartitionManager partitionManager = concurrentMapManager.getClusterPartitionManager();
+        for (Record record : records) {
+            if (partitionManager.shouldPurge(record.getBlockId())) {
+                mapRecords.remove(record.getKeyData());
+            }
+        }
+    }
+
+    Record getOwnedRecord(Data key) {
+        PartitionServiceImpl partitionService = concurrentMapManager.partitionServiceImpl;
+        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(concurrentMapManager.getBlockId(key));
+        Member ownerNow = partition.getOwner();
+        if (ownerNow != null && !partition.isMigrating() && ownerNow.localMember()) {
+            return getRecord(key);
+        }
+        return null;
+    }
+
+    boolean isBackup(Record record) {
+        PartitionServiceImpl partitionService = concurrentMapManager.partitionServiceImpl;
+        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
+        Member owner = partition.getOwner();
+        if (owner == null) return partition.isMigrating();
+        return !owner.localMember() && partition.isMigrating();
+    }
+
+    public int size2() {
+        if (maxIdle > 0 || ttl > 0 || ttlPerRecord || isList() || isMultiMap()) {
+            long now = System.currentTimeMillis();
+            int size = 0;
+            Collection<Record> records = mapIndexService.getOwnedRecords();
+            for (Record record : records) {
+                if (record.isActive() && record.isValid(now)) {
+                    size += record.valueCount();
+                }
+            }
+            return size;
+        } else {
+            System.out.println("size " + mapIndexService.size());
+            return mapIndexService.size();
+        }
+    }
+
+    public int size() {
+        long now = System.currentTimeMillis();
+        int size = 0;
+        PartitionManager partitionManager = concurrentMapManager.partitionManager;
+        Collection<Record> records = mapRecords.values();
+        for (Record record : records) {
+            PartitionInfo partition = partitionManager.getPartition(record.getBlockId());
+            Address owner = partition.getOwner();
+            if (owner != null && thisAddress.equals(owner)) {
+                if (record.isActive() && record.isValid(now)) {
+                    size += record.valueCount();
+                }
+            }
+        }
+        System.out.println(thisAddress + "  >>> " + size + " >>>   " + mapRecords.size());
+        return size;
+    }
+
+    public boolean hasOwned(long blockId) {
+        Collection<Record> records = mapRecords.values();
+        for (Record record : records) {
+            if (record.getBlockId() == blockId && record.isActive()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void collectScheduledLocks(Map<Object, DistributedLock> lockOwners, Map<Object, DistributedLock> lockRequested) {
+        Collection<Record> records = mapRecords.values();
+        for (Record record : records) {
+            DistributedLock dLock = record.getLock();
+            if (dLock != null && dLock.isLocked()) {
+                List<ScheduledAction> scheduledActions = record.getScheduledActions();
+                if (scheduledActions != null) {
+                    for (ScheduledAction scheduledAction : scheduledActions) {
+                        Request request = scheduledAction.getRequest();
+                        if (ClusterOperation.CONCURRENT_MAP_LOCK.equals(request.operation)) {
+                            lockOwners.put(record.getKey(), dLock);
+                            lockRequested.put(record.getKey(), new DistributedLock(request.lockAddress, request.lockThreadId));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public int valueCount(Data key) {
+        long now = System.currentTimeMillis();
+        int count = 0;
+        Record record = mapRecords.get(key);
+        if (record != null && record.isValid(now)) {
+            count = record.valueCount();
+        }
+        return count;
+    }
+
     LocalMapStatsImpl getLocalMapStats() {
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
         long now = System.currentTimeMillis();
@@ -1100,44 +1109,31 @@ public class CMap {
         long lockWaitCount = 0;
         ClusterImpl clusterImpl = node.getClusterImpl();
         final Collection<Record> records = mapRecords.values();
-        final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
+        final PartitionManager partitionManager = concurrentMapManager.partitionManager;
         for (Record record : records) {
             if (!record.isActive() || !record.isValid(now)) {
                 markedAsRemovedEntryCount++;
                 markedAsRemovedMemoryCost += record.getCost();
             } else {
-                PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
-                Member owner = partition.getOwner();
-                if (owner != null && !partition.isMigrating()) {
-                    boolean owned = owner.localMember();
-                    if (owned) {
-                        if (store != null && record.getLastStoredTime() < Math.max(record.getLastUpdateTime(), record.getCreationTime())) {
-                            dirtyCount++;
-                        }
-                        ownedEntryCount += record.valueCount();
-                        ownedEntryMemoryCost += record.getCost();
-                        localMapStats.setLastAccessTime(record.getLastAccessTime());
-                        localMapStats.setLastUpdateTime(record.getLastUpdateTime());
-                        hits += record.getHits();
-                        if (record.isLocked()) {
-                            lockedEntryCount++;
-                            lockWaitCount += record.getScheduledActionCount();
-                        }
-                    } else {
-                        Member ownerEventual = partition.getEventualOwner();
-                        boolean backup = false;
-                        if (ownerEventual != null && !owner.localMember()) {
-                            int distance = node.getClusterImpl().getDistanceFrom(ownerEventual, true);
-                            backup = (distance != -1 && distance <= getBackupCount());
-                        }
-                        if (backup && !shouldPurgeRecord(record, now)) {
-                            backupEntryCount += record.valueCount();
-                            backupEntryMemoryCost += record.getCost();
-                        } else {
-                            markedAsRemovedEntryCount++;
-                            markedAsRemovedMemoryCost += record.getCost();
-                        }
+                PartitionInfo partition = partitionManager.getPartition(record.getBlockId());
+                Address owner = partition.getOwner();
+                if (owner != null && thisAddress.equals(owner)) {
+                    if (store != null && record.getLastStoredTime() < Math.max(record.getLastUpdateTime(), record.getCreationTime())) {
+                        dirtyCount++;
                     }
+                    ownedEntryCount += record.valueCount();
+                    ownedEntryMemoryCost += record.getCost();
+                    localMapStats.setLastAccessTime(record.getLastAccessTime());
+                    localMapStats.setLastUpdateTime(record.getLastUpdateTime());
+                    hits += record.getHits();
+                    if (record.isLocked()) {
+                        lockedEntryCount++;
+                        lockWaitCount += record.getScheduledActionCount();
+                    }
+                } else if (partition.isBackup(thisAddress, backupCount)) {
+                    if (record.valueCount() <= 0) throw new RuntimeException();
+                    backupEntryCount += record.valueCount();
+                    backupEntryMemoryCost += record.getCost();
                 }
             }
         }
@@ -1191,7 +1187,7 @@ public class CMap {
         if (comparator == null) {
             comparator = new ComparatorWrapper(LRU_COMPARATOR);
         }
-        final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
+        final PartitionServiceImpl partitionService = concurrentMapManager.partitionServiceImpl;
         final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(comparator));
         final Set<Record> recordsToEvict = new HashSet<Record>();
         for (Record record : records) {
@@ -1304,7 +1300,7 @@ public class CMap {
             if (node.getClusterImpl().getMembers().size() < 2) {
                 return maxSize;
             } else {
-                PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
+                PartitionServiceImpl partitionService = concurrentMapManager.partitionServiceImpl;
                 int partitionCount = partitionService.getPartitions().size();
                 int ownedPartitionCount = partitionService.getOwnedPartitionCount();
                 if (partitionCount < 1 || ownedPartitionCount < 1) return maxSize;
@@ -1326,7 +1322,7 @@ public class CMap {
         final Collection<Record> records = mapRecords.values();
         final boolean overCapacity = maxSizePolicy.overCapacity();
         final boolean evictionAware = evictionComparator != null && overCapacity;
-        final PartitionServiceImpl partitionService = concurrentMapManager.partitionManager.partitionServiceImpl;
+        final PartitionServiceImpl partitionService = concurrentMapManager.partitionServiceImpl;
         int recordsStillOwned = 0;
         int backupPurgeCount = 0;
         for (Record record : records) {
@@ -1349,13 +1345,7 @@ public class CMap {
                         recordsStillOwned++;
                     }
                 } else {
-                    Member ownerEventual = partition.getEventualOwner();
-                    boolean backup = false;
-                    if (ownerEventual != null && owner != null && !owner.localMember()) {
-                        int distance = node.getClusterImpl().getDistanceFrom(ownerEventual, true);
-                        backup = (distance != -1 && distance <= getBackupCount());
-                    }
-                    if (backup) {
+                    if (partition.isMigrating()) {  // potential backup
                         if (shouldPurgeRecord(record, now)) {
                             recordsToPurge.add(record);
                             backupPurgeCount++;

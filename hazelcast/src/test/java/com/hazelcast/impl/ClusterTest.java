@@ -24,7 +24,6 @@ import com.hazelcast.examples.TestApp;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
@@ -49,6 +48,9 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Run these tests with
@@ -1387,13 +1389,13 @@ public class ClusterTest {
     @Test(timeout = 60000)
     public void testDataRecovery2() throws Exception {
         final int size = 1000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         IMap map1 = h1.getMap("default");
         for (int i = 0; i < size; i++) {
             map1.put(i, "value" + i);
         }
         assertEquals(size, map1.size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         IMap map2 = h2.getMap("default");
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
@@ -1428,48 +1430,75 @@ public class ClusterTest {
     @Test(timeout = 60000)
     public void testDataRecovery() throws Exception {
         final int size = 1000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         IMap map1 = h1.getMap("default");
         for (int i = 0; i < size; i++) {
             map1.put(i, "value" + i);
         }
         assertEquals(size, map1.size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         IMap map2 = h2.getMap("default");
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
         IMap map3 = h3.getMap("default");
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
         IMap map4 = h4.getMap("default");
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
         assertEquals(size, map4.size());
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map4.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map4.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        sleep(4000);
+        Thread.sleep(4000);
+        long ownedSize = getTotalOwnedEntryCount(map1, map2, map3, map4);
+        long backupSize = getTotalBackupEntryCount(map1, map2, map3, map4);
+        assertEquals(size, ownedSize);
+        assertEquals(size, backupSize);
+        System.out.println("1 " + map1.getLocalMapStats());
+        System.out.println("2 " + map2.getLocalMapStats());
+        System.out.println("3 " + map3.getLocalMapStats());
+        System.out.println("4 " + map4.getLocalMapStats());
         h4.shutdown();
+        sleep(4000);
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
         sleep(4000);
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
+        System.out.println("1 " + map1.getLocalMapStats());
+        System.out.println("2 " + map2.getLocalMapStats());
+        System.out.println("3 " + map3.getLocalMapStats());
+        ownedSize = getTotalOwnedEntryCount(map1, map2, map3);
+        backupSize = getTotalBackupEntryCount(map1, map2, map3);
+        assertEquals(size, ownedSize);
+        assertEquals(size, backupSize);
         h1.shutdown();
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
         sleep(4000);
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
+        ownedSize = getTotalOwnedEntryCount(map2, map3);
+        backupSize = getTotalBackupEntryCount(map2, map3);
+        assertEquals(size, ownedSize);
+        assertEquals(size, backupSize);
         h2.shutdown();
         assertEquals(size, map3.size());
+    }
+
+    private long getTotalOwnedEntryCount(IMap... maps) {
+        long total = 0;
+        for (IMap iMap : maps) {
+            total += iMap.getLocalMapStats().getOwnedEntryCount();
+        }
+        return total;
+    }
+
+    private long getTotalBackupEntryCount(IMap... maps) {
+        long total = 0;
+        for (IMap iMap : maps) {
+            total += iMap.getLocalMapStats().getBackupEntryCount();
+        }
+        return total;
     }
 
     /**
@@ -2604,11 +2633,9 @@ public class ClusterTest {
         if (h2 == null) return;
         final FactoryImpl f1 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h1).getHazelcastInstance();
         final FactoryImpl f2 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h2).getHazelcastInstance();
-
         AddOrRemoveConnection addOrRemoveConnection1 = new AddOrRemoveConnection(f2.node.address, false);
         addOrRemoveConnection1.setNode(f1.node);
         f1.node.clusterManager.enqueueAndWait(addOrRemoveConnection1, 5);
-        
         AddOrRemoveConnection addOrRemoveConnection2 = new AddOrRemoveConnection(f1.node.address, false);
         addOrRemoveConnection2.setNode(f2.node);
         f2.node.clusterManager.enqueueAndWait(addOrRemoveConnection2, 5);

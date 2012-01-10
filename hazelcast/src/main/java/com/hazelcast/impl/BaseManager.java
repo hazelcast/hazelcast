@@ -23,7 +23,10 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
@@ -464,6 +467,14 @@ public abstract class BaseManager {
         }
     }
 
+    protected void handleInterruptedException() {
+        if (node.factory.restarted) {
+            throw new RuntimeException();
+        } else {
+            throw new RuntimeInterruptedException(Thread.currentThread().toString() + " is interrupted.");
+        }
+    }
+
     public abstract class ResponseQueueCall extends RequestBasedCall {
 
         private final BlockingQueue<Object> responses = ResponseQueueFactory.newResponseQueue();
@@ -510,14 +521,6 @@ public abstract class BaseManager {
             }
         }
 
-        private void handleInterruptedException() {
-            if (node.factory.restarted) {
-                throw new RuntimeException();
-            } else {
-                throw new RuntimeInterruptedException(Thread.currentThread().toString() + " is interrupted.");
-            }
-        }
-
         @Override
         public Object getResult() {
             return getRedoAwareResult();
@@ -542,7 +545,7 @@ public abstract class BaseManager {
                                     Connection targetConnection = null;
                                     MemberImpl targetMember = null;
                                     Object key = toObject(reqCopy.key);
-                                    Block block = (reqCopy.key == null) ? null : node.concurrentMapManager.getOrCreateBlock(reqCopy);
+                                    PartitionInfo block = (reqCopy.key == null) ? null : node.concurrentMapManager.getOrCreateBlock(reqCopy);
                                     if (targetCopy != null) {
                                         targetMember = getMember(targetCopy);
                                         targetConnection = node.connectionManager.getConnection(targetCopy);
@@ -1079,6 +1082,7 @@ public abstract class BaseManager {
 
     public void sendEvents(int eventType, String name, Data key, Data value, Map<Address, Boolean> mapListeners, Address callerAddress) {
         if (mapListeners != null) {
+            checkServiceThread();
             final Set<Map.Entry<Address, Boolean>> listeners = mapListeners.entrySet();
             for (final Map.Entry<Address, Boolean> listener : listeners) {
                 final Address toAddress = listener.getKey();
@@ -1254,16 +1258,6 @@ public abstract class BaseManager {
 
     protected boolean releasePacket(Packet packet) {
         return Thread.currentThread() == node.serviceThread && node.serviceThreadPacketQueue.offer(packet);
-    }
-
-    protected boolean send(final String name, final ClusterOperation operation, final DataSerializable ds,
-                           final Address address) {
-        Packet packet = obtainPacket();
-        packet.set(name, operation, null, ds);
-        boolean sent = send(packet, address);
-        if (!sent)
-            releasePacket(packet);
-        return sent;
     }
 
     protected boolean sendResponse(final Packet packet) {
