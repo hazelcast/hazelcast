@@ -17,10 +17,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.merge.AddNewEntryMergePolicy;
-import com.hazelcast.merge.HigherHitsMergePolicy;
-import com.hazelcast.merge.LatestUpdateMergePolicy;
-import com.hazelcast.merge.PassThroughMergePolicy;
+import com.hazelcast.merge.*;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.util.ByteUtil;
 
@@ -90,6 +87,7 @@ public class Config implements DataSerializable {
         addMergePolicyConfig(new MergePolicyConfig(HigherHitsMergePolicy.NAME, new HigherHitsMergePolicy()));
         addMergePolicyConfig(new MergePolicyConfig(LatestUpdateMergePolicy.NAME, new LatestUpdateMergePolicy()));
         addMergePolicyConfig(new MergePolicyConfig(PassThroughMergePolicy.NAME, new PassThroughMergePolicy()));
+        addMergePolicyConfig(new MergePolicyConfig(InvalidatorMergePolicy.NAME, new InvalidatorMergePolicy()));
     }
 
     public void addMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
