@@ -17,10 +17,13 @@
 
 package com.hazelcast.hibernate.access;
 
+import java.util.Comparator;
+
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -32,9 +35,15 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
 
 	protected final ILogger LOG = Logger.getLogger(getClass().getName());
 	private final T hazelcastRegion;
+	protected final Comparator<Object> versionComparator;
 
 	protected AbstractAccessDelegate(final T hazelcastRegion) {
 		this.hazelcastRegion = hazelcastRegion;
+		if (hazelcastRegion instanceof AbstractTransactionalDataRegion) {
+            this.versionComparator = ((AbstractTransactionalDataRegion) hazelcastRegion).getCacheDataDescription().getVersionComparator();
+        } else {
+            this.versionComparator = null;
+        }
 	}
 
 	public final T getHazelcastRegion() {
@@ -43,6 +52,11 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
 
 	public final IMap getCache() {
 		return hazelcastRegion.getCache();
+	}
+	
+	protected boolean putTransient(final Object key, final Object value) {
+	    getCache().putTransient(key, value, 0, null);
+	    return true;
 	}
 	
 	public Object get(final Object key, final long txTimestamp) throws CacheException {

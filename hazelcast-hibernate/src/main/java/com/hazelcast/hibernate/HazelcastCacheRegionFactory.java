@@ -60,22 +60,22 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
 
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
                                                   final CacheDataDescription metadata) throws CacheException {
-        return new HazelcastCollectionRegion(instance, regionName, metadata);
+        return new HazelcastCollectionRegion(instance, regionName, metadata, properties);
     }
 
     public EntityRegion buildEntityRegion(final String regionName, final Properties properties,
                                           final CacheDataDescription metadata) throws CacheException {
-        return new HazelcastEntityRegion(instance, regionName, metadata);
+        return new HazelcastEntityRegion(instance, regionName, metadata, properties);
     }
 
     public QueryResultsRegion buildQueryResultsRegion(final String regionName, final Properties properties)
             throws CacheException {
-        return new HazelcastQueryResultsRegion(instance, regionName);
+        return new HazelcastQueryResultsRegion(instance, regionName, properties);
     }
 
     public TimestampsRegion buildTimestampsRegion(final String regionName, final Properties properties)
             throws CacheException {
-        return new HazelcastTimestampsRegion(instance, regionName);
+        return new HazelcastTimestampsRegion(instance, regionName, properties);
     }
 
     /**

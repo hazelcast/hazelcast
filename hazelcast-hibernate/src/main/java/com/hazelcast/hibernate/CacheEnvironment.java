@@ -35,5 +35,7 @@ public final class CacheEnvironment {
 	
 	public static final String NATIVE_CLIENT_PASSWORD = "hibernate.cache.hazelcast.native_client_password";
 	
+	public static final String LOCK_TIMEOUT = "hibernate.cache.hazelcast.lock_timeout_in_seconds";
 	
+	public static final String EXPLICIT_VERSION_CHECK = "hibernate.cache.hazelcast.explicit_version_check";
 }

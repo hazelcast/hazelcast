@@ -17,6 +17,8 @@
 
 package com.hazelcast.hibernate.region;
 
+import java.util.Properties;
+
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.TransactionalDataRegion;
 
@@ -30,8 +32,9 @@ public abstract class AbstractTransactionalDataRegion extends AbstractHazelcastR
 
     private final CacheDataDescription metadata;
 
-    protected AbstractTransactionalDataRegion(final HazelcastInstance instance, final String regionName, final CacheDataDescription metadata) {
-        super(instance, regionName);
+    protected AbstractTransactionalDataRegion(final HazelcastInstance instance, final String regionName, 
+            final CacheDataDescription metadata, final Properties properties) {
+        super(instance, regionName, properties);
         this.metadata = metadata;
     }
 
@@ -41,7 +44,7 @@ public abstract class AbstractTransactionalDataRegion extends AbstractHazelcastR
     public CacheDataDescription getCacheDataDescription() {
         return metadata;
     }
-
+    
     /**
      * @see org.hibernate.cache.TransactionalDataRegion#isTransactionAware()
      */

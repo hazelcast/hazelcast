@@ -28,6 +28,7 @@ import org.hibernate.util.PropertiesHelper;
 import org.hibernate.util.StringHelper;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.UrlXmlConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
@@ -81,7 +82,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 				throw new CacheException(e);
 			}
 		}
-		
+		config.addMergePolicyConfig(new MergePolicyConfig(VersionAwareMergePolicy.NAME, new VersionAwareMergePolicy()));
 		return Hazelcast.newHazelcastInstance(config);
 	}
 

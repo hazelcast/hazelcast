@@ -17,6 +17,8 @@
 
 package com.hazelcast.hibernate.region;
 
+import java.util.Properties;
+
 import com.hazelcast.core.IMap;
 import org.hibernate.cache.Region;
 
@@ -24,6 +26,10 @@ import org.hibernate.cache.Region;
  * @author Leo Kim (lkim@limewire.com)
  */
 public interface HazelcastRegion extends Region {
+    
     IMap getCache();
+
     void clearCache();
+
+    public Properties getProperties();
 }

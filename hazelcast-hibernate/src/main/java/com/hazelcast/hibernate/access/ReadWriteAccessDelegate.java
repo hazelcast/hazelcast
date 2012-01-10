@@ -17,9 +17,16 @@
 
 package com.hazelcast.hibernate.access;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
+
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
+import org.hibernate.cache.entry.CacheEntry;
+import org.hibernate.util.PropertiesHelper;
 
+import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 
 /**
@@ -29,13 +36,23 @@ import com.hazelcast.hibernate.region.HazelcastRegion;
  */
 public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends AbstractAccessDelegate<T> {
 
+    private final int lockTimeout;
+    private final boolean explicitVersionCheckEnabled ;
+    
 	public ReadWriteAccessDelegate(T hazelcastRegion) {
 		super(hazelcastRegion);
+        lockTimeout = PropertiesHelper.getInt(CacheEnvironment.LOCK_TIMEOUT, hazelcastRegion.getProperties(), 300);
+		explicitVersionCheckEnabled = PropertiesHelper.getBoolean(CacheEnvironment.EXPLICIT_VERSION_CHECK, 
+		        hazelcastRegion.getProperties(), false);
 	}
 
 	public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
-		getCache().put(key, value);
-		return true;
+	    try {
+            return put(key, value, version, null);
+        } catch (TimeoutException e) {
+            LOG.log(Level.FINEST, e.getMessage());
+        }
+        return false;
 	}
 
 	/**
@@ -46,21 +63,57 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
 	public boolean afterUpdate(final Object key, final Object value, final Object currentVersion, final Object previousVersion,
 			final SoftLock lock) throws CacheException {
 		try {
-			getCache().put(key, value);
-		} finally {
+	        return put(key, value, currentVersion, previousVersion);
+		} catch (TimeoutException e) {
+		    LOG.log(Level.FINEST, e.getMessage());
+        } finally {
 			unlockItem(key, lock);
 		}
-		return true;
+		return false;
 	}
 
 	public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version,
 			final boolean minimalPutOverride) throws CacheException {
-		getCache().put(key, value);
-		return true;
+		try {
+            return put(key, value, version, null);
+        } catch (TimeoutException e) {
+            LOG.log(Level.FINEST, e.getMessage());
+        }
+        return false;
+	}
+	
+	private boolean put(final Object key, final Object value, final Object currentVersion, final Object previousVersion) 
+	    throws TimeoutException {
+	    if (versionComparator != null) { 
+            if (explicitVersionCheckEnabled) {
+                final CacheEntry previousEntry = (CacheEntry) getCache().tryLockAndGet(key, 500, TimeUnit.MILLISECONDS);
+                final CacheEntry currentEntry = (CacheEntry) value;
+                if (previousEntry == null || 
+                        versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                    getCache().putAndUnlock(key, value);
+                    return true;
+                } else {
+                    getCache().unlock(key);
+                    return false;
+                }
+            }
+            else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {
+                return putTransient(key, value);
+            }
+            return false;
+        } else {
+            return putTransient(key, value);
+        }
 	}
 
 	public SoftLock lockItem(final Object key, final Object version) throws CacheException {
-		getCache().lock(key);
+	    if(lockTimeout > 0) {
+            if(!getCache().tryLock(key, lockTimeout, TimeUnit.SECONDS)) {
+                throw new CacheException("Cache lock could not be acquired! Wait-time: " + lockTimeout + " seconds");
+            }
+        } else {
+            getCache().lock(key);
+        }
 		return new SoftLock(){}; // dummy lock
 	}
 	
