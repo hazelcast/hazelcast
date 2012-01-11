@@ -22,7 +22,6 @@ import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.examples.TestApp;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
@@ -493,34 +492,6 @@ public class ClusterTest {
         h2.getLifecycleService().shutdown();
         assertEquals(1000, set1.size());
         assertEquals(1000, set3.size());
-    }
-
-    @Test(timeout = 160000)
-    public void testBackupCount() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        IMap map1 = h1.getMap("default");
-        IMap map2 = h2.getMap("default");
-        for (int i = 0; i < 10000; i++) {
-            map1.put(i, i);
-        }
-        assertEquals(map1.getLocalMapStats().getBackupEntryCount(), map2.getLocalMapStats().getOwnedEntryCount());
-        assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-        IMap map3 = h3.getMap("default");
-        final CountDownLatch latch = new CountDownLatch(1);
-        h2.getPartitionService().addMigrationListener(new MigrationListener() {
-            public void migrationStarted(MigrationEvent migrationEvent) {
-            }
-
-            public void migrationCompleted(MigrationEvent migrationEvent) {
-                latch.countDown();
-            }
-        });
-        latch.await();
-        assertEquals(map2.getLocalMapStats().getBackupEntryCount(), map1.getLocalMapStats().getOwnedEntryCount());
-        assertEquals(map1.getLocalMapStats().getBackupEntryCount(), map3.getLocalMapStats().getOwnedEntryCount());
-        assertEquals(map3.getLocalMapStats().getBackupEntryCount(), map2.getLocalMapStats().getOwnedEntryCount());
     }
 
     @Test(timeout = 60000)
@@ -1381,177 +1352,6 @@ public class ClusterTest {
         }
     }
 
-    /**
-     * Fix for the issue 275.
-     *
-     * @throws Exception
-     */
-    @Test(timeout = 60000)
-    public void testDataRecovery2() throws Exception {
-        final int size = 1000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-        IMap map1 = h1.getMap("default");
-        for (int i = 0; i < size; i++) {
-            map1.put(i, "value" + i);
-        }
-        assertEquals(size, map1.size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
-        IMap map2 = h2.getMap("default");
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-        IMap map3 = h3.getMap("default");
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(size, map3.size());
-        sleep(3000);
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        h2.shutdown();
-        assertEquals(size, map1.size());
-        assertEquals(size, map3.size());
-        sleep(3000);
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        h1.shutdown();
-        assertEquals(size, map3.size());
-    }
-
-    /**
-     * Testing if we are losing any data when we start a node
-     * or when we shutdown a node.
-     * <p/>
-     * Before the shutdowns we are waiting 2 seconds so that we will give
-     * remaining members some time to backup their data.
-     */
-    @Test(timeout = 60000)
-    public void testDataRecovery() throws Exception {
-        final int size = 1000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-        IMap map1 = h1.getMap("default");
-        for (int i = 0; i < size; i++) {
-            map1.put(i, "value" + i);
-        }
-        assertEquals(size, map1.size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
-        IMap map2 = h2.getMap("default");
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
-        IMap map3 = h3.getMap("default");
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(size, map3.size());
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
-        IMap map4 = h4.getMap("default");
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(size, map3.size());
-        assertEquals(size, map4.size());
-        Thread.sleep(4000);
-        long ownedSize = getTotalOwnedEntryCount(map1, map2, map3, map4);
-        long backupSize = getTotalBackupEntryCount(map1, map2, map3, map4);
-        assertEquals(size, ownedSize);
-        assertEquals(size, backupSize);
-        System.out.println("1 " + map1.getLocalMapStats());
-        System.out.println("2 " + map2.getLocalMapStats());
-        System.out.println("3 " + map3.getLocalMapStats());
-        System.out.println("4 " + map4.getLocalMapStats());
-        h4.shutdown();
-        sleep(4000);
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(size, map3.size());
-        sleep(4000);
-        System.out.println("1 " + map1.getLocalMapStats());
-        System.out.println("2 " + map2.getLocalMapStats());
-        System.out.println("3 " + map3.getLocalMapStats());
-        ownedSize = getTotalOwnedEntryCount(map1, map2, map3);
-        backupSize = getTotalBackupEntryCount(map1, map2, map3);
-        assertEquals(size, ownedSize);
-        assertEquals(size, backupSize);
-        h1.shutdown();
-        assertEquals(size, map2.size());
-        assertEquals(size, map3.size());
-        sleep(4000);
-        ownedSize = getTotalOwnedEntryCount(map2, map3);
-        backupSize = getTotalBackupEntryCount(map2, map3);
-        assertEquals(size, ownedSize);
-        assertEquals(size, backupSize);
-        h2.shutdown();
-        assertEquals(size, map3.size());
-    }
-
-    private long getTotalOwnedEntryCount(IMap... maps) {
-        long total = 0;
-        for (IMap iMap : maps) {
-            total += iMap.getLocalMapStats().getOwnedEntryCount();
-        }
-        return total;
-    }
-
-    private long getTotalBackupEntryCount(IMap... maps) {
-        long total = 0;
-        for (IMap iMap : maps) {
-            total += iMap.getLocalMapStats().getBackupEntryCount();
-        }
-        return total;
-    }
-
-    /**
-     * Testing correctness of the sizes during migration.
-     * <p/>
-     * Migration happens block by block and after completion of
-     * each block, next block will start migrating after a fixed
-     * time interval. While a block migrating, for the multicall
-     * operations, such as size() and queries, there might be a case
-     * where data is migrated but not counted/queried. To avoid this
-     * hazelcast will compare the block-owners hash. If req.blockId
-     * (which is holding requester's block-owners hash value) is not same
-     * as the target's block-owners hash value, then request will
-     * be re-done.
-     */
-    @Test(timeout = 3600000)
-    public void testDataRecoveryAndCorrectness() throws Exception {
-        final int size = 1000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        TestMigrationListener migrationListener1 = new TestMigrationListener(2, 2);
-        h1.getPartitionService().addMigrationListener(migrationListener1);
-        assertEquals(1, h1.getCluster().getMembers().size());
-        IMap map1 = h1.getMap("default");
-        for (int i = 0; i < size; i++) {
-            map1.put(i, "value" + i);
-        }
-        assertEquals(size, map1.size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        TestMigrationListener migrationListener2 = new TestMigrationListener(2, 2);
-        h2.getPartitionService().addMigrationListener(migrationListener2);
-        IMap map2 = h2.getMap("default");
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-        TestMigrationListener migrationListener3 = new TestMigrationListener(2, 2);
-        h3.getPartitionService().addMigrationListener(migrationListener3);
-        assertEquals(3, h3.getCluster().getMembers().size());
-        IMap map3 = h3.getMap("default");
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
-        TestMigrationListener migrationListener4 = new TestMigrationListener(2, 2);
-        h4.getPartitionService().addMigrationListener(migrationListener4);
-        IMap map4 = h4.getMap("default");
-        for (int i = 0; i < 20000; i++) {
-            assertEquals(size, map1.size());
-            assertEquals(size, map2.size());
-            assertEquals(size, map3.size());
-            assertEquals(size, map4.size());
-        }
-        int waitSeconds = 20;
-        migrationListener1.await(waitSeconds);
-        migrationListener2.await(waitSeconds);
-        migrationListener3.await(waitSeconds);
-        migrationListener4.await(waitSeconds);
-    }
-
     @Test(timeout = 240000)
     public void testExecutorServiceMultiTask() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
@@ -1974,38 +1774,6 @@ public class ClusterTest {
         assertEquals("v1", map1.get("1"));
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         assertNull(map1.get("1"));
-    }
-
-    @Test
-    public void testBackupAndMigrations() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        TestMigrationListener listener1 = new TestMigrationListener(5, 5);
-        h1.getPartitionService().addMigrationListener(listener1);
-        int counter = 5000;
-        Map<Integer, String> map = new HashMap<Integer, String>();
-        for (int i = 0; i < counter; i++) {
-            map.put(i, String.valueOf(i));
-        }
-        IMap map1 = h1.getMap("testIfProperlyBackedUp");
-        map1.putAll(map);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        TestMigrationListener listener2 = new TestMigrationListener(5, 5);
-        h2.getPartitionService().addMigrationListener(listener2);
-        IMap map2 = h2.getMap("testIfProperlyBackedUp");
-        sleep(1000);
-        for (int i = 0; i < 5; i++) {
-            sleep(10000);
-            LocalMapStats mapStats1 = map1.getLocalMapStats();
-            LocalMapStats mapStats2 = map2.getLocalMapStats();
-            if (mapStats1.getOwnedEntryCount() == counter) {
-                sleep(1000);
-            }
-            sleep(1000);
-            assertEquals(mapStats1.getOwnedEntryCount(), mapStats2.getBackupEntryCount());
-            assertEquals("Migrated blocks are not backed up", mapStats2.getOwnedEntryCount(), mapStats1.getBackupEntryCount());
-        }
-        assertTrue(listener1.await(15));
-        assertTrue(listener2.await(15));
     }
 
     @Test(timeout = 25000, expected = MemberLeftException.class)

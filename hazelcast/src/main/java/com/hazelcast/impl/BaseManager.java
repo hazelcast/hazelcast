@@ -1143,35 +1143,6 @@ public abstract class BaseManager {
         return node.getMasterAddress();
     }
 
-    protected MemberImpl getBackupMember(final Address owner, final int distance) {
-        final int size = lsMembers.size();
-        if (size <= 1)
-            return null;
-        Integer indexOfMember = mapStorageMemberIndexes.get(owner);
-        if (indexOfMember == null) {
-            for (int i = 0; i < size; i++) {
-                final MemberImpl member = lsMembers.get(i);
-                if (member.getAddress().equals(owner)) {
-                    indexOfMember = Integer.valueOf(i);
-                    mapStorageMemberIndexes.put(owner, indexOfMember);
-                }
-            }
-        }
-        if (indexOfMember == null)
-            return null;
-        int foundDistance = 0;
-        for (int i = indexOfMember.intValue(); i < size + indexOfMember; i++) {
-            final MemberImpl member = lsMembers.get((1 + i) % size);
-            if (!member.isSuperClient()) {
-                foundDistance++;
-            }
-            if (foundDistance == distance) {
-                return member;
-            }
-        }
-        return null;
-    }
-
     protected MemberImpl getNextMemberAfter(final Address address,
                                             final boolean skipSuperClient,
                                             final int distance) {
@@ -1205,33 +1176,6 @@ public abstract class BaseManager {
             }
         }
         return null;
-    }
-
-    protected int getMemberIndexOf(Address address) {
-        final int size = lsMembers.size();
-        for (int i = 0; i < size; i++) {
-            final MemberImpl member = lsMembers.get(i);
-            if (member.getAddress().equals(address)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    protected int getDistance(Address from, Address to) {
-        int fromIndex = getMemberIndexOf(from);
-        int toIndex = getMemberIndexOf(to);
-        if (fromIndex == -1 || toIndex == -1) {
-            return -1;
-        }
-        int size = lsMembers.size();
-        return ((toIndex - fromIndex) + size) % size;
-    }
-
-    protected MemberImpl getNextMemberBeforeSync(final Address address,
-                                                 final boolean skipSuperClient, final int distance) {
-        return getNextMemberAfter(node.clusterManager.getMembersBeforeSync(), address,
-                skipSuperClient, distance);
     }
 
     protected boolean isMaster() {

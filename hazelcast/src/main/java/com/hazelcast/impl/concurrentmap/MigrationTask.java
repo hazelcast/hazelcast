@@ -50,7 +50,7 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
     public Boolean call() throws Exception {
         Node node = ((FactoryImpl) hazelcast).node;
         RecordSet recordSet = (RecordSet) toObject(dataRecordSet);
-        node.concurrentMapManager.getClusterPartitionManager().doMigrate(replicaIndex, recordSet);
+        node.concurrentMapManager.getPartitionManager().doMigrate(replicaIndex, recordSet);
         return Boolean.TRUE;
     }
 

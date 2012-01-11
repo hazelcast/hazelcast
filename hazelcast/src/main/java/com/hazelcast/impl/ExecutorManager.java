@@ -62,6 +62,8 @@ public class ExecutorManager extends BaseManager {
     private final ParallelExecutorService parallelExecutorService;
     private final ThreadPoolExecutor threadPoolExecutor;
     private final ConcurrentMap<ExecutionKey, RequestExecutor> executions = new ConcurrentHashMap<ExecutionKey, RequestExecutor>(100);
+    private final ScheduledThreadPoolExecutor esScheduled = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
+
     final AtomicLong executionIdGen = new AtomicLong();
 
     ExecutorManager(final Node node) {
@@ -100,6 +102,10 @@ public class ExecutorManager extends BaseManager {
 
     public NamedExecutorService getOrCreateNamedExecutorService(String name) {
         return getOrCreateNamedExecutorService(name, null);
+    }
+
+    public ScheduledThreadPoolExecutor getScheduledExecutorService() {
+        return esScheduled;
     }
 
     public ParallelExecutor getMapLoaderExecutorService() {

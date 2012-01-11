@@ -32,7 +32,7 @@ public class PartitionStateGenerator {
     public PartitionInfo[] initialize(final List<MemberImpl> members, final int partitionCount) {
         final PartitionInfo[] newState = new PartitionInfo[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
-            newState[i] = new PartitionInfo(i);
+            newState[i] = new PartitionInfo(i, null);
         }
         int tryCount = 0;
         do {

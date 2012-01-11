@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
@@ -37,7 +36,6 @@ public class PartitionServiceImpl implements PartitionService {
     private final ConcurrentMap<Integer, PartitionProxy> mapPartitions = new ConcurrentHashMap<Integer, PartitionProxy>();
     private final List<MigrationListener> lsMigrationListeners = new CopyOnWriteArrayList<MigrationListener>();
     private final ConcurrentMapManager concurrentMapManager;
-    private final AtomicLong partitionVersion = new AtomicLong();
     private final Set<Partition> partitions;
     private volatile int ownedPartitionCount = -1;
 
@@ -106,7 +104,6 @@ public class PartitionServiceImpl implements PartitionService {
     }
 
     void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
-        partitionVersion.incrementAndGet();
         if (migrationEvent == null) throw new IllegalArgumentException("MigrationEvent is null.");
         for (final MigrationListener migrationListener : lsMigrationListeners) {
             concurrentMapManager.executeLocally(new Runnable() {

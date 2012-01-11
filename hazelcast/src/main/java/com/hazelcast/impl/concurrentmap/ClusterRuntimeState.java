@@ -36,11 +36,13 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
     private ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
     private ArrayList<ShortPartitionInfo> partitionInfos = new ArrayList<ShortPartitionInfo>(271);
     private long masterTime = System.currentTimeMillis();
+    private int version;
 
     public ClusterRuntimeState(final Collection<MemberInfo> memberInfos,
                                final PartitionInfo[] partitions,
-                               final long masterTime) {
+                               final long masterTime, int version) {
         this.masterTime = masterTime;
+        this.version = version;
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(memberInfos.size());
         int memberIndex = 0;
         for (MemberInfo memberInfo : memberInfos) {
@@ -75,8 +77,8 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
     }
 
     public void process() {
-        PartitionManager partitionManager = node.concurrentMapManager.getClusterPartitionManager();
-        partitionManager.setPartitions(getPartitions());
+        PartitionManager partitionManager = node.concurrentMapManager.getPartitionManager();
+        partitionManager.setClusterRuntimeState(this);
     }
 
     public PartitionInfo[] getPartitions() {
@@ -84,7 +86,7 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
         PartitionInfo[] partitions = new PartitionInfo[size];
         for (int i = 0; i < size; i++) {
             ShortPartitionInfo spi = partitionInfos.get(i);
-            PartitionInfo partition = new PartitionInfo(spi.partitionId);
+            PartitionInfo partition = new PartitionInfo(spi.partitionId, null);
             int[] addressIndexes = spi.addressIndexes;
             for (int c = 0; c < addressIndexes.length; c++) {
                 int index = addressIndexes[c];
@@ -100,6 +102,7 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
     @Override
     public void readData(DataInput in) throws IOException {
         masterTime = in.readLong();
+        version = in.readInt();
         int size = in.readInt();
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(size);
         int memberIndex = 0;
@@ -120,6 +123,7 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
     @Override
     public void writeData(DataOutput out) throws IOException {
         out.writeLong(masterTime);
+        out.writeInt(version);
         int memberSize = members.size();
         out.writeInt(memberSize);
         for (int i = 0; i < memberSize; i++) {
@@ -134,12 +138,16 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("MembersUpdateCall {\n");
+        StringBuilder sb = new StringBuilder("ClusterRuntimeState [" + version + "]{\n");
         for (MemberInfo address : members) {
             sb.append(address).append('\n');
         }
         sb.append('}');
         return sb.toString();
+    }
+
+    public int getVersion() {
+        return version;
     }
 
     class ShortPartitionInfo implements DataSerializable {

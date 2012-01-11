@@ -78,7 +78,7 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
     public Boolean call() throws Exception {
         if (from.equals(to)) return Boolean.TRUE;
         Node node = ((FactoryImpl) hazelcast).node;
-        PartitionManager pm = node.concurrentMapManager.getClusterPartitionManager();
+        PartitionManager pm = node.concurrentMapManager.getPartitionManager();
         try {
             Member target = pm.getMember(to);
             if (target == null) return Boolean.FALSE;
@@ -91,7 +91,6 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
             Future future = node.factory.getExecutorService().submit(task);
             return (Boolean) future.get(400, TimeUnit.SECONDS);
         } catch (Throwable e) {
-            e.printStackTrace();
             return Boolean.FALSE;
         }
     }

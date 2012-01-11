@@ -47,7 +47,6 @@ import java.util.logging.Level;
 import static com.hazelcast.core.Prefix.*;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class CMap {
 
@@ -435,7 +434,7 @@ public class CMap {
     }
 
     public void own(DataRecordEntry dataRecordEntry) {
-        System.out.println(thisAddress + "  " + dataRecordEntry.getName() + " owning " + toObject(dataRecordEntry.getKeyData()));
+//        System.out.println(thisAddress + "  " + dataRecordEntry.getName() + " owning " + toObject(dataRecordEntry.getKeyData()));
         Record record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
         record.setIndexes(dataRecordEntry.getIndexes(), dataRecordEntry.getIndexTypes());
         record.setVersion(dataRecordEntry.getVersion());
@@ -448,7 +447,7 @@ public class CMap {
     }
 
     public void storeAsBackup(DataRecordEntry dataRecordEntry) {
-        System.out.println(thisAddress + "  " + dataRecordEntry.getName() + " backup " + toObject(dataRecordEntry.getKeyData()));
+//        System.out.println(thisAddress + "  " + dataRecordEntry.getName() + " backup " + toObject(dataRecordEntry.getKeyData()));
         Record record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
         record.setVersion(dataRecordEntry.getVersion());
         mapRecords.put(dataRecordEntry.getKeyData(), record);
@@ -994,7 +993,7 @@ public class CMap {
     }
 
     private void purgeIfNotOwnedOrBackup(Collection<Record> records) {
-        PartitionManager partitionManager = concurrentMapManager.getClusterPartitionManager();
+        PartitionManager partitionManager = concurrentMapManager.getPartitionManager();
         for (Record record : records) {
             if (partitionManager.shouldPurge(record.getBlockId())) {
                 mapRecords.remove(record.getKeyData());
@@ -1020,7 +1019,7 @@ public class CMap {
         return !owner.localMember() && partition.isMigrating();
     }
 
-    public int size2() {
+    public int size() {
         if (maxIdle > 0 || ttl > 0 || ttlPerRecord || isList() || isMultiMap()) {
             long now = System.currentTimeMillis();
             int size = 0;
@@ -1037,10 +1036,11 @@ public class CMap {
         }
     }
 
-    public int size() {
+    public int size(int expectedPartitionVersion) {
+        PartitionManager partitionManager = concurrentMapManager.partitionManager;
+        if (partitionManager.getVersion() != expectedPartitionVersion) return -1;
         long now = System.currentTimeMillis();
         int size = 0;
-        PartitionManager partitionManager = concurrentMapManager.partitionManager;
         Collection<Record> records = mapRecords.values();
         for (Record record : records) {
             PartitionInfo partition = partitionManager.getPartition(record.getBlockId());
@@ -1052,6 +1052,7 @@ public class CMap {
             }
         }
         System.out.println(thisAddress + "  >>> " + size + " >>>   " + mapRecords.size());
+        if (partitionManager.getVersion() != expectedPartitionVersion) return -1;
         return size;
     }
 
@@ -1872,7 +1873,7 @@ public class CMap {
 
     @Override
     public String toString() {
-        return "CMap [" + getName() + "] size=" + size();
+        return "CMap [" + getName() + "]";
     }
 
     /**

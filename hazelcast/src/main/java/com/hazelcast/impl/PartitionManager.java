@@ -26,12 +26,13 @@ import com.hazelcast.impl.concurrentmap.ClusterRuntimeState;
 import com.hazelcast.impl.concurrentmap.MigrationRequestTask;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.MigrationEvent;
 
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class PartitionManager {
@@ -41,7 +42,8 @@ public class PartitionManager {
     private final PartitionInfo[] partitions;
     private final Map<Integer, PartitionInfo> mapActiveMigrations = new HashMap<Integer, PartitionInfo>(271);
     private boolean initialized = false;
-    private final ScheduledThreadPoolExecutor esMigrationService = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(1);
+    private final ThreadPoolExecutor esMigrationService = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(1);
+    private final AtomicInteger version = new AtomicInteger();
 
     public PartitionManager(final ConcurrentMapManager concurrentMapManager) {
         this.PARTITION_COUNT = concurrentMapManager.getPartitionCount();
@@ -49,16 +51,21 @@ public class PartitionManager {
         this.logger = concurrentMapManager.node.getLogger(PartitionManager.class.getName());
         this.partitions = new PartitionInfo[PARTITION_COUNT];
         for (int i = 0; i < PARTITION_COUNT; i++) {
-            this.partitions[i] = new PartitionInfo(i);
+            this.partitions[i] = new PartitionInfo(i, new ChangeListener() {
+                public void stateChanged(ChangeEvent e) {
+                    if (!concurrentMapManager.isMaster()) return;
+                    version.incrementAndGet();
+                }
+            });
         }
-        esMigrationService.scheduleAtFixedRate(new Runnable() {
+        concurrentMapManager.node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
-                concurrentMapManager.enqueueAndWait(new Processable() {
+                concurrentMapManager.enqueueAndReturn(new Processable() {
                     public void process() {
                         if (!concurrentMapManager.node.isActive()) return;
                         sendClusterRuntimeState();
                     }
-                }, 1000);
+                });
             }
         }, 5, 5, TimeUnit.SECONDS);
     }
@@ -82,20 +89,12 @@ public class PartitionManager {
         return mapActiveMigrations.containsKey(partitionId);
     }
 
-    public void invalidateMigratedRecords(List<Record> migratedRecords) {
-        for (Record migratedRecord : migratedRecords) {
-            CMap cmap = concurrentMapManager.getMap(migratedRecord.getName());
-            cmap.onMigrate(migratedRecord);
-            cmap.markAsEvicted(migratedRecord);
-        }
-    }
-
     public List<Record> getActivePartitionRecords(final int partitionId, final int replicaIndex, final Address newAddress) {
         concurrentMapManager.enqueueAndWait(new Processable() {
             public void process() {
                 PartitionInfo migratingPartition = mapActiveMigrations.get(partitionId);
                 if (migratingPartition == null) {
-                    migratingPartition = new PartitionInfo(partitionId);
+                    migratingPartition = new PartitionInfo(partitionId, null);
                     mapActiveMigrations.put(partitionId, migratingPartition);
                 }
                 migratingPartition.setReplicaAddress(replicaIndex, newAddress);
@@ -133,7 +132,6 @@ public class PartitionManager {
                         // backup
                         cmap.storeAsBackup(dataRecordEntry);
                     }
-                    System.out.println(concurrentMapManager.getThisAddress() + " now size  " + cmap.mapRecords.size());
                 }
             }
         }, 200);
@@ -175,6 +173,17 @@ public class PartitionManager {
     }
 
     public void syncForDead(MemberImpl deadMember) {
+        if (initialized) {
+            esMigrationService.getQueue().clear();
+        }
+        int maxBackupCount = 0;
+        for (final CMap cmap : concurrentMapManager.maps.values()) {
+            maxBackupCount = Math.max(maxBackupCount, cmap.getBackupCount());
+        }
+        int[] indexesOfDead = new int[partitions.length];
+        for (PartitionInfo partition : partitions) {
+            indexesOfDead[partition.getPartitionId()] = partition.getReplicaIndexOf(deadMember.getAddress());
+        }
         Address deadAddress = deadMember.getAddress();
         for (PartitionInfo partition : partitions) {
             partition.onDeadAddress(deadAddress);
@@ -183,8 +192,7 @@ public class PartitionManager {
         if (deadAddress == null || deadAddress.equals(thisAddress)) {
             return;
         }
-        Collection<CMap> cmaps = concurrentMapManager.maps.values();
-        for (CMap cmap : cmaps) {
+        for (CMap cmap : concurrentMapManager.maps.values()) {
             cmap.onDisconnect(deadAddress);
             Object[] records = cmap.mapRecords.values().toArray();
             for (Object recordObject : records) {
@@ -205,10 +213,26 @@ public class PartitionManager {
             }
         }
         if (concurrentMapManager.isMaster()) {
-            System.out.println("-====== NOW ====");
-            System.out.println(this);
+            for (int i = 0; i < indexesOfDead.length; i++) {
+                int indexOfDead = indexesOfDead[i];
+                if (indexOfDead != -1) {
+                    PartitionInfo partition = partitions[i];
+                    if (indexOfDead <= maxBackupCount) {
+                        Address owner = partition.getOwner();
+                        Address target = partition.getReplicaAddress(maxBackupCount);
+                        if (owner != null && target != null) {
+                            MigrationRequestTask mrt = new MigrationRequestTask(i, owner, target, maxBackupCount, false);
+                            esMigrationService.execute(new Migrator(mrt));
+                        }
+                    }
+                }
+            }
             sendClusterRuntimeState();
-            initRepartitioning();
+            esMigrationService.execute(new Runnable() {
+                public void run() {
+                    initRepartitioning();
+                }
+            });
         }
     }
 
@@ -235,6 +259,22 @@ public class PartitionManager {
         }
     }
 
+    void fireMigrationEvent(final boolean started, int partitionId, Address from, Address to) {
+        final MemberImpl current = concurrentMapManager.getMember(from);
+        final MemberImpl newOwner = concurrentMapManager.getMember(to);
+        final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, partitionId, current, newOwner);
+        concurrentMapManager.partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
+    }
+
+    public int getVersion() {
+        return version.get();
+    }
+
+    public void setClusterRuntimeState(ClusterRuntimeState clusterRuntimeState) {
+        setPartitions(clusterRuntimeState.getPartitions());
+        version.set(clusterRuntimeState.getVersion());
+    }
+
     class Migrator implements Runnable {
         final MigrationRequestTask migrationRequestTask;
 
@@ -245,6 +285,14 @@ public class PartitionManager {
         public void run() {
             try {
                 if (!concurrentMapManager.node.isActive()) return;
+                if (migrationRequestTask.isMigration() && migrationRequestTask.getReplicaIndex() == 0) {
+                    concurrentMapManager.enqueueAndWait(new Processable() {
+                        public void process() {
+                            concurrentMapManager.sendMigrationEvent(true, migrationRequestTask);
+                        }
+                    }, 100);
+                }
+                System.out.println("Migrating " + migrationRequestTask);
                 Member fromMember = getMember(migrationRequestTask.getFromAddress());
                 DistributedTask task = new DistributedTask(migrationRequestTask, fromMember);
                 Future future = concurrentMapManager.node.factory.getExecutorService().submit(task);
@@ -267,6 +315,7 @@ public class PartitionManager {
                                     if (ownerMember != null) {
                                         concurrentMapManager.partitionServiceImpl.setOwner(partition.getPartitionId(), ownerMember);
                                     }
+                                    concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
                                 }
                                 checkCurrentMigrations(partition);
                                 sendClusterRuntimeState();
@@ -274,24 +323,21 @@ public class PartitionManager {
                         }
                     }, 10000);
                 }
-            } catch (Throwable e) {
-                e.printStackTrace();
+            } catch (Throwable ignored) {
             }
         }
     }
 
     public void sendClusterRuntimeState() {
+        if (!concurrentMapManager.isMaster()) return;
         long clusterTime = concurrentMapManager.node.getClusterImpl().getClusterTime();
         List<MemberImpl> lsMembers = concurrentMapManager.lsMembers;
         ArrayList<MemberInfo> memberInfos = new ArrayList<MemberInfo>(lsMembers.size());
         for (MemberImpl member : lsMembers) {
             memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType(), member.getUuid()));
         }
-        for (MemberImpl member : concurrentMapManager.getMembers()) {
-            if (!member.localMember()) {
-                concurrentMapManager.sendProcessableToAll(new ClusterRuntimeState(memberInfos, partitions, clusterTime), false);
-            }
-        }
+        ClusterRuntimeState crs = new ClusterRuntimeState(memberInfos, partitions, clusterTime, version.get());
+        concurrentMapManager.sendProcessableToAll(crs, false);
     }
 
     public boolean shouldPurge(int partitionId) {

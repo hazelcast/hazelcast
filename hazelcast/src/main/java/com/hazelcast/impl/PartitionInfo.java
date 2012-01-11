@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.nio.Address;
 
+import javax.swing.event.ChangeListener;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class PartitionInfo {
@@ -26,9 +27,15 @@ public class PartitionInfo {
 
     private final int partitionId;
     private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
+    private final ChangeListener changeListener;
+
+    public PartitionInfo(int partitionId, ChangeListener changeListener) {
+        this.partitionId = partitionId;
+        this.changeListener = changeListener;
+    }
 
     public PartitionInfo(int partitionId) {
-        this.partitionId = partitionId;
+        this(partitionId, null);
     }
 
     public int getPartitionId() {
@@ -40,10 +47,22 @@ public class PartitionInfo {
     }
 
     public void setOwner(Address ownerAddress) {
-        addresses.set(0, ownerAddress);
+        setReplicaAddress(0, ownerAddress);
     }
 
     public void setReplicaAddress(int index, Address address) {
+        if (changeListener != null) {
+            Address currentAddress = addresses.get(index);
+            boolean changed;
+            if (currentAddress == null) {
+                changed = (address != null);
+            } else {
+                changed = !currentAddress.equals(address);
+            }
+            if (changed) {
+                changeListener.stateChanged(null);
+            }
+        }
         addresses.set(index, address);
     }
 
@@ -53,14 +72,14 @@ public class PartitionInfo {
     }
 
     public PartitionInfo copy() {
-        PartitionInfo p = new PartitionInfo(partitionId);
+        PartitionInfo p = new PartitionInfo(partitionId, changeListener);
         p.setPartitionInfo(this);
         return p;
     }
 
     public void setPartitionInfo(PartitionInfo partitionInfo) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            addresses.set(i, partitionInfo.getReplicaAddress(i));
+            setReplicaAddress(i, partitionInfo.getReplicaAddress(i));
         }
     }
 
@@ -101,12 +120,41 @@ public class PartitionInfo {
     public void onDeadAddress(Address deadAddress) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             if (deadAddress.equals(addresses.get(i))) {
-                addresses.set(i, null); // to guarantee that last guy is set to null
+                setReplicaAddress(i, null); // to guarantee that last guy is set to null
                 for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
-                    addresses.set(a, addresses.get(a + 1));
+                    setReplicaAddress(a, addresses.get(a + 1));
                 }
                 return;
             }
         }
+    }
+
+    public int getReplicaIndexOf(Address address) {
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            if (address.equals(addresses.get(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PartitionInfo that = (PartitionInfo) o;
+        if (partitionId != that.partitionId) return false;
+        if (addresses != null ? !addresses.equals(that.addresses) : that.addresses != null) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = partitionId;
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            Address address = addresses.get(i);
+            result = 31 * result + (address != null ? address.hashCode() : 0);
+        }
+        return result;
     }
 }

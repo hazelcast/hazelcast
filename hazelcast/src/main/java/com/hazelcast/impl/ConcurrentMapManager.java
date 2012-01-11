@@ -17,6 +17,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.core.*;
@@ -168,7 +169,7 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(SEMAPHORE_TRY_ACQUIRE, new SemaphoreTryAcquireOperationHandler());
     }
 
-    public PartitionManager getClusterPartitionManager() {
+    public PartitionManager getPartitionManager() {
         return partitionManager;
     }
 
@@ -446,6 +447,45 @@ public class ConcurrentMapManager extends BaseManager {
 
     public PartitionInfo getPartitionInfo(int partitionId) {
         return partitionManager.getPartition(partitionId);
+    }
+
+    public void sendMigrationEvent(boolean started, MigrationRequestTask migrationRequestTask) {
+        sendProcessableToAll(new MigrationNotification(started, migrationRequestTask), true);
+    }
+
+    public static class MigrationNotification extends AbstractRemotelyProcessable {
+        MigrationRequestTask migrationRequestTask;
+        boolean started;
+
+        public MigrationNotification() {
+        }
+
+        public MigrationNotification(boolean started, MigrationRequestTask migrationRequestTask) {
+            this.started = started;
+            this.migrationRequestTask = migrationRequestTask;
+        }
+
+        public void process() {
+            Address from = migrationRequestTask.getFromAddress();
+            Address to = migrationRequestTask.getToAddress();
+            int partitionId = migrationRequestTask.getPartitionId();
+            node.concurrentMapManager.partitionManager.fireMigrationEvent(started, partitionId, from, to);
+        }
+
+        @Override
+        public void readData(DataInput in) throws IOException {
+            super.readData(in);
+            migrationRequestTask = new MigrationRequestTask();
+            migrationRequestTask.readData(in);
+            started = in.readBoolean();
+        }
+
+        @Override
+        public void writeData(DataOutput out) throws IOException {
+            super.writeData(out);
+            migrationRequestTask.writeData(out);
+            out.writeBoolean(started);
+        }
     }
 
     class MLock extends MBackupAndMigrationAwareOp {
@@ -807,14 +847,15 @@ public class ConcurrentMapManager extends BaseManager {
         for (int i = 0; i < 10; i++) {
             try {
                 return trySize(name);
-            } catch (ExecutionException e) {
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    handleInterruptedException();
+                }
                 try {
                     Thread.sleep(redoWaitMillis);
                 } catch (InterruptedException e1) {
                     handleInterruptedException();
                 }
-            } catch (InterruptedException e) {
-                handleInterruptedException();
             }
         }
         throw new RuntimeException("Couldn't finalized the size operation[" + name + "]");
@@ -824,9 +865,10 @@ public class ConcurrentMapManager extends BaseManager {
         int totalSize = 0;
         Set<Member> members = node.getClusterImpl().getMembers();
         List<Future<Integer>> lsFutures = new ArrayList<Future<Integer>>();
+        int expectedPartitionVersion = partitionManager.getVersion();
         for (Member member : members) {
             if (!member.isLiteMember()) {
-                MapSizeCallable callable = new MapSizeCallable(name);
+                MapSizeCallable callable = new MapSizeCallable(name, expectedPartitionVersion);
                 DistributedTask<Integer> dt = new DistributedTask<Integer>(callable, member);
                 lsFutures.add(dt);
                 node.factory.getExecutorService(BATCH_OPS_EXECUTOR_NAME).execute(dt);
@@ -835,6 +877,9 @@ public class ConcurrentMapManager extends BaseManager {
         for (Future<Integer> future : lsFutures) {
             Integer partialSize = future.get();
             if (partialSize != null) {
+                if (partialSize == -1) {
+                    throw new IllegalStateException("Unexpected partition version!");
+                }
                 totalSize += partialSize;
             }
         }

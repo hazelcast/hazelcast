@@ -35,10 +35,12 @@ class TestMigrationListener implements MigrationListener {
     }
 
     public void migrationStarted(MigrationEvent migrationEvent) {
+//        System.out.println(latchStarted.getCount() + " started " + migrationEvent);
         latchStarted.countDown();
     }
 
     public void migrationCompleted(MigrationEvent migrationEvent) {
+//        System.out.println(latchCompleted.getCount() + " completed " + migrationEvent);
         latchCompleted.countDown();
     }
 
@@ -50,5 +52,13 @@ class TestMigrationListener implements MigrationListener {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "TestMigrationListener{" +
+                "latchStarted=" + latchStarted.getCount() +
+                ", latchCompleted=" + latchCompleted.getCount() +
+                '}';
     }
 }

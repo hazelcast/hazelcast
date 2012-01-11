@@ -29,11 +29,13 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 
 public class MapSizeCallable implements Callable<Integer>, DataSerializable, HazelcastInstanceAware {
+    private int partitionVersion;
     private String mapName;
     private transient HazelcastInstance hazelcast;
 
-    public MapSizeCallable(String mapName) {
+    public MapSizeCallable(String mapName, int partitionVersion) {
         this.mapName = mapName;
+        this.partitionVersion = partitionVersion;
     }
 
     public MapSizeCallable() {
@@ -43,15 +45,17 @@ public class MapSizeCallable implements Callable<Integer>, DataSerializable, Haz
         FactoryImpl factory = (FactoryImpl) hazelcast;
         CMap cmap = factory.node.concurrentMapManager.getMap(mapName);
         if (cmap == null) return 0;
-        return cmap.size();
+        return cmap.size(partitionVersion);
     }
 
     public void writeData(DataOutput out) throws IOException {
         out.writeUTF(mapName);
+        out.writeInt(partitionVersion);
     }
 
     public void readData(DataInput in) throws IOException {
         mapName = in.readUTF();
+        partitionVersion = in.readInt();
     }
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
