@@ -147,7 +147,7 @@ public class PartitionManager {
 
     public void firstArrangement() {
         if (!concurrentMapManager.isMaster()) return;
-        PartitionStateGenerator psg = new PartitionStateGenerator();
+        PartitionStateGenerator psg = PartitionStateGeneratorFactory.newRandomPartitionStateGenerator();
         PartitionInfo[] newState = psg.initialize(concurrentMapManager.lsMembers, PARTITION_COUNT);
         for (PartitionInfo partitionInfo : newState) {
             partitions[partitionInfo.getPartitionId()].setPartitionInfo(partitionInfo);
@@ -244,10 +244,10 @@ public class PartitionManager {
         if (concurrentMapManager.isMaster()) {
             if (initialized) {
                 esMigrationService.getQueue().clear();
-                PartitionStateGenerator psg = new PartitionStateGenerator();
+                PartitionStateGenerator psg = PartitionStateGeneratorFactory.newRandomPartitionStateGenerator();
                 Queue<MigrationRequestTask> migrationQ = new LinkedList<MigrationRequestTask>();
                 Queue<MigrationRequestTask> replicaQ = new LinkedList<MigrationRequestTask>();
-                psg.arrange(partitions, concurrentMapManager.lsMembers, PARTITION_COUNT, migrationQ, replicaQ);
+                psg.reArrange(partitions, concurrentMapManager.lsMembers, PARTITION_COUNT, migrationQ, replicaQ);
                 for (MigrationRequestTask migrationRequestTask : replicaQ) {
                     esMigrationService.execute(new Migrator(migrationRequestTask));
                 }
