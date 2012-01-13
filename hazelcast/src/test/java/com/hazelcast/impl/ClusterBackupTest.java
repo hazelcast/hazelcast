@@ -27,8 +27,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.impl.TestUtil.getConcurrentMapManager;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Run these tests with
@@ -185,6 +187,40 @@ public class ClusterBackupTest {
             total += iMap.getLocalMapStats().getBackupEntryCount();
         }
         return total;
+    }
+
+    @Test
+    public void testCleanupAfterMigration() throws Exception {
+        System.setProperty("hazelcast.log.state", "true");
+        final int size = 10000;
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("default");
+        for (int i = 0; i < size; i++) {
+            map1.put(i, "value" + i);
+        }
+        assertEquals(size, map1.size());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        IMap map2 = h2.getMap("default");
+        IMap map3 = h3.getMap("default");
+        for (int i = 0; i < 100; i++) {
+            assertEquals(size, map1.size());
+            assertEquals(size, map2.size());
+            assertEquals(size, map3.size());
+        }
+        ConcurrentMapManager c1 = getConcurrentMapManager(h1);
+        ConcurrentMapManager c2 = getConcurrentMapManager(h2);
+        ConcurrentMapManager c3 = getConcurrentMapManager(h3);
+        c1.startCleanup(false);
+        c2.startCleanup(false);
+        c3.startCleanup(false);
+        CMap cmap1 = c1.getMap("c:default");
+        CMap cmap2 = c2.getMap("c:default");
+        CMap cmap3 = c3.getMap("c:default");
+        assertTrue(cmap1.mapRecords.size() < size);
+        assertTrue(cmap2.mapRecords.size() < size);
+        assertTrue(cmap3.mapRecords.size() < size);
+        System.setProperty("hazelcast.log.state", "false");
     }
 
     /**

@@ -1045,6 +1045,10 @@ public abstract class BaseManager {
         return node.clusterService.enqueueAndWait(processable, seconds);
     }
 
+    public void enqueueAndWait(final Processable processable) {
+        node.clusterService.enqueueAndWait(processable);
+    }
+
     public Packet obtainPacket(String name, Object key, Object value,
                                ClusterOperation operation, long timeout) {
         final Packet packet = obtainPacket();

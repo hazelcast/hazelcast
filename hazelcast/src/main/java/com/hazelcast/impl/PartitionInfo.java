@@ -94,8 +94,8 @@ public class PartitionInfo {
     }
 
     public boolean isOwnerOrBackup(Address address, int backupCount) {
-        int backup = Math.min(backupCount + 1, MAX_REPLICA_COUNT);
-        for (int i = 0; i < backup; i++) {
+        int replicaCount = Math.min(backupCount + 1, MAX_REPLICA_COUNT);
+        for (int i = 0; i < replicaCount; i++) {
             if (address.equals(getReplicaAddress(i))) {
                 return true;
             }

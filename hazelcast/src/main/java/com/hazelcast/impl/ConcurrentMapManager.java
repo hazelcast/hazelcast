@@ -85,26 +85,11 @@ public class ConcurrentMapManager extends BaseManager {
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
         partitionManager = new PartitionManager(this);
         partitionServiceImpl = new PartitionServiceImpl(this);
-        node.clusterService.registerPeriodicRunnable(new FallThroughRunnable() {
-            public void doRun() {
-                logState();
-                long now = currentTimeMillis();
-                Collection<CMap> cmaps = maps.values();
-                for (final CMap cmap : cmaps) {
-                    if (cmap.cleanupState == CMap.CleanupState.SHOULD_CLEAN) {
-                        executeCleanup(cmap, true);
-                    }
-                }
-                if (now > nextCleanup) {
-                    for (final CMap cmap : cmaps) {
-                        if (cmap.cleanupState == CMap.CleanupState.NONE) {
-                            executeCleanup(cmap, false);
-                        }
-                    }
-                    nextCleanup = now + CLEANUP_DELAY_MILLIS;
-                }
+        node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
+            public void run() {
+                startCleanup(false);
             }
-        });
+        }, 10, 10, TimeUnit.SECONDS);
         registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET_DATA_RECORD_ENTRY, new GetDataRecordEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET, new GetOperationHandler());
@@ -171,28 +156,6 @@ public class ConcurrentMapManager extends BaseManager {
 
     public PartitionManager getPartitionManager() {
         return partitionManager;
-    }
-
-    private void executeCleanup(final CMap cmap, final boolean forced) {
-        if (cmap.cleanupState == CMap.CleanupState.CLEANING) {
-            return;
-        }
-        cmap.cleanupState = CMap.CleanupState.CLEANING;
-        executeLocally(new FallThroughRunnable() {
-            public void doRun() {
-                try {
-                    cmap.startCleanup(forced);
-                } catch (Exception e) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
-                } finally {
-                    enqueueAndReturn(new Processable() {
-                        public void process() {
-                            cmap.cleanupState = CMap.CleanupState.NONE;
-                        }
-                    });
-                }
-            }
-        });
     }
 
     public void onRestart() {
@@ -451,6 +414,20 @@ public class ConcurrentMapManager extends BaseManager {
 
     public void sendMigrationEvent(boolean started, MigrationRequestTask migrationRequestTask) {
         sendProcessableToAll(new MigrationNotification(started, migrationRequestTask), true);
+    }
+
+    public void startCleanup(boolean force) {
+        for (CMap cMap : maps.values()) {
+            cMap.startCleanup(force);
+        }
+    }
+
+    public void executeCleanup(final CMap cmap, final boolean force) {
+        node.executorManager.getScheduledExecutorService().execute(new Runnable() {
+            public void run() {
+                cmap.startCleanup(force);
+            }
+        });
     }
 
     public static class MigrationNotification extends AbstractRemotelyProcessable {

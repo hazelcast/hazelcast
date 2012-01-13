@@ -120,6 +120,21 @@ public final class ClusterService implements Runnable, Constants {
         return false;
     }
 
+    public void enqueueAndWait(final Processable processable) {
+        try {
+            final CountDownLatch l = new CountDownLatch(1);
+            enqueueAndReturn(new Processable() {
+                public void process() {
+                    processable.process();
+                    l.countDown();
+                }
+            });
+            node.checkNodeState();
+            l.await();
+        } catch (InterruptedException ignored) {
+        }
+    }
+
     public void enqueueAndReturn(Processable processable) {
         processableQueue.offer(processable);
         synchronized (notEmptyLock) {
@@ -261,7 +276,7 @@ public final class ClusterService implements Runnable, Constants {
     private void checkPeriodics() {
         final long now = System.currentTimeMillis();
         if (RESTART_ON_MAX_IDLE && (now - lastCheck) > MAX_IDLE_MILLIS) {
-            if(logger.isLoggable(Level.INFO)){
+            if (logger.isLoggable(Level.INFO)) {
                 final StringBuilder sb = new StringBuilder("Hazelcast ServiceThread is blocked for ");
                 sb.append((now - lastCheck));
                 sb.append(" ms. Restarting Hazelcast!");
