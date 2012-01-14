@@ -109,11 +109,13 @@ public class PartitionManager {
         concurrentMapManager.checkServiceThread();
         PartitionInfo migratingPartition = mapActiveMigrations.get(partition.getPartitionId());
         if (migratingPartition != null) {
+            boolean lostReplica = false;
             for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
                 Address targetAddress = migratingPartition.getReplicaAddress(i);
                 if (targetAddress != null) {
                     if (targetAddress.equals(partition.getReplicaAddress(i))) {
                         migratingPartition.setReplicaAddress(i, null);
+                        lostReplica = true;
                     }
                 }
             }
@@ -124,6 +126,9 @@ public class PartitionManager {
                 }
             }
             mapActiveMigrations.remove(partition.getPartitionId());
+            if (lostReplica) {
+                concurrentMapManager.startCleanup(false, false);
+            }
         }
     }
 

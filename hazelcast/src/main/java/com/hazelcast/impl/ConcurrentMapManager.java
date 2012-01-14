@@ -56,7 +56,6 @@ public class ConcurrentMapManager extends BaseManager {
     final int PARTITION_COUNT;
     final int MAX_BACKUP_COUNT;
     final long GLOBAL_REMOVE_DELAY_MILLIS;
-    final long CLEANUP_DELAY_MILLIS;
     final boolean LOG_STATE;
     long lastLogStateTime = currentTimeMillis();
     final ConcurrentMap<String, CMap> maps;
@@ -64,8 +63,6 @@ public class ConcurrentMapManager extends BaseManager {
     final PartitionServiceImpl partitionServiceImpl;
     final PartitionManager partitionManager;
     long newRecordId = 0;
-    @SuppressWarnings("VolatileLongOrDoubleField")
-    volatile long nextCleanup = 0;
     final ParallelExecutor storeExecutor;
     final ParallelExecutor evictionExecutor;
     private static final String BATCH_OPS_EXECUTOR_NAME = "hz_batch";
@@ -79,7 +76,7 @@ public class ConcurrentMapManager extends BaseManager {
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         MAX_BACKUP_COUNT = node.groupProperties.CONCURRENT_MAP_MAX_BACKUP_COUNT.getInteger();
         GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
-        CLEANUP_DELAY_MILLIS = node.groupProperties.CLEANUP_DELAY_SECONDS.getLong() * 1000L;
+        int CLEANUP_DELAY_SECONDS = node.groupProperties.CLEANUP_DELAY_SECONDS.getInteger();
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
@@ -87,9 +84,9 @@ public class ConcurrentMapManager extends BaseManager {
         partitionServiceImpl = new PartitionServiceImpl(this);
         node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
-                startCleanup(false);
+                startCleanup(true, false);
             }
-        }, 10, 10, TimeUnit.SECONDS);
+        }, 10, CLEANUP_DELAY_SECONDS, TimeUnit.SECONDS);
         registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET_DATA_RECORD_ENTRY, new GetDataRecordEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET, new GetOperationHandler());
@@ -416,14 +413,24 @@ public class ConcurrentMapManager extends BaseManager {
         sendProcessableToAll(new MigrationNotification(started, migrationRequestTask), true);
     }
 
-    public void startCleanup(boolean force) {
-        for (CMap cMap : maps.values()) {
-            cMap.startCleanup(force);
+    public void startCleanup(final boolean now, final boolean force) {
+        if (now) {
+            for (CMap cMap : maps.values()) {
+                cMap.startCleanup(force);
+            }
+        } else {
+            node.executorManager.executeNow(new Runnable() {
+                public void run() {
+                    for (CMap cMap : maps.values()) {
+                        cMap.startCleanup(force);
+                    }
+                }
+            });
         }
     }
 
     public void executeCleanup(final CMap cmap, final boolean force) {
-        node.executorManager.getScheduledExecutorService().execute(new Runnable() {
+        node.executorManager.executeNow(new Runnable() {
             public void run() {
                 cmap.startCleanup(force);
             }

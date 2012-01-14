@@ -172,7 +172,7 @@ public final class IOUtil {
         return bos.toByteArray();
     }
 
-    public static byte[] compress(byte[] input) {
+    public static byte[] compress(byte[] input) throws IOException {
         Deflater compressor = new Deflater();
         compressor.setLevel(Deflater.BEST_COMPRESSION);
         compressor.setInput(input);
@@ -183,14 +183,11 @@ public final class IOUtil {
             int count = compressor.deflate(buf);
             bos.write(buf, 0, count);
         }
-        try {
-            bos.close();
-        } catch (IOException e) {
-        }
+        bos.close();
         return bos.toByteArray();
     }
 
-    public static byte[] decompress(byte[] compressedData) {
+    public static byte[] decompress(byte[] compressedData) throws IOException {
         Inflater inflater = new Inflater();
         inflater.setInput(compressedData);
         ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedData.length);
@@ -202,10 +199,7 @@ public final class IOUtil {
             } catch (DataFormatException e) {
             }
         }
-        try {
-            bos.close();
-        } catch (IOException e) {
-        }
+        bos.close();
         return bos.toByteArray();
     }
 }

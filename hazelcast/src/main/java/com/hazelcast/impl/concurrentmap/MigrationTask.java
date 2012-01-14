@@ -55,11 +55,17 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
     }
 
     public void writeData(DataOutput out) throws IOException {
-        out.writeInt(partitionId);
-        out.writeInt(replicaIndex);
-        byte[] compressed = compress(dataRecordSet.buffer);
-        out.writeInt(compressed.length);
-        out.write(compressed);
+        try {
+            out.writeInt(partitionId);
+            out.writeInt(replicaIndex);
+            System.out.println("COMPRESSING!!!!!!!!!!");
+            byte[] compressed = compress(dataRecordSet.buffer);
+            System.out.println(dataRecordSet.size() + " COMMPRESSED TO " + compressed.length);
+            out.writeInt(compressed.length);
+            out.write(compressed);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     public void readData(DataInput in) throws IOException {

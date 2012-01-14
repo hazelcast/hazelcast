@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.monitor.LocalMapStats;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -189,6 +190,11 @@ public class ClusterBackupTest {
         return total;
     }
 
+    private long getOwnedAndBackupCount(IMap imap) {
+        LocalMapStats localMapStats = imap.getLocalMapStats();
+        return localMapStats.getOwnedEntryCount() + localMapStats.getBackupEntryCount();
+    }
+
     @Test
     public void testCleanupAfterMigration() throws Exception {
         System.setProperty("hazelcast.log.state", "true");
@@ -211,15 +217,39 @@ public class ClusterBackupTest {
         ConcurrentMapManager c1 = getConcurrentMapManager(h1);
         ConcurrentMapManager c2 = getConcurrentMapManager(h2);
         ConcurrentMapManager c3 = getConcurrentMapManager(h3);
-        c1.startCleanup(false);
-        c2.startCleanup(false);
-        c3.startCleanup(false);
+        c1.startCleanup(true, false);
+        c2.startCleanup(true, false);
+        c3.startCleanup(true, false);
         CMap cmap1 = c1.getMap("c:default");
         CMap cmap2 = c2.getMap("c:default");
         CMap cmap3 = c3.getMap("c:default");
         assertTrue(cmap1.mapRecords.size() < size);
         assertTrue(cmap2.mapRecords.size() < size);
         assertTrue(cmap3.mapRecords.size() < size);
+        assertEquals(cmap1.mapRecords.size(), getOwnedAndBackupCount(map1));
+        assertEquals(cmap2.mapRecords.size(), getOwnedAndBackupCount(map2));
+        assertEquals(cmap3.mapRecords.size(), getOwnedAndBackupCount(map3));
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
+        IMap map4 = h4.getMap("default");
+        ConcurrentMapManager c4 = getConcurrentMapManager(h4);
+        CMap cmap4 = c4.getMap("c:default");
+        c1.startCleanup(true, false);
+        c2.startCleanup(true, false);
+        c3.startCleanup(true, false);
+        c4.startCleanup(true, false);
+        Thread.sleep(5000);
+        assertEquals(cmap1.mapRecords.size(), getOwnedAndBackupCount(map1));
+        assertEquals(cmap2.mapRecords.size(), getOwnedAndBackupCount(map2));
+        assertEquals(cmap3.mapRecords.size(), getOwnedAndBackupCount(map3));
+        assertEquals(cmap4.mapRecords.size(), getOwnedAndBackupCount(map4));
+        h4.getLifecycleService().shutdown();
+        c1.startCleanup(true, false);
+        c2.startCleanup(true, false);
+        c3.startCleanup(true, false);
+        Thread.sleep(15000);
+        assertEquals(cmap1.mapRecords.size(), getOwnedAndBackupCount(map1));
+        assertEquals(cmap2.mapRecords.size(), getOwnedAndBackupCount(map2));
+        assertEquals(cmap3.mapRecords.size(), getOwnedAndBackupCount(map3));
         System.setProperty("hazelcast.log.state", "false");
     }
 
