@@ -30,6 +30,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -52,7 +53,6 @@
                     </execution>
                 </executions>
             </plugin>
-
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -106,6 +106,7 @@
                         <exclude>**/PerformanceTest.java</exclude>
                         <exclude>**/Redo*</exclude>
                         <exclude>**/CMapTest.java</exclude>
+                        <exclude>**/*StressTest.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -114,6 +115,32 @@
     </build>
 
     <profiles>
+
+        <!-- profile that runs the StressTests. Normally they should not be run because they take too much time. -->
+        <profile>
+            <id>stresstest</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>2.10</version>
+                        <configuration>
+                            <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -Dhazelcast.version.check.enabled=false
+                            </argLine>
+                            <includes>
+                                <include>**/*StressTest.java</include>
+                            </includes>
+                            <!-- we need to clean the 'exclude' since it already is being filled by the original
+                       plugin configuration for this plugin. -->
+                            <excludes>
+                                <exclude>Nonsense</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
 
         <profile>
             <id>aspect</id>
@@ -163,13 +190,14 @@
                             </argLine>
                             <excludes>
                                 <exclude>**/PerformanceTest.java</exclude>
+                                <exclude>**/*StressTest.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
-        
+
         <profile>
             <id>elastic</id>
             <build>
@@ -179,10 +207,12 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>2.10</version>
                         <configuration>
-                            <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -XX:MaxDirectMemorySize=1500m -Dhazelcast.version.check.enabled=false
+                            <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -XX:MaxDirectMemorySize=1500m
+                                -Dhazelcast.version.check.enabled=false
                             </argLine>
                             <excludes>
                                 <exclude>**/PerformanceTest.java</exclude>
+                                <exclude>**/*StressTest.java</exclude>
                                 <exclude>**/MemoryLeakTest.java</exclude>
                                 <exclude>**/ICountDownLatchTest.java</exclude>
                             </excludes>

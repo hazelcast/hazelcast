@@ -18,6 +18,7 @@
 package com.hazelcast.impl.executor;
 
 public interface ParallelExecutor {
+
     void execute(Runnable runnable);
 
     void execute(Runnable runnable, int hash);

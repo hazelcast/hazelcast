@@ -20,12 +20,18 @@ package com.hazelcast.impl.executor;
 import com.hazelcast.logging.ILogger;
 
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+/**
+ * todo:
+ * the ParallelExecutorService can lead to unbound thread creation.
+ */
 public class ParallelExecutorService {
     private final ExecutorService executorService;
     private final List<ParallelExecutor> lsParallelExecutors = new CopyOnWriteArrayList<ParallelExecutor>();
@@ -44,15 +50,18 @@ public class ParallelExecutorService {
     }
 
     public ParallelExecutor newBlockingParallelExecutor(int concurrencyLevel, int capacity) {
-        ParallelExecutor p = new BlockingParallelExecutorImpl(concurrencyLevel, capacity);
+        ParallelExecutor p = new ParallelExecutorImpl(concurrencyLevel, capacity);
         lsParallelExecutors.add(p);
         return p;
     }
 
     public ParallelExecutor newParallelExecutor(int concurrencyLevel) {
-        ParallelExecutor parallelExecutor = null;
+        ParallelExecutor parallelExecutor;
+
+        //todo: what if concurrencyLevel == 0?
+
         if (concurrencyLevel > 0 && concurrencyLevel < Integer.MAX_VALUE) {
-            parallelExecutor = new ParallelExecutorImpl(concurrencyLevel);
+            parallelExecutor = new ParallelExecutorImpl(concurrencyLevel, Integer.MAX_VALUE);
         } else {
             parallelExecutor = new FullyParallelExecutorImpl();
         }
@@ -60,13 +69,15 @@ public class ParallelExecutorService {
         return parallelExecutor;
     }
 
+    //todo: it can happen that a task is sleeping successfully, after the shutdown has been called.
     class FullyParallelExecutorImpl implements ParallelExecutor {
-        public void execute(Runnable runnable) {
-            executorService.execute(runnable);
+
+        public void execute(Runnable command) {
+            executorService.execute(command);
         }
 
-        public void execute(Runnable runnable, int hash) {
-            executorService.execute(runnable);
+        public void execute(Runnable command, int hash) {
+            executorService.execute(command);
         }
 
         public void shutdown() {
@@ -81,50 +92,40 @@ public class ParallelExecutorService {
         }
     }
 
-    class BlockingParallelExecutorImpl extends ParallelExecutorImpl {
-        private final BlockingQueue<Object> q;
+    private class ParallelExecutorImpl implements ParallelExecutor {
+        private final ExecutionSegment[] executionSegments;
+        private final AtomicInteger offerIndex = new AtomicInteger();
+        private final AtomicInteger activeCount = new AtomicInteger();
 
-        BlockingParallelExecutorImpl(int concurrencyLevel, int capacity) {
-            super(concurrencyLevel);
-            q = new ArrayBlockingQueue<Object>(capacity);
-        }
-
-        @Override
-        protected void onOffer() {
-            try {
-                q.put(Boolean.TRUE);
-            } catch (InterruptedException e) {
-            }
-        }
-
-        @Override
-        protected void afterRun() {
-            q.poll();
-        }
-    }
-
-    class ParallelExecutorImpl implements ParallelExecutor {
-        final ExecutionSegment[] executionSegments;
-        final AtomicInteger offerIndex = new AtomicInteger();
-        final AtomicInteger activeCount = new AtomicInteger();
-        final AtomicLong waitingExecutions = new AtomicLong();
-
-        ParallelExecutorImpl(int concurrencyLevel) {
+        /**
+         * Creates a new ParallelExecutorImpl
+         *
+         * @param concurrencyLevel the concurrency level
+         * @param segmentCapacity  the segment capacity. If the segment capacity is Integer.MAX_VALUE, there is
+         *                         no bound on the number of tasks that can be stored in the segment. Otherwise
+         *                         offering a task to be executed can block until there is capacity to store the
+         *                         task.
+         */
+        private ParallelExecutorImpl(int concurrencyLevel, int segmentCapacity) {
             this.executionSegments = new ExecutionSegment[concurrencyLevel];
             for (int i = 0; i < concurrencyLevel; i++) {
-                executionSegments[i] = new ExecutionSegment(i);
+                executionSegments[i] = new ExecutionSegment(segmentCapacity);
             }
         }
 
-        public void execute(Runnable runnable) {
+        public void execute(Runnable command) {
             int hash = offerIndex.incrementAndGet();
-            execute(runnable, hash);
+            execute(command, hash);
         }
 
-        public void execute(Runnable runnable, int hash) {
+        public void execute(Runnable command, int hash) {
+            if (command == null) {
+                throw new NullPointerException("Runnable is not allowed to be null");
+            }
+
             int index = (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % executionSegments.length;
             ExecutionSegment segment = executionSegments[index];
-            segment.offer(runnable);
+            segment.offer(command);
         }
 
         public void shutdown() {
@@ -136,7 +137,7 @@ public class ParallelExecutorService {
         public int getPoolSize() {
             int size = 0;
             for (ExecutionSegment executionSegment : executionSegments) {
-                size += executionSegment.size();
+                size += executionSegment.getPoolSize();
             }
             return size;
         }
@@ -145,95 +146,98 @@ public class ParallelExecutorService {
             return activeCount.get();
         }
 
-        public long getQueueSize() {
-            return waitingExecutions.get();
-        }
-
-        protected void onOffer() {
-        }
-
-        protected void beforeRun() {
-        }
-
-        protected void afterRun() {
-        }
-
         @SuppressWarnings("SynchronizedMethod")
         private class ExecutionSegment implements Runnable {
-            private final Queue<Runnable> q = new LinkedBlockingQueue<Runnable>();
-            private final int segmentIndex;
-            private int size = 0;
-            private boolean executing = false;
+            private final BlockingQueue<Runnable> q;
+            //this flag helps to guarantee that at most 1 thread at any given moment is running commands from this ExecutionSegment.
+            private final AtomicBoolean active = new AtomicBoolean(false);
 
-            ExecutionSegment(int segmentIndex) {
-                this.segmentIndex = segmentIndex;
+            private ExecutionSegment(int capacity) {
+                q = new LinkedBlockingQueue<Runnable>(capacity);
             }
 
-            public synchronized boolean shouldRun() {
-                size++;
-                if (!executing) {
-                    executing = true;
-                    return true;
+            private void offer(Runnable command) {
+                //put the item on the queue uninterruptibly.
+                boolean interrupted = false;
+                try {
+                    for (; ; ) {
+                        try {
+                            q.put(command);
+                            break;
+                        } catch (InterruptedException ie) {
+                            interrupted = true;
+                        }
+                    }
+                } finally {
+                    if (interrupted) {
+                        Thread.currentThread().interrupt();
+                    }
                 }
-                return false;
-            }
 
-            public synchronized boolean shouldLoop() {
-                boolean loop = size > 0;
-                if (!loop) {
-                    executing = false;
+                //if the segment is active we don't need to schedule.
+                if (active.get()) {
+                    return;
                 }
-                return loop;
-            }
 
-            public synchronized void decrement() {
-                size--;
-            }
-
-            public void offer(Runnable e) {
-                waitingExecutions.incrementAndGet();
-                q.offer(e);
-                onOffer();
-                if (shouldRun()) {
+                //now we need to do a cas to make sure
+                if (active.compareAndSet(false, true)) {
                     executorService.execute(ExecutionSegment.this);
                 }
             }
 
             public void run() {
                 activeCount.incrementAndGet();
-                while (shouldLoop()) {
-                    doRun();
-                }
-                activeCount.decrementAndGet();
-            }
+                try {
+                    for (; ; ) {
+                        Runnable command = q.poll();
+                        if (command == null) {
+                            active.set(false);
+                            //Here is some complex logic coming: it can happen that work was placed by another thread
+                            //after the q.poll. If we don't take care of this situation, it could happen that work remains
+                            //unscheduled (and we don't want that).
 
-            private void doRun() {
-                Runnable r = q.poll();
-                while (r != null) {
-                    try {
-                        beforeRun();
-                        r.run();
-                        afterRun();
-                        waitingExecutions.decrementAndGet();
-                    } catch (Throwable e) {
-                        logger.log(Level.WARNING, e.getMessage(), e);
-                    } finally {
-                        decrement();
+                            boolean finished;
+                            if (q.peek() == null) {
+                                //we are lucky, there was no new work scheduled after the ExecutionSegment was made inactive.
+                                //It will now be the responsibility of another thread to schedule execution and we can finish.
+                                finished = true;
+                            } else {
+                                //we were unlucky; we decided to deactivate this ExecutionSegment, but new work
+                                //was offered. If we can get this ExecutionSegment active again, we keep running, otherwise
+                                //it will be the responsibility of another thread to schedule execution and we can finish.
+
+                                //it can be that we are going to continue executing, even though there is no work anymore.
+                                //(some other thread could have processed the work that we found with the peek). But that
+                                //is not a problem since the g.poll returns null and this thread has the chance to complete
+                                //anyway.
+                                finished = !active.compareAndSet(false, true);
+                            }
+
+                            if (finished) {
+                                break;
+                            }
+                        } else {
+                            try {
+                                command.run();
+                            } catch (Throwable e) {
+                                logger.log(Level.WARNING, e.getMessage(), e);
+                            }
+                        }
                     }
-                    r = q.poll();
+                } finally {
+                    activeCount.decrementAndGet();
                 }
             }
 
-            public void shutdown() {
+            private void shutdown() {
                 Runnable r = q.poll();
                 while (r != null) {
-                    decrement();
                     r = q.poll();
                 }
             }
 
-            public synchronized int size() {
-                return size;
+            private int getPoolSize() {
+                return active.get() ? 1 : 0;
             }
         }
     }
