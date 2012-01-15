@@ -40,11 +40,6 @@ public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         super(klass);
     }
 
-    @Override
-    protected EachTestNotifier makeNotifier(FrameworkMethod method, RunNotifier notifier) {
-        return super.makeNotifier(method, notifier);
-    }
-
     protected List<FrameworkMethod> computeTestMethods() {
         List<FrameworkMethod> methods = super.computeTestMethods();
         Collections.shuffle(methods);
