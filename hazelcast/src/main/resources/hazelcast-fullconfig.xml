@@ -122,6 +122,18 @@
             <storePath>keystore</storePath>
         </asymmetric-encryption>
     </network>
+	<partition-group enabled="false" group-type="CUSTOM">
+		<member-group>
+			<interface>10.10.0.*</interface>
+			<interface>10.10.3.*</interface>
+			<interface>10.10.5.*</interface>
+		</member-group>
+		<member-group>
+			<interface>10.10.10.10-100</interface>
+			<interface>10.10.1.*</interface>
+			<interface>10.10.2.*</interface>
+		</member-group>
+	</partition-group>
     <executor-service name="default">
         <core-pool-size>16</core-pool-size>
         <max-pool-size>64</max-pool-size>

@@ -26,6 +26,7 @@ import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.base.Values;
 import com.hazelcast.impl.concurrentmap.*;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
+import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.merge.MergePolicy;
 import com.hazelcast.nio.*;

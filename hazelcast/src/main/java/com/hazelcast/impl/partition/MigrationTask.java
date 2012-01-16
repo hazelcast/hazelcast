@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.impl.concurrentmap;
+package com.hazelcast.impl.partition;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;

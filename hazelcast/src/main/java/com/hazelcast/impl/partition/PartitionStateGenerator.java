@@ -15,12 +15,12 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.partition;
 
 import java.util.List;
 import java.util.Queue;
 
-import com.hazelcast.impl.concurrentmap.MigrationRequestTask;
+import com.hazelcast.impl.MemberImpl;
 
 public interface PartitionStateGenerator {
     
@@ -31,10 +31,5 @@ public interface PartitionStateGenerator {
             final int partitionCount,
             final Queue<MigrationRequestTask> migrationQueue,
             final Queue<MigrationRequestTask> replicaQueue);
-
-    GeneratorType getType();
     
-    public enum GeneratorType {
-        RANDOM, HOST_AWARE, GROUP_AWARE
-    }
 }

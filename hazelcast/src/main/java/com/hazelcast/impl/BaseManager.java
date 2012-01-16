@@ -22,6 +22,7 @@ import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.*;
+import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

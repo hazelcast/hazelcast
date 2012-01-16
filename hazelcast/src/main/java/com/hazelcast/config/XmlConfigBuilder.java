@@ -19,6 +19,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.MapConfig.StorageType;
+import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.impl.Util;
 import com.hazelcast.logging.ILogger;
@@ -207,13 +208,15 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 				handleMergePolicies(node);
 			} else if ("listeners".equals(nodeName)) {
 				handleListeners(node);
+			} else if ("partition-group".equals(nodeName)) {
+			    handlePartitionGroup(node);
 			} else if ("security".equals(nodeName)) {
 				handleSecurity(node);
 			}
 		}
 	}
 
-	private void handleWanReplication(final org.w3c.dom.Node node) throws Exception {
+    private void handleWanReplication(final org.w3c.dom.Node node) throws Exception {
 		final Node attName = node.getAttributes().getNamedItem("name");
 		final String name = getTextContent(attName);
 		final WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
@@ -794,6 +797,32 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 			}
 		}
 	}
+	
+	private void handlePartitionGroup(Node node) {
+	    final NamedNodeMap atts = node.getAttributes();
+        final Node enabledNode = atts.getNamedItem("enabled");
+        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
+        config.getPartitionGroupConfig().setEnabled(enabled);
+        final Node groupTypeNode = atts.getNamedItem("group-type");
+        final MemberGroupType groupType = groupTypeNode != null ? MemberGroupType.valueOf(getValue(groupTypeNode).toUpperCase()) : null;
+        config.getPartitionGroupConfig().setGroupType(groupType);
+	    for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            if ("member-group".equals(cleanNodeName(child))) {
+                handleMemberGroup(child);
+            }
+        }
+    }
+	
+	private void handleMemberGroup(Node node) {
+	    MemberGroupConfig memberGroupConfig = new MemberGroupConfig();
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            if ("interface".equals(cleanNodeName(child))) {
+                String value = getValue(child);
+                memberGroupConfig.addInterface(value);
+            }
+        }
+        config.getPartitionGroupConfig().addMemberGroupConfig(memberGroupConfig);
+    }
 
 	private void handleSecurity(final org.w3c.dom.Node node) throws Exception {
 		final NamedNodeMap atts = node.getAttributes();

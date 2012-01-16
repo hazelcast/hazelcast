@@ -9,6 +9,7 @@
                 <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="network" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="partition-group" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="executor-service" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="queue" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="map" minOccurs="0" maxOccurs="unbounded"/>
@@ -842,6 +843,29 @@
 					<xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
 				</xs:extension>
 			</xs:simpleContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="partition-group">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="member-group" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="enabled" type="xs:boolean" default="false"/>
+			<xs:attribute name="group-type">
+				<xs:simpleType>
+					<xs:restriction base="non-space-string">
+						<xs:enumeration value="HOST_AWARE" />
+						<xs:enumeration value="CUSTOM" />
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="member-group">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="interface" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
     <xs:element name="security">

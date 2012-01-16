@@ -3,6 +3,8 @@ package com.hazelcast.impl.executor;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.StandardLoggerFactory;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,6 +46,7 @@ public class ParallelExecutorServiceImplStressTest {
         completedLatch = new CountDownLatch(TASK_COUNT);
     }
 
+    @After
     public void tearDown() throws InterruptedException {
         executorService.shutdownNow();
         assertTrue("ExecutorService failed to terminate within timeout window", executorService.awaitTermination(10, TimeUnit.SECONDS));

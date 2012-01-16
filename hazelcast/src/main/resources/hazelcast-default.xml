@@ -62,6 +62,7 @@
             <storePath>keystore</storePath>
         </asymmetric-encryption>
     </network>
+    <partition-group enabled="false" />
     <executor-service>
         <core-pool-size>16</core-pool-size>
         <max-pool-size>64</max-pool-size>

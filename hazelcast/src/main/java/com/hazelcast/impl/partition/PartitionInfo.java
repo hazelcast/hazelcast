@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.partition;
 
 import com.hazelcast.nio.Address;
 

@@ -17,23 +17,23 @@
 
 package com.hazelcast.impl;
 
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.base.RecordSet;
-import com.hazelcast.impl.concurrentmap.ClusterRuntimeState;
-import com.hazelcast.impl.concurrentmap.MigrationRequestTask;
+import com.hazelcast.impl.partition.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEvent;
-
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 public class PartitionManager {
     private final ConcurrentMapManager concurrentMapManager;

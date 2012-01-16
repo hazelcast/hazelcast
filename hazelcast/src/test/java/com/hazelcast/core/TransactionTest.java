@@ -943,6 +943,18 @@ public class TransactionTest {
         Assert.assertNull("The remove in the second thread should return null", t2Return.get());
         Hazelcast.shutdownAll();
     }
+    
+    @Test
+    public void issue770TestIMapTryPutUnderTransaction() {
+        final HazelcastInstance hz = Hazelcast.getDefaultInstance();
+        Transaction tx = hz.getTransaction();
+        tx.begin();
+        IMap<Object, Object> map = hz.getMap("test");
+        Assert.assertTrue(map.tryPut("key", "value", 100, TimeUnit.MILLISECONDS));
+        Assert.assertTrue(map.tryPut("key", "value2", 100, TimeUnit.MILLISECONDS));
+        tx.commit();
+        Hazelcast.shutdownAll();
+    }
 
     final List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();
 

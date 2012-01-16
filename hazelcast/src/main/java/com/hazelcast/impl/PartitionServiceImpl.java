@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;

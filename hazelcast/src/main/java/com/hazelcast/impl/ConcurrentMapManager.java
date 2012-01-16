@@ -28,6 +28,8 @@ import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
+import com.hazelcast.impl.partition.MigrationRequestTask;
+import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.merge.MergePolicy;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
@@ -1659,7 +1661,8 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public boolean tryPut(String name, Object key, Object value, long timeout, long ttl) {
-            return (Boolean) txnalPut(CONCURRENT_MAP_TRY_PUT, name, key, value, timeout, ttl);
+            Object result = txnalPut(CONCURRENT_MAP_TRY_PUT, name, key, value, timeout, ttl);
+            return (result == Boolean.TRUE);
         }
 
         private Object txnalReplaceIfSame(ClusterOperation operation, String name, Object key, Object newValue, Object expectedValue, long timeout) {
@@ -1736,6 +1739,9 @@ public class ConcurrentMapManager extends BaseManager {
                     } else {
                         txn.attachPutOp(name, key, value, 0, ttl, (oldObject == null));
                     }
+                    if (operation == CONCURRENT_MAP_TRY_PUT) {
+                        return Boolean.TRUE;
+                    }
                     return oldObject;
                 } else {
                     if (operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
@@ -1744,7 +1750,11 @@ public class ConcurrentMapManager extends BaseManager {
                             return existingValue;
                         }
                     }
-                    return txn.attachPutOp(name, key, value, false);
+                    Object result = txn.attachPutOp(name, key, value, false);
+                    if (operation == CONCURRENT_MAP_TRY_PUT) {
+                        return Boolean.TRUE;
+                    }
+                    return result;
                 }
             } else {
                 setLocal(operation, name, key, value, timeout, ttl);

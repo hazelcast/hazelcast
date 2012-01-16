@@ -86,6 +86,8 @@ public class Config implements DataSerializable {
     private SecurityConfig securityConfig = new SecurityConfig();
     
     private List<ListenerConfig> listenerConfigs;
+    
+    private PartitionGroupConfig partitionGroupConfig = new PartitionGroupConfig();
 
     public Config() {
         String liteMemberProp = System.getProperty("hazelcast.super.client");
@@ -653,6 +655,14 @@ public class Config implements DataSerializable {
     public void setListenerConfigs(List<ListenerConfig> listenerConfigs) {
 		this.listenerConfigs = listenerConfigs;
 	}
+    
+    public PartitionGroupConfig getPartitionGroupConfig() {
+        return partitionGroupConfig;
+    }
+    
+    public void setPartitionGroupConfig(PartitionGroupConfig partitionGroupConfig) {
+        this.partitionGroupConfig = partitionGroupConfig;
+    }
     
     /**
      * @param config
