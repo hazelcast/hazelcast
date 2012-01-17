@@ -18,7 +18,6 @@
 package com.hazelcast.impl.partition;
 
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 
 import com.hazelcast.impl.MemberImpl;
@@ -29,7 +28,7 @@ import com.hazelcast.nio.Address;
 class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     
     private static ILogger logger = Logger.getLogger(PartitionStateGenerator.class.getName());
-    private static final float RANGE_CHECK_RATIO = 1.3f; 
+    private static final float RANGE_CHECK_RATIO = 1.5f; 
     
     private final MemberGroupFactory memberGroupFactory ;
     
@@ -109,6 +108,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         final int avgPartitionPerGroup = partitionCount / groupSize;
         final int maxPartitionPerGroup = avgPartitionPerGroup + 1;
         
+        // reset partition before reuse
         for (NodeGroup nodeGroup : groups) {
             nodeGroup.resetPartitions();
         }
@@ -139,19 +139,24 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
         
         for (int index = 0; index < replicaCount; index++) {
+            // partitions those are not bound to any node/group
             final LinkedList<Integer> freePartitions = new LinkedList<Integer>();
+            // groups having partitions under average
             final LinkedList<NodeGroup> underLoadedGroups = new LinkedList<NodeGroup>();
+            // groups having partitions over average
             final LinkedList<NodeGroup> overLoadedGroups = new LinkedList<NodeGroup>();
+            // number of groups should have (average + 1) partitons
             int remainingPartitions = partitionCount - avgPartitionPerGroup * groupSize;
             
-            // if owner can not be found then add partition to arrange queue.
+            // if owner of a can not be found then add partition to free partitions queue.
             for (PartitionInfo partition : state) {
                 if (partition.getReplicaAddress(index) == null) {
                     freePartitions.add(partition.getPartitionId());
                 }
             }
             Collections.shuffle(freePartitions);
-            
+
+            // detect under-loaded and over-loaded groups
             for (NodeGroup nodeGroup : groups) {
                 int size = nodeGroup.getPartitonCount(index);
                 if (size < avgPartitionPerGroup) {
@@ -161,6 +166,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 }
             }
             
+            // distribute free partitions among under-loaded groups
             int maxTries = freePartitions.size() * underLoadedGroups.size();
             int tries = 0;
             while (tries++ < maxTries && !freePartitions.isEmpty() && !underLoadedGroups.isEmpty()) {
@@ -177,6 +183,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 int count = group.getPartitonCount(index);
                 if (remainingPartitions > 0 && count == maxPartitionPerGroup) {
                     if (--remainingPartitions == 0) {
+                        // all (avg + 1) partitions owned groups are found
+                        // if there is any group has avg number of partitions in under-loaded queue
+                        // remove it.
                         Iterator<NodeGroup> underLoaded = underLoadedGroups.iterator();
                         while (underLoaded.hasNext()) {
                             if (underLoaded.next().getPartitonCount(index) == avgPartitionPerGroup) {
@@ -191,6 +200,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             
             {
+                // if there are still free partitions those could not be distributed
+                // to under-loaded groups then one-by-one distribute them among all groups
+                // until queue is empty.
                 maxTries = freePartitions.size() * groupSize * 10;
                 tries = 0;
                 Integer partitionId = freePartitions.poll(); 
@@ -203,22 +215,28 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 }
             }
             
-            maxTries = underLoadedGroups.size() * overLoadedGroups.size() ;
+            // TODO: what if there are still free partitions?
+            
+            // iterate through over-loaded groups' partitions and distribute them to under-loaded groups.
+            maxTries = underLoadedGroups.size() * overLoadedGroups.size() * 2;
             tries = 0;
             int expectedPartitionCount = remainingPartitions > 0 ? maxPartitionPerGroup : avgPartitionPerGroup;
-            while (tries++ < maxTries && !underLoadedGroups.isEmpty() && !overLoadedGroups.isEmpty()) {
+            while (tries++ < maxTries && !underLoadedGroups.isEmpty()) {
                 NodeGroup toGroup = underLoadedGroups.poll();
                 int size = overLoadedGroups.size();
-                boolean done = false;
                 for (int i = 0; i < size; i++) {
                     NodeGroup fromGroup = overLoadedGroups.poll();
-                    final Iterator<Integer> partitionsIter = fromGroup.getPartitions(index);
+                    final Iterator<Integer> partitionsIter = fromGroup.getPartitionsIterator(index);
                     while (partitionsIter.hasNext() && fromGroup.getPartitonCount(index) > expectedPartitionCount) {
                         Integer partitionId = partitionsIter.next();
                         if (toGroup.addPartition(index, partitionId)) {
                             partitionsIter.remove();
-                            if (toGroup.getPartitonCount(index) == expectedPartitionCount) {
-                                done = true;
+                            if (toGroup.getPartitonCount(index) >= expectedPartitionCount) {
+                                if (expectedPartitionCount == maxPartitionPerGroup) {
+                                    if (--remainingPartitions == 0) {
+                                        expectedPartitionCount = avgPartitionPerGroup;
+                                    }
+                                }
                                 break;
                             }
                         }
@@ -236,21 +254,22 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                         overLoadedGroups.offer(fromGroup);
                     }
  
-                    if (done) {
+                    if (toGroup.getPartitonCount(index) == expectedPartitionCount) {
                         break;
-                    } else {
-                        underLoadedGroups.offer(toGroup);
                     }
                 }
             }
             
+            // post process each group's partition table (distribute partitions added to group to nodes 
+            // and balance load of partition ownership s in group) and save partition ownerships to 
+            // cluster partition state table.
             for (NodeGroup group : groups) {
-                Map<Address, PartitionTable> tables = group.postProcessPartitionTable(index);
-                for (Entry<Address, PartitionTable> e : tables.entrySet()) {
-                    PartitionTable t = e.getValue();
-                    Set<Integer> set = t.getPartitions(index);
+                group.postProcessPartitionTable(index);
+                for (Address address : group.getNodes()) {
+                    PartitionTable table = group.getPartitionTable(address);
+                    Set<Integer> set = table.getPartitions(index);
                     for (Integer partitionId : set) {
-                        state[partitionId.intValue()].setReplicaAddress(index, e.getKey());
+                        state[partitionId.intValue()].setReplicaAddress(index, address);
                     }
                 }
             }
@@ -353,14 +372,16 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     private interface NodeGroup {
         void addNode(Address address);
         boolean hasNode(Address address);
+        Set<Address> getNodes();
+        PartitionTable getPartitionTable(Address address);
         void resetPartitions();
         int getPartitonCount(int index);
         boolean containsPartition(Integer partitionId);
         void ownPartition(Address address, int index, Integer partitionId);
         boolean addPartition(int replicaIndex, Integer partitionId);
-        Iterator<Integer> getPartitions(int index);
+        Iterator<Integer> getPartitionsIterator(int index);
         boolean removePartition(int index, Integer partitionId);
-        Map<Address, PartitionTable> postProcessPartitionTable(int index);
+        void postProcessPartitionTable(int index);
     }
     
     private class DefaultNodeGroup implements NodeGroup {
@@ -378,6 +399,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
         public Set<Address> getNodes() {
             return nodes;
+        }
+        public PartitionTable getPartitionTable(Address address) {
+            return nodePartitionTables.get(address);
         }
         public void resetPartitions() {
             groupPartitionTable.reset();
@@ -409,7 +433,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             return false;
         }
-        public Iterator<Integer> getPartitions(final int index) {
+        public Iterator<Integer> getPartitionsIterator(final int index) {
             final Iterator<Integer> iter = groupPartitionTable.getPartitions(index).iterator();
             return new Iterator<Integer>() {
                 Integer current = null;
@@ -439,46 +463,45 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 }
             }
         }
-        public Map<Address, PartitionTable> postProcessPartitionTable(int index) {
+        public void postProcessPartitionTable(int index) {
             if (nodes.size() == 1) {
                 PartitionTable table = nodeTables.iterator().next();
                 while (!partitionQ.isEmpty()) {
                     table.add(index, partitionQ.poll());
                 }
-                return nodePartitionTables;
-            }
-            int totalCount = getPartitonCount(index);
-            int avgCount = totalCount / nodes.size();
-            List<PartitionTable> underLoadedStates = new LinkedList<PartitionTable>();
-            for (PartitionTable table : nodeTables) {
-                Set<Integer> partitions = table.getPartitions(index);
-                if (partitions.size() > avgCount) {
-                    Iterator<Integer> iter = partitions.iterator();
-                    while (partitions.size() > avgCount) {
-                        Integer partitionId = iter.next();
-                        iter.remove();
-                        partitionQ.add(partitionId);
-                    }
-                } else {
-                    underLoadedStates.add(table);
-                }
-            }
-            if (!partitionQ.isEmpty()) {
-                for (PartitionTable table : underLoadedStates) {
-                    while (table.size(index) < avgCount) {
-                        table.add(index, partitionQ.poll());
-                    }
-                }
-            }
-            while (!partitionQ.isEmpty()) {
+            } else {
+                int totalCount = getPartitonCount(index);
+                int avgCount = totalCount / nodes.size();
+                List<PartitionTable> underLoadedStates = new LinkedList<PartitionTable>();
                 for (PartitionTable table : nodeTables) {
-                    table.add(index, partitionQ.poll());
-                    if (partitionQ.isEmpty()) {
-                        break;
+                    Set<Integer> partitions = table.getPartitions(index);
+                    if (partitions.size() > avgCount) {
+                        Iterator<Integer> iter = partitions.iterator();
+                        while (partitions.size() > avgCount) {
+                            Integer partitionId = iter.next();
+                            iter.remove();
+                            partitionQ.add(partitionId);
+                        }
+                    } else {
+                        underLoadedStates.add(table);
+                    }
+                }
+                if (!partitionQ.isEmpty()) {
+                    for (PartitionTable table : underLoadedStates) {
+                        while (table.size(index) < avgCount) {
+                            table.add(index, partitionQ.poll());
+                        }
+                    }
+                }
+                while (!partitionQ.isEmpty()) {
+                    for (PartitionTable table : nodeTables) {
+                        table.add(index, partitionQ.poll());
+                        if (partitionQ.isEmpty()) {
+                            break;
+                        }
                     }
                 }
             }
-            return nodePartitionTables;
         }
         @Override
         public String toString() {
@@ -489,17 +512,22 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     private class SingleNodeGroup implements NodeGroup {
         final PartitionTable nodeTable = new PartitionTable();
         Address address = null; 
+        Set<Address> nodes ;
         public void addNode(Address addr) {
             if (address != null) {
                 throw new IllegalArgumentException();
             }
             this.address = addr;
+            nodes = Collections.singleton(address);
         }
         public boolean hasNode(Address address) {
             return this.address != null && this.address.equals(address);
         }
-        public Address getNode() {
-            return address;
+        public Set<Address> getNodes() {
+            return nodes;
+        }
+        public PartitionTable getPartitionTable(Address address) {
+            return hasNode(address) ? nodeTable : null;
         }
         public void resetPartitions() {
             nodeTable.reset();
@@ -522,14 +550,13 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             return nodeTable.add(replicaIndex, partitionId);
         }
-        public Iterator<Integer> getPartitions(final int index) {
+        public Iterator<Integer> getPartitionsIterator(final int index) {
             return nodeTable.getPartitions(index).iterator();
         }
         public boolean removePartition(int index, Integer partitionId) {
             return nodeTable.remove(index, partitionId);
         }
-        public Map<Address, PartitionTable> postProcessPartitionTable(int index) {
-            return Collections.singletonMap(address, nodeTable);
+        public void postProcessPartitionTable(int index) {
         }
         @Override
         public String toString() {
