@@ -85,9 +85,9 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
 	private boolean put(final Object key, final Object value, final Object currentVersion, final Object previousVersion) 
 	    throws TimeoutException {
 	    if (versionComparator != null) { 
-            if (explicitVersionCheckEnabled) {
-                final CacheEntry previousEntry = (CacheEntry) getCache().tryLockAndGet(key, 500, TimeUnit.MILLISECONDS);
+            if (explicitVersionCheckEnabled && value instanceof CacheEntry) {
                 final CacheEntry currentEntry = (CacheEntry) value;
+                final CacheEntry previousEntry = (CacheEntry) getCache().tryLockAndGet(key, 500, TimeUnit.MILLISECONDS);
                 if (previousEntry == null || 
                         versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
                     getCache().putAndUnlock(key, value);

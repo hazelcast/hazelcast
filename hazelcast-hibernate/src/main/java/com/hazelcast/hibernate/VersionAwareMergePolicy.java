@@ -32,15 +32,18 @@ public class VersionAwareMergePolicy implements MergePolicy {
         if (!mergingDataEntry.isValid()) {
             return REMOVE_EXISTING; 
         } else {
-            CacheEntry existing = existingEntry != null ? (CacheEntry) existingEntry.getValue() : null;
-            if (existing != null) {
-                CacheEntry merging = (CacheEntry) mergingEntry.getValue();
-                Object mergingVersionObject = merging.getVersion();
-                Object existingVersionObject = existing.getVersion();
+            final Object existingObject = existingEntry != null ? existingEntry.getValue() : null;
+            final Object mergingObject = mergingEntry.getValue();
+            if (existingObject != null && existingObject instanceof CacheEntry 
+                    && mergingObject != null && mergingObject instanceof CacheEntry) {
+                final CacheEntry existing = (CacheEntry) existingObject;
+                final CacheEntry merging = (CacheEntry) mergingObject;
+                final Object mergingVersionObject = merging.getVersion();
+                final Object existingVersionObject = existing.getVersion();
                 if (mergingVersionObject != null && existingVersionObject != null
                         && mergingVersionObject instanceof Comparable && existingVersionObject instanceof Comparable) {
-                    Comparable mergingVersion = (Comparable) mergingVersionObject;
-                    Comparable existingVersion = (Comparable) existingVersionObject;
+                    final Comparable mergingVersion = (Comparable) mergingVersionObject;
+                    final Comparable existingVersion = (Comparable) existingVersionObject;
                     if (mergingVersion.compareTo(existingVersion) > 0) {
                         return mergingDataEntry.getValueData();
                     } else {
