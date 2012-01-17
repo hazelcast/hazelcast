@@ -17,12 +17,13 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.impl.GroupProperties;
+import java.util.Properties;
+
 import org.hibernate.cfg.Environment;
 import org.junit.BeforeClass;
 
-import java.util.Properties;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.impl.GroupProperties;
 
 public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
 

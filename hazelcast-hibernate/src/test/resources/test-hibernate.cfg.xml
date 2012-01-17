@@ -21,6 +21,7 @@
 		<property name="hibernate.cache.use_minimal_puts">true</property>
 		
 		<mapping resource="com/hazelcast/hibernate/entity/DummyEntity.hbm.xml" />
+		<mapping resource="com/hazelcast/hibernate/entity/DummyProperty.hbm.xml" />
 
 	</session-factory>
 </hibernate-configuration>

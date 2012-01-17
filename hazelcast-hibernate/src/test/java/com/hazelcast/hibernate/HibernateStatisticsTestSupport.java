@@ -17,13 +17,10 @@
 
 package com.hazelcast.hibernate;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -38,6 +35,7 @@ import org.junit.Test;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
+import com.hazelcast.hibernate.entity.DummyProperty;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 
 public abstract class HibernateStatisticsTestSupport extends HibernateTestSupport {
@@ -65,11 +63,20 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 	protected abstract Properties getCacheProperties();
 	
 	protected void insertDummyEntities(int count) {
+	    insertDummyEntities(count, 0);
+	}
+	
+	protected void insertDummyEntities(int count, int childCount) {
 		Session session = sf.openSession();
 		Transaction tx = session.beginTransaction();
 		try {
 			for (int i = 0; i < count; i++) {
-				session.save(new DummyEntity(new Long(i), "dummy:" + i, i * 123456d, new Date()));
+			    DummyEntity e = new DummyEntity(new Long(i), "dummy:" + i, i * 123456d, new Date());
+			    session.save(e);
+			    for (int j = 0; j < childCount; j++) {
+			        DummyProperty p = new DummyProperty("key:" + j, e);
+                    session.save(p);
+                }
 			}
 			tx.commit();
 		} catch (Exception e) {
@@ -87,7 +94,8 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 		assertEquals(Hazelcast.getDefaultInstance(), hz);
 		
 		final int count = 100;
-		insertDummyEntities(count);
+		final int childCount = 3;
+		insertDummyEntities(count, childCount);
 		sleep(1);
 		
 		List<DummyEntity> list = new ArrayList<DummyEntity>(count);
@@ -118,15 +126,24 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 		}
 		
 		Map<?,?> cache = hz.getMap(DummyEntity.class.getName());
-		assertEquals(count, stats.getEntityInsertCount());
-		assertEquals(count * 2, stats.getSecondLevelCachePutCount());
-		assertEquals(0, stats.getEntityLoadCount());
+		Map<?,?> propCache = hz.getMap(DummyProperty.class.getName());
+		Map<?,?> propCollCache = hz.getMap(DummyEntity.class.getName() + ".properties");
+		
+		assertEquals((childCount + 1) * count, stats.getEntityInsertCount());
+		// twice put of entity and properties (on load and update) and once put of collection
+		assertEquals((childCount + 1) * count * 2 + count, stats.getSecondLevelCachePutCount());
+		assertEquals(childCount * count, stats.getEntityLoadCount());
 		assertEquals(count, stats.getSecondLevelCacheHitCount());
-		assertEquals(0, stats.getSecondLevelCacheMissCount());
+		// collection cache miss
+		assertEquals(count, stats.getSecondLevelCacheMissCount());
 		assertEquals(count, cache.size());
+		assertEquals(count * childCount, propCache.size());
+		assertEquals(count, propCollCache.size());
 		
 		sf.getCache().evictEntityRegion(DummyEntity.class);
+		sf.getCache().evictEntityRegion(DummyProperty.class);
 		assertEquals(0, cache.size());
+		assertEquals(0, propCache.size());
 		
 		stats.logSummary();
 	}
@@ -171,9 +188,9 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 //		assertEquals(entityCount, stats.getSecondLevelCachePutCount());
 		assertEquals(entityCount, stats.getEntityLoadCount());
 		assertEquals(entityCount, stats.getEntityDeleteCount());
-		
-		assertEquals(entityCount * (queryCount - 1), stats.getSecondLevelCacheHitCount());
-		assertEquals(0, stats.getSecondLevelCacheMissCount());
+		assertEquals(entityCount * (queryCount - 1) * 2, stats.getSecondLevelCacheHitCount());
+		// collection cache miss
+		assertEquals(entityCount, stats.getSecondLevelCacheMissCount());
 		assertEquals(1, hz.getMap(StandardQueryCache.class.getName()).size());
 
 		stats.logSummary();
