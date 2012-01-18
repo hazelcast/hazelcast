@@ -1994,7 +1994,7 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         public void process() {
             prepareForBackup();
-            request.blockId = getBlockId(request.key);
+            request.blockId = getPartitionId(request.key);
             super.process();
         }
 
@@ -2284,40 +2284,35 @@ public class ConcurrentMapManager extends BaseManager {
         return getKeyOwner(req.key);
     }
 
-    private Address getKeyOwner(int blockId) {
-        checkServiceThread();
-        return partitionManager.getOwner(blockId);
+    public Address getPartitionOwner(int partitionId) {
+        return partitionManager.getOwner(partitionId);
     }
 
     public Address getKeyOwner(Data key) {
-        int blockId = getBlockId(key);
-        return getKeyOwner(blockId);
+        int partitionId = getPartitionId(key);
+        return getPartitionOwner(partitionId);
     }
 
     @Override
     public boolean isMigrating(Request req) {
         final Data key = req.key;
-        return key != null && partitionManager.isMigrating(getBlockId(key));
+        return key != null && partitionManager.isMigrating(getPartitionId(key));
     }
 
-    public int getBlockId(Request req) {
+    public int getPartitionId(Request req) {
         if (req.blockId == -1) {
-            req.blockId = getBlockId(req.key);
+            req.blockId = getPartitionId(req.key);
         }
         return req.blockId;
     }
 
-    public final int getBlockId(Data key) {
+    public final int getPartitionId(Data key) {
         int hash = key.getPartitionHash();
         return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % PARTITION_COUNT;
     }
 
     public long newRecordId() {
         return newRecordId++;
-    }
-
-    PartitionInfo getOrCreateBlock(Request req) {
-        return partitionManager.getPartition(getBlockId(req));
     }
 
     void evict(final String name, final Data key) {
