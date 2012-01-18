@@ -18,7 +18,6 @@
 package com.hazelcast.aws.utility;
 
 import com.hazelcast.config.AwsConfig;
-import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -26,7 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-public class CloudyUtilityTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+
+public class CloudyUtilityTest {
     String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
             "<DescribeInstancesResponse xmlns=\"http://ec2.amazonaws.com/doc/2011-05-15/\">\n" +
             "    <requestId>c0f82bf8-b7f5-4cf1-bbfa-b95ea4bd38da</requestId>\n" +
@@ -182,7 +183,7 @@ public class CloudyUtilityTest extends TestCase {
         assertEquals(2, result.size());
     }
 
-        @Test
+    @Test
     public void testTagsBothNodeHave() throws IOException {
         InputStream is = new ByteArrayInputStream(xml.getBytes());
         AwsConfig awsConfig = new AwsConfig();
@@ -194,7 +195,8 @@ public class CloudyUtilityTest extends TestCase {
         List<String> result = (List<String>) CloudyUtility.unmarshalTheResponse(is, awsConfig);
         assertEquals(2, result.size());
     }
-            @Test
+
+    @Test
     public void testTagOnlyOneNodeHave() throws IOException {
         InputStream is = new ByteArrayInputStream(xml.getBytes());
         AwsConfig awsConfig = new AwsConfig();
