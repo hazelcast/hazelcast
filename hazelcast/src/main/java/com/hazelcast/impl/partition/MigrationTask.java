@@ -21,36 +21,59 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.Record;
+import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.base.RecordSet;
-import com.hazelcast.nio.Data;
+import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
 import com.hazelcast.nio.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import java.io.*;
+import java.util.List;
 import java.util.concurrent.Callable;
-
-import static com.hazelcast.nio.IOUtil.*;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
 
 public class MigrationTask implements Callable<Boolean>, DataSerializable, HazelcastInstanceAware {
     private int partitionId;
     private int replicaIndex;
-    private Data dataRecordSet;
-    private HazelcastInstance hazelcast;
+    private byte[] bytesRecordSet;
+    private transient HazelcastInstance hazelcast;
 
     public MigrationTask() {
     }
 
-    public MigrationTask(int partitionId, Data dataRecordSet, int replicaIndex) {
+    public MigrationTask(int partitionId, CostAwareRecordList costAwareRecordList, int replicaIndex) throws IOException {
         this.partitionId = partitionId;
-        this.dataRecordSet = dataRecordSet;
         this.replicaIndex = replicaIndex;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream((int) (costAwareRecordList.getCost() / 100));
+        DataOutputStream dos = new DataOutputStream(new DeflaterOutputStream(bos));
+        List<Record> lsRecordsToMigrate = costAwareRecordList.getRecords();
+        dos.writeInt(lsRecordsToMigrate.size());
+        for (Record record : lsRecordsToMigrate) {
+            new DataRecordEntry(record).writeData(dos);
+        }
+        dos.flush();
+        dos.close();
+        bytesRecordSet = bos.toByteArray();
     }
 
     public Boolean call() throws Exception {
-        Node node = ((FactoryImpl) hazelcast).node;
-        RecordSet recordSet = (RecordSet) toObject(dataRecordSet);
-        node.concurrentMapManager.getPartitionManager().doMigrate(partitionId, replicaIndex, recordSet);
+        try {
+            Node node = ((FactoryImpl) hazelcast).node;
+            ByteArrayInputStream bais = new ByteArrayInputStream(bytesRecordSet);
+            DataInputStream dis = new DataInputStream(new InflaterInputStream(bais));
+            int size = dis.readInt();
+            RecordSet recordSet = new RecordSet();
+            for (int i = 0; i < size; i++) {
+                DataRecordEntry r = new DataRecordEntry();
+                r.readData(dis);
+                recordSet.addDataRecordEntry(r);
+            }
+            node.concurrentMapManager.getPartitionManager().doMigrate(partitionId, replicaIndex, recordSet);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Boolean.FALSE;
+        }
         return Boolean.TRUE;
     }
 
@@ -58,11 +81,9 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
         try {
             out.writeInt(partitionId);
             out.writeInt(replicaIndex);
-            System.out.println("COMPRESSING!!!!!!!!!!");
-            byte[] compressed = compress(dataRecordSet.buffer);
-            System.out.println(dataRecordSet.size() + " COMMPRESSED TO " + compressed.length);
-            out.writeInt(compressed.length);
-            out.write(compressed);
+            out.writeInt(bytesRecordSet.length);
+            out.write(bytesRecordSet);
+//            System.out.println("write size " + bytesRecordSet.length);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -72,9 +93,9 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
         partitionId = in.readInt();
         replicaIndex = in.readInt();
         int size = in.readInt();
-        byte[] compressed = new byte[size];
-        in.readFully(compressed);
-        dataRecordSet = new Data(decompress(compressed));
+        bytesRecordSet = new byte[size];
+        in.readFully(bytesRecordSet);
+//        System.out.println("read " + bytesRecordSet.length);
     }
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {

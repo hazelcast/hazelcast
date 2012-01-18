@@ -27,36 +27,35 @@ import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.util.ConcurrentHashSet;
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 
 import static com.hazelcast.impl.TestUtil.OrderKey;
 import static com.hazelcast.impl.TestUtil.getCMap;
 import static java.lang.Thread.sleep;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  * Run these tests with
  * -Xms512m -Xmx512m
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class ClusterTest {
+public class ClusterTest extends TestCase {
 
     @BeforeClass
     public static void init() throws Exception {
@@ -71,56 +70,24 @@ public class ClusterTest {
     }
 
     @Test
-    public void testGracefulShutdown() throws Exception {
-        int size = 100000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-        IMap m1 = h1.getMap("default");
-        for (int i = 0; i < size; i++) {
-            m1.put(i, i);
+    public void te() throws Exception {
+        String classpath = System.getProperty("java.class.path");
+        for (String classpathEntry : classpath.split(System.getProperty("path.separator"))) {
+            if (classpathEntry.endsWith(".jar")) {
+                File jar = new File(classpathEntry);
+                JarInputStream is = new JarInputStream(new FileInputStream(jar));
+                JarEntry entry;
+                while ((entry = is.getNextJarEntry()) != null) {
+                    if (entry.getName().endsWith(".class")) {
+                        // Class.forName(entry.getName()) and check
+                        // for implementation of the interface
+                        //                        System.out.println("Class in jar " + entry);
+                    }
+                }
+            } else {
+                System.out.println("path " + classpathEntry);
+            }
         }
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
-        IMap m2 = h2.getMap("default");
-        h1.getLifecycleService().shutdown();
-        assertEquals(size, m2.size());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
-        IMap m3 = h3.getMap("default");
-        h2.getLifecycleService().shutdown();
-        assertEquals(size, m3.size());
-    }
-
-    @Test
-    public void testGracefulShutdown2() throws Exception {
-        int size = 100000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-        IMap m1 = h1.getMap("default");
-        for (int i = 0; i < size; i++) {
-            m1.put(i, i);
-        }
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
-        IMap m2 = h2.getMap("default");
-        IMap m3 = h3.getMap("default");
-        h1.getLifecycleService().shutdown();
-        assertEquals(size, m2.size());
-        h2.getLifecycleService().shutdown();
-        assertEquals(size, m3.size());
-    }
-
-    /**
-     * AtomicNumber.incrementAndGet backup issue
-     *
-     * @throws InterruptedException
-     */
-    @Test
-    public void testIssue505() throws InterruptedException {
-        HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(new Config());
-        HazelcastInstance superClient = Hazelcast.newHazelcastInstance(new Config());
-        AtomicNumber test = superClient.getAtomicNumber("test");
-        assertEquals(1, test.incrementAndGet());
-        HazelcastInstance hazelcastInstance3 = Hazelcast.newHazelcastInstance(new Config());
-        assertEquals(2, test.incrementAndGet());
-        hazelcastInstance1.getLifecycleService().shutdown();
-        assertEquals(3, test.incrementAndGet());
     }
 
     @Test
@@ -184,12 +151,10 @@ public class ClusterTest {
     public void testFirstNodeNoWait() throws Exception {
         final Config config = new Config();
         final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
-        final CountDownLatch latch = new CountDownLatch(2);
         for (int j = 0; j < 2; j++) {
             new Thread(new Runnable() {
                 public void run() {
                     final HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-                    latch.countDown();
                     for (int i = 0; i < 3000; i++) {
                         h.getMap("default").put(i, "value");
                     }
@@ -208,7 +173,6 @@ public class ClusterTest {
     public void testFirstNodeWait() throws Exception {
         final Config config = new Config();
         final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
-        final CountDownLatch latch = new CountDownLatch(2);
         final HazelcastInstance[] instances = new HazelcastInstance[2];
         for (int i = 0; i < 2; i++) {
             instances[i] = Hazelcast.newHazelcastInstance(config);
@@ -218,7 +182,6 @@ public class ClusterTest {
             new Thread(new Runnable() {
                 public void run() {
                     final HazelcastInstance h = instances[instanceIndex];
-                    latch.countDown();
                     for (int i = 0; i < 3000; i++) {
                         h.getMap("default").put(i, "value");
                     }
@@ -335,7 +298,7 @@ public class ClusterTest {
                 latchSuperPut.countDown();
             }
         }).start();
-        latch.await(10, TimeUnit.SECONDS);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(null);
         assertTrue(latchSuperPut.await(10, TimeUnit.SECONDS));
         assertEquals("value", hNormal.getMap("default").get("1"));
@@ -360,7 +323,7 @@ public class ClusterTest {
         });
         interrupter.start();
         map.put("1", "value");
-        latch.await();
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 60000)
@@ -376,71 +339,6 @@ public class ClusterTest {
         map.put("1", "value2");
         assertEquals("value2", map.get("1"));
         assertEquals("value2", h.getMap("default").get("1"));
-    }
-
-    @Test
-    public void issue390NoBackupWhenSuperClient() throws InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        IMap map1 = h1.getMap("def");
-        for (int i = 0; i < 200; i++) {
-            map1.put(i, new byte[1000]);
-        }
-        Config scconfig = new Config();
-        scconfig.setLiteMember(true);
-        HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        IMap map2 = h2.getMap("def");
-        final CountDownLatch latch = new CountDownLatch(2);
-        h2.getPartitionService().addMigrationListener(new MigrationListener() {
-            public void migrationStarted(MigrationEvent migrationEvent) {
-            }
-
-            public void migrationCompleted(MigrationEvent migrationEvent) {
-                latch.countDown();
-            }
-        });
-        assertTrue(latch.await(60, TimeUnit.SECONDS));
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-    }
-
-    @Test
-    public void issue388NoBackupWhenSuperClient() throws InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        Config scconfig = new Config();
-        scconfig.setLiteMember(true);
-        HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
-        IMap map1 = h1.getMap("def");
-        IMap map2 = h2.getMap("def");
-        IMap map3 = sc.getMap("def");
-        for (int i = 0; i < 300; ) {
-            map1.put(i++, new byte[1000]);
-            map2.put(i++, new byte[1000]);
-            map3.put(i++, new byte[1000]);
-        }
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-    }
-
-    @Test
-    public void issue395BackupProblemWithBCount2() {
-        Config config = new Config();
-        config.getMapConfig("default").setBackupCount(2);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        IMap map1 = h1.getMap("default");
-        IMap map2 = h2.getMap("default");
-        for (int i = 0; i < 1000; i++) {
-            map1.put(i, i);
-        }
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        IMap map3 = h3.getMap("default");
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount() + map3.getLocalMapStats().getOwnedEntryCount(), map2.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map2.getLocalMapStats().getOwnedEntryCount() + map3.getLocalMapStats().getOwnedEntryCount(), map1.getLocalMapStats().getBackupEntryCount());
-        assertEquals(map1.getLocalMapStats().getOwnedEntryCount() + map2.getLocalMapStats().getOwnedEntryCount(), map3.getLocalMapStats().getBackupEntryCount());
     }
 
     @Test
@@ -485,7 +383,7 @@ public class ClusterTest {
             public void migrationStarted(MigrationEvent migrationEvent) {
             }
         });
-        latch.await(30, TimeUnit.SECONDS);
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
         assertEquals(1000, set1.size());
         assertEquals(1000, set2.size());
         assertEquals(1000, set3.size());
@@ -679,7 +577,7 @@ public class ClusterTest {
             }
         }).start();
         h = Hazelcast.newHazelcastInstance(configNormal);
-        latch.await();
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
         assertEquals(2, h.getCluster().getMembers().size());
         assertEquals(2, s.getCluster().getMembers().size());
         assertFalse(h.getCluster().getLocalMember().isLiteMember());
@@ -1073,7 +971,7 @@ public class ClusterTest {
                 }
             }
         }).start();
-        latch.await();
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
         assertFalse(failed.get());
     }
 
@@ -1377,7 +1275,7 @@ public class ClusterTest {
      */
     @Test(timeout = 240000)
     public void testExecutorServiceAndMigration() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         List<DistributedTask> tasks = new ArrayList<DistributedTask>(10000);
         List<ExecutorServiceAndMigrationCallable> callables = new ArrayList<ExecutorServiceAndMigrationCallable>(10000);
         for (int i = 0; i < 10000; i++) {
@@ -2076,8 +1974,7 @@ public class ClusterTest {
                 }
             }).start();
         }
-        latch.await();
-        Thread.sleep(2000);
+        assertTrue(latch.await(200, TimeUnit.SECONDS));
     }
 
     @Test
@@ -2114,9 +2011,8 @@ public class ClusterTest {
                 map1.unlockMap();
             }
         }).start();
-        acquireLock.await();
-        boolean lockMap2 = map2.lockMap(10,
-                TimeUnit.SECONDS);
+        assertTrue(acquireLock.await(20, TimeUnit.SECONDS));
+        boolean lockMap2 = map2.lockMap(10, TimeUnit.SECONDS);
         assertTrue(lockMap2);
         hzi1.getLifecycleService().shutdown();
         hzi2.getLifecycleService().shutdown();
@@ -2141,10 +2037,9 @@ public class ClusterTest {
                 map1.unlockMap();
             }
         }).start();
-        acquireLock.await();
+        assertTrue(acquireLock.await(20, TimeUnit.SECONDS));
         map2.put(2, 2);
-        boolean lockMap2 = map2.lockMap(10,
-                TimeUnit.SECONDS);
+        boolean lockMap2 = map2.lockMap(10, TimeUnit.SECONDS);
         assertTrue(lockMap2);
         hzi1.getLifecycleService().shutdown();
         hzi2.getLifecycleService().shutdown();
@@ -2249,14 +2144,15 @@ public class ClusterTest {
 
     @Test
     public void testGetAll() {
-        Hazelcast.newHazelcastInstance(new Config());
-        Hazelcast.newHazelcastInstance(new Config());
         Set<String> keys = new HashSet<String>(1000);
         for (int i = 0; i < 1000; i++) {
             keys.add(String.valueOf(i));
         }
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
         IMap<String, Object> map3 = h3.getMap("default");
+        assertNull(map3.get("1"));
         map3.getAll(keys);
     }
 

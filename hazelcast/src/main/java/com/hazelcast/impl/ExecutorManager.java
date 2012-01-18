@@ -314,20 +314,20 @@ public class ExecutorManager extends BaseManager {
     public void call(String name, DistributedTask dtask) {
         NamedExecutorService namedExecutorService = getOrCreateNamedExecutorService(name);
         InnerFutureTask inner = (InnerFutureTask) dtask.getInner();
-        Data callable = toData(inner.getCallable());
+        Data dataCallable = toData(inner.getCallable());
         if (inner.getMembers() != null) {
             Set<Member> members = inner.getMembers();
             if (members.size() == 1) {
-                MemberCall memberCall = new MemberCall(name, (MemberImpl) members.iterator().next(), callable, dtask);
+                MemberCall memberCall = new MemberCall(name, (MemberImpl) members.iterator().next(), dataCallable, dtask);
                 inner.setExecutionManagerCallback(memberCall);
                 memberCall.call();
             } else {
-                MembersCall membersCall = new MembersCall(name, members, callable, dtask);
+                MembersCall membersCall = new MembersCall(name, members, dataCallable, dtask);
                 inner.setExecutionManagerCallback(membersCall);
                 membersCall.call();
             }
         } else if (inner.getMember() != null) {
-            MemberCall memberCall = new MemberCall(name, (MemberImpl) inner.getMember(), callable, dtask);
+            MemberCall memberCall = new MemberCall(name, (MemberImpl) inner.getMember(), dataCallable, dtask);
             inner.setExecutionManagerCallback(memberCall);
             memberCall.call();
         } else if (inner.getKey() != null) {
@@ -336,12 +336,12 @@ public class ExecutorManager extends BaseManager {
             if (target == null) {
                 target = node.factory.getCluster().getMembers().iterator().next();
             }
-            MemberCall memberCall = new MemberCall(name, (MemberImpl) target, callable, dtask);
+            MemberCall memberCall = new MemberCall(name, (MemberImpl) target, dataCallable, dtask);
             inner.setExecutionManagerCallback(memberCall);
             memberCall.call();
         } else {
             MemberImpl target = (MemberImpl) namedExecutorService.getExecutionLoadBalancer().getTarget(node.factory);
-            MemberCall memberCall = new MemberCall(name, target, callable, dtask);
+            MemberCall memberCall = new MemberCall(name, target, dataCallable, dtask);
             inner.setExecutionManagerCallback(memberCall);
             memberCall.call();
         }

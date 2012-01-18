@@ -132,8 +132,8 @@ public class Node {
 
     private ManagementCenterService managementCenterService = null;
 
-    public final SecurityContext securityContext ;
-    
+    public final SecurityContext securityContext;
+
     public Node(FactoryImpl factory, Config config) {
         this.id = counter.incrementAndGet();
         this.threadGroup = new ThreadGroup(factory.getName());
@@ -197,8 +197,11 @@ public class Node {
                 multicastSocket.setInterface(address.getInetAddress());
                 multicastSocket.setReceiveBufferSize(64 * 1024);
                 multicastSocket.setSendBufferSize(64 * 1024);
-                multicastSocket.joinGroup(InetAddress
-                        .getByName(join.getMulticastConfig().getMulticastGroup()));
+                String multicastGroup = System.getProperty("hazelcast.multicast.group");
+                if (multicastGroup == null) {
+                    multicastGroup = join.getMulticastConfig().getMulticastGroup();
+                }
+                multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
                 multicastSocket.setSoTimeout(1000);
                 mcService = new MulticastService(this, multicastSocket);
                 mcService.addMulticastListener(new NodeMulticastListener(this));
@@ -277,7 +280,7 @@ public class Node {
         concurrentMapManager.reset();
         clusterManager.stop();
     }
-    
+
     private void generateMemberUuid() {
         final String uuid = UUID.randomUUID().toString();
         logger.log(Level.FINEST, "Generated new UUID for local member: " + uuid);
@@ -392,7 +395,7 @@ public class Node {
         }
         initializer.afterInitialize(this);
     }
-    
+
     public void onRestart() {
         generateMemberUuid();
     }
@@ -415,12 +418,12 @@ public class Node {
 
     public void onOutOfMemory(OutOfMemoryError e) {
         try {
-        	if(connectionManager != null) {
-	            connectionManager.shutdown();
-	            shutdown(true, false);
-        	}
+            if (connectionManager != null) {
+                connectionManager.shutdown();
+                shutdown(true, false);
+            }
         } catch (Throwable ignored) {
-        	logger.log(Level.FINEST, ignored.getMessage(), ignored);
+            logger.log(Level.FINEST, ignored.getMessage(), ignored);
         } finally {
             // Node.doShutdown sets active=false
             // active = false;

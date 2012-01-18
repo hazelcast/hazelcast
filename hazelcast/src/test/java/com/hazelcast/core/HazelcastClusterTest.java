@@ -21,6 +21,7 @@ import com.hazelcast.config.*;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.nio.Address;
 import junit.framework.Assert;
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -38,15 +39,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-
 /**
  * HazelcastTest tests some specific cluster behavior.
  * Node is created for each test method.
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class HazelcastClusterTest {
+public class HazelcastClusterTest extends TestCase {
 
     @Before
     @After
@@ -154,7 +152,7 @@ public class HazelcastClusterTest {
                 }
             }).start();
         }
-        latch.await(200000, TimeUnit.MILLISECONDS);
+        latch.await(200, TimeUnit.SECONDS);
         for (HazelcastInstance h : mapOfInstances.values()) {
             Assert.assertEquals(count, h.getCluster().getMembers().size());
         }
@@ -245,7 +243,7 @@ public class HazelcastClusterTest {
                 }
             }).start();
         }
-        latch.await();
+        assertTrue(latch.await(200, TimeUnit.SECONDS));
         for (HazelcastInstance h : mapOfInstances.values()) {
             Assert.assertEquals(1, h.getCluster().getMembers().size());
         }
@@ -282,7 +280,7 @@ public class HazelcastClusterTest {
                 }
             }).start();
         }
-        assertTrue(latch.await(200000, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(200, TimeUnit.SECONDS));
     }
 
     @Test
@@ -319,7 +317,7 @@ public class HazelcastClusterTest {
                 }
             }).start();
         }
-        org.junit.Assert.assertTrue(latch.await(count * 10000, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(count * 10, TimeUnit.SECONDS));
         for (HazelcastInstance h : map.values()) {
             Assert.assertEquals(count, h.getCluster().getMembers().size());
         }

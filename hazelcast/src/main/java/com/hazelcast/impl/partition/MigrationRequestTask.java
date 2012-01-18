@@ -24,21 +24,16 @@ import com.hazelcast.core.Member;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.PartitionManager;
-import com.hazelcast.impl.Record;
-import com.hazelcast.impl.base.DataRecordEntry;
-import com.hazelcast.impl.base.RecordSet;
+import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.nio.IOUtil.toData;
 
 public class MigrationRequestTask implements Callable<Boolean>, DataSerializable, HazelcastInstanceAware {
     private int partitionId;
@@ -82,15 +77,12 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
         try {
             Member target = pm.getMember(to);
             if (target == null) return Boolean.FALSE;
-            List<Record> lsRecordsToMigrate = pm.getActivePartitionRecords(partitionId, replicaIndex, to);
-            RecordSet recordSet = new RecordSet();
-            for (Record record : lsRecordsToMigrate) {
-                recordSet.addDataRecordEntry(new DataRecordEntry(record));
-            }
-            DistributedTask task = new DistributedTask(new MigrationTask(partitionId, toData(recordSet), replicaIndex), target);
+            CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to);
+            DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList, replicaIndex), target);
             Future future = node.factory.getExecutorService().submit(task);
             return (Boolean) future.get(400, TimeUnit.SECONDS);
         } catch (Throwable e) {
+            e.printStackTrace();
             return Boolean.FALSE;
         }
     }

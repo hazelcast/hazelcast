@@ -24,6 +24,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.partition.Partition;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -37,7 +40,7 @@ public class SimpleMapTest {
     public static int GET_PERCENTAGE = 40;
     public static int PUT_PERCENTAGE = 40;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         final ILogger logger = Hazelcast.getLoggingService().getLogger("SimpleMapTest");
         boolean load = false;
         if (args != null && args.length > 0) {
@@ -73,17 +76,24 @@ public class SimpleMapTest {
         final IMap<String, byte[]> map = Hazelcast.getMap("default");
         if (load) {
             final Member thisMember = Hazelcast.getCluster().getLocalMember();
+            List<String> lsOwnedEntries = new LinkedList<String>();
             for (int i = 0; i < ENTRY_COUNT; i++) {
                 final String key = String.valueOf(i);
                 Partition partition = Hazelcast.getPartitionService().getPartition(key);
                 if (thisMember.equals(partition.getOwner())) {
-                    es.execute(new Runnable() {
-                        public void run() {
-                            map.put(key, new byte[VALUE_SIZE]);
-                        }
-                    });
+                    lsOwnedEntries.add(key);
                 }
             }
+            final CountDownLatch latch = new CountDownLatch(lsOwnedEntries.size());
+            for (final String ownedKey : lsOwnedEntries) {
+                es.execute(new Runnable() {
+                    public void run() {
+                        map.put(ownedKey, new byte[VALUE_SIZE]);
+                        latch.countDown();
+                    }
+                });
+            }
+            latch.await();
         }
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.execute(new Runnable() {

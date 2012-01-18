@@ -629,8 +629,8 @@ public class CMap {
             for (Record record : records) {
                 long now = System.currentTimeMillis();
                 if (record.isActive() && record.isValid(now)) {
-                    PartitionInfo block = concurrentMapManager.getPartitionInfo(record.getBlockId());
-                    if (thisAddress.equals(block.getOwner())) {
+                    Address owner = concurrentMapManager.getPartitionManager().getOwner(record.getBlockId());
+                    if (thisAddress.equals(owner)) {
                         if (record.containsValue(value)) {
                             return true;
                         }
@@ -648,8 +648,8 @@ public class CMap {
             for (Record record : records) {
                 long now = System.currentTimeMillis();
                 if (record.isActive() && record.isValid(now)) {
-                    PartitionInfo block = concurrentMapManager.getPartitionInfo(record.getBlockId());
-                    if (thisAddress.equals(block.getOwner())) {
+                    Address owner = concurrentMapManager.getPartitionOwner(record.getBlockId());
+                    if (thisAddress.equals(owner)) {
                         if (record.containsValue(request.value)) {
                             found = true;
                         }
@@ -997,7 +997,7 @@ public class CMap {
 
     Record getOwnedRecord(Data key) {
         PartitionServiceImpl partitionService = concurrentMapManager.partitionServiceImpl;
-        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(concurrentMapManager.getBlockId(key));
+        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(concurrentMapManager.getPartitionId(key));
         Member ownerNow = partition.getOwner();
         if (ownerNow != null && !partition.isMigrating() && ownerNow.localMember()) {
             return getRecord(key);
@@ -1037,27 +1037,15 @@ public class CMap {
         int size = 0;
         Collection<Record> records = mapRecords.values();
         for (Record record : records) {
-            PartitionInfo partition = partitionManager.getPartition(record.getBlockId());
-            Address owner = partition.getOwner();
+            Address owner = concurrentMapManager.getPartitionOwner(record.getBlockId());
             if (owner != null && thisAddress.equals(owner)) {
                 if (record.isActive() && record.isValid(now)) {
                     size += record.valueCount();
                 }
             }
         }
-        System.out.println(thisAddress + "  >>> " + size + " >>>   " + mapRecords.size());
         if (partitionManager.getVersion() != expectedPartitionVersion) return -1;
         return size;
-    }
-
-    public boolean hasOwned(long blockId) {
-        Collection<Record> records = mapRecords.values();
-        for (Record record : records) {
-            if (record.getBlockId() == blockId && record.isActive()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public void collectScheduledLocks(Map<Object, DistributedLock> lockOwners, Map<Object, DistributedLock> lockRequested) {
@@ -1132,6 +1120,7 @@ public class CMap {
                 }
             }
         }
+//        System.out.println(thisAddress + "  >> " + ownedEntryCount + "  backup: " + backupEntryCount + "   map.size " + mapRecords.size());
         localMapStats.setDirtyEntryCount(zeroOrPositive(dirtyCount));
         localMapStats.setMarkedAsRemovedEntryCount(zeroOrPositive(markedAsRemovedEntryCount));
         localMapStats.setMarkedAsRemovedMemoryCost(zeroOrPositive(markedAsRemovedMemoryCost));
@@ -1665,7 +1654,7 @@ public class CMap {
         if (key == null || key.size() == 0) {
             throw new RuntimeException("Cannot create record from a 0 size key: " + key);
         }
-        int blockId = concurrentMapManager.getBlockId(key);
+        int blockId = concurrentMapManager.getPartitionId(key);
         return concurrentMapManager.recordFactory.createNewRecord(this, blockId, key, value,
                 ttl, maxIdle, concurrentMapManager.newRecordId());
     }

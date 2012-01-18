@@ -187,6 +187,7 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
         }
+        reset();
         partitionManager.shutdown();
     }
 
@@ -659,9 +660,6 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         public void setTarget() {
             target = getKeyOwner(request);
-            if (target == null) {
-                partitionManager.getPartition(request.blockId).getOwner();
-            }
         }
     }
 

@@ -546,7 +546,7 @@ public abstract class BaseManager {
                                     Connection targetConnection = null;
                                     MemberImpl targetMember = null;
                                     Object key = toObject(reqCopy.key);
-                                    PartitionInfo block = (reqCopy.key == null) ? null : node.concurrentMapManager.getOrCreateBlock(reqCopy);
+                                    PartitionInfo block = (reqCopy.key == null) ? null : node.concurrentMapManager.getPartitionInfo(reqCopy.blockId);
                                     if (targetCopy != null) {
                                         targetMember = getMember(targetCopy);
                                         targetConnection = node.connectionManager.getConnection(targetCopy);
@@ -1112,7 +1112,22 @@ public abstract class BaseManager {
         }
     }
 
-    public void sendProcessableTo(final RemotelyProcessable rp, final Address address) {
+    public Packet createRemotelyProcessablePacket(RemotelyProcessable rp) {
+        Data value = ThreadContext.get().toData(rp);
+        Packet packet = obtainPacket();
+        packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
+        return packet;
+    }
+
+    public void sendProcessableTo(RemotelyProcessable rp, Connection conn) {
+        Packet packet = createRemotelyProcessablePacket(rp);
+        boolean sent = send(packet, conn);
+        if (!sent) {
+            releasePacket(packet);
+        }
+    }
+
+    public void sendProcessableTo(RemotelyProcessable rp, Address address) {
         final Data value = toData(rp);
         final Packet packet = obtainPacket();
         packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
@@ -1140,7 +1155,7 @@ public abstract class BaseManager {
         }
     }
 
-    public void executeLocally(final Runnable runnable) {
+    public void executeLocally(Runnable runnable) {
         node.executorManager.executeLocally(runnable);
     }
 

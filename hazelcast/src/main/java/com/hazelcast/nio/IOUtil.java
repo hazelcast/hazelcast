@@ -174,15 +174,17 @@ public final class IOUtil {
 
     public static byte[] compress(byte[] input) throws IOException {
         Deflater compressor = new Deflater();
-        compressor.setLevel(Deflater.BEST_COMPRESSION);
+        compressor.setLevel(Deflater.BEST_SPEED);
         compressor.setInput(input);
         compressor.finish();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(input.length);
-        byte[] buf = new byte[1024];
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(input.length / 10);
+        byte[] buf = new byte[input.length / 10];
         while (!compressor.finished()) {
             int count = compressor.deflate(buf);
             bos.write(buf, 0, count);
+            System.out.println("deflating...");
         }
+        System.out.println("done!");
         bos.close();
         return bos.toByteArray();
     }

@@ -19,7 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.impl.GroupProperties;
-
+import junit.framework.TestCase;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -29,16 +29,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static junit.framework.Assert.fail;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class SemaphoreTest {
+public class SemaphoreTest extends TestCase {
 
     @BeforeClass
     @AfterClass
     public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
@@ -67,7 +65,6 @@ public class SemaphoreTest {
             assertEquals(false, semaphore.tryAcquire(10, 10, TimeUnit.MILLISECONDS));
             assertEquals(9, semaphore.availablePermits());
             semaphore.release();
-
             //Test acquire and timeout and check for partial acquisitions.
             assertEquals(10, semaphore.availablePermits());
             assertEquals(false, semaphore.tryAcquire(20, 10, TimeUnit.MILLISECONDS));
@@ -166,10 +163,10 @@ public class SemaphoreTest {
         final ISemaphore semaphore = Hazelcast.getSemaphore("test");
         assertEquals(0, semaphore.availablePermits());
         final Future f1 = semaphore.acquireAsync();
-        Thread thread = new Thread(){
+        Thread thread = new Thread() {
             @Override
             public void run() {
-                for (;;){
+                for (; ; ) {
                     try {
                         f1.get(1, TimeUnit.SECONDS);
                         break;
@@ -249,7 +246,7 @@ public class SemaphoreTest {
             }
         };
         Thread thread2 = new Thread() {
-             public void run() {
+            public void run() {
                 for (int i = 0; i < 200; i++) {
                     try {
                         semaphore2.acquire();
@@ -265,7 +262,7 @@ public class SemaphoreTest {
             }
         };
         Thread thread3 = new Thread() {
-             public void run() {
+            public void run() {
                 for (int i = 0; i < 300; i++) {
                     try {
                         semaphore3.acquire();
@@ -279,7 +276,7 @@ public class SemaphoreTest {
                     }
                 }
             }
-         };
+        };
         thread1.start();
         thread2.start();
         thread3.start();

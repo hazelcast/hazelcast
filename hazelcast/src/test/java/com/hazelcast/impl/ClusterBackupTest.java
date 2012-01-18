@@ -19,19 +19,26 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationListener;
+import junit.framework.Assert;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.impl.TestUtil.getConcurrentMapManager;
 import static java.lang.Thread.sleep;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Run these tests with
@@ -53,6 +60,132 @@ public class ClusterBackupTest {
     }
 
     /**
+     * I should NOT shutdown before I backup everything
+     */
+    @Test
+    public void testGracefulShutdown() throws Exception {
+        int size = 100000;
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        IMap m1 = h1.getMap("default");
+        for (int i = 0; i < size; i++) {
+            m1.put(i, i);
+        }
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        IMap m2 = h2.getMap("default");
+        h1.getLifecycleService().shutdown();
+        assertEquals(size, m2.size());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        IMap m3 = h3.getMap("default");
+        h2.getLifecycleService().shutdown();
+        assertEquals(size, m3.size());
+    }
+
+    @Test
+    public void testGracefulShutdown2() throws Exception {
+        int size = 100000;
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        IMap m1 = h1.getMap("default");
+        for (int i = 0; i < size; i++) {
+            m1.put(i, i);
+        }
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        IMap m2 = h2.getMap("default");
+        IMap m3 = h3.getMap("default");
+        h1.getLifecycleService().shutdown();
+        assertEquals(size, m2.size());
+        h2.getLifecycleService().shutdown();
+        assertEquals(size, m3.size());
+    }
+
+    /**
+     * AtomicNumber.incrementAndGet backup issue
+     *
+     * @throws InterruptedException
+     */
+    @Test
+    public void testIssue505() throws InterruptedException {
+        HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance superClient = Hazelcast.newHazelcastInstance(new Config());
+        AtomicNumber test = superClient.getAtomicNumber("test");
+        assertEquals(1, test.incrementAndGet());
+        HazelcastInstance hazelcastInstance3 = Hazelcast.newHazelcastInstance(new Config());
+        assertEquals(2, test.incrementAndGet());
+        hazelcastInstance1.getLifecycleService().shutdown();
+        assertEquals(3, test.incrementAndGet());
+    }
+
+    @Test
+    public void issue390NoBackupWhenSuperClient() throws InterruptedException {
+        final int size = 200;
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        IMap map1 = h1.getMap("def");
+        for (int i = 0; i < size; i++) {
+            map1.put(i, new byte[1000]);
+        }
+        Config scconfig = new Config();
+        scconfig.setLiteMember(true);
+        HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        IMap map2 = h2.getMap("def");
+        final CountDownLatch latch = new CountDownLatch(2);
+        h2.getPartitionService().addMigrationListener(new MigrationListener() {
+            public void migrationStarted(MigrationEvent migrationEvent) {
+            }
+
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                latch.countDown();
+            }
+        });
+        Assert.assertTrue(latch.await(60, TimeUnit.SECONDS));
+        assertEquals(size, getTotalOwnedEntryCount(map1, map2));
+        assertEquals(size, getTotalBackupEntryCount(map1, map2));
+    }
+
+    @Test
+    public void issue388NoBackupWhenSuperClient() throws InterruptedException {
+        final int count = 300;
+        final int size = 3 * 300;
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Config scconfig = new Config();
+        scconfig.setLiteMember(true);
+        HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
+        IMap map1 = h1.getMap("def");
+        IMap map2 = h2.getMap("def");
+        IMap map3 = sc.getMap("def");
+        for (int i = 0; i < count; ) {
+            map1.put(i++, new byte[1000]);
+            map2.put(i++, new byte[1000]);
+            map3.put(i++, new byte[1000]);
+        }
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, getTotalOwnedEntryCount(map1, map2));
+        assertEquals(size, getTotalBackupEntryCount(map1, map2));
+    }
+
+    @Test
+    public void issue395BackupProblemWithBCount2() {
+        final int size = 1000;
+        Config config = new Config();
+        config.getMapConfig("default").setBackupCount(2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        for (int i = 0; i < size; i++) {
+            map1.put(i, i);
+        }
+        assertEquals(size, getTotalOwnedEntryCount(map1, map2));
+        assertEquals(size, getTotalBackupEntryCount(map1, map2));
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        IMap map3 = h3.getMap("default");
+        assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
+        assertEquals(size, getTotalBackupEntryCount(map1, map2, map3));
+    }
+
+    /**
      * Fix for the issue 275.
      *
      * @throws Exception
@@ -67,6 +200,7 @@ public class ClusterBackupTest {
         }
         assertEquals(size, map1.size());
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        sleep(3000);
         IMap map2 = h2.getMap("default");
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
@@ -74,20 +208,27 @@ public class ClusterBackupTest {
         assertEquals(size, getTotalBackupEntryCount(map1, map2));
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
         IMap map3 = h3.getMap("default");
+        sleep(3000);
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
-        sleep(3000);
         assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
         assertEquals(size, getTotalBackupEntryCount(map1, map2, map3));
+        MemberImpl member2 = (MemberImpl) h2.getCluster().getLocalMember();
         h2.getLifecycleService().shutdown();
+        sleep(3000);
         assertEquals(size, map1.size());
         assertEquals(size, map3.size());
-        sleep(3000);
         assertEquals(size, getTotalOwnedEntryCount(map1, map3));
         assertEquals(size, getTotalBackupEntryCount(map1, map3));
+        MemberImpl member1 = (MemberImpl) h1.getCluster().getLocalMember();
         h1.getLifecycleService().shutdown();
         assertEquals(size, map3.size());
+        ConcurrentMapManager c3 = getConcurrentMapManager(h3);
+        for (int i = 0; i < 271; i++) {
+            assertFalse(c3.getPartitionInfo(i).isOwnerOrBackup(member1.getAddress(), PartitionInfo.MAX_REPLICA_COUNT));
+            assertFalse(c3.getPartitionInfo(i).isOwnerOrBackup(member2.getAddress(), PartitionInfo.MAX_REPLICA_COUNT));
+        }
     }
 
     /**

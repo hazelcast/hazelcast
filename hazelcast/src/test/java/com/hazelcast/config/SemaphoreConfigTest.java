@@ -16,11 +16,10 @@
  */
 package com.hazelcast.config;
 
+import junit.framework.TestCase;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
-
-public class SemaphoreConfigTest {
+public class SemaphoreConfigTest extends TestCase {
 
     @Test
     public void testSetInitialPermits() {

@@ -265,7 +265,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             } else if ((now - memberImpl.getLastRead()) >= 10000) {
                                 node.connectionManager.destroyConnection(conn);
                             }
-                            
                             if ((now - memberImpl.getLastWrite()) > 500) {
                                 sendHeartbeat(conn);
                             }
@@ -389,11 +388,11 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
         } // end of REMOVE CONNECTION
     }
-    
+
     void doRemoveAddress(Address deadAddress) {
         doRemoveAddress(deadAddress, true);
     }
-    
+
     void doRemoveAddress(Address deadAddress, boolean destroyConnection) {
         mapStorageMemberIndexes.clear();
         logger.log(Level.INFO, "Removing Address " + deadAddress);
@@ -450,69 +449,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
-    public List<MemberImpl> getMembersBeforeSync() {
-        return lsMembersBefore;
-    }
-
-    public boolean isNextChanged(int distance) {
-        if (distance <= 0) {
-            return false;
-        }
-        if (lsMembers.size() == 0) {
-            return false;
-        } else if (lsMembersBefore.size() == 0) {
-            return true;
-        }
-        int indexBefore = lsMembersBefore.indexOf(thisMember);
-        int indexNow = lsMembers.indexOf(thisMember);
-        for (int i = 1; i < distance + 1; i++) {
-            Member before = memberAt(lsMembersBefore, (indexBefore + i) % lsMembersBefore.size());
-            Member now = memberAt(lsMembers, (indexNow + i) % lsMembers.size());
-            if (before == null && now == null) {
-            } else if (before == null
-                    || now == null
-                    || !now.equals(before)
-                    || now.isLiteMember()
-                    || before.isLiteMember()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean isPreviousChanged(int distance) {
-        if (distance <= 0) {
-            return false;
-        }
-        if (lsMembers.size() == 0) {
-            return false;
-        } else if (lsMembersBefore.size() == 0) {
-            return true;
-        }
-        int indexBefore = lsMembersBefore.indexOf(thisMember);
-        int indexNow = lsMembers.indexOf(thisMember);
-        for (int i = 1; i < distance + 1; i++) {
-            Member before = memberAt(lsMembersBefore, (lsMembersBefore.size() + indexBefore - i) % lsMembersBefore.size());
-            Member now = memberAt(lsMembers, (lsMembers.size() + indexNow - i) % lsMembers.size());
-            if (before == null && now == null) {
-            } else if ((before == null)
-                    || (now == null)
-                    || !now.equals(before)
-                    || now.isLiteMember()
-                    || before.isLiteMember()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private Member memberAt(List<MemberImpl> lsMembers, int index) {
-        if (index < 0 || index >= lsMembers.size()) {
-            return null;
-        }
-        return lsMembers.get(index);
-    }
-
     void handleJoinRequest(JoinRequest joinRequest) {
         final long now = System.currentTimeMillis();
         logger.log(Level.INFO, joinInProgress + " Handling join from " + joinRequest.address + " timeToStart: "
@@ -524,9 +460,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 logger.log(Level.FINEST, "Ignoring join request, member already exists.. => " + joinRequest);
                 return;
             }
-            logger.log(Level.WARNING, "New join request has been received from an existing endpoint! => " + member 
+            logger.log(Level.WARNING, "New join request has been received from an existing endpoint! => " + member
                     + " Removing old member and processing join request...");
-            
             // If existing connection of endpoint is different from current connection
             // destroy it, otherwise keep it.
             final Connection existingConnection = node.connectionManager.getConnection(joinRequest.address);
@@ -623,43 +558,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         return sb.toString();
     }
 
-    public int getMemberDistance(Address target) {
-        int indexThis = -1;
-        int indexTarget = -1;
-        int index = 0;
-        for (MemberImpl member : lsMembers) {
-            if (member.getAddress().equals(thisAddress)) {
-                indexThis = index;
-            } else if (member.getAddress().equals(target)) {
-                indexTarget = index;
-            }
-            if (indexThis > -1 && indexTarget > -1) {
-                int distance = indexThis - indexTarget;
-                if (distance < 0) {
-                    distance += lsMembers.size();
-                }
-                return distance;
-            }
-            index++;
-        }
-        return 0;
-    }
-
-    public Packet createRemotelyProcessablePacket(RemotelyProcessable rp) {
-        Data value = ThreadContext.get().toData(rp);
-        Packet packet = obtainPacket();
-        packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
-        return packet;
-    }
-
-    public void sendProcessableTo(RemotelyProcessable rp, Connection conn) {
-        Packet packet = createRemotelyProcessablePacket(rp);
-        boolean sent = send(packet, conn);
-        if (!sent) {
-            releasePacket(packet);
-        }
-    }
-
     void joinReset() {
         joinInProgress = false;
         setJoins.clear();
@@ -715,15 +613,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 setResult(Boolean.FALSE);
             }
         }
-
-//        @Override
-//        public void process() {
-//            if (!thisAddress.equals(target) && node.connectionManager.getConnection(target) == null) {
-//                setResult(Boolean.FALSE);
-//            } else {
-//                super.process();
-//            }
-//        }
 
         @Override
         public void doLocalOp() {

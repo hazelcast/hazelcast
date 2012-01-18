@@ -1,5 +1,6 @@
 package com.hazelcast.config;
 
+import junit.framework.TestCase;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
@@ -13,9 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
-import static org.junit.Assert.*;
-
-public class XMLConfigBuilderTest {
+public class XMLConfigBuilderTest extends TestCase {
 
     @Test
     public void testCleanNodeName() {

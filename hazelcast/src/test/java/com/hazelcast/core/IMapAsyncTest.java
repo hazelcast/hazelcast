@@ -27,7 +27,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class IMapAsyncTest {
+public class IMapAsyncTest extends TestCase {
     private final String key = "key";
     private final String value1 = "value1";
     private final String value2 = "value2";
@@ -78,10 +78,10 @@ public class IMapAsyncTest {
                 latch.countDown();
             }
         }).start();
-        latch.await();
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
         Future<String> f1 = map.removeAsync(key);
         try {
-            TestCase.assertEquals(value1, f1.get(0L, TimeUnit.SECONDS));
+            assertEquals(value1, f1.get(0L, TimeUnit.SECONDS));
         } catch (TimeoutException e) {
             // expected
             return;

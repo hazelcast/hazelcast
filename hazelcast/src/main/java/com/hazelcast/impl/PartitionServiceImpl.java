@@ -18,7 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
@@ -72,7 +72,7 @@ public class PartitionServiceImpl implements PartitionService {
 
     public PartitionProxy getPartition(Object key) {
         final Data keyData = toData(key);
-        final int partitionId = concurrentMapManager.getBlockId(keyData);
+        final int partitionId = concurrentMapManager.getPartitionId(keyData);
         return getPartition(partitionId);
     }
 
@@ -86,12 +86,12 @@ public class PartitionServiceImpl implements PartitionService {
             public void process() {
                 MemberImpl memberOwner = null;
                 try {
-                    PartitionInfo partition = concurrentMapManager.partitionManager.getPartition(partitionId);
-                    if (partition.getOwner() != null) {
-                        if (concurrentMapManager.thisAddress.equals(partition.getOwner())) {
+                    Address ownerAddress = concurrentMapManager.getPartitionManager().getOwner(partitionId);
+                    if (ownerAddress != null) {
+                        if (concurrentMapManager.thisAddress.equals(ownerAddress)) {
                             memberOwner = concurrentMapManager.thisMember;
                         } else {
-                            memberOwner = concurrentMapManager.getMember(partition.getOwner());
+                            memberOwner = concurrentMapManager.getMember(ownerAddress);
                         }
                     }
                 } catch (Exception e) {

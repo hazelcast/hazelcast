@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @SuppressWarnings("SynchronizationOnStaticField")
 public final class Hazelcast {
     private static final AtomicReference<HazelcastInstance> defaultInstance = new AtomicReference<HazelcastInstance>();
-    private final static Object initLock = new Object();
+    private static final Object initLock = new Object();
     private static Config defaultConfig = null;
 
     private Hazelcast() {

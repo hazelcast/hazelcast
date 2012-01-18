@@ -17,11 +17,10 @@
 
 package com.hazelcast.config;
 
+import junit.framework.TestCase;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
-public class MapConfigTest {
+public class MapConfigTest extends TestCase {
 
     /**
      * Test method for {@link com.hazelcast.config.MapConfig#getName()}.

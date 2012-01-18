@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -27,12 +28,7 @@ import org.junit.Test;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNull;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-public class ClusterQueueTest {
+public class ClusterQueueTest extends TestCase {
 
     @BeforeClass
     public static void init() throws Exception {
@@ -91,7 +87,7 @@ public class ClusterQueueTest {
                 }
             }
         }).start();
-        shutdownLatch.await(5, TimeUnit.SECONDS);
+        assertTrue(shutdownLatch.await(5, TimeUnit.SECONDS));
         q1.offer("item");
         assertEquals(1, q1.size());
         assertEquals("item", q1.poll());
@@ -116,7 +112,7 @@ public class ClusterQueueTest {
                 latch.countDown();
             }
         }).start();
-        latch.await();
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
         h3.getLifecycleService().shutdown();
         Thread.sleep(2000);
         assertEquals(1, h2.getMap("q:default").size());
@@ -133,7 +129,7 @@ public class ClusterQueueTest {
                 latch2.countDown();
             }
         }).start();
-        latch2.await();
+        assertTrue(latch2.await(5, TimeUnit.SECONDS));
         h1.getLifecycleService().shutdown();
         Thread.sleep(2000);
         assertEquals("item2", q2.poll());

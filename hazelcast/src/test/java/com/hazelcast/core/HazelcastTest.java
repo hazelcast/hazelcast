@@ -19,16 +19,14 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.impl.GroupProperties;
+import junit.framework.TestCase;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.concurrent.*;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  * HazelcastTest tests general behavior for one node.
@@ -37,7 +35,7 @@ import static org.junit.Assert.*;
  * Unit test is whiteboard'n'fast.
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class HazelcastTest {
+public class HazelcastTest extends TestCase {
 
     @BeforeClass
     @AfterClass
@@ -1164,7 +1162,7 @@ public class HazelcastTest {
         q.offer("message");
         assertEquals(1, q.size());
     }
-    
+
     @Test
     public void testIssue767ItemListenerUnderTransaction() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(3);
@@ -1173,10 +1171,11 @@ public class HazelcastTest {
                 latch.countDown();
                 System.out.println(item);
             }
+
             public void itemRemoved(ItemEvent item) {
             }
         };
-        class TestTask  {
+        class TestTask {
             public void test(HazelcastInstance hz, Object value) {
                 ISet set = hz.getSet("test");
                 set.addItemListener(listener, true);
@@ -1186,13 +1185,10 @@ public class HazelcastTest {
                 tx.commit();
             }
         }
-        
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(null);
         new TestTask().test(hz1, "test1");
-        
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
         new TestTask().test(hz2, "test2");
-        
         assertTrue(latch.await(2, TimeUnit.SECONDS));
     }
 }

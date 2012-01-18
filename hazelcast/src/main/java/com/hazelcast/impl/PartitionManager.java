@@ -17,23 +17,24 @@
 
 package com.hazelcast.impl;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
+import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.base.RecordSet;
+import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
 import com.hazelcast.impl.partition.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEvent;
+
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 public class PartitionManager {
     private final ConcurrentMapManager concurrentMapManager;
@@ -84,7 +85,18 @@ public class PartitionManager {
         if (!initialized) {
             firstArrangement();
         }
-        return partitions[partitionId].getOwner();
+        Address owner = partitions[partitionId].getOwner();
+        if (owner == null && !concurrentMapManager.isMaster()) {
+            concurrentMapManager.sendProcessableTo(new AssignPartitions(), concurrentMapManager.getMasterAddress());
+        }
+        return owner;
+    }
+
+    public static class AssignPartitions extends AbstractRemotelyProcessable {
+
+        public void process() {
+            node.concurrentMapManager.getPartitionManager().getOwner(0);
+        }
     }
 
     public boolean isMigrating(int partitionId) {
@@ -132,7 +144,7 @@ public class PartitionManager {
         }
     }
 
-    public List<Record> getActivePartitionRecords(final int partitionId, final int replicaIndex, final Address newAddress) {
+    public CostAwareRecordList getActivePartitionRecords(final int partitionId, final int replicaIndex, final Address newAddress) {
         concurrentMapManager.enqueueAndWait(new Processable() {
             public void process() {
                 addActiveMigration(partitionId, replicaIndex, newAddress);
@@ -140,7 +152,7 @@ public class PartitionManager {
         });
         long now = System.currentTimeMillis();
         final Collection<CMap> cmaps = concurrentMapManager.maps.values();
-        List<Record> lsResultSet = new ArrayList<Record>(1000);
+        CostAwareRecordList lsResultSet = new CostAwareRecordList(1000);
         for (final CMap cmap : cmaps) {
             if (cmap.getBackupCount() >= replicaIndex) {
                 for (Record rec : cmap.mapRecords.values()) {
@@ -150,6 +162,7 @@ public class PartitionManager {
                         }
                         if (rec.getBlockId() == partitionId) {
                             lsResultSet.add(rec);
+                            lsResultSet.addCost(rec.getCost());
                         }
                     }
                 }
@@ -209,8 +222,15 @@ public class PartitionManager {
     }
 
     public void reset() {
+        initialized = false;
+        esMigrationService.getQueue().clear();
+        for (PartitionInfo partition : partitions) {
+            partition.setPartitionInfo(new PartitionInfo(partition.getPartitionId()));
+        }
+        mapActiveMigrations.clear();
+        version.set(0);
     }
-    
+
     public void shutdown() {
         try {
             esMigrationService.shutdownNow();
@@ -308,7 +328,7 @@ public class PartitionManager {
     }
 
     void fireMigrationEvent(final boolean started, int partitionId, Address from, Address to) {
-        System.out.println(concurrentMapManager.getThisAddress() + "  " + mapActiveMigrations.size());
+//        System.out.println(concurrentMapManager.getThisAddress() + "  fireMigrationEvent " + mapActiveMigrations.size());
         final MemberImpl current = concurrentMapManager.getMember(from);
         final MemberImpl newOwner = concurrentMapManager.getMember(to);
         final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, partitionId, current, newOwner);
@@ -341,7 +361,7 @@ public class PartitionManager {
                         }
                     }, 100);
                 }
-                System.out.println("Migrating " + migrationRequestTask);
+//                System.out.println("Migrating " + migrationRequestTask);
                 Member fromMember = getMember(migrationRequestTask.getFromAddress());
                 DistributedTask task = new DistributedTask(migrationRequestTask, fromMember);
                 Future future = concurrentMapManager.node.factory.getExecutorService().submit(task);

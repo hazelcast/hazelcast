@@ -17,14 +17,12 @@
 
 package com.hazelcast.impl;
 
+import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-public class AddressPickerTest {
+public class AddressPickerTest extends TestCase {
 
     @Test
     public void matchAddres() {

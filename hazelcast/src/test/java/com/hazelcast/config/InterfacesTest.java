@@ -17,14 +17,13 @@
 
 package com.hazelcast.config;
 
+import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
-
-public class InterfacesTest {
+public class InterfacesTest extends TestCase {
 
     final String interfaceA = "127.0.0.1";
     final String interfaceB = "127.0.0.2";

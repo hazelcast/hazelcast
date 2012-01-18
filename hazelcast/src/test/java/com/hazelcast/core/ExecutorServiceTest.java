@@ -17,6 +17,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.impl.GroupProperties;
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -28,9 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
-import static junit.framework.Assert.*;
-import static org.junit.Assert.assertEquals;
-
 /**
  * Testing suite for ExecutorService
  *
@@ -38,13 +37,15 @@ import static org.junit.Assert.assertEquals;
  * @oztalip
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class ExecutorServiceTest {
+public class ExecutorServiceTest extends TestCase {
 
     public static int COUNT = 1000;
 
     @BeforeClass
     @AfterClass
     public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
