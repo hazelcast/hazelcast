@@ -187,6 +187,7 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
         }
+        partitionManager.shutdown();
     }
 
     public void flush(String name) {

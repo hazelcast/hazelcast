@@ -274,8 +274,13 @@ public class ExecutorManager extends BaseManager {
             namedExecutorService.stop();
         }
         parallelExecutorService.shutdown();
+        esScheduled.shutdownNow();
+        threadPoolExecutor.shutdownNow();
         try {
-            threadPoolExecutor.shutdownNow();
+            esScheduled.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+        try {
             threadPoolExecutor.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }

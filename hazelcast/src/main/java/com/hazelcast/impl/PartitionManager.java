@@ -210,6 +210,14 @@ public class PartitionManager {
 
     public void reset() {
     }
+    
+    public void shutdown() {
+        try {
+            esMigrationService.shutdownNow();
+            esMigrationService.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+    }
 
     public void syncForDead(MemberImpl deadMember) {
         if (initialized) {
