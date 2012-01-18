@@ -17,20 +17,22 @@
 
 package com.hazelcast.impl;
 
-import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-public class AddressPickerTest extends TestCase {
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class AddressPickerTest {
 
     @Test
-    public void matchAddres() {
+    public void matchAddress() {
         assertTrue(AddressPicker.matchAddress("10.235.194.23", Arrays.asList("10.235.194.23", "10.235.193.121")));
     }
 
     @Test
-    public void dontMatchAddres() {
+    public void doNotMatchAddress() {
         assertFalse(AddressPicker.matchAddress("10.235.194.23", Arrays.asList("10.235.193.*")));
     }
 }

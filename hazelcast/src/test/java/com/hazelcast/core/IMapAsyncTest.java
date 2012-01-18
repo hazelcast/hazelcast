@@ -27,7 +27,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class IMapAsyncTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class IMapAsyncTest {
     private final String key = "key";
     private final String value1 = "value1";
     private final String value2 = "value2";

@@ -17,13 +17,14 @@
 
 package com.hazelcast.config;
 
-import junit.framework.TestCase;
 import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  *
  */
-public class GroupConfigTest extends TestCase {
+public class GroupConfigTest {
 
     /**
      * Test method for {@link com.hazelcast.config.GroupConfig#GroupConfig()}.

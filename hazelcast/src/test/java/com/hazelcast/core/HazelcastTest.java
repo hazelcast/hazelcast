@@ -19,14 +19,13 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.impl.GroupProperties;
-import junit.framework.TestCase;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.concurrent.*;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.*;
 
 /**
  * HazelcastTest tests general behavior for one node.
@@ -35,7 +34,7 @@ import static org.junit.Assert.assertArrayEquals;
  * Unit test is whiteboard'n'fast.
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class HazelcastTest extends TestCase {
+public class HazelcastTest {
 
     @BeforeClass
     @AfterClass

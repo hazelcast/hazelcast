@@ -20,15 +20,18 @@ package com.hazelcast.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
-import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.concurrent.*;
 
-public class ClusterQueueTest extends TestCase {
+import static org.junit.Assert.*;
+
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+public class ClusterQueueTest {
 
     @BeforeClass
     public static void init() throws Exception {

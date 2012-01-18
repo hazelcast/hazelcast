@@ -21,7 +21,6 @@ import com.hazelcast.config.*;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.nio.Address;
 import junit.framework.Assert;
-import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -39,12 +38,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * HazelcastTest tests some specific cluster behavior.
  * Node is created for each test method.
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class HazelcastClusterTest extends TestCase {
+public class HazelcastClusterTest {
 
     @Before
     @After

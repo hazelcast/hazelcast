@@ -17,13 +17,15 @@
 
 package com.hazelcast.config;
 
-import junit.framework.TestCase;
 import org.junit.Test;
+
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
  */
-public class TopicConfigTest extends TestCase {
+public class TopicConfigTest {
 
     /**
      * Test method for {@link com.hazelcast.config.TopicConfig#getName()}.

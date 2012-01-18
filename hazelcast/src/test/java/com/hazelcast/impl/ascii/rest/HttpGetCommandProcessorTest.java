@@ -18,14 +18,14 @@
 package com.hazelcast.impl.ascii.rest;
 
 import com.hazelcast.impl.ascii.TextCommandService;
-import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
-public class HttpGetCommandProcessorTest extends TestCase {
+public class HttpGetCommandProcessorTest {
     private static final String uri_map_prefix = "/hazelcast/rest/maps/";
     private static final String uri_map_correct = uri_map_prefix + "testmap/testkey";
 

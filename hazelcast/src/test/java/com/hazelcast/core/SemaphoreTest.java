@@ -19,7 +19,6 @@ package com.hazelcast.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.impl.GroupProperties;
-import junit.framework.TestCase;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -29,8 +28,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.junit.Assert.*;
+
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class SemaphoreTest extends TestCase {
+public class SemaphoreTest {
 
     @BeforeClass
     @AfterClass

@@ -18,15 +18,16 @@ package com.hazelcast.core;
 
 import com.hazelcast.impl.CountDownLatchProxy;
 import com.hazelcast.impl.GroupProperties;
-import junit.framework.TestCase;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.*;
+
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class ICountDownLatchTest extends TestCase {
+public class ICountDownLatchTest {
 
     @BeforeClass
     @AfterClass

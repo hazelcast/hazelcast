@@ -18,7 +18,6 @@
 package com.hazelcast.core;
 
 import com.hazelcast.impl.GroupProperties;
-import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -30,6 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
+import static org.junit.Assert.*;
+
 /**
  * Testing suite for ExecutorService
  *
@@ -37,7 +38,7 @@ import java.util.concurrent.*;
  * @oztalip
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class ExecutorServiceTest extends TestCase {
+public class ExecutorServiceTest {
 
     public static int COUNT = 1000;
 

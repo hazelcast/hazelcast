@@ -17,10 +17,12 @@
 
 package com.hazelcast.config;
 
-import junit.framework.TestCase;
 import org.junit.Test;
 
-public class ExecutorConfigTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class ExecutorConfigTest {
 
     @Test
     public void testGetCorePoolSize() {

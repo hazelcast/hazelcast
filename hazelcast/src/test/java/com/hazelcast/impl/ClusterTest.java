@@ -27,7 +27,6 @@ import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.util.ConcurrentHashSet;
-import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -48,14 +47,14 @@ import java.util.jar.JarInputStream;
 import static com.hazelcast.impl.TestUtil.OrderKey;
 import static com.hazelcast.impl.TestUtil.getCMap;
 import static java.lang.Thread.sleep;
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.*;
 
 /**
  * Run these tests with
  * -Xms512m -Xmx512m
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class ClusterTest extends TestCase {
+public class ClusterTest {
 
     @BeforeClass
     public static void init() throws Exception {
