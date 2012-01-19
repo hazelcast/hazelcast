@@ -29,7 +29,7 @@ import java.util.*;
 import static com.hazelcast.impl.ClusterOperation.*;
 
 public class Entries extends AbstractSet {
-    final List<Map.Entry> lsKeyValues = new ArrayList<Map.Entry>();
+    final Set<Map.Entry> lsKeyValues = new HashSet<Map.Entry>();
     final String name;
     final ClusterOperation operation;
     final boolean checkValue;
@@ -92,7 +92,7 @@ public class Entries extends AbstractSet {
         }
     }
 
-    public List<Map.Entry> getKeyValues() {
+    public Set<Map.Entry> getKeyValues() {
         return lsKeyValues;
     }
 

@@ -1252,7 +1252,7 @@ public class ClientService implements ConnectionListener {
                 final Predicate p = (Predicate) toObject(value);
                 entries = (Entries) map.entrySet(p);
             }
-            final List<Map.Entry> list = entries.getKeyValues();
+            final Set<Map.Entry> list = entries.getKeyValues();
             final Keys keys = new Keys(new ArrayList<Data>(list.size() << 1));
             for (final Object obj : list) {
                 final KeyValue entry = (KeyValue) obj;
@@ -1303,7 +1303,7 @@ public class ClientService implements ConnectionListener {
                 Predicate p = (Predicate) toObject(value);
                 entries = (Entries) map.keySet(p);
             }
-            List<Map.Entry> list = entries.getKeyValues();
+            Set<Map.Entry> list = entries.getKeyValues();
             Keys keys = new Keys(collection);
             for (Object obj : list) {
                 KeyValue entry = (KeyValue) obj;
