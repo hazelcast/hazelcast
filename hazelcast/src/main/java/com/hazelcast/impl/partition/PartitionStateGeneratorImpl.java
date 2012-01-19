@@ -422,11 +422,15 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
         public void ownPartition(Address address, int index, Integer partitionId) {
             if (!hasNode(address)) {
-                throw new IllegalArgumentException("Address does not belong to this group: " + address.toString());
+                String error = "Address does not belong to this group: " + address.toString();
+                logger.log(Level.SEVERE, error);
+                throw new IllegalArgumentException(error);
             }
             if (containsPartition(partitionId)) {
-                throw new IllegalArgumentException("Partition[" + partitionId + "] is already owned by this group! " +
-                        "Duplicate!");
+                String error = "Partition[" + partitionId + "] is already owned by this group! " +
+                    "Duplicate!";
+                logger.log(Level.SEVERE, error);
+                throw new IllegalArgumentException(error);
             }
             groupPartitionTable.add(index, partitionId);
             nodePartitionTables.get(address).add(index, partitionId);
@@ -548,11 +552,15 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
         public void ownPartition(Address address, int index, Integer partitionId) {
             if (!hasNode(address)) {
-                throw new IllegalArgumentException(address + " is different from this node's " + this.address);
+                String error = address + " is different from this node's " + this.address;
+                logger.log(Level.SEVERE, error);
+                throw new IllegalArgumentException(error);
             }
             if (containsPartition(partitionId)) {
-                throw new IllegalArgumentException("Partition[" + partitionId + "] is already owned by this node " +
-                        address + "! Duplicate!");
+                String error = "Partition[" + partitionId + "] is already owned by this node " +
+                    address + "! Duplicate!";
+                logger.log(Level.SEVERE, error);
+                throw new IllegalArgumentException(error);
             }
             nodeTable.add(index, partitionId);
         }
