@@ -128,8 +128,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     if (owner != null) {
                         for (NodeGroup nodeGroup : groups) {
                             if (nodeGroup.hasNode(owner)) {
-                                valid = true;
-                                nodeGroup.ownPartition(owner, index, partition.getPartitionId());
+                                if (nodeGroup.ownPartition(owner, index, partition.getPartitionId())) {
+                                    valid = true;
+                                }
                                 break;
                             }
                         }
@@ -381,7 +382,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         void resetPartitions();
         int getPartitonCount(int index);
         boolean containsPartition(Integer partitionId);
-        void ownPartition(Address address, int index, Integer partitionId);
+        boolean ownPartition(Address address, int index, Integer partitionId);
         boolean addPartition(int replicaIndex, Integer partitionId);
         Iterator<Integer> getPartitionsIterator(int index);
         boolean removePartition(int index, Integer partitionId);
@@ -420,20 +421,20 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         public boolean containsPartition(Integer partitionId) {
             return groupPartitionTable.contains(partitionId);
         }
-        public void ownPartition(Address address, int index, Integer partitionId) {
+        public boolean ownPartition(Address address, int index, Integer partitionId) {
             if (!hasNode(address)) {
                 String error = "Address does not belong to this group: " + address.toString();
-                logger.log(Level.SEVERE, error);
-                throw new IllegalArgumentException(error);
+                logger.log(Level.WARNING, error);
+                return false;
             }
             if (containsPartition(partitionId)) {
                 String error = "Partition[" + partitionId + "] is already owned by this group! " +
                     "Duplicate!";
-                logger.log(Level.SEVERE, error);
-                throw new IllegalArgumentException(error);
+                logger.log(Level.FINEST, error);
+                return false;
             }
             groupPartitionTable.add(index, partitionId);
-            nodePartitionTables.get(address).add(index, partitionId);
+            return nodePartitionTables.get(address).add(index, partitionId);
         }
         public boolean addPartition(int replicaIndex, Integer partitionId) {
             if (containsPartition(partitionId)) {
@@ -527,7 +528,8 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         Set<Address> nodes ;
         public void addNode(Address addr) {
             if (address != null) {
-                throw new IllegalArgumentException("Single node group already has an address => " + address);
+                logger.log(Level.WARNING, "Single node group already has an address => " + address);
+                return;
             }
             this.address = addr;
             nodes = Collections.singleton(address);
@@ -550,19 +552,19 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         public boolean containsPartition(Integer partitionId) {
             return nodeTable.contains(partitionId);
         }
-        public void ownPartition(Address address, int index, Integer partitionId) {
+        public boolean ownPartition(Address address, int index, Integer partitionId) {
             if (!hasNode(address)) {
                 String error = address + " is different from this node's " + this.address;
-                logger.log(Level.SEVERE, error);
-                throw new IllegalArgumentException(error);
+                logger.log(Level.WARNING, error);
+                return false;
             }
             if (containsPartition(partitionId)) {
                 String error = "Partition[" + partitionId + "] is already owned by this node " +
                     address + "! Duplicate!";
-                logger.log(Level.SEVERE, error);
-                throw new IllegalArgumentException(error);
+                logger.log(Level.FINEST, error);
+                return false;
             }
-            nodeTable.add(index, partitionId);
+            return nodeTable.add(index, partitionId);
         }
         public boolean addPartition(int replicaIndex, Integer partitionId) {
             if (containsPartition(partitionId)) {
