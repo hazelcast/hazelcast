@@ -42,12 +42,23 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return arrange(groups, partitionCount, new EmptyStateInitializer());
     }
     
-    public PartitionInfo[] reArrange(PartitionInfo[] currentState, List<MemberImpl> members, int partitionCount,
-            Queue<MigrationRequestTask> migrationQueue, Queue<MigrationRequestTask> replicaQueue) {
+    public PartitionInfo[] reArrange(PartitionInfo[] currentState, List<MemberImpl> oldMembers, 
+            List<MemberImpl> members, int partitionCount,
+            Queue<MigrationRequestTask> scheduledQueue, Queue<MigrationRequestTask> immediateQueue) {
         final LinkedList<NodeGroup> groups = createNodeGroups(memberGroupFactory.createMemberGroups(members));
+        final LinkedList<NodeGroup> oldGroups = createNodeGroups(memberGroupFactory.createMemberGroups(oldMembers));
+        boolean immediateZero = false;
+        boolean immediateOne = false;
+        if (oldGroups.size() == 1 && groups.size() > 1) {
+            immediateZero = true;
+            immediateOne = true;
+        } else if (oldGroups.size() > 2 && groups.size() == 2) {
+            immediateOne = true;
+        }
+        
         PartitionInfo[] newState = arrange(groups, partitionCount, new CopyStateInitializer(currentState));
         finalizeArrangement(currentState, newState, Math.min(groups.size(), PartitionInfo.MAX_REPLICA_COUNT), 
-                migrationQueue, replicaQueue);
+                scheduledQueue, immediateQueue, immediateZero, immediateOne);
         return newState;
     }
     
@@ -78,7 +89,8 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
     
     private void finalizeArrangement(PartitionInfo[] currentState, PartitionInfo[] newState, int replicaCount,
-            Queue<MigrationRequestTask> migrationQueue, Queue<MigrationRequestTask> replicaQueue) {
+            Queue<MigrationRequestTask> scheduledQueue, Queue<MigrationRequestTask> immediateQueue, 
+            boolean immediateZero, boolean immediateOne) {
         final int partitionCount = currentState.length;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             PartitionInfo currentPartition = currentState[partitionId];
@@ -86,20 +98,29 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             for (int replicaIndex = 0; replicaIndex < replicaCount; replicaIndex++) {
                 Address currentOwner = currentPartition.getReplicaAddress(replicaIndex);
                 Address newOwner = newPartition.getReplicaAddress(replicaIndex);
+                MigrationRequestTask migrationRequestTask = null;
                 if (currentOwner != null && newOwner != null && !currentOwner.equals(newOwner)) {
                     // migration owner or backup
-                    MigrationRequestTask migrationRequestTask = new MigrationRequestTask(
+                    migrationRequestTask = new MigrationRequestTask(
                             partitionId, currentOwner, newOwner, replicaIndex, true);
-                    migrationQueue.offer(migrationRequestTask);
                 } else if (currentOwner == null && newOwner != null) {
                     // copy of a backup
                     currentOwner = currentPartition.getOwner();
-                    MigrationRequestTask migrationRequestTask = new MigrationRequestTask(
+                    migrationRequestTask = new MigrationRequestTask(
                             partitionId, currentOwner, newOwner, replicaIndex, false);
-                    replicaQueue.offer(migrationRequestTask);
                 } else if (currentOwner != null && newOwner == null) {
                     // should not happen!
                     logger.log(Level.WARNING, "Something is wrong! Old owner valid but new owner is null!");
+                }
+                
+                if (migrationRequestTask != null) {
+                    if (replicaIndex == 0 && immediateZero) {
+                        immediateQueue.offer(migrationRequestTask);
+                    } else if (replicaIndex == 1 && immediateOne) {
+                        immediateQueue.offer(migrationRequestTask);
+                    } else {
+                        scheduledQueue.offer(migrationRequestTask);
+                    }
                 }
             }
         }

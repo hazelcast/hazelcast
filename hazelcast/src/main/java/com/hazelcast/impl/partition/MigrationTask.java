@@ -30,6 +30,7 @@ import com.hazelcast.nio.DataSerializable;
 import java.io.*;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -58,8 +59,8 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
     }
 
     public Boolean call() throws Exception {
+        Node node = ((FactoryImpl) hazelcast).node;
         try {
-            Node node = ((FactoryImpl) hazelcast).node;
             ByteArrayInputStream bais = new ByteArrayInputStream(bytesRecordSet);
             DataInputStream dis = new DataInputStream(new InflaterInputStream(bais));
             int size = dis.readInt();
@@ -71,7 +72,7 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
             }
             node.concurrentMapManager.getPartitionManager().doMigrate(partitionId, replicaIndex, recordSet);
         } catch (IOException e) {
-            e.printStackTrace();
+            node.getLogger(MigrationTask.class.getName()).log(Level.WARNING, e.getMessage(), e);
             return Boolean.FALSE;
         }
         return Boolean.TRUE;

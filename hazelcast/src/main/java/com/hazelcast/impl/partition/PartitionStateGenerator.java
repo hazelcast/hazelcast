@@ -27,9 +27,10 @@ public interface PartitionStateGenerator {
     PartitionInfo[] initialize(final List<MemberImpl> members, final int partitionCount) ;
     
     PartitionInfo[] reArrange(final PartitionInfo[] currentState,
+            final List<MemberImpl> oldMembers,
             final List<MemberImpl> members,
             final int partitionCount,
-            final Queue<MigrationRequestTask> migrationQueue,
-            final Queue<MigrationRequestTask> replicaQueue);
+            final Queue<MigrationRequestTask> scheduledQueue,
+            final Queue<MigrationRequestTask> immediateQueue);
     
 }

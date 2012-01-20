@@ -140,7 +140,7 @@ public class PartitionStateGeneratorTest {
                     groups = nodeGroupFactory.createMemberGroups(memberList);
                     println("PARTITION-COUNT= " + partitionCount + ", MEMBER-COUNT= " 
                             + memberCount + ", GROUP-COUNT= " + groups.size());
-                    state = generator.reArrange(state, memberList, partitionCount, qm, qr);
+                    state = generator.reArrange(state, memberList, memberList, partitionCount, qm, qr);
                     for (int k = 0; k < Math.min(groups.size(), PartitionInfo.MAX_REPLICA_COUNT); k++) {
                         printTaskQueueSize(qm, qr, k);
                     }

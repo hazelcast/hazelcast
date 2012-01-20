@@ -108,7 +108,9 @@ public class ConnectionManager {
             return false;
         }
         if (!endPoint.equals(ioService.getThisAddress())) {
-            connection.setMonitor(getConnectionMonitor(endPoint, true));
+            if (!connection.isClient()) {
+                connection.setMonitor(getConnectionMonitor(endPoint, true));
+            }
             if (!accept) {
                 //make sure bind packet is the first packet sent to the end point.
                 Packet bindPacket = createBindPacket(new Bind(ioService.getThisAddress()));

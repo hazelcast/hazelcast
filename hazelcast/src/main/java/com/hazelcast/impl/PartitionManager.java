@@ -312,14 +312,15 @@ public class PartitionManager {
             if (initialized) {
                 esMigrationService.getQueue().clear();
                 PartitionStateGenerator psg = PartitionStateGeneratorFactory.newRandomPartitionStateGenerator();
-                Queue<MigrationRequestTask> migrationQ = new LinkedList<MigrationRequestTask>();
-                Queue<MigrationRequestTask> replicaQ = new LinkedList<MigrationRequestTask>();
-                psg.reArrange(partitions, concurrentMapManager.lsMembers, PARTITION_COUNT, migrationQ, replicaQ);
+                Queue<MigrationRequestTask> scheduledQ = new LinkedList<MigrationRequestTask>();
+                Queue<MigrationRequestTask> immediateQ = new LinkedList<MigrationRequestTask>();
+                psg.reArrange(partitions, concurrentMapManager.node.clusterManager.getOldMembers(), 
+                        concurrentMapManager.lsMembers, PARTITION_COUNT, scheduledQ, immediateQ);
                 int count = 0;
-                for (MigrationRequestTask migrationRequestTask : replicaQ) {
+                for (MigrationRequestTask migrationRequestTask : immediateQ) {
                     esMigrationService.schedule(new Migrator(migrationRequestTask), 0 * count++, TimeUnit.SECONDS);
                 }
-                for (MigrationRequestTask migrationRequestTask : migrationQ) {
+                for (MigrationRequestTask migrationRequestTask : scheduledQ) {
                     esMigrationService.schedule(new Migrator(migrationRequestTask), 0 * count++, TimeUnit.SECONDS);
                 }
             }

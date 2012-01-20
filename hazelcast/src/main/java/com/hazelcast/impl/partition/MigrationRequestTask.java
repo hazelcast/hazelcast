@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 public class MigrationRequestTask implements Callable<Boolean>, DataSerializable, HazelcastInstanceAware {
     private int partitionId;
@@ -81,10 +82,13 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
             DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList, replicaIndex), target);
             Future future = node.factory.getExecutorService().submit(task);
             return (Boolean) future.get(400, TimeUnit.SECONDS);
+        } catch (IllegalStateException e) {
+            // thrown if MigrationTask is being submitted during shutdown
+            node.getLogger(MigrationRequestTask.class.getName()).log(Level.FINEST, e.getMessage(), e);
         } catch (Throwable e) {
-            e.printStackTrace();
-            return Boolean.FALSE;
+            node.getLogger(MigrationRequestTask.class.getName()).log(Level.WARNING, e.getMessage(), e);
         }
+        return Boolean.FALSE;
     }
 
     public void writeData(DataOutput out) throws IOException {
