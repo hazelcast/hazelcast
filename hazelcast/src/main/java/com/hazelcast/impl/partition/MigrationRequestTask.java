@@ -72,7 +72,7 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
     }
 
     public Boolean call() throws Exception {
-        if (from.equals(to)) return Boolean.TRUE;
+        if (to.equals(from)) return Boolean.TRUE;
         Node node = ((FactoryImpl) hazelcast).node;
         PartitionManager pm = node.concurrentMapManager.getPartitionManager();
         try {
@@ -95,7 +95,11 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
         out.writeBoolean(migration);
-        from.writeData(out);
+        boolean hasFrom = from != null;
+        out.writeBoolean(hasFrom);
+        if (hasFrom) {
+            from.writeData(out);
+        }
         to.writeData(out);
     }
 
@@ -103,8 +107,11 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
         partitionId = in.readInt();
         replicaIndex = in.readInt();
         migration = in.readBoolean();
-        from = new Address();
-        from.readData(in);
+        boolean hasFrom = in.readBoolean();
+        if (hasFrom) {
+            from = new Address();
+            from.readData(in);
+        }
         to = new Address();
         to.readData(in);
     }

@@ -190,9 +190,11 @@ public class PartitionManager {
     }
 
     public Member getMember(Address address) {
-        for (Member member : concurrentMapManager.node.getClusterImpl().getMembers()) {
-            MemberImpl memberImpl = (MemberImpl) member;
-            if (memberImpl.getAddress().equals(address)) return member;
+        if (address != null) {
+            for (Member member : concurrentMapManager.node.getClusterImpl().getMembers()) {
+                MemberImpl memberImpl = (MemberImpl) member;
+                if (memberImpl.getAddress().equals(address)) return member;
+            }
         }
         return null;
     }
@@ -364,9 +366,15 @@ public class PartitionManager {
                 }
 //                System.out.println("Migrating " + migrationRequestTask);
                 Member fromMember = getMember(migrationRequestTask.getFromAddress());
-                DistributedTask task = new DistributedTask(migrationRequestTask, fromMember);
-                Future future = concurrentMapManager.node.factory.getExecutorService().submit(task);
-                Object result = future.get(600, TimeUnit.SECONDS);
+                Object result = Boolean.FALSE;
+                if (fromMember != null) {
+                    DistributedTask task = new DistributedTask(migrationRequestTask, fromMember);
+                    Future future = concurrentMapManager.node.factory.getExecutorService().submit(task);
+                    result = future.get(600, TimeUnit.SECONDS);
+                } else {
+                    // Partition is lost! Assign new owner and exit.
+                    result = Boolean.TRUE;
+                }
                 if (Boolean.TRUE.equals(result)) {
                     concurrentMapManager.enqueueAndWait(new Processable() {
                         public void process() {

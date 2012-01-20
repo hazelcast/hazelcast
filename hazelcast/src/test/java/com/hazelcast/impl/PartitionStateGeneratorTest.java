@@ -110,8 +110,8 @@ public class PartitionStateGeneratorTest {
         int maxSameHostCount = 3;
         int[] partitionCounts = new int[]{271, 787/*, 1549, 3217, 8707/**/};
         int[] members = new int[] {3, 6, 7, 9, 10, 5, 11, 13, 8, 17, 57, 100, 130, 77, 255};
-        Queue<MigrationRequestTask> qm = new LinkedList<MigrationRequestTask>();
-        Queue<MigrationRequestTask> qr = new LinkedList<MigrationRequestTask>();
+        Queue<MigrationRequestTask> scheduledQ = new LinkedList<MigrationRequestTask>();
+        Queue<MigrationRequestTask> immediateQ = new LinkedList<MigrationRequestTask>();
         for (int i = 0; i < partitionCounts.length; i++) {
             int partitionCount = partitionCounts[i];
             int memberCount = members[0];
@@ -123,6 +123,7 @@ public class PartitionStateGeneratorTest {
             PartitionInfo[] state = generator.initialize(memberList, partitionCount);
             doTest(state, groups, partitionCount);
             int previousMemberCount = memberCount;
+            List<MemberImpl> oldMemberList = new ArrayList<MemberImpl>(memberList);
             for (int j = 1; j < members.length; j++) {
                 memberCount = members[j];
                 if ((float) partitionCount / memberCount > 2) {
@@ -140,15 +141,16 @@ public class PartitionStateGeneratorTest {
                     groups = nodeGroupFactory.createMemberGroups(memberList);
                     println("PARTITION-COUNT= " + partitionCount + ", MEMBER-COUNT= " 
                             + memberCount + ", GROUP-COUNT= " + groups.size());
-                    state = generator.reArrange(state, memberList, memberList, partitionCount, qm, qr);
+                    state = generator.reArrange(state, oldMemberList, memberList, partitionCount, scheduledQ, immediateQ);
                     for (int k = 0; k < Math.min(groups.size(), PartitionInfo.MAX_REPLICA_COUNT); k++) {
-                        printTaskQueueSize(qm, qr, k);
+                        printTaskQueueSize(scheduledQ, immediateQ, k);
                     }
                     println();
-                    qm.clear();
-                    qr.clear();
+                    scheduledQ.clear();
+                    immediateQ.clear();
                     doTest(state, groups, partitionCount);
                     previousMemberCount = memberCount;
+                    oldMemberList = new ArrayList<MemberImpl>(memberList);
                 }
             }
         }
@@ -183,20 +185,20 @@ public class PartitionStateGeneratorTest {
         }
     }
     
-    private static void printTaskQueueSize(Queue<MigrationRequestTask> qm, Queue<MigrationRequestTask> qr, int index) {
-        int migration = 0;
-        for (MigrationRequestTask t : qm) {
-            if (t.getReplicaIndex() == index) {
-                migration++;
+    private static void printTaskQueueSize(Queue<MigrationRequestTask> scheduledQ, Queue<MigrationRequestTask> immediateQ, int index) {
+        int scheduled = 0;
+        for (MigrationRequestTask t : scheduledQ) {
+            if (t.getReplicaIndex() == index && !t.getToAddress().equals(t.getFromAddress())) {
+                scheduled++;
             }
         }
-        int replication = 0;
-        for (MigrationRequestTask t : qr) {
-            if (t.getReplicaIndex() == index) {
-                replication++;
+        int immediate = 0;
+        for (MigrationRequestTask t : immediateQ) {
+            if (t.getReplicaIndex() == index && !t.getToAddress().equals(t.getFromAddress())) {
+                immediate++;
             }
         }
-        println("INDEX= " + index + ", MIGRATION QUEUE= " + migration + ", REPLICATION QUEUE= " + replication);
+        println("INDEX= " + index + ", SCHEDULED QUEUE= " + scheduled + ", IMMEDIATE QUEUE= " + immediate);
     }
     
     private static List<MemberImpl> createMembers(int memberCount, int maxSameHostCount) throws Exception {

@@ -45,8 +45,8 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     public PartitionInfo[] reArrange(PartitionInfo[] currentState, List<MemberImpl> oldMembers, 
             List<MemberImpl> members, int partitionCount,
             Queue<MigrationRequestTask> scheduledQueue, Queue<MigrationRequestTask> immediateQueue) {
+        final Collection<MemberGroup> oldGroups = memberGroupFactory.createMemberGroups(oldMembers);
         final LinkedList<NodeGroup> groups = createNodeGroups(memberGroupFactory.createMemberGroups(members));
-        final LinkedList<NodeGroup> oldGroups = createNodeGroups(memberGroupFactory.createMemberGroups(oldMembers));
         boolean immediateZero = false;
         boolean immediateOne = false;
         if (oldGroups.size() == 1 && groups.size() > 1) {
@@ -95,6 +95,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             PartitionInfo currentPartition = currentState[partitionId];
             PartitionInfo newPartition = newState[partitionId];
+            boolean lost = false;
             for (int replicaIndex = 0; replicaIndex < replicaCount; replicaIndex++) {
                 Address currentOwner = currentPartition.getReplicaAddress(replicaIndex);
                 Address newOwner = newPartition.getReplicaAddress(replicaIndex);
@@ -105,7 +106,12 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                             partitionId, currentOwner, newOwner, replicaIndex, true);
                 } else if (currentOwner == null && newOwner != null) {
                     // copy of a backup
-                    currentOwner = currentPartition.getOwner();
+                    if ((currentOwner = currentPartition.getOwner()) == null) {
+                        // Assuming partition table is shifted up before arrangement.
+                        // Otherwise we should iterate over backup addresses to find 
+                        // current owner node.
+                        lost = true;
+                    }
                     migrationRequestTask = new MigrationRequestTask(
                             partitionId, currentOwner, newOwner, replicaIndex, false);
                 } else if (currentOwner != null && newOwner == null) {
@@ -122,6 +128,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                         scheduledQueue.offer(migrationRequestTask);
                     }
                 }
+            }
+            if (lost) {
+                logger.log(Level.SEVERE, "Oops! " + currentPartition + " has been LOST!");
             }
         }
     }
