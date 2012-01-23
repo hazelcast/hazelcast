@@ -201,13 +201,18 @@ public class PartitionManager {
 
     public void firstArrangement() {
         if (!concurrentMapManager.isMaster()) return;
-        PartitionStateGenerator psg = PartitionStateGeneratorFactory.newRandomPartitionStateGenerator();
+        PartitionStateGenerator psg = getPartitionStateGenerator();
         PartitionInfo[] newState = psg.initialize(concurrentMapManager.lsMembers, PARTITION_COUNT);
         for (PartitionInfo partitionInfo : newState) {
             partitions[partitionInfo.getPartitionId()].setPartitionInfo(partitionInfo);
         }
         sendClusterRuntimeState();
         initialized = true;
+    }
+    
+    private PartitionStateGenerator getPartitionStateGenerator() {
+        return PartitionStateGeneratorFactory.newConfigPartitionStateGenerator(
+                concurrentMapManager.node.getConfig().getPartitionGroupConfig());
     }
 
     @Override
@@ -313,11 +318,10 @@ public class PartitionManager {
         if (concurrentMapManager.isMaster()) {
             if (initialized) {
                 esMigrationService.getQueue().clear();
-                PartitionStateGenerator psg = PartitionStateGeneratorFactory.newRandomPartitionStateGenerator();
+                PartitionStateGenerator psg = getPartitionStateGenerator();
                 Queue<MigrationRequestTask> scheduledQ = new LinkedList<MigrationRequestTask>();
                 Queue<MigrationRequestTask> immediateQ = new LinkedList<MigrationRequestTask>();
-                psg.reArrange(partitions, concurrentMapManager.node.clusterManager.getOldMembers(), 
-                        concurrentMapManager.lsMembers, PARTITION_COUNT, scheduledQ, immediateQ);
+                psg.reArrange(partitions, concurrentMapManager.lsMembers, PARTITION_COUNT, scheduledQ, immediateQ);
                 int count = 0;
                 for (MigrationRequestTask migrationRequestTask : immediateQ) {
                     esMigrationService.schedule(new Migrator(migrationRequestTask), 0 * count++, TimeUnit.SECONDS);

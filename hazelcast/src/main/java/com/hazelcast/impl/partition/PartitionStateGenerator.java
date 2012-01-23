@@ -17,17 +17,16 @@
 
 package com.hazelcast.impl.partition;
 
+import com.hazelcast.impl.MemberImpl;
+
 import java.util.List;
 import java.util.Queue;
-
-import com.hazelcast.impl.MemberImpl;
 
 public interface PartitionStateGenerator {
     
     PartitionInfo[] initialize(final List<MemberImpl> members, final int partitionCount) ;
     
     PartitionInfo[] reArrange(final PartitionInfo[] currentState,
-            final List<MemberImpl> oldMembers,
             final List<MemberImpl> members,
             final int partitionCount,
             final Queue<MigrationRequestTask> scheduledQueue,

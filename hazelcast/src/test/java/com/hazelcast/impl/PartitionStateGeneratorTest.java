@@ -108,8 +108,9 @@ public class PartitionStateGeneratorTest {
     
     private void test(PartitionStateGenerator generator, MemberGroupFactory nodeGroupFactory) throws Exception {
         int maxSameHostCount = 3;
-        int[] partitionCounts = new int[]{271, 787/*, 1549, 3217, 8707/**/};
+        int[] partitionCounts = new int[]{271/*, 787/*, 1549, 3217, 8707/**/};
         int[] members = new int[] {3, 6, 7, 9, 10, 5, 11, 13, 8, 17, 57, 100, 130, 77, 255};
+//        int[] members = new int[] {1, 2, 3, 2, 4, 1, 10, 2};
         Queue<MigrationRequestTask> scheduledQ = new LinkedList<MigrationRequestTask>();
         Queue<MigrationRequestTask> immediateQ = new LinkedList<MigrationRequestTask>();
         for (int i = 0; i < partitionCounts.length; i++) {
@@ -123,7 +124,6 @@ public class PartitionStateGeneratorTest {
             PartitionInfo[] state = generator.initialize(memberList, partitionCount);
             doTest(state, groups, partitionCount);
             int previousMemberCount = memberCount;
-            List<MemberImpl> oldMemberList = new ArrayList<MemberImpl>(memberList);
             for (int j = 1; j < members.length; j++) {
                 memberCount = members[j];
                 if ((float) partitionCount / memberCount > 2) {
@@ -141,7 +141,7 @@ public class PartitionStateGeneratorTest {
                     groups = nodeGroupFactory.createMemberGroups(memberList);
                     println("PARTITION-COUNT= " + partitionCount + ", MEMBER-COUNT= " 
                             + memberCount + ", GROUP-COUNT= " + groups.size());
-                    state = generator.reArrange(state, oldMemberList, memberList, partitionCount, scheduledQ, immediateQ);
+                    state = generator.reArrange(state, memberList, partitionCount, scheduledQ, immediateQ);
                     for (int k = 0; k < Math.min(groups.size(), PartitionInfo.MAX_REPLICA_COUNT); k++) {
                         printTaskQueueSize(scheduledQ, immediateQ, k);
                     }
@@ -150,7 +150,6 @@ public class PartitionStateGeneratorTest {
                     immediateQ.clear();
                     doTest(state, groups, partitionCount);
                     previousMemberCount = memberCount;
-                    oldMemberList = new ArrayList<MemberImpl>(memberList);
                 }
             }
         }
@@ -342,9 +341,9 @@ public class PartitionStateGeneratorTest {
             return;
         }
         final float r = 2f;
-        Assert.assertTrue("Too low partiton count! Owned: " + count + ", Avg: " + average
+        Assert.assertTrue("Too low partition count! Owned: " + count + ", Avg: " + average
                 + ", Replica: " + replica, count >= average / r);
-        Assert.assertTrue("Too high partiton count! Owned: " + count + ", Avg: " + average
+        Assert.assertTrue("Too high partition count! Owned: " + count + ", Avg: " + average
                 + ", Replica: " + replica, count <= average * r);
     }
     
