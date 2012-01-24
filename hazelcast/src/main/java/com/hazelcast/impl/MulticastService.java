@@ -83,6 +83,10 @@ public class MulticastService implements Runnable {
             queue.put(new Runnable() {
                 public void run() {
                     running = false;
+                    inflatingBuffer.destroy();
+                    deflatingBuffer.destroy();
+                    datagramPacketReceive.setData(new byte[0]);
+                    datagramPacketSend.setData(new byte[0]);
                     l.countDown();
                 }
             });
@@ -144,6 +148,7 @@ public class MulticastService implements Runnable {
     }
 
     public void send(JoinInfo joinInfo) {
+        if (!running) return;
         synchronized (sendLock) {
             try {
             	deflatingBuffer.reset();

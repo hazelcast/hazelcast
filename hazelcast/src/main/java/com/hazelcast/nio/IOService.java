@@ -54,6 +54,8 @@ public interface IOService {
 
     String getThreadPrefix();
 
+    ThreadGroup getThreadGroup();
+
     void onFailedConnection(Address address);
 
     void shouldConnectTo(Address address);

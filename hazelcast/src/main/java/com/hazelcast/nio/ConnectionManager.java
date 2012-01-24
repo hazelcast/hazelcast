@@ -226,7 +226,7 @@ public class ConnectionManager {
         for (int i = 0; i < selectors.length; i++) {
             InOutSelector s = new InOutSelector(this, (i == 0 ? serverSocketChannel : null));
             selectors[i] = s;
-            new Thread(s, "hz." + ioService.getThreadPrefix() + ".IOThread" + i).start();
+            new Thread(ioService.getThreadGroup(), s, "hz." + ioService.getThreadPrefix() + ".IOThread" + i).start();
         }
     }
 

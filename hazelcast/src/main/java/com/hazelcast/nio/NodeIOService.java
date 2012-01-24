@@ -96,6 +96,10 @@ public class NodeIOService implements IOService {
         return node.getName();
     }
 
+    public ThreadGroup getThreadGroup() {
+        return node.threadGroup;
+    }
+
     public void onFailedConnection(Address address) {
         if (!node.joined()) {
             node.failedConnection(address);

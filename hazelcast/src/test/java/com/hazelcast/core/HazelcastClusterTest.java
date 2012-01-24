@@ -27,19 +27,18 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * HazelcastTest tests some specific cluster behavior.
@@ -350,5 +349,55 @@ public class HazelcastClusterTest {
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(hzConfig2);
         assertEquals(2, instance2.getCluster().getMembers().size());
         assertEquals("ok", instance2.getMap("foo").get("issue373"));
+    }
+
+    @Test(timeout = 1000 * 60)
+    public void testInstanceCreationInHazelcastExecutorService() throws ExecutionException, InterruptedException {
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(null);
+        try {
+            HazelcastInstance hza = Hazelcast.getHazelcastInstanceByName(
+                    hz.getExecutorService().submit(new NewInstanceCallable()).get());
+            HazelcastInstance hzb = Hazelcast.getHazelcastInstanceByName(
+                    hz.getExecutorService().submit(new NewInstanceCallable()).get());
+            hz.getLifecycleService().shutdown();
+
+            DistributedTask<String> taskA = new DistributedTask<String>(new EchoCallable(),
+                    hzb.getCluster().getLocalMember());
+            hza.getExecutorService().submit(taskA);
+
+            DistributedTask<String> taskB = new DistributedTask<String>(new EchoCallable(),
+                    hza.getCluster().getLocalMember());
+            hzb.getExecutorService().submit(taskB);
+
+            try {
+                taskA.get(10, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                e.printStackTrace();
+                fail("Failed to get result of EchoCallable from "
+                        + hza.getCluster().getLocalMember()
+                        + " to " + hzb.getCluster().getLocalMember());
+            }
+            try {
+                taskB.get(10, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                e.printStackTrace();
+                fail("Failed to get result of EchoCallable from "
+                        + hzb.getCluster().getLocalMember()
+                        + " to " + hza.getCluster().getLocalMember());
+            }
+        } finally {
+            Hazelcast.shutdownAll();
+        }
+    }
+
+    static class NewInstanceCallable implements Callable<String>, Serializable {
+        public String call() throws Exception {
+            return Hazelcast.newHazelcastInstance(null).getName();
+        }
+    }
+    static class EchoCallable implements Callable<String>, Serializable {
+        public String call() throws Exception {
+            return "hello!";
+        }
     }
 }

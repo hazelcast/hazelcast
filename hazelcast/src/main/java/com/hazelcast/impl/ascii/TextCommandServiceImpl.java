@@ -116,7 +116,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
             synchronized (this) {
                 if (responseThreadRunnable == null) {
                     responseThreadRunnable = new ResponseThreadRunnable();
-                    Thread thread = new Thread(responseThreadRunnable, "hz.ascii.service.response.thread");
+                    Thread thread = new Thread(node.threadGroup, responseThreadRunnable, "hz.ascii.service.response.thread");
                     thread.start();
                 }
             }
