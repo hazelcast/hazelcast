@@ -51,6 +51,7 @@ public abstract class HibernateTestSupport {
     protected static SessionFactory createSessionFactory(Properties props) {
         Configuration conf = new Configuration();
         URL xml = HibernateTestSupport.class.getClassLoader().getResource("test-hibernate.cfg.xml");
+        props.put(CacheEnvironment.EXPLICIT_VERSION_CHECK, "true");
         conf.addProperties(props);
         conf.configure(xml);
         final SessionFactory sf = conf.buildSessionFactory();

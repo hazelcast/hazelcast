@@ -70,13 +70,6 @@
             get evicted.
         -->
         <eviction-percentage>25</eviction-percentage>
-        <!--         <near-cache> -->
-        <!--            <time-to-live-seconds>0</time-to-live-seconds> -->
-        <!--            <max-idle-seconds>0</max-idle-seconds> -->
-        <!--            <eviction-policy>LFU</eviction-policy> -->
-        <!--            <max-size>15000</max-size> -->
-        <!--            <invalidate-on-change>true</invalidate-on-change> -->
-        <!--        </near-cache> -->
     </map>
 
     <map name="com.hazelcast.hibernate.entity.*">

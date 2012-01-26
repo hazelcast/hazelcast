@@ -55,6 +55,8 @@ public final class CacheEnvironment {
 
     private final static int DEFAULT_CACHE_TIMEOUT = (3600 * 1000); // one hour in milliseconds
 
+    public static final String EXPLICIT_VERSION_CHECK = "hibernate.cache.hazelcast.explicit_version_check";
+
     public static String getConfigFilePath(Properties props) {
         String configResourcePath = PropertiesHelper.getString(CacheEnvironment.CONFIG_FILE_PATH_LEGACY, props, null);
         if (StringHelper.isEmpty(configResourcePath)) {
@@ -94,5 +96,9 @@ public final class CacheEnvironment {
 
     public static boolean shutdownOnStop(Properties props, boolean defaultValue) {
         return PropertiesHelper.getBoolean(CacheEnvironment.SHUTDOWN_ON_STOP, props, defaultValue);
+    }
+
+    public static boolean isExplicitVersionCheckEnabled(Properties props) {
+        return PropertiesHelper.getBoolean(CacheEnvironment.EXPLICIT_VERSION_CHECK, props, false);
     }
 }

@@ -87,6 +87,7 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
 
     public void start(final Settings settings, final Properties properties) throws CacheException {
         LOG.log(Level.INFO, "Starting up HazelcastCacheRegionFactory...");
+
         if (instance == null || !instance.getLifecycleService().isRunning()) {
             instanceLoader = HazelcastInstanceFactory.createInstanceLoader(properties);
             instance = instanceLoader.loadInstance();

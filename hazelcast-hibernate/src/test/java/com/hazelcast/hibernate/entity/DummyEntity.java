@@ -18,6 +18,7 @@
 package com.hazelcast.hibernate.entity;
 
 import java.util.Date;
+import java.util.Set;
 
 public class DummyEntity {
 
@@ -31,13 +32,10 @@ public class DummyEntity {
 
     private Date date;
 
+    private Set<DummyProperty> properties;
+
     public DummyEntity() {
         super();
-    }
-
-    public DummyEntity(long id) {
-        super();
-        this.id = id;
     }
 
     public DummyEntity(long id, String name, double value, Date date) {
@@ -86,5 +84,13 @@ public class DummyEntity {
 
     public void setDate(Date date) {
         this.date = date;
+    }
+
+    public void setProperties(Set<DummyProperty> properties) {
+        this.properties = properties;
+    }
+
+    public Set<DummyProperty> getProperties() {
+        return properties;
     }
 }
