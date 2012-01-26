@@ -34,13 +34,14 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 public class MigrationRequestTask implements Callable<Boolean>, DataSerializable, HazelcastInstanceAware {
     private int partitionId;
     private Address from;
     private Address to;
     private int replicaIndex;
-    private boolean migration; //
+    private boolean migration; // migration or copy
     private HazelcastInstance hazelcast;
 
     public MigrationRequestTask() {
@@ -72,18 +73,22 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
 
     public Boolean call() throws Exception {
         if (to.equals(from)) return Boolean.TRUE;
+        Node node = ((FactoryImpl) hazelcast).node;
+        PartitionManager pm = node.concurrentMapManager.getPartitionManager();
         try {
-            Node node = ((FactoryImpl) hazelcast).node;
-            PartitionManager pm = node.concurrentMapManager.getPartitionManager();
             Member target = pm.getMember(to);
             if (target == null) return Boolean.FALSE;
             CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to);
             DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList, replicaIndex), target);
             Future future = node.factory.getExecutorService().submit(task);
             return (Boolean) future.get(400, TimeUnit.SECONDS);
-        } catch (Throwable ignored) {
-            return Boolean.FALSE;
+        } catch (IllegalStateException e) {
+            // thrown if MigrationTask is being submitted during shutdown
+            node.getLogger(MigrationRequestTask.class.getName()).log(Level.FINEST, e.getMessage(), e);
+        } catch (Throwable e) {
+            node.getLogger(MigrationRequestTask.class.getName()).log(Level.WARNING, e.getMessage(), e);
         }
+        return Boolean.FALSE;
     }
 
     public void writeData(DataOutput out) throws IOException {

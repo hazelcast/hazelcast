@@ -28,7 +28,10 @@ import java.util.logging.Level;
 class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
     private static ILogger logger = Logger.getLogger(PartitionStateGenerator.class.getName());
-    private static final float RANGE_CHECK_RATIO = 1.3f;
+    private static final float RANGE_CHECK_RATIO = 1.1f;
+    private static final int MAX_RETRY_COUNT = 3;
+    private static final int AGGRESSIVE_RETRY_THRESHOLD = 1;
+    private static final int AGGRESSIVE_INDEX_THRESHOLD = 2;
 
     private final MemberGroupFactory memberGroupFactory;
 
@@ -56,11 +59,11 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         final PartitionInfo[] state = new PartitionInfo[partitionCount];
         stateInitializer.initialize(state);
         TestResult result = null;
-        final int maxTries = 3;
         int tryCount = 0;
-        do {
-            tryArrange(state, groups, partitionCount);
-            result = testArrangment(state, groups, partitionCount);
+        while (tryCount < MAX_RETRY_COUNT && result != TestResult.PASS) {
+            boolean aggressive = tryCount >= AGGRESSIVE_RETRY_THRESHOLD;
+            tryArrange(state, groups, partitionCount, aggressive);
+            result = testArrangement(state, groups, partitionCount);
             if (result == TestResult.FAIL) {
                 logger.log(Level.WARNING, "Error detected on partition arrangement! Try-count: " + tryCount);
                 stateInitializer.initialize(state);
@@ -69,7 +72,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 tryCount++;
                 logger.log(Level.INFO, "Re-trying partition arrangement.. Count: " + tryCount);
             }
-        } while (tryCount <= maxTries && result != TestResult.PASS);
+        }
         if (result == TestResult.FAIL) {
             logger.log(Level.SEVERE, "Failed to arrange partitions !!!");
         }
@@ -83,7 +86,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             PartitionInfo currentPartition = currentState[partitionId];
             PartitionInfo newPartition = newState[partitionId];
             boolean lost = false;
-            for (int replicaIndex = 0; replicaIndex < replicaCount; replicaIndex++) {
+            for (int replicaIndex = replicaCount - 1; replicaIndex > -1; replicaIndex--) {
                 Address currentOwner = currentPartition.getReplicaAddress(replicaIndex);
                 Address newOwner = newPartition.getReplicaAddress(replicaIndex);
                 MigrationRequestTask migrationRequestTask = null;
@@ -103,19 +106,19 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                             partitionId, currentOwner, newOwner, replicaIndex, false);
                 } else if (currentOwner != null && newOwner == null) {
                     // should not happen!
-                    logger.log(Level.WARNING, "Something is wrong! Old owner valid but new owner is null!");
+                    logger.log(Level.WARNING, "Something seems wrong! Old owner is valid but new owner is null!");
                 }
+
                 if (migrationRequestTask != null) {
                     boolean immediate = false;
                     if (replicaIndex == 0
                             && currentPartition.getOwner() != null
                             && currentPartition.getOwner().equals(newPartition.getReplicaAddress(1))) {
-                        // TODO: if
                         immediate = true;
                     } else if (replicaIndex == 1 && currentPartition.getReplicaAddress(1) == null) {
-                        // TODO: if
                         immediate = true;
                     }
+
                     if (immediate) {
                         immediateQueue.offer(migrationRequestTask);
                     } else {
@@ -129,17 +132,188 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
     }
 
-    private void tryArrange(final PartitionInfo[] state, final LinkedList<NodeGroup> groups, final int partitionCount) {
+    private void tryArrange(final PartitionInfo[] state, final LinkedList<NodeGroup> groups,
+                            final int partitionCount, final boolean aggressive) {
         final int groupSize = groups.size();
         final int replicaCount = Math.min(groupSize, PartitionInfo.MAX_REPLICA_COUNT);
         final int avgPartitionPerGroup = partitionCount / groupSize;
+
+        // clear unused replica owners
+        // initialize partition registry for each group
+        initializeGroupPartitions(state, groups, replicaCount, aggressive);
+
+        for (int index = 0; index < replicaCount; index++) {
+            // partitions those are not bound to any node/group
+            final LinkedList<Integer> freePartitions = getUnownedPartitions(state, index);
+            // groups having partitions under average
+            final LinkedList<NodeGroup> underLoadedGroups = new LinkedList<NodeGroup>();
+            // groups having partitions over average
+            final LinkedList<NodeGroup> overLoadedGroups = new LinkedList<NodeGroup>();
+            // number of groups should have (average + 1) partitions
+            int plusOneGroupCount = partitionCount - avgPartitionPerGroup * groupSize;
+
+            // determine under-loaded and over-loaded groups
+            for (NodeGroup nodeGroup : groups) {
+                int size = nodeGroup.getPartitionCount(index);
+                if (size < avgPartitionPerGroup) {
+                    underLoadedGroups.add(nodeGroup);
+                } else if (size > avgPartitionPerGroup) { // maxPartitionPerGroup ?? 
+                    overLoadedGroups.add(nodeGroup);
+                }
+            }
+            // distribute free partitions among under-loaded groups
+            plusOneGroupCount = tryToDistributeUnownedPartitions(underLoadedGroups, freePartitions,
+                    avgPartitionPerGroup, index, plusOneGroupCount);
+
+            if (!freePartitions.isEmpty()) {
+                // if there are still free partitions those could not be distributed
+                // to under-loaded groups then one-by-one distribute them among all groups
+                // until queue is empty.
+                distributeUnownedPartitions(groups, freePartitions, index);
+            }
+            // TODO: what if there are still free partitions?
+
+            // iterate through over-loaded groups' partitions and distribute them to under-loaded groups.
+            transferPartitionsBetweenGroups(underLoadedGroups, overLoadedGroups, index,
+                    avgPartitionPerGroup, plusOneGroupCount);
+
+            // post process each group's partition table (distribute partitions added to group to nodes 
+            // and balance load of partition ownership s in group) and save partition ownerships to 
+            // cluster partition state table.
+            updatePartitionState(state, groups, index);
+        }
+    }
+
+    private void transferPartitionsBetweenGroups(final Queue<NodeGroup> underLoadedGroups,
+                                                 final Collection<NodeGroup> overLoadedGroups, final int index, final int avgPartitionPerGroup, int plusOneGroupCount) {
         final int maxPartitionPerGroup = avgPartitionPerGroup + 1;
+        final int maxTries = underLoadedGroups.size() * overLoadedGroups.size() * 10;
+        int tries = 0;
+        int expectedPartitionCount = plusOneGroupCount > 0 ? maxPartitionPerGroup : avgPartitionPerGroup;
+        while (tries++ < maxTries && !underLoadedGroups.isEmpty()) {
+            NodeGroup toGroup = underLoadedGroups.poll();
+            Iterator<NodeGroup> overLoadedGroupsIter = overLoadedGroups.iterator();
+            while (overLoadedGroupsIter.hasNext()) {
+                NodeGroup fromGroup = overLoadedGroupsIter.next();
+                final Iterator<Integer> partitionsIter = fromGroup.getPartitionsIterator(index);
+                while (partitionsIter.hasNext()
+                        && fromGroup.getPartitionCount(index) > expectedPartitionCount
+                        && toGroup.getPartitionCount(index) < expectedPartitionCount) {
+                    Integer partitionId = partitionsIter.next();
+                    if (toGroup.addPartition(index, partitionId)) {
+                        partitionsIter.remove();
+                    }
+                }
+
+                int fromCount = fromGroup.getPartitionCount(index);
+                if (plusOneGroupCount > 0 && fromCount == maxPartitionPerGroup) {
+                    if (--plusOneGroupCount == 0) {
+                        expectedPartitionCount = avgPartitionPerGroup;
+                    }
+                }
+                if (fromCount <= expectedPartitionCount) {
+                    overLoadedGroupsIter.remove();
+                }
+
+                int toCount = toGroup.getPartitionCount(index);
+                if (plusOneGroupCount > 0 && toCount == maxPartitionPerGroup) {
+                    if (--plusOneGroupCount == 0) {
+                        expectedPartitionCount = avgPartitionPerGroup;
+                    }
+                }
+                if (toCount >= expectedPartitionCount) {
+                    break;
+                }
+            }
+            if (toGroup.getPartitionCount(index) < avgPartitionPerGroup/* && !underLoadedGroups.contains(toGroup)*/) {
+                underLoadedGroups.offer(toGroup);
+            }
+        }
+    }
+
+    private void updatePartitionState(final PartitionInfo[] state, final Collection<NodeGroup> groups, final int index) {
+        for (NodeGroup group : groups) {
+            group.postProcessPartitionTable(index);
+            for (Address address : group.getNodes()) {
+                PartitionTable table = group.getPartitionTable(address);
+                Set<Integer> set = table.getPartitions(index);
+                for (Integer partitionId : set) {
+                    state[partitionId].setReplicaAddress(index, address);
+                }
+            }
+        }
+    }
+
+    private void distributeUnownedPartitions(final Queue<NodeGroup> groups, final Queue<Integer> freePartitions, final int index) {
+        final int groupSize = groups.size();
+        final int maxTries = freePartitions.size() * groupSize * 10;
+        int tries = 0;
+        Integer partitionId = freePartitions.poll();
+        while (partitionId != null && tries++ < maxTries) {
+            NodeGroup group = groups.poll();
+            if (group.addPartition(index, partitionId)) {
+                partitionId = freePartitions.poll();
+            }
+            groups.offer(group);
+        }
+    }
+
+    private int tryToDistributeUnownedPartitions(final Queue<NodeGroup> underLoadedGroups, final Queue<Integer> freePartitions,
+                                                 final int avgPartitionPerGroup, final int index, int plusOneGroupCount) {
+        // distribute free partitions among under-loaded groups
+        final int maxPartitionPerGroup = avgPartitionPerGroup + 1;
+        int maxTries = freePartitions.size() * underLoadedGroups.size();
+        int tries = 0;
+        while (tries++ < maxTries && !freePartitions.isEmpty() && !underLoadedGroups.isEmpty()) {
+            NodeGroup group = underLoadedGroups.poll();
+            int size = freePartitions.size();
+            for (int i = 0; i < size; i++) {
+                Integer partitionId = freePartitions.poll();
+                if (!group.addPartition(index, partitionId)) {
+                    freePartitions.offer(partitionId);
+                } else {
+                    break;
+                }
+            }
+            int count = group.getPartitionCount(index);
+            if (plusOneGroupCount > 0 && count == maxPartitionPerGroup) {
+                if (--plusOneGroupCount == 0) {
+                    // all (avg + 1) partitions owned groups are found
+                    // if there is any group has avg number of partitions in under-loaded queue
+                    // remove it.
+                    Iterator<NodeGroup> underLoaded = underLoadedGroups.iterator();
+                    while (underLoaded.hasNext()) {
+                        if (underLoaded.next().getPartitionCount(index) >= avgPartitionPerGroup) {
+                            underLoaded.remove();
+                        }
+                    }
+                }
+            } else if ((plusOneGroupCount > 0 && count < maxPartitionPerGroup)
+                    || (count < avgPartitionPerGroup)) {
+                underLoadedGroups.offer(group);
+            }
+        }
+        return plusOneGroupCount;
+    }
+
+    private LinkedList<Integer> getUnownedPartitions(final PartitionInfo[] state, final int index) {
+        final LinkedList<Integer> freePartitions = new LinkedList<Integer>();
+        // if owner of a can not be found then add partition to free partitions queue.
+        for (PartitionInfo partition : state) {
+            if (partition.getReplicaAddress(index) == null) {
+                freePartitions.add(partition.getPartitionId());
+            }
+        }
+        Collections.shuffle(freePartitions);
+        return freePartitions;
+    }
+
+    private void initializeGroupPartitions(final PartitionInfo[] state, final LinkedList<NodeGroup> groups,
+                                           final int replicaCount, final boolean aggressive) {
         // reset partition before reuse
         for (NodeGroup nodeGroup : groups) {
             nodeGroup.resetPartitions();
         }
-        // clear unused replica owners
-        // initialize partition registry for each group
         for (PartitionInfo partition : state) {
             for (int index = 0; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
                 if (index >= replicaCount) {
@@ -159,134 +333,10 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     }
                     if (!valid) {
                         partition.setReplicaAddress(index, null);
-                    }
-                }
-            }
-        }
-        for (int index = 0; index < replicaCount; index++) {
-            // partitions those are not bound to any node/group
-            final LinkedList<Integer> freePartitions = new LinkedList<Integer>();
-            // groups having partitions under average
-            final LinkedList<NodeGroup> underLoadedGroups = new LinkedList<NodeGroup>();
-            // groups having partitions over average
-            final LinkedList<NodeGroup> overLoadedGroups = new LinkedList<NodeGroup>();
-            // number of groups should have (average + 1) partitions
-            int remainingPartitions = partitionCount - avgPartitionPerGroup * groupSize;
-            // if owner of a can not be found then add partition to free partitions queue.
-            for (PartitionInfo partition : state) {
-                if (partition.getReplicaAddress(index) == null) {
-                    freePartitions.add(partition.getPartitionId());
-                }
-            }
-            Collections.shuffle(freePartitions);
-            // detect under-loaded and over-loaded groups
-            for (NodeGroup nodeGroup : groups) {
-                int size = nodeGroup.getPartitionCount(index);
-                if (size < avgPartitionPerGroup) {
-                    underLoadedGroups.add(nodeGroup);
-                } else if (size > avgPartitionPerGroup) { // maxPartitionPerGroup ?? 
-                    overLoadedGroups.add(nodeGroup);
-                }
-            }
-            // distribute free partitions among under-loaded groups
-            int maxTries = freePartitions.size() * underLoadedGroups.size();
-            int tries = 0;
-            while (tries++ < maxTries && !freePartitions.isEmpty() && !underLoadedGroups.isEmpty()) {
-                NodeGroup group = underLoadedGroups.poll();
-                int size = freePartitions.size();
-                for (int i = 0; i < size; i++) {
-                    Integer partitionId = freePartitions.poll();
-                    if (!group.addPartition(index, partitionId)) {
-                        freePartitions.offer(partitionId);
-                    } else {
-                        break;
-                    }
-                }
-                int count = group.getPartitionCount(index);
-                if (remainingPartitions > 0 && count == maxPartitionPerGroup) {
-                    if (--remainingPartitions == 0) {
-                        // all (avg + 1) partitions owned groups are found
-                        // if there is any group has avg number of partitions in under-loaded queue
-                        // remove it.
-                        Iterator<NodeGroup> underLoaded = underLoadedGroups.iterator();
-                        while (underLoaded.hasNext()) {
-                            if (underLoaded.next().getPartitionCount(index) >= avgPartitionPerGroup) {
-                                underLoaded.remove();
-                            }
+                    } else if (valid && aggressive && index < AGGRESSIVE_INDEX_THRESHOLD) {
+                        for (int i = AGGRESSIVE_INDEX_THRESHOLD; i < replicaCount; i++) {
+                            partition.setReplicaAddress(i, null);
                         }
-                    }
-                } else if ((remainingPartitions > 0 && count < maxPartitionPerGroup)
-                        || (count < avgPartitionPerGroup)) {
-                    underLoadedGroups.offer(group);
-                }
-            }
-            {
-                // if there are still free partitions those could not be distributed
-                // to under-loaded groups then one-by-one distribute them among all groups
-                // until queue is empty.
-                maxTries = freePartitions.size() * groupSize * 10;
-                tries = 0;
-                Integer partitionId = freePartitions.poll();
-                while (partitionId != null && tries++ < maxTries) {
-                    NodeGroup group = groups.poll();
-                    if (group.addPartition(index, partitionId)) {
-                        partitionId = freePartitions.poll();
-                    }
-                    groups.offer(group);
-                }
-            }
-            // TODO: what if there are still free partitions?
-            // iterate through over-loaded groups' partitions and distribute them to under-loaded groups.
-            maxTries = underLoadedGroups.size() * overLoadedGroups.size() * 10;
-            tries = 0;
-            int expectedPartitionCount = remainingPartitions > 0 ? maxPartitionPerGroup : avgPartitionPerGroup;
-            while (tries++ < maxTries && !underLoadedGroups.isEmpty()) {
-                NodeGroup toGroup = underLoadedGroups.poll();
-                Iterator<NodeGroup> overLoadedGroupsIter = overLoadedGroups.iterator();
-                while (overLoadedGroupsIter.hasNext()) {
-                    NodeGroup fromGroup = overLoadedGroupsIter.next();
-                    final Iterator<Integer> partitionsIter = fromGroup.getPartitionsIterator(index);
-                    while (partitionsIter.hasNext()
-                            && fromGroup.getPartitionCount(index) > expectedPartitionCount
-                            && toGroup.getPartitionCount(index) < expectedPartitionCount) {
-                        Integer partitionId = partitionsIter.next();
-                        if (toGroup.addPartition(index, partitionId)) {
-                            partitionsIter.remove();
-                        }
-                    }
-                    int fromCount = fromGroup.getPartitionCount(index);
-                    if (remainingPartitions > 0 && fromCount == maxPartitionPerGroup) {
-                        if (--remainingPartitions == 0) {
-                            expectedPartitionCount = avgPartitionPerGroup;
-                        }
-                    }
-                    if (fromCount <= expectedPartitionCount) {
-                        overLoadedGroupsIter.remove();
-                    }
-                    int toCount = toGroup.getPartitionCount(index);
-                    if (remainingPartitions > 0 && toCount == maxPartitionPerGroup) {
-                        if (--remainingPartitions == 0) {
-                            expectedPartitionCount = avgPartitionPerGroup;
-                        }
-                    }
-                    if (toCount >= expectedPartitionCount) {
-                        break;
-                    }
-                }
-                if (toGroup.getPartitionCount(index) < avgPartitionPerGroup/* && !underLoadedGroups.contains(toGroup)*/) {
-                    underLoadedGroups.offer(toGroup);
-                }
-            }
-            // post process each group's partition table (distribute partitions added to group to nodes
-            // and balance load of partition ownership s in group) and save partition ownerships to 
-            // cluster partition state table.
-            for (NodeGroup group : groups) {
-                group.postProcessPartitionTable(index);
-                for (Address address : group.getNodes()) {
-                    PartitionTable table = group.getPartitionTable(address);
-                    Set<Integer> set = table.getPartitions(index);
-                    for (Integer partitionId : set) {
-                        state[partitionId].setReplicaAddress(index, address);
                     }
                 }
             }
@@ -315,7 +365,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return nodeGroups;
     }
 
-    private TestResult testArrangment(PartitionInfo[] state, Collection<NodeGroup> groups, int partitionCount) {
+    private TestResult testArrangement(PartitionInfo[] state, Collection<NodeGroup> groups, int partitionCount) {
         final float ratio = RANGE_CHECK_RATIO;
         final int avgPartitionPerGroup = partitionCount / groups.size();
         final int replicaCount = Math.min(groups.size(), PartitionInfo.MAX_REPLICA_COUNT);
@@ -338,6 +388,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             set.clear();
         }
+
         for (NodeGroup group : groups) {
             for (int i = 0; i < replicaCount; i++) {
                 int partitionCountOfGroup = group.getPartitionCount(i);
@@ -351,6 +402,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
         return TestResult.PASS;
     }
+
     // ----- INNER CLASSES -----
 
     private interface StateInitializer {
@@ -693,4 +745,5 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
         }
     }
+
 }
