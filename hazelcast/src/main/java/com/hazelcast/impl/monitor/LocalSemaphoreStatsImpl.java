@@ -20,11 +20,11 @@ package com.hazelcast.impl.monitor;
 import com.hazelcast.monitor.LocalSemaphoreOperationStats;
 import com.hazelcast.monitor.LocalSemaphoreStats;
 
-public class LocalSemaphoreStatsImpl extends LocalInstanceStatsSupport<LocalSemaphoreOperationStats> 
-	implements LocalSemaphoreStats {
-	
-	@Override
-	LocalSemaphoreOperationStats newOperationStatsInstance() {
-		return new LocalSemaphoreOperationStatsImpl();
-	}
+public class LocalSemaphoreStatsImpl extends LocalInstanceStatsSupport<LocalSemaphoreOperationStats>
+        implements LocalSemaphoreStats {
+
+    @Override
+    LocalSemaphoreOperationStats newOperationStatsInstance() {
+        return new LocalSemaphoreOperationStatsImpl();
+    }
 }

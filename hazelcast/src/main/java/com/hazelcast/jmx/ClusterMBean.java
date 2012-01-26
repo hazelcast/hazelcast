@@ -21,7 +21,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 
 import javax.management.MBeanServer;
-import javax.management.ObjectName;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.net.InetSocketAddress;
@@ -62,7 +61,7 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
     public ObjectNameSpec getRootName() {
         return clusterObjectNames;
     }
-    
+
     public String getName() {
         return this.name;
     }
@@ -91,8 +90,7 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
             for (Member m : cluster.getMembers()) {
                 registerMember(m);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to start JMX member listener MBeans", e);
         }
     }
@@ -116,8 +114,7 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
             if (!mbs.isRegistered(mbean.getObjectName())) {
                 mbs.registerMBean(mbean, mbean.getObjectName());
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Unable to register Member MBeans", e);
         }
     }
@@ -135,18 +132,17 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
             if (mbs.isRegistered(mbean.getObjectName())) {
                 mbs.unregisterMBean(mbean.getObjectName());
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Unable to unregister Member MBeans", e);
         }
     }
-    
+
     @JMXAttribute("Config")
     @JMXDescription("Config.toString() result")
     public String getConfig() {
         return config.toString();
     }
-    
+
     @JMXAttribute("InstanceName")
     @JMXDescription("Name of intance")
     public String getInstanceName() {
@@ -209,21 +205,21 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
         }
         return result;
     }
-    
+
     @JMXAttribute("Running")
     @JMXDescription("Node's running state")
     public boolean isRunning() {
         final LifecycleService lifecycleService = getManagedObject().getLifecycleService();
         return lifecycleService.isRunning();
     }
-    
+
     @JMXOperation("restart")
     @JMXDescription("Restart node")
     public void restart() {
         final LifecycleService lifecycleService = getManagedObject().getLifecycleService();
         lifecycleService.restart();
     }
-    
+
     @JMXOperation("shutdown")
     @JMXDescription("Shutdown node")
     public void shutdown() {

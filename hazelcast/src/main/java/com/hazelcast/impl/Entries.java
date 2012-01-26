@@ -29,7 +29,7 @@ import java.util.*;
 import static com.hazelcast.impl.ClusterOperation.*;
 
 public class Entries extends AbstractSet {
-    final Set<Map.Entry> lsKeyValues = new HashSet<Map.Entry>();
+    final Collection<Map.Entry> colKeyValues = new HashSet<Map.Entry>();
     final String name;
     final ClusterOperation operation;
     final boolean checkValue;
@@ -51,22 +51,22 @@ public class Entries extends AbstractSet {
                 if (predicate != null) {
                     for (Map.Entry entry : entriesUnderTxn) {
                         if (predicate.apply((MapEntry) entry)) {
-                            lsKeyValues.add(entry);
+                            colKeyValues.add(entry);
                         }
                     }
                 } else {
-                    lsKeyValues.addAll(entriesUnderTxn);
+                    colKeyValues.addAll(entriesUnderTxn);
                 }
             }
         }
     }
 
     public int size() {
-        return lsKeyValues.size();
+        return colKeyValues.size();
     }
 
     public Iterator iterator() {
-        return new EntryIterator(lsKeyValues.iterator());
+        return new EntryIterator(colKeyValues.iterator());
     }
 
     public void addEntries(Pairs pairs) {
@@ -79,21 +79,21 @@ public class Entries extends AbstractSet {
                 if (txn.has(name, key)) {
                     Object value = txn.get(name, key);
                     if (value != null) {
-                        lsKeyValues.add(BaseManager.createSimpleMapEntry(concurrentMapManager.node.factory, name, key, value));
+                        colKeyValues.add(BaseManager.createSimpleMapEntry(concurrentMapManager.node.factory, name, key, value));
                     }
                 } else {
                     entry.setName(concurrentMapManager.node.factory, name);
-                    lsKeyValues.add(entry);
+                    colKeyValues.add(entry);
                 }
             } else {
                 entry.setName(concurrentMapManager.node.factory, name);
-                lsKeyValues.add(entry);
+                colKeyValues.add(entry);
             }
         }
     }
 
-    public Set<Map.Entry> getKeyValues() {
-        return lsKeyValues;
+    public Collection<Map.Entry> getKeyValues() {
+        return colKeyValues;
     }
 
     class EntryIterator implements Iterator {

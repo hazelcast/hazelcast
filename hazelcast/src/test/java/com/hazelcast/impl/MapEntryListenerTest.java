@@ -1,11 +1,12 @@
 package com.hazelcast.impl;
 
+import com.hazelcast.core.*;
+import org.junit.*;
+import org.junit.runner.RunWith;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.*;
-
-import com.hazelcast.core.*;
-
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MapEntryListenerTest {
 
     final String n = "foo";
@@ -34,22 +35,22 @@ public class MapEntryListenerTest {
 
     @After
     public void after() {
-    	destroyMaps();
+        destroyMaps();
         h1.getLifecycleService().shutdown();
         h2.getLifecycleService().shutdown();
     }
-    
+
     private void createMaps() {
-    	globalCount.set(0);
+        globalCount.set(0);
         localCount.set(0);
         valueCount.set(0);
-    	map1 = h1.getMap(n);
-    	map2 = h2.getMap(n);
+        map1 = h1.getMap(n);
+        map2 = h2.getMap(n);
     }
-    
+
     private void destroyMaps() {
-    	map1.destroy();
-    	map2.destroy();
+        map1.destroy();
+        map2.destroy();
     }
 
     @Test
@@ -101,29 +102,26 @@ public class MapEntryListenerTest {
         putDummyData(k);
         checkCountWithExpected(k * 3, k, k * 2);
     }
-    
+
     @Test
     /**
      * Test for Issue 663
      */
     public void createAfterDestroyListenerTest() throws Exception {
-    	createMaps();
-    	localListenerTest();
-    	destroyMaps();
-    	
-    	createMaps();
-    	localListenerTest();
-    	destroyMaps();
-    	
-    	createMaps();
-    	globalListenerTest();
-    	destroyMaps();
-    	
-    	createMaps();
-    	globalListenerTest();
-    	destroyMaps();
+        createMaps();
+        localListenerTest();
+        destroyMaps();
+        createMaps();
+        localListenerTest();
+        destroyMaps();
+        createMaps();
+        globalListenerTest();
+        destroyMaps();
+        createMaps();
+        globalListenerTest();
+        destroyMaps();
     }
-    
+
     private void putDummyData(int k) {
         for (int i = 0; i < k; i++) {
             map1.put("foo" + i, "bar");

@@ -21,12 +21,14 @@ import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ClusterImplTest {
     @Test
     public void testDistance() throws Exception {

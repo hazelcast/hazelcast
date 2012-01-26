@@ -17,74 +17,74 @@
 
 package com.hazelcast.impl.monitor;
 
+import com.hazelcast.monitor.LocalInstanceOperationStats;
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.hazelcast.monitor.LocalInstanceOperationStats;
-import com.hazelcast.nio.DataSerializable;
-
 abstract class LocalOperationStatsSupport implements LocalInstanceOperationStats {
 
-	long periodStart;
-	long periodEnd;
+    long periodStart;
+    long periodEnd;
 
-	public final long getPeriodStart() {
-		return periodStart;
-	}
+    public final long getPeriodStart() {
+        return periodStart;
+    }
 
-	public final long getPeriodEnd() {
-		return periodEnd;
-	}
-	
-	public final void writeData(DataOutput out) throws IOException {
+    public final long getPeriodEnd() {
+        return periodEnd;
+    }
+
+    public final void writeData(DataOutput out) throws IOException {
         out.writeLong(periodStart);
         out.writeLong(periodEnd);
         writeDataInternal(out);
     }
-	
-	abstract void writeDataInternal(DataOutput out) throws IOException;
+
+    abstract void writeDataInternal(DataOutput out) throws IOException;
 
     public final void readData(DataInput in) throws IOException {
         periodStart = in.readLong();
         periodEnd = in.readLong();
         readDataInternal(in);
     }
-    
-    abstract void readDataInternal(DataInput in) throws IOException ;
 
-	class OperationStat implements DataSerializable {
-		long count;
-		long totalLatency;
+    abstract void readDataInternal(DataInput in) throws IOException;
 
-		public OperationStat() {
-			this(0, 0);
-		}
+    class OperationStat implements DataSerializable {
+        long count;
+        long totalLatency;
 
-		public OperationStat(long c, long l) {
-			this.count = c;
-			this.totalLatency = l;
-		}
+        public OperationStat() {
+            this(0, 0);
+        }
 
-		@Override
-		public String toString() {
-			return "OperationStat{" + "count=" + count + ", averageLatency="
-					+ ((count == 0) ? 0 : totalLatency / count) + '}';
-		}
+        public OperationStat(long c, long l) {
+            this.count = c;
+            this.totalLatency = l;
+        }
 
-		public void writeData(DataOutput out) throws IOException {
-			out.writeLong(count);
-			out.writeLong(totalLatency);
-		}
+        @Override
+        public String toString() {
+            return "OperationStat{" + "count=" + count + ", averageLatency="
+                    + ((count == 0) ? 0 : totalLatency / count) + '}';
+        }
 
-		public void readData(DataInput in) throws IOException {
-			count = in.readLong();
-			totalLatency = in.readLong();
-		}
+        public void writeData(DataOutput out) throws IOException {
+            out.writeLong(count);
+            out.writeLong(totalLatency);
+        }
 
-		public void add(long c, long l) {
-			count += c;
-			totalLatency += l;
-		}
-	}
+        public void readData(DataInput in) throws IOException {
+            count = in.readLong();
+            totalLatency = in.readLong();
+        }
+
+        public void add(long c, long l) {
+            count += c;
+            totalLatency += l;
+        }
+    }
 }

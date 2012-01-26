@@ -40,7 +40,7 @@ public final class Predicates {
     private static final String timestampFormat = "yyyy-MM-dd hh:mm:ss.SSS";
     private static final String dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
     private static final String sqlDateFormat = "yyyy-mm-dd";
-    
+
     public static class GreaterLessPredicate extends EqualPredicate {
         boolean equal = false;
         boolean less = false;
@@ -957,8 +957,8 @@ public final class Predicates {
                 }
                 return getter.getValue(obj);
             } catch (Throwable e) {
-            	Util.throwUncheckedException(e);
-            	return null;
+                Util.throwUncheckedException(e);
+                return null;
             }
         }
 
@@ -1065,15 +1065,15 @@ public final class Predicates {
             return input;
         }
     }
-    
+
     private static DateFormat getTimestampFormat() {
         return new SimpleDateFormat(timestampFormat);
     }
-    
+
     private static DateFormat getSqlDateFormat() {
         return new SimpleDateFormat(sqlDateFormat);
     }
-    
+
     private static DateFormat getUtilDateFormat() {
         return new SimpleDateFormat(dateFormat);
     }

@@ -26,8 +26,8 @@ public final class ByteUtil {
      * Array of bit positions.
      */
     private static final byte[] POWERS = new byte[]{
-            (byte)(1 << 0), (byte)(1 << 1), (byte)(1 << 2), (byte)(1 << 3), 
-            (byte)(1 << 4), (byte)(1 << 5), (byte)(1 << 6), (byte)(1 << 7)
+            (byte) (1 << 0), (byte) (1 << 1), (byte) (1 << 2), (byte) (1 << 3),
+            (byte) (1 << 4), (byte) (1 << 5), (byte) (1 << 6), (byte) (1 << 7)
     };
 
     /**
@@ -80,30 +80,30 @@ public final class ByteUtil {
     public static boolean isFalse(final byte number, final int index) {
         return (number & (POWERS[index])) == 0;
     }
-    
-    public static byte toByte(boolean ... values){
-        if (values.length > Byte.SIZE){
+
+    public static byte toByte(boolean... values) {
+        if (values.length > Byte.SIZE) {
             throw new IllegalArgumentException(
-                "Expected less or equal to " + Byte.SIZE + " arguments");
+                    "Expected less or equal to " + Byte.SIZE + " arguments");
         }
         byte b = 0;
-        for(int i = 0; i < values.length; i++){
+        for (int i = 0; i < values.length; i++) {
             b |= values[i] ? POWERS[i] : 0;
         }
         return b;
     }
-    
-    public static boolean[] fromByte(byte b){
+
+    public static boolean[] fromByte(byte b) {
         boolean[] values = new boolean[Byte.SIZE];
-        for(int i = 0; i < values.length; i++){
+        for (int i = 0; i < values.length; i++) {
             values[i] = (b & POWERS[i]) != 0;
         }
         return values;
     }
-    
-    public static String toBinaryString(final byte number){
+
+    public static String toBinaryString(final byte number) {
         final StringBuilder builder = new StringBuilder(Byte.SIZE);
-        for(int i = 0; i < Byte.SIZE; i++){
+        for (int i = 0; i < Byte.SIZE; i++) {
             final int q = number & POWERS[Byte.SIZE - 1 - i];
             builder.append(q != 0 ? '1' : '0');
         }

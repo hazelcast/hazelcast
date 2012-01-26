@@ -17,28 +17,27 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.hazelcast.nio.DataSerializable;
-
-public final class TopicConfig  implements DataSerializable{
+public final class TopicConfig implements DataSerializable {
 
     public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = false;
 
     private String name;
 
     private boolean globalOrderingEnabled = DEFAULT_GLOBAL_ORDERING_ENABLED;
-    
+
     private List<ListenerConfig> listenerConfigs;
 
     public TopicConfig() {
     }
-    
-    
+
     public TopicConfig(TopicConfig config) {
         this.name = config.name;
         this.globalOrderingEnabled = config.globalOrderingEnabled;
@@ -73,27 +72,27 @@ public final class TopicConfig  implements DataSerializable{
         this.globalOrderingEnabled = globalOrderingEnabled;
         return this;
     }
-    
+
     public TopicConfig addMessageListenerConfig(ListenerConfig listenerConfig) {
-    	getMessageListenerConfigs().add(listenerConfig);
-    	return this;
+        getMessageListenerConfigs().add(listenerConfig);
+        return this;
     }
-    
+
     public List<ListenerConfig> getMessageListenerConfigs() {
-    	if (listenerConfigs == null) {
-    		listenerConfigs = new ArrayList<ListenerConfig>();
-    	}
-		return listenerConfigs;
-	}
-    
+        if (listenerConfigs == null) {
+            listenerConfigs = new ArrayList<ListenerConfig>();
+        }
+        return listenerConfigs;
+    }
+
     public void setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
-		this.listenerConfigs = listenerConfigs;
-	}
-    
+        this.listenerConfigs = listenerConfigs;
+    }
+
     @Override
     public int hashCode() {
         return (globalOrderingEnabled ? 1231 : 1237) +
-            31 * (name != null ? name.hashCode() : 0);
+                31 * (name != null ? name.hashCode() : 0);
     }
 
     @Override
@@ -103,11 +102,11 @@ public final class TopicConfig  implements DataSerializable{
         if (!(obj instanceof TopicConfig))
             return false;
         TopicConfig other = (TopicConfig) obj;
-        return 
-        (this.name != null ? this.name.equals(other.name) : other.name == null) &&
-            this.globalOrderingEnabled == other.globalOrderingEnabled;
+        return
+                (this.name != null ? this.name.equals(other.name) : other.name == null) &&
+                        this.globalOrderingEnabled == other.globalOrderingEnabled;
     }
-    
+
     @Override
     public String toString() {
         return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled + "]";
@@ -122,6 +121,4 @@ public final class TopicConfig  implements DataSerializable{
         name = in.readUTF();
         globalOrderingEnabled = in.readBoolean();
     }
-    
-    
 }

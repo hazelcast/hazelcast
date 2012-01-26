@@ -118,7 +118,7 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
             new Thread(p).start();
         }
         Thread.sleep(5000);
-        for (Iterator<Putter> it = list.iterator(); it.hasNext();) {
+        for (Iterator<Putter> it = list.iterator(); it.hasNext(); ) {
             Putter p = it.next();
             p.run = false;
         }
@@ -184,7 +184,7 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
             executorService.execute(new Runnable() {
 
                 public void run() {
-                    for (; ;) {
+                    for (; ; ) {
                         try {
                             queue.take();
                         } catch (InterruptedException e) {

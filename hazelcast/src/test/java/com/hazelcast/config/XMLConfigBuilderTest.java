@@ -1,6 +1,7 @@
 package com.hazelcast.config;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.Source;
@@ -15,6 +16,7 @@ import java.net.URL;
 
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class XMLConfigBuilderTest {
 
     @Test

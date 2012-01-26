@@ -19,7 +19,6 @@ package com.hazelcast.jmx;
 
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

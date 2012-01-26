@@ -21,5 +21,5 @@ import com.hazelcast.core.ISet;
 
 public interface SetProxy<E> extends ISet<E>, HazelcastInstanceAwareInstance {
 
-	 MProxy getMProxy();
+    MProxy getMProxy();
 }

@@ -4,10 +4,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public abstract class LoggerFactorySupport implements LoggerFactory {
-	
-	final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
-	
-	public final ILogger getLogger(String name) {
+
+    final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
+
+    public final ILogger getLogger(String name) {
         ILogger logger = mapLoggers.get(name);
         if (logger == null) {
             ILogger newLogger = createLogger(name);
@@ -19,5 +19,5 @@ public abstract class LoggerFactorySupport implements LoggerFactory {
         return logger;
     }
 
-	protected abstract ILogger createLogger(String name);
+    protected abstract ILogger createLogger(String name);
 }

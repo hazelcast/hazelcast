@@ -17,11 +17,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.hazelcast.nio.DataSerializable;
 
 public class ExecutorConfig implements DataSerializable {
 
@@ -127,6 +127,4 @@ public class ExecutorConfig implements DataSerializable {
         maxPoolSize = in.readInt();
         keepAliveSeconds = in.readInt();
     }
-    
-    
 }

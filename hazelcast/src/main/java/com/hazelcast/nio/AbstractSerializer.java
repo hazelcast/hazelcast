@@ -60,7 +60,7 @@ public abstract class AbstractSerializer {
     public static Class<?> loadClass(final String className) throws ClassNotFoundException {
         return loadClass(null, className);
     }
-    
+
     public static Class<?> loadClass(final ClassLoader classLoader, final String className) throws ClassNotFoundException {
         if (className == null) {
             throw new IllegalArgumentException("ClassName cannot be null!");

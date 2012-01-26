@@ -17,10 +17,6 @@
 
 package com.hazelcast.impl;
 
-import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Prefix;
@@ -28,6 +24,10 @@ import com.hazelcast.impl.ConcurrentMapManager.MMultiGet;
 import com.hazelcast.impl.ConcurrentMapManager.MRemoveMulti;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.nio.DataSerializable;
+
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class MultiMapProxyImpl extends FactoryAwareNamedProxy implements MultiMapProxy, DataSerializable, IGetAwareProxy {
 
@@ -348,8 +348,8 @@ public class MultiMapProxyImpl extends FactoryAwareNamedProxy implements MultiMa
         public void unlockMap() {
             mapProxy.unlockMap();
         }
-        
+
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		}
+        }
     }
 }

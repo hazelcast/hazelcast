@@ -17,13 +17,13 @@
 
 package com.hazelcast.impl.monitor;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.hazelcast.monitor.LocalTopicOperationStats;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class TopicOperationsCounter extends OperationsCounterSupport<LocalTopicOperationStats> {
-	private static final LocalTopicOperationStats empty = new LocalTopicOperationStatsImpl();
-	
+    private static final LocalTopicOperationStats empty = new LocalTopicOperationStatsImpl();
+
     private AtomicLong messagePublishes = new AtomicLong();
     private AtomicLong receivedMessages = new AtomicLong();
 
@@ -75,8 +75,8 @@ public class TopicOperationsCounter extends OperationsCounterSupport<LocalTopicO
         stats.periodEnd = now();
         return stats;
     }
-    
+
     LocalTopicOperationStats getEmpty() {
-    	return empty;
+        return empty;
     }
 }

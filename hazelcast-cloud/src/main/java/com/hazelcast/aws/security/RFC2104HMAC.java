@@ -17,31 +17,30 @@
 
 package com.hazelcast.aws.security;
 
-import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD;
-import static com.hazelcast.util.Base64.*;
-
-import java.security.SignatureException;
-
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.SignatureException;
+
+import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD;
+import static com.hazelcast.util.Base64.encode;
 
 public class RFC2104HMAC {
 
-	public static String calculateRFC2104HMAC(String data, String key)
-			throws SignatureException {
-		String result = null;
-		try {
-			SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(),
-					SIGNATURE_METHOD);
-			Mac mac = Mac.getInstance(SIGNATURE_METHOD);
-			mac.init(signingKey);
-			byte[] rawSignature = mac.doFinal(data.getBytes());
-			result = new String(encode(rawSignature));
-			result = result.trim();
-		} catch (Exception e) {
-			throw new SignatureException("Failed to generate HMAC : "
-					+ e.getMessage());
-		}
-		return result;
-	}
+    public static String calculateRFC2104HMAC(String data, String key)
+            throws SignatureException {
+        String result = null;
+        try {
+            SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(),
+                    SIGNATURE_METHOD);
+            Mac mac = Mac.getInstance(SIGNATURE_METHOD);
+            mac.init(signingKey);
+            byte[] rawSignature = mac.doFinal(data.getBytes());
+            result = new String(encode(rawSignature));
+            result = result.trim();
+        } catch (Exception e) {
+            throw new SignatureException("Failed to generate HMAC : "
+                    + e.getMessage());
+        }
+        return result;
+    }
 }

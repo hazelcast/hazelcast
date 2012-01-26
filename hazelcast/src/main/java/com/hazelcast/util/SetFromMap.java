@@ -21,9 +21,9 @@ import java.io.Serializable;
 import java.util.*;
 
 public class SetFromMap<E> extends AbstractSet<E> implements Set<E>, Serializable {
-    
+
     private final Map<E, Boolean> m;
-    
+
     public SetFromMap(final Map<E, Boolean> map) {
         super();
         this.m = map;

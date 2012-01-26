@@ -17,43 +17,40 @@
 
 package com.hazelcast.web.tomcat;
 
+import org.apache.catalina.session.StandardSessionFacade;
+
+import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
-import javax.servlet.http.HttpSession;
-
-import org.apache.catalina.session.StandardSessionFacade;
-
 /**
  * @author ali
- *
  */
 
 public class HazelcastSessionFacade extends StandardSessionFacade {
-	
+
     /**
      * Wrapped session object.
      */
     private HttpSession session = null;
-	
-	public HazelcastSessionFacade(HazelcastSession session) {
-		super(session);
-		this.session = session;
-	}
-	
-	public List<HazelcastAttribute> getTouchedAttributes(long requestId) {
-		List<HazelcastAttribute> touchedList = new ArrayList<HazelcastAttribute>();
-		Enumeration<String> attNames = session.getAttributeNames();
-		HazelcastSession hazelcastSession = (HazelcastSession) session;
-		while (attNames.hasMoreElements()) {
-			String attName = attNames.nextElement();
-			HazelcastAttribute hattribute = (HazelcastAttribute) hazelcastSession.getLocalAttribute(attName);
-			if(hattribute != null && hattribute.isTouched(requestId)){
-				touchedList.add(hattribute);
-			}
-		}
-		return touchedList;
-	}
-	
+
+    public HazelcastSessionFacade(HazelcastSession session) {
+        super(session);
+        this.session = session;
+    }
+
+    public List<HazelcastAttribute> getTouchedAttributes(long requestId) {
+        List<HazelcastAttribute> touchedList = new ArrayList<HazelcastAttribute>();
+        Enumeration<String> attNames = session.getAttributeNames();
+        HazelcastSession hazelcastSession = (HazelcastSession) session;
+        while (attNames.hasMoreElements()) {
+            String attName = attNames.nextElement();
+            HazelcastAttribute hattribute = (HazelcastAttribute) hazelcastSession.getLocalAttribute(attName);
+            if (hattribute != null && hattribute.isTouched(requestId)) {
+                touchedList.add(hattribute);
+            }
+        }
+        return touchedList;
+    }
 }

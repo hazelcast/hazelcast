@@ -22,7 +22,10 @@ import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.CMap;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.TestUtil;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;

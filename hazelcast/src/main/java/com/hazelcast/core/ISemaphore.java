@@ -17,11 +17,10 @@
 
 package com.hazelcast.core;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
 import com.hazelcast.monitor.LocalSemaphoreStats;
 
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * ISemaphore is a backed-up distributed implementation of {@link java.util.concurrent.Semaphore java.util.concurrent.Semaphore}.
@@ -96,7 +95,7 @@ public interface ISemaphore extends Instance {
      *
      * @throws InstanceDestroyedException if the instance is destroyed while waiting
      * @throws InterruptedException       if the current thread is interrupted
-     * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
+     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
     public void acquire() throws InstanceDestroyedException, InterruptedException;
 
@@ -132,7 +131,7 @@ public interface ISemaphore extends Instance {
      * @throws InstanceDestroyedException if the instance is destroyed while waiting
      * @throws InterruptedException       if the current thread is interrupted
      * @throws IllegalArgumentException   if {@code permits} is negative
-     * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
+     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
     public void acquire(int permits) throws InstanceDestroyedException, InterruptedException;
 
@@ -222,7 +221,7 @@ public interface ISemaphore extends Instance {
      * <p/>
      * See {@link #acquire()} and {@link #attach()}.
      *
-     * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
+     * @throws IllegalStateException if hazelcast instance is shutdown while waiting
      */
     public void acquireAttach() throws InstanceDestroyedException, InterruptedException;
 
@@ -242,7 +241,6 @@ public interface ISemaphore extends Instance {
      * Asynchronously acquires and attaches a permit to the caller's address.
      * <p/>
      * See {@link #acquireAsync()} and {@link #attach()}.
-     *
      */
     public Future acquireAttachAsync();
 
@@ -363,7 +361,6 @@ public interface ISemaphore extends Instance {
      */
     public void release(int permits);
 
-
     /**
      * Detaches a permit from the caller's address and returns it to the semaphore.
      * <p/>
@@ -454,7 +451,7 @@ public interface ISemaphore extends Instance {
      *         if the waiting time elapsed before a permit was acquired
      * @throws InstanceDestroyedException if the instance is destroyed while waiting
      * @throws InterruptedException       if the current thread is interrupted
-     * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
+     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
     public boolean tryAcquire(long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException;
 
@@ -500,7 +497,7 @@ public interface ISemaphore extends Instance {
      * @throws InstanceDestroyedException if the instance is destroyed while waiting
      * @throws InterruptedException       if the current thread is interrupted
      * @throws IllegalArgumentException   if {@code permits} is negative
-     * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
+     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException;
 
@@ -547,7 +544,7 @@ public interface ISemaphore extends Instance {
      *         if the waiting time elapsed before a permit could be acquired
      * @throws InstanceDestroyedException if the instance is destroyed while waiting
      * @throws InterruptedException       if the current thread is interrupted
-     * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
+     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
     public boolean tryAcquireAttach(long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException;
 
@@ -569,9 +566,9 @@ public interface ISemaphore extends Instance {
      * @throws InstanceDestroyedException if the instance is destroyed while waiting
      * @throws InterruptedException       if the current thread is interrupted
      * @throws IllegalArgumentException   if {@code permits} is negative
-     * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
+     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
     public boolean tryAcquireAttach(int permits, long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException;
-    
+
     LocalSemaphoreStats getLocalSemaphoreStats();
 }

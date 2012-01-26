@@ -155,8 +155,7 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
                     }
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Unable to register MBean", e);
         }
     }
@@ -178,8 +177,7 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
                     }
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Unable to unregister MBean", e);
         }
     }

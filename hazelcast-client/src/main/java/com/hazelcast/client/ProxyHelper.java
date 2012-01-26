@@ -184,8 +184,8 @@ public class ProxyHelper {
         if (response.getValue() != null) {
             Object result = toObject(response.getValue());
             if (result instanceof ClientServiceException) {
-            	final ClientServiceException ex = (ClientServiceException) result;
-            	Util.throwUncheckedException(ex.getThrowable());
+                final ClientServiceException ex = (ClientServiceException) result;
+                Util.throwUncheckedException(ex.getThrowable());
             }
             return result;
         }

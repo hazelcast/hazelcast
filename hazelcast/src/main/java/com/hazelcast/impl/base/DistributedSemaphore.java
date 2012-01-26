@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DistributedSemaphore implements DataSerializable{
+public class DistributedSemaphore implements DataSerializable {
 
     Map<Address, Integer> attachedPermits = new HashMap<Address, Integer>();
     int available;
@@ -43,7 +43,7 @@ public class DistributedSemaphore implements DataSerializable{
         attachedPermits.clear();
         available = in.readInt();
         int entries = in.readInt();
-        while(entries-- > 0){
+        while (entries-- > 0) {
             (address = new Address()).readData(in);
             attachedPermits.put(address, in.readInt());
         }
@@ -52,14 +52,14 @@ public class DistributedSemaphore implements DataSerializable{
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(available);
         out.writeInt(attachedPermits.size());
-        for(Map.Entry<Address, Integer> entry : attachedPermits.entrySet()){
+        for (Map.Entry<Address, Integer> entry : attachedPermits.entrySet()) {
             entry.getKey().writeData(out);
             out.writeInt(entry.getValue());
         }
     }
 
     public void attachDetach(Integer permitsDelta, Address address) {
-        if(permitsDelta != 0 && address != null){
+        if (permitsDelta != 0 && address != null) {
             int newValue = permitsDelta + getAttached(address);
             if (newValue != 0) {
                 attachedPermits.put(address, newValue);
@@ -77,7 +77,7 @@ public class DistributedSemaphore implements DataSerializable{
 
     public int getAttached() {
         int total = 0;
-        for(Integer permits : attachedPermits.values()){
+        for (Integer permits : attachedPermits.values()) {
             total += permits;
         }
         return total;
@@ -101,7 +101,7 @@ public class DistributedSemaphore implements DataSerializable{
     }
 
     public boolean tryAcquire(int permits, Address address) {
-        if (available  >= permits){
+        if (available >= permits) {
             available -= permits;
             attachDetach(permits, address);
             return true;

@@ -71,7 +71,7 @@ public class EntryListenerManager {
             key = toKey(key);
             List<EntryListenerHolder> list = m.get(key);
             if (list != null) {
-                for (final Iterator<EntryListenerHolder> it = list.iterator(); it.hasNext();) {
+                for (final Iterator<EntryListenerHolder> it = list.iterator(); it.hasNext(); ) {
                     final EntryListenerHolder entryListenerHolder = it.next();
                     if (entryListenerHolder.listener.equals(entryListener)) {
                         list.remove(entryListenerHolder);

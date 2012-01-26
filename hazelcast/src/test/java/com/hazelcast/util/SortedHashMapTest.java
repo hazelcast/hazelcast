@@ -19,6 +19,7 @@ package com.hazelcast.util;
 
 import org.junit.After;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Map;
@@ -27,6 +28,7 @@ import java.util.Set;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class SortedHashMapTest {
 
     private SortedHashMap<String, String> map = new SortedHashMap<String, String>();

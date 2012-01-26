@@ -18,9 +18,9 @@ import java.util.concurrent.ConcurrentMap;
  * A {@link ConcurrentMap} supporting {@link NavigableMap} operations,
  * and recursively so for its navigable sub-maps.
  *
- * @author Doug Lea
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
+ * @author Doug Lea
  */
 public interface ConcurrentNavigableMap<K, V>
         extends ConcurrentMap<K, V>, NavigableMap<K, V> {

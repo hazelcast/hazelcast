@@ -132,7 +132,7 @@ public class GroupProperties {
     public final GroupProperty SOCKET_KEEP_ALIVE;
 
     public final GroupProperty SOCKET_NO_DELAY;
-    
+
     public final GroupProperty SOCKET_TIMEOUT_SECONDS;
 
     public final GroupProperty SHUTDOWNHOOK_ENABLED;
@@ -196,11 +196,11 @@ public class GroupProperties {
     public final GroupProperty MC_MAX_INSTANCE_COUNT;
 
     public final GroupProperty CONCURRENT_MAP_SIMPLE_RECORD;
-    
+
     public final GroupProperty CONNECTION_MONITOR_INTERVAL;
-    
+
     public final GroupProperty CONNECTION_MONITOR_MAX_FAULTS;
-    
+
     public final GroupProperty ELASTIC_MEMORY_ENABLED;
 
     public final GroupProperty ELASTIC_MEMORY_TOTAL_SIZE;
@@ -210,7 +210,7 @@ public class GroupProperties {
     public final GroupProperty ELASTIC_MEMORY_SHARED_STORAGE;
 
     public final GroupProperty LICENSE_PATH;
-    
+
     public GroupProperties(Config config) {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");

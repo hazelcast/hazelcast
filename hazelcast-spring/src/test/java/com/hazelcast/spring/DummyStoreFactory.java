@@ -17,15 +17,14 @@
 
 package com.hazelcast.spring;
 
-import java.util.Properties;
-
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStoreFactory;
 
+import java.util.Properties;
+
 public class DummyStoreFactory implements MapStoreFactory {
 
-	public MapLoader newMapStore(String mapName, Properties properties) {
-		return new DummyStore();
-	}
-
+    public MapLoader newMapStore(String mapName, Properties properties) {
+        return new DummyStore();
+    }
 }

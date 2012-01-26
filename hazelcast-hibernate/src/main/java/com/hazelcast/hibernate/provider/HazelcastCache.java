@@ -17,14 +17,6 @@
 
 package com.hazelcast.hibernate.provider;
 
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-
-import org.hibernate.cache.Cache;
-import org.hibernate.cache.CacheException;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
@@ -33,6 +25,13 @@ import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
 import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import org.hibernate.cache.Cache;
+import org.hibernate.cache.CacheException;
+
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 /**
  * Implementation of (deprecated) Hibernate <code>Cache</code> interface for compatibility with pre-Hibernate 3.3.x
@@ -45,11 +44,11 @@ import com.hazelcast.logging.Logger;
 public final class HazelcastCache implements Cache {
 
     private static final ILogger LOG = Logger.getLogger(HazelcastCache.class.getName());
-    
+
     private final HazelcastInstance instance;
     private final IMap cache;
     private final String regionName;
-    private final int timeout ;
+    private final int timeout;
     private final int lockTimeout;
 
     public HazelcastCache(final HazelcastInstance instance, final String regionName, final Properties props) {
@@ -103,21 +102,21 @@ public final class HazelcastCache implements Cache {
     }
 
     public int getTimeout() {
-    	return timeout;
+        return timeout;
     }
 
     public long nextTimestamp() {
-    	return HazelcastTimestamper.nextTimestamp(instance);
+        return HazelcastTimestamper.nextTimestamp(instance);
     }
 
     public void lock(final Object key) throws CacheException {
-    	if(lockTimeout > 0) {
-    		if(!cache.tryLock(key, lockTimeout, TimeUnit.SECONDS)) {
-    			throw new CacheException("Cache lock could not be acquired! Wait-time: " + lockTimeout + " seconds");
-    		}
-    	} else {
-    		cache.lock(key);
-    	}
+        if (lockTimeout > 0) {
+            if (!cache.tryLock(key, lockTimeout, TimeUnit.SECONDS)) {
+                throw new CacheException("Cache lock could not be acquired! Wait-time: " + lockTimeout + " seconds");
+            }
+        } else {
+            cache.lock(key);
+        }
     }
 
     public void unlock(final Object key) throws CacheException {
@@ -143,7 +142,7 @@ public final class HazelcastCache implements Cache {
     public void update(final Object key, final Object value) throws CacheException {
         put(key, value);
     }
-    
+
     /**
      * @return the internal <code>IMap</code> used for this cache.
      */

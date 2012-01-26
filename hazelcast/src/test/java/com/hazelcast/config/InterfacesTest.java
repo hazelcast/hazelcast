@@ -18,12 +18,14 @@
 package com.hazelcast.config;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class InterfacesTest {
 
     final String interfaceA = "127.0.0.1";

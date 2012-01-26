@@ -2,7 +2,6 @@ package com.hazelcast.impl.executor;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.StandardLoggerFactory;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,19 +34,15 @@ public class ParallelExecutorServiceImplTest {
     @Test
     public void testExecuteWithIllegalArguments() {
         ParallelExecutor executor = parallelExecutorService.newParallelExecutor(2);
-
         try {
             executor.execute(null);
             fail();
         } catch (NullPointerException expected) {
-
         }
-
         try {
             executor.execute(null, 1);
             fail();
         } catch (NullPointerException expected) {
-
         }
     }
 }

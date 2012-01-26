@@ -17,12 +17,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.util.ByteUtil;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.util.ByteUtil;
 
 public class NetworkConfig implements DataSerializable {
     private Interfaces interfaces = new Interfaces();
@@ -87,10 +87,10 @@ public class NetworkConfig implements DataSerializable {
         boolean hasSymmetricEncryptionConfig = symmetricEncryptionConfig != null;
         boolean hasAsymmetricEncryptionConfig = asymmetricEncryptionConfig != null;
         out.writeByte(ByteUtil.toByte(hasSymmetricEncryptionConfig, hasAsymmetricEncryptionConfig));
-        if (hasSymmetricEncryptionConfig){
+        if (hasSymmetricEncryptionConfig) {
             symmetricEncryptionConfig.writeData(out);
         }
-        if (hasAsymmetricEncryptionConfig){
+        if (hasAsymmetricEncryptionConfig) {
             asymmetricEncryptionConfig.writeData(out);
         }
     }
@@ -103,12 +103,11 @@ public class NetworkConfig implements DataSerializable {
         boolean[] b = ByteUtil.fromByte(in.readByte());
         boolean hasSymmetricEncryptionConfig = b[0];
         boolean hasAsymmetricEncryptionConfig = b[1];
-        
-        if (hasSymmetricEncryptionConfig){
+        if (hasSymmetricEncryptionConfig) {
             symmetricEncryptionConfig = new SymmetricEncryptionConfig();
             symmetricEncryptionConfig.readData(in);
         }
-        if (hasAsymmetricEncryptionConfig){
+        if (hasAsymmetricEncryptionConfig) {
             asymmetricEncryptionConfig = new AsymmetricEncryptionConfig();
             asymmetricEncryptionConfig.readData(in);
         }
@@ -116,10 +115,9 @@ public class NetworkConfig implements DataSerializable {
 
     @Override
     public String toString() {
-        return "NetworkConfig [join=" + join 
-            + ", interfaces=" + interfaces
-            + ", symmetricEncryptionConfig=" + symmetricEncryptionConfig
-            + ", asymmetricEncryptionConfig=" + asymmetricEncryptionConfig + "]";
+        return "NetworkConfig [join=" + join
+                + ", interfaces=" + interfaces
+                + ", symmetricEncryptionConfig=" + symmetricEncryptionConfig
+                + ", asymmetricEncryptionConfig=" + asymmetricEncryptionConfig + "]";
     }
-    
 }

@@ -35,12 +35,12 @@ import java.util.logging.Level;
 
 public class WebFilter implements Filter {
 
-	private static final ILogger logger = Logger.getLogger(WebFilter.class.getName());
-	
-	private static final String HAZELCAST_REQUEST = "*hazelcast-request";
-	
-	private static final String HAZELCAST_SESSION_COOKIE_NAME = "hazelcast.sessionId";
-	
+    private static final ILogger logger = Logger.getLogger(WebFilter.class.getName());
+
+    private static final String HAZELCAST_REQUEST = "*hazelcast-request";
+
+    private static final String HAZELCAST_SESSION_COOKIE_NAME = "hazelcast.sessionId";
+
     private static final ConcurrentMap<String, String> mapOriginalSessions = new ConcurrentHashMap<String, String>(1000);
 
     private static final ConcurrentMap<String, HazelcastHttpSession> mapSessions = new ConcurrentHashMap<String, HazelcastHttpSession>(1000);
@@ -78,15 +78,15 @@ public class WebFilter implements Filter {
                 }
 
                 public void entryRemoved(EntryEvent entryEvent) {
-                	if(!entryEvent.getMember().localMember()) {
-                		removeSessionLocally((String) entryEvent.getKey());
-                	}
+                    if (!entryEvent.getMember().localMember()) {
+                        removeSessionLocally((String) entryEvent.getKey());
+                    }
                 }
 
                 public void entryUpdated(EntryEvent entryEvent) {
-                	if(!entryEvent.getMember().localMember()) {
-                		markSessionDirty((String) entryEvent.getKey());
-                	}
+                    if (!entryEvent.getMember().localMember()) {
+                        markSessionDirty((String) entryEvent.getKey());
+                    }
                 }
 
                 public void entryEvicted(EntryEvent entryEvent) {
@@ -123,9 +123,9 @@ public class WebFilter implements Filter {
     }
 
     void log(final Object obj) {
-    	Level level = Level.FINEST;
+        Level level = Level.FINEST;
         if (debug) {
-        	level = Level.INFO;
+            level = Level.INFO;
         }
         logger.log(level, obj.toString());
     }
@@ -153,24 +153,23 @@ public class WebFilter implements Filter {
         mapSessions.remove(session.getId());
         mapOriginalSessions.remove(session.originalSession.getId());
         session.destroy();
-        
-        final long maxInactive = session.originalSession.getMaxInactiveInterval() * 1000; // getMaxInactiveInterval() is in seconds 
+        final long maxInactive = session.originalSession.getMaxInactiveInterval() * 1000; // getMaxInactiveInterval() is in seconds
         final long clusterLastAccess = session.timestamp.get();
         final long now = System.currentTimeMillis(); // Hazelcast.getCluster().getClusterTime() ?
-        if((now - clusterLastAccess) >= maxInactive) { 
-        	log("Destroying cluster session: " + session.getId() + " => Max-inactive: " + maxInactive 
-        			+ ", Local-Last-Access: " + session.originalSession.getLastAccessedTime()
-        			+ ", Cluster-Last-Access: " + clusterLastAccess
-        			+ ", Now: " + now);
-        	getClusterMap().remove(session.getId());
-        	session.timestamp.destroy();
+        if ((now - clusterLastAccess) >= maxInactive) {
+            log("Destroying cluster session: " + session.getId() + " => Max-inactive: " + maxInactive
+                    + ", Local-Last-Access: " + session.originalSession.getLastAccessedTime()
+                    + ", Cluster-Last-Access: " + clusterLastAccess
+                    + ", Now: " + now);
+            getClusterMap().remove(session.getId());
+            session.timestamp.destroy();
         }
     }
 
     public IMap getClusterMap() {
         return Hazelcast.getMap(clusterMapName);
     }
-    
+
     HazelcastHttpSession getSessionWithId(final String sessionId) {
         HazelcastHttpSession session = mapSessions.get(sessionId);
         if (session != null && !session.isValid()) {
@@ -209,7 +208,7 @@ public class WebFilter implements Filter {
             return new RequestDispatcher() {
                 public void forward(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
 //                    original.getRequestDispatcher(path).forward(original, servletResponse);
-                	original.getRequestDispatcher(path).forward(RequestWrapper.this, servletResponse);
+                    original.getRequestDispatcher(path).forward(RequestWrapper.this, servletResponse);
                 }
 
                 public void include(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
@@ -250,7 +249,7 @@ public class WebFilter implements Filter {
                         mapOriginalSessions.remove(originalSession.getId());
                         originalSession.invalidate();
                     } else if (hazelcastSession.isDirty()) {
-                    	  hazelcastSession = null;
+                        hazelcastSession = null;
                     }
                 }
             }
@@ -283,7 +282,7 @@ public class WebFilter implements Filter {
             if (session == null || mapSession == null) return;
             final Enumeration<String> atts = session.getAttributeNames();
             while (atts.hasMoreElements()) {
-              session.removeAttribute(atts.nextElement());
+                session.removeAttribute(atts.nextElement());
             }
             Map mapData = null;
             final Set<Map.Entry> entries = mapSession.entrySet();
@@ -324,7 +323,7 @@ public class WebFilter implements Filter {
         final HttpSession originalSession;
 
         final WebFilter webFilter;
-        
+
         final AtomicNumber timestamp;
 
         public HazelcastHttpSession(WebFilter webFilter, final String sessionId, HttpSession originalSession) {
@@ -388,9 +387,9 @@ public class WebFilter implements Filter {
         }
 
         public void setAttribute(final String name, final Object value) {
-        	if(value != null && !(value instanceof Serializable)) {
-        		throw new IllegalArgumentException(new NotSerializableException(value.getClass().getName()));
-        	}
+            if (value != null && !(value instanceof Serializable)) {
+                throw new IllegalArgumentException(new NotSerializableException(value.getClass().getName()));
+            }
             originalSession.setAttribute(name, value);
         }
 
@@ -441,10 +440,10 @@ public class WebFilter implements Filter {
         public boolean isValid() {
             return valid;
         }
-        
+
         void setAccessed() {
-        	// timestamp.set(Hazelcast.getCluster().getClusterTime()); ???
-        	timestamp.set(System.currentTimeMillis());
+            // timestamp.set(Hazelcast.getCluster().getClusterTime()); ???
+            timestamp.set(System.currentTimeMillis());
         }
     }// END of HazelSession
 
@@ -466,8 +465,8 @@ public class WebFilter implements Filter {
     private static void addSessionCookie(final RequestWrapper req, final String sessionId) {
         final Cookie sessionCookie = new Cookie(HAZELCAST_SESSION_COOKIE_NAME, sessionId);
         String path = req.getContextPath();
-        if("".equals(path)) {
-        	path = "/";
+        if ("".equals(path)) {
+            path = "/";
         }
         sessionCookie.setPath(path);
         sessionCookie.setMaxAge(-1);
@@ -514,7 +513,7 @@ public class WebFilter implements Filter {
             req = null; // for easy debugging. reqWrapper should be used
             HazelcastHttpSession session = reqWrapper.getSession(false);
             if (session != null && session.isValid()) {
-            	session.setAccessed();
+                session.setAccessed();
                 final Enumeration<String> attNames = session.getAttributeNames();
                 Map mapData = null;
                 while (attNames.hasMoreElements()) {

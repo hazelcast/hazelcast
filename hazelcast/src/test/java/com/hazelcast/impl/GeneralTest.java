@@ -19,12 +19,14 @@ package com.hazelcast.impl;
 
 import com.hazelcast.nio.Data;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class GeneralTest {
 
     @Test

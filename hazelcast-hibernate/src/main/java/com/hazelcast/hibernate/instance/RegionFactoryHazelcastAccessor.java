@@ -17,37 +17,35 @@
 
 package com.hazelcast.hibernate.instance;
 
-import java.util.logging.Level;
-
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import org.hibernate.cache.CacheProvider;
 import org.hibernate.cache.RegionFactory;
 import org.hibernate.cache.impl.bridge.RegionFactoryCacheProviderBridge;
 import org.hibernate.cfg.Settings;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
-import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
+import java.util.logging.Level;
 
 final class RegionFactoryHazelcastAccessor extends HazelcastAccessor {
 
-	public HazelcastInstance getHazelcastInstance(Settings settings) {
-		final RegionFactory rf = settings.getRegionFactory();
-		if(rf == null) {
-			logger.log(Level.SEVERE, "Hibernate 2nd level cache has not been enabled!");	
-			return null;
-		}
-		
-		if(rf instanceof RegionFactoryCacheProviderBridge) {
-			final CacheProvider provider = ((RegionFactoryCacheProviderBridge) rf).getCacheProvider();
-			if(provider instanceof HazelcastCacheProvider) {
-				return ((HazelcastCacheProvider) provider).getHazelcastInstance();
-			}
-			logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheProvider!");
-		} else if(rf instanceof HazelcastCacheRegionFactory) {
-			return ((HazelcastCacheRegionFactory) rf).getHazelcastInstance();
-		} else {
-			logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheRegionFactory!");
-		}
-		return null;
-	}
+    public HazelcastInstance getHazelcastInstance(Settings settings) {
+        final RegionFactory rf = settings.getRegionFactory();
+        if (rf == null) {
+            logger.log(Level.SEVERE, "Hibernate 2nd level cache has not been enabled!");
+            return null;
+        }
+        if (rf instanceof RegionFactoryCacheProviderBridge) {
+            final CacheProvider provider = ((RegionFactoryCacheProviderBridge) rf).getCacheProvider();
+            if (provider instanceof HazelcastCacheProvider) {
+                return ((HazelcastCacheProvider) provider).getHazelcastInstance();
+            }
+            logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheProvider!");
+        } else if (rf instanceof HazelcastCacheRegionFactory) {
+            return ((HazelcastCacheRegionFactory) rf).getHazelcastInstance();
+        } else {
+            logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheRegionFactory!");
+        }
+        return null;
+    }
 }

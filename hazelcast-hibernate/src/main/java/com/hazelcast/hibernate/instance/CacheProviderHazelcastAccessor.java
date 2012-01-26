@@ -17,38 +17,34 @@
 
 package com.hazelcast.hibernate.instance;
 
-import java.lang.reflect.Method;
-import java.util.logging.Level;
-
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import org.hibernate.cache.CacheProvider;
 import org.hibernate.cfg.Settings;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
+import java.lang.reflect.Method;
+import java.util.logging.Level;
 
 final class CacheProviderHazelcastAccessor extends HazelcastAccessor {
-	
-	public HazelcastInstance getHazelcastInstance(Settings settings) {
-		Object providerObject = null;
-		try {
-			Method getCacheProviderMethod = Settings.class.getMethod(METHOD_GET_CACHE_PROVIDER);
-			providerObject = getCacheProviderMethod.invoke(settings);
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			return null;
-		}
-		
-		if(providerObject == null) {
-			logger.log(Level.SEVERE, "Hibernate 2nd level cache has not been enabled!");	
-			return null;
-		}
-		
-		final CacheProvider provider = (CacheProvider) providerObject;
-		if(provider instanceof HazelcastCacheProvider) {
-			return ((HazelcastCacheProvider) provider).getHazelcastInstance();
-		}
-		logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheProvider!");
-		return null;
-	}
 
+    public HazelcastInstance getHazelcastInstance(Settings settings) {
+        Object providerObject = null;
+        try {
+            Method getCacheProviderMethod = Settings.class.getMethod(METHOD_GET_CACHE_PROVIDER);
+            providerObject = getCacheProviderMethod.invoke(settings);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return null;
+        }
+        if (providerObject == null) {
+            logger.log(Level.SEVERE, "Hibernate 2nd level cache has not been enabled!");
+            return null;
+        }
+        final CacheProvider provider = (CacheProvider) providerObject;
+        if (provider instanceof HazelcastCacheProvider) {
+            return ((HazelcastCacheProvider) provider).getHazelcastInstance();
+        }
+        logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheProvider!");
+        return null;
+    }
 }

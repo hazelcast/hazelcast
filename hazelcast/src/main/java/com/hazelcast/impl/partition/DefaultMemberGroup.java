@@ -17,30 +17,30 @@
 
 package com.hazelcast.impl.partition;
 
+import com.hazelcast.impl.MemberImpl;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import com.hazelcast.impl.MemberImpl;
-
 public class DefaultMemberGroup implements MemberGroup {
-    
+
     private final Set<MemberImpl> members = new HashSet<MemberImpl>();
-    
+
     public DefaultMemberGroup() {
         super();
     }
-    
+
     public DefaultMemberGroup(Collection<MemberImpl> members) {
         super();
         addMembers(members);
     }
-    
+
     public void addMember(MemberImpl member) {
         members.add(member);
     }
-    
+
     public void addMembers(Collection<MemberImpl> members) {
         this.members.addAll(members);
     }
@@ -48,11 +48,11 @@ public class DefaultMemberGroup implements MemberGroup {
     public void removeMember(MemberImpl member) {
         members.remove(member);
     }
-    
+
     public boolean hasMember(MemberImpl member) {
         return members.contains(member);
     }
-    
+
     public Set<MemberImpl> getMembers() {
         return members;
     }
@@ -60,7 +60,7 @@ public class DefaultMemberGroup implements MemberGroup {
     public Iterator<MemberImpl> iterator() {
         return members.iterator();
     }
-    
+
     public int size() {
         return members.size();
     }

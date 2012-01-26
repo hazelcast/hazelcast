@@ -131,7 +131,7 @@ public class NodeIOService implements IOService {
     public boolean getSocketNoDelay() {
         return this.node.getGroupProperties().SOCKET_NO_DELAY.getBoolean();
     }
-    
+
     public int getSocketTimeoutSeconds() {
         return this.node.getGroupProperties().SOCKET_TIMEOUT_SECONDS.getInteger();
     }

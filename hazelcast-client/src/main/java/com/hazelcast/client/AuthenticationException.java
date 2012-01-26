@@ -18,9 +18,9 @@
 package com.hazelcast.client;
 
 public class AuthenticationException extends ClusterClientException {
-	private static final long	serialVersionUID	= 1L;
+    private static final long serialVersionUID = 1L;
 
-	public AuthenticationException() {
+    public AuthenticationException() {
         super("Wrong group name and password.");
     }
 

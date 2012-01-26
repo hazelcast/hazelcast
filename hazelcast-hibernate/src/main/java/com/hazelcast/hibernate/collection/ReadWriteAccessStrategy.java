@@ -17,9 +17,9 @@
 
 package com.hazelcast.hibernate.collection;
 
-import java.util.Properties;
-
 import com.hazelcast.hibernate.access.ReadWriteAccessDelegate;
+
+import java.util.Properties;
 
 /**
  * @author Leo Kim (lkim@limewire.com)

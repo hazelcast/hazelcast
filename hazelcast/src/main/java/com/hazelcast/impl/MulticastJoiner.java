@@ -129,7 +129,7 @@ public class MulticastJoiner extends AbstractJoiner {
             final String ip = System.getProperty("join.ip");
             if (ip == null) {
                 JoinInfo joinInfo = node.createJoinInfo();
-                for (; node.isActive() && currentTryCount.incrementAndGet() <= tryCount.get();) {
+                for (; node.isActive() && currentTryCount.incrementAndGet() <= tryCount.get(); ) {
                     joinInfo.setTryCount(currentTryCount.get());
                     node.multicastService.send(joinInfo);
                     if (node.getMasterAddress() == null) {

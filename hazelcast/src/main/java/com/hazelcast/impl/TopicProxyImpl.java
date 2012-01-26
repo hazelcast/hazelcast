@@ -171,8 +171,8 @@ public class TopicProxyImpl extends FactoryAwareNamedProxy implements TopicProxy
         public TopicOperationsCounter getTopicOperationCounter() {
             return topicOperationsCounter;
         }
-        
+
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		}
+        }
     }
 }

@@ -17,14 +17,14 @@
 
 package com.hazelcast.impl.monitor;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.hazelcast.monitor.LocalQueueOperationStats;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class QueueOperationsCounter extends OperationsCounterSupport<LocalQueueOperationStats> {
-	
-	private static final LocalQueueOperationStats empty = new LocalQueueOperationStatsImpl();
-	
+
+    private static final LocalQueueOperationStats empty = new LocalQueueOperationStatsImpl();
+
     private AtomicLong offers = new AtomicLong();
     private AtomicLong rejectedOffers = new AtomicLong();
     private AtomicLong polls = new AtomicLong();
@@ -33,7 +33,7 @@ public class QueueOperationsCounter extends OperationsCounterSupport<LocalQueueO
     private AtomicLong events = new AtomicLong();
 
     public QueueOperationsCounter() {
-    	super();
+        super();
     }
 
     public QueueOperationsCounter(long interval) {
@@ -111,8 +111,8 @@ public class QueueOperationsCounter extends OperationsCounterSupport<LocalQueueO
         stats.periodEnd = now();
         return stats;
     }
-    
+
     LocalQueueOperationStats getEmpty() {
-    	return empty;
+        return empty;
     }
 }

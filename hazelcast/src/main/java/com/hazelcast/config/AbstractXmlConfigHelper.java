@@ -163,7 +163,7 @@ public abstract class AbstractXmlConfigHelper {
         }
         return name;
     }
-    
+
     protected boolean checkTrue(final String value) {
         return "true".equalsIgnoreCase(value) ||
                 "yes".equalsIgnoreCase(value) ||

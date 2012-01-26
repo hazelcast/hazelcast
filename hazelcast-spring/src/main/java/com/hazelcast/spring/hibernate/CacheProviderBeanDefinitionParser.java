@@ -17,14 +17,13 @@
 
 package com.hazelcast.spring.hibernate;
 
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-
 import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 
 public class CacheProviderBeanDefinitionParser extends CacheBeanDefinitionParserSupport {
 
-	@Override
-	protected BeanDefinitionBuilder createBeanDefinitionBuilder() {
-		return BeanDefinitionBuilder.rootBeanDefinition(HazelcastCacheProvider.class);
-	}
+    @Override
+    protected BeanDefinitionBuilder createBeanDefinitionBuilder() {
+        return BeanDefinitionBuilder.rootBeanDefinition(HazelcastCacheProvider.class);
+    }
 }

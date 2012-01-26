@@ -25,22 +25,22 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TestUtility {
-    
-    static final List<HazelcastClient> clients = new CopyOnWriteArrayList<HazelcastClient>(); 
 
-    public synchronized static void destroyClients(){
-        for(final HazelcastClient c : clients){
+    static final List<HazelcastClient> clients = new CopyOnWriteArrayList<HazelcastClient>();
+
+    public synchronized static void destroyClients() {
+        for (final HazelcastClient c : clients) {
             c.shutdown();
         }
         clients.clear();
     }
-    
+
     public synchronized static HazelcastClient newHazelcastClient(HazelcastInstance... h) {
         String name = h[0].getConfig().getGroupConfig().getName();
         String pass = h[0].getConfig().getGroupConfig().getPassword();
         return newHazelcastClient(ClientProperties.createBaseClientProperties(name, pass), h);
     }
-    
+
     public synchronized static HazelcastClient newHazelcastClient(ClientProperties properties, HazelcastInstance... h) {
         InetSocketAddress[] addresses = new InetSocketAddress[h.length];
         for (int i = 0; i < h.length; i++) {
@@ -51,11 +51,11 @@ public class TestUtility {
         return client;
     }
 
-	public synchronized static HazelcastClient getAutoUpdatingClient(HazelcastInstance h1) {
-		String address = h1.getCluster().getLocalMember().getInetSocketAddress().toString().substring(1);
-		GroupConfig gc = h1.getConfig().getGroupConfig();
-		HazelcastClient client = HazelcastClient.newHazelcastClient(gc.getName(), gc.getPassword(), address);
-		clients.add(client);
-		return client;
-	}
+    public synchronized static HazelcastClient getAutoUpdatingClient(HazelcastInstance h1) {
+        String address = h1.getCluster().getLocalMember().getInetSocketAddress().toString().substring(1);
+        GroupConfig gc = h1.getConfig().getGroupConfig();
+        HazelcastClient client = HazelcastClient.newHazelcastClient(gc.getName(), gc.getPassword(), address);
+        clients.add(client);
+        return client;
+    }
 }

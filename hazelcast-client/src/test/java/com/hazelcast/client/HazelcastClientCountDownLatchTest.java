@@ -56,17 +56,17 @@ public class HazelcastClientCountDownLatchTest {
         HazelcastClient client2 = newHazelcastClient(instance);
         final ICountDownLatch cdl1 = client1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = client2.getCountDownLatch("test");
-        final Member c1Member = clientToMember(client1); 
+        final Member c1Member = clientToMember(client1);
         final AtomicInteger result = new AtomicInteger();
         int count = 5;
         cdl1.setCount(count);
         assertEquals(c1Member, ((CountDownLatchClientProxy) cdl2).getOwner());
-        Thread thread = new Thread(){
+        Thread thread = new Thread() {
             @Override
             public void run() {
                 try {
                     // should succeed
-                    if(cdl2.await(1000, TimeUnit.MILLISECONDS))
+                    if (cdl2.await(1000, TimeUnit.MILLISECONDS))
                         result.incrementAndGet();
                 } catch (Throwable e) {
                     e.printStackTrace();
@@ -75,7 +75,7 @@ public class HazelcastClientCountDownLatchTest {
             }
         };
         thread.start();
-        for (int i = count; i > 0; i--){
+        for (int i = count; i > 0; i--) {
             assertEquals(i, ((CountDownLatchClientProxy) cdl2).getCount());
             cdl1.countDown();
             Thread.sleep(100);
@@ -90,12 +90,12 @@ public class HazelcastClientCountDownLatchTest {
         HazelcastClient client2 = newHazelcastClient(instance);
         final ICountDownLatch cdl1 = client1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = client2.getCountDownLatch("test");
-        final Member c1Member = clientToMember(client1); 
+        final Member c1Member = clientToMember(client1);
         final AtomicInteger result = new AtomicInteger();
         cdl1.setCount(1);
         assertEquals(1, ((CountDownLatchClientProxy) cdl2).getCount());
         assertEquals(c1Member, ((CountDownLatchClientProxy) cdl2).getOwner());
-        Thread thread = new Thread(){
+        Thread thread = new Thread() {
             @Override
             public void run() {
                 try {
@@ -124,12 +124,12 @@ public class HazelcastClientCountDownLatchTest {
         HazelcastClient client2 = newHazelcastClient(instance);
         final ICountDownLatch cdl1 = client1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = client2.getCountDownLatch("test");
-        final Member c1Member = clientToMember(client1); 
+        final Member c1Member = clientToMember(client1);
         final AtomicInteger result = new AtomicInteger();
         cdl1.setCount(1);
         assertEquals(1, ((CountDownLatchClientProxy) cdl2).getCount());
         assertEquals(c1Member, ((CountDownLatchClientProxy) cdl2).getOwner());
-        Thread thread = new Thread(){
+        Thread thread = new Thread() {
             @Override
             public void run() {
                 try {
@@ -158,12 +158,12 @@ public class HazelcastClientCountDownLatchTest {
         HazelcastClient client2 = newHazelcastClient(instance);
         final ICountDownLatch cdl1 = client1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = client2.getCountDownLatch("test");
-        final Member c1Member = clientToMember(client1); 
+        final Member c1Member = clientToMember(client1);
         final AtomicInteger result = new AtomicInteger();
         cdl1.setCount(1);
         assertEquals(1, ((CountDownLatchClientProxy) cdl2).getCount());
         assertEquals(c1Member, ((CountDownLatchClientProxy) cdl2).getOwner());
-        Thread thread = new Thread(){
+        Thread thread = new Thread() {
             @Override
             public void run() {
                 try {
@@ -184,11 +184,11 @@ public class HazelcastClientCountDownLatchTest {
         thread.join();
         assertEquals(1, result.get());
     }
-    
+
     // remove this when Clients become members
     private Member clientToMember(HazelcastClient client) throws IOException {
         final Socket socket1 = client.connectionManager.getConnection().getSocket();
         final Address client1Address = new Address(socket1.getLocalAddress(), socket1.getLocalPort());
-        return new MemberImpl(client1Address, false); 
+        return new MemberImpl(client1Address, false);
     }
 }

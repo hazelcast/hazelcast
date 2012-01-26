@@ -18,6 +18,7 @@
 package com.hazelcast.config;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertNull;
 /**
  *
  */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class QueueConfigTest {
 
     /**

@@ -21,53 +21,53 @@ import java.util.Properties;
 
 public class LoginModuleConfig {
 
-	private String className;
-	private LoginModuleUsage usage;
-	private Properties properties = new Properties();
-	
-	public LoginModuleConfig() {
-		super();
-	}
-	
-	public LoginModuleConfig(String className, LoginModuleUsage usage) {
-		super();
-		this.className = className;
-		this.usage = usage;
-	}
-	
-	public enum LoginModuleUsage {
-		REQUIRED, REQUISITE, SUFFICIENT, OPTIONAL;
-		
-		public static LoginModuleUsage get(String v) {
-			try {
-				return LoginModuleUsage.valueOf(v.toUpperCase());
-			} catch (Exception ignore) {}
-			return REQUIRED;
-		}
-	}
-	
-	public String getClassName() {
-		return className;
-	}
-	
-	public Properties getProperties() {
-		return properties;
-	}
-	
-	public LoginModuleUsage getUsage() {
-		return usage;
-	}
+    private String className;
+    private LoginModuleUsage usage;
+    private Properties properties = new Properties();
 
-	public void setClassName(String className) {
-		this.className = className;
-	}
+    public LoginModuleConfig() {
+        super();
+    }
 
-	public void setUsage(LoginModuleUsage usage) {
-		this.usage = usage;
-	}
+    public LoginModuleConfig(String className, LoginModuleUsage usage) {
+        super();
+        this.className = className;
+        this.usage = usage;
+    }
 
-	public void setProperties(Properties properties) {
-		this.properties = properties;
-	}
-	
+    public enum LoginModuleUsage {
+        REQUIRED, REQUISITE, SUFFICIENT, OPTIONAL;
+
+        public static LoginModuleUsage get(String v) {
+            try {
+                return LoginModuleUsage.valueOf(v.toUpperCase());
+            } catch (Exception ignore) {
+            }
+            return REQUIRED;
+        }
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public Properties getProperties() {
+        return properties;
+    }
+
+    public LoginModuleUsage getUsage() {
+        return usage;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public void setUsage(LoginModuleUsage usage) {
+        this.usage = usage;
+    }
+
+    public void setProperties(Properties properties) {
+        this.properties = properties;
+    }
 }

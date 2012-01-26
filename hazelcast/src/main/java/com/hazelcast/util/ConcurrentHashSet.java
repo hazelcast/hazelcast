@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ConcurrentHashSet<E> extends SetFromMap<E> implements Set<E>, Serializable {
-    
+
     public ConcurrentHashSet() {
         super(new ConcurrentHashMap<E, Boolean>());
     }

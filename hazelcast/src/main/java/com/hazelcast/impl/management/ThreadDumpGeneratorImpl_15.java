@@ -41,8 +41,8 @@ class ThreadDumpGeneratorImpl_15 extends ThreadDumpGenerator {
         }
         if (info.getLockOwnerName() != null) {
             sb.append(" owned by \"")
-                .append(info.getLockOwnerName())
-                .append("\" Id=").append(info.getLockOwnerId());
+                    .append(info.getLockOwnerName())
+                    .append("\" Id=").append(info.getLockOwnerId());
         }
         if (info.isSuspended()) {
             sb.append(" (suspended)");

@@ -19,6 +19,7 @@ package com.hazelcast.config;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -35,6 +36,7 @@ import static org.junit.Assert.*;
 /**
  *
  */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class IterableNodeListTest {
 
     private Document document;

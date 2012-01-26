@@ -117,7 +117,7 @@ public class ClusterStateViewImpl implements ClusterStateView, DataSerializable 
     }
 
     public Set<String> getAtomicNumbers() {
-    	return getInstances(Prefix.ATOMIC_NUMBER);
+        return getInstances(Prefix.ATOMIC_NUMBER);
     }
 
     public Set<String> getCountDownLatches() {

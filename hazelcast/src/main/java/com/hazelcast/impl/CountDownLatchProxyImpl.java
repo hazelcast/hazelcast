@@ -17,21 +17,17 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.nio.IOUtil.toData;
-
-import java.util.concurrent.TimeUnit;
-
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.InstanceDestroyedException;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.core.Prefix;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.impl.monitor.LocalCountDownLatchStatsImpl;
 import com.hazelcast.monitor.LocalCountDownLatchStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+
+import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.nio.IOUtil.toData;
 
 public class CountDownLatchProxyImpl extends FactoryAwareNamedProxy implements CountDownLatchProxy {
     private transient CountDownLatchProxy base = null;
@@ -235,8 +231,8 @@ public class CountDownLatchProxyImpl extends FactoryAwareNamedProxy implements C
             mcdl.setOperationsCounter(operationsCounter);
             return mcdl;
         }
-        
+
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		}
+        }
     }
 }

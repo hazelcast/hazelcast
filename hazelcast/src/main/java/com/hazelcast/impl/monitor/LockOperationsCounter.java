@@ -17,13 +17,13 @@
 
 package com.hazelcast.impl.monitor;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.hazelcast.monitor.LocalLockOperationStats;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class LockOperationsCounter extends OperationsCounterSupport<LocalLockOperationStats> {
-	private static final LocalLockOperationStats empty = new LocalLockOperationStatsImpl();
-	
+    private static final LocalLockOperationStats empty = new LocalLockOperationStatsImpl();
+
     private AtomicLong locks = new AtomicLong();
     private AtomicLong unlocks = new AtomicLong();
     private AtomicLong failedLocks = new AtomicLong();
@@ -56,9 +56,9 @@ public class LockOperationsCounter extends OperationsCounterSupport<LocalLockOpe
         unlocks.incrementAndGet();
         publishSubResult();
     }
-    
+
     public void incrementFailedLocks() {
-    	failedLocks.incrementAndGet();
+        failedLocks.incrementAndGet();
         publishSubResult();
     }
 
@@ -84,8 +84,8 @@ public class LockOperationsCounter extends OperationsCounterSupport<LocalLockOpe
         stats.periodEnd = now();
         return stats;
     }
-    
+
     LocalLockOperationStats getEmpty() {
-    	return empty;
+        return empty;
     }
 }

@@ -56,7 +56,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         this.address = address;
         this.lastRead = System.currentTimeMillis();
     }
-    
+
     public MemberImpl(Address address, boolean localMember, NodeType nodeType, String uuid) {
         this(address, localMember, nodeType);
         this.uuid = uuid;
@@ -131,11 +131,11 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     public boolean isLiteMember() {
         return (nodeType == NodeType.LITE_MEMBER);
     }
-    
+
     void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
+
     public String getUuid() {
         return uuid;
     }

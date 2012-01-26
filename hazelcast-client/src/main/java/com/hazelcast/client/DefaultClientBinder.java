@@ -65,7 +65,7 @@ public class DefaultClientBinder implements ClientBinder {
             throw new RuntimeException((Exception) response);
         }
         if (!Boolean.TRUE.equals(response)) {
-                throw new AuthenticationException("Client [" + connection + "] has failed authentication");
+            throw new AuthenticationException("Client [" + connection + "] has failed authentication");
         }
     }
 

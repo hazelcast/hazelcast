@@ -17,43 +17,43 @@
 
 package com.hazelcast.impl.monitor;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import com.hazelcast.monitor.LocalInstanceOperationStats;
 import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.nio.DataSerializable;
 
-abstract class LocalInstanceStatsSupport<T extends LocalInstanceOperationStats> 
-	implements LocalInstanceStats<T>, DataSerializable {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-	T operationStats;
-	
-	public final T getOperationStats() {
+abstract class LocalInstanceStatsSupport<T extends LocalInstanceOperationStats>
+        implements LocalInstanceStats<T>, DataSerializable {
+
+    T operationStats;
+
+    public final T getOperationStats() {
         return operationStats;
     }
-	
-	public final void setOperationStats(T operationStats) {
-		this.operationStats = operationStats;
-	}
-	
-	public final void writeData(DataOutput out) throws IOException {
+
+    public final void setOperationStats(T operationStats) {
+        this.operationStats = operationStats;
+    }
+
+    public final void writeData(DataOutput out) throws IOException {
         operationStats.writeData(out);
         writeDataInternal(out);
     }
 
-	void writeDataInternal(DataOutput out) throws IOException {
-	}
+    void writeDataInternal(DataOutput out) throws IOException {
+    }
 
     public final void readData(DataInput in) throws IOException {
         operationStats = newOperationStatsInstance();
         operationStats.readData(in);
         readDataInternal(in);
     }
-    
+
     void readDataInternal(DataInput in) throws IOException {
     }
-	
-	abstract T newOperationStatsInstance();
+
+    abstract T newOperationStatsInstance();
 }

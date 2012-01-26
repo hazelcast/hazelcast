@@ -17,19 +17,19 @@
 
 package com.hazelcast.nio;
 
-import java.util.logging.Level;
-
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.util.logging.Level;
+
 class ConnectionMonitor {
-    
+
     final static ILogger logger = Logger.getLogger(ConnectionMonitor.class.getName());
-    
+
     final ConnectionManager connectionManager;
     final IOService ioService;
     final Address endPoint;
-    final long minInterval ;
+    final long minInterval;
     final int maxFaults;
     int faults = 0;
     long lastFaultTime = 0L;
@@ -42,11 +42,11 @@ class ConnectionMonitor {
         this.minInterval = ioService.getConnectionMonitorInterval();
         this.maxFaults = ioService.getConnectionMonitorMaxFaults();
     }
-    
+
     public Address getEndPoint() {
         return endPoint;
     }
-    
+
     public synchronized void onError(Throwable t) {
         logger.log(Level.FINEST, "An error occured on connection to " + endPoint + getCauseDescription(t));
         final long now = System.currentTimeMillis();
@@ -59,13 +59,13 @@ class ConnectionMonitor {
             lastFaultTime = now;
         }
     }
-    
+
     public synchronized void reset() {
         logger.log(Level.FINEST, "Resetting connection monitor for endpoint " + endPoint);
         faults = 0;
         lastFaultTime = 0L;
     }
-    
+
     private /*synchronized*/ String getCauseDescription(Throwable t) {
         StringBuilder s = new StringBuilder(" Cause => ");
         if (t != null) {
@@ -73,6 +73,6 @@ class ConnectionMonitor {
         } else {
             s.append("Unknown");
         }
-        return s.append(", Error-Count: ").append(faults).toString();    
+        return s.append(", Error-Count: ").append(faults).toString();
     }
 }

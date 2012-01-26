@@ -21,24 +21,23 @@ import com.hazelcast.impl.*;
 import com.hazelcast.nio.Data;
 
 public class DefaultRecordFactory implements RecordFactory {
-	
-	protected final boolean simple;
-	
-	public DefaultRecordFactory(boolean simple) {
-		super();
-		this.simple = simple;
-	}
 
-	public Record createNewRecord(CMap cmap, int blockId, Data key, Data value,
-			long ttl, long maxIdleMillis, long id) {
-		if(simple) {
-			return new SimpleRecord(blockId, cmap, id, key, value);
-		}
-		return new DefaultRecord(cmap, blockId, key, value, ttl, maxIdleMillis, id);
-	}
+    protected final boolean simple;
 
-	public NearCacheRecord createNewNearCacheRecord(CMap cmap, Data key, Data value) {
-		return new DefaultNearCacheRecord(key, value);
-	}
+    public DefaultRecordFactory(boolean simple) {
+        super();
+        this.simple = simple;
+    }
 
+    public Record createNewRecord(CMap cmap, int blockId, Data key, Data value,
+                                  long ttl, long maxIdleMillis, long id) {
+        if (simple) {
+            return new SimpleRecord(blockId, cmap, id, key, value);
+        }
+        return new DefaultRecord(cmap, blockId, key, value, ttl, maxIdleMillis, id);
+    }
+
+    public NearCacheRecord createNewNearCacheRecord(CMap cmap, Data key, Data value) {
+        return new DefaultNearCacheRecord(key, value);
+    }
 }

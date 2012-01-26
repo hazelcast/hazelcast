@@ -23,11 +23,11 @@ import java.util.logging.Logger;
 
 public class StandardLoggerFactory extends LoggerFactorySupport implements LoggerFactory {
 
-	protected ILogger createLogger(String name) {
-		final Logger l = Logger.getLogger(name);
+    protected ILogger createLogger(String name) {
+        final Logger l = Logger.getLogger(name);
         return new StandardLogger(l);
-	}
-	
+    }
+
     class StandardLogger implements ILogger {
         private final Logger logger;
 

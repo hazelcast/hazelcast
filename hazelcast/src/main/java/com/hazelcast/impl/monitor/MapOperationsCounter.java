@@ -17,14 +17,14 @@
 
 package com.hazelcast.impl.monitor;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.hazelcast.monitor.LocalMapOperationStats;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class MapOperationsCounter extends OperationsCounterSupport<LocalMapOperationStats> {
-	
+
     private final static LocalMapOperationStats empty = new LocalMapOperationStatsImpl();
-    
+
     private final OperationCounter puts = new OperationCounter();
     private final OperationCounter gets = new OperationCounter();
     private final OperationCounter removes = new OperationCounter();
@@ -107,9 +107,9 @@ public class MapOperationsCounter extends OperationsCounterSupport<LocalMapOpera
         stats.periodEnd = now();
         return stats;
     }
-    
+
     LocalMapOperationStats getEmpty() {
-    	return empty;
+        return empty;
     }
 
     @Override

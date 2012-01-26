@@ -21,7 +21,7 @@ import com.hazelcast.nio.DataSerializable;
 
 public interface LocalInstanceOperationStats extends DataSerializable {
 
-	/**
+    /**
      * Gets the start time of the period in milliseconds.
      *
      * @return start time in milliseconds.

@@ -17,12 +17,11 @@
 
 package com.hazelcast.hibernate.query;
 
-import java.util.Properties;
-
-import org.hibernate.cache.QueryResultsRegion;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.region.AbstractGeneralRegion;
+import org.hibernate.cache.QueryResultsRegion;
+
+import java.util.Properties;
 
 /**
  * @author Leo Kim (lkim@limewire.com)

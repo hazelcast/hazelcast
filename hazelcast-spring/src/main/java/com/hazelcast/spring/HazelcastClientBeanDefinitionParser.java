@@ -17,22 +17,16 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.client.ClientProperties;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.config.AbstractXmlConfigHelper;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
-import org.springframework.beans.factory.support.ManagedList;
-import org.springframework.beans.factory.support.ManagedMap;
+import org.springframework.beans.factory.support.*;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-
-import com.hazelcast.client.ClientProperties;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.config.AbstractXmlConfigHelper;
-
 
 public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
@@ -41,15 +35,15 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
         springXmlBuilder.handle(element);
         return springXmlBuilder.getBeanDefinition();
     }
-    
+
     private static class SpringXmlBuilder extends AbstractXmlConfigHelper {
 
         private final ParserContext parserContext;
-        
+
         private BeanDefinitionBuilder builder;
-        
+
         private ManagedList members;
-        
+
         private BeanDefinitionBuilder propertiesBuilder;
 
         public SpringXmlBuilder(ParserContext parserContext) {
@@ -57,13 +51,10 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastClient.class);
             this.builder.setFactoryMethod("newHazelcastClient");
             this.builder.setDestroyMethodName("shutdown");
-            
             this.members = new ManagedList();
             this.propertiesBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientProperties.class);
-            
             final AbstractBeanDefinition beanDefinition = propertiesBuilder.getBeanDefinition();
             BeanDefinitionHolder holder = new BeanDefinitionHolder(beanDefinition, "client-properties");
-            
             BeanDefinitionReaderUtils.registerBeanDefinition(holder, parserContext.getRegistry());
         }
 
@@ -78,11 +69,11 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
                 for (int a = 0; a < atts.getLength(); a++) {
                     final org.w3c.dom.Node att = atts.item(a);
                     String name = att.getNodeName();
-                    ClientProperties.ClientPropertyName key ;
+                    ClientProperties.ClientPropertyName key;
                     final String value = att.getNodeValue();
-                    if ("group-name".equals(name)){
+                    if ("group-name".equals(name)) {
                         key = ClientProperties.ClientPropertyName.GROUP_NAME;
-                    } else if ("group-password".equals(name)){
+                    } else if ("group-password".equals(name)) {
                         key = ClientProperties.ClientPropertyName.GROUP_PASSWORD;
                     } else {
                         continue;
@@ -90,16 +81,15 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
                     properties.put(key, value);
                 }
             }
-            
             for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(node.getNodeName());
                 if ("members".equals(nodeName)) {
                     members.add(getValue(node));
-                } else if ("client-properties".equals(nodeName)){
+                } else if ("client-properties".equals(nodeName)) {
                     for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                         final String name = cleanNodeName(n.getNodeName());
                         final String propertyName;
-                        if ("client-property".equals(name)){
+                        if ("client-property".equals(name)) {
                             propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
                             final String value = getValue(n);
                             properties.put(propertyName, value);
@@ -107,12 +97,9 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
                     }
                 }
             }
-            
             propertiesBuilder.addPropertyValue("properties", properties);
-            
             this.builder.addConstructorArgValue(propertiesBuilder.getBeanDefinition());
             this.builder.addConstructorArgValue(members);
         }
     }
-
 }

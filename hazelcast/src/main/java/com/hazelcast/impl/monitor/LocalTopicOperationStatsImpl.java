@@ -17,15 +17,15 @@
 
 package com.hazelcast.impl.monitor;
 
+import com.hazelcast.monitor.LocalTopicOperationStats;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.hazelcast.monitor.LocalTopicOperationStats;
-
 public class LocalTopicOperationStatsImpl extends LocalOperationStatsSupport
-	implements LocalTopicOperationStats {
-	
+        implements LocalTopicOperationStats {
+
     long numberOfPublishes;
     long numberOfReceives;
 

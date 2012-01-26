@@ -11,7 +11,7 @@ import static com.hazelcast.nio.IOUtil.writeLongString;
 
 public class ThreadDumpRequest implements ConsoleRequest {
 
-	private boolean isDeadlock;
+    private boolean isDeadlock;
     private Address target;
 
     public ThreadDumpRequest() {
@@ -28,22 +28,20 @@ public class ThreadDumpRequest implements ConsoleRequest {
 
     public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
         String threadDump = (String) mcs.call(target, new ThreadDumpCallable(isDeadlock));
-        if(threadDump != null) {
-        	dos.writeBoolean(true);
-        	writeLongString(dos, threadDump);
-        }
-        else {
-        	dos.writeBoolean(false);
+        if (threadDump != null) {
+            dos.writeBoolean(true);
+            writeLongString(dos, threadDump);
+        } else {
+            dos.writeBoolean(false);
         }
     }
 
     public String readResponse(DataInput in) throws IOException {
-    	if(in.readBoolean()) {
-    		return readLongString(in);
-    	}
-    	else {
-    		return null;
-    	}
+        if (in.readBoolean()) {
+            return readLongString(in);
+        } else {
+            return null;
+        }
     }
 
     public void writeData(DataOutput out) throws IOException {

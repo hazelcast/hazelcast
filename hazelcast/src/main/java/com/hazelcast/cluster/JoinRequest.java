@@ -73,11 +73,11 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         config.readData(in);
         uuid = in.readUTF();
         boolean hasCredentials = in.readBoolean();
-        if(hasCredentials) {
-        	credentials = (Credentials) SerializationHelper.readObject(in);
-        	if(credentials != null) {
-        		credentials.setEndpoint(address.getHost());
-        	}
+        if (hasCredentials) {
+            credentials = (Credentials) SerializationHelper.readObject(in);
+            if (credentials != null) {
+                credentials.setEndpoint(address.getHost());
+            }
         }
     }
 
@@ -96,31 +96,31 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         out.writeUTF(uuid);
         boolean hasCredentials = credentials != null;
         out.writeBoolean(hasCredentials);
-        if(hasCredentials) {
-        	SerializationHelper.writeObject(out, credentials);
+        if (hasCredentials) {
+            SerializationHelper.writeObject(out, credentials);
         }
     }
-    
+
     public void setCredentials(Credentials credentials) {
-		this.credentials = credentials;
-	}
-    
+        this.credentials = credentials;
+    }
+
     public Credentials getCredentials() {
-		return credentials;
-	}
+        return credentials;
+    }
 
     public String getUuid() {
         return uuid;
     }
-    
+
     @Override
     public String toString() {
-        return "JoinRequest{" 
-            + "nodeType=" + nodeType 
-            + ", address=" + address 
-            + ", buildNumber='" + buildNumber + '\'' 
-            + ", packetVersion='" + packetVersion + '\'' 
-            + ", config='" + config + "'}";
+        return "JoinRequest{"
+                + "nodeType=" + nodeType
+                + ", address=" + address
+                + ", buildNumber='" + buildNumber + '\''
+                + ", packetVersion='" + packetVersion + '\''
+                + ", config='" + config + "'}";
     }
 
     public void process() {

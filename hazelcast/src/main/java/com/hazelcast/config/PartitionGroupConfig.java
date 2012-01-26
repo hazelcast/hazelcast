@@ -25,15 +25,15 @@ import java.util.List;
 public class PartitionGroupConfig {
 
     private boolean enabled = false;
-    
-    private MemberGroupType groupType = null; 
-    
+
+    private MemberGroupType groupType = null;
+
     private final List<MemberGroupConfig> memberGroupConfigs = new LinkedList<MemberGroupConfig>();
-    
+
     public enum MemberGroupType {
         HOST_AWARE, CUSTOM
     }
-    
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -42,30 +42,30 @@ public class PartitionGroupConfig {
         this.enabled = enabled;
         return this;
     }
-    
+
     public MemberGroupType getGroupType() {
         return groupType;
     }
-    
+
     public PartitionGroupConfig setGroupType(MemberGroupType policyType) {
         this.groupType = policyType;
         return this;
     }
-    
+
     public PartitionGroupConfig addMemberGroupConfig(MemberGroupConfig config) {
         memberGroupConfigs.add(config);
         return this;
     }
-    
+
     public Collection<MemberGroupConfig> getMemberGroupConfigs() {
         return Collections.unmodifiableCollection(memberGroupConfigs);
     }
-    
+
     public PartitionGroupConfig clear() {
         memberGroupConfigs.clear();
         return this;
     }
-    
+
     public PartitionGroupConfig setMemberGroupConfigs(Collection<MemberGroupConfig> memberGroupConfigs) {
         this.memberGroupConfigs.clear();
         this.memberGroupConfigs.addAll(memberGroupConfigs);

@@ -1,12 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
 <para version='5.0' xmlns='http://docbook.org/ns/docbook'
-      xmlns:xlink='http://www.w3.org/1999/xlink'
-      xmlns:xi='http://www.w3.org/2001/XInclude'
-      xmlns:ns5='http://www.w3.org/2000/svg'
-      xmlns:ns4='http://www.w3.org/1998/Math/MathML'
-      xmlns:ns3='http://www.w3.org/1999/xhtml'
-      xmlns:db='http://docbook.org/ns/docbook'>
+        >
     Say you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down
     then your users on that server will be directed to one of the live servers (B or C) but their sessions will be lost!
     So we have to have all these sessions backed up somewhere if we don't want to lose the sessions upon server crashes.

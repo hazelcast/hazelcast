@@ -18,20 +18,20 @@
 package com.hazelcast.client;
 
 public class ClusterClientException extends RuntimeException {
-	private static final long	serialVersionUID	= 1L;
+    private static final long serialVersionUID = 1L;
 
-	public ClusterClientException() {
+    public ClusterClientException() {
         super();
     }
 
     public ClusterClientException(String message) {
         super(message);
     }
-    
+
     public ClusterClientException(String message, Throwable cause) {
         super(message, cause);
     }
-    
+
     public ClusterClientException(Throwable cause) {
         super(cause);
     }

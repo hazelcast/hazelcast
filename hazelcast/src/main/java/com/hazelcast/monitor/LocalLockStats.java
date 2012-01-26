@@ -18,5 +18,5 @@
 package com.hazelcast.monitor;
 
 public interface LocalLockStats extends LocalInstanceStats<LocalLockOperationStats> {
-    
+
 }

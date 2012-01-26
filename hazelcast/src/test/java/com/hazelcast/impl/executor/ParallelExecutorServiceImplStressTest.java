@@ -1,12 +1,11 @@
 package com.hazelcast.impl.executor;
 
-
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.StandardLoggerFactory;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -25,6 +24,7 @@ import static org.junit.Assert.assertTrue;
  * <li>when a task is offered to a segment, it should be executed in the order it was offered. </li>
  * </ol>
  */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ParallelExecutorServiceImplStressTest {
 
     public static final int TASK_DURATION_MS = 50;
@@ -68,25 +68,20 @@ public class ParallelExecutorServiceImplStressTest {
     public void test(int capacity) throws Exception {
         ParallelExecutor executor = parallelExecutorService.newBlockingParallelExecutor(CONCURRENCY_LEVEL, capacity);
         Random random = new Random();
-
         Segment[] segmentArray = new Segment[CONCURRENCY_LEVEL];
         for (int k = 0; k < segmentArray.length; k++) {
             segmentArray[k] = new Segment(k);
         }
-
         for (int k = 0; k < TASK_COUNT; k++) {
             sleepMs(random.nextInt(2));
-
             int segmentIndex = random.nextInt(CONCURRENCY_LEVEL);
             Segment segment = segmentArray[segmentIndex];
             TestRunnable runnable = new TestRunnable(segment);
             executor.execute(runnable, segmentIndex);
         }
-
         //wait for the tasks to complete. If, for whatever reason, a task is forgotten to be executed, this statement
         //is going to fail. 
         assertTrue("The tasks where not executed in the given timeout", completedLatch.await(120, TimeUnit.SECONDS));
-
         //make sure that no violations have taken place.
         assertEquals(violationCounter.get(), 0);
     }
@@ -117,18 +112,14 @@ public class ParallelExecutorServiceImplStressTest {
                 System.out.println("ERROR: Concurrent execution within a segment has taken place");
                 violationCounter.incrementAndGet();
             }
-
             if (segment.expectedSequenceNumber.getAndIncrement() != sequenceNumber) {
                 System.out.println("ERROR: An out of order execution within a segment has taken place");
                 violationCounter.incrementAndGet();
             }
-
             if (sequenceNumber % 100 == 0) {
                 System.out.println("Segment [" + segment.segment + "] is at element [" + sequenceNumber + "]");
             }
-
             sleepMs(segment.random.nextInt(TASK_DURATION_MS));
-
             segment.activeCounter.decrementAndGet();
             completedLatch.countDown();
         }

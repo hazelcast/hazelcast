@@ -24,12 +24,11 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.ConcurrentHashSet;
 
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginContext;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
@@ -44,7 +43,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     final ConcurrentHashSet<ClientRequestHandler> currentRequests = new ConcurrentHashSet<ClientRequestHandler>();
     final Node node;
     final Map<String, AtomicInteger> attachedSemaphorePermits = new ConcurrentHashMap<String, AtomicInteger>();
-    
+
     LoginContext loginContext = null;
 
     ClientEndpoint(Node node, Connection conn) {
@@ -302,18 +301,18 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     public void removeRequest(ClientRequestHandler clientRequestHandler) {
         this.currentRequests.remove(clientRequestHandler);
     }
-    
+
     public void setLoginContext(LoginContext loginContext) {
-		this.loginContext = loginContext;
-	}
-    
+        this.loginContext = loginContext;
+    }
+
     public LoginContext getLoginContext() {
-		return loginContext;
-	}
-    
+        return loginContext;
+    }
+
     public Subject getSubject() {
-		return loginContext != null ? loginContext.getSubject() : null;
-	}
+        return loginContext != null ? loginContext.getSubject() : null;
+    }
 
     static class Entry implements Map.Entry {
         Object key;

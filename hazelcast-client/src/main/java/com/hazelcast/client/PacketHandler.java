@@ -20,7 +20,7 @@ package com.hazelcast.client;
 public class PacketHandler {
 
     protected static final byte[] HEADER = new byte[]{'H', 'Z', 'C'};
-    
+
     private Connection connection;
 
     public Connection getConnection() {

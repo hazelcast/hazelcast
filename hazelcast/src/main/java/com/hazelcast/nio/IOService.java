@@ -69,15 +69,15 @@ public interface IOService {
     boolean getSocketKeepAlive();
 
     boolean getSocketNoDelay();
-    
+
     int getSocketTimeoutSeconds();
 
     int getSelectorThreadCount();
-    
+
     long getConnectionMonitorInterval();
-    
+
     int getConnectionMonitorMaxFaults();
-    
+
     void disconnectExistingCalls(Address deadEndpoint);
 
     boolean isClient();

@@ -73,7 +73,7 @@ public final class ClientProperties {
         }
         return this;
     }
-    
+
     public ClientProperties setPropertyValue(final String name, final String value) {
         return setPropertyValue(ClientPropertyName.fromValue(name), value);
     }

@@ -17,12 +17,11 @@
 
 package com.hazelcast.hibernate.region;
 
-import java.util.Properties;
-
+import com.hazelcast.core.HazelcastInstance;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.GeneralDataRegion;
 
-import com.hazelcast.core.HazelcastInstance;
+import java.util.Properties;
 
 /**
  * @author Leo Kim (lkim@limewire.com)

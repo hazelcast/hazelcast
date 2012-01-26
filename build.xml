@@ -51,6 +51,48 @@
         </jar>
     </target>
 
+    <target name="report">
+        <delete dir="./reports" failonerror="false"/>
+        <mkdir dir="./reports"/>
+        <delete dir="./reports" failonerror="false"/>
+        <mkdir dir="./reports"/>
+        <junitreport todir="./reports">
+            <fileset dir="./hazelcast/target/surefire-reports">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="./reports"/>
+        </junitreport>
+    </target>
+
+    <!--
+        ant -Dcount=6 -Dprofile=all test
+    -->
+    <target name="test">
+        <delete dir="./hazelcast/target/surefire-reports" failonerror="false"/>
+        <java classname="com.hazelcast.test.Parallel">
+            <arg value="${count}"/>
+            <arg value="${profile}"/>
+            <classpath>
+                <pathelement path="./target/classes"/>
+            </classpath>
+        </java>
+        <antcall target="report"/>
+    </target>
+
+    <target name="test4">
+        <antcall target="test">
+            <param name="count" value="4"/>
+            <param name="profile" value="all"/>
+        </antcall>
+    </target>
+
+    <target name="test10">
+        <antcall target="test">
+            <param name="count" value="10"/>
+            <param name="profile" value="all"/>
+        </antcall>
+    </target>
+
     <target name="jar">
         <antcall target="core"/>
         <antcall target="client"/>

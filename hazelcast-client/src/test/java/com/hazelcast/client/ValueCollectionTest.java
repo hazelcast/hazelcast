@@ -132,7 +132,7 @@ public class ValueCollectionTest {
         ValueCollection valueCollection = new ValueCollection(entryHolder, set);
         assertFalse(valueCollection.retainAll(new ArrayList()));
     }
-    
+
     @Test
     public void testToArrayWithArgument() {
         EntryHolder entryHolder = mock(EntryHolder.class);
@@ -147,17 +147,17 @@ public class ValueCollectionTest {
             assertArrayEquals(new Object[]{"1", "2", "3"}, values);
         }
         {
-            final String[] values = (String[])valueCollection.toArray(new String[3]);
+            final String[] values = (String[]) valueCollection.toArray(new String[3]);
             Arrays.sort(values);
             assertArrayEquals(new String[]{"1", "2", "3"}, values);
         }
         {
-            final String[] values = (String[])valueCollection.toArray(new String[2]);
+            final String[] values = (String[]) valueCollection.toArray(new String[2]);
             Arrays.sort(values);
             assertArrayEquals(new String[]{"1", "2", "3"}, values);
         }
         {
-            final String[] values = (String[])valueCollection.toArray(new String[5]);
+            final String[] values = (String[]) valueCollection.toArray(new String[5]);
             Arrays.sort(values, 0, 3);
             assertArrayEquals(new String[]{"1", "2", "3", null, null}, values);
         }
@@ -170,20 +170,20 @@ public class ValueCollectionTest {
         ValueCollection valueCollection = new ValueCollection(entryHolder, set);
         valueCollection.toArray(null);
     }
-    
+
     private static final class MapEntry<K, V> implements Map.Entry<K, V> {
         final K key;
         final V value;
-        
+
         public MapEntry(K key, V value) {
             this.key = key;
             this.value = value;
         }
-        
+
         public K getKey() {
             return key;
         }
-        
+
         public V getValue() {
             return value;
         }
@@ -191,6 +191,5 @@ public class ValueCollectionTest {
         public V setValue(V value) {
             throw new UnsupportedOperationException();
         }
-        
     }
 }

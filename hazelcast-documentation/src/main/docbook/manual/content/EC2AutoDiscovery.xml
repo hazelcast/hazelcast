@@ -1,11 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <sect1 xml:id="EC2AutoDiscovery" version='5.0' xmlns='http://docbook.org/ns/docbook'
-       xmlns:xlink='http://www.w3.org/1999/xlink'
-       xmlns:xi='http://www.w3.org/2001/XInclude'
-       xmlns:ns5='http://www.w3.org/2000/svg'
-       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
-       xmlns:ns3='http://www.w3.org/1999/xhtml'
-       xmlns:db='http://docbook.org/ns/docbook'>
+        >
     <title>Configuring Hazelcast for EC2 Auto Discovery</title>
     <para>Hazelcast supports EC2 Auto Discovery as of 1.9.4. It is useful when you don't want or
         can't provide the list of possible IP addresses. Here is a sample configuration:

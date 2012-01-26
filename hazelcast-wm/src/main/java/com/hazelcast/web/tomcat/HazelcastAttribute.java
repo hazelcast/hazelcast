@@ -17,6 +17,9 @@
 
 package com.hazelcast.web.tomcat;
 
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.SerializationHelper;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -24,78 +27,74 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.SerializationHelper;
-
 /**
  * @author ali
- *
  */
 
 public class HazelcastAttribute implements DataSerializable {
-	
-	private String sessionId = null;
-	
-	private String name = null;
-	
-	private Object value = null;
-	
-	private transient Set<Long> touchedByRequest = null;
-	
-	public HazelcastAttribute(){
-		touchedByRequest = Collections.synchronizedSet(new HashSet<Long>());
-	}
-	
-	public HazelcastAttribute(String sessionId, String name, Object value){
-		this();
-		this.sessionId = sessionId;
-		this.name = name;
-		this.value = value;
-	}
 
-	public String getSessionId() {
-		return sessionId;
-	}
+    private String sessionId = null;
 
-	public String getName() {
-		return name;
-	}
+    private String name = null;
 
-	public Object getValue() {
-		return value;
-	}
+    private Object value = null;
 
-	public void setValue(Object value) {
-		this.value = value;
-	}
-	
-	public void touch(long requestId){
-		touchedByRequest.add(requestId);
-	}
-	
-	public boolean isTouched(long requestId){
-		return touchedByRequest.remove(requestId);
-	}
-	
-	public String getKey(){
-		return sessionId + "_" + name;
-	}
+    private transient Set<Long> touchedByRequest = null;
 
-	public void writeData(DataOutput out) throws IOException {
-		out.writeUTF(sessionId);
-		out.writeUTF(name);
-		SerializationHelper.writeObject(out, value);
-	}
+    public HazelcastAttribute() {
+        touchedByRequest = Collections.synchronizedSet(new HashSet<Long>());
+    }
 
-	public void readData(DataInput in) throws IOException {
-		sessionId = in.readUTF();
-		name = in.readUTF();
-		value = SerializationHelper.readObject(in);
-	}
+    public HazelcastAttribute(String sessionId, String name, Object value) {
+        this();
+        this.sessionId = sessionId;
+        this.name = name;
+        this.value = value;
+    }
 
-	@Override
-	public String toString() {
-		return "HazelcastAttribute [sessionId=" + sessionId + ", name=" + name
-				+ ", value=" + value + "]";
-	}
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
+    }
+
+    public void touch(long requestId) {
+        touchedByRequest.add(requestId);
+    }
+
+    public boolean isTouched(long requestId) {
+        return touchedByRequest.remove(requestId);
+    }
+
+    public String getKey() {
+        return sessionId + "_" + name;
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeUTF(sessionId);
+        out.writeUTF(name);
+        SerializationHelper.writeObject(out, value);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        sessionId = in.readUTF();
+        name = in.readUTF();
+        value = SerializationHelper.readObject(in);
+    }
+
+    @Override
+    public String toString() {
+        return "HazelcastAttribute [sessionId=" + sessionId + ", name=" + name
+                + ", value=" + value + "]";
+    }
 }

@@ -17,14 +17,11 @@
 
 package com.hazelcast.spring.hibernate;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.net.InetSocketAddress;
-import java.util.Set;
-
-import javax.annotation.Resource;
-
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
+import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,25 +29,26 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
-import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
+import javax.annotation.Resource;
+import java.net.InetSocketAddress;
+import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"hibernate-applicationContext-hazelcast.xml"})
 public class TestHibernatelApplicationContext {
 
-    @Resource(name="instance")
+    @Resource(name = "instance")
     private HazelcastInstance instance;
-    
-    @Resource(name="cacheProvider")
+
+    @Resource(name = "cacheProvider")
     private HazelcastCacheProvider cacheProvider;
-    
-    @Resource(name="regionFactory")
+
+    @Resource(name = "regionFactory")
     private HazelcastCacheRegionFactory regionFactory;
-    
+
     @BeforeClass
     @AfterClass
     public static void start() {
@@ -72,7 +70,7 @@ public class TestHibernatelApplicationContext {
         assertNotNull(cacheProvider);
         assertEquals(cacheProvider.getHazelcastInstance(), instance);
     }
-    
+
     @Test
     public void testRegionFactory() {
         assertNotNull(regionFactory);

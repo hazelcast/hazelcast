@@ -17,45 +17,44 @@
 
 package com.hazelcast.hibernate;
 
-import java.net.URL;
-import java.util.Properties;
-import java.util.logging.Level;
-
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.junit.After;
 import org.junit.Before;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import java.net.URL;
+import java.util.Properties;
+import java.util.logging.Level;
 
 public abstract class HibernateTestSupport {
-	
-	private final ILogger logger = Logger.getLogger(getClass().getName());
-	
-	@Before
+
+    private final ILogger logger = Logger.getLogger(getClass().getName());
+
+    @Before
     @After
     public void start() {
         Hazelcast.shutdownAll();
     }
-	
-	protected void sleep(int seconds) {
-		try {
-			logger.log(Level.INFO, "Waiting " + seconds + " seconds...");
-			Thread.sleep(1000 * seconds);
-		} catch (InterruptedException e) {
-			logger.log(Level.SEVERE, "", e);
-		}
-	}
-	
-	protected static SessionFactory createSessionFactory(Properties props) {
-		Configuration conf = new Configuration();
-		URL xml = HibernateTestSupport.class.getClassLoader().getResource("test-hibernate.cfg.xml");
-		conf.addProperties(props);
-		conf.configure(xml);
-		final SessionFactory sf = conf.buildSessionFactory();
-		sf.getStatistics().setStatisticsEnabled(true);
-		return sf;
-	}
+
+    protected void sleep(int seconds) {
+        try {
+            logger.log(Level.INFO, "Waiting " + seconds + " seconds...");
+            Thread.sleep(1000 * seconds);
+        } catch (InterruptedException e) {
+            logger.log(Level.SEVERE, "", e);
+        }
+    }
+
+    protected static SessionFactory createSessionFactory(Properties props) {
+        Configuration conf = new Configuration();
+        URL xml = HibernateTestSupport.class.getClassLoader().getResource("test-hibernate.cfg.xml");
+        conf.addProperties(props);
+        conf.configure(xml);
+        final SessionFactory sf = conf.buildSessionFactory();
+        sf.getStatistics().setStatisticsEnabled(true);
+        return sf;
+    }
 }

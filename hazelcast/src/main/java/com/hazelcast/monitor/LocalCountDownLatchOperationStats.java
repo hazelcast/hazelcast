@@ -22,14 +22,12 @@ public interface LocalCountDownLatchOperationStats extends LocalInstanceOperatio
     /**
      * Returns the number of countDown operations in this period.
      *
-     *
      * @return number of acquire operations
      */
     public long getNumberOfCountDowns();
 
     /**
      * Returns the number of await operations in this period.
-     *
      *
      * @return number of await operations
      */
@@ -38,7 +36,6 @@ public interface LocalCountDownLatchOperationStats extends LocalInstanceOperatio
     /**
      * Returns the number of operations other than await or countDown
      * in this period.
-     *
      *
      * @return number of await operations
      */

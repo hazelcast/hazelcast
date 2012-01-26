@@ -17,11 +17,11 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.Util;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.hazelcast.impl.Util;
 
 public class Data implements DataSerializable {
 
@@ -34,7 +34,7 @@ public class Data implements DataSerializable {
     public Data(byte[] bytes) {
         this.buffer = bytes;
     }
-    
+
     public int size() {
         return (buffer == null) ? 0 : buffer.length;
     }
@@ -60,8 +60,8 @@ public class Data implements DataSerializable {
     @Override
     public int hashCode() {
         return Util.hashCode(buffer);
-	}
-    
+    }
+
     public int getPartitionHash() {
         if (partitionHash == -1) {
             if (buffer == null) {
@@ -85,21 +85,19 @@ public class Data implements DataSerializable {
         Data data = (Data) obj;
         return size() == data.size() && equals(buffer, data.buffer);
     }
-    
+
     // Same as Arrays.equals(byte[] a, byte[] a2) but loop order is reversed.
     private static boolean equals(final byte[] data1, final byte[] data2) {
-		if (data1 == data2) {
-			return true;
-		}
-		if (data1 == null || data2 == null) {
-			return false;
-		}
-
-		final int length = data1.length;
-		if (data2.length != length) {
-           return false;
-		}
-
+        if (data1 == data2) {
+            return true;
+        }
+        if (data1 == null || data2 == null) {
+            return false;
+        }
+        final int length = data1.length;
+        if (data2.length != length) {
+            return false;
+        }
         for (int i = length - 1; i >= 0; i--) {
             if (data1[i] != data2[i]) {
                 return false;

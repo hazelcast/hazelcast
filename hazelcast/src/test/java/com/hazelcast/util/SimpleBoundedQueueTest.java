@@ -19,9 +19,11 @@ package com.hazelcast.util;
 
 import org.junit.After;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static junit.framework.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class SimpleBoundedQueueTest {
 
     private SimpleBoundedQueue<String> queue = new SimpleBoundedQueue<String>(10);

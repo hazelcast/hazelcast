@@ -759,7 +759,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         node.setJoined();
         logger.log(Level.INFO, this.toString());
     }
-    
+
     public List<MemberImpl> getOldMembers() {
         return lsMembersBefore;
     }

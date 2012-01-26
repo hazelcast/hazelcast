@@ -259,7 +259,7 @@ public class HazelcastClientListTest extends HazelcastClientTestBase {
         counter.put(1, 1);
         counter.put(2, 2);
         counter.put(3, 1);
-        for (Iterator<Integer> iterator = list.iterator(); iterator.hasNext();) {
+        for (Iterator<Integer> iterator = list.iterator(); iterator.hasNext(); ) {
             Integer integer = iterator.next();
             counter.put(integer, counter.get(integer) - 1);
             iterator.remove();

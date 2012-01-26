@@ -23,13 +23,12 @@ import java.util.List;
 import java.util.Queue;
 
 public interface PartitionStateGenerator {
-    
-    PartitionInfo[] initialize(final List<MemberImpl> members, final int partitionCount) ;
-    
+
+    PartitionInfo[] initialize(final List<MemberImpl> members, final int partitionCount);
+
     PartitionInfo[] reArrange(final PartitionInfo[] currentState,
-            final List<MemberImpl> members,
-            final int partitionCount,
-            final Queue<MigrationRequestTask> scheduledQueue,
-            final Queue<MigrationRequestTask> immediateQueue);
-    
+                              final List<MemberImpl> members,
+                              final int partitionCount,
+                              final Queue<MigrationRequestTask> scheduledQueue,
+                              final Queue<MigrationRequestTask> immediateQueue);
 }

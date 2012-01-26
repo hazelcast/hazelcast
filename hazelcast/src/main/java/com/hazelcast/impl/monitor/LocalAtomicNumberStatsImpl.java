@@ -20,11 +20,11 @@ package com.hazelcast.impl.monitor;
 import com.hazelcast.monitor.LocalAtomicNumberOperationStats;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
 
-public class LocalAtomicNumberStatsImpl extends LocalInstanceStatsSupport<LocalAtomicNumberOperationStats> 
-	implements LocalAtomicNumberStats {
-	
-	@Override
-	LocalAtomicNumberOperationStats newOperationStatsInstance() {
-		return new LocalAtomicNumberOperationStatsImpl();
-	}
+public class LocalAtomicNumberStatsImpl extends LocalInstanceStatsSupport<LocalAtomicNumberOperationStats>
+        implements LocalAtomicNumberStats {
+
+    @Override
+    LocalAtomicNumberOperationStats newOperationStatsInstance() {
+        return new LocalAtomicNumberOperationStatsImpl();
+    }
 }

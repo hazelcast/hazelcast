@@ -19,11 +19,13 @@ package com.hazelcast.core;
 
 import org.junit.After;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MultiMapPerformance extends PerformanceTest {
     private MultiMap<String, String> map = Hazelcast.getMultiMap("MultiMapPerformance");
 

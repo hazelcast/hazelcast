@@ -17,49 +17,48 @@
 
 package com.hazelcast.config;
 
-import java.util.Properties;
-
 import com.hazelcast.security.ICredentialsFactory;
 
+import java.util.Properties;
+
 public class CredentialsFactoryConfig {
-	
-	private String className = null;
-	
-	private ICredentialsFactory implementation = null;
-	
-	private Properties properties = new Properties();
 
-	public CredentialsFactoryConfig() {
-		super();
-	}
-	
-	public CredentialsFactoryConfig(String className) {
-		super();
-		this.className = className;
-	}
+    private String className = null;
 
-	public String getClassName() {
-		return className;
-	}
+    private ICredentialsFactory implementation = null;
 
-	public void setClassName(String className) {
-		this.className = className;
-	}
+    private Properties properties = new Properties();
 
-	public ICredentialsFactory getImplementation() {
-		return implementation;
-	}
+    public CredentialsFactoryConfig() {
+        super();
+    }
 
-	public void setImplementation(ICredentialsFactory factoryImpl) {
-		this.implementation = factoryImpl;
-	}
+    public CredentialsFactoryConfig(String className) {
+        super();
+        this.className = className;
+    }
 
-	public Properties getProperties() {
-		return properties;
-	}
+    public String getClassName() {
+        return className;
+    }
 
-	public void setProperties(Properties properties) {
-		this.properties = properties;
-	}
+    public void setClassName(String className) {
+        this.className = className;
+    }
 
+    public ICredentialsFactory getImplementation() {
+        return implementation;
+    }
+
+    public void setImplementation(ICredentialsFactory factoryImpl) {
+        this.implementation = factoryImpl;
+    }
+
+    public Properties getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Properties properties) {
+        this.properties = properties;
+    }
 }

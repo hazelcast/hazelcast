@@ -17,20 +17,20 @@
 
 package com.hazelcast.impl.monitor;
 
+import com.hazelcast.monitor.LocalCountDownLatchOperationStats;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.hazelcast.monitor.LocalCountDownLatchOperationStats;
+public class LocalCountDownLatchOperationStatsImpl extends LocalOperationStatsSupport
+        implements LocalCountDownLatchOperationStats {
 
-public class LocalCountDownLatchOperationStatsImpl extends LocalOperationStatsSupport 
-	implements LocalCountDownLatchOperationStats {
-	
     long numberOfAwaitsReleased;
     long numberOfGatesOpened;
-    OperationStat await = new OperationStat(0,0);
-    OperationStat countdown = new OperationStat(0,0);
-    OperationStat other = new OperationStat(0,0);
+    OperationStat await = new OperationStat(0, 0);
+    OperationStat countdown = new OperationStat(0, 0);
+    OperationStat other = new OperationStat(0, 0);
 
     void writeDataInternal(DataOutput out) throws IOException {
         await.writeData(out);
@@ -45,7 +45,7 @@ public class LocalCountDownLatchOperationStatsImpl extends LocalOperationStatsSu
     }
 
     public long total() {
-    	return await.count + countdown.count + other.count;
+        return await.count + countdown.count + other.count;
     }
 
     public long getNumberOfAwaits() {

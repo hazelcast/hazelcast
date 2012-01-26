@@ -17,49 +17,48 @@
 
 package com.hazelcast.config;
 
-import java.util.Properties;
-
 import com.hazelcast.security.IPermissionPolicy;
 
+import java.util.Properties;
+
 public class PermissionPolicyConfig {
-	
-	private String className = null;
-	
-	private IPermissionPolicy implementation = null;
-	
-	private Properties properties = new Properties();
 
-	public PermissionPolicyConfig() {
-		super();
-	}
-	
-	public PermissionPolicyConfig(String className) {
-		super();
-		this.className = className;
-	}
+    private String className = null;
 
-	public String getClassName() {
-		return className;
-	}
+    private IPermissionPolicy implementation = null;
 
-	public void setClassName(String className) {
-		this.className = className;
-	}
+    private Properties properties = new Properties();
 
-	public IPermissionPolicy getImplementation() {
-		return implementation;
-	}
+    public PermissionPolicyConfig() {
+        super();
+    }
 
-	public void setImplementation(IPermissionPolicy policyImpl) {
-		this.implementation = policyImpl;
-	}
+    public PermissionPolicyConfig(String className) {
+        super();
+        this.className = className;
+    }
 
-	public Properties getProperties() {
-		return properties;
-	}
+    public String getClassName() {
+        return className;
+    }
 
-	public void setProperties(Properties properties) {
-		this.properties = properties;
-	}
-	
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public IPermissionPolicy getImplementation() {
+        return implementation;
+    }
+
+    public void setImplementation(IPermissionPolicy policyImpl) {
+        this.implementation = policyImpl;
+    }
+
+    public Properties getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Properties properties) {
+        this.properties = properties;
+    }
 }

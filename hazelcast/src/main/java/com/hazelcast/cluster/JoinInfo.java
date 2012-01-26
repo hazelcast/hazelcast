@@ -17,17 +17,17 @@
 
 package com.hazelcast.cluster;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.logging.Level;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.NodeType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.logging.Level;
 
 public class JoinInfo extends JoinRequest implements DataSerializable {
 

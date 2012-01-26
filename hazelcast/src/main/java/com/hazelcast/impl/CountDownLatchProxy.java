@@ -19,8 +19,8 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.Instance;
-import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.nio.Address;
 
 public interface CountDownLatchProxy extends ICountDownLatch, Instance, HazelcastInstanceAwareInstance {

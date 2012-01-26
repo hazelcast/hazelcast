@@ -17,7 +17,9 @@
 
 package com.hazelcast.core;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 import java.io.*;
 import java.util.Map;

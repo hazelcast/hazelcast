@@ -17,17 +17,17 @@
 
 package com.hazelcast.impl.monitor;
 
+import com.hazelcast.monitor.LocalSemaphoreOperationStats;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.hazelcast.monitor.LocalSemaphoreOperationStats;
+public class LocalSemaphoreOperationStatsImpl extends LocalOperationStatsSupport
+        implements LocalSemaphoreOperationStats {
 
-public class LocalSemaphoreOperationStatsImpl extends LocalOperationStatsSupport 
-	implements LocalSemaphoreOperationStats {
-	
-    OperationStat acquires = new OperationStat(0,0);
-    OperationStat nonAcquires = new OperationStat(0,0);
+    OperationStat acquires = new OperationStat(0, 0);
+    OperationStat nonAcquires = new OperationStat(0, 0);
     long numberOfRejectedAcquires;
     long numberOfPermitsAcquired;
     long numberOfPermitsReleased;
@@ -58,7 +58,7 @@ public class LocalSemaphoreOperationStatsImpl extends LocalOperationStatsSupport
     }
 
     public long total() {
-          return acquires.count + nonAcquires.count;
+        return acquires.count + nonAcquires.count;
     }
 
     public long getNumberOfAcquireOps() {

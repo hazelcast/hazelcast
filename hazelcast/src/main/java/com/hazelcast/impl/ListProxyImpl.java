@@ -17,7 +17,10 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Instance;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
@@ -31,7 +34,7 @@ import java.util.Set;
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class ListProxyImpl extends AbstractList implements ListProxy, DataSerializable {
-	String actualName;
+    String actualName;
     String name;
     FactoryImpl factory;
 
@@ -39,7 +42,7 @@ public class ListProxyImpl extends AbstractList implements ListProxy, DataSerial
     }
 
     public ListProxyImpl(String name, FactoryImpl factory) {
-    	this.actualName = name;
+        this.actualName = name;
         this.name = Prefix.QUEUE + actualName;
         this.factory = factory;
     }
@@ -49,8 +52,8 @@ public class ListProxyImpl extends AbstractList implements ListProxy, DataSerial
     }
 
     public void destroy() {
-    	factory.destroyInstanceClusterWide(actualName, null);
-    	factory.destroyInstanceClusterWide(name, null);
+        factory.destroyInstanceClusterWide(actualName, null);
+        factory.destroyInstanceClusterWide(name, null);
         factory.destroyInstanceClusterWide(Prefix.MAP + name, null);
     }
 

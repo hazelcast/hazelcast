@@ -7,45 +7,45 @@
         <password>dev-pass</password>
     </group>
     <properties>
-       <property name="hazelcast.executor.client.thread.count">10</property>
-       <property name="hazelcast.executor.event.thread.count">10</property>
-       <property name="hazelcast.executor.migration.thread.count">10</property>
-       <property name="hazelcast.executor.query.thread.count">10</property>
-       <property name="hazelcast.executor.store.thread.count">10</property>
-       <property name="hazelcast.heartbeat.interval.seconds">60</property>
-       <property name="hazelcast.icmp.enabled">true</property>
-       <property name="hazelcast.in.thread.priority">7</property>
-       <property name="hazelcast.initial.min.cluster.size">1</property>
-       <property name="hazelcast.initial.wait.seconds">0</property>
-       <property name="hazelcast.jmx">false</property>
-       <property name="hazelcast.jmx.detailed">false</property>
-       <property name="hazelcast.log.state">false</property>
-       <property name="hazelcast.mancenter.enabled">true</property>
-       <property name="hazelcast.map.cleanup.delay.seconds">10</property>
-       <property name="hazelcast.map.load.chunk.size">1000</property>
-       <property name="hazelcast.map.max.backup.count">5</property>
-       <property name="hazelcast.map.partition.count">271</property>
-       <property name="hazelcast.map.remove.delay.seconds">5</property>
-       <property name="hazelcast.max.no.heartbeat.seconds">300</property>
-       <property name="hazelcast.max.wait.seconds.before.join">20</property>
-       <property name="hazelcast.memcache.enabled">true</property>
-       <property name="hazelcast.merge.first.run.delay.seconds">120</property>
-       <property name="hazelcast.merge.next.run.delay.seconds">300</property>
-       <property name="hazelcast.out.thread.priority">7</property>
-       <property name="hazelcast.redo.wait.millis">500</property>
-       <property name="hazelcast.restart.on.max.idle">false</property>
-       <property name="hazelcast.serializer.gzip.enabled">true</property>
-       <property name="hazelcast.service.thread.priority">7</property>
-       <property name="hazelcast.shutdownhook.enabled">true</property>
-       <property name="hazelcast.socket.bind.any">true</property>
-       <property name="hazelcast.socket.keep.alive">true</property>
-       <property name="hazelcast.socket.no.delay">true</property>
-       <property name="hazelcast.socket.receive.buffer.size">32</property>
-       <property name="hazelcast.socket.send.buffer.size">32</property>
-       <property name="hazelcast.topic.flow.control.enabled">true</property>
-       <property name="hazelcast.version.check.enabled">true</property>
-       <property name="hazelcast.wait.seconds.before.join">5</property>
-  	</properties>
+        <property name="hazelcast.executor.client.thread.count">10</property>
+        <property name="hazelcast.executor.event.thread.count">10</property>
+        <property name="hazelcast.executor.migration.thread.count">10</property>
+        <property name="hazelcast.executor.query.thread.count">10</property>
+        <property name="hazelcast.executor.store.thread.count">10</property>
+        <property name="hazelcast.heartbeat.interval.seconds">60</property>
+        <property name="hazelcast.icmp.enabled">true</property>
+        <property name="hazelcast.in.thread.priority">7</property>
+        <property name="hazelcast.initial.min.cluster.size">1</property>
+        <property name="hazelcast.initial.wait.seconds">0</property>
+        <property name="hazelcast.jmx">false</property>
+        <property name="hazelcast.jmx.detailed">false</property>
+        <property name="hazelcast.log.state">false</property>
+        <property name="hazelcast.mancenter.enabled">true</property>
+        <property name="hazelcast.map.cleanup.delay.seconds">10</property>
+        <property name="hazelcast.map.load.chunk.size">1000</property>
+        <property name="hazelcast.map.max.backup.count">5</property>
+        <property name="hazelcast.map.partition.count">271</property>
+        <property name="hazelcast.map.remove.delay.seconds">5</property>
+        <property name="hazelcast.max.no.heartbeat.seconds">300</property>
+        <property name="hazelcast.max.wait.seconds.before.join">20</property>
+        <property name="hazelcast.memcache.enabled">true</property>
+        <property name="hazelcast.merge.first.run.delay.seconds">120</property>
+        <property name="hazelcast.merge.next.run.delay.seconds">300</property>
+        <property name="hazelcast.out.thread.priority">7</property>
+        <property name="hazelcast.redo.wait.millis">500</property>
+        <property name="hazelcast.restart.on.max.idle">false</property>
+        <property name="hazelcast.serializer.gzip.enabled">true</property>
+        <property name="hazelcast.service.thread.priority">7</property>
+        <property name="hazelcast.shutdownhook.enabled">true</property>
+        <property name="hazelcast.socket.bind.any">true</property>
+        <property name="hazelcast.socket.keep.alive">true</property>
+        <property name="hazelcast.socket.no.delay">true</property>
+        <property name="hazelcast.socket.receive.buffer.size">32</property>
+        <property name="hazelcast.socket.send.buffer.size">32</property>
+        <property name="hazelcast.topic.flow.control.enabled">true</property>
+        <property name="hazelcast.version.check.enabled">true</property>
+        <property name="hazelcast.wait.seconds.before.join">5</property>
+    </properties>
     <wan-replication name="my-wan-cluster">
         <target-cluster group-name="tokyo" group-password="tokyo-pass">
             <replication-impl>com.hazelcast.impl.wan.WanNoDelayReplication</replication-impl>
@@ -69,23 +69,23 @@
                 <multicast-group>224.2.2.3</multicast-group>
                 <multicast-port>54327</multicast-port>
                 <trusted-interfaces>
-                	<interface>10.10.1.*</interface>
-                	<interface>10.10.2.*</interface>
+                    <interface>10.10.1.*</interface>
+                    <interface>10.10.2.*</interface>
                 </trusted-interfaces>
             </multicast>
             <tcp-ip enabled="false">
                 <interface>127.0.0.1</interface>
             </tcp-ip>
             <aws enabled="false">
-		        <access-key>my-access-key</access-key>
-		        <secret-key>my-secret-key</secret-key>
-		        <!--optional, default is us-east-1 -->
-		        <region>us-west-1</region>  							
-		        <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
-		        <security-group-name>hazelcast-sg</security-group-name> 
-		        <tag-key>type</tag-key>  						
-		        <tag-value>hz-nodes</tag-value>  				
-		    </aws>
+                <access-key>my-access-key</access-key>
+                <secret-key>my-secret-key</secret-key>
+                <!--optional, default is us-east-1 -->
+                <region>us-west-1</region>
+                <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
+                <security-group-name>hazelcast-sg</security-group-name>
+                <tag-key>type</tag-key>
+                <tag-value>hz-nodes</tag-value>
+            </aws>
         </join>
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>
@@ -122,18 +122,18 @@
             <storePath>keystore</storePath>
         </asymmetric-encryption>
     </network>
-	<partition-group enabled="false" group-type="CUSTOM">
-		<member-group>
-			<interface>10.10.0.*</interface>
-			<interface>10.10.3.*</interface>
-			<interface>10.10.5.*</interface>
-		</member-group>
-		<member-group>
-			<interface>10.10.10.10-100</interface>
-			<interface>10.10.1.*</interface>
-			<interface>10.10.2.*</interface>
-		</member-group>
-	</partition-group>
+    <partition-group enabled="false" group-type="CUSTOM">
+        <member-group>
+            <interface>10.10.0.*</interface>
+            <interface>10.10.3.*</interface>
+            <interface>10.10.5.*</interface>
+        </member-group>
+        <member-group>
+            <interface>10.10.10.10-100</interface>
+            <interface>10.10.1.*</interface>
+            <interface>10.10.2.*</interface>
+        </member-group>
+    </partition-group>
     <executor-service name="default">
         <core-pool-size>16</core-pool-size>
         <max-pool-size>64</max-pool-size>
@@ -154,9 +154,9 @@
             map for this queue.
         -->
         <backing-map-ref>default</backing-map-ref>
-        
+
         <item-listeners>
-        	<item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
 
     </queue>
@@ -167,14 +167,14 @@
             fail-safety. 0 means no backup.
         -->
         <backup-count>1</backup-count>
-         <!-- 
-	        Maximum number of seconds for each item to live.
+        <!--
+            Maximum number of seconds for each item to live.
             Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
         -->
         <time-to-live-seconds>0</time-to-live-seconds>
-        
+
         <!--
-        	Maximum number of seconds for each item to stay idle (untouched).
+            Maximum number of seconds for each item to stay idle (untouched).
             Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
         -->
         <max-idle-seconds>0</max-idle-seconds>
@@ -218,54 +218,54 @@
             hz.LATEST_UPDATE ; entry with the latest update wins.
         -->
         <merge-policy>hz.ADD_NEW_ENTRY</merge-policy>
-        
+
         <map-store enabled="true">
-        	<class-name>com.hazelcast.examples.DummyStore</class-name>
-<!--         	<factory-class-name>com.hazelcast.examples.DummyStoreFactory</factory-class-name> -->
-        	<write-delay-seconds>0</write-delay-seconds>
-        	<properties>
-        		<property name="dummy.property">value</property>
-        	</properties>
+            <class-name>com.hazelcast.examples.DummyStore</class-name>
+            <!--         	<factory-class-name>com.hazelcast.examples.DummyStoreFactory</factory-class-name> -->
+            <write-delay-seconds>0</write-delay-seconds>
+            <properties>
+                <property name="dummy.property">value</property>
+            </properties>
         </map-store>
-        
+
         <near-cache>
-        	<max-size>10000</max-size>
-        	<time-to-live-seconds>0</time-to-live-seconds>
-        	<max-idle-seconds>0</max-idle-seconds>
-        	<eviction-policy>LFU</eviction-policy>
-        	<invalidate-on-change>true</invalidate-on-change>
+            <max-size>10000</max-size>
+            <time-to-live-seconds>0</time-to-live-seconds>
+            <max-idle-seconds>0</max-idle-seconds>
+            <eviction-policy>LFU</eviction-policy>
+            <invalidate-on-change>true</invalidate-on-change>
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">
             <merge-policy>hz.PASS_THROUGH</merge-policy>
         </wan-replication-ref>
-        
+
         <indexes>
-        	<index ordered="false">name</index>
-        	<index ordered="true">age</index>
+            <index ordered="false">name</index>
+            <index ordered="true">age</index>
         </indexes>
-        
+
         <entry-listeners>
-       		<entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
+            <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
-        
+
         <!-- HEAP or OFFHEAP -->
         <storage-type>HEAP</storage-type>
     </map>
-	
-	<multimap name="default">
-    	<value-collection-type>SET</value-collection-type>
-    	<entry-listeners>
-    		<entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
-    	</entry-listeners>
+
+    <multimap name="default">
+        <value-collection-type>SET</value-collection-type>
+        <entry-listeners>
+            <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
+        </entry-listeners>
     </multimap>
-        
+
     <topic name="default">
-    	<message-listeners>
-    		<message-listener>com.hazelcast.examples.MessageListener</message-listener>
-    	</message-listeners>
+        <message-listeners>
+            <message-listener>com.hazelcast.examples.MessageListener</message-listener>
+        </message-listeners>
     </topic>
-    
+
     <semaphore name="default">
         <initial-permits>10</initial-permits>
         <semaphore-factory enabled="true">
@@ -273,87 +273,87 @@
         </semaphore-factory>
     </semaphore>
 
-   	<merge-policies>
-      	<map-merge-policy name="hz.MERGING_WINS">
-           	<class-name>com.hazelcast.examples.MyOwnMergePolicy</class-name>
-       	</map-merge-policy>
-   	</merge-policies>
-   	
-   	<listeners>
-   		<listener>com.hazelcast.examples.MembershipListener</listener>
-   		<listener>com.hazelcast.examples.InstanceListener</listener>
-   		<listener>com.hazelcast.examples.MigrationListenerListener</listener>
-   	</listeners>
-	
-	<security enabled="false">
-		<member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
-			<properties>
-				<property name="property">value</property>
-			</properties>
-		</member-credentials-factory>
-		<member-login-modules>
-			<login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
-				<properties>
-					<property name="property">value</property>
-				</properties>
-			</login-module>
-		</member-login-modules>
-		<client-login-modules>
-			<login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
-				<properties>
-					<property name="property">value</property>
-				</properties>
-			</login-module>
-			<login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
-				<properties>
-					<property name="property">value</property>
-				</properties>
-			</login-module>
-		</client-login-modules>
-		<client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
-			<properties>
-				<property name="property">value</property>
-			</properties>
-		</client-permission-policy>
-		<client-permissions>
-			<all-permissions principal="admin" >
-				<endpoints>
-					<endpoint>127.0.0.1</endpoint>
-				</endpoints>
-			</all-permissions>
-			<map-permission name="default" principal="dev">
-				<actions>
-					<action>create</action>
-					<action>destroy</action>
-					<action>put</action>
-					<action>get</action>
-				</actions>
-			</map-permission>
-			<map-permission name="custom" principal="dev">
-				<endpoints>
-					<endpoint>127.0.0.1</endpoint>
-				</endpoints>
-				<actions>
-					<action>create</action>
-					<action>destroy</action>
-					<action>put</action>
-					<action>get</action>
-				</actions>
-			</map-permission>
-			<queue-permission name="default" principal="dev">
-				<endpoints>
-					<endpoint>127.0.0.1</endpoint>
-				</endpoints>
-				<actions>
-					<action>create</action>
-					<action>destroy</action>
-					<action>offer</action>
-					<action>poll</action>
-				</actions>
-			</queue-permission>
-			<transaction-permission />
-			<listener-permisson name="instance"/>
-		</client-permissions>
-	</security>
-	   	
+    <merge-policies>
+        <map-merge-policy name="hz.MERGING_WINS">
+            <class-name>com.hazelcast.examples.MyOwnMergePolicy</class-name>
+        </map-merge-policy>
+    </merge-policies>
+
+    <listeners>
+        <listener>com.hazelcast.examples.MembershipListener</listener>
+        <listener>com.hazelcast.examples.InstanceListener</listener>
+        <listener>com.hazelcast.examples.MigrationListenerListener</listener>
+    </listeners>
+
+    <security enabled="false">
+        <member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
+            <properties>
+                <property name="property">value</property>
+            </properties>
+        </member-credentials-factory>
+        <member-login-modules>
+            <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                <properties>
+                    <property name="property">value</property>
+                </properties>
+            </login-module>
+        </member-login-modules>
+        <client-login-modules>
+            <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
+                <properties>
+                    <property name="property">value</property>
+                </properties>
+            </login-module>
+            <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                <properties>
+                    <property name="property">value</property>
+                </properties>
+            </login-module>
+        </client-login-modules>
+        <client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
+            <properties>
+                <property name="property">value</property>
+            </properties>
+        </client-permission-policy>
+        <client-permissions>
+            <all-permissions principal="admin">
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
+            </all-permissions>
+            <map-permission name="default" principal="dev">
+                <actions>
+                    <action>create</action>
+                    <action>destroy</action>
+                    <action>put</action>
+                    <action>get</action>
+                </actions>
+            </map-permission>
+            <map-permission name="custom" principal="dev">
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
+                <actions>
+                    <action>create</action>
+                    <action>destroy</action>
+                    <action>put</action>
+                    <action>get</action>
+                </actions>
+            </map-permission>
+            <queue-permission name="default" principal="dev">
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
+                <actions>
+                    <action>create</action>
+                    <action>destroy</action>
+                    <action>offer</action>
+                    <action>poll</action>
+                </actions>
+            </queue-permission>
+            <transaction-permission/>
+            <listener-permisson name="instance"/>
+        </client-permissions>
+    </security>
+
 </hazelcast>

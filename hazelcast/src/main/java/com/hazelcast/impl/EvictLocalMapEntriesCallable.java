@@ -17,21 +17,21 @@
 
 package com.hazelcast.impl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.concurrent.Callable;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.nio.DataSerializable;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.concurrent.Callable;
+
 public class EvictLocalMapEntriesCallable implements Callable<Boolean>, HazelcastInstanceAware, DataSerializable {
-	
-	private static final long serialVersionUID = -8809741591882405286L;
-	
-	private transient HazelcastInstance hazelcastInstance;
+
+    private static final long serialVersionUID = -8809741591882405286L;
+
+    private transient HazelcastInstance hazelcastInstance;
     private String mapName;
     private int percentage;
 

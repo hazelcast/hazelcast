@@ -1,8 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
-      xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg"
-      xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml"
-      xmlns:db="http://docbook.org/ns/docbook">
+        >
 
     <para>
         By default, Hazelcast stores your distributed data (map entries, queue items) into Java heap
@@ -53,23 +51,25 @@
             </listitem>
             <listitem>
                 <para>
-                    Configure maps you want them to use Elastic Memory by setting <literal>StorageType</literal> to <code>OFFHEAP</code>.
-                    Default value is <code>HEAP</code>.
+                    Configure maps you want them to use Elastic Memory by setting
+                    <literal>StorageType</literal>
+                    to<code>OFFHEAP</code>.
+                    Default value is<code>HEAP</code>.
                 </para>
                 <para>
-                	Using XML configuration:
+                    Using XML configuration:
                     <programlisting language="xml"><![CDATA[<hazelcast>
     ...
     <map name="default">
         ...
         <storage-type>OFFHEAP</storage-type>
     </map>
-</hazelcast>]]></programlisting> 
+</hazelcast>]]></programlisting>
                 </para>
                 <para>
-                	Using Config API:
+                    Using Config API:
                     <programlisting language="java"><![CDATA[MapConfig mapConfig = new MapConfig();
-mapConfig.setStorageType(StorageType.OFFHEAP);]]></programlisting> 
+mapConfig.setStorageType(StorageType.OFFHEAP);]]></programlisting>
                 </para>
             </listitem>
         </itemizedlist>

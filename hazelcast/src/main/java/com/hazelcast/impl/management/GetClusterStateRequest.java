@@ -1,10 +1,10 @@
 package com.hazelcast.impl.management;
 
+import com.hazelcast.monitor.TimedClusterState;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.hazelcast.monitor.TimedClusterState;
 
 public class GetClusterStateRequest implements ConsoleRequest {
 

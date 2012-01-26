@@ -55,9 +55,9 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * null return values cannot be reliably distinguished from the absence of
  * elements.
  *
- * @author Doug Lea
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
+ * @author Doug Lea
  */
 public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
         implements ConcurrentNavigableMap<K, V>,
@@ -691,10 +691,10 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
     private Node<K, V> findPredecessor(Comparable<? super K> key) {
         if (key == null)
             throw new NullPointerException(); // don't postpone errors
-        for (; ;) {
+        for (; ; ) {
             Index<K, V> q = head;
             Index<K, V> r = q.right;
-            for (; ;) {
+            for (; ; ) {
                 if (r != null) {
                     Node<K, V> n = r.node;
                     K k = n.key;
@@ -765,10 +765,10 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * @return node holding key, or null if no such
      */
     private Node<K, V> findNode(Comparable<? super K> key) {
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> b = findPredecessor(key);
             Node<K, V> n = b.next;
-            for (; ;) {
+            for (; ; ) {
                 if (n == null)
                     return null;
                 Node<K, V> f = n.next;
@@ -812,7 +812,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
          * null just as it is about to be returned, in which case we
          * lost a race with a deletion, so must retry.
          */
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> n = findNode(key);
             if (n == null)
                 return null;
@@ -834,10 +834,10 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      */
     private V doPut(K kkey, V value, boolean onlyIfAbsent) {
         Comparable<? super K> key = comparable(kkey);
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> b = findPredecessor(key);
             Node<K, V> n = b.next;
-            for (; ;) {
+            for (; ; ) {
                 if (n != null) {
                     Node<K, V> f = n.next;
                     if (n != b.next)               // inconsistent read
@@ -925,7 +925,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                 idxs[i] = idx = new Index<K, V>(z, idx, null);
             HeadIndex<K, V> oldh;
             int k;
-            for (; ;) {
+            for (; ; ) {
                 oldh = head;
                 int oldLevel = oldh.level;
                 if (level <= oldLevel) { // lost race to add level
@@ -960,12 +960,12 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
         if (key == null) throw new NullPointerException();
         // Similar to findPredecessor, but adding index nodes along
         // path to key.
-        for (; ;) {
+        for (; ; ) {
             int j = h.level;
             Index<K, V> q = h;
             Index<K, V> r = q.right;
             Index<K, V> t = idx;
-            for (; ;) {
+            for (; ; ) {
                 if (r != null) {
                     Node<K, V> n = r.node;
                     // compare before deletion check avoids needing recheck
@@ -1027,10 +1027,10 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      */
     final V doRemove(Object okey, Object value) {
         Comparable<? super K> key = comparable(okey);
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> b = findPredecessor(key);
             Node<K, V> n = b.next;
-            for (; ;) {
+            for (; ; ) {
                 if (n == null)
                     return null;
                 Node<K, V> f = n.next;
@@ -1109,7 +1109,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * @return first node or null if empty
      */
     Node<K, V> findFirst() {
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> b = head.node;
             Node<K, V> n = b.next;
             if (n == null)
@@ -1126,7 +1126,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * @return null if empty, else snapshot of first entry
      */
     Map.Entry<K, V> doRemoveFirstEntry() {
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> b = head.node;
             Node<K, V> n = b.next;
             if (n == null)
@@ -1152,9 +1152,9 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * Clears out index nodes associated with deleted first entry.
      */
     private void clearIndexToFirst() {
-        for (; ;) {
+        for (; ; ) {
             Index<K, V> q = head;
-            for (; ;) {
+            for (; ; ) {
                 Index<K, V> r = q.right;
                 if (r != null && r.indexesDeletedNode() && !q.unlink(r))
                     break;
@@ -1180,7 +1180,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
          * both levels are folded together.
          */
         Index<K, V> q = head;
-        for (; ;) {
+        for (; ; ) {
             Index<K, V> d, r;
             if ((r = q.right) != null) {
                 if (r.indexesDeletedNode()) {
@@ -1193,7 +1193,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
             } else {
                 Node<K, V> b = q.node;
                 Node<K, V> n = b.next;
-                for (; ;) {
+                for (; ; ) {
                     if (n == null)
                         return (b.isBaseHeader()) ? null : b;
                     Node<K, V> f = n.next;            // inconsistent read
@@ -1223,9 +1223,9 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * @return likely predecessor of last node
      */
     private Node<K, V> findPredecessorOfLast() {
-        for (; ;) {
+        for (; ; ) {
             Index<K, V> q = head;
-            for (; ;) {
+            for (; ; ) {
                 Index<K, V> d, r;
                 if ((r = q.right) != null) {
                     if (r.indexesDeletedNode()) {
@@ -1253,7 +1253,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * @return null if empty, else snapshot of last entry
      */
     Map.Entry<K, V> doRemoveLastEntry() {
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> b = findPredecessorOfLast();
             Node<K, V> n = b.next;
             if (n == null) {
@@ -1262,7 +1262,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                 else
                     continue; // all b's successors are deleted; retry
             }
-            for (; ;) {
+            for (; ; ) {
                 Node<K, V> f = n.next;
                 if (n != b.next)                    // inconsistent read
                     break;
@@ -1309,10 +1309,10 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      */
     Node<K, V> findNear(K kkey, int rel) {
         Comparable<? super K> key = comparable(kkey);
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> b = findPredecessor(key);
             Node<K, V> n = b.next;
-            for (; ;) {
+            for (; ; ) {
                 if (n == null)
                     return ((rel & LT) == 0 || b.isBaseHeader()) ? null : b;
                 Node<K, V> f = n.next;
@@ -1345,7 +1345,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * @return Entry fitting relation, or null if no such
      */
     SimpleImmutableEntry<K, V> getNear(K key, int rel) {
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> n = findNear(key, rel);
             if (n == null)
                 return null;
@@ -1530,7 +1530,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
             preds.set(i, q);
             q = q.down;
         }
-        for (; ;) {
+        for (; ; ) {
             Object k = s.readObject();
             if (k == null)
                 break;
@@ -1870,7 +1870,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
         if (oldValue == null || newValue == null)
             throw new NullPointerException();
         Comparable<? super K> k = comparable(key);
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> n = findNode(k);
             if (n == null)
                 return false;
@@ -1897,7 +1897,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
         if (value == null)
             throw new NullPointerException();
         Comparable<? super K> k = comparable(key);
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> n = findNode(k);
             if (n == null)
                 return null;
@@ -2100,7 +2100,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * the <tt>Entry.setValue</tt> method.
      */
     public Map.Entry<K, V> firstEntry() {
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> n = findFirst();
             if (n == null)
                 return null;
@@ -2117,7 +2117,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * the <tt>Entry.setValue</tt> method.
      */
     public Map.Entry<K, V> lastEntry() {
-        for (; ;) {
+        for (; ; ) {
             Node<K, V> n = findLast();
             if (n == null)
                 return null;
@@ -2169,7 +2169,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
          * Initializes ascending iterator for entire range.
          */
         Iter() {
-            for (; ;) {
+            for (; ; ) {
                 next = findFirst();
                 if (next == null)
                     break;
@@ -2192,7 +2192,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
             if (next == null)
                 throw new NoSuchElementException();
             lastReturned = next;
-            for (; ;) {
+            for (; ; ) {
                 next = next.next;
                 if (next == null)
                     break;
@@ -2666,7 +2666,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
         }
 
         private Map.Entry<K, V> lowestEntry() {
-            for (; ;) {
+            for (; ; ) {
                 ConcurrentSkipListMap.Node<K, V> n = loNode();
                 if (!isBeforeEnd(n))
                     return null;
@@ -2677,7 +2677,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
         }
 
         private Map.Entry<K, V> highestEntry() {
-            for (; ;) {
+            for (; ; ) {
                 ConcurrentSkipListMap.Node<K, V> n = hiNode();
                 if (n == null || !inBounds(n.key))
                     return null;
@@ -2688,7 +2688,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
         }
 
         private Map.Entry<K, V> removeLowest() {
-            for (; ;) {
+            for (; ; ) {
                 Node<K, V> n = loNode();
                 if (n == null)
                     return null;
@@ -2702,7 +2702,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
         }
 
         private Map.Entry<K, V> removeHighest() {
-            for (; ;) {
+            for (; ; ) {
                 Node<K, V> n = hiNode();
                 if (n == null)
                     return null;
@@ -2729,7 +2729,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                 return ((rel & m.LT) != 0) ? null : lowestEntry();
             if (tooHigh(key))
                 return ((rel & m.LT) != 0) ? highestEntry() : null;
-            for (; ;) {
+            for (; ; ) {
                 Node<K, V> n = m.findNear(key, rel);
                 if (n == null || !inBounds(n.key))
                     return null;
@@ -2767,7 +2767,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                 }
                 return null;
             }
-            for (; ;) {
+            for (; ; ) {
                 Node<K, V> n = m.findNear(key, rel);
                 if (n == null || !inBounds(n.key))
                     return null;
@@ -3060,7 +3060,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
             V nextValue;
 
             SubMapIter() {
-                for (; ;) {
+                for (; ; ) {
                     next = isDescending ? hiNode() : loNode();
                     if (next == null)
                         break;
@@ -3090,7 +3090,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
             }
 
             private void ascend() {
-                for (; ;) {
+                for (; ; ) {
                     next = next.next;
                     if (next == null)
                         break;
@@ -3106,7 +3106,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
             }
 
             private void descend() {
-                for (; ;) {
+                for (; ; ) {
                     next = m.findNear(lastReturned.key, LT);
                     if (next == null)
                         break;

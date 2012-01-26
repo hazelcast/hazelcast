@@ -26,10 +26,8 @@ import com.hazelcast.query.SqlPredicate;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
-
 import java.lang.management.ManagementFactory;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 
 /**
@@ -102,35 +100,35 @@ public class MapMBean extends AbstractMBean<IMap> {
             }
         }
     }
-    
+
     @JMXOperation("clear")
     @JMXDescription("Clear map")
     public void clear() {
         getManagedObject().clear();
     }
-    
+
     @JMXOperation("values")
     @JMXDescription("Values")
     public String values(final String query) {
         final Predicate predicate = query != null && query.trim().length() > 0 ?
-            new SqlPredicate(query) : null;
+                new SqlPredicate(query) : null;
         final Collection values = predicate != null ?
-            getManagedObject().values(predicate) :
-            getManagedObject().values();
+                getManagedObject().values(predicate) :
+                getManagedObject().values();
         final List list = new ArrayList(values);
         return list.toString();
     }
-    
+
     @JMXOperation("entrySet")
     @JMXDescription("EntrySet")
     public String entrySet(final String query) {
         final Predicate predicate = query != null && query.trim().length() > 0 ?
-            new SqlPredicate(query) : null;
+                new SqlPredicate(query) : null;
         final Collection<Map.Entry> values = predicate != null ?
-            getManagedObject().entrySet(predicate) :
-            getManagedObject().entrySet();
+                getManagedObject().entrySet(predicate) :
+                getManagedObject().entrySet();
         final StringBuilder sb = new StringBuilder().append("{");
-        for(final Iterator<Map.Entry> it = values.iterator();it.hasNext();){
+        for (final Iterator<Map.Entry> it = values.iterator(); it.hasNext(); ) {
             final Map.Entry next = it.next();
             // workaround due to bug with hasNext
             if (sb.length() > 1) {
@@ -140,10 +138,10 @@ public class MapMBean extends AbstractMBean<IMap> {
         }
         return sb.append("}").toString();
     }
-    
+
     @JMXAttribute("Config")
     @JMXDescription("Map configuration")
-    public String getConfig(){
+    public String getConfig() {
         final MapConfig config = managementService.getInstance().getConfig().getMapConfig(getName());
         return config.toString();
     }
@@ -156,8 +154,7 @@ public class MapMBean extends AbstractMBean<IMap> {
                 MapEntryMBean mbean = new MapEntryMBean(getManagedObject(), key);
                 mbs.registerMBean(mbean, entryName);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Unable to register MapEntry MBeans", e);
         }
     }
@@ -169,8 +166,7 @@ public class MapMBean extends AbstractMBean<IMap> {
             if (mbs.isRegistered(entryName)) {
                 mbs.unregisterMBean(entryName);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Unable to unregister MapEntry MBeans", e);
         }
     }

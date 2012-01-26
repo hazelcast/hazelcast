@@ -1,7 +1,8 @@
 package com.hazelcast.client;
 
-import java.io.IOException;
 import com.hazelcast.security.Credentials;
+
+import java.io.IOException;
 /*
  * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  *

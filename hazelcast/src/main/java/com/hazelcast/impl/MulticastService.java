@@ -41,8 +41,8 @@ import java.util.zip.Deflater;
 
 public class MulticastService implements Runnable {
 
-	private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
-	
+    private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
+
     private final ILogger logger;
     private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
     private final MulticastSocket multicastSocket;
@@ -53,10 +53,10 @@ public class MulticastService implements Runnable {
     final Node node;
     private boolean running = true;
     private List<MulticastListener> lsListeners = new CopyOnWriteArrayList<MulticastListener>();
-    
+
     private final InflatingPipedBuffer inflatingBuffer = PipedZipBufferFactory.createInflatingBuffer(DATAGRAM_BUFFER_SIZE);
     private final DeflatingPipedBuffer deflatingBuffer = PipedZipBufferFactory.createDeflatingBuffer(DATAGRAM_BUFFER_SIZE, Deflater.BEST_SPEED);
-    
+
     public MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
         this.node = node;
         logger = node.getLogger(MulticastService.class.getName());
@@ -83,8 +83,8 @@ public class MulticastService implements Runnable {
             queue.put(new Runnable() {
                 public void run() {
                     running = false;
-                    inflatingBuffer.destroy();
-                    deflatingBuffer.destroy();
+//                    inflatingBuffer.destroy();
+//                    deflatingBuffer.destroy();
                     datagramPacketReceive.setData(new byte[0]);
                     datagramPacketSend.setData(new byte[0]);
                     l.countDown();
@@ -121,25 +121,25 @@ public class MulticastService implements Runnable {
     public JoinInfo receive() {
         synchronized (receiveLock) {
             try {
-            	inflatingBuffer.reset();
+                inflatingBuffer.reset();
                 try {
                     multicastSocket.receive(datagramPacketReceive);
                 } catch (SocketTimeoutException ignore) {
                     return null;
                 }
                 try {
-                	inflatingBuffer.inflate(datagramPacketReceive.getLength());
-                	JoinInfo joinInfo = new JoinInfo();
-                	joinInfo.readData(inflatingBuffer.getDataInput());
-                	return joinInfo;
-				} catch (Exception e) {
-					if(e instanceof EOFException || e instanceof DataFormatException) {
-						logger.log(Level.FINEST, "Received data format is invalid." +
-							" (An old version of Hazelcast may be running here.)", e);
-					} else {
-						throw e;
-					}
-				}
+                    inflatingBuffer.inflate(datagramPacketReceive.getLength());
+                    JoinInfo joinInfo = new JoinInfo();
+                    joinInfo.readData(inflatingBuffer.getDataInput());
+                    return joinInfo;
+                } catch (Exception e) {
+                    if (e instanceof EOFException || e instanceof DataFormatException) {
+                        logger.log(Level.FINEST, "Received data format is invalid." +
+                                " (An old version of Hazelcast may be running here.)", e);
+                    } else {
+                        throw e;
+                    }
+                }
             } catch (Exception e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
@@ -151,8 +151,8 @@ public class MulticastService implements Runnable {
         if (!running) return;
         synchronized (sendLock) {
             try {
-            	deflatingBuffer.reset();
-            	joinInfo.writeData(deflatingBuffer.getDataOutput());
+                deflatingBuffer.reset();
+                joinInfo.writeData(deflatingBuffer.getDataOutput());
                 final int count = deflatingBuffer.deflate();
                 datagramPacketSend.setData(deflatingBuffer.getOutputBuffer().array(), 0, count);
                 multicastSocket.send(datagramPacketSend);

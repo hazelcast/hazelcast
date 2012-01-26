@@ -22,12 +22,14 @@ import com.hazelcast.impl.monitor.MapOperationsCounter;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.nio.DataSerializable;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.*;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MapOperationsCounterTest {
 
     @Test

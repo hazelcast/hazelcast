@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sect1 xml:id="MemberSecurity" version="5.0"
-    xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
-    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg"
-    xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml"
-    xmlns:db="http://docbook.org/ns/docbook">
+       xmlns="http://docbook.org/ns/docbook"
+        >
     <title>Cluster Member Security</title>
-    <para> Hazelcast supports standard Java Security (JAAS) based authentication between cluster
-        members. You should configure one or more <code>LoginModule</code>s and an instance of
-            <literal>com.hazelcast.security.ICredentialsFactory</literal>. Although Hazelcast has
+    <para>Hazelcast supports standard Java Security (JAAS) based authentication between cluster
+        members. You should configure one or more<code>LoginModule</code>s and an instance of
+        <literal>com.hazelcast.security.ICredentialsFactory</literal>. Although Hazelcast has
         default implementations using cluster group and group-password and
-            <literal>UsernamePasswordCredentials</literal> on authentication, it is advised to
-        implement these according to specific needs and environment. <programlisting language="xml"><![CDATA[
+        <literal>UsernamePasswordCredentials</literal>
+        on authentication, it is advised to
+        implement these according to specific needs and environment.
+        <programlisting language="xml"><![CDATA[
 <security enabled="true">
     <member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
         <properties>
@@ -37,12 +37,15 @@
     </member-login-modules>
     ...
 </security>
-]]></programlisting> You can define as many as <literal>LoginModule</literal>s you wanted in
+]]></programlisting>
+        You can define as many as<literal>LoginModule</literal>s you wanted in
         configuration. Those are executed in given order. Usage attribute has 4 values; 'required',
         'requisite', 'sufficient' and 'optional' as defined in
-            <code>javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag</code>.</para>
-    
-<para><programlisting language="java"><![CDATA[
+        <code>javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag</code>.
+    </para>
+
+    <para>
+        <programlisting language="java"><![CDATA[
 package com.hazelcast.security;
 /**
  * ICredentialsFactory is used to create Credentials objects to be used
@@ -56,9 +59,15 @@ public interface ICredentialsFactory {
 
     void destroy();
 }
-]]></programlisting></para>
-<para>
-    Properties defined in configuration are passed to <code>ICredentialsFactory.configure()</code> method as <code>java.util.Properties</code>
-    and to <code>LoginModule.initialize()</code> method as <code>java.util.Map</code>.
-</para>    
+]]></programlisting>
+    </para>
+    <para>
+        Properties defined in configuration are passed to
+        <code>ICredentialsFactory.configure()</code>
+        method as
+        <code>java.util.Properties</code>
+        and to
+        <code>LoginModule.initialize()</code>
+        method as<code>java.util.Map</code>.
+    </para>
 </sect1>

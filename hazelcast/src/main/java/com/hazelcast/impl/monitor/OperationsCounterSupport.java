@@ -17,47 +17,47 @@
 
 package com.hazelcast.impl.monitor;
 
+import com.hazelcast.monitor.LocalInstanceOperationStats;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.hazelcast.monitor.LocalInstanceOperationStats;
-
 abstract class OperationsCounterSupport<T extends LocalInstanceOperationStats> {
 
-	final long interval;
-	final Object lock = new Object();
-	long startTime = now();
-	long endTime = Long.MAX_VALUE;
-	transient volatile T published = null;
+    final long interval;
+    final Object lock = new Object();
+    long startTime = now();
+    long endTime = Long.MAX_VALUE;
+    transient volatile T published = null;
 
-	final List listOfSubCounters = new ArrayList();
+    final List listOfSubCounters = new ArrayList();
 
-	public OperationsCounterSupport() {
-		this(5000);
-	}
+    public OperationsCounterSupport() {
+        this(5000);
+    }
 
-	public OperationsCounterSupport(long interval) {
-		super();
-		this.interval = interval;
-	}
+    public OperationsCounterSupport(long interval) {
+        super();
+        this.interval = interval;
+    }
 
-	public final T getPublishedStats() {
+    public final T getPublishedStats() {
         //noinspection DoubleCheckedLocking
         if (published == null) {
-			synchronized (lock) {
-				if (published == null) {
-					published = getThis();
-				}
-			}
-		}
-		if (published.getPeriodEnd() < now() - interval) {
-			return getEmpty();
-		}
-		return published;
-	}
-	
-	final void publishSubResult() {
+            synchronized (lock) {
+                if (published == null) {
+                    published = getThis();
+                }
+            }
+        }
+        if (published.getPeriodEnd() < now() - interval) {
+            return getEmpty();
+        }
+        return published;
+    }
+
+    final void publishSubResult() {
         long subInterval = interval / 5;
         if (now() - startTime > subInterval) {
             synchronized (lock) {
@@ -73,54 +73,54 @@ abstract class OperationsCounterSupport<T extends LocalInstanceOperationStats> {
         }
     }
 
-	abstract T getThis();
-	
-	abstract T getEmpty();
-	
-	abstract OperationsCounterSupport<T> getAndReset();
-	
-	abstract T aggregateSubCounterStats();
+    abstract T getThis();
 
-	final long now() {
-		return System.currentTimeMillis();
-	}
+    abstract T getEmpty();
 
-	class OperationCounter {
-		final AtomicLong count;
-		final AtomicLong totalLatency;
+    abstract OperationsCounterSupport<T> getAndReset();
 
-		public OperationCounter() {
-			this(0, 0);
-		}
+    abstract T aggregateSubCounterStats();
 
-		public OperationCounter(long c, long l) {
-			this.count = new AtomicLong(c);
-			totalLatency = new AtomicLong(l);
-		}
+    final long now() {
+        return System.currentTimeMillis();
+    }
 
-		public OperationCounter copyAndReset() {
-			OperationCounter copy = new OperationCounter(count.get(),
-					totalLatency.get());
-			this.count.set(0);
-			this.totalLatency.set(0);
-			return copy;
-		}
+    class OperationCounter {
+        final AtomicLong count;
+        final AtomicLong totalLatency;
 
-		public void set(OperationCounter now) {
-			this.count.set(now.count.get());
-			this.totalLatency.set(now.totalLatency.get());
-		}
+        public OperationCounter() {
+            this(0, 0);
+        }
 
-		public void count(long elapsed) {
-			this.count.incrementAndGet();
-			this.totalLatency.addAndGet(elapsed);
-		}
+        public OperationCounter(long c, long l) {
+            this.count = new AtomicLong(c);
+            totalLatency = new AtomicLong(l);
+        }
 
-		@Override
-		public String toString() {
-			long count = this.count.get();
-			return "OperationStat{" + "count=" + count + ", averageLatency="
-					+ ((count == 0) ? 0 : totalLatency.get() / count) + '}';
-		}
-	}
+        public OperationCounter copyAndReset() {
+            OperationCounter copy = new OperationCounter(count.get(),
+                    totalLatency.get());
+            this.count.set(0);
+            this.totalLatency.set(0);
+            return copy;
+        }
+
+        public void set(OperationCounter now) {
+            this.count.set(now.count.get());
+            this.totalLatency.set(now.totalLatency.get());
+        }
+
+        public void count(long elapsed) {
+            this.count.incrementAndGet();
+            this.totalLatency.addAndGet(elapsed);
+        }
+
+        @Override
+        public String toString() {
+            long count = this.count.get();
+            return "OperationStat{" + "count=" + count + ", averageLatency="
+                    + ((count == 0) ? 0 : totalLatency.get() / count) + '}';
+        }
+    }
 }

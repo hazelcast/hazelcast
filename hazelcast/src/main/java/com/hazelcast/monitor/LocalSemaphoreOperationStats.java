@@ -69,7 +69,6 @@ public interface LocalSemaphoreOperationStats extends LocalInstanceOperationStat
     /**
      * Returns the number of permits released.
      *
-     *
      * @return number of permits released
      */
     public long getNumberOfPermitsReleased();

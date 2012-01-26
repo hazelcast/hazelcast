@@ -48,25 +48,25 @@ public class SemaphoreMBean extends AbstractMBean<ISemaphore> {
 
     @JMXOperation("available")
     @JMXDescription("number of permits immediately available")
-    public int available(){
+    public int available() {
         return getManagedObject().availablePermits();
     }
 
     @JMXOperation("drain")
     @JMXDescription("acquire and return all permits immediately available")
-    public int drain(){
+    public int drain() {
         return getManagedObject().drainPermits();
     }
 
     @JMXOperation("reduce")
     @JMXDescription("reduce the number of permits available")
-    public void reduce(int reduction){
+    public void reduce(int reduction) {
         getManagedObject().reducePermits(reduction);
     }
 
     @JMXOperation("release")
     @JMXDescription("increase the number of permits available")
-    public void release(int permits){
+    public void release(int permits) {
         getManagedObject().release(permits);
     }
 }

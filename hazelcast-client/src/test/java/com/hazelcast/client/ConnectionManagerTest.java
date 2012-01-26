@@ -21,7 +21,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
-
 import org.junit.Test;
 
 import java.net.InetSocketAddress;

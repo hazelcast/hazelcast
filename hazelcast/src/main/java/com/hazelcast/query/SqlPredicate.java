@@ -110,11 +110,11 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         }
         root:
         while (tokens.size() > 1) {
-        	boolean foundOperand = false;
+            boolean foundOperand = false;
             for (int i = 0; i < tokens.size(); i++) {
                 Object tokenObj = tokens.get(i);
                 if (tokenObj instanceof String && parser.isOperand((String) tokenObj)) {
-                	foundOperand = true;
+                    foundOperand = true;
                     String token = (String) tokenObj;
                     if ("=".equals(token) || "==".equals(token)) {
                         int position = (i - 2);
@@ -192,17 +192,17 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                     continue root;
                 }
             }
-            if(!foundOperand) {
-            	throw new RuntimeException("Invalid SQL: [" + sql + "]");
+            if (!foundOperand) {
+                throw new RuntimeException("Invalid SQL: [" + sql + "]");
             }
         }
         return (Predicate) tokens.get(0);
     }
-    
+
     private void validateOperandPosition(int pos) {
-    	if(pos < 0) {
-    		throw new RuntimeException("Invalid SQL: [" + sql + "]");
-    	}
+        if (pos < 0) {
+            throw new RuntimeException("Invalid SQL: [" + sql + "]");
+        }
     }
 
     private Object toValue(final Object key, final Map<String, String> phrases) {

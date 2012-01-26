@@ -17,17 +17,17 @@
 
 package com.hazelcast.impl.monitor;
 
+import com.hazelcast.monitor.LocalMapOperationStats;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.hazelcast.monitor.LocalMapOperationStats;
-
 public class LocalMapOperationStatsImpl extends LocalOperationStatsSupport implements LocalMapOperationStats {
 
-    OperationStat gets = new OperationStat(0,0);
-    OperationStat puts = new OperationStat(0,0);
-    OperationStat removes = new OperationStat(0,0);
+    OperationStat gets = new OperationStat(0, 0);
+    OperationStat puts = new OperationStat(0, 0);
+    OperationStat removes = new OperationStat(0, 0);
     long numberOfOtherOperations;
     long numberOfEvents;
 

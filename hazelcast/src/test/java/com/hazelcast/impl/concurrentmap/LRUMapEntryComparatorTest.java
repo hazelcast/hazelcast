@@ -20,11 +20,13 @@ package com.hazelcast.impl.concurrentmap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.TestUtil;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class LRUMapEntryComparatorTest extends TestUtil {
     @Test
     public void testLRU() {

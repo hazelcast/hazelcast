@@ -5,12 +5,11 @@ import com.hazelcast.core.MembershipListener;
 
 public class DummyMembershipListener implements MembershipListener {
 
-	public void memberAdded(MembershipEvent membershipEvent) {
-		System.err.println(membershipEvent);
-	}
+    public void memberAdded(MembershipEvent membershipEvent) {
+        System.err.println(membershipEvent);
+    }
 
-	public void memberRemoved(MembershipEvent membershipEvent) {
-		System.err.println(membershipEvent);
-	}
-
+    public void memberRemoved(MembershipEvent membershipEvent) {
+        System.err.println(membershipEvent);
+    }
 }

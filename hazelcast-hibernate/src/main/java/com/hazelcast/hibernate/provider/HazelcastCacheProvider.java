@@ -17,13 +17,6 @@
 
 package com.hazelcast.hibernate.provider;
 
-import java.util.Properties;
-import java.util.logging.Level;
-
-import org.hibernate.cache.Cache;
-import org.hibernate.cache.CacheException;
-import org.hibernate.cache.CacheProvider;
-
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
@@ -32,6 +25,12 @@ import com.hazelcast.hibernate.instance.HazelcastInstanceFactory;
 import com.hazelcast.hibernate.instance.IHazelcastInstanceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import org.hibernate.cache.Cache;
+import org.hibernate.cache.CacheException;
+import org.hibernate.cache.CacheProvider;
+
+import java.util.Properties;
+import java.util.logging.Level;
 
 /**
  * Implementation of (deprecated) Hibernate <code>CacheProvider</code> interface for compatibility with pre-Hibernate
@@ -47,15 +46,15 @@ import com.hazelcast.logging.Logger;
 public final class HazelcastCacheProvider implements CacheProvider {
 
     private static final ILogger LOG = Logger.getLogger(HazelcastCacheProvider.class.getName());
-    
+
     private IHazelcastInstanceLoader instanceLoader = null;
     private HazelcastInstance instance;
 
     public HazelcastCacheProvider() {
     }
-    
+
     public HazelcastCacheProvider(final HazelcastInstance instance) {
-    	this.instance = instance;
+        this.instance = instance;
     }
 
     public Cache buildCache(final String name, final Properties properties) throws CacheException {
@@ -70,31 +69,30 @@ public final class HazelcastCacheProvider implements CacheProvider {
     }
 
     public long nextTimestamp() {
-    	return HazelcastTimestamper.nextTimestamp(instance);
+        return HazelcastTimestamper.nextTimestamp(instance);
     }
 
     public void start(final Properties props) throws CacheException {
         LOG.log(Level.INFO, "Starting up HazelcastCacheProvider...");
-        
-        if(instance == null || !instance.getLifecycleService().isRunning()) {
-        	instanceLoader = HazelcastInstanceFactory.createInstanceLoader(props);
-        	instance = instanceLoader.loadInstance();
+        if (instance == null || !instance.getLifecycleService().isRunning()) {
+            instanceLoader = HazelcastInstanceFactory.createInstanceLoader(props);
+            instance = instanceLoader.loadInstance();
         }
     }
-    
+
     public HazelcastInstance getHazelcastInstance() {
-    	return instance;
+        return instance;
     }
 
     /**
      * Calls <code>{@link Hazelcast#shutdown()}</code>.
      */
     public void stop() {
-        if(instanceLoader != null) {
-        	LOG.log(Level.INFO, "Shutting down HazelcastCacheProvider...");
-	        instanceLoader.unloadInstance();
-	        instance = null;
-	        instanceLoader = null;
-    	}
+        if (instanceLoader != null) {
+            LOG.log(Level.INFO, "Shutting down HazelcastCacheProvider...");
+            instanceLoader.unloadInstance();
+            instance = null;
+            instanceLoader = null;
+        }
     }
 }

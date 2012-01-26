@@ -17,15 +17,17 @@
 
 package com.hazelcast.util;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.List;
 
-import org.junit.Test;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for AddressUtil class.
  */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class AddressUtilTest {
 
     @Test
@@ -34,7 +36,7 @@ public class AddressUtilTest {
         assertEquals(1, members.size());
         assertEquals("10.11.12.13", members.get(0));
     }
-    
+
     @Test
     public void testEvery() throws Exception {
         final List<String> members = AddressUtil.handleMember("10.11.12.*");
@@ -44,7 +46,7 @@ public class AddressUtilTest {
             assertEquals("10.11.12." + (i++), member);
         }
     }
-    
+
     @Test
     public void testRange() throws Exception {
         final List<String> members = AddressUtil.handleMember("10.11.12.15-20");

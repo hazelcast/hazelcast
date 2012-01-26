@@ -17,16 +17,14 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.core.Hazelcast;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
-import com.hazelcast.config.AbstractXmlConfigHelper;
-import com.hazelcast.core.Hazelcast;
-
 
 public class HazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
@@ -35,11 +33,11 @@ public class HazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser 
         springXmlBuilder.handle(element);
         return springXmlBuilder.getBeanDefinition();
     }
-    
+
     private static class SpringXmlBuilder extends AbstractXmlConfigHelper {
 
         private final ParserContext parserContext;
-        
+
         private BeanDefinitionBuilder builder;
 
         public SpringXmlBuilder(ParserContext parserContext) {
@@ -64,5 +62,4 @@ public class HazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser 
             }
         }
     }
-
 }

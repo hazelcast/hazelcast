@@ -17,12 +17,12 @@
 
 package com.hazelcast.impl;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.nio.DataSerializable;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 public class IdGeneratorProxyImpl extends FactoryAwareNamedProxy implements IdGeneratorProxy, DataSerializable {
 
@@ -139,8 +139,8 @@ public class IdGeneratorProxyImpl extends FactoryAwareNamedProxy implements IdGe
         public Object getId() {
             return name;
         }
-        
+
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		}
+        }
     }
 }

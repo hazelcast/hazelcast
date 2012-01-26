@@ -17,11 +17,6 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.nio.IOUtil.toData;
-
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.InstanceDestroyedException;
 import com.hazelcast.core.Prefix;
@@ -31,6 +26,11 @@ import com.hazelcast.impl.monitor.LocalSemaphoreStatsImpl;
 import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
 import com.hazelcast.monitor.LocalSemaphoreStats;
 import com.hazelcast.nio.Data;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.nio.IOUtil.toData;
 
 public class SemaphoreProxyImpl extends FactoryAwareNamedProxy implements SemaphoreProxy {
     private transient SemaphoreProxy base = null;
@@ -487,8 +487,8 @@ public class SemaphoreProxyImpl extends FactoryAwareNamedProxy implements Semaph
         private boolean doTryAcquire(int permits, boolean attach, long timeout) throws InstanceDestroyedException {
             return newMSemaphore().tryAcquire(getNameAsData(), permits, attach, timeout);
         }
-        
+
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		}
+        }
     }
 }

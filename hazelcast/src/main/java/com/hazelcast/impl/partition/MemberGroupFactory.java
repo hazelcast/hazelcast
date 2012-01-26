@@ -15,15 +15,13 @@
  *
  */
 
-
 package com.hazelcast.impl.partition;
-
-import java.util.Collection;
 
 import com.hazelcast.impl.MemberImpl;
 
-public interface MemberGroupFactory {
-    
-    Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members);
+import java.util.Collection;
 
+public interface MemberGroupFactory {
+
+    Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members);
 }

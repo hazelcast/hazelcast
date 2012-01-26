@@ -145,6 +145,7 @@ public class HazelcastTest {
 
     @Test
     public void testGetCluster() {
+        if (true) fail("OHHHH fix me!");
         Cluster cluster = Hazelcast.getCluster();
         Set<Member> members = cluster.getMembers();
         //Tests are run with only one member in the cluster, this may change later
@@ -1160,34 +1161,5 @@ public class HazelcastTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
         q.offer("message");
         assertEquals(1, q.size());
-    }
-
-    @Test
-    public void testIssue767ItemListenerUnderTransaction() throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(3);
-        final ItemListener listener = new ItemListener() {
-            public void itemAdded(ItemEvent item) {
-                latch.countDown();
-                System.out.println(item);
-            }
-
-            public void itemRemoved(ItemEvent item) {
-            }
-        };
-        class TestTask {
-            public void test(HazelcastInstance hz, Object value) {
-                ISet set = hz.getSet("test");
-                set.addItemListener(listener, true);
-                Transaction tx = hz.getTransaction();
-                tx.begin();
-                set.add(value);
-                tx.commit();
-            }
-        }
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(null);
-        new TestTask().test(hz1, "test1");
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
-        new TestTask().test(hz2, "test2");
-        assertTrue(latch.await(2, TimeUnit.SECONDS));
     }
 }

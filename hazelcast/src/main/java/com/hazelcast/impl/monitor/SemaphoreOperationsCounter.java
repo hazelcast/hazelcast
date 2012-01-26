@@ -17,14 +17,14 @@
 
 package com.hazelcast.impl.monitor;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.hazelcast.monitor.LocalSemaphoreOperationStats;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class SemaphoreOperationsCounter extends OperationsCounterSupport<LocalSemaphoreOperationStats> {
-	
-	final private static LocalSemaphoreOperationStats empty = new LocalSemaphoreOperationStatsImpl();
-	
+
+    final private static LocalSemaphoreOperationStats empty = new LocalSemaphoreOperationStatsImpl();
+
     private OperationCounter modified = new OperationCounter();
     private OperationCounter nonModified = new OperationCounter();
     private OperationCounter acquires = new OperationCounter();
@@ -37,11 +37,11 @@ public class SemaphoreOperationsCounter extends OperationsCounterSupport<LocalSe
     private AtomicLong permitsReduced = new AtomicLong();
 
     public SemaphoreOperationsCounter() {
-    	super();
+        super();
     }
 
     public SemaphoreOperationsCounter(long interval) {
-    	super(interval);
+        super(interval);
     }
 
     public void incrementModified(long elapsed) {
@@ -70,7 +70,7 @@ public class SemaphoreOperationsCounter extends OperationsCounterSupport<LocalSe
 
     public void incrementReleases(long elapsed, int permits, boolean detached) {
         permitsReleased.addAndGet(permits);
-        if(detached)
+        if (detached)
             incrementNonAcquires(elapsed, -permits);
         else
             incrementNonAcquires(elapsed, 0);
@@ -95,7 +95,7 @@ public class SemaphoreOperationsCounter extends OperationsCounterSupport<LocalSe
         LocalSemaphoreOperationStatsImpl stats = new LocalSemaphoreOperationStatsImpl();
         stats.periodStart = ((SemaphoreOperationsCounter) listOfSubCounters.get(0)).startTime;
         for (Object obj : listOfSubCounters) {
-        	SemaphoreOperationsCounter sub = (SemaphoreOperationsCounter) obj;
+            SemaphoreOperationsCounter sub = (SemaphoreOperationsCounter) obj;
             stats.acquires.add(sub.acquires.count.get(), sub.acquires.totalLatency.get());
             stats.nonAcquires.add(sub.nonAcquires.count.get(), sub.nonAcquires.totalLatency.get());
             stats.numberOfRejectedAcquires += sub.rejectedAcquires.get();
@@ -139,8 +139,8 @@ public class SemaphoreOperationsCounter extends OperationsCounterSupport<LocalSe
         stats.periodEnd = now();
         return stats;
     }
-    
+
     LocalSemaphoreOperationStats getEmpty() {
-    	return empty;
+        return empty;
     }
 }

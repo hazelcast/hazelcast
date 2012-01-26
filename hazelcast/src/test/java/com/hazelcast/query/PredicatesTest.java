@@ -19,12 +19,14 @@ package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.sql.Timestamp;
 import java.util.Date;
 
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class PredicatesTest {
     @Test
     public void testEqual() {
@@ -149,17 +151,17 @@ public class PredicatesTest {
         assertEquals("(age>10 AND (active=true OR age BETWEEN 10 AND 15))", sql("age>10 AND (active or (age between 10 and 15))"));
         assertEquals("(age<=10 AND (active=true OR NOT(age BETWEEN 10 AND 15)))", sql("age<=10 AND (active or (age not between 10 and 15))"));
     }
-    
+
     @Test(expected = RuntimeException.class)
     public void testInvalidSqlPredicate1() {
-    	new SqlPredicate("invalid sql");
+        new SqlPredicate("invalid sql");
     }
-    
+
     @Test(expected = RuntimeException.class)
     public void testInvalidSqlPredicate2() {
-    	new SqlPredicate("");
+        new SqlPredicate("");
     }
-    
+
     private String sql(String sql) {
         return new SqlPredicate(sql).toString();
     }

@@ -17,11 +17,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.hazelcast.nio.DataSerializable;
 
 public final class GroupConfig implements DataSerializable {
 
@@ -78,11 +78,11 @@ public final class GroupConfig implements DataSerializable {
         this.password = password;
         return this;
     }
-    
+
     @Override
     public int hashCode() {
-        return (name != null ? name.hashCode() : 0) + 
-            31 * (password != null ? password.hashCode() : 0);
+        return (name != null ? name.hashCode() : 0) +
+                31 * (password != null ? password.hashCode() : 0);
     }
 
     @Override
@@ -93,16 +93,14 @@ public final class GroupConfig implements DataSerializable {
             return false;
         GroupConfig other = (GroupConfig) obj;
         return (this.name == null ? other.name == null : this.name.equals(other.name)) &&
-            (this.password == null ? other.password == null : this.password.equals(other.password));
+                (this.password == null ? other.password == null : this.password.equals(other.password));
     }
-    
-    
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("GroupConfig [name=").append(this.name).append(", password=");
-        for(int i = 0, len = password.length(); i < len; i++){
+        for (int i = 0, len = password.length(); i < len; i++) {
             builder.append('*');
         }
         builder.append("]");
@@ -113,7 +111,7 @@ public final class GroupConfig implements DataSerializable {
         out.writeUTF(name);
         out.writeUTF(password);
     }
-    
+
     public void readData(DataInput in) throws IOException {
         name = in.readUTF();
         password = in.readUTF();

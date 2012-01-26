@@ -17,17 +17,17 @@
 
 package com.hazelcast.impl.base;
 
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.logging.Level;
-
 import com.hazelcast.impl.DefaultProxyFactory;
-import com.hazelcast.impl.ProxyFactory;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.ProxyFactory;
 import com.hazelcast.impl.concurrentmap.DefaultRecordFactory;
 import com.hazelcast.impl.concurrentmap.RecordFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
+
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.logging.Level;
 
 public class DefaultNodeInitializer implements NodeInitializer {
 
@@ -40,7 +40,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
     protected boolean simpleRecord = false;
 
     public void beforeInitialize(Node node) {
-    	this.node = node;
+        this.node = node;
         systemLogger = node.getLogger("com.hazelcast.system");
         logger = node.getLogger("com.hazelcast.initializer");
         parseSystemProps();
@@ -52,7 +52,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
                 + build + ") starting at " + node.getThisAddress());
         systemLogger.log(Level.INFO, "Copyright (C) 2008-2011 Hazelcast.com");
     }
-    
+
     public void afterInitialize(Node node) {
     }
 
@@ -98,15 +98,15 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
 
     public ProxyFactory getProxyFactory() {
-    	return new DefaultProxyFactory(node.factory);
+        return new DefaultProxyFactory(node.factory);
     }
-    
+
     public SecurityContext getSecurityContext() {
         logger.log(Level.WARNING, "Security features are only available on Hazelcast Enterprise Edition!");
         return null;
     }
-    
+
     public void destroy() {
-    	logger.log(Level.INFO, "Destroying node initializer.");
+        logger.log(Level.INFO, "Destroying node initializer.");
     }
 }

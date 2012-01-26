@@ -28,6 +28,7 @@ import com.hazelcast.query.SqlPredicate;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -38,6 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.nio.IOUtil.toData;
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MapStoreTest extends TestUtil {
 
     @BeforeClass

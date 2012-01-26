@@ -24,7 +24,7 @@ import com.hazelcast.nio.Data;
 
 public interface RecordFactory {
 
-	Record createNewRecord(CMap cmap, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id);
-	
-	NearCacheRecord createNewNearCacheRecord(CMap cmap, Data key, Data value);
+    Record createNewRecord(CMap cmap, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id);
+
+    NearCacheRecord createNewNearCacheRecord(CMap cmap, Data key, Data value);
 }

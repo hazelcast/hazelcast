@@ -795,24 +795,21 @@ public class QueryTest extends TestUtil {
         assertEquals(1, set.size());
         assertEquals(1, map.values(new SqlPredicate("this=15")).size());
     }
-    
+
     /**
      * Test for issue 711
      */
     @Test
     public void testPredicateWithEntryKeyObject() {
-    	IMap map = Hazelcast.getMap("test");
-		map.put("1", 11);
-		map.put("2", 22);
-		map.put("3", 33);
-
-		Predicate predicate = new PredicateBuilder().getEntryObject().key().equal("1");
-		assertEquals(1, map.values(predicate).size());
-
-		predicate = new PredicateBuilder().getEntryObject().key().in("2", "3");
-		assertEquals(2, map.keySet(predicate).size());
-		
-		Hazelcast.shutdownAll();
+        IMap map = Hazelcast.getMap("test");
+        map.put("1", 11);
+        map.put("2", 22);
+        map.put("3", 33);
+        Predicate predicate = new PredicateBuilder().getEntryObject().key().equal("1");
+        assertEquals(1, map.values(predicate).size());
+        predicate = new PredicateBuilder().getEntryObject().key().in("2", "3");
+        assertEquals(2, map.keySet(predicate).size());
+        Hazelcast.shutdownAll();
     }
 
     public void doFunctionalSQLQueryTest(IMap imap) {
@@ -896,68 +893,66 @@ public class QueryTest extends TestUtil {
             assertTrue(c.getAge() <= 40);
         }
     }
-    
+
     @Test
     public void testInvalidSqlPredicate() {
-    	IMap map = Hazelcast.getMap("employee");
-    	map.put(1, new Employee("e", 1, false, 0));
-    	map.put(2, new Employee("e2", 1, false, 0));
-    	try {
-    		map.values(new SqlPredicate("invalid_sql"));
-    		fail("Should fail because of invalid SQL!");
-		} catch (RuntimeException e) {
-			assertEquals("There is no suitable accessor for 'invalid_sql'", e.getMessage());
-		}
-		try {
-    		map.values(new SqlPredicate("invalid sql"));
-    		fail("Should fail because of invalid SQL!");
-		} catch (RuntimeException e) {
-			assertEquals("Invalid SQL: [invalid sql]", e.getMessage());
-		}
-		try {
-    		map.values(new SqlPredicate("invalid and sql"));
-    		fail("Should fail because of invalid SQL!");
-		} catch (RuntimeException e) {
-			assertEquals("There is no suitable accessor for 'invalid'", e.getMessage());
-		}
-		try {
-    		map.values(new SqlPredicate("invalid sql and"));
-    		fail("Should fail because of invalid SQL!");
-		} catch (RuntimeException e) {
-			assertEquals("There is no suitable accessor for 'invalid'", e.getMessage());
-		}
-		try {
-    		map.values(new SqlPredicate(""));
-    		fail("Should fail because of invalid SQL!");
-		} catch (RuntimeException e) {
-			assertEquals("Invalid SQL: []", e.getMessage());
-		}
-		assertEquals(2, map.values(new SqlPredicate("age=1 and name like 'e%'")).size());
+        IMap map = Hazelcast.getMap("employee");
+        map.put(1, new Employee("e", 1, false, 0));
+        map.put(2, new Employee("e2", 1, false, 0));
+        try {
+            map.values(new SqlPredicate("invalid_sql"));
+            fail("Should fail because of invalid SQL!");
+        } catch (RuntimeException e) {
+            assertEquals("There is no suitable accessor for 'invalid_sql'", e.getMessage());
+        }
+        try {
+            map.values(new SqlPredicate("invalid sql"));
+            fail("Should fail because of invalid SQL!");
+        } catch (RuntimeException e) {
+            assertEquals("Invalid SQL: [invalid sql]", e.getMessage());
+        }
+        try {
+            map.values(new SqlPredicate("invalid and sql"));
+            fail("Should fail because of invalid SQL!");
+        } catch (RuntimeException e) {
+            assertEquals("There is no suitable accessor for 'invalid'", e.getMessage());
+        }
+        try {
+            map.values(new SqlPredicate("invalid sql and"));
+            fail("Should fail because of invalid SQL!");
+        } catch (RuntimeException e) {
+            assertEquals("There is no suitable accessor for 'invalid'", e.getMessage());
+        }
+        try {
+            map.values(new SqlPredicate(""));
+            fail("Should fail because of invalid SQL!");
+        } catch (RuntimeException e) {
+            assertEquals("Invalid SQL: []", e.getMessage());
+        }
+        assertEquals(2, map.values(new SqlPredicate("age=1 and name like 'e%'")).size());
     }
-    
+
     @Test
-	public void testMapIndexInitialization() {
-		Config config = new Config();
-		MapConfig mapConfig = config.getMapConfig("testMapIndexInitialization");
-		mapConfig.addMapIndexConfig(new MapIndexConfig("name", false));
-		mapConfig.addMapIndexConfig(new MapIndexConfig("age", true));
-		
-		HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-		IMap map = hz.getMap(mapConfig.getName());
-		CMap cmap = TestUtil.getCMap(hz, mapConfig.getName());
-		Map<Expression, Index> indexes = cmap.getMapIndexService().getIndexes();
-		assertEquals(2, indexes.size());
-		
-		for (Entry<Expression, Index> e : indexes.entrySet()) {
-			Index index = e.getValue();
-			if("name".equals(e.getKey().toString())) {
-				assertFalse(index.isOrdered());
-			} else if("age".equals(e.getKey().toString())) {
-				assertTrue(index.isOrdered());
-			} else {
-				fail("Unknown expression: " + e.getKey() 
-						+ "! Has toString() of GetExpressionImpl changed?");
-			}
-		}
-	}
+    public void testMapIndexInitialization() {
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig("testMapIndexInitialization");
+        mapConfig.addMapIndexConfig(new MapIndexConfig("name", false));
+        mapConfig.addMapIndexConfig(new MapIndexConfig("age", true));
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        IMap map = hz.getMap(mapConfig.getName());
+        CMap cmap = TestUtil.getCMap(hz, mapConfig.getName());
+        Map<Expression, Index> indexes = cmap.getMapIndexService().getIndexes();
+        assertEquals(2, indexes.size());
+        for (Entry<Expression, Index> e : indexes.entrySet()) {
+            Index index = e.getValue();
+            if ("name".equals(e.getKey().toString())) {
+                assertFalse(index.isOrdered());
+            } else if ("age".equals(e.getKey().toString())) {
+                assertTrue(index.isOrdered());
+            } else {
+                fail("Unknown expression: " + e.getKey()
+                        + "! Has toString() of GetExpressionImpl changed?");
+            }
+        }
+    }
 }

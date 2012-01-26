@@ -106,7 +106,7 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         Collection<Integer> collection = multiMap.get("a");
         assertEquals(Values.class, collection.getClass());
         assertEquals(2, collection.size());
-        for (Iterator<Integer> it = collection.iterator(); it.hasNext();) {
+        for (Iterator<Integer> it = collection.iterator(); it.hasNext(); ) {
             Integer o = it.next();
             map.get(o).countDown();
         }
@@ -126,7 +126,7 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         Collection<Integer> collection = multiMap.remove("a");
         assertEquals(Values.class, collection.getClass());
         assertEquals(2, collection.size());
-        for (Iterator<Integer> it = collection.iterator(); it.hasNext();) {
+        for (Iterator<Integer> it = collection.iterator(); it.hasNext(); ) {
             Object o = it.next();
             map.get((Integer) o).countDown();
         }
@@ -174,7 +174,7 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         assertEquals(count * (count + 1) / 2, multiMap.size());
         Set<Entry<String, String>> set = multiMap.entrySet();
         assertEquals(count * (count + 1) / 2, set.size());
-        for (Iterator<Entry<String, String>> iterator = set.iterator(); iterator.hasNext();) {
+        for (Iterator<Entry<String, String>> iterator = set.iterator(); iterator.hasNext(); ) {
             Entry<String, String> o = iterator.next();
             assertTrue(Integer.valueOf(o.getValue()) < count);
             assertTrue(keyValueListMap.get(o.getKey()).contains(o.getValue()));
@@ -203,7 +203,7 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         assertEquals(count * (count + 1) / 2, collection.size());
         Iterator<String> iterator = collection.iterator();
         System.out.println(iterator.getClass());
-        for (; iterator.hasNext();) {
+        for (; iterator.hasNext(); ) {
             String value = iterator.next();
             assertNotNull(valueKeyListMap.get(value).remove(0));
             if (valueKeyListMap.get(value).size() == 0) {

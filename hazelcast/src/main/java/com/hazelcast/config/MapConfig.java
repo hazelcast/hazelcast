@@ -381,43 +381,43 @@ public class MapConfig implements DataSerializable {
     public StorageType getStorageType() {
         return storageType;
     }
-    
+
     public MapConfig setStorageType(StorageType storageType) {
         this.storageType = storageType;
         return this;
     }
-    
+
     public MapConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
-    	getEntryListenerConfigs().add(listenerConfig);
-    	return this;
+        getEntryListenerConfigs().add(listenerConfig);
+        return this;
     }
-    
+
     public List<EntryListenerConfig> getEntryListenerConfigs() {
-    	if (listenerConfigs == null) {
-    		listenerConfigs = new ArrayList<EntryListenerConfig>();
-    	}
-		return listenerConfigs;
-	}
+        if (listenerConfigs == null) {
+            listenerConfigs = new ArrayList<EntryListenerConfig>();
+        }
+        return listenerConfigs;
+    }
 
     public void setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
-		this.listenerConfigs = listenerConfigs;
-	}
+        this.listenerConfigs = listenerConfigs;
+    }
 
     public MapConfig addMapIndexConfig(MapIndexConfig mapIndexConfig) {
-    	getMapIndexConfigs().add(mapIndexConfig);
-    	return this;
+        getMapIndexConfigs().add(mapIndexConfig);
+        return this;
     }
 
     public List<MapIndexConfig> getMapIndexConfigs() {
-    	if (mapIndexConfigs == null) {
-    		mapIndexConfigs = new ArrayList<MapIndexConfig>();
-    	}
-		return mapIndexConfigs;
-	}
-    
+        if (mapIndexConfigs == null) {
+            mapIndexConfigs = new ArrayList<MapIndexConfig>();
+        }
+        return mapIndexConfigs;
+    }
+
     public void setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
-		this.mapIndexConfigs = mapIndexConfigs;
-	}
+        this.mapIndexConfigs = mapIndexConfigs;
+    }
 
     public boolean isCompatible(MapConfig other) {
         if (this == other)

@@ -56,19 +56,19 @@ public class CountDownLatchMBean extends AbstractMBean<ICountDownLatch> {
 
     @JMXOperation("countDown")
     @JMXDescription("perform a countdown operation")
-    public void countDown(){
+    public void countDown() {
         getManagedObject().countDown();
     }
 
     @JMXOperation("getCount")
     @JMXDescription("return current count value")
     public long getCount() {
-        return ((CountDownLatchProxy)getManagedObject()).getCount();
+        return ((CountDownLatchProxy) getManagedObject()).getCount();
     }
 
     @JMXOperation("getOwner")
     @JMXDescription("return current count owner")
     public Member getOwner() {
-        return ((CountDownLatchProxy)getManagedObject()).getOwner();
+        return ((CountDownLatchProxy) getManagedObject()).getOwner();
     }
 }

@@ -33,7 +33,7 @@ import java.util.logging.Level;
 public class Util {
 
     final static ILogger logger = Logger.getLogger(Util.class.getName());
-    
+
     public static void checkSerializable(Object obj) {
         if (obj == null) {
             throw new NullPointerException("Object cannot be null.");
@@ -42,28 +42,26 @@ public class Util {
             throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
         }
     }
-    
+
     public static void throwUncheckedException(Throwable t) {
-    	if(t instanceof Error) {
-			throw (Error) t;
-		} else if(t instanceof RuntimeException) {
-			throw (RuntimeException) t;
-		} else {
-			throw new RuntimeException((Throwable) t);
-		}
+        if (t instanceof Error) {
+            throw (Error) t;
+        } else if (t instanceof RuntimeException) {
+            throw (RuntimeException) t;
+        } else {
+            throw new RuntimeException((Throwable) t);
+        }
     }
-    
+
     public static int hashCode(final byte[] data) {
-    	if (data == null) return Integer.MIN_VALUE;
-        
+        if (data == null) return Integer.MIN_VALUE;
         // FNV (Fowler/Noll/Vo) Hash "1a"
-	    final int prime = 0x01000193;
-	    int hash = 0x811c9dc5;
-	
-	    for (int i = data.length-1; i >= 0; i--) {
-	    	hash = (hash ^ data[i]) * prime;
-	    }
-	    return hash;
+        final int prime = 0x01000193;
+        int hash = 0x811c9dc5;
+        for (int i = data.length - 1; i >= 0; i--) {
+            hash = (hash ^ data[i]) * prime;
+        }
+        return hash;
 //	    return Arrays.hashCode(data);
     }
 

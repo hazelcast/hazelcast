@@ -73,16 +73,15 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
      * copied from JDK 1.6 {@link ThreadInfo} toString()
      */
     protected void appendThreadInfo(ThreadInfo info, StringBuilder sb) {
-        sb.append("\"").append(info.getThreadName()).append( "\"").append(
+        sb.append("\"").append(info.getThreadName()).append("\"").append(
                 " Id=").append(info.getThreadId()).append(" ").append(
                 info.getThreadState());
-        
         if (info.getLockName() != null) {
             sb.append(" on ").append(info.getLockName());
         }
         if (info.getLockOwnerName() != null) {
             sb.append(" owned by \"").append(info.getLockOwnerName()).
-                    append("\" Id=").append( + info.getLockOwnerId());
+                    append("\" Id=").append(+info.getLockOwnerId());
         }
         if (info.isSuspended()) {
             sb.append(" (suspended)");
@@ -91,16 +90,13 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
             sb.append(" (in native)");
         }
         sb.append('\n');
-        
         final StackTraceElement[] stackTrace = info.getStackTrace();
         final Object lockInfo = objectCall(info, ThreadInfo_getLockInfo);
         final Object[] monitorInfo = objectCall(info, ThreadInfo_getLockedMonitors);
-        
         for (int i = 0; i < stackTrace.length; i++) {
             StackTraceElement ste = stackTrace[i];
             sb.append("\tat ").append(ste.toString());
             sb.append('\n');
-            
             if (i == 0 && lockInfo != null) {
                 Thread.State ts = info.getThreadState();
                 switch (ts) {
@@ -119,7 +115,6 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
                     default:
                 }
             }
-            
             for (Object mi : monitorInfo) {
                 Integer depth = objectCall(mi, MonitorInfo_getLockedStackDepth);
                 if (depth == i) {
@@ -128,7 +123,6 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
                 }
             }
         }
-        
         final Object[] locks = objectCall(info, ThreadInfo_getLockedSynchronizers);
         if (locks.length > 0) {
             sb.append("\n\tNumber of locked synchronizers = ").append(locks.length);

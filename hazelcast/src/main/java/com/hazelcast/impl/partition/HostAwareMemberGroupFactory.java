@@ -15,15 +15,14 @@
  *
  */
 
-
 package com.hazelcast.impl.partition;
+
+import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.nio.Address;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.nio.Address;
 
 public class HostAwareMemberGroupFactory implements MemberGroupFactory {
 
@@ -40,5 +39,4 @@ public class HostAwareMemberGroupFactory implements MemberGroupFactory {
         }
         return groups.values();
     }
-
 }

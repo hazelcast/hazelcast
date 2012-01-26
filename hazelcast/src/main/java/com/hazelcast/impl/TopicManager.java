@@ -132,19 +132,19 @@ public class TopicManager extends BaseManager {
             this.name = name;
             initializeListeners();
         }
-        
+
         private void initializeListeners() {
-			final TopicConfig topicConfig = node.config.findMatchingTopicConfig(name);
-			for (ListenerConfig lc : topicConfig.getMessageListenerConfigs()) {
-				try {
-					node.listenerManager.createAndAddListenerItem(name, lc, InstanceType.TOPIC);
-					for (MemberImpl member : node.clusterManager.getMembers()) {
-						addListener(member.getAddress(), true);
-					}
-				} catch (Exception e) {
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
-			}
+            final TopicConfig topicConfig = node.config.findMatchingTopicConfig(name);
+            for (ListenerConfig lc : topicConfig.getMessageListenerConfigs()) {
+                try {
+                    node.listenerManager.createAndAddListenerItem(name, lc, InstanceType.TOPIC);
+                    for (MemberImpl member : node.clusterManager.getMembers()) {
+                        addListener(member.getAddress(), true);
+                    }
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                }
+            }
         }
 
         public void addListener(final Address address, final boolean includeValue) {

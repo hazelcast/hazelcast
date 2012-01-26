@@ -137,7 +137,7 @@ public class NearCache {
         checkThread();
         if (cache.size() != sortedMap.size()) {
             logger.log(Level.WARNING, cmap.getName() + " cache and sorted map size should be the same: "
-                    + cache.size() + " vs. " + sortedMap.size() 
+                    + cache.size() + " vs. " + sortedMap.size()
                     + "/nCheck equals and hashCode of key object!");
         }
         if (cache.size() + 1 >= maxSize) {
@@ -181,9 +181,9 @@ public class NearCache {
         if (theKey != null) {
             final CacheEntry removedCacheEntry = cache.remove(theKey);
             if (removedCacheEntry != null) {
-            	removedCacheEntry.invalidate();
+                removedCacheEntry.invalidate();
             } else {
-            	logger.log(Level.WARNING, cmap.name + " removed CacheEntry cannot be null");
+                logger.log(Level.WARNING, cmap.name + " removed CacheEntry cannot be null");
             }
         }
     }

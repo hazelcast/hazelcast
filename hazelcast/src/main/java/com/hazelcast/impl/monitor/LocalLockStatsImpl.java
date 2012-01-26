@@ -20,11 +20,11 @@ package com.hazelcast.impl.monitor;
 import com.hazelcast.monitor.LocalLockOperationStats;
 import com.hazelcast.monitor.LocalLockStats;
 
-public class LocalLockStatsImpl extends LocalInstanceStatsSupport<LocalLockOperationStats> 
-	implements LocalLockStats {
+public class LocalLockStatsImpl extends LocalInstanceStatsSupport<LocalLockOperationStats>
+        implements LocalLockStats {
 
-	@Override
-	LocalLockOperationStats newOperationStatsInstance() {
-		return new LocalLockOperationStatsImpl();
-	}
+    @Override
+    LocalLockOperationStats newOperationStatsInstance() {
+        return new LocalLockOperationStatsImpl();
+    }
 }

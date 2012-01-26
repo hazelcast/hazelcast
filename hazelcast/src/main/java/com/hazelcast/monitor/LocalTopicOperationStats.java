@@ -22,7 +22,6 @@ public interface LocalTopicOperationStats extends LocalInstanceOperationStats {
     /**
      * Returns the number of publish operations.
      *
-     *
      * @return number of publish operations
      */
     public long getNumberOfPublishes();

@@ -56,10 +56,10 @@ import java.util.SortedMap;
  * {@code NavigableMap}.  Similarly,
  * {@link #keySet()} can be overriden to return {@code NavigableSet}.
  *
- * @author Doug Lea
- * @author Josh Bloch
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
+ * @author Doug Lea
+ * @author Josh Bloch
  */
 public interface NavigableMap<K, V> extends SortedMap<K, V> {
     /**
@@ -356,7 +356,7 @@ public interface NavigableMap<K, V> extends SortedMap<K, V> {
     /**
      * {@inheritDoc}
      * <p/>
-     * <p>Equivalent to {@code subMap(fromKey,true,toKey,false)}.
+     * <p>Equivalent to {@code subMap(fromKey, true, toKey, false)}.
      *
      * @throws ClassCastException       {@inheritDoc}
      * @throws NullPointerException     {@inheritDoc}
@@ -367,7 +367,7 @@ public interface NavigableMap<K, V> extends SortedMap<K, V> {
     /**
      * {@inheritDoc}
      * <p/>
-     * <p>Equivalent to {@code headMap(toKey,false)}.
+     * <p>Equivalent to {@code headMap(toKey, false)}.
      *
      * @throws ClassCastException       {@inheritDoc}
      * @throws NullPointerException     {@inheritDoc}
@@ -378,7 +378,7 @@ public interface NavigableMap<K, V> extends SortedMap<K, V> {
     /**
      * {@inheritDoc}
      * <p/>
-     * <p>Equivalent to {@code tailMap(fromKey,true)}.
+     * <p>Equivalent to {@code tailMap(fromKey, true)}.
      *
      * @throws ClassCastException       {@inheritDoc}
      * @throws NullPointerException     {@inheritDoc}

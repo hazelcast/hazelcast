@@ -17,6 +17,12 @@
 
 package com.hazelcast.impl.partition;
 
+import com.hazelcast.cluster.AbstractRemotelyProcessable;
+import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.impl.PartitionManager;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -24,12 +30,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.hazelcast.cluster.AbstractRemotelyProcessable;
-import com.hazelcast.cluster.MemberInfo;
-import com.hazelcast.impl.PartitionManager;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
 
 public class ClusterRuntimeState extends AbstractRemotelyProcessable {
     private ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);

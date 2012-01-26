@@ -39,10 +39,9 @@ public abstract class ClientRunnable implements Runnable {
     }
 
     public void shutdown() {
-        if(terminated){
+        if (terminated) {
             return;
         }
-
         synchronized (monitor) {
             running = false;
             while (!terminated) {

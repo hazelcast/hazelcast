@@ -17,9 +17,9 @@
 
 package com.hazelcast.hibernate.entity;
 
-import java.util.Properties;
-
 import com.hazelcast.hibernate.access.ReadWriteAccessDelegate;
+
+import java.util.Properties;
 
 /**
  * Makes <b>READ COMMITTED</b> consistency guarantees even in a clustered environment.

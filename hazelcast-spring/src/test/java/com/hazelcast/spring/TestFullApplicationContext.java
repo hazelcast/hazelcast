@@ -23,7 +23,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.wan.WanReplicationEndpoint;
 import com.hazelcast.merge.MergePolicy;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -82,30 +81,30 @@ public class TestFullApplicationContext {
     @Resource(name = "atomicNumber")
     private AtomicNumber atomicLong;
 
-    @Resource(name="countDownLatch")
+    @Resource(name = "countDownLatch")
     private ICountDownLatch countDownLatch;
 
-    @Resource(name="semaphore")
+    @Resource(name = "semaphore")
     private ISemaphore semaphore;
 
     @Resource(name = "dummyMapStore")
     private MapStore dummyMapStore;
-    
+
     @Autowired
     private MapStoreFactory dummyMapStoreFactory;
-    
+
     @Autowired
     private WanReplicationEndpoint wanReplication;
-    
+
     @Autowired
     private MergePolicy dummyMergePolicy;
-    
+
     @Autowired
     private MembershipListener membershipListener;
-    
+
     @Autowired
     private EntryListener entryListener;
-    
+
     @Resource(name = "liteConfig")
     private Config liteConfig;
 
@@ -137,14 +136,14 @@ public class TestFullApplicationContext {
         assertEquals(StorageType.HEAP, testMapConfig.getStorageType());
         assertEquals(2, testMapConfig.getMapIndexConfigs().size());
         for (MapIndexConfig index : testMapConfig.getMapIndexConfigs()) {
-			if("name".equals(index.getAttribute())) {
-				assertFalse(index.isOrdered());
-			} else if("age".equals(index.getAttribute())) {
-				assertTrue(index.isOrdered());
-			} else {
-				fail("unknown index!");
-			}
-		}
+            if ("name".equals(index.getAttribute())) {
+                assertFalse(index.isOrdered());
+            } else if ("age".equals(index.getAttribute())) {
+                assertTrue(index.isOrdered());
+            } else {
+                fail("unknown index!");
+            }
+        }
         // Test that the testMapConfig has a mapStoreConfig and it is correct
         MapStoreConfig testMapStoreConfig = testMapConfig.getMapStoreConfig();
         assertNotNull(testMapStoreConfig);
@@ -169,17 +168,17 @@ public class TestFullApplicationContext {
         assertEquals("LRU", testMapConfig2.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(2, testMapConfig2.getEntryListenerConfigs().size());
         for (EntryListenerConfig listener : testMapConfig2.getEntryListenerConfigs()) {
-			if(listener.getClassName() != null) {
-				assertNull(listener.getImplementation());
-				assertTrue(listener.isIncludeValue());
-				assertFalse(listener.isLocal());
-			} else {
-				assertNotNull(listener.getImplementation());
-				assertEquals(entryListener, listener.getImplementation());
-				assertTrue(listener.isLocal());
-				assertTrue(listener.isIncludeValue());
-			}
-		}
+            if (listener.getClassName() != null) {
+                assertNull(listener.getImplementation());
+                assertTrue(listener.isIncludeValue());
+                assertFalse(listener.isLocal());
+            } else {
+                assertNotNull(listener.getImplementation());
+                assertEquals(entryListener, listener.getImplementation());
+                assertTrue(listener.isLocal());
+                assertTrue(listener.isIncludeValue());
+            }
+        }
         MapConfig simpleMapConfig = config.getMapConfig("simpleMap");
         assertNotNull(simpleMapConfig);
         assertEquals("simpleMap", simpleMapConfig.getName());
@@ -193,12 +192,10 @@ public class TestFullApplicationContext {
         assertNull(simpleMapConfig.getMapStoreConfig());
         // Test that the simpleMapConfig does NOT have a nearCacheConfig
         assertNull(simpleMapConfig.getNearCacheConfig());
-        
         MapConfig testMapConfig3 = config.getMapConfig("testMap3");
         assertEquals("com.hazelcast.spring.DummyStoreFactory", testMapConfig3.getMapStoreConfig().getFactoryClassName());
         assertFalse(testMapConfig3.getMapStoreConfig().getProperties().isEmpty());
         assertEquals(testMapConfig3.getMapStoreConfig().getProperty("dummy.property"), "value");
-        
         MapConfig testMapConfig4 = config.getMapConfig("testMap4");
         assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
     }
@@ -218,26 +215,26 @@ public class TestFullApplicationContext {
         assertEquals("com.hazelcast.spring.DummyItemListener", listenerConfig.getClassName());
         assertTrue(listenerConfig.isIncludeValue());
     }
-    
+
     @Test
     public void testMultimapConfig() {
-    	MultiMapConfig testMultiMapConfig = config.getMultiMapConfig("testMultimap");
-    	assertEquals(MultiMapConfig.ValueCollectionType.LIST, testMultiMapConfig.getValueCollectionType());
+        MultiMapConfig testMultiMapConfig = config.getMultiMapConfig("testMultimap");
+        assertEquals(MultiMapConfig.ValueCollectionType.LIST, testMultiMapConfig.getValueCollectionType());
         assertEquals(2, testMultiMapConfig.getEntryListenerConfigs().size());
         for (EntryListenerConfig listener : testMultiMapConfig.getEntryListenerConfigs()) {
-			if(listener.getClassName() != null) {
-				assertNull(listener.getImplementation());
-				assertTrue(listener.isIncludeValue());
-				assertFalse(listener.isLocal());
-			} else {
-				assertNotNull(listener.getImplementation());
-				assertEquals(entryListener, listener.getImplementation());
-				assertTrue(listener.isLocal());
-				assertTrue(listener.isIncludeValue());
-			}
-		}
+            if (listener.getClassName() != null) {
+                assertNull(listener.getImplementation());
+                assertTrue(listener.isIncludeValue());
+                assertFalse(listener.isLocal());
+            } else {
+                assertNotNull(listener.getImplementation());
+                assertEquals(entryListener, listener.getImplementation());
+                assertTrue(listener.isLocal());
+                assertTrue(listener.isIncludeValue());
+            }
+        }
     }
-    
+
     @Test
     public void testTopicConfig() {
         TopicConfig testTopicConfig = config.getTopicConfig("testTopic");
@@ -291,7 +288,6 @@ public class TestFullApplicationContext {
         assertEquals("127.0.0.1:5700", members.get(0));
         assertEquals("127.0.0.1:5701", members.get(1));
         assertEquals("127.0.0.1:5700", tcp.getRequiredMember());
-        
         AwsConfig aws = networkConfig.getJoin().getAwsConfig();
         assertFalse(aws.isEnabled());
         assertEquals("sample-access-key", aws.getAccessKey());
@@ -361,51 +357,49 @@ public class TestFullApplicationContext {
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }
-    
+
     @Test
     public void testWanReplicationConfig() {
-    	WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan");
-    	assertNotNull(wcfg);
-    	assertEquals(2, wcfg.getTargetClusterConfigs().size());
-    	
-    	WanTargetClusterConfig targetCfg = wcfg.getTargetClusterConfigs().get(0);
-    	assertNotNull(targetCfg);
-    	assertEquals("tokyo", targetCfg.getGroupName());
-    	assertEquals("tokyo-pass", targetCfg.getGroupPassword());
-    	assertEquals("com.hazelcast.impl.wan.WanNoDelayReplication", targetCfg.getReplicationImpl());
-    	assertEquals(2, targetCfg.getEndpoints().size());
-    	assertEquals("10.2.1.1:5701", targetCfg.getEndpoints().get(0));
-    	assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
-    	
-    	assertEquals(wanReplication, wcfg.getTargetClusterConfigs().get(1).getReplicationImplObject());
+        WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan");
+        assertNotNull(wcfg);
+        assertEquals(2, wcfg.getTargetClusterConfigs().size());
+        WanTargetClusterConfig targetCfg = wcfg.getTargetClusterConfigs().get(0);
+        assertNotNull(targetCfg);
+        assertEquals("tokyo", targetCfg.getGroupName());
+        assertEquals("tokyo-pass", targetCfg.getGroupPassword());
+        assertEquals("com.hazelcast.impl.wan.WanNoDelayReplication", targetCfg.getReplicationImpl());
+        assertEquals(2, targetCfg.getEndpoints().size());
+        assertEquals("10.2.1.1:5701", targetCfg.getEndpoints().get(0));
+        assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
+        assertEquals(wanReplication, wcfg.getTargetClusterConfigs().get(1).getReplicationImplObject());
     }
-    
+
     @Test
     public void testMapMergePolicyConfig() {
-    	Map<String, MergePolicyConfig> merges = config.getMergePolicyConfigs();
-    	assertEquals(1, merges.size());
-    	MergePolicyConfig cfg = merges.values().iterator().next();
-    	assertEquals("hz.MERGE_POLICY_TEST", cfg.getName());
-    	assertEquals("com.hazelcast.spring.TestMapMergePolicy", cfg.getClassName());
-    	assertEquals(dummyMergePolicy, cfg.getImplementation());
+        Map<String, MergePolicyConfig> merges = config.getMergePolicyConfigs();
+        assertEquals(1, merges.size());
+        MergePolicyConfig cfg = merges.values().iterator().next();
+        assertEquals("hz.MERGE_POLICY_TEST", cfg.getName());
+        assertEquals("com.hazelcast.spring.TestMapMergePolicy", cfg.getClassName());
+        assertEquals(dummyMergePolicy, cfg.getImplementation());
     }
-    
+
     @Test
     public void testConfigListeners() {
-    	assertNotNull(membershipListener);
-    	List<ListenerConfig> list = config.getListenerConfigs();
-    	assertEquals(2, list.size());
-    	for (ListenerConfig lc : list) {
-			if(lc.getClassName() != null) {
-				assertNull(lc.getImplementation());
-				assertEquals(DummyMembershipListener.class.getName(), lc.getClassName());
-			} else {
-				assertNotNull(lc.getImplementation());
-				assertEquals(membershipListener, lc.getImplementation());
-			}
-		}
+        assertNotNull(membershipListener);
+        List<ListenerConfig> list = config.getListenerConfigs();
+        assertEquals(2, list.size());
+        for (ListenerConfig lc : list) {
+            if (lc.getClassName() != null) {
+                assertNull(lc.getImplementation());
+                assertEquals(DummyMembershipListener.class.getName(), lc.getClassName());
+            } else {
+                assertNotNull(lc.getImplementation());
+                assertEquals(membershipListener, lc.getImplementation());
+            }
+        }
     }
-    
+
     @Test
     public void testLiteMember() {
         assertNotNull(liteConfig);

@@ -1,9 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
 <para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
-      xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg"
-      xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml"
-      xmlns:db="http://docbook.org/ns/docbook">Hazelcast provides distributed second level cache for
+        >Hazelcast provides distributed second level cache for
     your Hibernate entities, collections and queries. Hazelcast has two implementations of Hibernate
     2nd level cache, one for hibernate-pre-3.3 and one for hibernate-3.3.x versions. In your
     Hibernate configuration file (ex: hibernate.cfg.xml), add these properties;

@@ -17,13 +17,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.hazelcast.nio.DataSerializable;
 
 public final class QueueConfig implements DataSerializable {
 
@@ -88,22 +88,22 @@ public final class QueueConfig implements DataSerializable {
         this.backingMapRef = backingMapRef;
         return this;
     }
-    
+
     public QueueConfig addItemListenerConfig(ItemListenerConfig listenerConfig) {
-    	getItemListenerConfigs().add(listenerConfig);
-    	return this;
+        getItemListenerConfigs().add(listenerConfig);
+        return this;
     }
-    
+
     public List<ItemListenerConfig> getItemListenerConfigs() {
-    	if (listenerConfigs == null) {
-    		listenerConfigs = new ArrayList<ItemListenerConfig>();
-    	}
-		return listenerConfigs;
-	}
-    
+        if (listenerConfigs == null) {
+            listenerConfigs = new ArrayList<ItemListenerConfig>();
+        }
+        return listenerConfigs;
+    }
+
     public void setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
-		this.listenerConfigs = listenerConfigs;
-	}
+        this.listenerConfigs = listenerConfigs;
+    }
 
     public boolean isCompatible(final QueueConfig queueConfig) {
         if (queueConfig == null) return false;

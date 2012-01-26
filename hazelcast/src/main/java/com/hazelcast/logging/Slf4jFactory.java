@@ -17,19 +17,19 @@
 
 package com.hazelcast.logging;
 
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+
 public class Slf4jFactory extends LoggerFactorySupport {
-	
-	protected ILogger createLogger(String name) {
-		final Logger l = LoggerFactory.getLogger(name);
+
+    protected ILogger createLogger(String name) {
+        final Logger l = LoggerFactory.getLogger(name);
         return new Slf4jLogger(l);
-	}
-	
+    }
+
     class Slf4jLogger implements ILogger {
         private final Logger logger;
 

@@ -15,35 +15,34 @@
  *
  */
 
-
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.config.PartitionGroupConfig;
 
 public class PartitionStateGeneratorFactory {
-    
+
     public static PartitionStateGenerator newRandomPartitionStateGenerator() {
         return new PartitionStateGeneratorImpl(new SingleMemberGroupFactory());
     }
-    
+
     public static PartitionStateGenerator newHostAwarePartitionStateGenerator() {
         return new PartitionStateGeneratorImpl(new HostAwareMemberGroupFactory());
     }
-    
+
     public static PartitionStateGenerator newConfigPartitionStateGenerator(PartitionGroupConfig partitionGroupConfig) {
         if (partitionGroupConfig == null || !partitionGroupConfig.isEnabled()) {
             return newRandomPartitionStateGenerator();
-        } 
+        }
         switch (partitionGroupConfig.getGroupType()) {
-        case HOST_AWARE:
-            return newHostAwarePartitionStateGenerator();
-        case CUSTOM:
-            return newCustomPartitionStateGenerator(new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs()));
-        default:
-            return newRandomPartitionStateGenerator();
+            case HOST_AWARE:
+                return newHostAwarePartitionStateGenerator();
+            case CUSTOM:
+                return newCustomPartitionStateGenerator(new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs()));
+            default:
+                return newRandomPartitionStateGenerator();
         }
     }
-    
+
     public static PartitionStateGenerator newCustomPartitionStateGenerator(MemberGroupFactory nodeGroupFactory) {
         return new PartitionStateGeneratorImpl(nodeGroupFactory);
     }

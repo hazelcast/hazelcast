@@ -21,20 +21,20 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 
 public final class HazelcastTimestamper {
-	
-	public static long nextTimestamp(HazelcastInstance instance) {
-		return instance.getCluster().getClusterTime() ; // System time in ms.
-	}
 
-	public static int getTimeout(HazelcastInstance instance, String regionName) {
-		try {
-			final MapConfig cfg = instance.getConfig().findMatchingMapConfig(regionName);
-			if(cfg.getTimeToLiveSeconds() > 0) {
-				return cfg.getTimeToLiveSeconds() * 1000; // TTL in ms.
-			}
-		} catch (UnsupportedOperationException ignored) {
-			// HazelcastInstance is instance of HazelcastClient.
-		}
-		return CacheEnvironment.getDefaultCacheTimeoutInMillis();
-	}
+    public static long nextTimestamp(HazelcastInstance instance) {
+        return instance.getCluster().getClusterTime(); // System time in ms.
+    }
+
+    public static int getTimeout(HazelcastInstance instance, String regionName) {
+        try {
+            final MapConfig cfg = instance.getConfig().findMatchingMapConfig(regionName);
+            if (cfg.getTimeToLiveSeconds() > 0) {
+                return cfg.getTimeToLiveSeconds() * 1000; // TTL in ms.
+            }
+        } catch (UnsupportedOperationException ignored) {
+            // HazelcastInstance is instance of HazelcastClient.
+        }
+        return CacheEnvironment.getDefaultCacheTimeoutInMillis();
+    }
 }

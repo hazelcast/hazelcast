@@ -17,9 +17,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.Join;
-import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ReplicatedMapFactory;
@@ -31,19 +28,17 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.Assert.*;
 
 /**
  * UnresolvedIssues is a set of unit test for known issues
  */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class UnresolvedIssues extends TestUtil {
 
     @Before

@@ -23,8 +23,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class LocalQueueOperationStatsImpl extends LocalOperationStatsSupport 
-	implements LocalQueueOperationStats {
+public class LocalQueueOperationStatsImpl extends LocalOperationStatsSupport
+        implements LocalQueueOperationStats {
 
     long numberOfOffers;
     long numberOfRejectedOffers;
@@ -34,7 +34,7 @@ public class LocalQueueOperationStatsImpl extends LocalOperationStatsSupport
     long numberOfEvents;
 
     void writeDataInternal(DataOutput out) throws IOException {
-    	out.writeLong(numberOfOffers);
+        out.writeLong(numberOfOffers);
         out.writeLong(numberOfPolls);
         out.writeLong(numberOfRejectedOffers);
         out.writeLong(numberOfEmptyPolls);

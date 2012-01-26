@@ -17,11 +17,9 @@
 
 package com.hazelcast.monitor;
 
-
 public interface LocalAtomicNumberOperationStats extends LocalInstanceOperationStats {
     /**
      * Returns the number of operations that modified the stored atomic value.
-     *
      *
      * @return number of modified operations
      */
@@ -29,7 +27,6 @@ public interface LocalAtomicNumberOperationStats extends LocalInstanceOperationS
 
     /**
      * Returns the number of operations that did not modify the stored atomic value.
-     *
      *
      * @return number of non-modified operations
      */

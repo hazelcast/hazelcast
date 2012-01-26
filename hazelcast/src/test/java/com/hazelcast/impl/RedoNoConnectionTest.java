@@ -17,13 +17,9 @@
 
 package com.hazelcast.impl;
 
-import java.util.Arrays;
-
-import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -142,7 +138,7 @@ public class RedoNoConnectionTest extends RedoTestService {
                 new QueueCallBuilder(h2));
         t.run();
     }
-    
+
     @Ignore
     abstract class AbstractConnectionBehavior extends BeforeAfterBehavior {
         final HazelcastInstance caller;
@@ -177,6 +173,7 @@ public class RedoNoConnectionTest extends RedoTestService {
         NoConnectionBehavior(HazelcastInstance caller, HazelcastInstance target) {
             super(caller, target);
         }
+
         @Override
         void after() {
             callerNode.getConnectionManager().attachConnection(targetConn.getEndPoint(), targetConn);

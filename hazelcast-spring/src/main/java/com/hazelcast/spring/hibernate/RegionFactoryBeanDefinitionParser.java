@@ -17,14 +17,13 @@
 
 package com.hazelcast.spring.hibernate;
 
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 
 public class RegionFactoryBeanDefinitionParser extends CacheBeanDefinitionParserSupport {
 
-	@Override
-	protected BeanDefinitionBuilder createBeanDefinitionBuilder() {
-		return BeanDefinitionBuilder.rootBeanDefinition(HazelcastCacheRegionFactory.class);
-	}
+    @Override
+    protected BeanDefinitionBuilder createBeanDefinitionBuilder() {
+        return BeanDefinitionBuilder.rootBeanDefinition(HazelcastCacheRegionFactory.class);
+    }
 }

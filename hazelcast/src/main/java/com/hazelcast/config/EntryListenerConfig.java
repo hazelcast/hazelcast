@@ -21,43 +21,43 @@ import com.hazelcast.core.EntryListener;
 
 public class EntryListenerConfig extends ListenerConfig {
 
-	private boolean local = false;
-	
-	private boolean includeValue = true;
-	
-	public EntryListenerConfig() {
-		super();
-	}
+    private boolean local = false;
 
-	public EntryListenerConfig(String className, boolean local, boolean includeValue) {
-		super(className);
-		this.local = local;
-		this.includeValue = includeValue;
-	}
+    private boolean includeValue = true;
 
-	public EntryListenerConfig(EntryListener implementation, boolean local, boolean includeValue) {
-		super(implementation);
-		this.local = local;
-		this.includeValue = includeValue;
-	}
+    public EntryListenerConfig() {
+        super();
+    }
 
-	public EntryListener getImplementation() {
-		return (EntryListener) implementation;
-	}
+    public EntryListenerConfig(String className, boolean local, boolean includeValue) {
+        super(className);
+        this.local = local;
+        this.includeValue = includeValue;
+    }
 
-	public boolean isLocal() {
-		return local;
-	}
+    public EntryListenerConfig(EntryListener implementation, boolean local, boolean includeValue) {
+        super(implementation);
+        this.local = local;
+        this.includeValue = includeValue;
+    }
 
-	public void setLocal(boolean local) {
-		this.local = local;
-	}
+    public EntryListener getImplementation() {
+        return (EntryListener) implementation;
+    }
 
-	public boolean isIncludeValue() {
-		return includeValue;
-	}
+    public boolean isLocal() {
+        return local;
+    }
 
-	public void setIncludeValue(boolean includeValue) {
-		this.includeValue = includeValue;
-	}
+    public void setLocal(boolean local) {
+        this.local = local;
+    }
+
+    public boolean isIncludeValue() {
+        return includeValue;
+    }
+
+    public void setIncludeValue(boolean includeValue) {
+        this.includeValue = includeValue;
+    }
 }

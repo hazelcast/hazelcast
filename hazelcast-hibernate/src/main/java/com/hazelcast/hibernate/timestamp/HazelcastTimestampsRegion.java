@@ -17,12 +17,11 @@
 
 package com.hazelcast.hibernate.timestamp;
 
-import java.util.Properties;
-
-import org.hibernate.cache.TimestampsRegion;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.region.AbstractGeneralRegion;
+import org.hibernate.cache.TimestampsRegion;
+
+import java.util.Properties;
 
 /**
  * @author Leo Kim (lkim@limewire.com)

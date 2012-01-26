@@ -84,9 +84,9 @@ public class Config implements DataSerializable {
     private Map<String, WanReplicationConfig> mapWanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
     private SecurityConfig securityConfig = new SecurityConfig();
-    
+
     private List<ListenerConfig> listenerConfigs;
-    
+
     private PartitionGroupConfig partitionGroupConfig = new PartitionGroupConfig();
 
     public Config() {
@@ -499,10 +499,10 @@ public class Config implements DataSerializable {
     public Map<String, MapConfig> getMapConfigs() {
         return Collections.unmodifiableMap(mapConfigs);
     }
-    
+
     public Map<String, MultiMapConfig> getMultiMapConfigs() {
-		return Collections.unmodifiableMap(multiMapConfigs);
-	}
+        return Collections.unmodifiableMap(multiMapConfigs);
+    }
 
     /**
      * @param mapConfigs the mapConfigs to set
@@ -514,7 +514,7 @@ public class Config implements DataSerializable {
         }
         return this;
     }
-    
+
     public Config setMultiMapConfigs(Map<String, MultiMapConfig> multiMapConfigs) {
         this.multiMapConfigs = multiMapConfigs;
         for (final Entry<String, MultiMapConfig> entry : this.multiMapConfigs.entrySet()) {
@@ -641,29 +641,29 @@ public class Config implements DataSerializable {
     }
 
     public Config addListenerConfig(ListenerConfig listenerConfig) {
-    	getListenerConfigs().add(listenerConfig);
-    	return this;
+        getListenerConfigs().add(listenerConfig);
+        return this;
     }
-    
+
     public List<ListenerConfig> getListenerConfigs() {
-    	if (listenerConfigs == null) {
-    		listenerConfigs = new ArrayList<ListenerConfig>();
-    	}
-		return listenerConfigs;
-	}
-    
+        if (listenerConfigs == null) {
+            listenerConfigs = new ArrayList<ListenerConfig>();
+        }
+        return listenerConfigs;
+    }
+
     public void setListenerConfigs(List<ListenerConfig> listenerConfigs) {
-		this.listenerConfigs = listenerConfigs;
-	}
-    
+        this.listenerConfigs = listenerConfigs;
+    }
+
     public PartitionGroupConfig getPartitionGroupConfig() {
         return partitionGroupConfig;
     }
-    
+
     public void setPartitionGroupConfig(PartitionGroupConfig partitionGroupConfig) {
         this.partitionGroupConfig = partitionGroupConfig;
     }
-    
+
     /**
      * @param config
      * @return true if config is compatible with this one,

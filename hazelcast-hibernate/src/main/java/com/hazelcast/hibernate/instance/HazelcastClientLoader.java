@@ -17,68 +17,64 @@
 
 package com.hazelcast.hibernate.instance;
 
-import java.util.Properties;
-import java.util.logging.Level;
-
-import org.hibernate.cache.CacheException;
-import org.hibernate.util.PropertiesHelper;
-
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import org.hibernate.cache.CacheException;
+import org.hibernate.util.PropertiesHelper;
+
+import java.util.Properties;
+import java.util.logging.Level;
 
 class HazelcastClientLoader implements IHazelcastInstanceLoader {
-	
-	private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class.getName());
-	
-	private final Properties props = new Properties();
-	private HazelcastClient client;
-	
-	public void configure(Properties props) {
-		this.props.putAll(props);
-	}
 
-	public HazelcastInstance loadInstance() throws CacheException {
-		if(props == null) {
-			throw new NullPointerException("Hibernate environment properties is null!");
-		}
-		
-		if(client != null && client.getLifecycleService().isRunning()) {
-			logger.log(Level.WARNING, "Current HazelcastClient is already active! Shutting it down...");
-			unloadInstance();
-		}
-		
-		String address = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_ADDRESS, props, null);
-		if(address == null) {
-			String[] hosts = PropertiesHelper.toStringArray(CacheEnvironment.NATIVE_CLIENT_HOSTS, ",", props);
-			if(hosts != null && hosts.length > 0) {
-				address = hosts[0];
-				logger.log(Level.WARNING, "Hibernate property '" + CacheEnvironment.NATIVE_CLIENT_HOSTS + "' " +
-						"is deprecated, use '" + CacheEnvironment.NATIVE_CLIENT_ADDRESS + "' isntead!");
-			}
-		}
-    	String group = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_GROUP, props, null);
-    	String pass = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_PASSWORD, props, null);
-    	
-    	if(address == null || group == null || pass == null) {
-    		throw new CacheException("Configuration properties " + CacheEnvironment.NATIVE_CLIENT_ADDRESS + ", " 
-    				+ CacheEnvironment.NATIVE_CLIENT_GROUP + " and " + CacheEnvironment.NATIVE_CLIENT_PASSWORD 
-    				+ " are mandatory to use native client!");
-    	}
-    	return (client = HazelcastClient.newHazelcastClient(group, pass, address));
-	}
+    private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class.getName());
 
-	public void unloadInstance() throws CacheException {
-		if(client == null) {
-			return;
-		}
-		try {
-			client.shutdown();
-			client = null;
-		} catch (Exception e) {
-			throw new CacheException(e);
-		}
-	}
+    private final Properties props = new Properties();
+    private HazelcastClient client;
+
+    public void configure(Properties props) {
+        this.props.putAll(props);
+    }
+
+    public HazelcastInstance loadInstance() throws CacheException {
+        if (props == null) {
+            throw new NullPointerException("Hibernate environment properties is null!");
+        }
+        if (client != null && client.getLifecycleService().isRunning()) {
+            logger.log(Level.WARNING, "Current HazelcastClient is already active! Shutting it down...");
+            unloadInstance();
+        }
+        String address = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_ADDRESS, props, null);
+        if (address == null) {
+            String[] hosts = PropertiesHelper.toStringArray(CacheEnvironment.NATIVE_CLIENT_HOSTS, ",", props);
+            if (hosts != null && hosts.length > 0) {
+                address = hosts[0];
+                logger.log(Level.WARNING, "Hibernate property '" + CacheEnvironment.NATIVE_CLIENT_HOSTS + "' " +
+                        "is deprecated, use '" + CacheEnvironment.NATIVE_CLIENT_ADDRESS + "' isntead!");
+            }
+        }
+        String group = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_GROUP, props, null);
+        String pass = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_PASSWORD, props, null);
+        if (address == null || group == null || pass == null) {
+            throw new CacheException("Configuration properties " + CacheEnvironment.NATIVE_CLIENT_ADDRESS + ", "
+                    + CacheEnvironment.NATIVE_CLIENT_GROUP + " and " + CacheEnvironment.NATIVE_CLIENT_PASSWORD
+                    + " are mandatory to use native client!");
+        }
+        return (client = HazelcastClient.newHazelcastClient(group, pass, address));
+    }
+
+    public void unloadInstance() throws CacheException {
+        if (client == null) {
+            return;
+        }
+        try {
+            client.shutdown();
+            client = null;
+        } catch (Exception e) {
+            throw new CacheException(e);
+        }
+    }
 }

@@ -25,7 +25,7 @@ import java.util.Set;
 public class MemberGroupConfig {
 
     private final Set<String> interfaces = new HashSet<String>();
-    
+
     public MemberGroupConfig addInterface(final String ip) {
         interfaces.add(ip);
         return this;
@@ -39,7 +39,7 @@ public class MemberGroupConfig {
     public Collection<String> getInterfaces() {
         return Collections.unmodifiableCollection(interfaces);
     }
-    
+
     public MemberGroupConfig setInterfaces(final Collection<String> interfaces) {
         clear();
         this.interfaces.addAll(interfaces);

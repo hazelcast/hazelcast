@@ -21,49 +21,49 @@ import com.hazelcast.query.Expression;
 
 public class MapIndexConfig {
 
-	private String attribute;
-	
-	private Expression expression;
-	
-	private boolean ordered = false;
-	
-	public MapIndexConfig() {
-		super();
-	}
+    private String attribute;
 
-	public MapIndexConfig(String attribute, boolean ordered) {
-		super();
-		this.attribute = attribute;
-		this.ordered = ordered;
-	}
-	
-	public MapIndexConfig(Expression expression, boolean ordered) {
-		super();
-		this.expression = expression;
-		this.ordered = ordered;
-	}
+    private Expression expression;
 
-	public String getAttribute() {
-		return attribute;
-	}
+    private boolean ordered = false;
 
-	public void setAttribute(String attribute) {
-		this.attribute = attribute;
-	}
+    public MapIndexConfig() {
+        super();
+    }
 
-	public boolean isOrdered() {
-		return ordered;
-	}
+    public MapIndexConfig(String attribute, boolean ordered) {
+        super();
+        this.attribute = attribute;
+        this.ordered = ordered;
+    }
 
-	public void setOrdered(boolean ordered) {
-		this.ordered = ordered;
-	}
-	
-	public Expression getExpression() {
-		return expression;
-	}
-	
-	public void setExpression(Expression expression) {
-		this.expression = expression;
-	}
+    public MapIndexConfig(Expression expression, boolean ordered) {
+        super();
+        this.expression = expression;
+        this.ordered = ordered;
+    }
+
+    public String getAttribute() {
+        return attribute;
+    }
+
+    public void setAttribute(String attribute) {
+        this.attribute = attribute;
+    }
+
+    public boolean isOrdered() {
+        return ordered;
+    }
+
+    public void setOrdered(boolean ordered) {
+        this.ordered = ordered;
+    }
+
+    public Expression getExpression() {
+        return expression;
+    }
+
+    public void setExpression(Expression expression) {
+        this.expression = expression;
+    }
 }

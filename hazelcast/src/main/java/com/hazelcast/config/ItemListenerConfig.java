@@ -21,31 +21,31 @@ import com.hazelcast.core.ItemListener;
 
 public class ItemListenerConfig extends ListenerConfig {
 
-	private boolean includeValue = true;
-	
-	public ItemListenerConfig() {
-		super();
-	}
+    private boolean includeValue = true;
 
-	public ItemListenerConfig(String className, boolean includeValue) {
-		super(className);
-		this.includeValue = includeValue;
-	}
+    public ItemListenerConfig() {
+        super();
+    }
 
-	public ItemListenerConfig(ItemListener implementation, boolean includeValue) {
-		super(implementation);
-		this.includeValue = includeValue;
-	}
+    public ItemListenerConfig(String className, boolean includeValue) {
+        super(className);
+        this.includeValue = includeValue;
+    }
 
-	public ItemListener getImplementation() {
-		return (ItemListener) implementation;
-	}
+    public ItemListenerConfig(ItemListener implementation, boolean includeValue) {
+        super(implementation);
+        this.includeValue = includeValue;
+    }
 
-	public boolean isIncludeValue() {
-		return includeValue;
-	}
+    public ItemListener getImplementation() {
+        return (ItemListener) implementation;
+    }
 
-	public void setIncludeValue(boolean includeValue) {
-		this.includeValue = includeValue;
-	}
+    public boolean isIncludeValue() {
+        return includeValue;
+    }
+
+    public void setIncludeValue(boolean includeValue) {
+        this.includeValue = includeValue;
+    }
 }

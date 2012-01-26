@@ -77,11 +77,11 @@ public class TestClientApp {
     }
 
     private void connect(String[] args) {
-    	String ip = "localhost";
+        String ip = "localhost";
         String groupName = "dev";
         String pass = "dev-pass";
         if (args.length > 1) {
-        	ip = args[1];
+            ip = args[1];
         }
         if (args.length > 3) {
             groupName = args[2];

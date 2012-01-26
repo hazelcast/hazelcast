@@ -22,57 +22,57 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * Simple implementation of {@link Credentials} using 
- * username and password as security attributes. 
+ * Simple implementation of {@link Credentials} using
+ * username and password as security attributes.
  */
 public class UsernamePasswordCredentials extends AbstractCredentials {
-	
-	private static final long serialVersionUID = -1508314631354255039L;
-	
-	private byte[] password;
-	
-	public UsernamePasswordCredentials() {
-		super();
-	}
-	
-	public UsernamePasswordCredentials(String username, String password) {
-		super(username);
-		this.password = password.getBytes();
-	}
 
-	public String getUsername() {
-		return getPrincipal();
-	}
+    private static final long serialVersionUID = -1508314631354255039L;
 
-	public byte[] getPassword() {
-		return password;
-	}
-	
-	public void setUsername(String username) {
-		setPrincipal(username);
-	}
-	
-	public void setPassword(String password) {
-		this.password = password.getBytes();
-	}
+    private byte[] password;
 
-	public void writeDataInternal(DataOutput out) throws IOException {
-		out.writeInt(password != null ? password.length : 0);
-		if(password != null) {
-			out.write(password);
-		}
-	}
+    public UsernamePasswordCredentials() {
+        super();
+    }
 
-	public void readDataInternal(DataInput in) throws IOException {
-		int s = in.readInt();
-		if(s > 0) {
-			password = new byte[s];
-			in.readFully(password);
-		}
-	}
+    public UsernamePasswordCredentials(String username, String password) {
+        super(username);
+        this.password = password.getBytes();
+    }
 
-	@Override
-	public String toString() {
-		return "UsernamePasswordCredentials [username=" + getUsername() + "]";
-	}
+    public String getUsername() {
+        return getPrincipal();
+    }
+
+    public byte[] getPassword() {
+        return password;
+    }
+
+    public void setUsername(String username) {
+        setPrincipal(username);
+    }
+
+    public void setPassword(String password) {
+        this.password = password.getBytes();
+    }
+
+    public void writeDataInternal(DataOutput out) throws IOException {
+        out.writeInt(password != null ? password.length : 0);
+        if (password != null) {
+            out.write(password);
+        }
+    }
+
+    public void readDataInternal(DataInput in) throws IOException {
+        int s = in.readInt();
+        if (s > 0) {
+            password = new byte[s];
+            in.readFully(password);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "UsernamePasswordCredentials [username=" + getUsername() + "]";
+    }
 }

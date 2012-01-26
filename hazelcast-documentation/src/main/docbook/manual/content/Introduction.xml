@@ -1,10 +1,6 @@
 <para version='5.0' xmlns='http://docbook.org/ns/docbook'
       xmlns:xlink='http://www.w3.org/1999/xlink'
-      xmlns:xi='http://www.w3.org/2001/XInclude'
-      xmlns:ns5='http://www.w3.org/2000/svg'
-      xmlns:ns4='http://www.w3.org/1998/Math/MathML'
-      xmlns:ns3='http://www.w3.org/1999/xhtml'
-      xmlns:db='http://docbook.org/ns/docbook'>
+        >
     Hazelcast is a clustering and highly scalable data distribution platform for Java. Hazelcast helps architects and
     developers to easily design and develop faster, highly scalable and reliable applications for their businesses.
     <itemizedlist>
@@ -83,7 +79,8 @@
     To install Hazelcast:
     <itemizedlist>
         <listitem>
-            <para>Download hazelcast-_version_.zip from <link xlink:href="http://www.hazelcast.com">www.hazelcast.com</link>
+            <para>Download hazelcast-_version_.zip from
+                <link xlink:href="http://www.hazelcast.com">www.hazelcast.com</link>
             </para>
         </listitem>
         <listitem>
@@ -97,9 +94,10 @@
     </itemizedlist>
     Hazelcast is pure Java. JVMs that are running Hazelcast will dynamically cluster. Although by default Hazelcast will
     use multicast for discovery, it can also be configured to only use TCP/IP for environments where multicast is not
-    available or preferred (<link xlink:href="#ConfigFullTcpIp">Click here for more info</link>). Communication among cluster members is always
+    available or preferred (<link xlink:href="#ConfigFullTcpIp">Click here for more info</link>). Communication among
+    cluster members is always
     TCP/IP with Java NIO beauty. Default configuration comes with 1 backup so if one node fails, no data will be lost.
-    It is as simple as using <literal>java.util.{Queue, Set, List, Map}</literal>. Just add the hazelcast.jar into your
+    It is as simple as using<literal>java.util.{Queue, Set, List, Map}</literal>. Just add the hazelcast.jar into your
     classpath and start coding.
 
 </para>

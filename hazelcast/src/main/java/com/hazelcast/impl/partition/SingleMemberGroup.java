@@ -17,19 +17,19 @@
 
 package com.hazelcast.impl.partition;
 
+import com.hazelcast.impl.MemberImpl;
+
 import java.util.Collection;
 import java.util.Iterator;
 
-import com.hazelcast.impl.MemberImpl;
-
 public class SingleMemberGroup implements MemberGroup {
-    
-    private MemberImpl member ;
-    
+
+    private MemberImpl member;
+
     public SingleMemberGroup() {
         super();
     }
-    
+
     public SingleMemberGroup(MemberImpl member) {
         super();
         this.member = member;
@@ -51,7 +51,7 @@ public class SingleMemberGroup implements MemberGroup {
             this.member = null;
         }
     }
-    
+
     public boolean hasMember(MemberImpl member) {
         return this.member != null && this.member.equals(member);
     }
@@ -59,16 +59,18 @@ public class SingleMemberGroup implements MemberGroup {
     public Iterator<MemberImpl> iterator() {
         return new MemberIterator();
     }
-    
+
     public int size() {
         return member != null ? 1 : 0;
     }
-    
+
     private class MemberIterator implements Iterator<MemberImpl> {
         boolean end = false;
+
         public boolean hasNext() {
             return !end;
         }
+
         public MemberImpl next() {
             if (hasNext()) {
                 end = true;
@@ -76,6 +78,7 @@ public class SingleMemberGroup implements MemberGroup {
             }
             return null;
         }
+
         public void remove() {
             throw new UnsupportedOperationException();
         }

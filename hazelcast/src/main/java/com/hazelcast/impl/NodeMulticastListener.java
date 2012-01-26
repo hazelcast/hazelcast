@@ -17,10 +17,10 @@
 
 package com.hazelcast.impl;
 
-import java.util.Set;
-
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.nio.Address;
+
+import java.util.Set;
 
 public class NodeMulticastListener implements MulticastListener {
     final Node node;
@@ -29,7 +29,7 @@ public class NodeMulticastListener implements MulticastListener {
     public NodeMulticastListener(Node node) {
         this.node = node;
         this.trustedInterfaces = node.getConfig().getNetworkConfig()
-        	.getJoin().getMulticastConfig().getTrustedInterfaces();
+                .getJoin().getMulticastConfig().getTrustedInterfaces();
     }
 
     public void onMessage(Object msg) {
@@ -50,11 +50,11 @@ public class NodeMulticastListener implements MulticastListener {
                     } else {
                         if (!node.joined() && !joinInfo.isRequest()) {
                             if (node.masterAddress == null) {
-                            	final String masterHost = joinInfo.address.getHost();
-                            	if(trustedInterfaces.isEmpty() || 
-                            			AddressPicker.matchAddress(masterHost, trustedInterfaces)) {
-                            		node.masterAddress = new Address(joinInfo.address);
-                            	}
+                                final String masterHost = joinInfo.address.getHost();
+                                if (trustedInterfaces.isEmpty() ||
+                                        AddressPicker.matchAddress(masterHost, trustedInterfaces)) {
+                                    node.masterAddress = new Address(joinInfo.address);
+                                }
                             }
                         } else if (joinInfo.isRequest()) {
                             Joiner joiner = node.getJoiner();

@@ -45,6 +45,6 @@ public interface ClusterStateView extends DataSerializable {
     Set<String> getCountDownLatches();
 
     Set<String> getSemaphores();
-    
+
     int[] getPartitions(Member member);
 }

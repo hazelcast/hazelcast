@@ -19,9 +19,11 @@ package com.hazelcast.core;
 
 import org.junit.After;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static junit.framework.Assert.assertTrue;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class IListPerformance extends PerformanceTest {
     private IList<Integer> list = Hazelcast.getList("IListPerformance");
 

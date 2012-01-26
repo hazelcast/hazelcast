@@ -17,8 +17,6 @@
 
 package com.hazelcast.client;
 
-import static com.hazelcast.client.ProxyHelper.check;
-
 import com.hazelcast.core.ILock;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.FactoryImpl;
@@ -26,6 +24,8 @@ import com.hazelcast.monitor.LocalLockStats;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
+
+import static com.hazelcast.client.ProxyHelper.check;
 
 public class LockClientProxy implements ILock {
     final ProxyHelper proxyHelper;
@@ -43,7 +43,7 @@ public class LockClientProxy implements ILock {
         return lockObject;
     }
 
-//    public void lock() {
+    //    public void lock() {
 //        client.mapLockProxy.lock(lockObject);
 //    }
 //
@@ -63,7 +63,7 @@ public class LockClientProxy implements ILock {
 //    public void unlock() {
 //        client.mapLockProxy.unlock(lockObject);
 //    }
-    
+
     public void lock() {
         doLock(-1, null);
     }
@@ -71,7 +71,7 @@ public class LockClientProxy implements ILock {
     public boolean tryLock() {
         return (Boolean) doLock(0, null);
     }
-    
+
     public boolean tryLock(long time, TimeUnit timeunit) {
         ProxyHelper.checkTime(time, timeunit);
         return (Boolean) doLock(time, timeunit);
@@ -80,9 +80,9 @@ public class LockClientProxy implements ILock {
     public void unlock() {
         proxyHelper.doOp(ClusterOperation.LOCK_UNLOCK, lockObject, null);
     }
-    
+
     private Object doLock(long timeout, TimeUnit timeUnit) {
-    	ClusterOperation operation = ClusterOperation.LOCK_LOCK;
+        ClusterOperation operation = ClusterOperation.LOCK_LOCK;
         Packet request = proxyHelper.prepareRequest(operation, lockObject, null);
         request.setTimeout(timeUnit == null ? timeout : timeUnit.toMillis(timeout));
         Packet response = proxyHelper.callAndGetResult(request);
@@ -119,7 +119,7 @@ public class LockClientProxy implements ILock {
         return getId().hashCode();
     }
 
-	public LocalLockStats getLocalLockStats() {
-		throw new UnsupportedOperationException();
-	}
+    public LocalLockStats getLocalLockStats() {
+        throw new UnsupportedOperationException();
+    }
 }

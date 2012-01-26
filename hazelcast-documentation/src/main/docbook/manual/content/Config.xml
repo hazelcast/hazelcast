@@ -1,34 +1,50 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
-    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg"
-    xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml"
-    xmlns:db="http://docbook.org/ns/docbook"> Hazelcast can be configured through xml or using
-    configuration api or even mix of both. <orderedlist>
+<para version="5.0" xmlns="http://docbook.org/ns/docbook"
+        >Hazelcast can be configured through xml or using
+    configuration api or even mix of both.
+    <orderedlist>
         <listitem>
-            <para><emphasis role="bold">Xml Configuration</emphasis></para>
+            <para>
+                <emphasis role="bold">Xml Configuration</emphasis>
+            </para>
             <para>If you are using default Hazelcast instance
-                    (<literal>Hazelcast.getDefaultInstance()</literal>) or creating new Hazelcast
-                instance with passing <literal>null</literal> parameter
-                    (<literal>Hazelcast.newHazelcastInstance(null)</literal>), Hazelcast will look
-                into two places for the configuration file: <itemizedlist>
+                (<literal>Hazelcast.getDefaultInstance()</literal>) or creating new Hazelcast
+                instance with passing
+                <literal>null</literal>
+                parameter
+                (<literal>Hazelcast.newHazelcastInstance(null)</literal>), Hazelcast will look
+                into two places for the configuration file:
+                <itemizedlist>
                     <listitem>
-                        <para><emphasis role="bold">System property:</emphasis> Hazelcast will first
+                        <para>
+                            <emphasis role="bold">System property:</emphasis>
+                            Hazelcast will first
                             check if "<literal>hazelcast.config</literal>" system property is set to
                             a file path. Example:
-                                <literal>-Dhazelcast.config=C:/myhazelcast.xml</literal>. </para>
+                            <literal>-Dhazelcast.config=C:/myhazelcast.xml</literal>.
+                        </para>
                     </listitem>
                     <listitem>
-                        <para><emphasis role="bold">Classpath:</emphasis> If config file is not set
-                            as a system property, Hazelcast will check classpath for <emphasis
-                                role="bold"><literal>hazelcast.xml</literal></emphasis> file.</para>
+                        <para>
+                            <emphasis role="bold">Classpath:</emphasis>
+                            If config file is not set
+                            as a system property, Hazelcast will check classpath for
+                            <emphasis
+                                    role="bold">
+                                <literal>hazelcast.xml</literal>
+                            </emphasis>
+                            file.
+                        </para>
                     </listitem>
-                </itemizedlist>If Hazelcast doesn't find any config file, it will happily start with
+                </itemizedlist>
+                If Hazelcast doesn't find any config file, it will happily start with
                 default configuration (<literal>hazelcast-default.xml</literal>) located in
-                    <literal>hazelcast.jar</literal>. (Before configuring Hazelcast, please try to
+                <literal>hazelcast.jar</literal>. (Before configuring Hazelcast, please try to
                 work with default configuration to see if it works for you. Default should be just
                 fine for most of the users. If not, then consider custom configuration for your
-                environment.) <programlisting language="xml"><![CDATA[<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-basic.xsd"
+                environment.)
+                <programlisting language="xml"><![CDATA[<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-basic.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -53,7 +69,8 @@
         </join>
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>
-        </interfaces>]]></programlisting><programlisting language="xml"><![CDATA[
+        </interfaces>]]></programlisting>
+                <programlisting language="xml"><![CDATA[
         <symmetric-encryption enabled="false">
             <!--
                encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES,
@@ -100,7 +117,8 @@
             map for this queue.
         -->
         <backing-map-ref>default</backing-map-ref>
-    </queue>]]></programlisting><programlisting language="xml"><![CDATA[
+    </queue>]]></programlisting>
+                <programlisting language="xml"><![CDATA[
     <map name="default">
         <!--
             Number of backups. If 1 is set as the backup-count for example, then all entries of 
@@ -162,41 +180,65 @@
         <merge-policy>hz.ADD_NEW_ENTRY</merge-policy>
     </map>
 </hazelcast>
-]]></programlisting> If you want to specify your own configuration file to create
-                    <literal>Config</literal>, Hazelcast supports several ways including filesystem,
-                classpath, InputStream, URL etc.: <itemizedlist>
+]]></programlisting>
+                If you want to specify your own configuration file to create
+                <literal>Config</literal>, Hazelcast supports several ways including filesystem,
+                classpath, InputStream, URL etc.:
+                <itemizedlist>
                     <listitem>
-                        <para><code language="java">Config cfg = new
-                                XmlConfigBuilder(xmlFileName).build();</code></para>
+                        <para>
+                            <code language="java">Config cfg = new
+                                XmlConfigBuilder(xmlFileName).build();
+                            </code>
+                        </para>
                     </listitem>
                     <listitem>
-                        <para><code language="java">Config cfg = new
-                                XmlConfigBuilder(inputStream).build();</code></para>
+                        <para>
+                            <code language="java">Config cfg = new
+                                XmlConfigBuilder(inputStream).build();
+                            </code>
+                        </para>
                     </listitem>
                     <listitem>
-                        <para><code language="java">Config cfg = new
-                                ClasspathXmlConfig(xmlFileName);</code></para>
+                        <para>
+                            <code language="java">Config cfg = new
+                                ClasspathXmlConfig(xmlFileName);
+                            </code>
+                        </para>
                     </listitem>
                     <listitem>
-                        <para><code language="java">Config cfg = new
-                                FileSystemXmlConfig(configFilename);</code></para>
+                        <para>
+                            <code language="java">Config cfg = new
+                                FileSystemXmlConfig(configFilename);
+                            </code>
+                        </para>
                     </listitem>
                     <listitem>
-                        <para><code language="java">Config cfg = new
-                            UrlXmlConfig(url);</code></para>
+                        <para>
+                            <code language="java">Config cfg = new
+                                UrlXmlConfig(url);
+                            </code>
+                        </para>
                     </listitem>
                     <listitem>
-                        <para><code language="java">Config cfg = new
-                            InMemoryXmlConfig(xml);</code></para>
+                        <para>
+                            <code language="java">Config cfg = new
+                                InMemoryXmlConfig(xml);
+                            </code>
+                        </para>
                     </listitem>
                 </itemizedlist>
             </para>
         </listitem>
         <listitem>
-            <para><emphasis role="bold">Programmatic Configuration</emphasis></para>
+            <para>
+                <emphasis role="bold">Programmatic Configuration</emphasis>
+            </para>
             <para>To configure Hazelcast programmatically, just instantiate a
-                    <literal>Config</literal> object and set/change its properties/attributes due to
-                your needs. <programlisting language="java"><![CDATA[Config cfg = new Config();
+                <literal>Config</literal>
+                object and set/change its properties/attributes due to
+                your needs.
+                <programlisting language="java"><![CDATA[Config cfg = new Config();
 cfg.setPort(5900);
 cfg.setPortAutoIncrement(false);
         
@@ -221,38 +263,60 @@ NearCacheConfig nearCacheConfig = new NearCacheConfig();
 nearCacheConfig.setMaxSize(1000).setMaxIdleSeconds(120).setTimeToLiveSeconds(300);
 mapCfg.setNearCacheConfig(nearCacheConfig);
 
-cfg.addMapConfig(mapCfg);]]></programlisting></para>
+cfg.addMapConfig(mapCfg);]]></programlisting>
+            </para>
         </listitem>
-    </orderedlist> After creating <literal>Config</literal> object, you can use it to initialize
-    default Hazelcast instance or create a new Hazelcast instance.<itemizedlist>
+    </orderedlist>
+    After creating
+    <literal>Config</literal>
+    object, you can use it to initialize
+    default Hazelcast instance or create a new Hazelcast instance.
+    <itemizedlist>
         <listitem>
-            <para><code language="java">Hazelcast.init(cfg);</code></para>
+            <para>
+                <code language="java">Hazelcast.init(cfg);</code>
+            </para>
         </listitem>
         <listitem>
-            <para><code language="java">Hazelcast.newHazelcastInstance(cfg);</code></para>
+            <para>
+                <code language="java">Hazelcast.newHazelcastInstance(cfg);</code>
+            </para>
         </listitem>
     </itemizedlist>
     <anchor xml:id="NamedHazelcastInstance"/>
     <itemizedlist>
         <title>HazelcastInstance with a name:</title>
         <listitem>
-            <para>To create a named <literal>HazelcastInstance</literal> you should set <code>instanceName</code>
-                of <literal>Config</literal> object.
+            <para>To create a named
+                <literal>HazelcastInstance</literal>
+                you should set
+                <code>instanceName</code>
+                of
+                <literal>Config</literal>
+                object.
             </para>
-            <para><programlisting language="java"><![CDATA[Config cfg = new Config();
+            <para>
+                <programlisting language="java"><![CDATA[Config cfg = new Config();
 config.setInstanceName('my-instance');
-Hazelcast.newHazelcastInstance(config);]]></programlisting></para>
+Hazelcast.newHazelcastInstance(config);]]></programlisting>
+            </para>
         </listitem>
         <listitem>
-            <para>To retrieve an existing <literal>HazelcastInstance</literal> using its name, use; 
+            <para>To retrieve an existing
+                <literal>HazelcastInstance</literal>
+                using its name, use;
             </para>
-            <para><code language="java">Hazelcast.getHazelcastInstanceByName('my-instance');</code></para>
+            <para>
+                <code language="java">Hazelcast.getHazelcastInstanceByName('my-instance');</code>
+            </para>
         </listitem>
         <listitem>
-            <para>To retrieve all existing <literal>HazelcastInstance</literal>s, use; 
+            <para>To retrieve all existing<literal>HazelcastInstance</literal>s, use;
             </para>
-            <para><code language="java">Hazelcast.getAllHazelcastInstances();</code></para>
+            <para>
+                <code language="java">Hazelcast.getAllHazelcastInstances();</code>
+            </para>
         </listitem>
     </itemizedlist>
-    
+
 </para>

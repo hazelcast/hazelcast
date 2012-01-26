@@ -19,51 +19,51 @@ package com.hazelcast.config;
 
 public class ListenerConfig {
 
-	protected String className = null;
+    protected String className = null;
 
-	protected Object implementation = null;
+    protected Object implementation = null;
 
-	public ListenerConfig() {
-		super();
-	}
+    public ListenerConfig() {
+        super();
+    }
 
-	public ListenerConfig(String className) {
-		super();
-		this.className = className;
-	}
+    public ListenerConfig(String className) {
+        super();
+        this.className = className;
+    }
 
-	public ListenerConfig(Object implementation) {
-		super();
-		this.implementation = implementation;
-	}
+    public ListenerConfig(Object implementation) {
+        super();
+        this.implementation = implementation;
+    }
 
-	public String getClassName() {
-		return className;
-	}
+    public String getClassName() {
+        return className;
+    }
 
-	public void setClassName(String className) {
-		this.className = className;
-	}
+    public void setClassName(String className) {
+        this.className = className;
+    }
 
-	public Object getImplementation() {
-		return implementation;
-	}
+    public Object getImplementation() {
+        return implementation;
+    }
 
-	public void setImplementation(Object implementation) {
-		this.implementation = implementation;
-	}
-	
-	public boolean isIncludeValue() {
-		return true;
-	}
-	
-	public boolean isLocal() {
-		return false;
-	}
+    public void setImplementation(Object implementation) {
+        this.implementation = implementation;
+    }
 
-	@Override
-	public String toString() {
-		return "ListenerConfig [className=" + className + ", implementation=" + implementation + ", includeValue="
-				+ isIncludeValue() + ", local=" + isLocal() + "]";
-	}
+    public boolean isIncludeValue() {
+        return true;
+    }
+
+    public boolean isLocal() {
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return "ListenerConfig [className=" + className + ", implementation=" + implementation + ", includeValue="
+                + isIncludeValue() + ", local=" + isLocal() + "]";
+    }
 }

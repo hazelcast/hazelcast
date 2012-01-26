@@ -5,14 +5,14 @@ import com.hazelcast.nio.Data;
 public interface NearCacheRecord {
 
     Data getKeyData();
-    
+
     Data getValueData();
-    
-    Object getValue() ;
-    
+
+    Object getValue();
+
     void setValueData(Data value);
-    
+
     boolean hasValueData();
-    
+
     void invalidate();
 }

@@ -43,13 +43,13 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
             return (Boolean) proxyHelper.doOp(COUNT_DOWN_LATCH_AWAIT, null, null, timeout, unit);
         } catch (RuntimeException re) {
             Throwable e = re.getCause();
-            if (e instanceof  InstanceDestroyedException){
+            if (e instanceof InstanceDestroyedException) {
                 throw (InstanceDestroyedException) e;
-            } else if (e instanceof  MemberLeftException){
+            } else if (e instanceof MemberLeftException) {
                 throw (MemberLeftException) e;
-            } else if (e instanceof  InterruptedException){
+            } else if (e instanceof InterruptedException) {
                 throw (InterruptedException) e;
-            } else if (re instanceof  NoMemberAvailableException){
+            } else if (re instanceof NoMemberAvailableException) {
                 throw new IllegalStateException();
             }
             throw re;
@@ -92,7 +92,7 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
         return name.substring(Prefix.COUNT_DOWN_LATCH.length());
     }
 
-	public LocalCountDownLatchStats getLocalCountDownLatchStats() {
-		throw new UnsupportedOperationException();
-	}
+    public LocalCountDownLatchStats getLocalCountDownLatchStats() {
+        throw new UnsupportedOperationException();
+    }
 }

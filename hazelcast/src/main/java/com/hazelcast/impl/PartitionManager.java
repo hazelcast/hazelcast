@@ -209,7 +209,7 @@ public class PartitionManager {
         sendClusterRuntimeState();
         initialized = true;
     }
-    
+
     private PartitionStateGenerator getPartitionStateGenerator() {
         return PartitionStateGeneratorFactory.newConfigPartitionStateGenerator(
                 concurrentMapManager.node.getConfig().getPartitionGroupConfig());

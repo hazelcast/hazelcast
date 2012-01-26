@@ -17,18 +17,14 @@
 
 package com.hazelcast.impl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.AbstractCollection;
-import java.util.Iterator;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.nio.DataSerializable;
+
+import java.io.*;
+import java.util.AbstractCollection;
+import java.util.Iterator;
 
 public class SetProxyImpl extends AbstractCollection implements SetProxy, DataSerializable, HazelcastInstanceAwareInstance {
     String name = null;
@@ -152,11 +148,11 @@ public class SetProxyImpl extends AbstractCollection implements SetProxy, DataSe
         ensure();
         base.removeItemListener(itemListener);
     }
-    
+
     public MProxy getMProxy() {
-    	ensure();
-		return base.getMProxy();
-	}
+        ensure();
+        return base.getMProxy();
+    }
 
     class SetProxyReal extends AbstractCollection implements SetProxy {
 
@@ -230,12 +226,12 @@ public class SetProxyImpl extends AbstractCollection implements SetProxy, DataSe
         public void destroy() {
             factory.destroyInstanceClusterWide(name, null);
         }
-        
+
         public MProxy getMProxy() {
-    		return mapProxy;
-    	}
-        
+            return mapProxy;
+        }
+
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		}
+        }
     }
 }

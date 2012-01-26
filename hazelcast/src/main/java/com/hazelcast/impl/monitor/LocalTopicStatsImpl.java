@@ -20,11 +20,11 @@ package com.hazelcast.impl.monitor;
 import com.hazelcast.monitor.LocalTopicOperationStats;
 import com.hazelcast.monitor.LocalTopicStats;
 
-public class LocalTopicStatsImpl extends LocalInstanceStatsSupport<LocalTopicOperationStats> 
-	implements LocalTopicStats {
-	
-	@Override
-	LocalTopicOperationStats newOperationStatsInstance() {
-		return new LocalTopicOperationStatsImpl();
-	}
+public class LocalTopicStatsImpl extends LocalInstanceStatsSupport<LocalTopicOperationStats>
+        implements LocalTopicStats {
+
+    @Override
+    LocalTopicOperationStats newOperationStatsInstance() {
+        return new LocalTopicOperationStatsImpl();
+    }
 }

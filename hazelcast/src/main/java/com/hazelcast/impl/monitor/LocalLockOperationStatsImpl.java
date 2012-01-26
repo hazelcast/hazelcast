@@ -17,44 +17,44 @@
 
 package com.hazelcast.impl.monitor;
 
+import com.hazelcast.monitor.LocalLockOperationStats;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.hazelcast.monitor.LocalLockOperationStats;
-
 public class LocalLockOperationStatsImpl extends LocalOperationStatsSupport
-		implements LocalLockOperationStats {
+        implements LocalLockOperationStats {
 
-	long numberOfLocks ;
-	long numberOfUnlocks ;
-	long numberOfFailedLocks ;
+    long numberOfLocks;
+    long numberOfUnlocks;
+    long numberOfFailedLocks;
 
-	public long getNumberOfLocks() {
-		return numberOfLocks;
-	}
+    public long getNumberOfLocks() {
+        return numberOfLocks;
+    }
 
-	public long getNumberOfUnlocks() {
-		return numberOfUnlocks;
-	}
-	
-	public long getNumberOfFailedLocks() {
-		return numberOfFailedLocks;
-	}
-	
-	public long total() {
-		return numberOfLocks + numberOfUnlocks + numberOfFailedLocks;
-	}
+    public long getNumberOfUnlocks() {
+        return numberOfUnlocks;
+    }
 
-	void writeDataInternal(DataOutput out) throws IOException {
-		out.writeLong(numberOfLocks);
-		out.writeLong(numberOfUnlocks);
-		out.writeLong(numberOfFailedLocks);
-	}
+    public long getNumberOfFailedLocks() {
+        return numberOfFailedLocks;
+    }
 
-	void readDataInternal(DataInput in) throws IOException {
-		numberOfLocks = in.readLong();
-		numberOfUnlocks = in.readLong();
-		numberOfFailedLocks = in.readLong();
-	}
+    public long total() {
+        return numberOfLocks + numberOfUnlocks + numberOfFailedLocks;
+    }
+
+    void writeDataInternal(DataOutput out) throws IOException {
+        out.writeLong(numberOfLocks);
+        out.writeLong(numberOfUnlocks);
+        out.writeLong(numberOfFailedLocks);
+    }
+
+    void readDataInternal(DataInput in) throws IOException {
+        numberOfLocks = in.readLong();
+        numberOfUnlocks = in.readLong();
+        numberOfFailedLocks = in.readLong();
+    }
 }

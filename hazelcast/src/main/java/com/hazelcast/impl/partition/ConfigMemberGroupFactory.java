@@ -15,20 +15,22 @@
  *
  */
 
-
 package com.hazelcast.impl.partition;
-
-import java.util.*;
-import java.util.Map.Entry;
 
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.impl.AddressPicker;
 import com.hazelcast.impl.MemberImpl;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 public class ConfigMemberGroupFactory implements MemberGroupFactory {
-    
+
     private final Map<Integer, MemberGroupConfig> memberGroupConfigMap;
-    
+
     public ConfigMemberGroupFactory(Collection<MemberGroupConfig> memberGroupConfigs) {
         super();
         this.memberGroupConfigMap = new LinkedHashMap<Integer, MemberGroupConfig>();
@@ -55,5 +57,4 @@ public class ConfigMemberGroupFactory implements MemberGroupFactory {
         }
         return memberGroups.values();
     }
-    
 }

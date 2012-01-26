@@ -17,85 +17,85 @@
 
 package com.hazelcast.security;
 
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.hazelcast.nio.DataSerializable;
 
 /**
  * Absract implementation of {@link Credentials}
  */
 public abstract class AbstractCredentials implements Credentials, DataSerializable {
 
-	private static final long serialVersionUID = 3587995040707072446L;
+    private static final long serialVersionUID = 3587995040707072446L;
 
-	private String endpoint;
-	private String principal;
+    private String endpoint;
+    private String principal;
 
-	public AbstractCredentials() {
-	}
-	
-	public AbstractCredentials(String principal) {
-		super();
-		this.principal = principal;
-	}
+    public AbstractCredentials() {
+    }
 
-	public final String getEndpoint() {
-		return endpoint;
-	}
+    public AbstractCredentials(String principal) {
+        super();
+        this.principal = principal;
+    }
 
-	public final void setEndpoint(String endpoint) {
-		this.endpoint = endpoint;
-	}
-	
-	public String getPrincipal() {
-		return principal;
-	}
-	
-	public void setPrincipal(String principal) {
-		this.principal = principal;
-	}
-	
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result
-				+ ((principal == null) ? 0 : principal.hashCode());
-		return result;
-	}
+    public final String getEndpoint() {
+        return endpoint;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		AbstractCredentials other = (AbstractCredentials) obj;
-		if (principal == null) {
-			if (other.principal != null)
-				return false;
-		} else if (!principal.equals(other.principal))
-			return false;
-		return true;
-	}
+    public final void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+    }
 
-	public final void writeData(DataOutput out) throws IOException {
-		out.writeUTF(principal);
-		out.writeUTF(endpoint);
-		writeDataInternal(out);
-	}
-	
-	public final void readData(DataInput in) throws IOException {
-		principal = in.readUTF();
-		endpoint = in.readUTF();
-		readDataInternal(in);
-	}
-	
-	protected abstract void writeDataInternal(DataOutput out) throws IOException ;
-	
-	protected abstract void readDataInternal(DataInput in) throws IOException ;
+    public String getPrincipal() {
+        return principal;
+    }
+
+    public void setPrincipal(String principal) {
+        this.principal = principal;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result
+                + ((principal == null) ? 0 : principal.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        AbstractCredentials other = (AbstractCredentials) obj;
+        if (principal == null) {
+            if (other.principal != null)
+                return false;
+        } else if (!principal.equals(other.principal))
+            return false;
+        return true;
+    }
+
+    public final void writeData(DataOutput out) throws IOException {
+        out.writeUTF(principal);
+        out.writeUTF(endpoint);
+        writeDataInternal(out);
+    }
+
+    public final void readData(DataInput in) throws IOException {
+        principal = in.readUTF();
+        endpoint = in.readUTF();
+        readDataInternal(in);
+    }
+
+    protected abstract void writeDataInternal(DataOutput out) throws IOException;
+
+    protected abstract void readDataInternal(DataInput in) throws IOException;
 }

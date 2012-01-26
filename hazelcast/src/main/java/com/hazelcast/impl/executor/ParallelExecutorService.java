@@ -57,9 +57,7 @@ public class ParallelExecutorService {
 
     public ParallelExecutor newParallelExecutor(int concurrencyLevel) {
         ParallelExecutor parallelExecutor;
-
         //todo: what if concurrencyLevel == 0?
-
         if (concurrencyLevel > 0 && concurrencyLevel < Integer.MAX_VALUE) {
             parallelExecutor = new ParallelExecutorImpl(concurrencyLevel, Integer.MAX_VALUE);
         } else {
@@ -122,7 +120,6 @@ public class ParallelExecutorService {
             if (command == null) {
                 throw new NullPointerException("Runnable is not allowed to be null");
             }
-
             int index = (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % executionSegments.length;
             ExecutionSegment segment = executionSegments[index];
             segment.offer(command);
@@ -173,12 +170,10 @@ public class ParallelExecutorService {
                         Thread.currentThread().interrupt();
                     }
                 }
-
                 //if the segment is active we don't need to schedule.
                 if (active.get()) {
                     return;
                 }
-
                 //now we need to do a cas to make sure
                 if (active.compareAndSet(false, true)) {
                     executorService.execute(ExecutionSegment.this);
@@ -195,7 +190,6 @@ public class ParallelExecutorService {
                             //Here is some complex logic coming: it can happen that work was placed by another thread
                             //after the q.poll. If we don't take care of this situation, it could happen that work remains
                             //unscheduled (and we don't want that).
-
                             boolean finished;
                             if (q.peek() == null) {
                                 //we are lucky, there was no new work scheduled after the ExecutionSegment was made inactive.
@@ -205,14 +199,12 @@ public class ParallelExecutorService {
                                 //we were unlucky; we decided to deactivate this ExecutionSegment, but new work
                                 //was offered. If we can get this ExecutionSegment active again, we keep running, otherwise
                                 //it will be the responsibility of another thread to schedule execution and we can finish.
-
                                 //it can be that we are going to continue executing, even though there is no work anymore.
                                 //(some other thread could have processed the work that we found with the peek). But that
                                 //is not a problem since the g.poll returns null and this thread has the chance to complete
                                 //anyway.
                                 finished = !active.compareAndSet(false, true);
                             }
-
                             if (finished) {
                                 break;
                             }

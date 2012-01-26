@@ -17,8 +17,6 @@
 
 package com.hazelcast.impl;
 
-import static com.hazelcast.nio.IOUtil.toData;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ConcurrentMapManager.MAtomicNumber;
@@ -27,6 +25,8 @@ import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.LocalAtomicNumberStatsImpl;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
 import com.hazelcast.nio.Data;
+
+import static com.hazelcast.nio.IOUtil.toData;
 
 public class AtomicNumberProxyImpl extends FactoryAwareNamedProxy implements AtomicNumberProxy {
     private transient AtomicNumberProxy base = null;
@@ -243,8 +243,8 @@ public class AtomicNumberProxyImpl extends FactoryAwareNamedProxy implements Ato
             mAtomicNumber.setOperationsCounter(operationsCounter);
             return mAtomicNumber;
         }
-        
+
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		}
+        }
     }
 }

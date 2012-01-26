@@ -943,7 +943,7 @@ public class TransactionTest {
         Assert.assertNull("The remove in the second thread should return null", t2Return.get());
         Hazelcast.shutdownAll();
     }
-    
+
     @Test
     public void issue770TestIMapTryPutUnderTransaction() {
         final HazelcastInstance hz = Hazelcast.getDefaultInstance();

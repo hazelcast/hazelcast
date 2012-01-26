@@ -1,16 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <sect1 xml:id="MultiMap" version='5.0' xmlns='http://docbook.org/ns/docbook'
-       xmlns:xlink='http://www.w3.org/1999/xlink'
-       xmlns:xi='http://www.w3.org/2001/XInclude'
-       xmlns:ns5='http://www.w3.org/2000/svg'
-       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
-       xmlns:ns3='http://www.w3.org/1999/xhtml'
-       xmlns:db='http://docbook.org/ns/docbook'>
+        >
     <title>Distributed MultiMap</title>
     <para>
-        <literal>MultiMap</literal> is a specialized map where you can associate a key with multiple values.
+        <literal>MultiMap</literal>
+        is a specialized map where you can associate a key with multiple values.
         Just like any other distributed data structure implementation in Hazelcast,
-        <literal>MultiMap</literal> is distributed/partitioned and thread-safe.
+        <literal>MultiMap</literal>
+        is distributed/partitioned and thread-safe.
 
         <programlisting language="java"><![CDATA[import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Hazelcast;

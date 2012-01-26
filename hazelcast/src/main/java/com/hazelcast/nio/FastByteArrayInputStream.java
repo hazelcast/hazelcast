@@ -239,14 +239,14 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
      *             form: <blockquote>
      *             <p/>
      *             <pre>
-     *                                                                                                                                                                                     DataInputStream d = new DataInputStream(in);
-     *                                                                                                                                                                                     </pre>
+     *                                                                                                                                                                                                                         DataInputStream d = new DataInputStream(in);
+     *                                                                                                                                                                                                                         </pre>
      *
      *             </blockquote> with: <blockquote>
      *
      *             <pre>
-     *                                                                                                                                                                                     BufferedReader d = new BufferedReader(new InputStreamReader(in));
-     *                                                                                                                                                                                     </pre>
+     *                                                                                                                                                                                                                         BufferedReader d = new BufferedReader(new InputStreamReader(in));
+     *                                                                                                                                                                                                                         </pre>
      *
      *             </blockquote>
      */

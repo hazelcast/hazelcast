@@ -67,7 +67,7 @@ public class ManagementService {
         this.logger = instance.node.getLogger(ManagementService.class.getName());
     }
 
-    public HazelcastInstance getInstance(){
+    public HazelcastInstance getInstance() {
         return instance;
     }
 

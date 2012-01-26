@@ -40,7 +40,7 @@ public class HazelcastClientSemaphoreTest {
 
     @Before
     @After
-    public void after() throws Exception{
+    public void after() throws Exception {
         System.out.flush();
         System.err.flush();
         destroyClients();
@@ -79,7 +79,6 @@ public class HazelcastClientSemaphoreTest {
             assertEquals(false, semaphore.tryAcquire(10, 10, TimeUnit.MILLISECONDS));
             assertEquals(9, semaphore.availablePermits());
             semaphore.release();
-
             //Test acquire and timeout and check for partial acquisitions.
             assertEquals(10, semaphore.availablePermits());
             assertEquals(false, semaphore.tryAcquire(20, 10, TimeUnit.MILLISECONDS));
@@ -183,10 +182,10 @@ public class HazelcastClientSemaphoreTest {
         HazelcastClient client = newHazelcastClient(instance);
         final ISemaphore semaphore = client.getSemaphore("test");
         final Future f1 = semaphore.acquireAsync();
-        Thread thread = new Thread(){
+        Thread thread = new Thread() {
             @Override
             public void run() {
-                for (;;){
+                for (; ; ) {
                     try {
                         f1.get();
                         break;
@@ -246,7 +245,7 @@ public class HazelcastClientSemaphoreTest {
             }
         };
         Thread thread2 = new Thread() {
-             public void run() {
+            public void run() {
                 for (int i = 0; i < 200; i++) {
                     try {
                         semaphore2.acquire();
@@ -264,7 +263,7 @@ public class HazelcastClientSemaphoreTest {
             }
         };
         Thread thread3 = new Thread() {
-             public void run() {
+            public void run() {
                 for (int i = 0; i < 300; i++) {
                     try {
                         semaphore3.acquire();
@@ -280,7 +279,7 @@ public class HazelcastClientSemaphoreTest {
                     }
                 }
             }
-         };
+        };
         thread1.start();
         thread2.start();
         thread3.start();

@@ -48,9 +48,9 @@ import java.util.SortedSet;
  * of this interface are encouraged to override these methods to return
  * {@code NavigableSet}.
  *
+ * @param <E> the type of elements maintained by this set
  * @author Doug Lea
  * @author Josh Bloch
- * @param <E> the type of elements maintained by this set
  */
 public interface NavigableSet<E> extends SortedSet<E> {
     /**
@@ -251,7 +251,7 @@ public interface NavigableSet<E> extends SortedSet<E> {
     /**
      * {@inheritDoc}
      * <p/>
-     * <p>Equivalent to {@code subSet(fromElement,true,toElement,false)}.
+     * <p>Equivalent to {@code subSet(fromElement, true, toElement, false)}.
      *
      * @throws ClassCastException       {@inheritDoc}
      * @throws NullPointerException     {@inheritDoc}
@@ -262,7 +262,7 @@ public interface NavigableSet<E> extends SortedSet<E> {
     /**
      * {@inheritDoc}
      * <p/>
-     * <p>Equivalent to {@code headSet(toElement,false)}.
+     * <p>Equivalent to {@code headSet(toElement, false)}.
      *
      * @throws ClassCastException       {@inheritDoc}
      * @throws NullPointerException     {@inheritDoc}
@@ -274,7 +274,7 @@ public interface NavigableSet<E> extends SortedSet<E> {
     /**
      * {@inheritDoc}
      * <p/>
-     * <p>Equivalent to {@code tailSet(fromElement,true)}.
+     * <p>Equivalent to {@code tailSet(fromElement, true)}.
      *
      * @throws ClassCastException       {@inheritDoc}
      * @throws NullPointerException     {@inheritDoc}

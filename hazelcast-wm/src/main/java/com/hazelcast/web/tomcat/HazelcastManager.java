@@ -17,59 +17,55 @@
 
 package com.hazelcast.web.tomcat;
 
-import java.io.IOException;
-
+import com.hazelcast.core.IMap;
 import org.apache.catalina.Session;
 import org.apache.catalina.session.StandardManager;
 import org.apache.catalina.session.StandardSession;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 
-import com.hazelcast.core.IMap;
+import java.io.IOException;
 
 /**
  * @author ali
- *
  */
 
 public class HazelcastManager extends StandardManager {
-	
-	private final Log log = LogFactory.getLog(HazelcastManager.class);
-	
+
+    private final Log log = LogFactory.getLog(HazelcastManager.class);
+
     /**
      * The descriptive information string for this implementation.
      */
-	private static final String info = "HazelManager/1.0";
-	
+    private static final String info = "HazelManager/1.0";
+
     /**
      * The descriptive name of this Manager implementation (for logging).
      */
     protected static String name = "HazelManager";
-	
-	public String getInfo() {
-		return info;
-	}
 
-	/**
+    public String getInfo() {
+        return info;
+    }
+
+    /**
      * Get new session class to be used in the doLoad() method.
      */
-	protected StandardSession getNewSession() {
-		return new HazelcastSession(this);
-	}
-	
-	@Override
-	public Session findSession(String id) throws IOException {
-		Session session = super.findSession(id);
-		if(session != null){
-			return session;
-		}
-		
-		final IMap<String, HazelcastAttribute> sessionAttrMap = HazelcastClusterSupport.get().getAttributesMap();
-		HazelcastAttribute mark = sessionAttrMap.get(id + "_" + HazelcastSession.SESSION_MARK);
-		if(mark != null && mark.getValue() != null){
-			session = createSession(id);
-		}
-		return session;
-	}
-	
+    protected StandardSession getNewSession() {
+        return new HazelcastSession(this);
+    }
+
+    @Override
+    public Session findSession(String id) throws IOException {
+        Session session = super.findSession(id);
+        if (session != null) {
+            return session;
+        }
+        final IMap<String, HazelcastAttribute> sessionAttrMap = HazelcastClusterSupport.get().getAttributesMap();
+        HazelcastAttribute mark = sessionAttrMap.get(id + "_" + HazelcastSession.SESSION_MARK);
+        if (mark != null && mark.getValue() != null) {
+            session = createSession(id);
+        }
+        return session;
+    }
 }

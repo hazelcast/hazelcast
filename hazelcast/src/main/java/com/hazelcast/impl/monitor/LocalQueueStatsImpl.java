@@ -17,17 +17,17 @@
 
 package com.hazelcast.impl.monitor;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import com.hazelcast.monitor.LocalQueueOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.DataSerializable;
 
-public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOperationStats> 
-	implements LocalQueueStats, DataSerializable {
-	
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOperationStats>
+        implements LocalQueueStats, DataSerializable {
+
     private int ownedItemCount;
     private int backupItemCount;
     private long minAge;
@@ -60,11 +60,11 @@ public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOpe
         maxAge = in.readLong();
         aveAge = in.readLong();
     }
-    
+
     @Override
-	LocalQueueOperationStats newOperationStatsInstance() {
-		return new LocalQueueOperationStatsImpl();
-	}
+    LocalQueueOperationStats newOperationStatsInstance() {
+        return new LocalQueueOperationStatsImpl();
+    }
 
     public int getOwnedItemCount() {
         return ownedItemCount;

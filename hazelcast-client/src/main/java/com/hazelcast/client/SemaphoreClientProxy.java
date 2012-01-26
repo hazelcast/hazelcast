@@ -187,7 +187,7 @@ public class SemaphoreClientProxy implements ISemaphore {
         };
     }
 
-	public LocalSemaphoreStats getLocalSemaphoreStats() {
-		throw new UnsupportedOperationException();
-	}
+    public LocalSemaphoreStats getLocalSemaphoreStats() {
+        throw new UnsupportedOperationException();
+    }
 }

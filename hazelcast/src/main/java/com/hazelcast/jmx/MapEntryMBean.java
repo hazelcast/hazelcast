@@ -86,11 +86,9 @@ public class MapEntryMBean extends AbstractMBean<MapEntry> {
                 }
             }
             return map.get(key).getClass();
-        }
-        catch (Exception cnfe) {
+        } catch (Exception cnfe) {
             return String.class;
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             return null;
         }
     }

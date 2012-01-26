@@ -15,14 +15,13 @@
  *
  */
 
-
 package com.hazelcast.impl.partition;
+
+import com.hazelcast.impl.MemberImpl;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.hazelcast.impl.MemberImpl;
 
 public class SingleMemberGroupFactory implements MemberGroupFactory {
 
@@ -33,5 +32,4 @@ public class SingleMemberGroupFactory implements MemberGroupFactory {
         }
         return groups;
     }
-
 }

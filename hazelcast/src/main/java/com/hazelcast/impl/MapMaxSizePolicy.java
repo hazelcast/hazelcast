@@ -21,6 +21,6 @@ import com.hazelcast.config.MaxSizeConfig;
 
 public interface MapMaxSizePolicy {
     boolean overCapacity();
+
     MaxSizeConfig getMaxSizeConfig();
-    
 }

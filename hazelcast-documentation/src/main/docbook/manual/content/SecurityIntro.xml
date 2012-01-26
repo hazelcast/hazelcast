@@ -1,13 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
-    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg"
-    xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml"
-    xmlns:db="http://docbook.org/ns/docbook"> Hazelcast has an extensible, JAAS based security feature 
-    which can be used to authenticate both cluster members and clients and to do access control checks 
+<para version="5.0" xmlns="http://docbook.org/ns/docbook"
+        >Hazelcast has an extensible, JAAS based security feature
+    which can be used to authenticate both cluster members and clients and to do access control checks
     on client operations. Access control can be done according to endpoint principal and/or endpoint address.
-    Security can be enabled and configured either in configuration xml or using Config api.     
-     <programlisting language="xml"><![CDATA[<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-basic.xsd"
+    Security can be enabled and configured either in configuration xml or using Config api.
+    <programlisting language="xml"><![CDATA[<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-basic.xsd"
     xmlns="http://www.hazelcast.com/schema/config"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     
@@ -16,8 +14,8 @@
     ...
     </security>
 </hazelcast>
-]]></programlisting> 
-   <programlisting language="java"><![CDATA[Config cfg = new Config();
+]]></programlisting>
+    <programlisting language="java"><![CDATA[Config cfg = new Config();
 SecurityConfig securityCfg = cfg.getSecurityConfig();
 securityCfg.setEnabled(true);
 ]]></programlisting>

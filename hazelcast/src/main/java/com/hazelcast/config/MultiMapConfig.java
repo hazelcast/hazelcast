@@ -27,68 +27,68 @@ import java.util.List;
 
 public class MultiMapConfig implements DataSerializable {
 
-	private String name;
-	private String valueCollectionType = ValueCollectionType.SET.toString();
-	private List<EntryListenerConfig> listenerConfigs;
+    private String name;
+    private String valueCollectionType = ValueCollectionType.SET.toString();
+    private List<EntryListenerConfig> listenerConfigs;
 
-	public MultiMapConfig() {
-	}
-	
-	public MultiMapConfig(MultiMapConfig defConfig) {
-		this.name = defConfig.getName();
-		this.valueCollectionType = defConfig.getValueCollectionType().toString();
-	}
+    public MultiMapConfig() {
+    }
 
-	public enum ValueCollectionType {
-		SET, LIST
-	}
+    public MultiMapConfig(MultiMapConfig defConfig) {
+        this.name = defConfig.getName();
+        this.valueCollectionType = defConfig.getValueCollectionType().toString();
+    }
 
-	public void writeData(DataOutput out) throws IOException {
-		out.writeUTF(name);
-		out.writeUTF(valueCollectionType);
-	}
+    public enum ValueCollectionType {
+        SET, LIST
+    }
 
-	public void readData(DataInput in) throws IOException {
-		name = in.readUTF();
-		valueCollectionType = in.readUTF();
-	}
+    public void writeData(DataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(valueCollectionType);
+    }
 
-	public String getName() {
-		return name;
-	}
+    public void readData(DataInput in) throws IOException {
+        name = in.readUTF();
+        valueCollectionType = in.readUTF();
+    }
 
-	public MultiMapConfig setName(String name) {
-		this.name = name;
-		return this;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public ValueCollectionType getValueCollectionType() {
-		return ValueCollectionType.valueOf(valueCollectionType.toUpperCase());
-	}
+    public MultiMapConfig setName(String name) {
+        this.name = name;
+        return this;
+    }
 
-	public MultiMapConfig setValueCollectionType(String valueCollectionType) {
-		this.valueCollectionType = valueCollectionType;
-		return this;
-	}
-	
-	public MultiMapConfig setValueCollectionType(ValueCollectionType valueCollectionType) {
-		this.valueCollectionType = valueCollectionType.toString();
-		return this;
-	}
+    public ValueCollectionType getValueCollectionType() {
+        return ValueCollectionType.valueOf(valueCollectionType.toUpperCase());
+    }
 
-	public MultiMapConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
-		getEntryListenerConfigs().add(listenerConfig);
-		return this;
-	}
+    public MultiMapConfig setValueCollectionType(String valueCollectionType) {
+        this.valueCollectionType = valueCollectionType;
+        return this;
+    }
 
-	public List<EntryListenerConfig> getEntryListenerConfigs() {
-		if (listenerConfigs == null) {
-			listenerConfigs = new ArrayList<EntryListenerConfig>();
-		}
-		return listenerConfigs;
-	}
+    public MultiMapConfig setValueCollectionType(ValueCollectionType valueCollectionType) {
+        this.valueCollectionType = valueCollectionType.toString();
+        return this;
+    }
 
-	public void setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
-		this.listenerConfigs = listenerConfigs;
-	}
+    public MultiMapConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
+        getEntryListenerConfigs().add(listenerConfig);
+        return this;
+    }
+
+    public List<EntryListenerConfig> getEntryListenerConfigs() {
+        if (listenerConfigs == null) {
+            listenerConfigs = new ArrayList<EntryListenerConfig>();
+        }
+        return listenerConfigs;
+    }
+
+    public void setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
+        this.listenerConfigs = listenerConfigs;
+    }
 }

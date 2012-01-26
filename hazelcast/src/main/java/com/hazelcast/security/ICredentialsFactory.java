@@ -17,31 +17,33 @@
 
 package com.hazelcast.security;
 
-import java.util.Properties;
-
 import com.hazelcast.config.GroupConfig;
+
+import java.util.Properties;
 
 /**
  * ICredentialsFactory is used to create {@link Credentials} objects to be used
  * during node authentication before connection accepted by master node.
  */
 public interface ICredentialsFactory {
-	
-	/**
-	 * Configures {@link ICredentialsFactory}.
-	 * @param groupConfig Hazelcast {@link GroupConfig}
-	 * @param properties
-	 */
-	void configure(GroupConfig groupConfig, Properties properties);
 
-	/**
-	 * Creates new {@link Credentials} object.
-	 * @return Credentials
-	 */
-	Credentials newCredentials();
+    /**
+     * Configures {@link ICredentialsFactory}.
+     *
+     * @param groupConfig Hazelcast {@link GroupConfig}
+     * @param properties
+     */
+    void configure(GroupConfig groupConfig, Properties properties);
 
-	/**
-	 * Destroys {@link ICredentialsFactory}.
-	 */
-	void destroy();
+    /**
+     * Creates new {@link Credentials} object.
+     *
+     * @return Credentials
+     */
+    Credentials newCredentials();
+
+    /**
+     * Destroys {@link ICredentialsFactory}.
+     */
+    void destroy();
 }

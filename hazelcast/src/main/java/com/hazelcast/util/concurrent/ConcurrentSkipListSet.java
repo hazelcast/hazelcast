@@ -45,8 +45,8 @@ import java.util.*;
  * because <tt>null</tt> arguments and return values cannot be reliably
  * distinguished from the absence of elements.
  *
- * @author Doug Lea
  * @param <E> the type of elements maintained by this set
+ * @author Doug Lea
  */
 public class ConcurrentSkipListSet<E>
         extends AbstractSet<E>
@@ -268,7 +268,7 @@ public class ConcurrentSkipListSet<E>
     public boolean removeAll(Collection<?> c) {
         // Override AbstractSet version to avoid unnecessary call to size()
         boolean modified = false;
-        for (Iterator<?> i = c.iterator(); i.hasNext();)
+        for (Iterator<?> i = c.iterator(); i.hasNext(); )
             if (remove(i.next()))
                 modified = true;
         return modified;

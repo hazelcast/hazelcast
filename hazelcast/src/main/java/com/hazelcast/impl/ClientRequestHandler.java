@@ -21,10 +21,9 @@ import com.hazelcast.impl.ClientService.ClientOperationHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 
+import javax.security.auth.Subject;
 import java.security.PrivilegedExceptionAction;
 import java.util.logging.Level;
-
-import javax.security.auth.Subject;
 
 public class ClientRequestHandler extends FallThroughRunnable {
     private final Packet packet;
@@ -36,8 +35,8 @@ public class ClientRequestHandler extends FallThroughRunnable {
     private final ILogger logger;
     private final Subject subject;
 
-    public ClientRequestHandler(Node node, Packet packet, CallContext callContext, 
-    		ClientOperationHandler clientOperationHandler, Subject subject) {
+    public ClientRequestHandler(Node node, Packet packet, CallContext callContext,
+                                ClientOperationHandler clientOperationHandler, Subject subject) {
         this.packet = packet;
         this.callContext = callContext;
         this.node = node;
@@ -52,22 +51,19 @@ public class ClientRequestHandler extends FallThroughRunnable {
         ThreadContext.get().setCallContext(callContext);
         try {
             if (!valid) return;
-            
             final PrivilegedExceptionAction<Void> action = new PrivilegedExceptionAction<Void>() {
-				public Void run() {
-					clientOperationHandler.handle(node, packet);
-					node.clientService.getClientEndpoint(packet.conn).removeRequest(ClientRequestHandler.this);
-					clientOperationHandler.postHandle(packet);
-					return null;
-				}
+                public Void run() {
+                    clientOperationHandler.handle(node, packet);
+                    node.clientService.getClientEndpoint(packet.conn).removeRequest(ClientRequestHandler.this);
+                    clientOperationHandler.postHandle(packet);
+                    return null;
+                }
             };
-            
-            if(node.securityContext == null) {
-            	action.run();
+            if (node.securityContext == null) {
+                action.run();
             } else {
-            	node.securityContext.doAsPrivileged(subject, action);
+                node.securityContext.doAsPrivileged(subject, action);
             }
-            
         } catch (Throwable e) {
             logger.log(Level.WARNING, e.getMessage(), e);
             if (node.isActive()) {

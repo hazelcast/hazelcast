@@ -19,7 +19,9 @@ package com.hazelcast.core;
 
 import org.junit.After;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class IMapPerformance extends PerformanceTest {
 
     private IMap map = Hazelcast.getMap("IMapPerformance");

@@ -55,5 +55,4 @@ public interface LocalQueueStats extends LocalInstanceStats<LocalQueueOperationS
      * @return average age
      */
     long getAveAge();
-
 }

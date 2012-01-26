@@ -1,11 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <sect1 xml:id="NetworkPartitioning" version='5.0' xmlns='http://docbook.org/ns/docbook'
-       xmlns:xlink='http://www.w3.org/1999/xlink'
-       xmlns:xi='http://www.w3.org/2001/XInclude'
-       xmlns:ns5='http://www.w3.org/2000/svg'
-       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
-       xmlns:ns3='http://www.w3.org/1999/xhtml'
-       xmlns:db='http://docbook.org/ns/docbook'>
+        >
     <title>Network Partitioning (Split-Brain Syndrome)</title>
     <para>Imagine that you have 10-node cluster and for some reason the network is divided into two
         in a way that 4 servers cannot see the other 6. As a result you ended up having two separate

@@ -48,7 +48,7 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
     private E managedObject;
 
     private String description;
-    
+
     protected final ManagementService managementService;
 
     /**
@@ -260,8 +260,7 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
                 }
                 result = getter.invoke(managedObject);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Error accessing attribute " + attribute, e);
             throw new ReflectionException(e);
         }
@@ -294,8 +293,7 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
                 Attribute attribute = new Attribute(name, value);
                 result.add(attribute);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
         return result;
@@ -327,8 +325,7 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
                 }
                 result = method.invoke(managedObject, params);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Error invoking operation " + actionName, e);
             throw new ReflectionException(e);
         }
@@ -425,8 +422,7 @@ public abstract class AbstractMBean<E> implements DynamicMBean, MBeanRegistratio
     public ObjectName preRegister(MBeanServer server, ObjectName name) throws Exception {
         try {
             instrument();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Error generating MBeanInfo", e);
             throw e;
         }

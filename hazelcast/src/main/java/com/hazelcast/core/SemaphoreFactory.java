@@ -23,10 +23,10 @@ package com.hazelcast.core;
  * methods for the desired usage.
  * <p/>
  * Semaphore sample config:
- *     <semaphore name="default">
- *         <initial-permits>1</initial-permits>
- *         <helper-class-name>com.domain.MySemaphoreHelper</helper-class-name>
- *     </semaphore>
+ * <semaphore name="default">
+ * <initial-permits>1</initial-permits>
+ * <helper-class-name>com.domain.MySemaphoreHelper</helper-class-name>
+ * </semaphore>
  */
 public interface SemaphoreFactory {
     /**

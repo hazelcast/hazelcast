@@ -22,9 +22,8 @@ import com.hazelcast.merge.MergePolicy;
 
 public class DummyMergePolicy implements MergePolicy {
 
-	public Object merge(String mapName, MapEntry mergingEntry,
-			MapEntry existingEntry) {
-		return null;
-	}
-
+    public Object merge(String mapName, MapEntry mergingEntry,
+                        MapEntry existingEntry) {
+        return null;
+    }
 }

@@ -18,12 +18,12 @@
 package com.hazelcast.util;
 
 import com.hazelcast.impl.GroupProperties;
-import org.junit.internal.runners.model.EachTestNotifier;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -36,14 +36,37 @@ public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
     }
 
+    final static String indexStr = System.getProperty("hazelcast.test.index");
+    final static String concurrencyLevelStr = System.getProperty("hazelcast.test.concurrency.level");
+
     public RandomBlockJUnit4ClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
     }
 
     protected List<FrameworkMethod> computeTestMethods() {
         List<FrameworkMethod> methods = super.computeTestMethods();
+        if (indexStr != null && concurrencyLevelStr != null) {
+            System.out.println(concurrencyLevelStr + " concurrencyLevel and index: " + indexStr);
+            int index = Integer.parseInt(indexStr);
+            System.setProperty("hazelcast.multicast.group", "224.2.2." + index);
+            int concurrencyLevel = Integer.parseInt(concurrencyLevelStr);
+            List<FrameworkMethod> filteredMethods = new ArrayList<FrameworkMethod>(methods.size());
+            for (FrameworkMethod method : methods) {
+                if (method.getName().hashCode() % concurrencyLevel == index) {
+                    filteredMethods.add(method);
+                }
+            }
+            methods = filteredMethods;
+        }
         Collections.shuffle(methods);
         return methods;
+    }
+
+    //
+    protected void validateInstanceMethods(List<Throwable> errors) {
+        if (indexStr == null || concurrencyLevelStr == null) {
+            super.validateInstanceMethods(errors);
+        }
     }
 
     @Override

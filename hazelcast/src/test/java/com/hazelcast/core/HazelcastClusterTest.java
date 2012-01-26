@@ -36,9 +36,7 @@ import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * HazelcastTest tests some specific cluster behavior.
@@ -360,15 +358,12 @@ public class HazelcastClusterTest {
             HazelcastInstance hzb = Hazelcast.getHazelcastInstanceByName(
                     hz.getExecutorService().submit(new NewInstanceCallable()).get());
             hz.getLifecycleService().shutdown();
-
             DistributedTask<String> taskA = new DistributedTask<String>(new EchoCallable(),
                     hzb.getCluster().getLocalMember());
             hza.getExecutorService().submit(taskA);
-
             DistributedTask<String> taskB = new DistributedTask<String>(new EchoCallable(),
                     hza.getCluster().getLocalMember());
             hzb.getExecutorService().submit(taskB);
-
             try {
                 taskA.get(10, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
@@ -395,6 +390,7 @@ public class HazelcastClusterTest {
             return Hazelcast.newHazelcastInstance(null).getName();
         }
     }
+
     static class EchoCallable implements Callable<String>, Serializable {
         public String call() throws Exception {
             return "hello!";

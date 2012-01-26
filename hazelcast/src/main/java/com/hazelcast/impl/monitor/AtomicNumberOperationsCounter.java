@@ -20,9 +20,9 @@ package com.hazelcast.impl.monitor;
 import com.hazelcast.monitor.LocalAtomicNumberOperationStats;
 
 public class AtomicNumberOperationsCounter extends OperationsCounterSupport<LocalAtomicNumberOperationStats> {
-	
-	final private static LocalAtomicNumberOperationStats empty = new LocalAtomicNumberOperationStatsImpl();
-	
+
+    final private static LocalAtomicNumberOperationStats empty = new LocalAtomicNumberOperationStatsImpl();
+
     private OperationCounter modified = new OperationCounter();
     private OperationCounter nonModified = new OperationCounter();
 
@@ -48,7 +48,7 @@ public class AtomicNumberOperationsCounter extends OperationsCounterSupport<Loca
         LocalAtomicNumberOperationStatsImpl stats = new LocalAtomicNumberOperationStatsImpl();
         stats.periodStart = ((AtomicNumberOperationsCounter) listOfSubCounters.get(0)).startTime;
         for (Object obj : listOfSubCounters) {
-        	AtomicNumberOperationsCounter sub = (AtomicNumberOperationsCounter) obj;
+            AtomicNumberOperationsCounter sub = (AtomicNumberOperationsCounter) obj;
             stats.modified.add(sub.modified.count.get(), sub.modified.totalLatency.get());
             stats.nonModified.add(sub.nonModified.count.get(), sub.nonModified.totalLatency.get());
             stats.periodEnd = sub.endTime;
@@ -74,8 +74,8 @@ public class AtomicNumberOperationsCounter extends OperationsCounterSupport<Loca
         stats.periodEnd = now();
         return stats;
     }
-    
+
     LocalAtomicNumberOperationStats getEmpty() {
-    	return empty;
+        return empty;
     }
 }

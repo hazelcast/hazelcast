@@ -56,49 +56,49 @@ public class AtomicNumberMBean extends AbstractMBean<AtomicNumber> {
 
     @JMXOperation("set")
     @JMXDescription("set value")
-    public void set(final long newValue){
+    public void set(final long newValue) {
         getManagedObject().set(newValue);
     }
 
     @JMXOperation("add")
     @JMXDescription("add value and return")
-    public void add(final long delta){
+    public void add(final long delta) {
         getManagedObject().addAndGet(delta);
     }
 
     @JMXOperation("getAndAdd")
     @JMXDescription("add value return original")
-    public long getAdd(final long delta){
+    public long getAdd(final long delta) {
         return getManagedObject().addAndGet(delta);
     }
 
     @JMXOperation("getAndSet")
     @JMXDescription("set value return original")
-    public long getSet(final long delta){
+    public long getSet(final long delta) {
         return getManagedObject().addAndGet(delta);
     }
 
     @JMXOperation("increment")
     @JMXDescription("add 1 and return")
-    public void incrementAndGet(){
+    public void incrementAndGet() {
         getManagedObject().incrementAndGet();
     }
 
     @JMXOperation("decrement")
     @JMXDescription("subtract 1 and return")
-    public void decrementAndGet(){
+    public void decrementAndGet() {
         getManagedObject().decrementAndGet();
     }
 
     @JMXOperation("reset")
     @JMXDescription("reset value to 0")
-    public void reset(){
+    public void reset() {
         getManagedObject().set(0L);
     }
 
     @JMXOperation("compareAndSet")
     @JMXDescription("if expected set value")
-    public void compareAndSet(final long expectedValue, final long newValue){
+    public void compareAndSet(final long expectedValue, final long newValue) {
         getManagedObject().compareAndSet(expectedValue, newValue);
     }
 }

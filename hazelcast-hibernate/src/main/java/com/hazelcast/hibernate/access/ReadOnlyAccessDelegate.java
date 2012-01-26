@@ -17,14 +17,12 @@
 
 package com.hazelcast.hibernate.access;
 
-import java.util.Properties;
-import java.util.logging.Level;
-
+import com.hazelcast.hibernate.region.HazelcastRegion;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 
-import com.hazelcast.hibernate.region.HazelcastRegion;
-
+import java.util.Properties;
+import java.util.logging.Level;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -33,8 +31,8 @@ import com.hazelcast.hibernate.region.HazelcastRegion;
 public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrictReadWriteAccessDelegate<T> {
 
     public ReadOnlyAccessDelegate(T hazelcastRegion, final Properties props) {
-		super(hazelcastRegion, props);
-	}
+        super(hazelcastRegion, props);
+    }
 
     /**
      * @throws UnsupportedOperationException

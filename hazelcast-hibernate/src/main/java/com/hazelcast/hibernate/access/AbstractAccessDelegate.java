@@ -17,87 +17,86 @@
 
 package com.hazelcast.hibernate.access;
 
-import java.util.Properties;
-
-import org.hibernate.cache.CacheException;
-import org.hibernate.cache.access.SoftLock;
-
 import com.hazelcast.core.IMap;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import org.hibernate.cache.CacheException;
+import org.hibernate.cache.access.SoftLock;
+
+import java.util.Properties;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
 public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implements AccessDelegate<T> {
 
-	protected final ILogger LOG = Logger.getLogger(getClass().getName());
-	private final T hazelcastRegion;
+    protected final ILogger LOG = Logger.getLogger(getClass().getName());
+    private final T hazelcastRegion;
 
-	protected AbstractAccessDelegate(final T hazelcastRegion, final Properties props) {
-		this.hazelcastRegion = hazelcastRegion;
-	}
+    protected AbstractAccessDelegate(final T hazelcastRegion, final Properties props) {
+        this.hazelcastRegion = hazelcastRegion;
+    }
 
-	public final T getHazelcastRegion() {
-		return hazelcastRegion;
-	}
+    public final T getHazelcastRegion() {
+        return hazelcastRegion;
+    }
 
-	public final IMap getCache() {
-		return hazelcastRegion.getCache();
-	}
-	
-	public Object get(final Object key, final long txTimestamp) throws CacheException {
-		return getCache().get(key);
-	}
+    public final IMap getCache() {
+        return hazelcastRegion.getCache();
+    }
 
-	public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version) throws CacheException {
-		return putFromLoad(key, value, txTimestamp, version, true);
-	}
-	
-	public void remove(final Object key) throws CacheException {
-		getCache().remove(key);
-	}
+    public Object get(final Object key, final long txTimestamp) throws CacheException {
+        return getCache().get(key);
+    }
 
-	public void removeAll() throws CacheException {
-		hazelcastRegion.clearCache();
-	}
+    public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version) throws CacheException {
+        return putFromLoad(key, value, txTimestamp, version, true);
+    }
 
-	public void evict(final Object key) throws CacheException {
-		remove(key);
-	}
+    public void remove(final Object key) throws CacheException {
+        getCache().remove(key);
+    }
 
-	public void evictAll() throws CacheException {
-		hazelcastRegion.clearCache();
-	}
+    public void removeAll() throws CacheException {
+        hazelcastRegion.clearCache();
+    }
 
-	/**
-	 * NO-OP
-	 */
-	public SoftLock lockRegion() throws CacheException {
-		return null;
-	}
+    public void evict(final Object key) throws CacheException {
+        remove(key);
+    }
 
-	/**
-	 * NO-OP
-	 */
-	public void unlockRegion(final SoftLock lock) throws CacheException {
-	}
-	
-	/**
-	 * This is an asynchronous cache access strategy.
-	 * NO-OP
-	 */
-    public boolean insert(final Object key, final Object value, final Object version) throws CacheException {
-		return false;
-	}
-    
+    public void evictAll() throws CacheException {
+        hazelcastRegion.clearCache();
+    }
+
     /**
-	 * This is an asynchronous cache access strategy.
-	 * NO-OP
-	 */
-	public boolean update(final Object key, final Object value, final Object currentVersion, final Object previousVersion)
-			throws CacheException {
-		return false;
-	}
+     * NO-OP
+     */
+    public SoftLock lockRegion() throws CacheException {
+        return null;
+    }
+
+    /**
+     * NO-OP
+     */
+    public void unlockRegion(final SoftLock lock) throws CacheException {
+    }
+
+    /**
+     * This is an asynchronous cache access strategy.
+     * NO-OP
+     */
+    public boolean insert(final Object key, final Object value, final Object version) throws CacheException {
+        return false;
+    }
+
+    /**
+     * This is an asynchronous cache access strategy.
+     * NO-OP
+     */
+    public boolean update(final Object key, final Object value, final Object currentVersion, final Object previousVersion)
+            throws CacheException {
+        return false;
+    }
 }

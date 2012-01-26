@@ -17,13 +17,13 @@
 
 package com.hazelcast.impl.monitor;
 
+import com.hazelcast.monitor.LocalMapOperationStats;
+import com.hazelcast.monitor.LocalMapStats;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.hazelcast.monitor.LocalMapOperationStats;
-import com.hazelcast.monitor.LocalMapStats;
 
 public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperationStats> implements LocalMapStats {
     private final AtomicLong lastAccessTime = new AtomicLong();
@@ -88,11 +88,11 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
         lockWaitCount = in.readLong();
         dirtyEntryCount = in.readLong();
     }
-    
+
     @Override
-	LocalMapOperationStats newOperationStatsInstance() {
-		return new LocalMapOperationStatsImpl();
-	}
+    LocalMapOperationStats newOperationStatsInstance() {
+        return new LocalMapOperationStatsImpl();
+    }
 
     public long getOwnedEntryCount() {
         return ownedEntryCount;

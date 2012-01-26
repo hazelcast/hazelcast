@@ -17,30 +17,29 @@
 
 package com.hazelcast.hibernate.region;
 
-import java.util.Map;
-import java.util.Properties;
-
-import org.hibernate.cache.CacheException;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.hibernate.HazelcastTimestamper;
+import org.hibernate.cache.CacheException;
+
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
 abstract class AbstractHazelcastRegion implements HazelcastRegion {
 
-	private final HazelcastInstance instance;
+    private final HazelcastInstance instance;
     private final IMap cache;
     private final String regionName;
     private final int timeout;
     protected final Properties props;
 
     protected AbstractHazelcastRegion(final HazelcastInstance instance, final String regionName, final Properties props) {
-    	super();
-    	this.instance = instance;
+        super();
+        this.instance = instance;
         this.cache = instance.getMap(regionName);
         this.regionName = regionName;
         this.timeout = HazelcastTimestamper.getTimeout(instance, regionName);
@@ -50,14 +49,14 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
     public final IMap getCache() {
         return cache;
     }
-    
+
     public final void clearCache() {
-    	// clear all cache and destroy proxies
-    	// when a new operation done over this proxy
-    	// Hazelcast will initialize and create map again.
-    	cache.destroy();
-    	// create Hazelcast internal proxies, has no effect on map operations
-    	instance.getMap(regionName);
+        // clear all cache and destroy proxies
+        // when a new operation done over this proxy
+        // Hazelcast will initialize and create map again.
+        cache.destroy();
+        // create Hazelcast internal proxies, has no effect on map operations
+        instance.getMap(regionName);
     }
 
     public void destroy() throws CacheException {
@@ -108,7 +107,7 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
     }
 
     public long nextTimestamp() {
-    	return HazelcastTimestamper.nextTimestamp(instance);
+        return HazelcastTimestamper.nextTimestamp(instance);
     }
 
     /**
@@ -119,8 +118,8 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
     public Map toMap() {
         return getCache();
     }
-    
+
     public boolean contains(Object key) {
-		return getCache().containsKey(key);
-	}
+        return getCache().containsKey(key);
+    }
 }

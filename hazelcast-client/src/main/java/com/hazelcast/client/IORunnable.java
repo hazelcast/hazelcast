@@ -61,7 +61,7 @@ public abstract class IORunnable extends ClientRunnable {
 
     public void interruptWaitingCalls() {
         final Collection<Call> values = callMap.values();
-        for (Iterator<Call> it = values.iterator(); it.hasNext();) {
+        for (Iterator<Call> it = values.iterator(); it.hasNext(); ) {
             Call call = it.next();
             if (call == RECONNECT_CALL) continue;
             logger.log(Level.INFO, "Cancel " + call);

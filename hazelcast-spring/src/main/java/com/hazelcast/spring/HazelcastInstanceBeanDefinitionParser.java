@@ -17,6 +17,8 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.core.HazelcastInstance;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
@@ -24,18 +26,14 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 
-import com.hazelcast.config.AbstractXmlConfigHelper;
-import com.hazelcast.core.HazelcastInstance;
-
-
 public class HazelcastInstanceBeanDefinitionParser extends AbstractBeanDefinitionParser {
-    
+
     private final String methodName;
-    
+
     public HazelcastInstanceBeanDefinitionParser(final String type) {
         this.methodName = "get" + Character.toUpperCase(type.charAt(0)) + type.substring(1);
     }
-    
+
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
         springXmlBuilder.handle(element);
@@ -43,22 +41,22 @@ public class HazelcastInstanceBeanDefinitionParser extends AbstractBeanDefinitio
         builder.setFactoryMethod(methodName);
         return builder.getBeanDefinition();
     }
-    
+
     private static class SpringXmlBuilder extends AbstractXmlConfigHelper {
-    
+
         private final ParserContext parserContext;
-        
+
         private BeanDefinitionBuilder builder;
 
         public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastInstance.class);
         }
-    
+
         public BeanDefinitionBuilder getBuilder() {
             return this.builder;
         }
-    
+
         public void handle(Element element) {
             final NamedNodeMap atts = element.getAttributes();
             if (atts != null) {
@@ -66,9 +64,9 @@ public class HazelcastInstanceBeanDefinitionParser extends AbstractBeanDefinitio
                     final org.w3c.dom.Node att = atts.item(a);
                     String name = att.getNodeName();
                     final String value = att.getNodeValue();
-                    if ("name".equals(name)){
+                    if ("name".equals(name)) {
                         this.builder.addConstructorArgValue(value);
-                    } else if ("instance-ref".equals(name)){
+                    } else if ("instance-ref".equals(name)) {
                         this.builder.getRawBeanDefinition().setFactoryBeanName(value);
                     } else {
                         continue;

@@ -17,30 +17,30 @@
 
 package com.hazelcast.impl.base;
 
-import com.hazelcast.impl.ProxyFactory;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.ProxyFactory;
 import com.hazelcast.impl.concurrentmap.RecordFactory;
 import com.hazelcast.security.SecurityContext;
 
 public interface NodeInitializer {
-	
-	void beforeInitialize(Node node);
-	
-	void printNodeInfo(Node node);
-	
-	void afterInitialize(Node node);
-	
-	String getBuild();
-	
-	int getBuildNumber();
-	
-	String getVersion() ;
-	
-	ProxyFactory getProxyFactory(); 
-	
-	RecordFactory getRecordFactory();
-	
-	SecurityContext getSecurityContext();
-	
-	void destroy();
+
+    void beforeInitialize(Node node);
+
+    void printNodeInfo(Node node);
+
+    void afterInitialize(Node node);
+
+    String getBuild();
+
+    int getBuildNumber();
+
+    String getVersion();
+
+    ProxyFactory getProxyFactory();
+
+    RecordFactory getRecordFactory();
+
+    SecurityContext getSecurityContext();
+
+    void destroy();
 }

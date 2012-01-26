@@ -17,12 +17,6 @@
 
 package com.hazelcast.impl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
 import com.hazelcast.impl.base.RuntimeInterruptedException;
@@ -31,6 +25,12 @@ import com.hazelcast.impl.monitor.LockOperationsCounter;
 import com.hazelcast.monitor.LocalLockStats;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 
 @SuppressWarnings("LockAcquiredButNotSafelyReleased")
 public class LockProxyImpl extends SerializationHelper implements HazelcastInstanceAwareInstance, LockProxy, DataSerializable {
@@ -215,8 +215,8 @@ public class LockProxyImpl extends SerializationHelper implements HazelcastInsta
         public LockOperationsCounter getLockOperationCounter() {
             return lockOperationsCounter;
         }
-        
+
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		}
+        }
     }
 }

@@ -17,9 +17,11 @@
 package com.hazelcast.config;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertTrue;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class SemaphoreConfigTest {
 
     @Test

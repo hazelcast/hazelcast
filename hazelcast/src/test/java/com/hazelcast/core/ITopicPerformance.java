@@ -19,7 +19,9 @@ package com.hazelcast.core;
 
 import org.junit.After;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ITopicPerformance extends PerformanceTest {
     private ITopic<String> topic = Hazelcast.getTopic("ITopicPerformance");
 

@@ -78,12 +78,10 @@ public class SimpleMultiMapTest {
                         int putCount = puts.getAndSet(0);
                         int getCount = gets.getAndSet(0);
                         int removeCount = removes.getAndSet(0);
-                        logger.info("TOTAL:" + (removeCount+putCount+getCount)/STATS_SECONDS);
-                        logger.info("PUTS:" + putCount/STATS_SECONDS);
-                        logger.info("GEtS:" + getCount/STATS_SECONDS);
-                        logger.info("REMOVES:" + removeCount/STATS_SECONDS);
-
-
+                        logger.info("TOTAL:" + (removeCount + putCount + getCount) / STATS_SECONDS);
+                        logger.info("PUTS:" + putCount / STATS_SECONDS);
+                        logger.info("GEtS:" + getCount / STATS_SECONDS);
+                        logger.info("REMOVES:" + removeCount / STATS_SECONDS);
                     } catch (InterruptedException ignored) {
                         return;
                     }

@@ -17,27 +17,27 @@
 
 package com.hazelcast.impl.management;
 
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import com.hazelcast.nio.DataSerializable;
-
 public class ThreadDumpCallable implements Callable<String>, DataSerializable {
 
     private static final long serialVersionUID = -1910495089344606344L;
-    
+
     private boolean isDeadlock;
-    
+
     public ThreadDumpCallable() {
-    	this(false);
-	}
-    
+        this(false);
+    }
+
     public ThreadDumpCallable(boolean deadlock) {
-    	super();
-    	this.isDeadlock = deadlock;
-	}
+        super();
+        this.isDeadlock = deadlock;
+    }
 
     public String call() throws Exception {
         ThreadDumpGenerator gen = ThreadDumpGenerator.newInstance();

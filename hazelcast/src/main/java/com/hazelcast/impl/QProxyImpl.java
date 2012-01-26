@@ -17,16 +17,6 @@
 
 package com.hazelcast.impl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.AbstractQueue;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Prefix;
@@ -34,6 +24,12 @@ import com.hazelcast.impl.monitor.LocalQueueStatsImpl;
 import com.hazelcast.impl.monitor.QueueOperationsCounter;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.DataSerializable;
+
+import java.io.*;
+import java.util.AbstractQueue;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 public class QProxyImpl extends AbstractQueue implements QProxy, HazelcastInstanceAwareInstance, DataSerializable {
     private transient QProxy qproxyReal = null;
@@ -208,9 +204,9 @@ public class QProxyImpl extends AbstractQueue implements QProxy, HazelcastInstan
     }
 
     private static void check(Object obj) {
-    	Util.checkSerializable(obj);
+        Util.checkSerializable(obj);
     }
-    
+
     private class QProxyReal extends AbstractQueue implements QProxy {
         private final QueueOperationsCounter operationsCounter = new QueueOperationsCounter();
 
@@ -384,8 +380,8 @@ public class QProxyImpl extends AbstractQueue implements QProxy, HazelcastInstan
         public QueueOperationsCounter getQueueOperationCounter() {
             return operationsCounter;
         }
-        
+
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-		}
+        }
     }
 }

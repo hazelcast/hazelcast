@@ -24,11 +24,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class AddressUtil {
-    
-    private AddressUtil(){
+
+    private AddressUtil() {
     }
-    
-    public static List<String> handleMembers(final Collection<String> members){
+
+    public static List<String> handleMembers(final Collection<String> members) {
         List<String> lsAddresses = new ArrayList<String>();
         for (final String address : members) {
             lsAddresses.addAll(AddressUtil.handleMember(address));
@@ -42,9 +42,8 @@ public final class AddressUtil {
         for (String token : value.split("[;, ]")) {
             token = token.trim();
             if (token.length() == 0) continue;
-            
             final Matcher matcher = ipPattern.matcher(token);
-            if (matcher.matches()){
+            if (matcher.matches()) {
                 final String first3 = matcher.group(1);
                 final String star = matcher.group(3);
                 final String range = matcher.group(4);

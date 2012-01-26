@@ -17,9 +17,9 @@
 
 package com.hazelcast.hibernate.entity;
 
-import java.util.Properties;
-
 import com.hazelcast.hibernate.access.NonStrictReadWriteAccessDelegate;
+
+import java.util.Properties;
 
 /**
  * @author Leo Kim (lkim@limewire.com)

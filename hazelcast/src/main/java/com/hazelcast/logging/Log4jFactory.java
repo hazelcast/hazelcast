@@ -17,19 +17,19 @@
 
 package com.hazelcast.logging;
 
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+
 public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory {
-	
-	protected ILogger createLogger(String name) {
-		final Logger l = Logger.getLogger(name);
+
+    protected ILogger createLogger(String name) {
+        final Logger l = Logger.getLogger(name);
         return new Log4jLogger(l);
-	}
-	
+    }
+
     class Log4jLogger implements ILogger {
         private final Logger logger;
         private final Level level;

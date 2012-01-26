@@ -29,12 +29,7 @@ import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import com.hazelcast.impl.GroupProperties;
-
-import org.hibernate.EntityMode;
-import org.hibernate.Hibernate;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
+import org.hibernate.*;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CacheKey;
 import org.hibernate.cfg.Environment;
@@ -55,7 +50,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         Hazelcast.shutdownAll();
     }
-    
+
     @Before
     @After
     public void start() {
@@ -76,7 +71,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         assertEquals(50, cfg.getMaxSizeConfig().getSize());
         Hazelcast.getDefaultInstance().getLifecycleService().shutdown();
         sf.close();
-        
         assertTrue(hz.getLifecycleService().isRunning());
         hz.getLifecycleService().shutdown();
     }
@@ -110,7 +104,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         ClientProperties cProps = client.getProperties();
         assertEquals("dev-custom", cProps.getProperty(ClientPropertyName.GROUP_NAME));
         assertEquals("dev-pass", cProps.getProperty(ClientPropertyName.GROUP_PASSWORD));
-        
         Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         assertEquals(2, hz.getCluster().getMembers().size());
         main.getLifecycleService().shutdown();
@@ -118,25 +111,23 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         sf.close();
         Hazelcast.shutdownAll();
     }
-    
+
     @Test
     public void testNamedInstance() {
-    	Config config = new Config();
-    	config.setInstanceName("hibernate");
-    	HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-    	
-		Properties props = getDefaultProperties();
-		props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
-		props.put(CacheEnvironment.HAZELCAST_INSTANCE_NAME, "hibernate");
-		props.put(CacheEnvironment.SHUTDOWN_ON_STOP, "false");
-		final SessionFactory sf = createSessionFactory(props);
-		
-		assertTrue(hz == HazelcastAccessor.getHazelcastInstance(sf));
-		sf.close();
-		assertTrue(hz.getLifecycleService().isRunning());
-		hz.getLifecycleService().shutdown();
+        Config config = new Config();
+        config.setInstanceName("hibernate");
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        Properties props = getDefaultProperties();
+        props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
+        props.put(CacheEnvironment.HAZELCAST_INSTANCE_NAME, "hibernate");
+        props.put(CacheEnvironment.SHUTDOWN_ON_STOP, "false");
+        final SessionFactory sf = createSessionFactory(props);
+        assertTrue(hz == HazelcastAccessor.getHazelcastInstance(sf));
+        sf.close();
+        assertTrue(hz.getLifecycleService().isRunning());
+        hz.getLifecycleService().shutdown();
     }
-    
+
     @Test(expected = CacheException.class)
     public void testTimeout() throws InterruptedException {
         Properties props = getDefaultProperties();
@@ -145,7 +136,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         final SessionFactory sf = createSessionFactory(props);
         assertEquals(3, CacheEnvironment.getLockTimeoutInSeconds(props));
         final HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
-        
         final Long id = new Long(1L);
         DummyEntity e = new DummyEntity(id, "", 0, null);
         Session session = sf.openSession();
@@ -153,28 +143,28 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         session.save(e);
         tx.commit();
         session.close();
-        
         new Thread() {
-        	public void run() {
-        		final SessionFactoryImplementor sfi = (SessionFactoryImplementor) sf;
-        		final CacheKey key = new CacheKey(id, Hibernate.LONG, 
-        				DummyEntity.class.getName(), EntityMode.POJO, sfi); 
-        		assertTrue(hz.getMap(DummyEntity.class.getName()).tryLock(key));
-        	};
+            public void run() {
+                final SessionFactoryImplementor sfi = (SessionFactoryImplementor) sf;
+                final CacheKey key = new CacheKey(id, Hibernate.LONG,
+                        DummyEntity.class.getName(), EntityMode.POJO, sfi);
+                assertTrue(hz.getMap(DummyEntity.class.getName()).tryLock(key));
+            }
+
+            ;
         }.start();
-        
         Thread.sleep(1000);
         session = sf.openSession();
         try {
-        	e = (DummyEntity) session.get(DummyEntity.class, id);
-        	e.setName("test");
-        	tx = session.beginTransaction();
-        	session.update(e);
-        	tx.commit();
-		} finally {
-			session.close();
-			sf.close();
-		}
+            e = (DummyEntity) session.get(DummyEntity.class, id);
+            e.setName("test");
+            tx = session.beginTransaction();
+            session.update(e);
+            tx.commit();
+        } finally {
+            session.close();
+            sf.close();
+        }
     }
 
     private Properties getDefaultProperties() {

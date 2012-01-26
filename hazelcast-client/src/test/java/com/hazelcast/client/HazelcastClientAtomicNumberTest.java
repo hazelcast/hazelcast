@@ -35,7 +35,7 @@ public class HazelcastClientAtomicNumberTest {
 
     @Before
     @After
-    public void after() throws Exception{
+    public void after() throws Exception {
         System.out.flush();
         System.err.flush();
         destroyClients();
@@ -67,38 +67,29 @@ public class HazelcastClientAtomicNumberTest {
     public void testSimple() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         HazelcastClient client = newHazelcastClient(h1);
-
         final String name = "simple";
         final AtomicNumber nodeAtomicLong = h1.getAtomicNumber(name);
         final AtomicNumber clientAtomicLong = client.getAtomicNumber(name);
         check(nodeAtomicLong, clientAtomicLong, 0L);
-
         assertEquals(1L, clientAtomicLong.incrementAndGet());
         check(nodeAtomicLong, clientAtomicLong, 1L);
-
         assertEquals(1L, clientAtomicLong.getAndAdd(1));
         check(nodeAtomicLong, clientAtomicLong, 2L);
-
         assertEquals(1L, nodeAtomicLong.decrementAndGet());
         check(nodeAtomicLong, clientAtomicLong, 1L);
-
         assertEquals(2L, clientAtomicLong.addAndGet(1L));
         check(nodeAtomicLong, clientAtomicLong, 2L);
-
         clientAtomicLong.set(3L);
         check(nodeAtomicLong, clientAtomicLong, 3L);
-
         assertFalse(nodeAtomicLong.compareAndSet(4L, 1L));
         check(nodeAtomicLong, clientAtomicLong, 3L);
-
         assertTrue(clientAtomicLong.compareAndSet(3L, 1L));
         check(nodeAtomicLong, clientAtomicLong, 1L);
     }
 
     private void check(final AtomicNumber nodeAtomicLong,
-            final AtomicNumber clientAtomicLong, final long expectedValue) {
+                       final AtomicNumber clientAtomicLong, final long expectedValue) {
         assertEquals(expectedValue, nodeAtomicLong.get());
         assertEquals(expectedValue, clientAtomicLong.get());
     }
-
 }

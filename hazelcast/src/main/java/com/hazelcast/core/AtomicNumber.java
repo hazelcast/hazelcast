@@ -46,7 +46,7 @@ public interface AtomicNumber extends Instance {
      * @param expect the expected value
      * @param update the new value
      * @return true if successful; or false if the actual value
-     * was not equal to the expected value.
+     *         was not equal to the expected value.
      */
     public boolean compareAndSet(long expect, long update);
 
@@ -93,19 +93,18 @@ public interface AtomicNumber extends Instance {
      * @param newValue the new value
      */
     public void set(long newValue);
-    
+
     /**
      * Not implemented. Use compareAndSet().
      */
     @Deprecated
     boolean weakCompareAndSet(long expect, long update);
- 
+
     @Deprecated
     /**
      * Not implemented. Use set().
      */
     void lazySet(long newValue);
-    
-    
+
     LocalAtomicNumberStats getLocalAtomicNumberStats();
 }

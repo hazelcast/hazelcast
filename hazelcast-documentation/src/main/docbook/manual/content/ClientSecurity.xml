@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sect1 xml:id="ClientSecurity" version="5.0"
-    xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
-    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:ns5="http://www.w3.org/2000/svg"
-    xmlns:ns4="http://www.w3.org/1998/Math/MathML" xmlns:ns3="http://www.w3.org/1999/xhtml"
-    xmlns:db="http://docbook.org/ns/docbook">
+       xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
+        >
     <title>Native Client Security</title>
-    <para> Hazelcast's Client security includes both authentication and authorization.</para> 
-    
+    <para>Hazelcast's Client security includes both authentication and authorization.</para>
+
     <sect2>
         <title>Authentication</title>
         <para>Authentication mechanism just works the same as cluster member authentication. Implementation of client
-            authentication requires a <literal>Credentials</literal> and one or more
+            authentication requires a
+            <literal>Credentials</literal>
+            and one or more
             <literal>LoginModule</literal>(s). Client side does not have/need a factory object to
-            create <literal>Credentials</literal> objects like <literal>ICredentialsFactory</literal>.
-            <literal>Credentials</literal> must be created at client side and sent to connected node
-            during connection process. <programlisting language="xml"><![CDATA[
+            create
+            <literal>Credentials</literal>
+            objects like<literal>ICredentialsFactory</literal>.
+            <literal>Credentials</literal>
+            must be created at client side and sent to connected node
+            during connection process.
+            <programlisting language="xml"><![CDATA[
 <security enabled="true">
     <client-login-modules>
         <login-module class-name="com.hazelcast.examples.MyRequiredClientLoginModule" usage="required">
@@ -35,29 +39,44 @@
     </client-login-modules>
     ...
 </security>
-]]></programlisting></para> 
-    <para>You can define as many as <literal>LoginModule</literal>s you wanted in
+]]></programlisting>
+        </para>
+        <para>You can define as many as<literal>LoginModule</literal>s you wanted in
             configuration. Those are executed in given order. Usage attribute has 4 values; 'required',
             'requisite', 'sufficient' and 'optional' as defined in
-            <code>javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag</code>.</para>
-        
-<para><programlisting language="java"><![CDATA[
+            <code>javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag</code>.
+        </para>
+
+        <para>
+            <programlisting language="java"><![CDATA[
 final Credentials credentials = new UsernamePasswordCredentials("dev", "dev-pass");
 HazelcastInstance client = HazelcastClient.newHazelcastClient(credentials, "localhost");
-]]></programlisting></para>
+]]></programlisting>
+        </para>
     </sect2>
-    
+
     <sect2>
         <title>Authorization</title>
-        <para>Hazelcast client authorization is configured by a client permission policy. Hazelcast has a default permission policy 
-        implementation that uses permission configurations defined in Hazelcast security configuration. Default policy permission checks are done 
-        against instance types (map, queue...), instance names (map, queue etc. name), instance actions (put, get, remove, add...), 
-        client endpoint addresses and client principal defined by <literal>Credentials</literal> object. 
-        <emphasis role="italic">Instance and principal names and endpoint addresses
-        can be defined as wildcards(*). Take a look at <link xlink:href="#WildcardConfiguration">Wildcard Name Configuration</link>
-        and <link xlink:href="#ConfigSpecifyInterfaces">Newtwork Configuration</link> pages.</emphasis></para>
-        
-        <para><programlisting language="xml"><![CDATA[
+        <para>Hazelcast client authorization is configured by a client permission policy. Hazelcast has a default
+            permission policy
+            implementation that uses permission configurations defined in Hazelcast security configuration. Default
+            policy permission checks are done
+            against instance types (map, queue...), instance names (map, queue etc. name), instance actions (put, get,
+            remove, add...),
+            client endpoint addresses and client principal defined by
+            <literal>Credentials</literal>
+            object.
+            <emphasis role="italic">Instance and principal names and endpoint addresses
+                can be defined as wildcards(*). Take a look at
+                <link xlink:href="#WildcardConfiguration">Wildcard Name Configuration</link>
+                and
+                <link xlink:href="#ConfigSpecifyInterfaces">Newtwork Configuration</link>
+                pages.
+            </emphasis>
+        </para>
+
+        <para>
+            <programlisting language="xml"><![CDATA[
 <security enabled="true">
     <client-permissions>
         <!-- Principal 'admin' from endpoint '127.0.0.1' has all permissions. -->
@@ -113,9 +132,10 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient(credentials, "loca
     </client-permissions>
 </security>
 ]]></programlisting>
-    </para>
-        
-        <para>Users also can define their own policy by implementing <literal>com.hazelcast.security.IPermissionPolicy</literal>.
+        </para>
+
+        <para>Users also can define their own policy by implementing<literal>
+            com.hazelcast.security.IPermissionPolicy</literal>.
             <programlisting language="java"><![CDATA[
 package com.hazelcast.security;
 /**
@@ -129,28 +149,46 @@ public interface IPermissionPolicy {
     PermissionCollection getPermissions(Subject subject, Class<? extends Permission> type);
     
     void destroy();
-}]]></programlisting></para>
-        <para>Permission policy implementations can access <code>client-permissions</code> in
-            configuration by using <code>SecurityConfig.getClientPermissionConfigs()</code> during
-                <code>configure(SecurityConfig securityConfig, Properties properties)</code> method
-            is called by Hazelcast. <code>IPermissionPolicy.getPermissions(Subject subject,
-                Class&lt;? extends Permission&gt; type)</code> method is used to determine a client
+}]]></programlisting>
+        </para>
+        <para>Permission policy implementations can access
+            <code>client-permissions</code>
+            in
+            configuration by using
+            <code>SecurityConfig.getClientPermissionConfigs()</code>
+            during
+            <code>configure(SecurityConfig securityConfig, Properties properties)</code>
+            method
+            is called by Hazelcast.
+            <code>IPermissionPolicy.getPermissions(Subject subject,
+                Class&lt;? extends Permission&gt; type)
+            </code>
+            method is used to determine a client
             request has been granted permission to do a security-sensitive operation. Permission
-            policy should return a <literal>PermissionCollection</literal> containing permissions of
-            given type for given <literal>Subject</literal>. Hazelcast access controller will call
-                <code>PermissionCollection.implies(Permission)</code> on returning
-                <literal>PermissionCollection</literal> and will decide if current
-                <literal>Subject</literal> has permitted to access to requested resources or
-            not.</para>    
+            policy should return a
+            <literal>PermissionCollection</literal>
+            containing permissions of
+            given type for given<literal>Subject</literal>. Hazelcast access controller will call
+            <code>PermissionCollection.implies(Permission)</code>
+            on returning
+            <literal>PermissionCollection</literal>
+            and will decide if current
+            <literal>Subject</literal>
+            has permitted to access to requested resources or
+            not.
+        </para>
     </sect2>
-    
+
     <sect2>
         <title>Permissions</title>
         <para>
             <orderedlist>
                 <listitem>
-                    <para><emphasis role="bold">All Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">All Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <all-permissions principal="principal">
     <endpoints>
         ...
@@ -160,8 +198,11 @@ public interface IPermissionPolicy {
                     </para>
                 </listitem>
                 <listitem>
-                    <para><emphasis role="bold">Map Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">Map Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <map-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -172,14 +213,20 @@ public interface IPermissionPolicy {
 </map-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Actions: </emphasis><emphasis role="italic">all, create, destroy,
-                            put, get, remove, listen, lock, stats</emphasis>
+                    <para>
+                        <emphasis role="bold">Actions:</emphasis>
+                        <emphasis role="italic">all, create, destroy,
+                            put, get, remove, listen, lock, stats
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">Queue Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">Queue Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <queue-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -190,14 +237,20 @@ public interface IPermissionPolicy {
 </queue-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Actions: </emphasis><emphasis role="italic">all, create, destroy,
-                            offer, poll, get, remove, listen, stats</emphasis>
+                    <para>
+                        <emphasis role="bold">Actions:</emphasis>
+                        <emphasis role="italic">all, create, destroy,
+                            offer, poll, get, remove, listen, stats
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">Multimap Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">Multimap Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <multimap-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -208,14 +261,20 @@ public interface IPermissionPolicy {
 </multimap-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Actions: </emphasis><emphasis role="italic">all, create, destroy,
-                            put, get, remove, listen, lock, stats</emphasis>
+                    <para>
+                        <emphasis role="bold">Actions:</emphasis>
+                        <emphasis role="italic">all, create, destroy,
+                            put, get, remove, listen, lock, stats
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">Topic Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">Topic Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <topic-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -226,14 +285,20 @@ public interface IPermissionPolicy {
 </topic-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Actions: </emphasis><emphasis role="italic">create, destroy, 
-                        publish, listen, stats</emphasis> 
+                    <para>
+                        <emphasis role="bold">Actions:</emphasis>
+                        <emphasis role="italic">create, destroy,
+                            publish, listen, stats
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">List Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">List Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <list-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -244,14 +309,20 @@ public interface IPermissionPolicy {
 </list-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Actions: </emphasis><emphasis role="italic">all, create, destroy,
-                            add, set, get, remove, listen</emphasis>
+                    <para>
+                        <emphasis role="bold">Actions:</emphasis>
+                        <emphasis role="italic">all, create, destroy,
+                            add, set, get, remove, listen
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">Set Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">Set Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <set-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -262,14 +333,20 @@ public interface IPermissionPolicy {
 </set-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Actions: </emphasis><emphasis role="italic">all, create, destroy,
-                            add, get, remove, listen</emphasis>
+                    <para>
+                        <emphasis role="bold">Actions:</emphasis>
+                        <emphasis role="italic">all, create, destroy,
+                            add, get, remove, listen
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">Lock Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">Lock Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <lock-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -280,14 +357,20 @@ public interface IPermissionPolicy {
 </lock-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Actions: </emphasis><emphasis role="italic">all, create, destroy,
-                            lock, stats</emphasis>
+                    <para>
+                        <emphasis role="bold">Actions:</emphasis>
+                        <emphasis role="italic">all, create, destroy,
+                            lock, stats
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">AtomicNumber Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">AtomicNumber Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <atomic-number-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -298,14 +381,20 @@ public interface IPermissionPolicy {
 </atomic-number-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Actions: </emphasis><emphasis role="italic">all, create, destroy,
-                        increment, decrement, get, set, add, stats</emphasis>
+                    <para>
+                        <emphasis role="bold">Actions:</emphasis>
+                        <emphasis role="italic">all, create, destroy,
+                            increment, decrement, get, set, add, stats
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">CountDownLatch Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">CountDownLatch Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <countdown-latch-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -316,14 +405,20 @@ public interface IPermissionPolicy {
 </countdown-latch-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Actions: </emphasis><emphasis role="italic">all, create, destroy,
-                        countdown, set, stats</emphasis>
+                    <para>
+                        <emphasis role="bold">Actions:</emphasis>
+                        <emphasis role="italic">all, create, destroy,
+                            countdown, set, stats
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">Semaphore Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">Semaphore Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <semaphore-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -334,14 +429,20 @@ public interface IPermissionPolicy {
 </semaphore-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Actions: </emphasis><emphasis role="italic">all, create, destroy,
-                        acquire, release, drain, stats</emphasis>
+                    <para>
+                        <emphasis role="bold">Actions:</emphasis>
+                        <emphasis role="italic">all, create, destroy,
+                            acquire, release, drain, stats
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">Executor Service Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">Executor Service Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <executor-service-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -352,14 +453,20 @@ public interface IPermissionPolicy {
 </executor-service-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Actions: </emphasis><emphasis role="italic">all, create, destroy,
-                        execute</emphasis>
+                    <para>
+                        <emphasis role="bold">Actions:</emphasis>
+                        <emphasis role="italic">all, create, destroy,
+                            execute
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">Listener Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">Listener Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <listener-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -367,14 +474,20 @@ public interface IPermissionPolicy {
 </listener-permission>
 ]]></programlisting>
                     </para>
-                    <para><emphasis role="bold">Names: </emphasis><emphasis role="italic">all, instance,
-                            member</emphasis>
+                    <para>
+                        <emphasis role="bold">Names:</emphasis>
+                        <emphasis role="italic">all, instance,
+                            member
+                        </emphasis>
                     </para>
                 </listitem>
-                
+
                 <listitem>
-                    <para><emphasis role="bold">Transaction Permission</emphasis></para>
-                    <para><programlisting language="xml"><![CDATA[
+                    <para>
+                        <emphasis role="bold">Transaction Permission</emphasis>
+                    </para>
+                    <para>
+                        <programlisting language="xml"><![CDATA[
 <transaction-permission principal="principal">
     <endpoints>
         ...
@@ -384,6 +497,6 @@ public interface IPermissionPolicy {
                     </para>
                 </listitem>
             </orderedlist>
-        </para>        
+        </para>
     </sect2>
 </sect1>

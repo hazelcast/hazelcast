@@ -59,13 +59,13 @@ public class CallContext {
     public void reset() {
         this.txn = null;
     }
-    
+
     public Subject getSubject() {
-    	return currentSubject;
+        return currentSubject;
     }
-    
+
     public void setSubject(Subject subject) {
-    	this.currentSubject = subject;
+        this.currentSubject = subject;
     }
 
     @Override

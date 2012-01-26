@@ -17,19 +17,6 @@
 
 package com.hazelcast.hibernate;
 
-import java.util.Properties;
-import java.util.logging.Level;
-
-import org.hibernate.cache.CacheDataDescription;
-import org.hibernate.cache.CacheException;
-import org.hibernate.cache.CollectionRegion;
-import org.hibernate.cache.EntityRegion;
-import org.hibernate.cache.QueryResultsRegion;
-import org.hibernate.cache.RegionFactory;
-import org.hibernate.cache.TimestampsRegion;
-import org.hibernate.cache.access.AccessType;
-import org.hibernate.cfg.Settings;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.collection.HazelcastCollectionRegion;
 import com.hazelcast.hibernate.entity.HazelcastEntityRegion;
@@ -39,6 +26,12 @@ import com.hazelcast.hibernate.query.HazelcastQueryResultsRegion;
 import com.hazelcast.hibernate.timestamp.HazelcastTimestampsRegion;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import org.hibernate.cache.*;
+import org.hibernate.cache.access.AccessType;
+import org.hibernate.cfg.Settings;
+
+import java.util.Properties;
+import java.util.logging.Level;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -46,7 +39,7 @@ import com.hazelcast.logging.Logger;
 public class HazelcastCacheRegionFactory implements RegionFactory {
 
     private static final ILogger LOG = Logger.getLogger(HazelcastCacheRegionFactory.class.getName());
-    
+
     private IHazelcastInstanceLoader instanceLoader = null;
     private HazelcastInstance instance;
 
@@ -56,9 +49,9 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
     public HazelcastCacheRegionFactory(final Properties properties) {
         this();
     }
-    
+
     public HazelcastCacheRegionFactory(final HazelcastInstance instance) {
-    	this.instance = instance;
+        this.instance = instance;
     }
 
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
@@ -89,32 +82,31 @@ public class HazelcastCacheRegionFactory implements RegionFactory {
     }
 
     public long nextTimestamp() {
-    	return HazelcastTimestamper.nextTimestamp(instance);
+        return HazelcastTimestamper.nextTimestamp(instance);
     }
 
     public void start(final Settings settings, final Properties properties) throws CacheException {
         LOG.log(Level.INFO, "Starting up HazelcastCacheRegionFactory...");
-        
-        if(instance == null || !instance.getLifecycleService().isRunning()) {
-        	instanceLoader = HazelcastInstanceFactory.createInstanceLoader(properties);
-        	instance = instanceLoader.loadInstance();
+        if (instance == null || !instance.getLifecycleService().isRunning()) {
+            instanceLoader = HazelcastInstanceFactory.createInstanceLoader(properties);
+            instance = instanceLoader.loadInstance();
         }
     }
 
     public void stop() {
-    	if(instanceLoader != null) {
-	        LOG.log(Level.INFO, "Shutting down HazelcastCacheRegionFactory...");
-	        instanceLoader.unloadInstance();
-	        instance = null;
-	        instanceLoader = null;
-    	}
-    }
-    
-    public HazelcastInstance getHazelcastInstance() {
-    	return instance;
+        if (instanceLoader != null) {
+            LOG.log(Level.INFO, "Shutting down HazelcastCacheRegionFactory...");
+            instanceLoader.unloadInstance();
+            instance = null;
+            instanceLoader = null;
+        }
     }
 
-	public AccessType getDefaultAccessType() {
-		return AccessType.READ_WRITE;
-	}
+    public HazelcastInstance getHazelcastInstance() {
+        return instance;
+    }
+
+    public AccessType getDefaultAccessType() {
+        return AccessType.READ_WRITE;
+    }
 }

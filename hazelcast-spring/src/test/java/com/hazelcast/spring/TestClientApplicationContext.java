@@ -33,71 +33,70 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "node-client-applicationContext-hazelcast.xml" })
+@ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
 public class TestClientApplicationContext {
 
     @Resource
     private HazelcastClient client;
 
-	@Resource(name="instance")
+    @Resource(name = "instance")
     private HazelcastInstance instance;
 
-	@Resource(name="map1")
+    @Resource(name = "map1")
     private IMap<Object, Object> map1;
 
-    @Resource(name="map2")
+    @Resource(name = "map2")
     private IMap<Object, Object> map2;
 
-    @Resource(name="multiMap")
+    @Resource(name = "multiMap")
     private MultiMap multiMap;
 
-    @Resource(name="queue")
+    @Resource(name = "queue")
     private IQueue queue;
 
-    @Resource(name="topic")
+    @Resource(name = "topic")
     private ITopic topic;
 
-    @Resource(name="set")
+    @Resource(name = "set")
     private ISet set;
 
-    @Resource(name="list")
+    @Resource(name = "list")
     private IList list;
 
-    @Resource(name="executorService")
+    @Resource(name = "executorService")
     private ExecutorService executorService;
 
-    @Resource(name="idGenerator")
+    @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
 
-	@Resource(name="atomicNumber")
-	private AtomicNumber atomicLong;
+    @Resource(name = "atomicNumber")
+    private AtomicNumber atomicLong;
 
-    @Resource(name="countDownLatch")
+    @Resource(name = "countDownLatch")
     private ICountDownLatch countDownLatch;
 
-    @Resource(name="semaphore")
+    @Resource(name = "semaphore")
     private ISemaphore semaphore;
 
-	@BeforeClass
+    @BeforeClass
     @AfterClass
-    public static void start(){
+    public static void start() {
         Hazelcast.shutdownAll();
     }
 
-	@Test
-	public void testClient() {
-		assertNotNull(client);
-		final IMap<Object, Object> map = client.getMap("default");
-		map.put("Q", "q");
-		final IMap<Object, Object> map2 = instance.getMap("default");
-		assertEquals("q", map2.get("Q"));
-	}
+    @Test
+    public void testClient() {
+        assertNotNull(client);
+        final IMap<Object, Object> map = client.getMap("default");
+        map.put("Q", "q");
+        final IMap<Object, Object> map2 = instance.getMap("default");
+        assertEquals("q", map2.get("Q"));
+    }
 
-	@Test
+    @Test
     public void testHazelcastInstances() {
         assertNotNull(map1);
         assertNotNull(map2);
-
         assertNotNull(multiMap);
         assertNotNull(queue);
         assertNotNull(topic);
@@ -105,13 +104,11 @@ public class TestClientApplicationContext {
         assertNotNull(list);
         assertNotNull(executorService);
         assertNotNull(idGenerator);
-		assertNotNull(atomicLong);
+        assertNotNull(atomicLong);
         assertNotNull(countDownLatch);
-	    assertNotNull(semaphore);
-
+        assertNotNull(semaphore);
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());
-
         assertEquals("multiMap", multiMap.getName());
         assertEquals("queue", queue.getName());
         assertEquals("topic", topic.getName());
@@ -122,5 +119,4 @@ public class TestClientApplicationContext {
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }
-
 }

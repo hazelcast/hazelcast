@@ -17,14 +17,14 @@
 
 package com.hazelcast.impl.monitor;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.hazelcast.monitor.LocalCountDownLatchOperationStats;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class CountDownLatchOperationsCounter extends OperationsCounterSupport<LocalCountDownLatchOperationStats> {
-	
-	final private static LocalCountDownLatchOperationStats empty = new LocalCountDownLatchOperationStatsImpl();
-	
+
+    final private static LocalCountDownLatchOperationStats empty = new LocalCountDownLatchOperationStatsImpl();
+
     private AtomicLong awaitsReleased = new AtomicLong();
     private AtomicLong gatesOpened = new AtomicLong();
     private OperationCounter await = new OperationCounter();
@@ -46,7 +46,7 @@ public class CountDownLatchOperationsCounter extends OperationsCounterSupport<Lo
 
     public void incrementCountDown(long elapsed, int releasedThreads) {
         countdown.count(elapsed);
-        if(releasedThreads > 0){
+        if (releasedThreads > 0) {
             awaitsReleased.addAndGet(releasedThreads);
             gatesOpened.incrementAndGet();
         }
@@ -62,7 +62,7 @@ public class CountDownLatchOperationsCounter extends OperationsCounterSupport<Lo
         LocalCountDownLatchOperationStatsImpl stats = new LocalCountDownLatchOperationStatsImpl();
         stats.periodStart = ((CountDownLatchOperationsCounter) listOfSubCounters.get(0)).startTime;
         for (Object obj : listOfSubCounters) {
-        	CountDownLatchOperationsCounter sub = (CountDownLatchOperationsCounter) obj;
+            CountDownLatchOperationsCounter sub = (CountDownLatchOperationsCounter) obj;
             stats.await.add(sub.await.count.get(), sub.await.totalLatency.get());
             stats.countdown.add(sub.countdown.count.get(), sub.countdown.totalLatency.get());
             stats.other.add(sub.other.count.get(), sub.other.totalLatency.get());
@@ -97,8 +97,8 @@ public class CountDownLatchOperationsCounter extends OperationsCounterSupport<Lo
         stats.periodEnd = now();
         return stats;
     }
-    
+
     LocalCountDownLatchOperationStats getEmpty() {
-    	return empty;
+        return empty;
     }
 }

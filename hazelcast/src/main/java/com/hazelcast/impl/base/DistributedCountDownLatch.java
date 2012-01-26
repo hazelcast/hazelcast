@@ -26,7 +26,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class DistributedCountDownLatch implements DataSerializable  {
+public class DistributedCountDownLatch implements DataSerializable {
     public final static Data newInstanceData = IOUtil.toData(new DistributedCountDownLatch());
 
     int count;

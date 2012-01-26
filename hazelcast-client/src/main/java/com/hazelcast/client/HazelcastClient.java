@@ -73,12 +73,12 @@ public class HazelcastClient implements HazelcastInstance {
     volatile boolean active = true;
 
     private HazelcastClient(ClientProperties properties, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
-    	this(properties, new UsernamePasswordCredentials(properties.getProperty(ClientPropertyName.GROUP_NAME), 
-    			properties.getProperty(ClientPropertyName.GROUP_PASSWORD)), shuffle, clusterMembers, automatic);
+        this(properties, new UsernamePasswordCredentials(properties.getProperty(ClientPropertyName.GROUP_NAME),
+                properties.getProperty(ClientPropertyName.GROUP_PASSWORD)), shuffle, clusterMembers, automatic);
     }
-    
-    private HazelcastClient(ClientProperties properties, Credentials credentials, 
-    		boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
+
+    private HazelcastClient(ClientProperties properties, Credentials credentials,
+                            boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
         this.properties = properties;
         this.id = clientIdCounter.incrementAndGet();
         final long timeout = Long.valueOf(properties.getProperty(ClientPropertyName.CONNECTION_TIMEOUT));
@@ -89,32 +89,30 @@ public class HazelcastClient implements HazelcastInstance {
                 new ConnectionManager(this, credentials, lifecycleService, clusterMembers, shuffle, timeout);
         connectionManager.setBinder(new DefaultClientBinder(this));
         out = new OutRunnable(this, calls, new PacketWriter());
-    	in = new InRunnable(this, out, calls, new PacketReader());
-    	listenerManager = new ListenerManager(this);
-    	
+        in = new InRunnable(this, out, calls, new PacketReader());
+        listenerManager = new ListenerManager(this);
         try {
-    		final Connection c = connectionManager.getInitConnection();
-    		if (c == null) {
-        		connectionManager.shutdown();
-    			throw new IllegalStateException("Unable to connect to cluster");
-    		}
-    	} catch (IOException e) {
-    		connectionManager.shutdown();
-    		throw new ClusterClientException(e.getMessage(), e);
-    	}
-    	
-    	final String prefix = "hz.client." + this.id + ".";
-    	new Thread(out, prefix + "OutThread").start();
-    	new Thread(in, prefix + "InThread").start();
-    	new Thread(listenerManager, prefix + "Listener").start();
-    	clusterClientProxy = new ClusterClientProxy(this);
-    	partitionClientProxy = new PartitionClientProxy(this);
-    	if (automatic) {
-    		this.getCluster().addMembershipListener(connectionManager);
-    		connectionManager.updateMembers();
-    	}
-    	lifecycleService.fireLifecycleEvent(STARTED);
-    	connectionManager.scheduleHeartbeatTimerTask();
+            final Connection c = connectionManager.getInitConnection();
+            if (c == null) {
+                connectionManager.shutdown();
+                throw new IllegalStateException("Unable to connect to cluster");
+            }
+        } catch (IOException e) {
+            connectionManager.shutdown();
+            throw new ClusterClientException(e.getMessage(), e);
+        }
+        final String prefix = "hz.client." + this.id + ".";
+        new Thread(out, prefix + "OutThread").start();
+        new Thread(in, prefix + "InThread").start();
+        new Thread(listenerManager, prefix + "Listener").start();
+        clusterClientProxy = new ClusterClientProxy(this);
+        partitionClientProxy = new PartitionClientProxy(this);
+        if (automatic) {
+            this.getCluster().addMembershipListener(connectionManager);
+            connectionManager.updateMembers();
+        }
+        lifecycleService.fireLifecycleEvent(STARTED);
+        connectionManager.scheduleHeartbeatTimerTask();
     }
 
     GroupConfig groupConfig() {
@@ -154,7 +152,7 @@ public class HazelcastClient implements HazelcastInstance {
     public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String... addresses) {
         return newHazelcastClient(ClientProperties.createBaseClientProperties(groupName, groupPassword), addresses);
     }
-    
+
     /**
      * Returns a new HazelcastClient. It will shuffle the given address list and pick one address to connect.
      * If the connected member will die, client will pick another from given addresses.
@@ -288,41 +286,41 @@ public class HazelcastClient implements HazelcastInstance {
         InetSocketAddress inetSocketAddress = parse(address);
         return new HazelcastClient(clientProperties, inetSocketAddress);
     }
-    
+
     /**
      * Returns a new HazelcastClient.
-     * <p>
+     * <p/>
      * Giving address of one member is enough. It will connect to that member and will get addresses of all members
      * in the cluster. If the connected member will die or leave the cluster, client will automatically
      * switch to another member in the cluster.
-     * 
-     * @param credentials {@link Credentials} to be used in authentication   
+     *
+     * @param credentials {@link Credentials} to be used in authentication
      * @param address     Address of one of the members that client will choose one to connect.
      *                    An address is in the form ip:port. If you will not specify the port, it will assume the default one, 5701.
      *                    ex: "10.90.0.1", "10.90.0.2:5702"
      * @return Returns a new Hazelcast Client instance.
      */
     public static HazelcastClient newHazelcastClient(Credentials credentials, String address) {
-    	return newHazelcastClient(credentials, new ClientProperties(), address);
+        return newHazelcastClient(credentials, new ClientProperties(), address);
     }
-    
+
     /**
      * Returns a new HazelcastClient.
-     * <p>
+     * <p/>
      * Giving address of one member is enough. It will connect to that member and will get addresses of all members
      * in the cluster. If the connected member will die or leave the cluster, client will automatically
      * switch to another member in the cluster.
-     * 
-     * @param credentials {@link Credentials} to be used in authentication   
+     *
+     * @param credentials      {@link Credentials} to be used in authentication
      * @param clientProperties Client Properties
-     * @param address     Address of one of the members that client will choose one to connect.
-     *                    An address is in the form ip:port. If you will not specify the port, it will assume the default one, 5701.
-     *                    ex: "10.90.0.1", "10.90.0.2:5702"
+     * @param address          Address of one of the members that client will choose one to connect.
+     *                         An address is in the form ip:port. If you will not specify the port, it will assume the default one, 5701.
+     *                         ex: "10.90.0.1", "10.90.0.2:5702"
      * @return Returns a new Hazelcast Client instance.
      */
     public static HazelcastClient newHazelcastClient(Credentials credentials, ClientProperties clientProperties, String address) {
         final InetSocketAddress inetSocketAddress = parse(address);
-    	return new HazelcastClient(clientProperties, credentials, false, new InetSocketAddress[]{inetSocketAddress}, true);
+        return new HazelcastClient(clientProperties, credentials, false, new InetSocketAddress[]{inetSocketAddress}, true);
     }
 
     public Config getConfig() {

@@ -17,14 +17,6 @@
 
 package com.hazelcast.impl.management;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.logging.Level;
-import java.util.regex.Pattern;
-import java.util.zip.Deflater;
-
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
@@ -42,6 +34,14 @@ import com.hazelcast.nio.PipedZipBufferFactory.DeflatingPipedBuffer;
 import com.hazelcast.nio.PipedZipBufferFactory.InflatingPipedBuffer;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.logging.Level;
+import java.util.regex.Pattern;
+import java.util.zip.Deflater;
 
 public class ManagementCenterService implements MembershipListener {
 
@@ -124,7 +124,7 @@ public class ManagementCenterService implements MembershipListener {
         Address address = ((MemberImpl) membershipEvent.getMember()).getAddress();
         memberStates.remove(address);
         socketAddresses.remove(address);
-		addresses.remove(address);
+        addresses.remove(address);
     }
 
     void updateMemberOrder() {
@@ -138,7 +138,7 @@ public class ManagementCenterService implements MembershipListener {
                         SocketAddress socketAddress = new InetSocketAddress(address.getInetAddress(), calculatePort(address));
                         socketAddresses.putIfAbsent(address, socketAddress);
                     }
-					addresses.add(address);
+                    addresses.add(address);
                 } catch (UnknownHostException e) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }
@@ -149,10 +149,10 @@ public class ManagementCenterService implements MembershipListener {
             }
         }
     }
-    
+
     private int calculatePort(final Address address) {
-        int port = (address.getPort() - factory.node.config.getPort()) 
-            + factory.node.getGroupProperties().MC_PORT.getInteger();
+        int port = (address.getPort() - factory.node.config.getPort())
+                + factory.node.getGroupProperties().MC_PORT.getInteger();
         return port;
     }
 
@@ -216,7 +216,7 @@ public class ManagementCenterService implements MembershipListener {
             try {
                 while (running) {
                     final ClientHandler clientHandler = qClientHandlers.poll();
-                    if(clientHandler == null) {
+                    if (clientHandler == null) {
                         logger.log(Level.SEVERE, "ClientHandler pool exhausted! Try to connect another node...");
                         break;
                     }
@@ -356,7 +356,7 @@ public class ManagementCenterService implements MembershipListener {
         memberState.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
         memberState.getMemberHealthStats().setActive(node.isActive());
         memberState.getMemberHealthStats().setServiceThreadStats(node.getCpuUtilization().serviceThread);
-                memberState.getMemberHealthStats().setOutThreadStats(node.getCpuUtilization().outThread);
+        memberState.getMemberHealthStats().setOutThreadStats(node.getCpuUtilization().outThread);
         memberState.getMemberHealthStats().setInThreadStats(node.getCpuUtilization().inThread);
         PartitionService partitionService = factory.getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();
@@ -420,7 +420,7 @@ public class ManagementCenterService implements MembershipListener {
                             memberState.putLocalSemaphoreStats(semaphoreProxy.getName(), (LocalSemaphoreStatsImpl) semaphoreProxy.getLocalSemaphoreStats());
                             count++;
                         }
-                    } 
+                    }
                 }
                 it.remove();
             }
@@ -533,7 +533,7 @@ public class ManagementCenterService implements MembershipListener {
                 while (running) {
                     int requestType = socketIn.read();
                     if (requestType == -1) {
-                        logger.log(Level.WARNING, "Management Center Client connection [" 
+                        logger.log(Level.WARNING, "Management Center Client connection ["
                                 + socket.getInetAddress() + "] is closed!");
                         return;
                     }
@@ -623,7 +623,7 @@ public class ManagementCenterService implements MembershipListener {
             updateLocalState();
         }
         TimedClusterState timedClusterState = new TimedClusterState();
-		for (Address address : addresses) {
+        for (Address address : addresses) {
             MemberState memberState = memberStates.get(address);
             if (memberState != null) {
                 timedClusterState.addMemberState(memberState);
@@ -640,7 +640,7 @@ public class ManagementCenterService implements MembershipListener {
     ConsoleCommandHandler getCommandHandler() {
         return commandHandler;
     }
-    
+
     public static class SocketReadyServerSocket extends ServerSocket {
 
         public SocketReadyServerSocket(int port, int timeout, boolean reuseAddress) throws IOException {

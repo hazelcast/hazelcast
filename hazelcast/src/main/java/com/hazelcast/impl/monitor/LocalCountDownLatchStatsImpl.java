@@ -20,11 +20,11 @@ package com.hazelcast.impl.monitor;
 import com.hazelcast.monitor.LocalCountDownLatchOperationStats;
 import com.hazelcast.monitor.LocalCountDownLatchStats;
 
-public class LocalCountDownLatchStatsImpl extends LocalInstanceStatsSupport<LocalCountDownLatchOperationStats> 
-	implements LocalCountDownLatchStats {
-	
-	@Override
-	LocalCountDownLatchOperationStats newOperationStatsInstance() {
-		return new LocalCountDownLatchOperationStatsImpl();
-	}
+public class LocalCountDownLatchStatsImpl extends LocalInstanceStatsSupport<LocalCountDownLatchOperationStats>
+        implements LocalCountDownLatchStats {
+
+    @Override
+    LocalCountDownLatchOperationStats newOperationStatsInstance() {
+        return new LocalCountDownLatchOperationStatsImpl();
+    }
 }

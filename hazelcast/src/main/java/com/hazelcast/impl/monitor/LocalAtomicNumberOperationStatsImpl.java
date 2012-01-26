@@ -17,17 +17,17 @@
 
 package com.hazelcast.impl.monitor;
 
+import com.hazelcast.monitor.LocalAtomicNumberOperationStats;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.hazelcast.monitor.LocalAtomicNumberOperationStats;
+public class LocalAtomicNumberOperationStatsImpl extends LocalOperationStatsSupport
+        implements LocalAtomicNumberOperationStats {
 
-public class LocalAtomicNumberOperationStatsImpl extends LocalOperationStatsSupport 
-	implements LocalAtomicNumberOperationStats {
-	
-    OperationStat modified = new OperationStat(0,0);
-    OperationStat nonModified = new OperationStat(0,0);
+    OperationStat modified = new OperationStat(0, 0);
+    OperationStat nonModified = new OperationStat(0, 0);
 
     void writeDataInternal(DataOutput out) throws IOException {
         modified.writeData(out);
@@ -40,7 +40,7 @@ public class LocalAtomicNumberOperationStatsImpl extends LocalOperationStatsSupp
     }
 
     public long total() {
-    	return modified.count + nonModified.count;
+        return modified.count + nonModified.count;
     }
 
     public long getNumberOfModifyOps() {

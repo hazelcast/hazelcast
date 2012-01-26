@@ -24,10 +24,12 @@ import com.hazelcast.core.IList;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ClusterListTest {
     @BeforeClass
     public static void init() throws Exception {

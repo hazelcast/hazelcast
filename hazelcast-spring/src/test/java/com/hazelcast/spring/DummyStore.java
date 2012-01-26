@@ -50,8 +50,8 @@ public class DummyStore implements MapStore {
         return null;
     }
 
-	public Set loadAllKeys() {
-		// not implemented
-		return null;
-	}
+    public Set loadAllKeys() {
+        // not implemented
+        return null;
+    }
 }

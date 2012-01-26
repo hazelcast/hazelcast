@@ -63,7 +63,7 @@ public class AsyncClientCall<V> implements Future<V> {
         Object response;
         try {
             response = remoteCall.getResponse(timeout, unit);
-        } catch (RuntimeException e){
+        } catch (RuntimeException e) {
             response = e.getCause();
         }
         processResult(response);

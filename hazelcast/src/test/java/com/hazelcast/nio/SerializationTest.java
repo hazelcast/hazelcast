@@ -142,15 +142,15 @@ public class SerializationTest {
         assertNotSame(o, object);
         assertEquals(o, object);
     }
-    
+
     @Test
-	public void testPrimitiveArray() {
-		Serializer serializer = new Serializer();
-		int[] value = new int[]{1,2,3};
-		byte[] data = serializer.toByteArray(value);
-		int[] value2 = (int[]) serializer.toObject(data);
-		assertArrayEquals(value, value2);
-	}
+    public void testPrimitiveArray() {
+        Serializer serializer = new Serializer();
+        int[] value = new int[]{1, 2, 3};
+        byte[] data = serializer.toByteArray(value);
+        int[] value2 = (int[]) serializer.toObject(data);
+        assertArrayEquals(value, value2);
+    }
 
     private static class ExternalizableImpl implements Externalizable {
         private int v;

@@ -104,14 +104,12 @@ public class ValueCollection<K, V> implements Collection<V> {
             result = a;
         }
         int i = 0;
-        for (Entry<K, V> entry : entrySet){ 
+        for (Entry<K, V> entry : entrySet) {
             result[i++] = (T) entry.getValue();
         }
-
-        for(int j = i; j < a.length; j++){
-        	result[j] = null;
+        for (int j = i; j < a.length; j++) {
+            result[j] = null;
         }
-
         return result;
     }
 }

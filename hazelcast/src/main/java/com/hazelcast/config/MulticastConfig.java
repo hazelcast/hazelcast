@@ -17,13 +17,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.DataSerializable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.hazelcast.nio.DataSerializable;
 
 public class MulticastConfig implements DataSerializable {
 
@@ -39,7 +39,7 @@ public class MulticastConfig implements DataSerializable {
     private int multicastPort = DEFAULT_MULTICAST_PORT;
 
     private int multicastTimeoutSeconds = DEFAULT_MULTICAST_TIMEOUT_SECONDS;
-    
+
     private final Set<String> trustedInterfaces = new HashSet<String>();
 
     /**
@@ -103,20 +103,20 @@ public class MulticastConfig implements DataSerializable {
     }
 
     public Set<String> getTrustedInterfaces() {
-		return trustedInterfaces;
-	}
-    
+        return trustedInterfaces;
+    }
+
     public MulticastConfig setTrustedInterfaces(Set<String> interfaces) {
-		trustedInterfaces.clear();
-		trustedInterfaces.addAll(interfaces);
-		return this;
-	}
-    
-    public MulticastConfig addTrustedInterface(final String ip) {
-    	trustedInterfaces.add(ip);
+        trustedInterfaces.clear();
+        trustedInterfaces.addAll(interfaces);
         return this;
     }
-    
+
+    public MulticastConfig addTrustedInterface(final String ip) {
+        trustedInterfaces.add(ip);
+        return this;
+    }
+
     public void writeData(DataOutput out) throws IOException {
         out.writeBoolean(enabled);
         out.writeUTF(multicastGroup);
@@ -133,11 +133,9 @@ public class MulticastConfig implements DataSerializable {
 
     @Override
     public String toString() {
-        return "MulticastConfig [enabled=" + enabled 
-            + ", multicastGroup=" + multicastGroup
-            + ", multicastPort=" + multicastPort 
-            + ", multicastTimeoutSeconds=" + multicastTimeoutSeconds + "]";
+        return "MulticastConfig [enabled=" + enabled
+                + ", multicastGroup=" + multicastGroup
+                + ", multicastPort=" + multicastPort
+                + ", multicastTimeoutSeconds=" + multicastTimeoutSeconds + "]";
     }
-    
-    
 }

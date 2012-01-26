@@ -55,7 +55,7 @@ public class ValueHolder {
 
     @Override
     public int hashCode() {
-    	final Object v = getValue(); 
+        final Object v = getValue();
         return v != null ? v.hashCode() : Integer.MIN_VALUE;
     }
 }
