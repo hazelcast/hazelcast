@@ -33,32 +33,36 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 
-@SuppressWarnings("SynchronizationOnStaticField")
 public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>, HazelcastInstanceAware {
 
     private static final long serialVersionUID = -4729129143589252665L;
 
     private static final ILogger logger = Logger.getLogger(ScriptExecutorCallable.class.getName());
     private static final String SCRIPT_ENGINE_MANAGER_CLASS = "javax.script.ScriptEngineManager";
-    private static final Class/*<ScriptEngineManager>*/ scriptEngineManagerClass;
-    private static final Object lock = new Object();
-
-    private static Object/*ScriptEngineManager*/ scriptEngineManager;
-    private static Method/*ScriptEngineManager.getEngineByName*/ mGetEngineByName;
+    private static final Object/*ScriptEngineManager*/ scriptEngineManager;
+    private static final Method/*ScriptEngineManager.getEngineByName*/ mGetEngineByName;
+    private static final Exception scriptEngineLoadError;
 
     static {
-        Class clazz = null;
+        Object manager = null;
+        Method method = null;
+        Exception error = null;
         try {
-            clazz = Class.forName(SCRIPT_ENGINE_MANAGER_CLASS);
+            final Class scriptEngineManagerClass = Class.forName(SCRIPT_ENGINE_MANAGER_CLASS);
+            manager = scriptEngineManagerClass.newInstance();
+            method = scriptEngineManagerClass.getMethod("getEngineByName", new Class[]{String.class});
         } catch (Exception e) {
-            logger.log(Level.WARNING, "ScriptEngineManager class could not be loaded!");
+            error = e;
+            logger.log(Level.WARNING, "ScriptEngineManager could not be loaded!", e);
         }
-        scriptEngineManagerClass = clazz;
+        scriptEngineManager = manager;
+        mGetEngineByName = method;
+        scriptEngineLoadError = error;
     }
 
-    @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
     private String engineName;
     private String script;
     private Map<String, Object> bindings;
@@ -81,20 +85,13 @@ public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>,
     }
 
     public V call() throws Exception {
-        if (scriptEngineManagerClass == null) {
-            throw new ClassNotFoundException("ScriptEngineManager class could not be loaded!");
+        if (scriptEngineLoadError != null) {
+            throw new ExecutionException("ScriptEngineManager could not be loaded!", scriptEngineLoadError);
         }
-        Object/*ScriptEngine*/ engine = null;
-        synchronized (lock) {
-            if (scriptEngineManager == null) {
-                scriptEngineManager = scriptEngineManagerClass.newInstance();
-                mGetEngineByName = scriptEngineManagerClass.getMethod("getEngineByName", new Class[]{String.class});
-            }
-            // ScriptEngine engine = ScriptEngineManager.getEngineByName(engineName);
-            engine = mGetEngineByName.invoke(scriptEngineManager, engineName);
-        }
+        // ScriptEngine engine = ScriptEngineManager.getEngineByName(engineName);
+        Object/*ScriptEngine*/ engine = mGetEngineByName.invoke(scriptEngineManager, engineName);
         if (engine == null) {
-            throw new NullPointerException("Could not find ScriptEngine named '" + engineName + "'.");
+            throw new IllegalArgumentException("Could not find ScriptEngine named '" + engineName + "'.");
         }
         Method put = engine.getClass().getMethod("put", new Class[]{String.class, Object.class});
         put.invoke(engine, "hazelcast", hazelcast);
@@ -150,4 +147,5 @@ public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>,
     public void setBindings(Map<String, Object> bindings) {
         this.bindings = bindings;
     }
+
 }
