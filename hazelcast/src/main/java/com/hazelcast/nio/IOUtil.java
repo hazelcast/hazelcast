@@ -182,10 +182,9 @@ public final class IOUtil {
         while (!compressor.finished()) {
             int count = compressor.deflate(buf);
             bos.write(buf, 0, count);
-            System.out.println("deflating...");
         }
-        System.out.println("done!");
         bos.close();
+        compressor.end();
         return bos.toByteArray();
     }
 
@@ -202,6 +201,7 @@ public final class IOUtil {
             }
         }
         bos.close();
+        inflater.end();
         return bos.toByteArray();
     }
 }

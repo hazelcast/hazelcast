@@ -61,11 +61,13 @@ public final class PipedZipBufferFactory {
         InputStream getInputStream();
 
         void reset();
+
+        void destroy();
     }
 
     private static class DeflatingPipedBufferImpl extends PipedZipBufferSupport implements DeflatingPipedBuffer {
         private final Deflater deflater;
-        private final DataOutput dataOutput;
+        private DataOutputStream dataOutput;
 
         private DeflatingPipedBufferImpl(int compressedDataSize, int compressionLevel) {
             super(compressedDataSize);
@@ -101,11 +103,18 @@ public final class PipedZipBufferFactory {
         public DataOutput getDataOutput() {
             return dataOutput;
         }
+
+        public void destroy() {
+            closeResource(dataOutput);
+            dataOutput = null;
+            deflater.end();
+            super.destroy();
+        }
     }
 
     private static class InflatingPipedBufferImpl extends PipedZipBufferSupport implements InflatingPipedBuffer {
         private final Inflater inflater = new Inflater();
-        private final DataInput dataInput;
+        private DataInputStream dataInput;
 
         private InflatingPipedBufferImpl(int compressedDataSize) {
             super(compressedDataSize);
@@ -145,13 +154,20 @@ public final class PipedZipBufferFactory {
         public DataInput getDataInput() {
             return dataInput;
         }
+
+        public void destroy() {
+            closeResource(dataInput);
+            dataInput = null;
+            inflater.end();
+            super.destroy();
+        }
     }
 
     private static abstract class PipedZipBufferSupport implements PipedZipBufferCommons {
-        protected final ByteBuffer compressedBuffer;
-        protected final ByteBuffer uncompressedBuffer;
-        protected final InputStream inputStream;
-        protected final OutputStream outputStream;
+        protected ByteBuffer compressedBuffer;
+        protected ByteBuffer uncompressedBuffer;
+        protected InputStream inputStream;
+        protected OutputStream outputStream;
 
         private PipedZipBufferSupport(int compressedDataSize) {
             super();
@@ -172,6 +188,22 @@ public final class PipedZipBufferFactory {
         public void reset() {
             uncompressedBuffer.clear();
             compressedBuffer.clear();
+        }
+
+        public void destroy() {
+            closeResource(inputStream);
+            closeResource(outputStream);
+            compressedBuffer = null;
+            uncompressedBuffer = null;
+            inputStream = null;
+            outputStream = null;
+        }
+
+        void closeResource(Closeable c) {
+            try {
+                c.close();
+            } catch (IOException ignored) {
+            }
         }
     }
 }

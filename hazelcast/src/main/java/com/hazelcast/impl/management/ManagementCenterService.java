@@ -83,7 +83,7 @@ public class ManagementCenterService implements MembershipListener {
         updateMemberOrder();
         logger = factory.node.getLogger(ManagementCenterService.class.getName());
         for (int i = 0; i < 100; i++) {
-            qClientHandlers.offer(new ClientHandler());
+            qClientHandlers.offer(new ClientHandler(i));
         }
         maxVisibleInstanceCount = factory.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         factory.getCluster().addMembershipListener(this);
@@ -112,6 +112,7 @@ public class ManagementCenterService implements MembershipListener {
                 clientHandler.shutdown();
             }
             udpSender.interrupt();
+            lsClientHandlers.clear();
         } catch (Throwable ignored) {
         }
     }
@@ -208,7 +209,7 @@ public class ManagementCenterService implements MembershipListener {
         final SocketReadyServerSocket serverSocket;
 
         TCPListener(SocketReadyServerSocket serverSocket) {
-            super("hz.TCP.Listener");
+            super(factory.node.threadGroup, "hz.TCP.Listener");
             this.serverSocket = serverSocket;
         }
 
@@ -243,7 +244,7 @@ public class ManagementCenterService implements MembershipListener {
         final DatagramPacket packet = new DatagramPacket(buffer.getInputBuffer().array(), DATAGRAM_BUFFER_SIZE);
 
         public UDPListener(DatagramSocket socket, int timeout, boolean reuseAddress) throws SocketException {
-            super("hz.UDP.Listener");
+            super(factory.node.threadGroup, "hz.UDP.Listener");
             this.socket = socket;
             this.socket.setSoTimeout(timeout);
             this.socket.setReuseAddress(reuseAddress);
@@ -266,6 +267,9 @@ public class ManagementCenterService implements MembershipListener {
                 if (running && factory.node.isActive()) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }
+            } finally {
+                buffer.destroy();
+                packet.setData(new byte[0]);
             }
         }
     }
@@ -276,7 +280,7 @@ public class ManagementCenterService implements MembershipListener {
         final DeflatingPipedBuffer buffer = PipedZipBufferFactory.createDeflatingBuffer(DATAGRAM_BUFFER_SIZE, Deflater.BEST_SPEED);
 
         public UDPSender(DatagramSocket socket) throws SocketException {
-            super("hz.UDP.Sender");
+            super(factory.node.threadGroup, "hz.UDP.Sender");
             this.socket = socket;
         }
 
@@ -292,6 +296,9 @@ public class ManagementCenterService implements MembershipListener {
                 if (running && factory.node.isActive()) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }
+            } finally {
+                buffer.destroy();
+                packet.setData(new byte[0]);
             }
         }
 
@@ -507,7 +514,8 @@ public class ManagementCenterService implements MembershipListener {
         final LazyDataInputStream socketIn = new LazyDataInputStream();
         final LazyDataOutputStream socketOut = new LazyDataOutputStream();
 
-        public ClientHandler() {
+        public ClientHandler(int id) {
+            super(factory.node.threadGroup, "hz.Client.Handler." + id);
             register(new LoginRequest());
             register(new GetClusterStateRequest());
             register(new ThreadDumpRequest());
