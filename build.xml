@@ -68,12 +68,16 @@
         ant -Dcount=6 -Dprofile=all test
     -->
     <target name="test">
+        <exec executable="mvn" dir="./hazelcast">
+            <arg value="compile"/>
+            <arg value="compiler:testCompile"/>
+        </exec>
         <delete dir="./hazelcast/target/surefire-reports" failonerror="false"/>
         <java classname="com.hazelcast.util.Parallel">
             <arg value="${count}"/>
             <arg value="${profile}"/>
             <classpath>
-                <pathelement path="./target/classes"/>
+                <pathelement path="./hazelcast/target/test-classes"/>
             </classpath>
         </java>
         <antcall target="report"/>
@@ -89,6 +93,13 @@
     <target name="test10">
         <antcall target="test">
             <param name="count" value="10"/>
+            <param name="profile" value="all"/>
+        </antcall>
+    </target>
+
+    <target name="test20">
+        <antcall target="test">
+            <param name="count" value="20"/>
             <param name="profile" value="all"/>
         </antcall>
     </target>
