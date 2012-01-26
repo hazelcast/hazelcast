@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.test;
+package com.hazelcast.util;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

@@ -69,7 +69,7 @@
     -->
     <target name="test">
         <delete dir="./hazelcast/target/surefire-reports" failonerror="false"/>
-        <java classname="com.hazelcast.test.Parallel">
+        <java classname="com.hazelcast.util.Parallel">
             <arg value="${count}"/>
             <arg value="${profile}"/>
             <classpath>
