@@ -22,6 +22,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.plugin.version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -34,6 +35,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
                 <configuration>
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
@@ -44,6 +46,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+                <version>${maven.source.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -57,6 +60,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <archive>
                         <index>true</index>
@@ -69,6 +73,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
+                <version>${maven.antrun.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>set-timestamp</id>
@@ -96,9 +101,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.10</version>
+                <version>${maven.surefire.plugin.version}</version>
                 <configuration>
-                    <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -Dhazelcast.version.check.enabled=false</argLine>
+                    <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -Dhazelcast.version.check.enabled=false
+                        -Dhazelcast.mancenter.enabled=false
+                    </argLine>
                     <excludes>
                         <exclude>**/ClusterTest.java</exclude>
                         <exclude>**/QueryTest.java</exclude>
@@ -124,9 +131,10 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>2.10</version>
+                        <version>${maven.surefire.plugin.version}</version>
                         <configuration>
                             <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.mancenter.enabled=false
                             </argLine>
                             <includes>
                                 <include>**/*StressTest.java</include>
@@ -184,9 +192,10 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>2.10</version>
+                        <version>${maven.surefire.plugin.version}</version>
                         <configuration>
                             <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.mancenter.enabled=false
                             </argLine>
                             <!--<excludes>-->
                             <!--<exclude>**/ClusterTest.java</exclude>-->
@@ -211,10 +220,10 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>2.10</version>
+                        <version>${maven.surefire.plugin.version}</version>
                         <configuration>
                             <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -XX:MaxDirectMemorySize=1500m
-                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.version.check.enabled=false -Dhazelcast.mancenter.enabled=false
                             </argLine>
                             <excludes>
                                 <exclude>**/PerformanceTest.java</exclude>
@@ -235,7 +244,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>2.10</version>
+                        <version>${maven.surefire.plugin.version}</version>
                         <configuration>
                             <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M</argLine>
                             <includes>
