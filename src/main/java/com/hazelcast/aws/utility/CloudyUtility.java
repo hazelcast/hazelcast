@@ -28,7 +28,9 @@ import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -42,7 +44,7 @@ public class CloudyUtility {
 
     public static String getQueryString(Map<String, String> attributes) {
         StringBuilder query = new StringBuilder();
-        for (Iterator<String> iterator = attributes.keySet().iterator(); iterator.hasNext();) {
+        for (Iterator<String> iterator = attributes.keySet().iterator(); iterator.hasNext(); ) {
             String key = iterator.next();
             String value = attributes.get(key);
             query.append(AwsURLEncoder.urlEncode(key)).append("=").append(AwsURLEncoder.urlEncode(value)).append("&");
@@ -146,7 +148,7 @@ public class CloudyUtility {
 
         private boolean applyFilter(AwsConfig awsConfig, Node node) {
             boolean inGroup = applyFilter(node, awsConfig.getSecurityGroupName(), "groupset", "groupname");
-            return inGroup && applyTagFilter(node,awsConfig.getTagKey(), awsConfig.getTagValue());
+            return inGroup && applyTagFilter(node, awsConfig.getTagKey(), awsConfig.getTagValue());
         }
 
         private boolean applyFilter(Node node, String filter, String set, String filterField) {

@@ -46,6 +46,7 @@ public class TcpIpJoinerOverAWSTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         h2.getLifecycleService().shutdown();
     }
+
     @Test
     public void test() throws FileNotFoundException {
         System.setProperty("hazelcast.config", "/Users/malikov/hazelcast-1.9.4/bin/hazelcast.xml");

@@ -64,7 +64,7 @@ public class EC2RequestSigner {
 
     private List<String> getListOfEntries(Map<String, String> entries) {
         List<String> components = new ArrayList<String>();
-        for (Iterator<String> iterator = entries.keySet().iterator(); iterator.hasNext();) {
+        for (Iterator<String> iterator = entries.keySet().iterator(); iterator.hasNext(); ) {
             String key = iterator.next();
             addComponentz(components, entries, key);
         }
