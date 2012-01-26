@@ -831,7 +831,12 @@ public class ConcurrentMapManager extends BaseManager {
     int size(String name) {
         for (int i = 0; i < 10; i++) {
             try {
-                return trySize(name);
+                int size = trySize(name);
+                TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
+                if (txn != null) {
+                    size += txn.size(name);
+                }
+                return size;
             } catch (Exception e) {
                 if (e instanceof InterruptedException) {
                     handleInterruptedException();
@@ -2188,7 +2193,7 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            return new MSize(name).getSize() == 0;
+            return size(name) == 0;
         }
     }
 
