@@ -288,7 +288,7 @@ public class ClusterTest {
         final CountDownLatch latchSuperPut = new CountDownLatch(1);
         new Thread(new Runnable() {
             public void run() {
-                Config config = new XmlConfigBuilder().build();
+                Config config = new Config();
                 config.setLiteMember(true);
                 final HazelcastInstance hSuper = Hazelcast.newHazelcastInstance(config);
                 latch.countDown();
@@ -298,14 +298,14 @@ public class ClusterTest {
             }
         }).start();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(new Config());
         assertTrue(latchSuperPut.await(10, TimeUnit.SECONDS));
         assertEquals("value", hNormal.getMap("default").get("1"));
     }
 
     @Test(timeout = 60000)
     public void testRestart() throws Exception {
-        final HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
         IMap map = h.getMap("default");
         map.put("1", "value");
         final CountDownLatch latch = new CountDownLatch(1);
@@ -327,8 +327,8 @@ public class ClusterTest {
 
     @Test(timeout = 60000)
     public void testRestart2() throws Exception {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         IMap map = h2.getMap("default");
         map.put("1", "value1");
         assertEquals(2, h.getCluster().getMembers().size());
@@ -2540,10 +2540,10 @@ public class ClusterTest {
         HazelcastInstance hc2 = Hazelcast.newHazelcastInstance(config);
         IMap<Integer, String> m1 = hc1.getMap(MAP_NAME);
         IMap<Integer, String> m2 = hc2.getMap(MAP_NAME);
-        junit.framework.Assert.assertEquals(STORE.size(), m1.keySet().size());
-        junit.framework.Assert.assertEquals(STORE.size(), m2.keySet().size());
+        assertEquals(STORE.size(), m1.keySet().size());
+        assertEquals(STORE.size(), m2.keySet().size());
         hc1.getLifecycleService().shutdown();
-        junit.framework.Assert.assertEquals(STORE.size(), m2.keySet().size());
+        assertEquals(STORE.size(), m2.keySet().size());
     }
 
     @Test

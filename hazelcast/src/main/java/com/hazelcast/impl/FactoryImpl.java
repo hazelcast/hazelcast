@@ -19,7 +19,6 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
@@ -30,8 +29,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
-import com.hazelcast.nio.Serializer;
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.util.ResponseQueueFactory;
 
@@ -432,31 +429,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
         managementService = new ManagementService(this);
         managementService.register();
-        initializeListeners(config);
-    }
-
-    private void initializeListeners(Config config) {
-        for (final ListenerConfig listenerCfg : config.getListenerConfigs()) {
-            Object listener = listenerCfg.getImplementation();
-            if (listener == null) {
-                try {
-                    listener = Serializer.newInstance(Serializer.loadClass(listenerCfg.getClassName()));
-                } catch (Exception e) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
-                }
-            }
-            if (listener instanceof InstanceListener) {
-                addInstanceListener((InstanceListener) listener);
-            } else if (listener instanceof MembershipListener) {
-                getCluster().addMembershipListener((MembershipListener) listener);
-            } else if (listener instanceof MigrationListener) {
-                getPartitionService().addMigrationListener((MigrationListener) listener);
-            } else if (listener != null) {
-                final String error = "Unknown listener type: " + listener.getClass();
-                Throwable t = new IllegalArgumentException(error);
-                logger.log(Level.WARNING, error, t);
-            }
-        }
     }
 
     public Set<String> getLongInstanceNames() {

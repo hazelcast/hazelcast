@@ -105,6 +105,7 @@ public class PartitionServiceImpl implements PartitionService {
     }
 
     void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
+//        System.out.println(concurrentMapManager.getThisAddress() + "  has listeners " + lsMigrationListeners.size());
         if (migrationEvent == null) throw new IllegalArgumentException("MigrationEvent is null.");
         for (final MigrationListener migrationListener : lsMigrationListeners) {
             concurrentMapManager.executeLocally(new Runnable() {

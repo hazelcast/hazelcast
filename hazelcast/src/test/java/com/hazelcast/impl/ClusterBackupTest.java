@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.Hazelcast;
@@ -118,7 +119,7 @@ public class ClusterBackupTest {
     @Test
     public void issue390NoBackupWhenSuperClient() throws InterruptedException {
         final int size = 200;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         IMap map1 = h1.getMap("def");
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[1000]);
@@ -126,17 +127,18 @@ public class ClusterBackupTest {
         Config scconfig = new Config();
         scconfig.setLiteMember(true);
         HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        IMap map2 = h2.getMap("def");
+        Config config = new Config();
         final CountDownLatch latch = new CountDownLatch(2);
-        h2.getPartitionService().addMigrationListener(new MigrationListener() {
+        config.addListenerConfig(new ListenerConfig(new MigrationListener() {
             public void migrationStarted(MigrationEvent migrationEvent) {
             }
 
             public void migrationCompleted(MigrationEvent migrationEvent) {
                 latch.countDown();
             }
-        });
+        }));
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap map2 = h2.getMap("def");
         Assert.assertTrue(latch.await(60, TimeUnit.SECONDS));
         assertEquals(size, getTotalOwnedEntryCount(map1, map2));
         assertEquals(size, getTotalBackupEntryCount(map1, map2));
@@ -146,8 +148,8 @@ public class ClusterBackupTest {
     public void issue388NoBackupWhenSuperClient() throws InterruptedException {
         final int count = 300;
         final int size = 3 * 300;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         Config scconfig = new Config();
         scconfig.setLiteMember(true);
         HazelcastInstance sc = Hazelcast.newHazelcastInstance(scconfig);

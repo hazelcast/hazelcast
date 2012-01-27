@@ -207,8 +207,10 @@ public class PartitionManager {
         if (!concurrentMapManager.isMaster()) return;
         PartitionStateGenerator psg = getPartitionStateGenerator();
         PartitionInfo[] newState = psg.initialize(concurrentMapManager.lsMembers, PARTITION_COUNT);
-        for (PartitionInfo partitionInfo : newState) {
-            partitions[partitionInfo.getPartitionId()].setPartitionInfo(partitionInfo);
+        if (newState != null) {
+            for (PartitionInfo partitionInfo : newState) {
+                partitions[partitionInfo.getPartitionId()].setPartitionInfo(partitionInfo);
+            }
         }
         sendClusterRuntimeState();
         initialized = true;
@@ -251,6 +253,7 @@ public class PartitionManager {
     }
 
     public void syncForDead(MemberImpl deadMember) {
+        concurrentMapManager.partitionServiceImpl.reset();
         boolean isMember = !deadMember.isLiteMember();
         Address deadAddress = deadMember.getAddress();
         Address thisAddress = concurrentMapManager.getThisAddress();

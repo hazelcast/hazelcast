@@ -42,12 +42,14 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
     public PartitionInfo[] initialize(List<MemberImpl> members, int partitionCount) {
         final LinkedList<NodeGroup> groups = createNodeGroups(memberGroupFactory.createMemberGroups(members));
+        if (groups.size() == 0) return null;
         return arrange(groups, partitionCount, new EmptyStateInitializer());
     }
 
     public PartitionInfo[] reArrange(PartitionInfo[] currentState, List<MemberImpl> members, int partitionCount,
                                      Queue<MigrationRequestTask> scheduledQueue, Queue<MigrationRequestTask> immediateQueue) {
         final LinkedList<NodeGroup> groups = createNodeGroups(memberGroupFactory.createMemberGroups(members));
+        if (groups.size() == 0) return currentState;
         PartitionInfo[] newState = arrange(groups, partitionCount, new CopyStateInitializer(currentState));
         finalizeArrangement(currentState, newState, Math.min(groups.size(), PartitionInfo.MAX_REPLICA_COUNT),
                 scheduledQueue, immediateQueue);
@@ -111,7 +113,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     // should not happen!
                     logger.log(Level.WARNING, "Something seems wrong! Old owner is valid but new owner is null!");
                 }
-
                 if (migrationRequestTask != null) {
                     boolean immediate = false;
                     if (replicaIndex == 0
@@ -121,7 +122,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     } else if (replicaIndex == 1 && currentPartition.getReplicaAddress(1) == null) {
                         immediate = true;
                     }
-
                     if (immediate) {
                         immediateQueue.offer(migrationRequestTask);
                     } else {
@@ -140,11 +140,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         final int groupSize = groups.size();
         final int replicaCount = Math.min(groupSize, PartitionInfo.MAX_REPLICA_COUNT);
         final int avgPartitionPerGroup = partitionCount / groupSize;
-
         // clear unused replica owners
         // initialize partition registry for each group
         initializeGroupPartitions(state, groups, replicaCount, aggressive);
-
         for (int index = 0; index < replicaCount; index++) {
             // partitions those are not bound to any node/group
             final LinkedList<Integer> freePartitions = getUnownedPartitions(state, index);
@@ -154,7 +152,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             final LinkedList<NodeGroup> overLoadedGroups = new LinkedList<NodeGroup>();
             // number of groups should have (average + 1) partitions
             int plusOneGroupCount = partitionCount - avgPartitionPerGroup * groupSize;
-
             // determine under-loaded and over-loaded groups
             for (NodeGroup nodeGroup : groups) {
                 int size = nodeGroup.getPartitionCount(index);
@@ -167,7 +164,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             // distribute free partitions among under-loaded groups
             plusOneGroupCount = tryToDistributeUnownedPartitions(underLoadedGroups, freePartitions,
                     avgPartitionPerGroup, index, plusOneGroupCount);
-
             if (!freePartitions.isEmpty()) {
                 // if there are still free partitions those could not be distributed
                 // to under-loaded groups then one-by-one distribute them among all groups
@@ -175,12 +171,10 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 distributeUnownedPartitions(groups, freePartitions, index);
             }
             // TODO: what if there are still free partitions?
-
             // iterate through over-loaded groups' partitions and distribute them to under-loaded groups.
             transferPartitionsBetweenGroups(underLoadedGroups, overLoadedGroups, index,
                     avgPartitionPerGroup, plusOneGroupCount);
-
-            // post process each group's partition table (distribute partitions added to group to nodes 
+            // post process each group's partition table (distribute partitions added to group to nodes
             // and balance load of partition ownership s in group) and save partition ownerships to 
             // cluster partition state table.
             updatePartitionState(state, groups, index);
@@ -207,7 +201,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                         partitionsIter.remove();
                     }
                 }
-
                 int fromCount = fromGroup.getPartitionCount(index);
                 if (plusOneGroupCount > 0 && fromCount == maxPartitionPerGroup) {
                     if (--plusOneGroupCount == 0) {
@@ -217,7 +210,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 if (fromCount <= expectedPartitionCount) {
                     overLoadedGroupsIter.remove();
                 }
-
                 int toCount = toGroup.getPartitionCount(index);
                 if (plusOneGroupCount > 0 && toCount == maxPartitionPerGroup) {
                     if (--plusOneGroupCount == 0) {
@@ -391,7 +383,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             set.clear();
         }
-
         for (NodeGroup group : groups) {
             for (int i = 0; i < replicaCount; i++) {
                 int partitionCountOfGroup = group.getPartitionCount(i);
@@ -405,7 +396,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
         return TestResult.PASS;
     }
-
     // ----- INNER CLASSES -----
 
     private interface StateInitializer {
@@ -748,5 +738,4 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
         }
     }
-
 }

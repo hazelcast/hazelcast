@@ -20,6 +20,9 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.Join;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.core.InstanceListener;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
 import com.hazelcast.impl.base.CpuUtilization;
@@ -30,10 +33,8 @@ import com.hazelcast.impl.management.ManagementCenterService;
 import com.hazelcast.impl.wan.WanReplicationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.util.ConcurrentHashSet;
@@ -212,7 +213,32 @@ public class Node {
         }
         this.multicastService = mcService;
         wanReplicationService = new WanReplicationService(this);
+        initializeListeners(config);
         joiner = createJoiner();
+    }
+
+    private void initializeListeners(Config config) {
+        for (final ListenerConfig listenerCfg : config.getListenerConfigs()) {
+            Object listener = listenerCfg.getImplementation();
+            if (listener == null) {
+                try {
+                    listener = Serializer.newInstance(Serializer.loadClass(listenerCfg.getClassName()));
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                }
+            }
+            if (listener instanceof InstanceListener) {
+                factory.addInstanceListener((InstanceListener) listener);
+            } else if (listener instanceof MembershipListener) {
+                clusterImpl.addMembershipListener((MembershipListener) listener);
+            } else if (listener instanceof MigrationListener) {
+                concurrentMapManager.partitionServiceImpl.addMigrationListener((MigrationListener) listener);
+            } else if (listener != null) {
+                final String error = "Unknown listener type: " + listener.getClass();
+                Throwable t = new IllegalArgumentException(error);
+                logger.log(Level.WARNING, error, t);
+            }
+        }
     }
 
     public void failedConnection(Address address) {
