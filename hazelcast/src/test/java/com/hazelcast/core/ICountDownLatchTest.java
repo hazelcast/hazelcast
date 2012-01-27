@@ -16,6 +16,7 @@
  */
 package com.hazelcast.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.impl.CountDownLatchProxy;
 import com.hazelcast.impl.GroupProperties;
 import org.junit.*;
@@ -49,8 +50,8 @@ public class ICountDownLatchTest {
 
     @Test
     public void testCountDownLatchSimple() throws InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final ICountDownLatch cdl1 = h1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = h2.getCountDownLatch("test");
         Member h1Member = h1.getCluster().getLocalMember();
@@ -64,7 +65,7 @@ public class ICountDownLatchTest {
             @Override
             public void run() {
                 try {
-                    if (cdl2.await(1000, TimeUnit.MILLISECONDS))
+                    if (cdl2.await(10, TimeUnit.SECONDS))
                         result.incrementAndGet();
                 } catch (Throwable e) {
                     e.printStackTrace();
@@ -76,15 +77,15 @@ public class ICountDownLatchTest {
         for (int i = count; i > 0; i--) {
             assertEquals(i, ((CountDownLatchProxy) cdl2).getCount());
             cdl1.countDown();
-            Thread.sleep(100);
+            Thread.sleep(1000);
         }
         assertEquals(1, result.get());
     }
 
     @Test
     public void testCountDownLatchOwnerLeft() throws InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final ICountDownLatch cdl1 = h1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = h2.getCountDownLatch("test");
         Member h2Member = h2.getCluster().getLocalMember();
@@ -100,7 +101,7 @@ public class ICountDownLatchTest {
             @Override
             public void run() {
                 try {
-                    cdl1.await();
+                    assertFalse(cdl1.await(5, TimeUnit.SECONDS));
                     fail();
                 } catch (MemberLeftException e) {
                     result.incrementAndGet();
@@ -111,7 +112,7 @@ public class ICountDownLatchTest {
             }
         };
         thread.start();
-        Thread.sleep(20);
+        Thread.sleep(1000);
         h2.shutdown();
         thread.join();
         assertEquals(1, result.get());
@@ -119,8 +120,8 @@ public class ICountDownLatchTest {
 
     @Test
     public void testCountDownLatchOwnerLeftInstancesReversed() throws InterruptedException {
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final ICountDownLatch cdl1 = h1.getCountDownLatch("test");
         final ICountDownLatch cdl2 = h2.getCountDownLatch("test");
         Member h2Member = h2.getCluster().getLocalMember();
@@ -136,7 +137,7 @@ public class ICountDownLatchTest {
             @Override
             public void run() {
                 try {
-                    cdl1.await();
+                    assertFalse(cdl1.await(5, TimeUnit.SECONDS));
                     fail();
                 } catch (MemberLeftException e) {
                     result.incrementAndGet();
@@ -147,7 +148,7 @@ public class ICountDownLatchTest {
             }
         };
         thread.start();
-        Thread.sleep(20);
+        Thread.sleep(1000);
         h2.shutdown();
         thread.join();
         assertEquals(1, result.get());
@@ -169,7 +170,7 @@ public class ICountDownLatchTest {
             @Override
             public void run() {
                 try {
-                    cdl2.await();
+                    assertFalse(cdl1.await(5, TimeUnit.SECONDS));
                     fail();
                 } catch (InstanceDestroyedException e) {
                     result.incrementAndGet();
@@ -180,7 +181,7 @@ public class ICountDownLatchTest {
             }
         };
         thread.start();
-        Thread.sleep(20);
+        Thread.sleep(1000);
         cdl1.destroy();
         thread.join();
         assertEquals(1, result.get());
@@ -202,7 +203,7 @@ public class ICountDownLatchTest {
             @Override
             public void run() {
                 try {
-                    cdl1.await();
+                    assertFalse(cdl1.await(5, TimeUnit.SECONDS));
                     fail();
                 } catch (IllegalStateException e) {
                     e.printStackTrace();
@@ -214,7 +215,7 @@ public class ICountDownLatchTest {
             }
         };
         thread.start();
-        Thread.sleep(20);
+        Thread.sleep(1000);
         h1.shutdown();
         thread.join();
         assertEquals(1, result.get());

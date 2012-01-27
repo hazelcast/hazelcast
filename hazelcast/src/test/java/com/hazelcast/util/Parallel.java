@@ -21,7 +21,9 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Parallel {
     static final SimpleDateFormat format = new SimpleDateFormat("dd HH:mm:ss");
@@ -34,6 +36,7 @@ public class Parallel {
         System.out.println(format.format(new Date()) + " PARALLEL TESTS STARTED concurrency:"
                 + concurrencyLevel + " profile:" + profile);
         long start = System.currentTimeMillis();
+        final Collection<Process> colProcesses = new CopyOnWriteArrayList<Process>();
         for (int i = 0; i < concurrencyLevel; i++) {
             final String index = Integer.toString(i);
             Thread t = new Thread(new Runnable() {
@@ -48,19 +51,20 @@ public class Parallel {
                         ProcessBuilder processBuilder = new ProcessBuilder(exec);
                         processBuilder.redirectErrorStream(true);
                         Process proc = processBuilder.start();
+                        colProcesses.add(proc);
                         InputStream in = proc.getInputStream();
                         BufferedReader br = new BufferedReader(new InputStreamReader(in));
                         String str;
                         while ((str = br.readLine()) != null) {
-                            if (str.contains("Started") || str.contains("Finished")) {
-                                System.out.println(str);
+                            if (str.contains("Started") || str.contains("Finished") || str.startsWith("PLOG:")) {
+                                System.out.println("[" + index + "] " + str);
                             }
 //                            System.out.println(str);
                         }
                         try {
                             proc.waitFor();
                         } catch (InterruptedException e) {
-                            System.err.println("Process was interrupted");
+                            System.err.println("[" + index + "] Process was interrupted");
                         }
                         System.out.println(proc.exitValue());
                         br.close();
@@ -83,6 +87,17 @@ public class Parallel {
             threads[i] = t;
             t.start();
         }
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            public void run() {
+                for (Process process : colProcesses) {
+                    try {
+                        System.out.println("Destroying process");
+                        process.destroy();
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }));
         for (Thread thread : threads) {
             try {
                 thread.join();

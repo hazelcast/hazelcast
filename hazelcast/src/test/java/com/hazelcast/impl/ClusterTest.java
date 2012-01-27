@@ -1433,8 +1433,10 @@ public class ClusterTest {
      */
     @Test(timeout = 16000)
     public void testHazelcastInstanceSerializationWhenUsingExecutorService() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        Config config = new Config();
+        config.getNetworkConfig().getInterfaces().setEnabled(true).addInterface("127.0.0.1");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         Map m1 = h1.getMap("default");
         m1.put("1", "value1");
         Future ft = h2.getExecutorService().submit(
@@ -1459,8 +1461,8 @@ public class ClusterTest {
 
     @Test(timeout = 30000)
     public void testExecutorServiceDeadLock() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         Member target1 = h1.getCluster().getLocalMember();
         Member target2 = h2.getCluster().getLocalMember();
         int executionCount = 20;
@@ -1485,8 +1487,8 @@ public class ClusterTest {
      */
     @Test(timeout = 16000)
     public void testHazelcastInstanceAwareSerializationWhenUsingExecutorService() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         Map m1 = h1.getMap("default");
         m1.put("1", "value1");
         Future ft = h2.getExecutorService().submit(

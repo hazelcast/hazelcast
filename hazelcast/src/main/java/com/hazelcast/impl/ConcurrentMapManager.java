@@ -2286,7 +2286,9 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public Address getKeyOwner(Request req) {
-        return getKeyOwner(req.key);
+        int partitionId = getPartitionId(req.key);
+        req.blockId = partitionId;
+        return getPartitionOwner(partitionId);
     }
 
     public Address getPartitionOwner(int partitionId) {

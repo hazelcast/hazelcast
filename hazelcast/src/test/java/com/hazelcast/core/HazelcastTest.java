@@ -145,7 +145,6 @@ public class HazelcastTest {
 
     @Test
     public void testGetCluster() {
-        if (true) fail("OHHHH fix me!");
         Cluster cluster = Hazelcast.getCluster();
         Set<Member> members = cluster.getMembers();
         //Tests are run with only one member in the cluster, this may change later

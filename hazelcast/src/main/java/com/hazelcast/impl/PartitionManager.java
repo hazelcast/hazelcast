@@ -328,6 +328,7 @@ public class PartitionManager {
     }
 
     public void syncForAdd() {
+        System.out.println("SYNC for ADD");
         if (concurrentMapManager.isMaster()) {
             // esMigrationService is a single thread scheduled service.
             // we should clear executor task queue
@@ -346,6 +347,7 @@ public class PartitionManager {
 
     private void initRepartitioning() {
         if (concurrentMapManager.isMaster()) {
+            System.out.println(concurrentMapManager.node.getClusterImpl().getLocalMember() + " INIT " + initialized);
             if (initialized) {
                 esMigrationService.getQueue().clear();
                 PartitionStateGenerator psg = getPartitionStateGenerator();
@@ -398,22 +400,27 @@ public class PartitionManager {
                         }
                     }, 100);
                 }
-//                System.out.println("Migrating " + migrationRequestTask);
+                System.out.println("Migrating " + migrationRequestTask);
+                Object result = null;
                 MemberImpl fromMember = null;
                 if (migrationRequestTask.isMigration()) {
                     fromMember = getMember(migrationRequestTask.getFromAddress());
-//                    System.err.println("Migration ::: " + migrationRequestTask);
+                    //                    System.err.println("Migration ::: " + migrationRequestTask);
                 } else {
                     // ignore fromAddress of task and get actual owner from partition table
                     fromMember = getMember(partitions[migrationRequestTask.getPartitionId()].getOwner());
-//                    System.err.println("Calculated owner: " + fromMember + " ==>>> " + migrationRequestTask);
-                    migrationRequestTask.setFromAddress(fromMember.getAddress());
+                    //                    System.err.println("Calculated owner: " + fromMember + " ==>>> " + migrationRequestTask);
                 }
-                Object result = Boolean.FALSE;
+                result = Boolean.FALSE;
                 if (fromMember != null) {
+                    migrationRequestTask.setFromAddress(fromMember.getAddress());
                     DistributedTask task = new DistributedTask(migrationRequestTask, fromMember);
                     Future future = concurrentMapManager.node.factory.getExecutorService().submit(task);
-                    result = future.get(600, TimeUnit.SECONDS);
+                    try {
+                        result = future.get(600, TimeUnit.SECONDS);
+                    } catch (Throwable e) {
+                        logger.log(Level.WARNING, "Failed migrating to " + fromMember);
+                    }
                 } else {
                     // Partition is lost! Assign new owner and exit.
                     result = Boolean.TRUE;

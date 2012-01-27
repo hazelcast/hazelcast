@@ -144,6 +144,7 @@ public class ClusterLockTest {
     public void testUnusedLocks() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        h1.getMap("default");
         IMap map2 = h2.getMap("default");
         for (int i = 0; i < 1000; i++) {
             map2.lock(i);

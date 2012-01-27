@@ -201,6 +201,7 @@ public class Node {
                 if (multicastGroup == null) {
                     multicastGroup = join.getMulticastConfig().getMulticastGroup();
                 }
+                join.getMulticastConfig().setMulticastGroup(multicastGroup);
                 multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
                 multicastSocket.setSoTimeout(1000);
                 mcService = new MulticastService(this, multicastSocket);

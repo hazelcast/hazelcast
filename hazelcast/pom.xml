@@ -197,15 +197,13 @@
                             <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                             </argLine>
-                            <!--<excludes>-->
-                            <!--<exclude>**/ClusterTest.java</exclude>-->
-                            <!--<exclude>**/QueryTest.java</exclude>-->
-                            <!--<exclude>**/PerformanceTest.java</exclude>-->
-                            <!--<exclude>**/*StressTest.java</exclude>-->
-                            <!--</excludes>-->
-                            <includes>
-                                <include>**/TransactionTest.java</include>
-                            </includes>
+                            <excludes>
+                                <!--<exclude>**/ClusterTest.java</exclude>-->
+                                <!--<exclude>**/QueryTest.java</exclude>-->
+                                <exclude>**/PerformanceTest.java</exclude>
+                                <exclude>**/*StressTest.java</exclude>
+                            </excludes>
+
                             <reportNameSuffix>${reportNameSuffix}</reportNameSuffix>
                         </configuration>
                     </plugin>
