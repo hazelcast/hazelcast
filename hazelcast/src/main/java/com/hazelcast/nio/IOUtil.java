@@ -159,17 +159,23 @@ public final class IOUtil {
     public static Object serializeToObject(byte[] bytes) throws Exception {
         if (bytes == null) return null;
         ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes));
-        Object obj = in.readObject();
-        in.close();
-        return obj;
+        try {
+            Object obj = in.readObject();
+            return obj;
+        } finally {
+            closeResource(in);
+        }
     }
 
     public static byte[] serializeToBytes(Object object) throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(bos);
-        out.writeObject(object);
-        out.close();
-        return bos.toByteArray();
+        try {
+            out.writeObject(object);
+            return bos.toByteArray();
+        } finally {
+            closeResource(out);
+        }
     }
 
     public static byte[] compress(byte[] input) throws IOException {
@@ -203,5 +209,14 @@ public final class IOUtil {
         bos.close();
         inflater.end();
         return bos.toByteArray();
+    }
+
+    public static void closeResource(Closeable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (IOException ignored) {
+            }
+        }
     }
 }

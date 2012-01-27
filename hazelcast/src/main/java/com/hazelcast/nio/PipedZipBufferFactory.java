@@ -23,6 +23,8 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+import static com.hazelcast.nio.IOUtil.closeResource;
+
 public final class PipedZipBufferFactory {
 
     public static DeflatingPipedBuffer createDeflatingBuffer(int compressedDataSize) {
@@ -197,13 +199,6 @@ public final class PipedZipBufferFactory {
             uncompressedBuffer = null;
             inputStream = null;
             outputStream = null;
-        }
-
-        void closeResource(Closeable c) {
-            try {
-                c.close();
-            } catch (IOException ignored) {
-            }
         }
     }
 }

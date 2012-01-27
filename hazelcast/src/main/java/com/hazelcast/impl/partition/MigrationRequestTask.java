@@ -42,17 +42,25 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
     private Address to;
     private int replicaIndex;
     private boolean migration; // migration or copy
-    private HazelcastInstance hazelcast;
+    private boolean diffOnly;
+    private int selfCopyReplicaIndex = -1;
+    private transient HazelcastInstance hazelcast;
 
     public MigrationRequestTask() {
     }
 
     public MigrationRequestTask(int partitionId, Address from, Address to, int replicaIndex, boolean migration) {
+        this(partitionId, from, to, replicaIndex, migration, false);
+    }
+
+    public MigrationRequestTask(int partitionId, Address from, Address to, int replicaIndex,
+                                boolean migration, boolean diffOnly) {
         this.partitionId = partitionId;
         this.from = from;
         this.to = to;
         this.replicaIndex = replicaIndex;
         this.migration = migration;
+        this.diffOnly = diffOnly;
     }
 
     public Address getFromAddress() {
@@ -71,6 +79,22 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
         return migration;
     }
 
+    public boolean isDiffOnly() {
+        return diffOnly;
+    }
+
+    public int getSelfCopyReplicaIndex() {
+        return selfCopyReplicaIndex;
+    }
+
+    public void setSelfCopyReplicaIndex(final int selfCopyReplicaIndex) {
+        this.selfCopyReplicaIndex = selfCopyReplicaIndex;
+    }
+
+    public void setFrom(final Address from) {
+        this.from = from;
+    }
+
     public Boolean call() throws Exception {
         if (to.equals(from)) return Boolean.TRUE;
         Node node = ((FactoryImpl) hazelcast).node;
@@ -78,7 +102,7 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
         try {
             Member target = pm.getMember(to);
             if (target == null) return Boolean.FALSE;
-            CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to);
+            CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to, diffOnly);
             DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList, replicaIndex), target);
             Future future = node.factory.getExecutorService().submit(task);
             return (Boolean) future.get(400, TimeUnit.SECONDS);
@@ -95,6 +119,8 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
         out.writeBoolean(migration);
+        out.writeBoolean(diffOnly);
+        out.writeInt(selfCopyReplicaIndex);
         boolean hasFrom = from != null;
         out.writeBoolean(hasFrom);
         if (hasFrom) {
@@ -107,6 +133,8 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
         partitionId = in.readInt();
         replicaIndex = in.readInt();
         migration = in.readBoolean();
+        diffOnly = in.readBoolean();
+        selfCopyReplicaIndex = in.readInt();
         boolean hasFrom = in.readBoolean();
         if (hasFrom) {
             from = new Address();
@@ -134,4 +162,5 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
                 ", migration=" + migration +
                 '}';
     }
+
 }

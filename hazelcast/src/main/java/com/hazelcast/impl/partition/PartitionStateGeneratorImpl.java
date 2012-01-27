@@ -86,7 +86,8 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             PartitionInfo currentPartition = currentState[partitionId];
             PartitionInfo newPartition = newState[partitionId];
             boolean lost = false;
-            for (int replicaIndex = replicaCount - 1; replicaIndex > -1; replicaIndex--) {
+            for (int replicaIndex = 0; replicaIndex < replicaCount; replicaIndex++) {
+//            for (int replicaIndex = replicaCount - 1; replicaIndex > -1; replicaIndex--) {
                 Address currentOwner = currentPartition.getReplicaAddress(replicaIndex);
                 Address newOwner = newPartition.getReplicaAddress(replicaIndex);
                 MigrationRequestTask migrationRequestTask = null;
@@ -102,6 +103,8 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                         // current owner node.
                         lost = true;
                     }
+                    // currentOwner set here is not used on operation, just for an info.
+                    // actual currentOwner will be determined just before copy.
                     migrationRequestTask = new MigrationRequestTask(
                             partitionId, currentOwner, newOwner, replicaIndex, false);
                 } else if (currentOwner != null && newOwner == null) {

@@ -26,6 +26,7 @@ import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.base.RecordSet;
 import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.*;
 import java.util.List;
@@ -46,23 +47,28 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
     public MigrationTask(int partitionId, CostAwareRecordList costAwareRecordList, int replicaIndex) throws IOException {
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
+
         ByteArrayOutputStream bos = new ByteArrayOutputStream((int) (costAwareRecordList.getCost() / 100));
-        DataOutputStream dos = new DataOutputStream(new DeflaterOutputStream(bos));
-        List<Record> lsRecordsToMigrate = costAwareRecordList.getRecords();
-        dos.writeInt(lsRecordsToMigrate.size());
-        for (Record record : lsRecordsToMigrate) {
-            new DataRecordEntry(record).writeData(dos);
+        DataOutputStream dos = null;
+        try {
+            dos = new DataOutputStream(new DeflaterOutputStream(bos));
+            List<Record> lsRecordsToMigrate = costAwareRecordList.getRecords();
+            dos.writeInt(lsRecordsToMigrate.size());
+            for (Record record : lsRecordsToMigrate) {
+                new DataRecordEntry(record).writeData(dos);
+            }
+        } finally {
+            IOUtil.closeResource(dos);
         }
-        dos.flush();
-        dos.close();
         bytesRecordSet = bos.toByteArray();
     }
 
     public Boolean call() throws Exception {
         Node node = ((FactoryImpl) hazelcast).node;
+        DataInputStream dis = null;
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(bytesRecordSet);
-            DataInputStream dis = new DataInputStream(new InflaterInputStream(bais));
+            dis = new DataInputStream(new InflaterInputStream(bais));
             int size = dis.readInt();
             RecordSet recordSet = new RecordSet();
             for (int i = 0; i < size; i++) {
@@ -74,6 +80,8 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
         } catch (IOException e) {
             node.getLogger(MigrationTask.class.getName()).log(Level.WARNING, e.getMessage(), e);
             return Boolean.FALSE;
+        } finally {
+            IOUtil.closeResource(dis);
         }
         return Boolean.TRUE;
     }
