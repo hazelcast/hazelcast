@@ -28,7 +28,9 @@ public class SingleMemberGroupFactory implements MemberGroupFactory {
     public Set<MemberGroup> createMemberGroups(Collection<MemberImpl> members) {
         Set<MemberGroup> groups = new HashSet<MemberGroup>(members.size());
         for (MemberImpl member : members) {
-            groups.add(new SingleMemberGroup(member));
+            if (!member.isLiteMember()) {
+                groups.add(new SingleMemberGroup(member));
+            }
         }
         return groups;
     }

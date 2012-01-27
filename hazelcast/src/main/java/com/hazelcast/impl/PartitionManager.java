@@ -251,24 +251,17 @@ public class PartitionManager {
     }
 
     public void syncForDead(MemberImpl deadMember) {
-        if (initialized) {
-            esMigrationService.getQueue().clear();
-        }
-        int maxBackupCount = 0;
-        for (final CMap cmap : concurrentMapManager.maps.values()) {
-            maxBackupCount = Math.max(maxBackupCount, cmap.getBackupCount());
-        }
-        int[] indexesOfDead = new int[partitions.length];
-        for (PartitionInfo partition : partitions) {
-            indexesOfDead[partition.getPartitionId()] = partition.getReplicaIndexOf(deadMember.getAddress());
-        }
+        boolean isMember = !deadMember.isLiteMember();
         Address deadAddress = deadMember.getAddress();
-        for (PartitionInfo partition : partitions) {
-            partition.onDeadAddress(deadAddress);
-        }
         Address thisAddress = concurrentMapManager.getThisAddress();
-        if (deadAddress == null || deadAddress.equals(thisAddress)) {
-            return;
+        if (isMember) {
+            esMigrationService.getQueue().clear();
+            for (PartitionInfo partition : partitions) {
+                partition.onDeadAddress(deadAddress);
+            }
+            if (deadAddress == null || deadAddress.equals(thisAddress)) {
+                return;
+            }
         }
         for (CMap cmap : concurrentMapManager.maps.values()) {
             cmap.onDisconnect(deadAddress);
@@ -290,7 +283,15 @@ public class PartitionManager {
                 }
             }
         }
-        if (concurrentMapManager.isMaster()) {
+        if (isMember && concurrentMapManager.isMaster()) {
+            int maxBackupCount = 0;
+            for (final CMap cmap : concurrentMapManager.maps.values()) {
+                maxBackupCount = Math.max(maxBackupCount, cmap.getBackupCount());
+            }
+            int[] indexesOfDead = new int[partitions.length];
+            for (PartitionInfo partition : partitions) {
+                indexesOfDead[partition.getPartitionId()] = partition.getReplicaIndexOf(deadMember.getAddress());
+            }
             for (int partitionId = 0; partitionId < indexesOfDead.length; partitionId++) {
                 int indexOfDead = indexesOfDead[partitionId];
                 if (indexOfDead != -1) {
@@ -406,7 +407,7 @@ public class PartitionManager {
                     // ignore fromAddress of task and get actual owner from partition table
                     fromMember = getMember(partitions[migrationRequestTask.getPartitionId()].getOwner());
 //                    System.err.println("Calculated owner: " + fromMember + " ==>>> " + migrationRequestTask);
-                    migrationRequestTask.setFrom(fromMember.getAddress());
+                    migrationRequestTask.setFromAddress(fromMember.getAddress());
                 }
                 Object result = Boolean.FALSE;
                 if (fromMember != null) {

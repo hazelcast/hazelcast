@@ -43,6 +43,9 @@ public class ConfigMemberGroupFactory implements MemberGroupFactory {
     public Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members) {
         final Map<Integer, MemberGroup> memberGroups = new HashMap<Integer, MemberGroup>();
         for (MemberImpl member : members) {
+            if (member.isLiteMember()) {
+                continue;
+            }
             for (Entry<Integer, MemberGroupConfig> groupConfigEntry : memberGroupConfigMap.entrySet()) {
                 if (AddressPicker.matchAddress(member.getAddress().getHost(), groupConfigEntry.getValue().getInterfaces())) {
                     MemberGroup group = memberGroups.get(groupConfigEntry.getKey());

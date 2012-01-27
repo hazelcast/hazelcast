@@ -29,13 +29,15 @@ public class HostAwareMemberGroupFactory implements MemberGroupFactory {
     public Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members) {
         Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
         for (MemberImpl member : members) {
-            Address address = member.getAddress();
-            MemberGroup group = groups.get(address.getHost());
-            if (group == null) {
-                group = new DefaultMemberGroup();
-                groups.put(address.getHost(), group);
+            if (!member.isLiteMember()) {
+                Address address = member.getAddress();
+                MemberGroup group = groups.get(address.getHost());
+                if (group == null) {
+                    group = new DefaultMemberGroup();
+                    groups.put(address.getHost(), group);
+                }
+                group.addMember(member);
             }
-            group.addMember(member);
         }
         return groups.values();
     }

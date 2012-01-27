@@ -91,7 +91,7 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
         this.selfCopyReplicaIndex = selfCopyReplicaIndex;
     }
 
-    public void setFrom(final Address from) {
+    public void setFromAddress(final Address from) {
         this.from = from;
     }
 
