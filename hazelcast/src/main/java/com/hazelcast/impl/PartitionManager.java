@@ -328,7 +328,6 @@ public class PartitionManager {
     }
 
     public void syncForAdd() {
-        System.out.println("SYNC for ADD");
         if (concurrentMapManager.isMaster()) {
             // esMigrationService is a single thread scheduled service.
             // we should clear executor task queue
@@ -347,7 +346,6 @@ public class PartitionManager {
 
     private void initRepartitioning() {
         if (concurrentMapManager.isMaster()) {
-            System.out.println(concurrentMapManager.node.getClusterImpl().getLocalMember() + " INIT " + initialized);
             if (initialized) {
                 esMigrationService.getQueue().clear();
                 PartitionStateGenerator psg = getPartitionStateGenerator();
@@ -400,7 +398,6 @@ public class PartitionManager {
                         }
                     }, 100);
                 }
-                System.out.println("Migrating " + migrationRequestTask);
                 Object result = null;
                 MemberImpl fromMember = null;
                 if (migrationRequestTask.isMigration()) {
