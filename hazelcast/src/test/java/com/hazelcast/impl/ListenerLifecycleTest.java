@@ -22,6 +22,7 @@ public class ListenerLifecycleTest {
 
     @BeforeClass
     public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
@@ -227,15 +228,7 @@ public class ListenerLifecycleTest {
 
     public static class CountdownMembershipListener implements MembershipListener {
         static final int MEMBERS = 3;
-        static final int EVENT_TOTAL;
-
-        static {
-            int c = 0;
-            for (int i = 1; i < MEMBERS; i++) {
-                c += i;
-            }
-            EVENT_TOTAL = c;
-        }
+        static final int EVENT_TOTAL = 6;
 
         static final CountDownLatch LATCH = new CountingCountdownLatch(EVENT_TOTAL);
 

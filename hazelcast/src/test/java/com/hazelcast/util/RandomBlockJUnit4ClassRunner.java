@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
     static {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
     }
 

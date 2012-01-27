@@ -6,6 +6,8 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,6 +23,18 @@ import static org.junit.Assert.fail;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MemoryLeakTest {
+
+    @BeforeClass
+    public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+        Hazelcast.shutdownAll();
+    }
+
+    @After
+    public void cleanup() throws Exception {
+        Hazelcast.shutdownAll();
+    }
 
     @Test
     public void testShutdownAllMemoryLeak() throws Exception {

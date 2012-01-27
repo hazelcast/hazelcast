@@ -141,22 +141,24 @@ public class MapStoreTest extends TestUtil {
         for (int i = 0; i < 50; i++) {
             new Thread(new Runnable() {
                 public void run() {
-                    instances[random.nextInt(100) % 3].getMap("default");
+                    instances[random.nextInt(3)].getMap("default");
                     latch.countDown();
                 }
             }).start();
         }
         assertTrue(latch.await(100, TimeUnit.SECONDS));
-        assertTrue(testMapStore.callCount.get() >= 13);
-        assertTrue(testMapStore.callCount.get() <= 15);
+        instances[0].getMap("default");
+        instances[1].getMap("default");
+        instances[2].getMap("default");
+        System.out.println(testMapStore.callCount.get());
+        assertEquals(15, testMapStore.callCount.get());
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
         IMap map3 = h3.getMap("default");
         for (int i = 0; i < size; i++) {
             assertEquals("value" + i, map3.get(i));
         }
-        assertTrue(testMapStore.callCount.get() >= 13);
-        assertTrue(testMapStore.callCount.get() <= 15);
+        assertEquals(15, testMapStore.callCount.get());
     }
 
     @Test
