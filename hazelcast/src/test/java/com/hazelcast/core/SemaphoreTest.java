@@ -23,10 +23,7 @@ import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
 
@@ -141,7 +138,7 @@ public class SemaphoreTest {
     }
 
     @Test
-    public void testSemaphorePeerDisconnect() {
+    public void testSemaphorePeerDisconnect() throws InterruptedException {
         SemaphoreConfig semaphoreConfig = new SemaphoreConfig("default", 10);
         Config config = new Config();
         config.addSemaphoreConfig(semaphoreConfig);
@@ -153,7 +150,17 @@ public class SemaphoreTest {
         int result = semaphore1.availablePermits();
         int expectedResult = 5;
         assertEquals(expectedResult, result);
-        instance2.shutdown();
+        final CountDownLatch latch = new CountDownLatch(1);
+        instance1.getCluster().addMembershipListener(new MembershipListener() {
+            public void memberAdded(MembershipEvent membershipEvent) {
+            }
+
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                latch.countDown();
+            }
+        });
+        instance2.getLifecycleService().shutdown();
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
         expectedResult = 10;
         result = semaphore1.availablePermits();
         assertEquals(expectedResult, result);

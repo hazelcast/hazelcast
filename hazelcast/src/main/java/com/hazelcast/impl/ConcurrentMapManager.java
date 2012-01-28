@@ -221,9 +221,9 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public void syncForDead(MemberImpl deadMember) {
-        partitionManager.syncForDead(deadMember);
         syncForDeadSemaphores(deadMember.getAddress());
         syncForDeadCountDownLatches(deadMember.getAddress());
+        partitionManager.syncForDead(deadMember);
     }
 
     void syncForDeadSemaphores(Address deadAddress) {
