@@ -29,6 +29,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.util.ResponseQueueFactory;
 
@@ -582,6 +583,13 @@ public class FactoryImpl implements HazelcastInstance {
                 return;
             }
             if (!cmap.isMapForQueue() && cmap.initState.notInitialized()) {
+                while (!allPartitionsOwned()) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                }
                 synchronized (cmap.getInitLock()) {
                     if (cmap.initState.notInitialized()) {
                         final MapStoreConfig mapStoreConfig = cmap.mapConfig.getMapStoreConfig();
@@ -597,11 +605,12 @@ public class FactoryImpl implements HazelcastInstance {
                                     Set keys = cmap.loader.loadAllKeys();
                                     if (keys != null) {
                                         int count = 0;
-                                        PartitionService partitionService = getPartitionService();
                                         Queue<Set> chunks = new LinkedList<Set>();
                                         Set ownedKeys = new HashSet();
+                                        PartitionService partitionService = getPartitionService();
                                         for (Object key : keys) {
-                                            if (partitionService.getPartition(key).getOwner().localMember()) {
+                                            Member owner = partitionService.getPartition(key).getOwner();
+                                            if (owner == null || owner.localMember()) {
                                                 ownedKeys.add(key);
                                                 count++;
                                                 if (ownedKeys.size() >= node.groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger()) {
@@ -627,6 +636,17 @@ public class FactoryImpl implements HazelcastInstance {
                 }
             }
         }
+    }
+
+    private boolean allPartitionsOwned() {
+        PartitionService partitionService = getPartitionService();
+        Set<Partition> partitions = partitionService.getPartitions();
+        for (Partition partition : partitions) {
+            if (partition.getOwner() == null) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void loadChunks(final MProxy mProxy, final CMap cmap, final Queue<Set> chunks) throws InterruptedException {

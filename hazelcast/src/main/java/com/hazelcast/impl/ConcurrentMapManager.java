@@ -30,6 +30,7 @@ import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
 import com.hazelcast.impl.partition.MigrationRequestTask;
 import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.impl.wan.WanMergeListener;
 import com.hazelcast.merge.MergePolicy;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
@@ -69,6 +70,7 @@ public class ConcurrentMapManager extends BaseManager {
     final ParallelExecutor evictionExecutor;
     private static final String BATCH_OPS_EXECUTOR_NAME = "hz_batch";
     final RecordFactory recordFactory;
+    final Collection<WanMergeListener> colWanMergeListeners = new CopyOnWriteArrayList<WanMergeListener>();
 
     ConcurrentMapManager(Node node) {
         super(node);
@@ -155,6 +157,14 @@ public class ConcurrentMapManager extends BaseManager {
 
     public PartitionManager getPartitionManager() {
         return partitionManager;
+    }
+
+    public void addWanMergeListener(WanMergeListener listener) {
+        colWanMergeListeners.add(listener);
+    }
+
+    public void removeWanMergeListener(WanMergeListener listener) {
+        colWanMergeListeners.remove(listener);
     }
 
     public void onRestart() {
@@ -327,9 +337,25 @@ public class ConcurrentMapManager extends BaseManager {
             if (winner != null) {
                 if (winner == MergePolicy.REMOVE_EXISTING) {
                     mproxy.removeForSync(mergingEntry.getKey());
+                    notifyWanMergeListeners(WanMergeListener.EventType.REMOVED);
                 } else {
                     mproxy.putForSync(mergingEntry.getKeyData(), winner);
+                    notifyWanMergeListeners(WanMergeListener.EventType.UPDATED);
                 }
+            } else {
+                notifyWanMergeListeners(WanMergeListener.EventType.IGNORED);
+            }
+        }
+    }
+
+    void notifyWanMergeListeners(WanMergeListener.EventType eventType) {
+        for (WanMergeListener wanMergeListener : colWanMergeListeners) {
+            if (eventType == WanMergeListener.EventType.UPDATED) {
+                wanMergeListener.entryUpdated();
+            } else if (eventType == WanMergeListener.EventType.REMOVED) {
+                wanMergeListener.entryRemoved();
+            } else {
+                wanMergeListener.entryIgnored();
             }
         }
     }
@@ -1182,9 +1208,12 @@ public class ConcurrentMapManager extends BaseManager {
                     return txn.attachRemoveOp(name, key, value, false);
                 }
             } else {
+                setLocal(operation, name, key, value, timeout, -1);
                 request.txnId = txnId;
                 if (operation == CONCURRENT_MAP_REMOVE) {
-                    Object oldValue = objectCall(operation, name, key, value, timeout, -1);
+                    request.setObjectRequest();
+                    doOp();
+                    Object oldValue = getResultAsObject();
                     if (oldValue != null) {
                         if (oldValue instanceof AddressAwareException) {
                             rethrowException(operation, (AddressAwareException) oldValue);
@@ -1195,7 +1224,9 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                     return oldValue;
                 } else {
-                    boolean success = booleanCall(operation, name, key, value, timeout, -1);
+                    request.setBooleanRequest();
+                    doOp();
+                    boolean success = getResultAsBoolean();
                     if (success) {
                         backup(CONCURRENT_MAP_BACKUP_REMOVE);
                     }

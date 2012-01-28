@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.query.Predicate;
@@ -29,7 +30,7 @@ import java.util.*;
 import static com.hazelcast.impl.ClusterOperation.*;
 
 public class Entries extends AbstractSet {
-    final Collection<Map.Entry> colKeyValues = new HashSet<Map.Entry>();
+    final Collection<Map.Entry> colKeyValues;
     final String name;
     final ClusterOperation operation;
     final boolean checkValue;
@@ -41,6 +42,11 @@ public class Entries extends AbstractSet {
         this.name = name;
         this.operation = operation;
         this.predicate = predicate;
+        if (name.startsWith(Prefix.MULTIMAP)) {
+            colKeyValues = new LinkedList<Map.Entry>();
+        } else {
+            colKeyValues = new HashSet<Map.Entry>();
+        }
         TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
         this.checkValue = (Instance.InstanceType.MAP == BaseManager.getInstanceType(name)) &&
                 (operation == CONCURRENT_MAP_ITERATE_VALUES

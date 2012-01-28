@@ -67,6 +67,8 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         }
     }
 
+    int count;
+
     public void run() {
         Connection conn = null;
         while (running) {

@@ -23,12 +23,21 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.impl.wan.WanMergeListener;
 import com.hazelcast.merge.PassThroughMergePolicy;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.impl.TestUtil.getConcurrentMapManager;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class WanReplicationTest {
@@ -70,27 +79,43 @@ public class WanReplicationTest {
         HazelcastInstance h12 = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance h13 = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance h22 = Hazelcast.newHazelcastInstance(c2);
-        int size = 1000;
+        int size = 100;
         for (int i = 0; i < size; i++) {
             h2.getMap("default").put(i, "value" + i);
             h22.getMap("default").put(size + i, "value" + (size + i));
         }
-        Thread.sleep(5000);
-        Assert.assertEquals(2 * size, h1.getMap("default").size());
-        Assert.assertEquals(2 * size, h2.getMap("default").size());
-        Assert.assertEquals(2 * size, h12.getMap("default").size());
-        Assert.assertEquals(2 * size, h13.getMap("default").size());
-        Assert.assertEquals(2 * size, h22.getMap("default").size());
+        MergeLatch mergeLatch1 = new MergeLatch(2 * size);
+        MergeLatch mergeLatch2 = new MergeLatch(size);
+        getConcurrentMapManager(h1).addWanMergeListener(mergeLatch1);
+        getConcurrentMapManager(h12).addWanMergeListener(mergeLatch1);
+        getConcurrentMapManager(h13).addWanMergeListener(mergeLatch1);
+        getConcurrentMapManager(h2).addWanMergeListener(mergeLatch2);
+        getConcurrentMapManager(h22).addWanMergeListener(mergeLatch2);
+        assertTrue(mergeLatch1.await(30, TimeUnit.SECONDS));
+        Thread.sleep(1000);
+        assertEquals(0, mergeLatch2.totalOperations());
+        assertEquals(2 * size, mergeLatch1.getUpdateCount());
+        assertEquals(2 * size, mergeLatch1.totalOperations());
+        assertEquals(2 * size, h2.getMap("default").size());
+        assertEquals(2 * size, h1.getMap("default").size());
+        assertEquals(2 * size, h12.getMap("default").size());
+        assertEquals(2 * size, h13.getMap("default").size());
+        assertEquals(2 * size, h22.getMap("default").size());
+        mergeLatch1.reset();
         for (int i = 0; i < size / 2; i++) {
             h1.getMap("default").remove(i);
             h13.getMap("default").remove(size + i);
         }
-        Thread.sleep(5000);
-        Assert.assertEquals(size, h1.getMap("default").size());
-        Assert.assertEquals(size, h2.getMap("default").size());
-        Assert.assertEquals(size, h12.getMap("default").size());
-        Assert.assertEquals(size, h13.getMap("default").size());
-        Assert.assertEquals(size, h22.getMap("default").size());
+        assertTrue(mergeLatch2.await(30, TimeUnit.SECONDS));
+        Thread.sleep(1000);
+        assertEquals(size, mergeLatch2.getRemoveCount());
+        assertEquals(size, mergeLatch2.totalOperations());
+        assertEquals(0, mergeLatch1.totalOperations());
+        assertEquals(size, h1.getMap("default").size());
+        assertEquals(size, h2.getMap("default").size());
+        assertEquals(size, h12.getMap("default").size());
+        assertEquals(size, h13.getMap("default").size());
+        assertEquals(size, h22.getMap("default").size());
     }
 
     @Test
@@ -122,31 +147,51 @@ public class WanReplicationTest {
         HazelcastInstance h20 = Hazelcast.newHazelcastInstance(c2);
         HazelcastInstance h21 = Hazelcast.newHazelcastInstance(c2);
         HazelcastInstance h12 = Hazelcast.newHazelcastInstance(c1);
-        Thread.sleep(5000);
-        Assert.assertEquals(size, h10.getMap("default").size());
-        Assert.assertEquals(size, h20.getMap("default").size());
-        Assert.assertEquals(size, h12.getMap("default").size());
-        Assert.assertEquals(size, h11.getMap("default").size());
-        Assert.assertEquals(size, h21.getMap("default").size());
+        MergeLatch mergeLatch1 = new MergeLatch(size);
+        getConcurrentMapManager(h10).addWanMergeListener(mergeLatch1);
+        getConcurrentMapManager(h11).addWanMergeListener(mergeLatch1);
+        getConcurrentMapManager(h12).addWanMergeListener(mergeLatch1);
+        MergeLatch mergeLatch2 = new MergeLatch(size);
+        getConcurrentMapManager(h20).addWanMergeListener(mergeLatch2);
+        getConcurrentMapManager(h21).addWanMergeListener(mergeLatch2);
+        assertTrue(mergeLatch2.await(30, TimeUnit.SECONDS));
+        Thread.sleep(1000);
+        assertEquals(size, mergeLatch2.totalOperations());
+        assertEquals(0, mergeLatch1.totalOperations());
+        assertEquals(size, h10.getMap("default").size());
+        assertEquals(size, h20.getMap("default").size());
+        assertEquals(size, h12.getMap("default").size());
+        assertEquals(size, h11.getMap("default").size());
+        assertEquals(size, h21.getMap("default").size());
+        mergeLatch2.reset();
         for (int i = 0; i < size; i++) {
             h21.getMap("default").put(size + i, "value" + (size + i));
         }
-        Thread.sleep(5000);
-        Assert.assertEquals(2 * size, h10.getMap("default").size());
-        Assert.assertEquals(2 * size, h20.getMap("default").size());
-        Assert.assertEquals(2 * size, h12.getMap("default").size());
-        Assert.assertEquals(2 * size, h11.getMap("default").size());
-        Assert.assertEquals(2 * size, h21.getMap("default").size());
+        assertTrue(mergeLatch1.await(30, TimeUnit.SECONDS));
+        Thread.sleep(1000);
+        assertEquals(size, mergeLatch1.totalOperations());
+        assertEquals(0, mergeLatch2.totalOperations());
+        assertEquals(2 * size, h10.getMap("default").size());
+        assertEquals(2 * size, h20.getMap("default").size());
+        assertEquals(2 * size, h12.getMap("default").size());
+        assertEquals(2 * size, h11.getMap("default").size());
+        assertEquals(2 * size, h21.getMap("default").size());
+        mergeLatch1.reset(size / 2);
+        mergeLatch2.reset(size / 2);
         for (int i = 0; i < size / 2; i++) {
             h10.getMap("default").remove(i);
             h21.getMap("default").remove(size + i);
         }
-        Thread.sleep(5000);
-        Assert.assertEquals(size, h10.getMap("default").size());
-        Assert.assertEquals(size, h20.getMap("default").size());
-        Assert.assertEquals(size, h12.getMap("default").size());
-        Assert.assertEquals(size, h11.getMap("default").size());
-        Assert.assertEquals(size, h21.getMap("default").size());
+        assertTrue(mergeLatch1.await(30, TimeUnit.SECONDS));
+        assertTrue(mergeLatch2.await(30, TimeUnit.SECONDS));
+        Thread.sleep(1000);
+        assertEquals(size / 2, mergeLatch1.totalOperations());
+        assertEquals(size / 2, mergeLatch2.totalOperations());
+        assertEquals(size, h10.getMap("default").size());
+        assertEquals(size, h20.getMap("default").size());
+        assertEquals(size, h12.getMap("default").size());
+        assertEquals(size, h11.getMap("default").size());
+        assertEquals(size, h21.getMap("default").size());
     }
 
     @Test
@@ -168,14 +213,96 @@ public class WanReplicationTest {
         HazelcastInstance h10 = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance h20 = Hazelcast.newHazelcastInstance(c2);
         int size = 1000;
+        MergeLatch mergeLatch2 = new MergeLatch(size);
+        getConcurrentMapManager(h20).addWanMergeListener(mergeLatch2);
         for (int i = 0; i < size; i++) {
             h10.getMap("default").put(i, "value" + i);
         }
-        Thread.sleep(5000);
-        Assert.assertEquals(size, h10.getMap("default").size());
-        Assert.assertEquals(size, h20.getMap("default").size());
+        assertTrue(mergeLatch2.await(30, TimeUnit.SECONDS));
+        Thread.sleep(1000);
+        assertEquals(size, mergeLatch2.totalOperations());
+        assertEquals(size, h10.getMap("default").size());
+        assertEquals(size, h20.getMap("default").size());
         for (int i = 0; i < size; i++) {
-            Assert.assertEquals("value" + i, h20.getMap("default").get(i));
+            assertEquals("value" + i, h20.getMap("default").get(i));
+        }
+    }
+
+    class MergeLatch implements WanMergeListener {
+        final AtomicInteger removeCount = new AtomicInteger();
+        final AtomicInteger updateCount = new AtomicInteger();
+        final AtomicInteger ignoreCount = new AtomicInteger();
+        final AtomicReference<CountDownLatch> latch;
+
+        MergeLatch(int count) {
+            latch = new AtomicReference<CountDownLatch>(new CountDownLatch(count));
+        }
+
+        public long getCount() {
+            return latch.get().getCount();
+        }
+
+        public void countDown() {
+            CountDownLatch l = latch.get();
+            if (l != null) {
+                l.countDown();
+            }
+        }
+
+        public void entryRemoved() {
+            removeCount.incrementAndGet();
+            countDown();
+        }
+
+        public void entryUpdated() {
+            updateCount.incrementAndGet();
+            countDown();
+        }
+
+        public void entryIgnored() {
+            ignoreCount.incrementAndGet();
+            countDown();
+        }
+
+        public int totalOperations() {
+            return getIgnoreCount() + getRemoveCount() + getUpdateCount();
+        }
+
+        public int getRemoveCount() {
+            return removeCount.get();
+        }
+
+        public int getUpdateCount() {
+            return updateCount.get();
+        }
+
+        public int getIgnoreCount() {
+            return ignoreCount.get();
+        }
+
+        public void reset() {
+            removeCount.set(0);
+            updateCount.set(0);
+            ignoreCount.set(0);
+        }
+
+        public void reset(int count) {
+            latch.set(new CountDownLatch(count));
+            reset();
+        }
+
+        public boolean await(int time, TimeUnit timeUnit) throws InterruptedException {
+            return latch.get().await(time, timeUnit);
+        }
+
+        @Override
+        public String toString() {
+            return "MergeLatch{" +
+                    "count=" + getCount() +
+                    ", removeCount=" + removeCount.get() +
+                    ", updateCount=" + updateCount.get() +
+                    ", ignoreCount=" + ignoreCount.get() +
+                    '}';
         }
     }
 }
