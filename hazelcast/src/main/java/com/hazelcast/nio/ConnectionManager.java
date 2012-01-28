@@ -274,7 +274,10 @@ public class ConnectionManager {
             }
         }
         for (int i = 0; i < selectors.length; i++) {
-            selectors[i].shutdown();
+            InOutSelector ioSelector = selectors[i];
+            if (ioSelector != null) {
+                ioSelector.shutdown();
+            }
         }
         setConnectionInProgress.clear();
         mapConnections.clear();

@@ -1209,7 +1209,9 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             } else {
                 setLocal(operation, name, key, value, timeout, -1);
-                request.txnId = txnId;
+                if (txnId != -1) {
+                    request.txnId = txnId;
+                }
                 if (operation == CONCURRENT_MAP_REMOVE) {
                     request.setObjectRequest();
                     doOp();

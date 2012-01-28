@@ -59,4 +59,19 @@ public class WanReplicationService {
             return wr;
         }
     }
+
+    public void shutdown() {
+        synchronized (this) {
+            for (WanReplication wanReplication : mapWanReplications.values()) {
+                WanReplicationEndpoint[] wanReplicationEndpoints = wanReplication.getEndpoints();
+                if (wanReplicationEndpoints != null) {
+                    for (WanReplicationEndpoint wanReplicationEndpoint : wanReplicationEndpoints) {
+                        if (wanReplicationEndpoint != null) {
+                            wanReplicationEndpoint.shutdown();
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

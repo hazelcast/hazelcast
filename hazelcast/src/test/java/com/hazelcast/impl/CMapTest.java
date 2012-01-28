@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -168,6 +169,9 @@ public class CMapTest extends TestUtil {
     public void testTTL() throws Exception {
         Config config = new Config();
         FactoryImpl mockFactory = mock(FactoryImpl.class);
+        // we mocked the node
+        // do not forget to shutdown the connectionManager
+        // so that server socket can be released.
         Node node = new Node(mockFactory, config);
         node.serviceThread = Thread.currentThread();
         CMap cmap = new CMap(node.concurrentMapManager, "c:myMap");
@@ -210,12 +214,16 @@ public class CMapTest extends TestUtil {
         assertEquals(0, cmap.mapRecords.size());
         assertEquals(0, cmap.size());
         assertEquals(0, cmap.mapIndexService.size());
+        node.connectionManager.shutdown();
     }
 
     @Test
     public void testPut() throws Exception {
         Config config = new Config();
         FactoryImpl mockFactory = mock(FactoryImpl.class);
+        // we mocked the node
+        // do not forget to shutdown the connectionManager
+        // so that server socket can be released.
         Node node = new Node(mockFactory, config);
         node.serviceThread = Thread.currentThread();
         CMap cmap = new CMap(node.concurrentMapManager, "c:myMap");
@@ -247,5 +255,6 @@ public class CMapTest extends TestUtil {
         Thread.sleep(1500);
         assertEquals(0, cmap.size());
         assertFalse(cmap.contains(newContainsRequest(dKey, null)));
+        node.connectionManager.shutdown();
     }
 }

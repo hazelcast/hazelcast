@@ -342,6 +342,7 @@ public class Node {
             // events, such as remove address
             joined.set(false);
             setActive(false);
+            wanReplicationService.shutdown();
             try {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             } catch (Throwable ignored) {

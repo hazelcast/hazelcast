@@ -91,7 +91,7 @@ public class WanReplicationTest {
         getConcurrentMapManager(h13).addWanMergeListener(mergeLatch1);
         getConcurrentMapManager(h2).addWanMergeListener(mergeLatch2);
         getConcurrentMapManager(h22).addWanMergeListener(mergeLatch2);
-        assertTrue(mergeLatch1.await(30, TimeUnit.SECONDS));
+        assertTrue("Latch state: " + mergeLatch1, mergeLatch1.await(60, TimeUnit.SECONDS));
         Thread.sleep(1000);
         assertEquals(0, mergeLatch2.totalOperations());
         assertEquals(2 * size, mergeLatch1.getUpdateCount());
@@ -106,7 +106,7 @@ public class WanReplicationTest {
             h1.getMap("default").remove(i);
             h13.getMap("default").remove(size + i);
         }
-        assertTrue(mergeLatch2.await(30, TimeUnit.SECONDS));
+        assertTrue("Latch state: " + mergeLatch2, mergeLatch2.await(60, TimeUnit.SECONDS));
         Thread.sleep(1000);
         assertEquals(size, mergeLatch2.getRemoveCount());
         assertEquals(size, mergeLatch2.totalOperations());
@@ -154,7 +154,7 @@ public class WanReplicationTest {
         MergeLatch mergeLatch2 = new MergeLatch(size);
         getConcurrentMapManager(h20).addWanMergeListener(mergeLatch2);
         getConcurrentMapManager(h21).addWanMergeListener(mergeLatch2);
-        assertTrue(mergeLatch2.await(30, TimeUnit.SECONDS));
+        assertTrue("Latch state: " + mergeLatch2, mergeLatch2.await(60, TimeUnit.SECONDS));
         Thread.sleep(1000);
         assertEquals(size, mergeLatch2.totalOperations());
         assertEquals(0, mergeLatch1.totalOperations());
@@ -167,7 +167,7 @@ public class WanReplicationTest {
         for (int i = 0; i < size; i++) {
             h21.getMap("default").put(size + i, "value" + (size + i));
         }
-        assertTrue(mergeLatch1.await(30, TimeUnit.SECONDS));
+        assertTrue("Latch state: " + mergeLatch1, mergeLatch1.await(60, TimeUnit.SECONDS));
         Thread.sleep(1000);
         assertEquals(size, mergeLatch1.totalOperations());
         assertEquals(0, mergeLatch2.totalOperations());
@@ -182,8 +182,8 @@ public class WanReplicationTest {
             h10.getMap("default").remove(i);
             h21.getMap("default").remove(size + i);
         }
-        assertTrue(mergeLatch1.await(30, TimeUnit.SECONDS));
-        assertTrue(mergeLatch2.await(30, TimeUnit.SECONDS));
+        assertTrue("Latch state: " + mergeLatch1, mergeLatch1.await(60, TimeUnit.SECONDS));
+        assertTrue("Latch state: " + mergeLatch2, mergeLatch2.await(60, TimeUnit.SECONDS));
         Thread.sleep(1000);
         assertEquals(size / 2, mergeLatch1.totalOperations());
         assertEquals(size / 2, mergeLatch2.totalOperations());
@@ -218,7 +218,7 @@ public class WanReplicationTest {
         for (int i = 0; i < size; i++) {
             h10.getMap("default").put(i, "value" + i);
         }
-        assertTrue(mergeLatch2.await(30, TimeUnit.SECONDS));
+        assertTrue("Latch state: " + mergeLatch2, mergeLatch2.await(60, TimeUnit.SECONDS));
         Thread.sleep(1000);
         assertEquals(size, mergeLatch2.totalOperations());
         assertEquals(size, h10.getMap("default").size());
