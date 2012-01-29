@@ -275,9 +275,6 @@ public class ClusterBackupTest {
         sleep(4000);
         ownedSize = getTotalOwnedEntryCount(map1, map2, map3);
         backupSize = getTotalBackupEntryCount(map1, map2, map3);
-        System.out.println(map1.getLocalMapStats());
-        System.out.println(map2.getLocalMapStats());
-        System.out.println(map3.getLocalMapStats());
         assertEquals(size, ownedSize);
         assertEquals(size, backupSize);
         h1.getLifecycleService().shutdown();

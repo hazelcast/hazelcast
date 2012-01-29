@@ -88,6 +88,7 @@ public class MapIndexServiceTest extends TestUtil {
 //            System.out.println("result size " + results.size() + " took " + (System.currentTimeMillis() - start));
             assertEquals(1, results.size());
         }
+        cmap.getNode().connectionManager.shutdown();
     }
 
     @Test
@@ -126,5 +127,6 @@ public class MapIndexServiceTest extends TestUtil {
 //            System.out.println("result size " + results.size() + " took " + (System.currentTimeMillis() - start));
             assertEquals(10, results.size());
         }
+        cmap.getNode().connectionManager.shutdown();
     }
 }

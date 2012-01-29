@@ -428,11 +428,23 @@ public class CMap {
     }
 
     public void own(DataRecordEntry dataRecordEntry) {
-//        System.out.println(thisAddress + "  " + dataRecordEntry.getName() + " owning " + toObject(dataRecordEntry.getKeyData()));
-        Record record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
+        Record record;
+        if (isMultiMap()) {
+            record = getRecord(dataRecordEntry.getKeyData());
+            if (record == null) {
+                record = createNewRecord(dataRecordEntry.getKeyData(), null);
+                mapRecords.put(dataRecordEntry.getKeyData(), record);
+            }
+            if (record.getMultiValues() == null) {
+                record.setMultiValues(createMultiValuesCollection());
+            }
+            record.getMultiValues().add(new ValueHolder(dataRecordEntry.getValueData()));
+        } else {
+            record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
+            mapRecords.put(dataRecordEntry.getKeyData(), record);
+        }
         record.setIndexes(dataRecordEntry.getIndexes(), dataRecordEntry.getIndexTypes());
         record.setVersion(dataRecordEntry.getVersion());
-        mapRecords.put(dataRecordEntry.getKeyData(), record);
         // TODO lock owner should migrate
         markAsActive(record);
         if (record.getValueData() != null) {
@@ -441,10 +453,22 @@ public class CMap {
     }
 
     public void storeAsBackup(DataRecordEntry dataRecordEntry) {
-//        System.out.println(thisAddress + "  " + dataRecordEntry.getName() + " backup " + toObject(dataRecordEntry.getKeyData()));
-        Record record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
+        Record record;
+        if (isMultiMap()) {
+            record = getRecord(dataRecordEntry.getKeyData());
+            if (record == null) {
+                record = createNewRecord(dataRecordEntry.getKeyData(), null);
+                mapRecords.put(dataRecordEntry.getKeyData(), record);
+            }
+            if (record.getMultiValues() == null) {
+                record.setMultiValues(createMultiValuesCollection());
+            }
+            record.getMultiValues().add(new ValueHolder(dataRecordEntry.getValueData()));
+        } else {
+            record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
+            mapRecords.put(dataRecordEntry.getKeyData(), record);
+        }
         record.setVersion(dataRecordEntry.getVersion());
-        mapRecords.put(dataRecordEntry.getKeyData(), record);
         // TODO lock owner should migrate
         markAsActive(record);
     }

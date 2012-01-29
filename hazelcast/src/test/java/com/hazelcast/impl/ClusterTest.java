@@ -118,8 +118,8 @@ public class ClusterTest {
 
     @Test
     public void testAtomicNumber() throws Exception {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         AtomicNumber a1 = h1.getAtomicNumber("default");
         AtomicNumber a2 = h2.getAtomicNumber("default");
         assertEquals(1, a1.incrementAndGet());
@@ -132,7 +132,7 @@ public class ClusterTest {
         h1.getLifecycleService().shutdown();
         assertEquals(13, a2.getAndSet(21));
         assertEquals(21, a2.get());
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
         AtomicNumber a3 = h3.getAtomicNumber("default");
         assertEquals(20, a3.decrementAndGet());
         assertEquals(20, a2.getAndAdd(-20));
@@ -208,7 +208,7 @@ public class ClusterTest {
 
     @Test(timeout = 50000, expected = RuntimeException.class)
     public void testPutAfterShutdown() throws InterruptedException {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         Map map = h1.getMap("default");
         h1.shutdown();
         map.put("1", "value");
@@ -342,8 +342,8 @@ public class ClusterTest {
 
     @Test
     public void issue397MapReplaceLeadsToMemoryLeak() {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         IMap map1 = h1.getMap("def");
         Object old = map1.replace(1, "v");
         assertNull(old);
@@ -363,25 +363,26 @@ public class ClusterTest {
 
     @Test
     public void issue452SetMigration() throws InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        Config config = new Config();
+        final CountDownLatch latch = new CountDownLatch(1);
+        config.addListenerConfig(new ListenerConfig(new MigrationListener() {
+            public void migrationStarted(MigrationEvent migrationEvent) {
+            }
+
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                latch.countDown();
+            }
+        }));
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         ISet set1 = h1.getSet("mySet");
         for (int i = 0; i < 1000; i++) {
             set1.add(i);
         }
         assertEquals(1000, set1.size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
         ISet set2 = h2.getSet("mySet");
         ISet set3 = h3.getSet("mySet");
-        final CountDownLatch latch = new CountDownLatch(1);
-        h1.getPartitionService().addMigrationListener(new MigrationListener() {
-            public void migrationCompleted(MigrationEvent migrationEvent) {
-                latch.countDown();
-            }
-
-            public void migrationStarted(MigrationEvent migrationEvent) {
-            }
-        });
         assertTrue(latch.await(30, TimeUnit.SECONDS));
         assertEquals(1000, set1.size());
         assertEquals(1000, set2.size());
@@ -393,8 +394,8 @@ public class ClusterTest {
 
     @Test(timeout = 60000)
     public void testMapReplaceIfSame() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
         map1.put("1", "value1");
@@ -563,7 +564,7 @@ public class ClusterTest {
         assertEquals("value1", maps.get("1"));
         assertEquals(1, map.size());
         assertEquals(1, maps.size());
-        h.shutdown();
+        h.getLifecycleService().shutdown();
         sleep(500);
         assertEquals(1, s.getCluster().getMembers().size());
         final CountDownLatch latch = new CountDownLatch(1);
@@ -762,8 +763,8 @@ public class ClusterTest {
 
     @Test(timeout = 120000)
     public void testListeners2() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final Member member1 = h1.getCluster().getLocalMember();
         final Member member2 = h2.getCluster().getLocalMember();
         final CountDownLatch latchAdded = new CountDownLatch(4);
@@ -818,11 +819,11 @@ public class ClusterTest {
 
     @Test(timeout = 120000)
     public void testListeners() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(1, h1.getCluster().getMembers().size());
         h1.getMap("default").put("1", "value1");
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         allMapListenerTest(h2.getMap("default"), "5", h1.getMap("default"));
     }
 
@@ -885,12 +886,12 @@ public class ClusterTest {
     @Test(timeout = 60000)
     public void testMulticastWithDifferentBuildNumber() throws Exception {
         System.setProperty("hazelcast.build", "1");
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(1, h1.getCluster().getMembers().size());
         h1.getMap("default").put("1", "value1");
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         System.setProperty("hazelcast.build", "2");
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(1, h1.getCluster().getMembers().size());
         assertEquals(1, h2.getCluster().getMembers().size());
         System.setProperty("hazelcast.build", "t");
@@ -923,9 +924,9 @@ public class ClusterTest {
      */
     @Test
     public void testEvictionOfEntriesWithTTL() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         IMap map1 = h1.getMap("default");
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         IMap map2 = h2.getMap("default");
         TestEntryListener cl1 = new TestEntryListener(100, 0, 0, 100);
         TestEntryListener cl2 = new TestEntryListener(100, 0, 0, 100);
@@ -942,7 +943,7 @@ public class ClusterTest {
     @Test(timeout = 180000)
     public void testLosingEntries() throws Exception {
         final CountDownLatch latch = new CountDownLatch(2);
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final AtomicBoolean failed = new AtomicBoolean(false);
         new Thread(new Runnable() {
             public void run() {
@@ -957,7 +958,7 @@ public class ClusterTest {
             }
         }).start();
         sleep(4000);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         new Thread(new Runnable() {
             public void run() {
                 try {
@@ -991,30 +992,30 @@ public class ClusterTest {
             }
             map.put(r.nextInt(200000), i);
         }
-        h.shutdown();
+        h.getLifecycleService().shutdown();
     }
 
     @Test(timeout = 60000)
     public void testMapRecovery() throws Exception {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
         IMap mm = h.getMap("default");
         mm.put("1", "value");
         assertEquals(1, mm.size());
         assertEquals(1, mm.keySet().size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(1, mm.size());
         assertEquals(1, mm.keySet().size());
         IMap mm2 = h2.getMap("default");
         assertEquals(1, mm2.size());
         assertEquals(1, mm2.keySet().size());
-        h.shutdown();
+        h.getLifecycleService().shutdown();
         assertEquals(1, mm2.size());
         assertEquals(1, mm2.keySet().size());
     }
 
     @Test(timeout = 60000)
     public void testMultiMapRecovery() throws Exception {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
         MultiMap mm = h.getMultiMap("default");
         Collection<String> expectedValues = new HashSet<String>();
         expectedValues.add("value1");
@@ -1027,7 +1028,7 @@ public class ClusterTest {
         for (Object value : values) {
             assertTrue(expectedValues.contains(value));
         }
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(2, mm.size());
         assertEquals(1, mm.keySet().size());
         values = mm.get("1");
@@ -1041,7 +1042,7 @@ public class ClusterTest {
         for (Object value : values) {
             assertTrue(expectedValues.contains(value));
         }
-        h.shutdown();
+        h.getLifecycleService().shutdown();
         assertEquals(2, mm2.size());
         assertEquals(1, mm2.keySet().size());
         values = mm2.get("1");
@@ -1060,11 +1061,11 @@ public class ClusterTest {
      */
     @Test(timeout = 60000)
     public void testLockForeverOnBackups() throws Exception {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
         ILock lock = h.getLock("FOO");
         lock.lock();
         lock.unlock();
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final ILock lock2 = h2.getLock("FOO");
         lock2.lock();
         final CountDownLatch latch = new CountDownLatch(2);
@@ -1083,18 +1084,18 @@ public class ClusterTest {
         );
         lock2.unlock();
         sleep(1000);
-        h.shutdown();
+        h.getLifecycleService().shutdown();
         assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 60000)
     public void testLockWaiters() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map1 = h1.getMap("default");
         for (int i = 0; i < 5000; i++) {
             map1.put(i, "value" + i);
         }
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map2 = h2.getMap("default");
         testLockWaiters(map1, map2, 1);
         testLockWaiters(map2, map2, 2);
@@ -1128,9 +1129,9 @@ public class ClusterTest {
 
     @Test(timeout = 60000)
     public void testMapLock() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map1 = h1.getMap("default");
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map2 = h2.getMap("default");
         testMapLockWaiters(map1, map2, 1);
         testMapLockWaiters(map2, map2, 2);
@@ -1173,8 +1174,8 @@ public class ClusterTest {
      */
     @Test(timeout = 60000)
     public void testBigValue() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         IMap<Integer, byte[]> map1 = h1.getMap("default");
         IMap<Integer, byte[]> map2 = h2.getMap("default");
         byte[] v = new byte[10000000];
@@ -1220,8 +1221,8 @@ public class ClusterTest {
      */
     @Test
     public void testTopic() {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         String topicName = "TestMessages";
         ITopic<String> topic1 = h1.getTopic(topicName);
         final CountDownLatch latch1 = new CountDownLatch(1);
@@ -1251,10 +1252,10 @@ public class ClusterTest {
 
     @Test(timeout = 240000)
     public void testExecutorServiceMultiTask() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
         MultiTask multitask = new MultiTask(new DistributedMapStatsCallable("default"), h1.getCluster().getMembers());
         ExecutorService es = h1.getExecutorService();
         for (int i = 0; i < 100; i++) {
@@ -1324,8 +1325,8 @@ public class ClusterTest {
      */
     @Test(timeout = 16000)
     public void testProxySerialization() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         Map map = h1.getMap("default");
         map.put("1", "value1");
         IQueue q = h1.getQueue("default");
@@ -1405,8 +1406,8 @@ public class ClusterTest {
      */
     @Test(timeout = 16000)
     public void testMapProxySerializationWhenUsingExecutorService() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         Map m1 = h1.getMap("default");
         m1.put("1", "value1");
         Future ft = h2.getExecutorService().submit(new DistributedTask(new TestProxyTask(m1), h1.getCluster().getLocalMember()));
@@ -1508,8 +1509,8 @@ public class ClusterTest {
 
     @Test
     public void testKeyOwner() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         Map<String, String> m1 = h1.getMap("default");
         for (int i = 0; i < 100; i++) {
             m1.put(String.valueOf(i), "value" + i);
@@ -1556,13 +1557,13 @@ public class ClusterTest {
                 latch.countDown();
             }
         };
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         h1.getTopic("default").addMessageListener(ml);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         h2.getTopic("default").addMessageListener(ml);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
         h3.getTopic("default").addMessageListener(ml);
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
         h4.getTopic("default").publish("message1");
         assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
@@ -1576,14 +1577,14 @@ public class ClusterTest {
                 latch.countDown();
             }
         };
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(1, h1.getCluster().getMembers().size());
         h1.getTopic("default2").addMessageListener(ml);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         h2.getTopic("default2").addMessageListener(ml);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
         h3.getTopic("default2").addMessageListener(ml);
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
         h4.getTopic("default2").addMessageListener(ml);
         assertEquals(4, h4.getCluster().getMembers().size());
         h1.getTopic("default2").publish("message2");
@@ -1607,14 +1608,14 @@ public class ClusterTest {
             public void entryEvicted(EntryEvent entryEvent) {
             }
         };
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(1, h1.getCluster().getMembers().size());
         h1.getMap("default3").addEntryListener(ml, true);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         h2.getMap("default3").addEntryListener(ml, true);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
         h3.getMap("default3").addEntryListener(ml, true);
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
         h4.getMap("default3").put("key", "value");
         assertEquals(true, latch.await(3, TimeUnit.SECONDS));
     }
@@ -1677,8 +1678,8 @@ public class ClusterTest {
 
     @Test(timeout = 25000, expected = MemberLeftException.class)
     public void testExecutorWhenOneMemberDiesWhileExecuting() throws ExecutionException, InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         Set<Member> members = h2.getCluster().getMembers();
         MultiTask<Long> task = new MultiTask<Long>(new SleepCallable(10000), members);
         h2.getExecutorService().execute(task);
@@ -1734,7 +1735,7 @@ public class ClusterTest {
 
     @Test
     public void testMemberFiredTheEventIsLocal() throws InterruptedException {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         IMap map = h1.getMap("default");
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener(new EntryListener() {
@@ -1760,8 +1761,8 @@ public class ClusterTest {
 
     @Test(expected = MemberLeftException.class)
     public void distributedTaskShouldThrowMemberLeftExceptionWhenTargetMemberRemoved() throws ExecutionException, TimeoutException, InterruptedException {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         ExecutorService ex = h2.getExecutorService();
         FutureTask<String> ft = new DistributedTask<String>(new TestApp.Echo("hello"), h1.getCluster().getLocalMember());
         h1.shutdown();
@@ -1771,8 +1772,8 @@ public class ClusterTest {
 
     @Test
     public void issue370() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         Queue<String> q1 = h1.getQueue("q");
         Queue<String> q2 = h2.getQueue("q");
         for (int i = 0; i < 5; i++) {
@@ -1789,7 +1790,7 @@ public class ClusterTest {
         h1.shutdown();
         Thread.sleep(1000);
         assertEquals(2, q2.size());
-        h1 = Hazelcast.newHazelcastInstance(null);
+        h1 = Hazelcast.newHazelcastInstance(new Config());
         q1 = h1.getQueue("q");
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
@@ -1803,7 +1804,7 @@ public class ClusterTest {
     public void issue391() throws Exception {
         // passed
         final Collection<String> results = new CopyOnWriteArrayList<String>();
-        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(new Config());
         final CountDownLatch latchOffer = new CountDownLatch(1);
         final CountDownLatch latchTake = new CountDownLatch(1);
         new Thread(new Runnable() {
@@ -1818,7 +1819,7 @@ public class ClusterTest {
                 }
             }
         }).start();
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(new Config());
         new Thread(new Runnable() {
             public void run() {
                 for (int i = 0; i < 5; i++) {
@@ -1949,7 +1950,7 @@ public class ClusterTest {
         for (int i = 0; i < 2; i++) {
             new Thread(new Runnable() {
                 public void run() {
-                    HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
+                    HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
                     IMap<String, Integer> map = h.getMap(MAP_NAME);
                     start.countDown();
                     try {
@@ -1980,8 +1981,8 @@ public class ClusterTest {
 
     @Test
     public void secondLockOnMapShouldReturnFalse() {
-        HazelcastInstance hzi1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance hzi2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance hzi1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance hzi2 = Hazelcast.newHazelcastInstance(new Config());
         IMap<Object, Object> map1 = hzi1.getMap("dummymap");
         IMap<Object, Object> map2 = hzi2.getMap("dummymap");
         boolean lockMap1 = map1.lockMap(0,
@@ -1996,8 +1997,8 @@ public class ClusterTest {
 
     @Test
     public void secondLockOnMapShouldReturnTrueWhenFirstLockReleased() throws InterruptedException {
-        final HazelcastInstance hzi1 = Hazelcast.newHazelcastInstance(null);
-        final HazelcastInstance hzi2 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance hzi1 = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance hzi2 = Hazelcast.newHazelcastInstance(new Config());
         final IMap<Object, Object> map1 = hzi1.getMap("dummymap");
         final IMap<Object, Object> map2 = hzi2.getMap("dummymap");
         final CountDownLatch acquireLock = new CountDownLatch(1);
@@ -2021,8 +2022,8 @@ public class ClusterTest {
 
     @Test
     public void mapLock() throws InterruptedException {
-        final HazelcastInstance hzi1 = Hazelcast.newHazelcastInstance(null);
-        final HazelcastInstance hzi2 = Hazelcast.newHazelcastInstance(null);
+        final HazelcastInstance hzi1 = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance hzi2 = Hazelcast.newHazelcastInstance(new Config());
         final IMap<Object, Object> map1 = hzi1.getMap("dummymap");
         final IMap<Object, Object> map2 = hzi2.getMap("dummymap");
         final CountDownLatch acquireLock = new CountDownLatch(1);
@@ -2120,7 +2121,7 @@ public class ClusterTest {
     public void testMapEvictWithTTLAndListener() throws InterruptedException {
         int count = 100;
         final CountDownLatch latch = new CountDownLatch(count);
-        IMap<String, String> map = Hazelcast.newHazelcastInstance(null).getMap("testMapEvictAndListener");
+        IMap<String, String> map = Hazelcast.newHazelcastInstance(new Config()).getMap("testMapEvictAndListener");
         map.addEntryListener(new EntryListener<String, String>() {
             public void entryAdded(EntryEvent<String, String> stringStringEntryEvent) {
             }
@@ -2588,9 +2589,9 @@ public class ClusterTest {
                 tx.commit();
             }
         }
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(new Config());
         new TestTask().test(hz1, "test1");
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(new Config());
         new TestTask().test(hz2, "test2");
         assertTrue(latch.await(2, TimeUnit.SECONDS));
     }

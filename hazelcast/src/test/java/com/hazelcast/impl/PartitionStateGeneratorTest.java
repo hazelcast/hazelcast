@@ -28,7 +28,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.partition.*;
 import com.hazelcast.nio.Address;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -39,6 +41,18 @@ import java.util.Map.Entry;
 public class PartitionStateGeneratorTest {
 
     private static final boolean printState = false;
+
+    @BeforeClass
+    public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+        Hazelcast.shutdownAll();
+    }
+
+    @After
+    public void cleanup() throws Exception {
+        Hazelcast.shutdownAll();
+    }
 
     @Test
     public void testRandomPartitionGenerator() throws Exception {
@@ -355,13 +369,11 @@ public class PartitionStateGeneratorTest {
         config.getMapConfig("map3").setBackupCount(5);
         config.getMapConfig("map4").setBackupCount(1);
         config.getMapConfig("test").setBackupCount(testMapReplicaCount - 1);
-
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         final IMap<Integer, Integer> testMap = hz.getMap("test");
         for (int i = 0; i < entryCount; i++) {
             testMap.put(i, i);
         }
-
         final int[] size = new int[]{3, 5, 7, 6, 5, 4, 3, 2, 1};
         int k = 0;
         for (int i = 0; i < size.length; i++) {
@@ -378,7 +390,6 @@ public class PartitionStateGeneratorTest {
             int wait = replicaMax * 2;
             System.out.println("Waiting " + wait + " seconds for partition arrangement...");
             Thread.sleep(1000 * wait);
-
             int[] partitionCounts = new int[PartitionInfo.MAX_REPLICA_COUNT];
             println("PARTITIONS: ");
             for (HazelcastInstance node : set) {
@@ -472,7 +483,6 @@ public class PartitionStateGeneratorTest {
         }
         return counts;
     }
-
 
     private static void println(Object str) {
         print(str);

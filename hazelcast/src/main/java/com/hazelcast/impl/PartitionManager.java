@@ -24,6 +24,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.base.RecordSet;
 import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
+import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.impl.partition.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -165,7 +166,16 @@ public class PartitionManager {
                             throw new RuntimeException("Record.key is null or empty " + rec.getKeyData());
                         }
                         if (rec.getBlockId() == partitionId) {
-                            lsResultSet.add(rec);
+                            if (cmap.isMultiMap()) {
+                                Collection<ValueHolder> colValues = rec.getMultiValues();
+                                for (ValueHolder valueHolder : colValues) {
+                                    Record record = rec.copy();
+                                    record.setValue(valueHolder.getData());
+                                    lsResultSet.add(record);
+                                }
+                            } else {
+                                lsResultSet.add(rec);
+                            }
                             lsResultSet.addCost(rec.getCost());
                         }
                     }
@@ -223,7 +233,7 @@ public class PartitionManager {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("ClusterPartitionManager{\n");
+        StringBuilder sb = new StringBuilder("PartitionManager{\n");
         int count = 0;
         for (PartitionInfo partitionInfo : partitions) {
             sb.append(partitionInfo.toString());
@@ -236,7 +246,7 @@ public class PartitionManager {
 
     public void reset() {
         initialized = false;
-        esMigrationService.getQueue().clear();
+        clearQueue();
         for (PartitionInfo partition : partitions) {
             partition.setPartitionInfo(new PartitionInfo(partition.getPartitionId()));
         }
@@ -262,7 +272,7 @@ public class PartitionManager {
             indexesOfDead[partition.getPartitionId()] = partition.getReplicaIndexOf(deadMember.getAddress());
         }
         if (isMember) {
-            esMigrationService.getQueue().clear();
+            clearQueue();
             for (PartitionInfo partition : partitions) {
                 partition.onDeadAddress(deadAddress);
             }
@@ -328,9 +338,13 @@ public class PartitionManager {
             // we should clear executor task queue
             // and submit repartitioning task to executor
             // to avoid repartitioning during a migration process.
-            esMigrationService.getQueue().clear();
+            clearQueue();
             esMigrationService.execute(new InitRepartitioningTask());
         }
+    }
+
+    void clearQueue() {
+        esMigrationService.getQueue().clear();
     }
 
     class InitRepartitioningTask implements Runnable {
@@ -342,7 +356,7 @@ public class PartitionManager {
     private void initRepartitioning() {
         if (concurrentMapManager.isMaster()) {
             if (initialized) {
-                esMigrationService.getQueue().clear();
+                clearQueue();
                 PartitionStateGenerator psg = getPartitionStateGenerator();
                 Queue<MigrationRequestTask> scheduledQ = new LinkedList<MigrationRequestTask>();
                 Queue<MigrationRequestTask> immediateQ = new LinkedList<MigrationRequestTask>();
