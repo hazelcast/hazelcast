@@ -146,8 +146,7 @@ public class ClusterBackupTest {
 
     @Test
     public void issue388NoBackupWhenSuperClient() throws InterruptedException {
-        final int count = 300;
-        final int size = 3 * 300;
+        final int size = 900;
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         Config scconfig = new Config();
@@ -156,7 +155,7 @@ public class ClusterBackupTest {
         IMap map1 = h1.getMap("def");
         IMap map2 = h2.getMap("def");
         IMap map3 = sc.getMap("def");
-        for (int i = 0; i < count; ) {
+        for (int i = 0; i < size; ) {
             map1.put(i++, new byte[1000]);
             map2.put(i++, new byte[1000]);
             map3.put(i++, new byte[1000]);
@@ -184,7 +183,7 @@ public class ClusterBackupTest {
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
         IMap map3 = h3.getMap("default");
         assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
-        assertEquals(size, getTotalBackupEntryCount(map1, map2, map3));
+        assertEquals(2 * size, getTotalBackupEntryCount(map1, map2, map3));
     }
 
     /**
@@ -276,6 +275,9 @@ public class ClusterBackupTest {
         sleep(4000);
         ownedSize = getTotalOwnedEntryCount(map1, map2, map3);
         backupSize = getTotalBackupEntryCount(map1, map2, map3);
+        System.out.println(map1.getLocalMapStats());
+        System.out.println(map2.getLocalMapStats());
+        System.out.println(map3.getLocalMapStats());
         assertEquals(size, ownedSize);
         assertEquals(size, backupSize);
         h1.getLifecycleService().shutdown();
