@@ -28,4 +28,7 @@ public class DummyWanReplication implements WanReplicationEndpoint {
 
     public void recordUpdated(Record record) {
     }
+
+    public void shutdown() {
+    }
 }
