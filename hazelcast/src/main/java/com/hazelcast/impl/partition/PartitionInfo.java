@@ -120,10 +120,11 @@ public class PartitionInfo {
     public void onDeadAddress(Address deadAddress) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             if (deadAddress.equals(addresses.get(i))) {
-                setReplicaAddress(i, null); // to guarantee that last guy is set to null
+//                setReplicaAddress(i, null); // to guarantee that last guy is set to null
                 for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
                     setReplicaAddress(a, addresses.get(a + 1));
                 }
+                setReplicaAddress(MAX_REPLICA_COUNT - 1, null);
                 return;
             }
         }

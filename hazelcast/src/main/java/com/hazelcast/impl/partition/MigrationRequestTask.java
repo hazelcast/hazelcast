@@ -154,13 +154,16 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
 
     @Override
     public String toString() {
-        return "MigrationRequestTask{" +
-                "partitionId=" + partitionId +
-                ", from=" + from +
-                ", to=" + to +
-                ", replicaIndex=" + replicaIndex +
-                ", migration=" + migration +
-                '}';
+        final StringBuilder sb = new StringBuilder();
+        sb.append("MigrationRequestTask");
+        sb.append("{partitionId=").append(partitionId);
+        sb.append(", from=").append(from);
+        sb.append(", to=").append(to);
+        sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append(", migration=").append(migration);
+        sb.append(", diffOnly=").append(diffOnly);
+        sb.append(", selfCopyReplicaIndex=").append(selfCopyReplicaIndex);
+        sb.append('}');
+        return sb.toString();
     }
-
 }

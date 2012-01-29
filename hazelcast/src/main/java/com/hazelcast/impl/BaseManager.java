@@ -535,7 +535,7 @@ public abstract class BaseManager {
                 }
                 if (result == OBJECT_REDO) {
                     request.redoCount++;
-                    System.out.println(ResponseQueueCall.this + " request block id " + request.blockId);
+//                    System.out.println(ResponseQueueCall.this + " request block id " + request.blockId);
                     if (request.redoCount > 19 && (request.redoCount % 10 == 0)) {
                         final CountDownLatch l = new CountDownLatch(1);
                         final Request reqCopy = request.hardCopy();
@@ -547,7 +547,7 @@ public abstract class BaseManager {
                                     Connection targetConnection = null;
                                     MemberImpl targetMember = null;
                                     Object key = toObject(reqCopy.key);
-                                    System.out.println("BLOCK ID " + reqCopy.blockId);
+//                                    System.out.println("BLOCK ID " + reqCopy.blockId);
                                     PartitionInfo block = (reqCopy.key == null) ? null : node.concurrentMapManager.getPartitionInfo(reqCopy.blockId);
                                     if (targetCopy != null) {
                                         targetMember = getMember(targetCopy);

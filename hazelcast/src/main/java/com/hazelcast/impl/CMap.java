@@ -1025,7 +1025,7 @@ public class CMap {
             }
             return size;
         } else {
-            System.out.println("size " + mapIndexService.size());
+//            System.out.println("size " + mapIndexService.size());
             return mapIndexService.size();
         }
     }

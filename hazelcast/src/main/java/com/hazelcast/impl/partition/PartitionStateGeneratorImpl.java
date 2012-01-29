@@ -84,12 +84,13 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     private void finalizeArrangement(PartitionInfo[] currentState, PartitionInfo[] newState, int replicaCount,
                                      Queue<MigrationRequestTask> scheduledQueue, Queue<MigrationRequestTask> immediateQueue) {
         final int partitionCount = currentState.length;
+        // hold migration tasks related to a partition temporarily
+        final List<MigrationRequestTask> partitionMigrationTasks = new LinkedList<MigrationRequestTask>();
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             PartitionInfo currentPartition = currentState[partitionId];
             PartitionInfo newPartition = newState[partitionId];
             boolean lost = false;
             for (int replicaIndex = 0; replicaIndex < replicaCount; replicaIndex++) {
-//            for (int replicaIndex = replicaCount - 1; replicaIndex > -1; replicaIndex--) {
                 Address currentOwner = currentPartition.getReplicaAddress(replicaIndex);
                 Address newOwner = newPartition.getReplicaAddress(replicaIndex);
                 MigrationRequestTask migrationRequestTask = null;
@@ -105,15 +106,31 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                         // current owner node.
                         lost = true;
                     }
-                    // currentOwner set here is not used on operation, just for an info.
-                    // actual currentOwner will be determined just before copy.
-                    migrationRequestTask = new MigrationRequestTask(
-                            partitionId, currentOwner, newOwner, replicaIndex, false);
+                    boolean selfCopy = false;
+                    // an earlier level replica of this partition may be migrated from
+                    // target of this copy task. if so, to avoid copy back partition data after migration,
+                    // set partition's replica owner to just after earlier replica is migrated.
+                    ListIterator<MigrationRequestTask> iter = partitionMigrationTasks.listIterator(partitionMigrationTasks.size());
+                    while (iter.hasPrevious()) {
+                        MigrationRequestTask task = iter.previous();
+                        if (newOwner.equals(task.getFromAddress())) {
+                            selfCopy = true;
+                            task.setSelfCopyReplicaIndex(replicaIndex);
+                            break;
+                        }
+                    }
+                    if (!selfCopy) {
+                        // currentOwner set here is not used on operation, just for an info.
+                        // actual currentOwner will be determined just before copy.
+                        migrationRequestTask = new MigrationRequestTask(
+                                partitionId, currentOwner, newOwner, replicaIndex, false);
+                    }
                 } else if (currentOwner != null && newOwner == null) {
                     // should not happen!
                     logger.log(Level.WARNING, "Something seems wrong! Old owner is valid but new owner is null!");
                 }
                 if (migrationRequestTask != null) {
+                    partitionMigrationTasks.add(migrationRequestTask);
                     boolean immediate = false;
                     if (replicaIndex == 0
                             && currentPartition.getOwner() != null
@@ -129,8 +146,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     }
                 }
             }
+            partitionMigrationTasks.clear();
             if (lost) {
-                logger.log(Level.SEVERE, "Oops! " + currentPartition + " has been LOST!");
+                logger.log(Level.WARNING, "Oops! " + currentPartition + " has been LOST!");
             }
         }
     }

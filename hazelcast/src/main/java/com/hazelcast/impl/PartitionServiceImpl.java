@@ -18,6 +18,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.MigrationEvent;
@@ -30,10 +31,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class PartitionServiceImpl implements PartitionService {
+    private final ILogger logger;
     private final ConcurrentMap<Integer, PartitionProxy> mapPartitions = new ConcurrentHashMap<Integer, PartitionProxy>();
     private final List<MigrationListener> lsMigrationListeners = new CopyOnWriteArrayList<MigrationListener>();
     private final ConcurrentMapManager concurrentMapManager;
@@ -41,6 +44,7 @@ public class PartitionServiceImpl implements PartitionService {
     private volatile int ownedPartitionCount = -1;
 
     public PartitionServiceImpl(ConcurrentMapManager concurrentMapManager) {
+        this.logger = concurrentMapManager.node.getLogger(PartitionService.class.getName());
         this.concurrentMapManager = concurrentMapManager;
         this.partitions = new TreeSet<Partition>();
         for (int i = 0; i < concurrentMapManager.PARTITION_COUNT; i++) {
@@ -95,7 +99,7 @@ public class PartitionServiceImpl implements PartitionService {
                         }
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.log(Level.SEVERE, e.getMessage(), e);
                 } finally {
                     responseQ.offer(memberOwner);
                 }

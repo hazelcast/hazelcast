@@ -22,6 +22,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.partition.*;
 import com.hazelcast.nio.Address;
 import org.junit.Assert;
@@ -109,9 +113,8 @@ public class PartitionStateGeneratorTest {
 
     private void test(PartitionStateGenerator generator, MemberGroupFactory nodeGroupFactory) throws Exception {
         int maxSameHostCount = 3;
-        int[] partitionCounts = new int[]{271/*, 787/*, 1549, 3217, 8707/**/};
+        int[] partitionCounts = new int[]{271, 787/*, 1549, 3217, 8707/**/};
         int[] members = new int[]{3, 6, 7, 9, 10, 5, 11, 13, 8, 17, 57, 100, 130, 77, 255};
-//        int[] members = new int[] {1, 2, 3, 2, 4, 1, 10, 2};
         Queue<MigrationRequestTask> scheduledQ = new LinkedList<MigrationRequestTask>();
         Queue<MigrationRequestTask> immediateQ = new LinkedList<MigrationRequestTask>();
         for (int i = 0; i < partitionCounts.length; i++) {
@@ -340,6 +343,136 @@ public class PartitionStateGeneratorTest {
         Assert.assertTrue("Too high partition count! Owned: " + count + ", Avg: " + average
                 + ", Replica: " + replica, count <= average * r);
     }
+
+    @Test
+    public void testPartitionAndCMapRecordCounts() throws InterruptedException {
+        final int entryCount = 10000;
+        final int totalPartitionCount = 271;
+        final int testMapReplicaCount = 3;
+        Config config = new ClasspathXmlConfig("hazelcast-default.xml");
+        config.getMapConfig("map1").setBackupCount(4);
+        config.getMapConfig("map2").setBackupCount(3);
+        config.getMapConfig("map3").setBackupCount(5);
+        config.getMapConfig("map4").setBackupCount(1);
+        config.getMapConfig("test").setBackupCount(testMapReplicaCount - 1);
+
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final IMap<Integer, Integer> testMap = hz.getMap("test");
+        for (int i = 0; i < entryCount; i++) {
+            testMap.put(i, i);
+        }
+
+        final int[] size = new int[]{3, 5, 7, 6, 5, 4, 3, 2, 1};
+        int k = 0;
+        for (int i = 0; i < size.length; i++) {
+            int n = size[k++ % size.length];
+            System.out.println("Node size : " + n);
+            while (Hazelcast.getAllHazelcastInstances().size() < n) {
+                Hazelcast.newHazelcastInstance(config);
+            }
+            while (Hazelcast.getAllHazelcastInstances().size() > n) {
+                Hazelcast.getAllHazelcastInstances().iterator().next().getLifecycleService().shutdown();
+            }
+            Collection<HazelcastInstance> set = Hazelcast.getAllHazelcastInstances();
+            final int replicaMax = set.size();
+            int wait = replicaMax * 2;
+            System.out.println("Waiting " + wait + " seconds for partition arrangement...");
+            Thread.sleep(1000 * wait);
+
+            int[] partitionCounts = new int[PartitionInfo.MAX_REPLICA_COUNT];
+            println("PARTITIONS: ");
+            for (HazelcastInstance node : set) {
+                if (node != null) {
+                    try {
+                        int[] pc = getPartitionCounts(node);
+                        for (int j = 0; j < pc.length; j++) {
+                            partitionCounts[j] += pc[j];
+                        }
+                        println(node.getCluster().getLocalMember() + " => " + Arrays.toString(pc));
+                    } catch (Exception e) {
+                    }
+                }
+            }
+            println("Total => " + Arrays.toString(partitionCounts));
+            println("");
+            for (int j = 0; j < partitionCounts.length; j++) {
+                int partitionCount = partitionCounts[j];
+                if (j < replicaMax) {
+                    Assert.assertTrue("index: " + j + ", partitions: " + partitionCount + ", max-replica: " + replicaMax,
+                            partitionCount == totalPartitionCount);
+                } else {
+                    Assert.assertTrue("index: " + j + ", partitions: " + partitionCount + ", max-replica: " + replicaMax,
+                            partitionCount == 0);
+                }
+            }
+            println("RECORDS: ");
+            int[] recordCounts = new int[PartitionInfo.MAX_REPLICA_COUNT];
+            for (HazelcastInstance node : set) {
+                if (node != null) {
+                    try {
+                        int[] rc = getCMapRecordCounts(node, "test");
+                        for (int j = 0; j < rc.length; j++) {
+                            recordCounts[j] += rc[j];
+                        }
+                        println(node.getCluster().getLocalMember() + " => " + Arrays.toString(rc));
+                    } catch (Exception e) {
+                    }
+                }
+            }
+            println("Total => " + Arrays.toString(recordCounts));
+            println();
+            for (int j = 0; j < recordCounts.length; j++) {
+                int recordCount = recordCounts[j];
+                if (j < Math.min(testMapReplicaCount, replicaMax)) {
+                    Assert.assertTrue("index: " + j + ", records: " + recordCount + ", max-replica: " + replicaMax,
+                            recordCount == entryCount);
+                } else {
+                    Assert.assertTrue("index: " + j + ", records: " + recordCount + ", max-replica: " + replicaMax,
+                            recordCount == 0);
+                }
+            }
+            println("--------------------------------------------------------------------------------");
+        }
+    }
+
+    private static int[] getPartitionCounts(HazelcastInstance hz) {
+        int[] counts = new int[PartitionInfo.MAX_REPLICA_COUNT];
+        FactoryImpl.HazelcastInstanceProxy proxy = (FactoryImpl.HazelcastInstanceProxy) hz;
+        Node node = proxy.getFactory().node;
+        Address address = node.clusterManager.getThisAddress();
+        PartitionManager partitionManager = node.concurrentMapManager.getPartitionManager();
+        PartitionInfo[] partitions = partitionManager.getPartitions();
+        for (PartitionInfo p : partitions) {
+            for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
+                if (address.equals(p.getReplicaAddress(i))) {
+                    counts[i]++;
+                }
+            }
+        }
+        return counts;
+    }
+
+    private static int[] getCMapRecordCounts(HazelcastInstance hz, String name) {
+        FactoryImpl.HazelcastInstanceProxy proxy = (FactoryImpl.HazelcastInstanceProxy) hz;
+        Node node = proxy.getFactory().node;
+        CMap map = node.concurrentMapManager.getMap(Prefix.MAP + name);
+        Address address = node.clusterManager.getThisAddress();
+        int[] counts = new int[PartitionInfo.MAX_REPLICA_COUNT];
+        PartitionManager partitionManager = node.concurrentMapManager.getPartitionManager();
+        Collection<Record> records = map.mapRecords.values();
+        for (Record record : records) {
+            int id = record.getBlockId();
+            PartitionInfo p = partitionManager.getPartition(id);
+            for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
+                if (address.equals(p.getReplicaAddress(i))) {
+                    counts[i]++;
+                    break;
+                }
+            }
+        }
+        return counts;
+    }
+
 
     private static void println(Object str) {
         print(str);

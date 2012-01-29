@@ -138,9 +138,9 @@ public class PartitionManager {
             }
             mapActiveMigrations.remove(partition.getPartitionId());
             // do we need cleanup here? it will eventually run soon.
-//            if (migrationCompleted) {
-//                concurrentMapManager.startCleanup(false, false);
-//            }
+            if (migrationCompleted) {
+                concurrentMapManager.startCleanup(false, false);
+            }
         }
     }
 
@@ -299,14 +299,6 @@ public class PartitionManager {
                 int indexOfDead = indexesOfDead[partitionId];
                 if (indexOfDead != -1) {
                     PartitionInfo partition = partitions[partitionId];
-//                    if (indexOfDead <= maxBackupCount) {
-//                        Address owner = partition.getOwner();
-//                        Address target = partition.getReplicaAddress(maxBackupCount);
-//                        if (owner != null && target != null) {
-//                            MigrationRequestTask mrt = new MigrationRequestTask(i, owner, target, maxBackupCount, false);
-//                            esMigrationService.execute(new Migrator(mrt));
-//                        }
-//                    }
                     Address owner = partition.getOwner();
                     if (owner == null) {
                         logger.log(Level.WARNING, "Owner of one of the replicas of Partition[" +
@@ -401,17 +393,15 @@ public class PartitionManager {
                         }
                     }, 100);
                 }
-                Object result = null;
                 MemberImpl fromMember = null;
+                Object result = Boolean.FALSE;
                 if (migrationRequestTask.isMigration()) {
                     fromMember = getMember(migrationRequestTask.getFromAddress());
-                    //                    System.err.println("Migration ::: " + migrationRequestTask);
                 } else {
                     // ignore fromAddress of task and get actual owner from partition table
-                    fromMember = getMember(partitions[migrationRequestTask.getPartitionId()].getOwner());
-                    //                    System.err.println("Calculated owner: " + fromMember + " ==>>> " + migrationRequestTask);
+                    final int partitionId = migrationRequestTask.getPartitionId();
+                    fromMember = getMember(partitions[partitionId].getOwner());
                 }
-                result = Boolean.FALSE;
                 if (fromMember != null) {
                     migrationRequestTask.setFromAddress(fromMember.getAddress());
                     DistributedTask task = new DistributedTask(migrationRequestTask, fromMember);
@@ -444,6 +434,13 @@ public class PartitionManager {
                                         concurrentMapManager.partitionServiceImpl.setOwner(partition.getPartitionId(), ownerMember);
                                     }
                                     concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
+                                }
+                                // if this partition should be copied back,
+                                // just set partition's replica address
+                                // before data is cleaned up.
+                                if (migrationRequestTask.getSelfCopyReplicaIndex() > -1) {
+                                    partition.setReplicaAddress(migrationRequestTask.getSelfCopyReplicaIndex(),
+                                            migrationRequestTask.getFromAddress());
                                 }
                                 checkCurrentMigrations(partition);
                                 sendClusterRuntimeState();
