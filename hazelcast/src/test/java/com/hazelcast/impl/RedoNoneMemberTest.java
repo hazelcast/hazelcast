@@ -59,66 +59,43 @@ public class RedoNoneMemberTest extends RedoTestService {
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        final Node node1 = getNode(h1);
-        CallBuilder callBuilder = new KeyCallBuilder(h1);
-        BeforeAfterBehavior behavior = new BeforeAfterBehavior() {
-            @Override
-            void before() throws Exception {
-                TestUtil.migrateKey(1, h1, h2);
-                node1.clusterManager.enqueueAndWait(new Processable() {
-                    public void process() {
-                        node1.clusterManager.removeMember((MemberImpl) h2.getCluster().getLocalMember());
-                        assertEquals(1, node1.clusterManager.lsMembers.size());
-                    }
-                }, 5);
-            }
-
-            @Override
-            void after() {
-                node1.clusterManager.enqueueAndWait(new Processable() {
-                    public void process() {
-                        MemberImpl secondMember = new MemberImpl(((MemberImpl) h2.getCluster().getLocalMember()).getAddress(), false);
-                        node1.clusterManager.addMember(secondMember);
-                        assertEquals(2, node1.clusterManager.lsMembers.size());
-                    }
-                }, 5);
-            }
-        };
-        new BeforeAfterTester(behavior, callBuilder).run();
+        new RunAfterTester(new TargetNotMemberBehavior(h1, h2), new KeyCallBuilder(h1)).run();
+        new RunAfterTester(new TargetNotMemberBehavior(h2, h1), new KeyCallBuilder(h2)).run();
     }
 
-    @Test(timeout = 100000)
-    public void testMapCallerNotMember() {
-        Config config = new Config();
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        final Node node2 = getNode(h2);
-        CallBuilder callBuilder = new KeyCallBuilder(h1);
-        BeforeAfterBehavior behavior = new BeforeAfterBehavior() {
-            @Override
-            void before() throws Exception {
-                TestUtil.migrateKey(1, h1, h2);
-                node2.clusterManager.enqueueAndWait(new Processable() {
-                    public void process() {
-                        node2.clusterManager.removeMember((MemberImpl) h1.getCluster().getLocalMember());
-                        assertEquals(1, node2.clusterManager.lsMembers.size());
-                    }
-                }, 5);
-            }
+    class TargetNotMemberBehavior extends BeforeAfterBehavior {
+        final HazelcastInstance caller;
+        final HazelcastInstance target;
+        final Node callerNode;
+        final Node targetNode;
 
-            @Override
-            void after() {
-                final Node node2 = getNode(h2);
-                node2.clusterManager.enqueueAndWait(new Processable() {
-                    public void process() {
-                        MemberImpl secondMember = new MemberImpl(((MemberImpl) h1.getCluster().getLocalMember()).getAddress(), false);
-                        node2.clusterManager.addMember(secondMember);
-                        assertEquals(2, node2.clusterManager.lsMembers.size());
-                    }
-                }, 5);
-            }
-        };
-        new BeforeAfterTester(behavior, callBuilder).run();
+        TargetNotMemberBehavior(HazelcastInstance caller, HazelcastInstance target) {
+            this.caller = caller;
+            this.target = target;
+            this.callerNode = getNode(caller);
+            this.targetNode = getNode(target);
+        }
+
+        @Override
+        void before() throws Exception {
+            callerNode.clusterManager.enqueueAndWait(new Processable() {
+                public void process() {
+                    callerNode.clusterManager.removeMember((MemberImpl) target.getCluster().getLocalMember());
+                    assertEquals(1, callerNode.clusterManager.lsMembers.size());
+                }
+            }, 5);
+        }
+
+        @Override
+        void after() {
+            callerNode.clusterManager.enqueueAndWait(new Processable() {
+                public void process() {
+                    MemberImpl secondMember = new MemberImpl(((MemberImpl) target.getCluster().getLocalMember()).getAddress(), false);
+                    callerNode.clusterManager.addMember(secondMember);
+                    assertEquals(2, callerNode.clusterManager.lsMembers.size());
+                }
+            }, 5);
+        }
     }
 
     @Test(timeout = 100000)

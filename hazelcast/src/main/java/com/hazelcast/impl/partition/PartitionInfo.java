@@ -19,7 +19,6 @@ package com.hazelcast.impl.partition;
 
 import com.hazelcast.nio.Address;
 
-import javax.swing.event.ChangeListener;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class PartitionInfo {
@@ -27,11 +26,11 @@ public class PartitionInfo {
 
     private final int partitionId;
     private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
-    private final ChangeListener changeListener;
+    private final PartitionListener partitionListener;
 
-    public PartitionInfo(int partitionId, ChangeListener changeListener) {
+    public PartitionInfo(int partitionId, PartitionListener partitionListener) {
         this.partitionId = partitionId;
-        this.changeListener = changeListener;
+        this.partitionListener = partitionListener;
     }
 
     public PartitionInfo(int partitionId) {
@@ -51,19 +50,19 @@ public class PartitionInfo {
     }
 
     public void setReplicaAddress(int index, Address address) {
-        if (changeListener != null) {
-            Address currentAddress = addresses.get(index);
-            boolean changed;
+        boolean changed = false;
+        Address currentAddress = addresses.get(index);
+        if (partitionListener != null) {
             if (currentAddress == null) {
                 changed = (address != null);
             } else {
                 changed = !currentAddress.equals(address);
             }
-            if (changed) {
-                changeListener.stateChanged(null);
-            }
         }
         addresses.set(index, address);
+        if (changed) {
+            partitionListener.replicaChanged(new PartitionReplicaChangeEvent(partitionId, index, currentAddress, address));
+        }
     }
 
     public Address getReplicaAddress(int index) {
@@ -72,7 +71,7 @@ public class PartitionInfo {
     }
 
     public PartitionInfo copy() {
-        PartitionInfo p = new PartitionInfo(partitionId, changeListener);
+        PartitionInfo p = new PartitionInfo(partitionId, partitionListener);
         p.setPartitionInfo(this);
         return p;
     }

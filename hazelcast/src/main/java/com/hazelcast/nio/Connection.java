@@ -165,7 +165,7 @@ public final class Connection {
         return connectionId;
     }
 
-    private void close0() throws IOException {
+    public void close0() throws IOException {
         if (!live)
             return;
         live = false;

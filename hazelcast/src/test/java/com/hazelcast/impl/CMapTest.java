@@ -21,7 +21,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.nio.Data;
+import com.hazelcast.partition.PartitionService;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -50,6 +52,46 @@ public class CMapTest extends TestUtil {
     @After
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testMigrationOfTTLAndLock() throws Exception {
+        Config config = new Config();
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        ConcurrentMapManager cmm1 = getConcurrentMapManager(h1);
+        ConcurrentMapManager cmm2 = getConcurrentMapManager(h2);
+        IMap imap1 = h1.getMap("default");
+        IMap imap2 = h2.getMap("default");
+        imap1.put("1", "value1", 60, TimeUnit.SECONDS);
+        imap1.lock("1");
+        Data dKey = toData("1");
+        CMap cmap1 = getCMap(h1, "default");
+        CMap cmap2 = getCMap(h2, "default");
+        PartitionService partitionService = h1.getPartitionService();
+        DistributedLock lock = cmap1.getRecord(dKey).getLock();
+        assertTrue(cmm1.thisAddress.equals(lock.getLockAddress()));
+        assertTrue(lock.getLockThreadId() != -1);
+        assertEquals(1, lock.getLockCount());
+        assertTrue(migrateKey("1", h1, h2, 0));
+        assertTrue(migrateKey("1", h1, h1, 1));
+        Thread.sleep(1000);
+        cmap1.startCleanup(true);
+        cmap2.startCleanup(true);
+        assertEquals(1, cmap1.mapRecords.size());
+        assertEquals(1, cmap2.mapRecords.size());
+        assertEquals(1, cmap2.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertTrue(cmap1.getRecord(dKey).getRemainingTTL() < 60000);
+        assertTrue(cmap2.getRecord(dKey).getRemainingTTL() < 60000);
+        lock = cmap2.getRecord(dKey).getLock();
+        assertTrue(cmm1.thisAddress.equals(lock.getLockAddress()));
+        assertTrue(lock.getLockThreadId() != -1);
+        assertEquals(1, lock.getLockCount());
+        lock = cmap1.getRecord(dKey).getLock();
+        assertTrue(cmm1.thisAddress.equals(lock.getLockAddress()));
+        assertTrue(lock.getLockThreadId() != -1);
+        assertEquals(1, lock.getLockCount());
     }
 
     @Test
@@ -114,11 +156,17 @@ public class CMapTest extends TestUtil {
         assertTrue(record2.isValid(now));
         assertEquals(1, record1.valueCount());
         assertEquals(1, record2.valueCount());
-        assertTrue(TestUtil.migrateKey(key, h1, h2));
+        assertEquals(1, cmap1.mapRecords.size());
+        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
+        assertTrue(migrateKey(key, h1, h2, 0));
+        assertTrue(migrateKey(key, h1, h1, 1));
+        cmap1.startCleanup(true);
+        cmap2.startCleanup(true);
         assertEquals(1, cmap1.mapRecords.size());
         assertEquals(1, cmap2.mapRecords.size());
-        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
         assertEquals(1, cmap2.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
         now = System.currentTimeMillis();
         millisLeft1 = record1.getExpirationTime() - now;
         millisLeft2 = record2.getExpirationTime() - now;
@@ -135,10 +183,10 @@ public class CMapTest extends TestUtil {
         assertFalse(record1.isValid(now));
         assertFalse(record2.isValid(now));
         Thread.sleep(20000);
-        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
         assertEquals(0, cmap1.mapRecords.size());
         assertEquals(0, cmap2.mapRecords.size());
+        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
         imap1.put("1", "value1");
         record1 = cmap1.getRecord(dKey);
         record2 = cmap2.getRecord(dKey);

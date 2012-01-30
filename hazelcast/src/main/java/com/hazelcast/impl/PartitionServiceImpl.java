@@ -166,6 +166,10 @@ public class PartitionServiceImpl implements PartitionService {
             return owner;
         }
 
+        public void resetOwner() {
+            owner = null;
+        }
+
         public boolean isMigrating() {
             return migrating;
         }

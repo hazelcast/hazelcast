@@ -27,6 +27,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class RedoNoConnectionTest extends RedoTestService {
 
@@ -68,13 +70,15 @@ public class RedoNoConnectionTest extends RedoTestService {
     @Test(timeout = 100000)
     public void testKeyBasedCallToNotConnectedMember() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        TestUtil.migrateKey(1, h1, h2);
-        BeforeAfterTester t = new BeforeAfterTester(
+        RunAfterTester t = new RunAfterTester(
                 new NoConnectionBehavior(h1, h2),
                 new KeyCallBuilder(h1));
+        t.run();
+        t = new RunAfterTester(
+                new NoConnectionBehavior(h2, h1),
+                new KeyCallBuilder(h2));
         t.run();
     }
 
@@ -117,13 +121,15 @@ public class RedoNoConnectionTest extends RedoTestService {
     @Test(timeout = 100000)
     public void testKeyBasedCallToDisconnectingMember() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        TestUtil.migrateKey(1, h1, h2);
-        BeforeAfterTester t = new BeforeAfterTester(
+        Runnable t = new RunAfterTester(
                 new DisconnectionBehavior(h1, h2),
                 new KeyCallBuilder(h1));
+        t.run();
+        t = new RunAfterTester(
+                new DisconnectionBehavior(h2, h1),
+                new KeyCallBuilder(h2));
         t.run();
     }
 
@@ -153,8 +159,8 @@ public class RedoNoConnectionTest extends RedoTestService {
             this.target = target;
             this.callerNode = getNode(caller);
             targetMember = (MemberImpl) target.getCluster().getLocalMember();
-            targetConn = callerNode.getConnectionManager().getConnection(targetMember.getAddress());
             callerMember = (MemberImpl) caller.getCluster().getLocalMember();
+            targetConn = callerNode.getConnectionManager().getConnection(targetMember.getAddress());
         }
 
         @Override
@@ -176,7 +182,6 @@ public class RedoNoConnectionTest extends RedoTestService {
 
         @Override
         void after() {
-            callerNode.getConnectionManager().attachConnection(targetConn.getEndPoint(), targetConn);
             callerNode.clusterManager.enqueueAndWait(new Processable() {
                 public void process() {
                     callerNode.clusterManager.addMember(targetMember);
@@ -192,14 +197,29 @@ public class RedoNoConnectionTest extends RedoTestService {
         }
 
         @Override
+        void before() throws Exception {
+            callerNode.connectionManager.getIOHandler().removeEndpoint(targetMember.getAddress());
+            if (targetConn != null) {
+                try {
+                    targetConn.close0();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            callerNode.clusterManager.enqueueAndWait(new Processable() {
+                public void process() {
+                    callerNode.clusterManager.removeMember(targetMember);
+                }
+            }, 3);
+        }
+
+        @Override
         void after() {
             callerNode.clusterManager.enqueueAndWait(new Processable() {
                 public void process() {
                     callerNode.clusterManager.addMember(targetMember);
                 }
             }, 3);
-            callerNode.connectionManager.destroyConnection(targetConn);
-            callerNode.connectionManager.getIOHandler().removeEndpoint(targetConn.getEndPoint());
         }
     }
 }

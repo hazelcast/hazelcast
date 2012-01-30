@@ -72,7 +72,7 @@ public class RedoTestService extends TestUtil {
     }
 
     @Ignore
-    class BeforeAfterTester {
+    class BeforeAfterTester implements Runnable {
         final protected ExecutorService es = Executors.newCachedThreadPool();
         final protected ExecutorService esSingle = Executors.newSingleThreadExecutor();
 
@@ -110,6 +110,46 @@ public class RedoTestService extends TestUtil {
                 wait = 0; // remaining calls waited enough already.
             }
             behavior.after();
+            for (FutureTask futureTask : lsFutureTasks) {
+                try {
+                    futureTask.get(5, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail("Failed callTask: " + futureTask);
+                }
+            }
+            behavior.destroy();
+            destroy();
+        }
+    }
+
+    @Ignore
+    class RunAfterTester implements Runnable {
+        final protected ExecutorService es = Executors.newCachedThreadPool();
+        final protected ExecutorService esSingle = Executors.newSingleThreadExecutor();
+
+        final BeforeAfterBehavior behavior;
+        final CallBuilder callBuilder;
+
+        RunAfterTester(BeforeAfterBehavior behavior, CallBuilder callBuilder) {
+            this.behavior = behavior;
+            this.callBuilder = callBuilder;
+        }
+
+        protected void destroy() {
+            es.shutdown();
+            esSingle.shutdown();
+        }
+
+        public void run() {
+            try {
+                behavior.before();
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail(e.getMessage());
+            }
+            behavior.after();
+            List<FutureTask> lsFutureTasks = callBuilder.getCalls(es, esSingle);
             for (FutureTask futureTask : lsFutureTasks) {
                 try {
                     futureTask.get(5, TimeUnit.SECONDS);

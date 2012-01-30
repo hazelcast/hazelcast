@@ -19,6 +19,7 @@ package com.hazelcast.impl.base;
 
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 
@@ -46,6 +47,9 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     private Object key = null;
     private Object value = null;
     private long lastStoredTime;
+    private Address lockAddress = null;
+    private int lockThreadId = -1;
+    private long remainingIdle = Long.MAX_VALUE;
 
     public DataRecordEntry() {
     }
@@ -56,6 +60,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
 
     public DataRecordEntry(Record record, Data value) {
         cost = record.getCost();
+        remainingIdle = record.getRemainingIdle();
         expirationTime = record.getExpirationTime();
         lastAccessTime = record.getLastAccessTime();
         lastUpdateTime = record.getLastUpdateTime();
@@ -69,12 +74,18 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         valueData = value;
         indexes = record.getIndexes();
         indexTypes = record.getIndexTypes();
+        DistributedLock lock = record.getLock();
+        if (lock != null) {
+            lockAddress = lock.getLockAddress();
+            lockThreadId = lock.getLockThreadId();
+        }
     }
 
     public void writeData(DataOutput out) throws IOException {
         long now = System.currentTimeMillis();
         out.writeBoolean(valid);
         out.writeLong(cost);
+        out.writeLong(remainingIdle);
         out.writeLong(expirationTime - now);
         out.writeLong(lastAccessTime - now);
         out.writeLong(lastUpdateTime - now);
@@ -95,12 +106,19 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
             out.writeLong(indexes[i]);
             out.write(indexTypes[i]);
         }
+        out.writeInt(lockThreadId);
+        boolean hasLockAddress = lockAddress != null;
+        out.writeBoolean(hasLockAddress);
+        if (hasLockAddress) {
+            lockAddress.writeData(out);
+        }
     }
 
     public void readData(DataInput in) throws IOException {
         long now = System.currentTimeMillis();
         valid = in.readBoolean();
         cost = in.readLong();
+        remainingIdle = in.readLong();
         expirationTime = in.readLong() + now;
         lastAccessTime = in.readLong() + now;
         lastUpdateTime = in.readLong() + now;
@@ -125,6 +143,16 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
                 indexTypes[i] = in.readByte();
             }
         }
+        lockThreadId = in.readInt();
+        boolean hasLockAddress = in.readBoolean();
+        if (hasLockAddress) {
+            lockAddress = new Address();
+            lockAddress.readData(in);
+        }
+    }
+
+    public long getRemainingIdle() {
+        return remainingIdle;
     }
 
     public Object setValue(Object value) {
@@ -203,5 +231,13 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
 
     public byte[] getIndexTypes() {
         return indexTypes;
+    }
+
+    public Address getLockAddress() {
+        return lockAddress;
+    }
+
+    public int getLockThreadId() {
+        return lockThreadId;
     }
 }

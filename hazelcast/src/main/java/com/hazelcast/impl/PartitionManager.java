@@ -30,8 +30,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEvent;
 
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,6 +46,7 @@ public class PartitionManager {
     private boolean initialized = false;
     private final ScheduledThreadPoolExecutor esMigrationService = new ScheduledThreadPoolExecutor(1); // !! pool size = 1
     private final AtomicInteger version = new AtomicInteger();
+    private final List<PartitionListener> lsPartitionListeners = new CopyOnWriteArrayList<PartitionListener>();
 
     public PartitionManager(final ConcurrentMapManager concurrentMapManager) {
         this.PARTITION_COUNT = concurrentMapManager.getPartitionCount();
@@ -55,8 +54,12 @@ public class PartitionManager {
         this.logger = concurrentMapManager.node.getLogger(PartitionManager.class.getName());
         this.partitions = new PartitionInfo[PARTITION_COUNT];
         for (int i = 0; i < PARTITION_COUNT; i++) {
-            this.partitions[i] = new PartitionInfo(i, new ChangeListener() {
-                public void stateChanged(ChangeEvent e) {
+            this.partitions[i] = new PartitionInfo(i, new PartitionListener() {
+
+                public void replicaChanged(PartitionReplicaChangeEvent event) {
+                    for (PartitionListener partitionListener : lsPartitionListeners) {
+                        partitionListener.replicaChanged(event);
+                    }
                     if (!concurrentMapManager.isMaster()) return;
                     version.incrementAndGet();
                 }
@@ -72,6 +75,10 @@ public class PartitionManager {
                 });
             }
         }, 5, 5, TimeUnit.SECONDS);
+    }
+
+    public void addPartitionListener(PartitionListener partitionListener) {
+        lsPartitionListeners.add(partitionListener);
     }
 
     public PartitionInfo[] getPartitions() {
@@ -140,7 +147,7 @@ public class PartitionManager {
             mapActiveMigrations.remove(partition.getPartitionId());
             // do we need cleanup here? it will eventually run soon.
             if (migrationCompleted) {
-                concurrentMapManager.startCleanup(false, false);
+//                concurrentMapManager.startCleanup(false, false);
             }
         }
     }
@@ -246,6 +253,7 @@ public class PartitionManager {
 
     public void reset() {
         initialized = false;
+        lsPartitionListeners.clear();
         clearQueue();
         for (PartitionInfo partition : partitions) {
             partition.setPartitionInfo(new PartitionInfo(partition.getPartitionId()));
@@ -374,15 +382,21 @@ public class PartitionManager {
     }
 
     void fireMigrationEvent(final boolean started, int partitionId, Address from, Address to) {
-//        System.out.println(concurrentMapManager.getThisAddress() + "  fireMigrationEvent " + mapActiveMigrations.size());
+//        System.out.println(concurrentMapManager.getThisAddress() + "  fireMigrationEvent " + partitionId);
         final MemberImpl current = concurrentMapManager.getMember(from);
         final MemberImpl newOwner = concurrentMapManager.getMember(to);
         final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, partitionId, current, newOwner);
+        concurrentMapManager.partitionServiceImpl.getPartition(partitionId).resetOwner();
         concurrentMapManager.partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
     }
 
     public int getVersion() {
         return version.get();
+    }
+
+    public void forcePartitionOwnerMigration(int partitionId, int replicaIndex, Address from, Address to) {
+        MigrationRequestTask mrt = new MigrationRequestTask(partitionId, from, to, replicaIndex, true);
+        esMigrationService.execute(new Migrator(mrt));
     }
 
     public void setClusterRuntimeState(ClusterRuntimeState clusterRuntimeState) {

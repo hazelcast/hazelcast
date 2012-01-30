@@ -428,31 +428,19 @@ public class CMap {
     }
 
     public void own(DataRecordEntry dataRecordEntry) {
-        Record record;
-        if (isMultiMap()) {
-            record = getRecord(dataRecordEntry.getKeyData());
-            if (record == null) {
-                record = createNewRecord(dataRecordEntry.getKeyData(), null);
-                mapRecords.put(dataRecordEntry.getKeyData(), record);
+        Record record = storeDataRecordEntry(dataRecordEntry);
+        if (record != null) {
+            if (!isMultiMap() && record.getValueData() != null) {
+                updateIndexes(record);
             }
-            if (record.getMultiValues() == null) {
-                record.setMultiValues(createMultiValuesCollection());
-            }
-            record.getMultiValues().add(new ValueHolder(dataRecordEntry.getValueData()));
-        } else {
-            record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
-            mapRecords.put(dataRecordEntry.getKeyData(), record);
-        }
-        record.setIndexes(dataRecordEntry.getIndexes(), dataRecordEntry.getIndexTypes());
-        record.setVersion(dataRecordEntry.getVersion());
-        // TODO lock owner should migrate
-        markAsActive(record);
-        if (record.getValueData() != null) {
-            updateIndexes(record);
         }
     }
 
     public void storeAsBackup(DataRecordEntry dataRecordEntry) {
+        storeDataRecordEntry(dataRecordEntry);
+    }
+
+    public Record storeDataRecordEntry(DataRecordEntry dataRecordEntry) {
         Record record;
         if (isMultiMap()) {
             record = getRecord(dataRecordEntry.getKeyData());
@@ -465,12 +453,23 @@ public class CMap {
             }
             record.getMultiValues().add(new ValueHolder(dataRecordEntry.getValueData()));
         } else {
+            Record existing = getRecord(dataRecordEntry.getKeyData());
+            if (existing != null) {
+                mapIndexService.remove(existing);
+            }
             record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
+            record.setCreationTime(dataRecordEntry.getCreationTime());
+            record.setExpirationTime(dataRecordEntry.getExpirationTime() - System.currentTimeMillis());
+            record.setMaxIdle(dataRecordEntry.getRemainingIdle());
+            record.setIndexes(dataRecordEntry.getIndexes(), dataRecordEntry.getIndexTypes());
+            if (dataRecordEntry.getLockAddress() != null && dataRecordEntry.getLockThreadId() != -1) {
+                record.lock(dataRecordEntry.getLockThreadId(), dataRecordEntry.getLockAddress());
+            }
             mapRecords.put(dataRecordEntry.getKeyData(), record);
         }
         record.setVersion(dataRecordEntry.getVersion());
-        // TODO lock owner should migrate
         markAsActive(record);
+        return record;
     }
 
     public void own(Request req) {
@@ -861,7 +860,7 @@ public class CMap {
             }
             record.getMultiValues().add(new ValueHolder(req.value));
         }
-        updateIndexes(record);
+//        updateIndexes(record);
         record.incrementVersion();
         concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKeyData(), null, req.value, record.getListeners(), req.caller);
         if (req.txnId != -1) {
@@ -1014,6 +1013,7 @@ public class CMap {
         PartitionManager partitionManager = concurrentMapManager.getPartitionManager();
         for (Record record : records) {
             if (partitionManager.shouldPurge(record.getBlockId(), backupCount)) {
+                mapIndexService.remove(record);
                 mapRecords.remove(record.getKeyData());
             }
         }

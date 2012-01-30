@@ -19,10 +19,11 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.impl.partition.PartitionListener;
+import com.hazelcast.impl.partition.PartitionReplicaChangeEvent;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-import com.hazelcast.partition.MigrationEvent;
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import org.junit.Ignore;
@@ -36,134 +37,65 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static junit.framework.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static junit.framework.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @Ignore
 public class TestUtil {
 
-    public static boolean migratePartition(int partitionId, HazelcastInstance oldest, HazelcastInstance to) throws Exception {
-        final MemberImpl currentOwnerMember = (MemberImpl) getPartitionById(oldest.getPartitionService(), partitionId).getOwner();
-        final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
-        if (currentOwnerMember.equals(toMember)) {
-            return false;
-        }
+    public static boolean migrateKey(Object key, HazelcastInstance oldest, HazelcastInstance to, final int replicaIndex) throws Exception {
+        final int partitionId = oldest.getPartitionService().getPartition(key).getPartitionId();
         final ConcurrentMapManager concurrentMapManagerOldest = getConcurrentMapManager(oldest);
-        final Address addressCurrentOwner = currentOwnerMember.getAddress();
-        final Address addressNewOwner = toMember.getAddress();
-        final int blockId = getPartitionById(oldest.getPartitionService(), partitionId).getPartitionId();
-        final CountDownLatch migrationLatch = new CountDownLatch(2);
-        MigrationListener migrationListener = new MigrationListener() {
-            public void migrationCompleted(MigrationEvent migrationEvent) {
-                if (migrationEvent.getPartitionId() == blockId && toMember.equals(migrationEvent.getNewOwner())) {
-                    migrationLatch.countDown();
-                }
-            }
-
-            public void migrationStarted(MigrationEvent migrationEvent) {
-            }
-        };
-        oldest.getPartitionService().addMigrationListener(migrationListener);
-        to.getPartitionService().addMigrationListener(migrationListener);
-        concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
-            public void process() {
-//                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
-//                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
-//                concurrentMapManagerOldest.partitionManager.initiateMigration();
-            }
-        });
-        if (!migrationLatch.await(30, TimeUnit.SECONDS)) {
-            fail("Migration should get completed in 30 seconds!!");
-        }
-        assertEquals(toMember, getPartitionById(oldest.getPartitionService(), partitionId).getOwner());
-        assertEquals(toMember, getPartitionById(to.getPartitionService(), partitionId).getOwner());
-        return true;
-    }
-
-    public static boolean initiateMigration(final int partitionId, final int completeWaitSeconds, HazelcastInstance oldest, HazelcastInstance from, HazelcastInstance to) throws Exception {
-        final MemberImpl currentOwnerMember = (MemberImpl) getPartitionById(oldest.getPartitionService(), partitionId).getOwner();
-        final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
-        if (currentOwnerMember.equals(toMember)) {
-            return false;
-        }
-        final ConcurrentMapManager concurrentMapManagerOldest = getConcurrentMapManager(oldest);
-        final ConcurrentMapManager concurrentMapManagerFrom = getConcurrentMapManager(from);
-        final Address addressCurrentOwner = currentOwnerMember.getAddress();
-        final Address addressNewOwner = toMember.getAddress();
-        final int blockId = getPartitionById(oldest.getPartitionService(), partitionId).getPartitionId();
-        final CountDownLatch migrationLatch = new CountDownLatch(2);
-        MigrationListener migrationListener = new MigrationListener() {
-            public void migrationCompleted(MigrationEvent migrationEvent) {
-            }
-
-            public void migrationStarted(MigrationEvent migrationEvent) {
-                migrationLatch.countDown();
-            }
-        };
-        from.getPartitionService().addMigrationListener(migrationListener);
-        to.getPartitionService().addMigrationListener(migrationListener);
-        concurrentMapManagerFrom.enqueueAndReturn(new Processable() {
-            public void process() {
-//                concurrentMapManagerFrom.partitionManager.MIGRATION_COMPLETE_WAIT_SECONDS = completeWaitSeconds;
-            }
-        });
-        concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
-            public void process() {
-//                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
-//                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.clear();
-//                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
-//                concurrentMapManagerOldest.partitionManager.initiateMigration();
-            }
-        });
-        if (!migrationLatch.await(20, TimeUnit.SECONDS)) {
-            fail("Migration should get started in 20 seconds!!");
-        }
-        return true;
-    }
-
-    public abstract static class MigrationProcess {
-
-        public abstract boolean prepare() throws Exception;
-
-        public abstract boolean finish() throws Exception;
-    }
-
-    public static boolean migrateKey(Object key, HazelcastInstance oldest, HazelcastInstance to) throws Exception {
-        final MemberImpl currentOwnerMember = (MemberImpl) oldest.getPartitionService().getPartition(key).getOwner();
+        final ConcurrentMapManager concurrentMapManagerTo = getConcurrentMapManager(to);
+        final PartitionInfo partitionInfoOldest = concurrentMapManagerOldest.getPartitionInfo(partitionId);
+        final PartitionInfo partitionInfoTo = concurrentMapManagerTo.getPartitionInfo(partitionId);
+        final MemberImpl currentOwnerMember = concurrentMapManagerOldest.getMember(partitionInfoOldest.getReplicaAddress(replicaIndex));
         final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
         if (currentOwnerMember.equals(toMember)) {
             return true;
         }
-        final ConcurrentMapManager concurrentMapManagerOldest = getConcurrentMapManager(oldest);
         final Address addressCurrentOwner = currentOwnerMember.getAddress();
         final Address addressNewOwner = toMember.getAddress();
-        final int blockId = oldest.getPartitionService().getPartition(key).getPartitionId();
-        final CountDownLatch migrationLatch = new CountDownLatch(2);
-        MigrationListener migrationListener = new MigrationListener() {
-            public void migrationCompleted(MigrationEvent migrationEvent) {
-                if (migrationEvent.getPartitionId() == blockId && migrationEvent.getNewOwner().equals(toMember)) {
-                    migrationLatch.countDown();
-                }
-            }
-
-            public void migrationStarted(MigrationEvent migrationEvent) {
-            }
-        };
-        oldest.getPartitionService().addMigrationListener(migrationListener);
-        to.getPartitionService().addMigrationListener(migrationListener);
+        PartitionListenerLatch latchOldest = new PartitionListenerLatch(toMember.getAddress(), partitionId, replicaIndex);
+        PartitionListenerLatch latchTo = new PartitionListenerLatch(toMember.getAddress(), partitionId, replicaIndex);
+        concurrentMapManagerOldest.getPartitionManager().addPartitionListener(latchOldest);
+        concurrentMapManagerTo.getPartitionManager().addPartitionListener(latchTo);
         concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
             public void process() {
-//                Block blockToMigrate = new Block(blockId, addressCurrentOwner, addressNewOwner);
-//                concurrentMapManagerOldest.partitionManager.lsBlocksToMigrate.add(blockToMigrate);
-//                concurrentMapManagerOldest.partitionManager.initiateMigration();
+                concurrentMapManagerOldest.partitionManager.forcePartitionOwnerMigration(partitionId, replicaIndex, addressCurrentOwner, addressNewOwner);
             }
         });
-        if (!migrationLatch.await(20, TimeUnit.SECONDS)) {
-            fail("Migration should get completed in 20 seconds!!");
-        }
-        assertEquals(toMember, oldest.getPartitionService().getPartition(key).getOwner());
-        assertEquals(toMember, to.getPartitionService().getPartition(key).getOwner());
+        assertTrue("Migration should get completed in 20 seconds!!", latchOldest.await(20, TimeUnit.SECONDS));
+        assertTrue("Migration should get completed in 20 seconds!!", latchTo.await(20, TimeUnit.SECONDS));
+        assertEquals(toMember.getAddress(), partitionInfoOldest.getReplicaAddress(replicaIndex));
+        assertEquals(toMember.getAddress(), partitionInfoTo.getReplicaAddress(replicaIndex));
         return true;
+    }
+
+    static class PartitionListenerLatch implements PartitionListener {
+        final CountDownLatch migrationLatch = new CountDownLatch(1);
+        final Address toAddress;
+        final int partitionId;
+        final int replicaIndex;
+
+        PartitionListenerLatch(Address toAddress, int partitionId, int replicaIndex) {
+            this.toAddress = toAddress;
+            this.partitionId = partitionId;
+            this.replicaIndex = replicaIndex;
+        }
+
+        public void replicaChanged(PartitionReplicaChangeEvent event) {
+            if (event.getReplicaIndex() == replicaIndex
+                    && event.getPartitionId() == partitionId
+                    && toAddress != null
+                    && toAddress.equals(event.getNewAddress())) {
+                migrationLatch.countDown();
+            }
+        }
+
+        public boolean await(int time, TimeUnit timeUnit) throws InterruptedException {
+            return migrationLatch.await(time, timeUnit);
+        }
     }
 
     public static Node getNode(HazelcastInstance h) {
