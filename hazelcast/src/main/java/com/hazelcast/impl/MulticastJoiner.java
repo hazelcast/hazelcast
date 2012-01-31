@@ -113,15 +113,16 @@ public class MulticastJoiner extends AbstractJoiner {
         }
     }
 
-    private void connectAndSendJoinRequest(Address masterAddress) {
+    private boolean connectAndSendJoinRequest(Address masterAddress) {
         if (masterAddress == null || masterAddress.equals(node.address)) {
             throw new IllegalArgumentException();
         }
         Connection conn = node.connectionManager.getOrConnect(masterAddress);
         logger.log(Level.FINEST, "Master connection " + conn);
         if (conn != null) {
-            node.clusterManager.sendJoinRequest(masterAddress, true);
+            return node.clusterManager.sendJoinRequest(masterAddress);
         }
+        return false;
     }
 
     private Address findMasterWithMulticast() {

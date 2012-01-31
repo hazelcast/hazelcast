@@ -1138,9 +1138,10 @@ public class CMap {
                         lockWaitCount += record.getScheduledActionCount();
                     }
                 } else if (partition.isBackup(thisAddress, backupCount)) {
-                    if (record.valueCount() <= 0) throw new RuntimeException();
-                    backupEntryCount += record.valueCount();
-                    backupEntryMemoryCost += record.getCost();
+                    if (record.valueCount() > 0) {
+                        backupEntryCount += record.valueCount();
+                        backupEntryMemoryCost += record.getCost();
+                    }
                 }
             }
         }

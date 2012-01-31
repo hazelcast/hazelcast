@@ -1895,6 +1895,7 @@ public class ClusterTest {
         assertEquals(1, l.getCount(LifecycleEvent.LifecycleState.RESTARTED));
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
+        Thread.sleep(2000);
         int newMapSize = size + 100;
         int newMultiMapSize = 2 * newMapSize;
         assertEquals(newMapSize, h1.getMap("default").size());
