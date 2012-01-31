@@ -22,6 +22,7 @@ import com.hazelcast.examples.TestApp;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 
 public class TestClientApp {
 
@@ -30,10 +31,19 @@ public class TestClientApp {
     TestApp app;
 
     public static void main(String[] arguments) {
-        new TestClientApp().run();
+        TestClientApp app = new TestClientApp();
+        if (arguments.length == 0)
+            app.noArgument();
+        else
+            try {
+                app.connect(arguments);
+                app.run(arguments);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
     }
 
-    public void run() {
+    public void noArgument() {
         final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         message();
         while (true) {
@@ -46,19 +56,23 @@ public class TestClientApp {
                     args[i] = argsSplit[i].trim();
                 }
                 handleCommand(args);
-                if (hz != null) {
-                    app = new TestApp(hz);
-                    app.start(null);
-                }
+                run(args);
             } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
     }
 
+    void run(String[] args) throws Exception {
+        if (hz != null) {
+            app = new TestApp(hz);
+            app.start(null);
+        }
+    }
+
     private void handleCommand(String[] args) throws Exception {
         if (args[0].startsWith("connect")) {
-            connect(args);
+            connect(Arrays.copyOfRange(args, 1, args.length));
         } else {
             if (hz == null) {
                 message();
@@ -80,12 +94,12 @@ public class TestClientApp {
         String ip = "localhost";
         String groupName = "dev";
         String pass = "dev-pass";
-        if (args.length > 1) {
-            ip = args[1];
+        if (args.length > 0) {
+            ip = args[0];
         }
-        if (args.length > 3) {
-            groupName = args[2];
-            pass = args[3];
+        if (args.length > 2) {
+            groupName = args[1];
+            pass = args[2];
         }
         System.out.println("Connecting to " + ip);
         String[] ips = null;

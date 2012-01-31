@@ -68,7 +68,7 @@ class SocketPacketReader implements SocketReader {
         p.read();
         p.setFromConnection(connection);
         if (p.client) {
-            connection.setType(Connection.Type.JAVA_CLIENT);
+            connection.setType(Connection.Type.CLIENT);
             ioService.handleClientPacket(p);
         } else {
             connection.setType(Connection.Type.MEMBER);

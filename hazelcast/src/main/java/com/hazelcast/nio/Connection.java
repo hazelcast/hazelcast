@@ -85,7 +85,7 @@ public final class Connection {
     public enum Type {
         NONE(false, false),
         MEMBER(true, true),
-        JAVA_CLIENT(false, true),
+        CLIENT(false, true),
         REST_CLIENT(false, false),
         MEMCACHE_CLIENT(false, false);
 
