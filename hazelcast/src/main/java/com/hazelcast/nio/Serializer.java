@@ -104,7 +104,7 @@ public final class Serializer extends AbstractSerializer {
                 ds.readData(bbis);
                 return ds;
             } catch (final Exception e) {
-                throw new IOException("Problem reading DataSerializable class : " + className, e);
+                throw new IOException("Problem reading DataSerializable class : " + className + ", exception: " + e);
             }
         }
 
