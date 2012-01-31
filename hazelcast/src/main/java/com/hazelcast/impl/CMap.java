@@ -430,7 +430,7 @@ public class CMap {
     public void own(DataRecordEntry dataRecordEntry) {
         Record record = storeDataRecordEntry(dataRecordEntry);
         if (record != null) {
-            if (!isMultiMap() && record.getValueData() != null) {
+            if (record.getValueData() != null) {
                 updateIndexes(record);
             }
         }
@@ -441,6 +441,10 @@ public class CMap {
     }
 
     public Record storeDataRecordEntry(DataRecordEntry dataRecordEntry) {
+        Record existing = getRecord(dataRecordEntry.getKeyData());
+        if (existing != null) {
+            mapIndexService.remove(existing);
+        }
         Record record;
         if (isMultiMap()) {
             record = getRecord(dataRecordEntry.getKeyData());
@@ -453,10 +457,6 @@ public class CMap {
             }
             record.getMultiValues().add(new ValueHolder(dataRecordEntry.getValueData()));
         } else {
-            Record existing = getRecord(dataRecordEntry.getKeyData());
-            if (existing != null) {
-                mapIndexService.remove(existing);
-            }
             record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
             record.setCreationTime(dataRecordEntry.getCreationTime());
             record.setExpirationTime(dataRecordEntry.getExpirationTime() - System.currentTimeMillis());
@@ -860,7 +860,7 @@ public class CMap {
             }
             record.getMultiValues().add(new ValueHolder(req.value));
         }
-//        updateIndexes(record);
+        updateIndexes(record);
         record.incrementVersion();
         concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_ADDED, record.getKeyData(), null, req.value, record.getListeners(), req.caller);
         if (req.txnId != -1) {
