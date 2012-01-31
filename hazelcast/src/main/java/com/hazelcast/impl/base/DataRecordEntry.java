@@ -75,7 +75,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         indexes = record.getIndexes();
         indexTypes = record.getIndexTypes();
         DistributedLock lock = record.getLock();
-        if (lock != null) {
+        if (lock != null && lock.getLockCount() > 0) {
             lockAddress = lock.getLockAddress();
             lockThreadId = lock.getLockThreadId();
         }

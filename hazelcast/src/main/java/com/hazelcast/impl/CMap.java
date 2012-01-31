@@ -1488,9 +1488,11 @@ public class CMap {
             }
         }
         record.setIndexes(req.indexes, req.indexTypes);
-        if (req.lockCount >= 0) {
+        if (req.lockCount > 0) {
             DistributedLock lock = new DistributedLock(req.lockAddress, req.lockThreadId, req.lockCount);
             record.setLock(lock);
+        } else {
+            record.setLock(null);
         }
         return record;
     }
