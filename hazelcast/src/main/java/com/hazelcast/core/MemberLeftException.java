@@ -29,4 +29,8 @@ public class MemberLeftException extends ExecutionException {
     public Member getMember() {
         return member;
     }
+
+    public String getMessage() {
+        return member + " has left cluster!";
+    }
 }

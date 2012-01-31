@@ -93,7 +93,7 @@ public class NodeIOService implements IOService {
     }
 
     public String getThreadPrefix() {
-        return node.getName();
+        return node.getThreadPoolNamePrefix("IO");
     }
 
     public ThreadGroup getThreadGroup() {

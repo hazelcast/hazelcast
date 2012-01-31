@@ -354,10 +354,10 @@ public class FactoryImpl implements HazelcastInstance {
             shutdownManagementService();
         }
         factory.proxies.clear();
+        factory.node.shutdown(false, true);
         for (ExecutorService esp : factory.executorServiceProxies.values()) {
             esp.shutdown();
         }
-        factory.node.shutdown(false, true);
     }
 
     private static void shutdownManagementService() {

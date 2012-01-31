@@ -266,8 +266,12 @@ public class Node {
         return factory.getName();
     }
 
+    public String getThreadNamePrefix(String name) {
+        return "hz." + getName() + "." + name;
+    }
+
     public String getThreadPoolNamePrefix(String poolName) {
-        return "hz." + id + ".threads." + getName() + "." + poolName + ".thread-";
+        return getThreadNamePrefix(poolName) + ".thread-";
     }
 
     public void handleInterruptedException(Thread thread, Exception e) {
@@ -389,14 +393,13 @@ public class Node {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
         generateMemberUuid();
-        final String prefix = "hz." + this.id + ".";
-        serviceThread = new Thread(threadGroup, clusterService, prefix + "ServiceThread");
+        serviceThread = new Thread(threadGroup, clusterService, getThreadNamePrefix("ServiceThread"));
         serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
         serviceThread.start();
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-            final Thread multicastServiceThread = new Thread(threadGroup, multicastService, prefix + "MulticastThread");
+            final Thread multicastServiceThread = new Thread(threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
             multicastServiceThread.start();
         }
         setActive(true);

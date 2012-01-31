@@ -367,12 +367,13 @@ public class ListenerManager extends BaseManager {
         final EntryEvent event2 = listenerItem.includeValue ?
                 event :
                 (event.getValue() != null ?
-                        new EntryEvent(event.getSource(),
-                                event.getMember(),
+                        new DataAwareEntryEvent(event.getMember(),
                                 event.getEventType().getType(),
-                                event.getKey(),
+                                event.getName(),
+                                event.getKeyData(),
                                 null,
-                                null) :
+                                null,
+                                event.firedLocally) :
                         event);
         switch (listenerItem.instanceType) {
             case MAP:

@@ -52,6 +52,7 @@ public class ClusterBackupTest {
     public static void init() throws Exception {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+//        System.setProperty(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
         Hazelcast.shutdownAll();
     }
 
@@ -74,16 +75,20 @@ public class ClusterBackupTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         IMap m2 = h2.getMap("default");
         h1.getLifecycleService().shutdown();
+        Thread.sleep(1000);
         assertEquals(size, m2.size());
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
         IMap m3 = h3.getMap("default");
         h2.getLifecycleService().shutdown();
         assertEquals(size, m3.size());
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
+        h4.getLifecycleService().shutdown();
+        assertEquals(size, m3.size());
     }
 
     @Test
     public void testGracefulShutdown2() throws Exception {
-        int size = 100000;
+        int size = 10000;
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         IMap m1 = h1.getMap("default");
         for (int i = 0; i < size; i++) {
@@ -95,6 +100,8 @@ public class ClusterBackupTest {
         IMap m3 = h3.getMap("default");
         h1.getLifecycleService().shutdown();
         assertEquals(size, m2.size());
+        // TODO: temporary fix !! => data race between syncForDead and node shutdown
+        Thread.sleep(1000);
         h2.getLifecycleService().shutdown();
         assertEquals(size, m3.size());
     }
@@ -167,9 +174,10 @@ public class ClusterBackupTest {
     }
 
     @Test
-    public void issue395BackupProblemWithBCount2() {
+    public void issue395BackupProblemWithBCount2() throws InterruptedException {
         final int size = 1000;
         Config config = new Config();
+        config.getProperties().put(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
         config.getMapConfig("default").setBackupCount(2);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -182,6 +190,10 @@ public class ClusterBackupTest {
         assertEquals(size, getTotalBackupEntryCount(map1, map2));
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
         IMap map3 = h3.getMap("default");
+        // we should wait here a little,
+        // since copying 2nd backup is not immediate.
+        // we have set 'PROP_PARTITION_MIGRATION_INTERVAL' to 0.
+        Thread.sleep(1000 * 2);
         assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
         assertEquals(2 * size, getTotalBackupEntryCount(map1, map2, map3));
     }
@@ -292,6 +304,7 @@ public class ClusterBackupTest {
     @Test(timeout = 160000)
     public void testBackupCountTwo() throws Exception {
         Config config = new Config();
+        config.getProperties().put(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
         MapConfig mapConfig = config.getMapConfig("default");
         mapConfig.setBackupCount(2);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -365,9 +378,10 @@ public class ClusterBackupTest {
         CMap cmap1 = c1.getMap("c:default");
         CMap cmap2 = c2.getMap("c:default");
         CMap cmap3 = c3.getMap("c:default");
-        assertTrue(cmap1.mapRecords.size() < size);
-        assertTrue(cmap2.mapRecords.size() < size);
-        assertTrue(cmap3.mapRecords.size() < size);
+        // check record counts just after cleanup
+        assertTrue(cmap1.mapRecords.size() <= size);
+        assertTrue(cmap2.mapRecords.size() <= size);
+        assertTrue(cmap3.mapRecords.size() <= size);
         assertEquals(cmap1.mapRecords.size(), getOwnedAndBackupCount(map1));
         assertEquals(cmap2.mapRecords.size(), getOwnedAndBackupCount(map2));
         assertEquals(cmap3.mapRecords.size(), getOwnedAndBackupCount(map3));
@@ -375,20 +389,22 @@ public class ClusterBackupTest {
         IMap map4 = h4.getMap("default");
         ConcurrentMapManager c4 = getConcurrentMapManager(h4);
         CMap cmap4 = c4.getMap("c:default");
+        Thread.sleep(5000);
         c1.startCleanup(true, false);
         c2.startCleanup(true, false);
         c3.startCleanup(true, false);
         c4.startCleanup(true, false);
-        Thread.sleep(5000);
+        // check record counts just after cleanup
         assertEquals(cmap1.mapRecords.size(), getOwnedAndBackupCount(map1));
         assertEquals(cmap2.mapRecords.size(), getOwnedAndBackupCount(map2));
         assertEquals(cmap3.mapRecords.size(), getOwnedAndBackupCount(map3));
         assertEquals(cmap4.mapRecords.size(), getOwnedAndBackupCount(map4));
         h4.getLifecycleService().shutdown();
+        Thread.sleep(15000);
         c1.startCleanup(true, false);
         c2.startCleanup(true, false);
         c3.startCleanup(true, false);
-        Thread.sleep(15000);
+        // check record counts just after cleanup
         assertEquals(cmap1.mapRecords.size(), getOwnedAndBackupCount(map1));
         assertEquals(cmap2.mapRecords.size(), getOwnedAndBackupCount(map2));
         assertEquals(cmap3.mapRecords.size(), getOwnedAndBackupCount(map3));

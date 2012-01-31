@@ -81,6 +81,11 @@ public class ConcurrentMapManager extends BaseManager {
         MAX_BACKUP_COUNT = node.groupProperties.CONCURRENT_MAP_MAX_BACKUP_COUNT.getInteger();
         GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
         int CLEANUP_DELAY_SECONDS = node.groupProperties.CLEANUP_DELAY_SECONDS.getInteger();
+        if (CLEANUP_DELAY_SECONDS <= 0) {
+            logger.log(Level.WARNING, GroupProperties.PROP_CLEANUP_DELAY_SECONDS
+                    + " must be greater than zero. Setting to 1.");
+            CLEANUP_DELAY_SECONDS = 1;
+        }
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);

@@ -28,10 +28,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.partition.*;
 import com.hazelcast.nio.Address;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.*;
@@ -46,6 +43,7 @@ public class PartitionStateGeneratorTest {
     public static void init() throws Exception {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+        System.setProperty(GroupProperties.PROP_MANCENTER_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
@@ -129,8 +127,8 @@ public class PartitionStateGeneratorTest {
         int maxSameHostCount = 3;
         int[] partitionCounts = new int[]{271, 787/*, 1549, 3217, 8707/**/};
         int[] members = new int[]{3, 6, 7, 9, 10, 5, 11, 13, 8, 17, 57, 100, 130, 77, 255};
-        Queue<MigrationRequestTask> scheduledQ = new LinkedList<MigrationRequestTask>();
-        Queue<MigrationRequestTask> immediateQ = new LinkedList<MigrationRequestTask>();
+        LinkedList<MigrationRequestTask> scheduledQ = new LinkedList<MigrationRequestTask>();
+        LinkedList<MigrationRequestTask> immediateQ = new LinkedList<MigrationRequestTask>();
         for (int i = 0; i < partitionCounts.length; i++) {
             int partitionCount = partitionCounts[i];
             int memberCount = members[0];
@@ -358,12 +356,14 @@ public class PartitionStateGeneratorTest {
                 + ", Replica: " + replica, count <= average * r);
     }
 
+    @Ignore
     @Test
     public void testPartitionAndCMapRecordCounts() throws InterruptedException {
         final int entryCount = 10000;
         final int totalPartitionCount = 271;
         final int testMapReplicaCount = 3;
         Config config = new ClasspathXmlConfig("hazelcast-default.xml");
+        config.getProperties().put(GroupProperties.PROP_CLEANUP_DELAY_SECONDS, "1");
         config.getMapConfig("map1").setBackupCount(4);
         config.getMapConfig("map2").setBackupCount(3);
         config.getMapConfig("map3").setBackupCount(5);

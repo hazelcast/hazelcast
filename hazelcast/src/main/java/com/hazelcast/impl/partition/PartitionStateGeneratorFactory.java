@@ -30,20 +30,24 @@ public class PartitionStateGeneratorFactory {
     }
 
     public static PartitionStateGenerator newConfigPartitionStateGenerator(PartitionGroupConfig partitionGroupConfig) {
-        if (partitionGroupConfig == null || !partitionGroupConfig.isEnabled()) {
-            return newRandomPartitionStateGenerator();
-        }
-        switch (partitionGroupConfig.getGroupType()) {
-            case HOST_AWARE:
-                return newHostAwarePartitionStateGenerator();
-            case CUSTOM:
-                return newCustomPartitionStateGenerator(new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs()));
-            default:
-                return newRandomPartitionStateGenerator();
-        }
+        return newCustomPartitionStateGenerator(newMemberGroupFactory(partitionGroupConfig));
     }
 
     public static PartitionStateGenerator newCustomPartitionStateGenerator(MemberGroupFactory nodeGroupFactory) {
         return new PartitionStateGeneratorImpl(nodeGroupFactory);
+    }
+
+    public static MemberGroupFactory newMemberGroupFactory(PartitionGroupConfig partitionGroupConfig) {
+        if (partitionGroupConfig == null || !partitionGroupConfig.isEnabled()) {
+            return new SingleMemberGroupFactory();
+        }
+        switch (partitionGroupConfig.getGroupType()) {
+            case HOST_AWARE:
+                return new HostAwareMemberGroupFactory();
+            case CUSTOM:
+                return new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs());
+            default:
+                return new SingleMemberGroupFactory();
+        }
     }
 }

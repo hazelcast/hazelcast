@@ -47,12 +47,12 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     public PartitionInfo[] reArrange(PartitionInfo[] currentState, List<MemberImpl> members, int partitionCount,
-                                     Queue<MigrationRequestTask> scheduledQueue, Queue<MigrationRequestTask> immediateQueue) {
+                                     List<MigrationRequestTask> scheduledTasksList, List<MigrationRequestTask> immediateTasksList) {
         final LinkedList<NodeGroup> groups = createNodeGroups(memberGroupFactory.createMemberGroups(members));
         if (groups.size() == 0) return currentState;
         PartitionInfo[] newState = arrange(groups, partitionCount, new CopyStateInitializer(currentState));
         finalizeArrangement(currentState, newState, Math.min(groups.size(), PartitionInfo.MAX_REPLICA_COUNT),
-                scheduledQueue, immediateQueue);
+                scheduledTasksList, immediateTasksList);
         return newState;
     }
 
@@ -72,7 +72,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 //                tryCount = 0;
             } else if (result == TestResult.RETRY) {
                 tryCount++;
-                logger.log(Level.INFO, "Re-trying partition arrangement.. Count: " + tryCount);
+                logger.log(Level.FINEST, "Re-trying partition arrangement.. Count: " + tryCount);
             }
         }
         if (result == TestResult.FAIL) {
@@ -82,7 +82,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     private void finalizeArrangement(PartitionInfo[] currentState, PartitionInfo[] newState, int replicaCount,
-                                     Queue<MigrationRequestTask> scheduledQueue, Queue<MigrationRequestTask> immediateQueue) {
+                                     List<MigrationRequestTask> scheduledTasksList, List<MigrationRequestTask> immediateTasksList) {
         final int partitionCount = currentState.length;
         // hold migration tasks related to a partition temporarily
         final List<MigrationRequestTask> partitionMigrationTasks = new LinkedList<MigrationRequestTask>();
@@ -140,17 +140,23 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                         immediate = true;
                     }
                     if (immediate) {
-                        immediateQueue.offer(migrationRequestTask);
+                        immediateTasksList.add(migrationRequestTask);
                     } else {
-                        scheduledQueue.offer(migrationRequestTask);
+                        scheduledTasksList.add(migrationRequestTask);
                     }
                 }
             }
             partitionMigrationTasks.clear();
             if (lost) {
-                logger.log(Level.WARNING, "Oops! " + currentPartition + " has been LOST!");
+                logger.log(Level.FINEST, "Oops! " + currentPartition + " has been LOST!");
             }
         }
+        Collections.sort(scheduledTasksList, new Comparator<MigrationRequestTask>() {
+            public int compare(final MigrationRequestTask t1, final MigrationRequestTask t2) {
+                return t1.getReplicaIndex() > t2.getReplicaIndex() ? 1 :
+                        (t1.getReplicaIndex() == t2.getReplicaIndex() ? 0 : -1);
+            }
+        });
     }
 
     private void tryArrange(final PartitionInfo[] state, final LinkedList<NodeGroup> groups,

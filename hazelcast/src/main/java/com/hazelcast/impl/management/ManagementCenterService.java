@@ -209,7 +209,7 @@ public class ManagementCenterService implements MembershipListener {
         final SocketReadyServerSocket serverSocket;
 
         TCPListener(SocketReadyServerSocket serverSocket) {
-            super(factory.node.threadGroup, "hz.TCP.Listener");
+            super(factory.node.threadGroup, factory.node.getThreadNamePrefix("TCP.Listener"));
             this.serverSocket = serverSocket;
         }
 
@@ -244,7 +244,7 @@ public class ManagementCenterService implements MembershipListener {
         final DatagramPacket packet = new DatagramPacket(buffer.getInputBuffer().array(), DATAGRAM_BUFFER_SIZE);
 
         public UDPListener(DatagramSocket socket, int timeout, boolean reuseAddress) throws SocketException {
-            super(factory.node.threadGroup, "hz.UDP.Listener");
+            super(factory.node.threadGroup, factory.node.getThreadNamePrefix("UDP.Listener"));
             this.socket = socket;
             this.socket.setSoTimeout(timeout);
             this.socket.setReuseAddress(reuseAddress);
@@ -280,7 +280,7 @@ public class ManagementCenterService implements MembershipListener {
         final DeflatingPipedBuffer buffer = PipedZipBufferFactory.createDeflatingBuffer(DATAGRAM_BUFFER_SIZE, Deflater.BEST_SPEED);
 
         public UDPSender(DatagramSocket socket) throws SocketException {
-            super(factory.node.threadGroup, "hz.UDP.Sender");
+            super(factory.node.threadGroup, factory.node.getThreadNamePrefix("UDP.Sender"));
             this.socket = socket;
         }
 
@@ -515,7 +515,7 @@ public class ManagementCenterService implements MembershipListener {
         final LazyDataOutputStream socketOut = new LazyDataOutputStream();
 
         public ClientHandler(int id) {
-            super(factory.node.threadGroup, "hz.Client.Handler." + id);
+            super(factory.node.threadGroup, factory.node.getThreadPoolNamePrefix("Client.Handler") + id);
             register(new LoginRequest());
             register(new GetClusterStateRequest());
             register(new ThreadDumpRequest());

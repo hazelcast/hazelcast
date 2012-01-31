@@ -20,7 +20,6 @@ package com.hazelcast.impl.partition;
 import com.hazelcast.impl.MemberImpl;
 
 import java.util.List;
-import java.util.Queue;
 
 public interface PartitionStateGenerator {
 
@@ -29,6 +28,6 @@ public interface PartitionStateGenerator {
     PartitionInfo[] reArrange(final PartitionInfo[] currentState,
                               final List<MemberImpl> members,
                               final int partitionCount,
-                              final Queue<MigrationRequestTask> scheduledQueue,
-                              final Queue<MigrationRequestTask> immediateQueue);
+                              final List<MigrationRequestTask> scheduledTasksList,
+                              final List<MigrationRequestTask> immediateTasksList);
 }

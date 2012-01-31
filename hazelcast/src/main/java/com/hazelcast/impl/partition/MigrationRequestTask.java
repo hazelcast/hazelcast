@@ -17,10 +17,7 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.core.DistributedTask;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.PartitionManager;
@@ -32,6 +29,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -106,11 +104,14 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
             DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList, replicaIndex), target);
             Future future = node.factory.getExecutorService().submit(task);
             return (Boolean) future.get(400, TimeUnit.SECONDS);
-        } catch (IllegalStateException e) {
-            // thrown if MigrationTask is being submitted during shutdown
-            node.getLogger(MigrationRequestTask.class.getName()).log(Level.FINEST, e.getMessage(), e);
         } catch (Throwable e) {
-            node.getLogger(MigrationRequestTask.class.getName()).log(Level.WARNING, e.getMessage(), e);
+            Level level = Level.WARNING;
+            if (e instanceof ExecutionException &&
+                    (e.getCause() instanceof MemberLeftException
+                            || e.getCause() instanceof IllegalStateException)) {
+                level = Level.FINEST;
+            }
+            node.getLogger(MigrationRequestTask.class.getName()).log(level, e.getMessage(), e);
         }
         return Boolean.FALSE;
     }

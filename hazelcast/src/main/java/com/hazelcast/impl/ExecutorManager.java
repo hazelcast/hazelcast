@@ -62,7 +62,7 @@ public class ExecutorManager extends BaseManager {
     private final ParallelExecutorService parallelExecutorService;
     private final ThreadPoolExecutor threadPoolExecutor;
     private final ConcurrentMap<ExecutionKey, RequestExecutor> executions = new ConcurrentHashMap<ExecutionKey, RequestExecutor>(100);
-    private final ScheduledThreadPoolExecutor esScheduled = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
+    private final ScheduledThreadPoolExecutor esScheduled;
 
     final AtomicLong executionIdGen = new AtomicLong();
 
@@ -89,6 +89,8 @@ public class ExecutorManager extends BaseManager {
                 threadContext.setCallContext(callContext);
             }
         };
+        esScheduled = new ScheduledThreadPoolExecutor(10, new ExecutorThreadFactory(node.threadGroup,
+                node.getThreadPoolNamePrefix("scheduled"), classLoader), new RejectionHandler());
         parallelExecutorService = new ParallelExecutorService(node.getLogger(ParallelExecutorService.class.getName()), threadPoolExecutor);
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);

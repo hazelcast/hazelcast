@@ -18,14 +18,12 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 import java.util.logging.Level;
 
 class ConnectionMonitor {
 
-    final static ILogger logger = Logger.getLogger(ConnectionMonitor.class.getName());
-
+    final ILogger logger;
     final ConnectionManager connectionManager;
     final IOService ioService;
     final Address endPoint;
@@ -41,6 +39,7 @@ class ConnectionMonitor {
         this.ioService = connectionManager.getIOHandler();
         this.minInterval = ioService.getConnectionMonitorInterval();
         this.maxFaults = ioService.getConnectionMonitorMaxFaults();
+        this.logger = ioService.getLogger(getClass().getName());
     }
 
     public Address getEndPoint() {
