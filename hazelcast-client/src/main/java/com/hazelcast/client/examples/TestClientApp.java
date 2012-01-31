@@ -22,7 +22,6 @@ import com.hazelcast.examples.TestApp;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 
 public class TestClientApp {
 
@@ -72,7 +71,7 @@ public class TestClientApp {
 
     private void handleCommand(String[] args) throws Exception {
         if (args[0].startsWith("connect")) {
-            connect(Arrays.copyOfRange(args, 1, args.length));
+            connect(copyOfRange(args, 1, args.length));
         } else {
             if (hz == null) {
                 message();
@@ -82,6 +81,16 @@ public class TestClientApp {
                 System.out.println("connect 192.168.1.3");
             }
         }
+    }
+
+    private static String[] copyOfRange(String[] original, int from, int to) {
+        int length = to - from;
+        if (length < 0)
+            throw new IllegalArgumentException(from + " > " + to);
+        String[] copy = new String[length];
+        System.arraycopy(original, from, copy, 0,
+                Math.min(original.length - from, length));
+        return copy;
     }
 
     private void message() {

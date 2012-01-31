@@ -60,7 +60,7 @@ public class DefaultClientBinder implements ClientBinder {
         auth.set("", ClusterOperation.CLIENT_AUTHENTICATE, new byte[0], toByte(credentials));
         Packet packet = writeAndRead(connection, auth);
         final Object response = toObject(packet.getValue());
-        logger.log(Level.FINEST, "auth responce:" + response);
+        logger.log(Level.FINEST, "auth response:" + response);
         if (response instanceof Exception) {
             throw new RuntimeException((Exception) response);
         }
