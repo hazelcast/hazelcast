@@ -22,7 +22,16 @@ import java.util.EventObject;
 public class InstanceEvent extends EventObject {
 
     public enum InstanceEventType {
-        CREATED, DESTROYED
+        CREATED(0), DESTROYED(2);
+        private int id;
+
+        InstanceEventType(int i) {
+            this.id = i;
+        }
+
+        public int getId() {
+            return id;
+        }
     }
 
     private final InstanceEventType instanceEventType;

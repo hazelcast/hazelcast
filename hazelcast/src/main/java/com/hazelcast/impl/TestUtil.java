@@ -494,6 +494,10 @@ public class TestUtil {
         }
     }
 
+    public static enum State {
+        STATE1, STATE2;
+    }
+
     @Ignore
     public static class Employee implements Serializable {
         long id;
@@ -505,6 +509,11 @@ public class TestUtil {
         Timestamp date;
         Date createDate;
         java.sql.Date sqlDate;
+        State state;
+
+        public Employee(long id, String name, int age, boolean live, double price, State state) {
+            this.state = state;
+        }
 
         public Employee(long id, String name, int age, boolean live, double price) {
             this(id, name, null, age, live, price);

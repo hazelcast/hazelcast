@@ -140,6 +140,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             int numberOfSeconds = 0;
             final int connectionTimeoutSeconds = config.getNetworkConfig().getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();
             while (!foundConnection && numberOfSeconds < connectionTimeoutSeconds) {
+                logger.log(Level.FINEST, "Removing failedConnections: " + node.getFailedConnections());
                 colPossibleAddresses.removeAll(node.getFailedConnections());
                 if (colPossibleAddresses.size() == 0) {
                     break;
@@ -147,12 +148,12 @@ public class TcpIpJoiner extends AbstractJoiner {
                 //noinspection BusyWait
                 Thread.sleep(1000L);
                 numberOfSeconds++;
-                logger.log(Level.FINEST, "we are going to try to connect to each address");
+                logger.log(Level.FINEST, "We are going to try to connect to each address" + colPossibleAddresses);
                 for (Address possibleAddress : colPossibleAddresses) {
                     final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
                     if (conn != null) {
                         foundConnection = true;
-                        logger.log(Level.FINEST, "found and sending join request for " + possibleAddress);
+                        logger.log(Level.FINEST, "Found and sending join request for " + possibleAddress);
                         node.clusterManager.sendJoinRequest(possibleAddress, true);
                     }
                 }

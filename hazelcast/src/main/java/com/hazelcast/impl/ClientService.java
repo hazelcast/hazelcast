@@ -66,6 +66,7 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[CONCURRENT_MAP_PUT_ALL.getValue()] = new MapPutAllHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_MULTI.getValue()] = new MapPutMultiHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_IF_ABSENT.getValue()] = new MapPutIfAbsentHandler();
+        clientOperationHandlers[CONCURRENT_MAP_PUT_TRANSIENT.getValue()] = new MapPutTransientHandler();
         clientOperationHandlers[CONCURRENT_MAP_TRY_PUT.getValue()] = new MapTryPutHandler();
         clientOperationHandlers[CONCURRENT_MAP_GET.getValue()] = new MapGetHandler();
         clientOperationHandlers[CONCURRENT_MAP_GET_ALL.getValue()] = new MapGetAllHandler();
@@ -344,7 +345,11 @@ public class ClientService implements ConnectionListener {
     private class QueueEntriesHandler extends ClientQueueOperationHandler {
         public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
             Object[] array = queue.toArray();
-            return toData(array);
+            Keys keys = new Keys();
+            for (Object o : array) {
+                keys.add(toData(o));
+            }
+            return toData(keys);
         }
     }
 
@@ -472,7 +477,7 @@ public class ClientService implements ConnectionListener {
     private class GetInstancesHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             Collection<Instance> instances = factory.getInstances();
-            ArrayList<Object> instanceIds = new ArrayList<Object>();
+            Keys keys = new Keys();
             for (Instance instance : instances) {
                 Object id = instance.getId();
                 if (id instanceof FactoryImpl.ProxyKey) {
@@ -482,10 +487,10 @@ public class ClientService implements ConnectionListener {
                 }
                 String idStr = id.toString();
                 if (!idStr.startsWith(Prefix.MAP_OF_LIST) && !idStr.startsWith(Prefix.MAP_FOR_QUEUE)) {
-                    instanceIds.add(id);
+                    keys.add(toData(id));
                 }
             }
-            packet.setValue(toData(instanceIds.toArray()));
+            packet.setValue(toData(keys));
         }
     }
 
@@ -495,7 +500,7 @@ public class ClientService implements ConnectionListener {
             Set<Member> members = cluster.getMembers();
             Set<Data> setData = new LinkedHashSet<Data>();
             if (members != null) {
-                for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
+                for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
                     Member member = iterator.next();
                     setData.add(toData(member));
                 }
@@ -516,7 +521,7 @@ public class ClientService implements ConnectionListener {
             } else {
                 Set<Partition> partitions = partitionService.getPartitions();
                 Set<Data> setData = new LinkedHashSet<Data>();
-                for (Iterator<Partition> iterator = partitions.iterator(); iterator.hasNext(); ) {
+                for (Iterator<Partition> iterator = partitions.iterator(); iterator.hasNext();) {
                     Partition partition = iterator.next();
                     setData.add(toData(new PartitionImpl(partition.getPartitionId(), (MemberImpl) partition.getOwner())));
                 }
@@ -879,8 +884,9 @@ public class ClientService implements ConnectionListener {
                 node.concurrentMapManager.doPutAll(mproxy.getLongName(), pairs);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
+            } finally {
+                return null;
             }
-            return null;
         }
     }
 
@@ -898,6 +904,15 @@ public class ClientService implements ConnectionListener {
             } else {
                 return (Data) map.put(key, v, ttl, TimeUnit.MILLISECONDS);
             }
+        }
+    }
+
+    private class MapPutTransientHandler extends ClientMapOperationHandlerWithTTL {
+
+        @Override
+        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
+            map.putTransient(key, value, ttl, TimeUnit.MILLISECONDS);
+            return null;
         }
     }
 
@@ -1038,8 +1053,9 @@ public class ClientService implements ConnectionListener {
 
     private class MapReplaceIfSameHandler extends ClientMapOperationHandler {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
-            Object[] arr = (Object[]) toObject(value);
-            return toData(map.replace(key, arr[0], arr[1]));
+            Keys keys = (Keys) toObject(value);
+            Iterator it = keys.getKeys().iterator();
+            return toData(map.replace(key, it.next(), it.next()));
         }
     }
 
@@ -1134,7 +1150,9 @@ public class ClientService implements ConnectionListener {
             } else if (timeout == 0) {
                 value = toData(map.tryLock(packet.getKeyData()));
             } else {
-                value = toData(map.tryLock(packet.getKeyData(), timeout, (TimeUnit) toObject(packet.getValueData())));
+                TimeUnit timeUnit = (TimeUnit) toObject(packet.getValueData());
+                timeUnit = timeUnit == null ? TimeUnit.MILLISECONDS : timeUnit;
+                value = toData(map.tryLock(packet.getKeyData(), timeout, timeUnit));
             }
             packet.setValue(value);
         }
@@ -1171,7 +1189,9 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
             long timeout = packet.timeout;
-            Data value = toData(map.lockMap(timeout, (TimeUnit) toObject(packet.getValueData())));
+            TimeUnit timeUnit = (TimeUnit) toObject(packet.getValueData());
+            timeUnit = (timeUnit == null) ? TimeUnit.MILLISECONDS : timeUnit;
+            Data value = toData(map.lockMap(timeout, timeUnit));
             packet.setValue(value);
         }
     }
@@ -1450,7 +1470,7 @@ public class ClientService implements ConnectionListener {
         @Override
         public void processCall(Node node, Packet packet) {
             ISet list = (ISet) factory.getOrCreateProxyByName(packet.name);
-            Boolean value = list.add(packet.getKeyData());
+            boolean value = list.add(packet.getKeyData());
             packet.clearForResponse();
             packet.setValue(toData(value));
         }

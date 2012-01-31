@@ -24,6 +24,8 @@ import com.hazelcast.client.ProxyHelper;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.Keys;
+import com.hazelcast.nio.Data;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -71,7 +73,7 @@ public class EntryListenerManager {
             key = toKey(key);
             List<EntryListenerHolder> list = m.get(key);
             if (list != null) {
-                for (final Iterator<EntryListenerHolder> it = list.iterator(); it.hasNext(); ) {
+                for (final Iterator<EntryListenerHolder> it = list.iterator(); it.hasNext();) {
                     final EntryListenerHolder entryListenerHolder = it.next();
                     if (entryListenerHolder.listener.equals(entryListener)) {
                         list.remove(entryListenerHolder);
@@ -106,11 +108,11 @@ public class EntryListenerManager {
     public void notifyListeners(Packet packet) {
         Object oldValue = null;
         Object value = toObject(packet.getValue());
-        if (value instanceof CollectionWrapper) {
-            final CollectionWrapper values = (CollectionWrapper) value;
-            final Iterator it = values.getKeys().iterator();
-            value = it.hasNext() ? it.next() : null;
-            oldValue = it.hasNext() ? it.next() : null;
+        if (value instanceof Keys) {
+            final Keys values = (Keys) value;
+            final Iterator<Data> it = values.getKeys().iterator();
+            value = (it.hasNext() ? toObject(it.next().buffer) : null);
+            oldValue = it.hasNext() ? toObject(it.next().buffer) : null;
         }
         final EntryEvent event = new EntryEvent(packet.getName(), null, (int) packet.getLongValue(),
                 toObject(packet.getKey()),

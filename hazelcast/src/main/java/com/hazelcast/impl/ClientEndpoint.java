@@ -189,7 +189,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
 
     Packet createInstanceEventPacket(InstanceEvent event) {
         Packet packet = new Packet();
-        packet.set(null, ClusterOperation.EVENT, toData(event.getInstance().getId()), toData(event.getEventType()));
+        packet.set(null, ClusterOperation.EVENT, toData(event.getInstance().getId()), toData(event.getEventType().getId()));
         return packet;
     }
 

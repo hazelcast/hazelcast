@@ -17,7 +17,7 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.cluster.Bind;
+import com.hazelcast.cluster.Bind;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;

@@ -17,10 +17,17 @@
 
 package com.hazelcast.impl;
 
-import java.io.Serializable;
+import com.hazelcast.nio.DataSerializable;
 
-public class ClientServiceException implements Serializable {
-    final Throwable throwable;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+public class ClientServiceException implements DataSerializable {
+    Throwable throwable;
+
+    public ClientServiceException() {
+    }
 
     public ClientServiceException(Throwable throwable) {
         this.throwable = throwable;
@@ -28,5 +35,13 @@ public class ClientServiceException implements Serializable {
 
     public Throwable getThrowable() {
         return throwable;
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeUTF(throwable.getMessage());
+    }
+
+    public void readData(DataInput in) throws IOException {
+        throwable = new RuntimeException(in.readUTF());
     }
 }

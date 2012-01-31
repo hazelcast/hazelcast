@@ -51,11 +51,15 @@ public class DefaultSerializer implements CustomSerializer {
 
     private static final byte SERIALIZER_TYPE_EXTERNALIZABLE = 8;
 
+    private static final byte SERIALIZER_TYPE_BOOLEAN = 9;
+
     private static final int SERIALIZER_PRIORITY_OBJECT = Integer.MAX_VALUE;
 
     private static final int SERIALIZER_PRIORITY_BYTE_ARRAY = 100;
 
     private static final int SERIALIZER_PRIORITY_INTEGER = 300;
+
+    private static final int SERIALIZER_PRIORITY_BOOLEAN = 300;
 
     private static final int SERIALIZER_PRIORITY_LONG = 200;
 
@@ -86,6 +90,7 @@ public class DefaultSerializer implements CustomSerializer {
         registerSerializer(new ByteArraySerializer());
         registerSerializer(new LongSerializer());
         registerSerializer(new IntegerSerializer());
+        registerSerializer(new BooleanSerializer());
         registerSerializer(new StringSerializer());
         registerSerializer(new ClassSerializer());
         registerSerializer(new DateSerializer());
@@ -224,6 +229,29 @@ public class DefaultSerializer implements CustomSerializer {
 
         public final void write(final FastByteArrayOutputStream bbos, final Integer obj) throws Exception {
             bbos.writeInt(obj.intValue());
+        }
+    }
+
+    public static class BooleanSerializer implements TypeSerializer<Boolean> {
+
+        public int priority() {
+            return SERIALIZER_PRIORITY_BOOLEAN;
+        }
+
+        public boolean isSuitable(Object obj) {
+            return obj instanceof Boolean;
+        }
+
+        public byte getTypeId() {
+            return SERIALIZER_TYPE_BOOLEAN;
+        }
+
+        public void write(FastByteArrayOutputStream bbos, Boolean obj) throws Exception {
+            bbos.write((obj == true ? 1 : 0));
+        }
+
+        public Boolean read(FastByteArrayInputStream bbis) throws Exception {
+            return bbis.readByte() == 1;
         }
     }
 

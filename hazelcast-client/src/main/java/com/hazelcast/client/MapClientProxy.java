@@ -193,10 +193,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         check(arg0);
         check(arg1);
         check(arg2);
-        Object[] arr = new Object[2];
-        arr[0] = arg1;
-        arr[1] = arg2;
-        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REPLACE_IF_SAME, arg0, arr);
+        Keys keys = new Keys();
+        keys.getKeys().add(toData(arg0));
+        keys.getKeys().add(toData(arg1));
+        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REPLACE_IF_SAME, arg0, keys);
     }
 
     public void clear() {

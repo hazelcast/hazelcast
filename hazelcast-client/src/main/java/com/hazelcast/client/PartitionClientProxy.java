@@ -16,8 +16,9 @@
  */
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.CollectionWrapper;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.Keys;
+import com.hazelcast.nio.Data;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
@@ -33,9 +34,13 @@ public class PartitionClientProxy implements PartitionService {
     }
 
     public Set<Partition> getPartitions() {
-        CollectionWrapper<Partition> partitions =
-                (CollectionWrapper<Partition>) proxyHelper.doOp(ClusterOperation.CLIENT_GET_PARTITIONS, null, null);
-        return new LinkedHashSet<Partition>(partitions.getKeys());
+        Keys partitions =
+                (Keys) proxyHelper.doOp(ClusterOperation.CLIENT_GET_PARTITIONS, null, null);
+        Set<Partition> set = new LinkedHashSet<Partition>();
+        for (Data d : partitions.getKeys()) {
+            set.add((Partition) IOUtil.toObject(d.buffer));
+        }
+        return set;
     }
 
     public Partition getPartition(Object key) {

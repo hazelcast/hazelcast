@@ -189,7 +189,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             for (int i = 0; i < repeat; i++) {
                 handleCommand(command.substring(first.length()).replaceAll("\\$i", "" + i));
             }
-            System.out.println("ops/s = " + repeat * 1000 / (System.currentTimeMillis() - t0));
+            println("ops/s = " + repeat * 1000 / (System.currentTimeMillis() - t0));
             return;
         } else if (first.startsWith("&") && first.length() > 1) {
             final int fork = Integer.parseInt(first.substring(1));

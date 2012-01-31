@@ -22,7 +22,6 @@ import com.hazelcast.client.ClientRunnable;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
 import com.hazelcast.core.Instance;
-import com.hazelcast.core.InstanceEvent.InstanceEventType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -77,7 +76,7 @@ public class ListenerManager extends ClientRunnable {
                 Packet packet = (Packet) obj;
                 if (packet.getName() == null) {
                     Object eventType = toObject(packet.getValue());
-                    if (eventType instanceof InstanceEventType) {
+                    if (new Integer(0).equals(eventType) || new Integer(2).equals(eventType)) {
                         instanceListenerManager.notifyListeners(packet);
                     } else {
                         membershipListenerManager.notifyListeners(packet);

@@ -17,11 +17,12 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.CollectionWrapper;
 import com.hazelcast.client.impl.InstanceListenerManager;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.impl.Keys;
+import com.hazelcast.nio.Data;
 
 import java.util.*;
 
@@ -37,15 +38,16 @@ public class ClusterClientProxy implements Cluster {
     }
 
     public Collection<Instance> getInstances() {
-        Object[] instances = (Object[]) proxyHelper.doOp(ClusterOperation.GET_INSTANCES, null, null);
+        Keys instances = (Keys) proxyHelper.doOp(ClusterOperation.GET_INSTANCES, null, null);
         List<Instance> list = new ArrayList<Instance>();
         if (instances != null) {
-            for (int i = 0; i < instances.length; i++) {
-                if (instances[i] instanceof FactoryImpl.ProxyKey) {
-                    FactoryImpl.ProxyKey proxyKey = (FactoryImpl.ProxyKey) instances[i];
+            for (Data data : instances) {
+                Object o = IOUtil.toObject(data.buffer);
+                if (o instanceof FactoryImpl.ProxyKey) {
+                    FactoryImpl.ProxyKey proxyKey = (FactoryImpl.ProxyKey) o;
                     list.add((Instance) client.getClientProxy(proxyKey.getKey()));
                 } else {
-                    list.add((Instance) client.getClientProxy(instances[i]));
+                    list.add((Instance) client.getClientProxy(o));
                 }
             }
         }
@@ -62,8 +64,13 @@ public class ClusterClientProxy implements Cluster {
     }
 
     public Set<Member> getMembers() {
-        CollectionWrapper<Member> cw = (CollectionWrapper<Member>) proxyHelper.doOp(ClusterOperation.GET_MEMBERS, null, null);
-        return new LinkedHashSet<Member>(cw.getKeys());
+        Keys cw = (Keys) proxyHelper.doOp(ClusterOperation.GET_MEMBERS, null, null);
+        Collection<Data> datas = cw.getKeys();
+        Set<Member> set = new LinkedHashSet<Member>();
+        for (Data d : datas) {
+            set.add((Member) IOUtil.toObject(d.buffer));
+        }
+        return set;
     }
 
     public Member getLocalMember() {

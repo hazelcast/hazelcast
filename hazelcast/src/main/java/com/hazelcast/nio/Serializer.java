@@ -93,8 +93,8 @@ public final class Serializer extends AbstractSerializer {
             return AbstractSerializer.loadClass(className);
         }
 
-        protected String toClassName(final Class clazz) throws ClassNotFoundException {
-            return clazz.getName();
+        protected String toClassName(final Object obj) throws ClassNotFoundException {
+            return obj.getClass().getName();
         }
 
         public final DataSerializable read(final FastByteArrayInputStream bbis) throws Exception {
@@ -104,12 +104,12 @@ public final class Serializer extends AbstractSerializer {
                 ds.readData(bbis);
                 return ds;
             } catch (final Exception e) {
-                throw new IOException("Problem reading DataSerializable class : " + className + ", exception: " + e);
+                throw new IOException("Problem reading DataSerializable class : " + className, e);
             }
         }
 
         public final void write(final FastByteArrayOutputStream bbos, final DataSerializable obj) throws Exception {
-            bbos.writeUTF(toClassName(obj.getClass()));
+            bbos.writeUTF(toClassName(obj));
             obj.writeData(bbos);
         }
     }

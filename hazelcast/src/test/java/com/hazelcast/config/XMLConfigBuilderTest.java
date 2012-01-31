@@ -42,7 +42,7 @@ public class XMLConfigBuilderTest {
                         "                <multicast-group>224.2.2.3</multicast-group>\n" +
                         "                <multicast-port>54327</multicast-port>\n" +
                         "            </multicast>\n" +
-                        "            <tcp-ip enabled=\"false\">\n" +
+                        "            <tcp-ip enabled=\"false\" conn-timeout-seconds=\"10\">\n" +
                         "                <interface>127.0.0.1</interface>\n" +
                         "            </tcp-ip>\n" +
                         "            <aws enabled=\"true\">\n" +
@@ -60,6 +60,7 @@ public class XMLConfigBuilderTest {
         Config config = configBuilder.build();
         AwsConfig awsConfig = config.getNetworkConfig().getJoin().getAwsConfig();
         assertTrue(awsConfig.isEnabled());
+        assertEquals(10, config.getNetworkConfig().getJoin().getTcpIpConfig().getConnectionTimeoutSeconds());
         assertEquals("access", awsConfig.getAccessKey());
         assertEquals("secret", awsConfig.getSecretKey());
     }

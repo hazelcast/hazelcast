@@ -17,16 +17,18 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.CollectionWrapper;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.impl.ClientServiceException;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.Keys;
 import com.hazelcast.impl.Util;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Data;
 import com.hazelcast.query.Predicate;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.concurrent.Future;
@@ -198,11 +200,21 @@ public class ProxyHelper {
     }
 
     public <K> Collection<K> keys(Predicate predicate) {
-        return ((CollectionWrapper<K>) doOp(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null, predicate)).getKeys();
+        Keys keys = (Keys) doOp(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null, predicate);
+        Collection<K> collection = new ArrayList<K>();
+        for (Data d : keys) {
+            collection.add((K) toObject(d.buffer));
+        }
+        return collection;
     }
 
     public <K> Collection<K> entries(final Predicate predicate) {
-        return ((CollectionWrapper<K>) doOp(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, null, predicate)).getKeys();
+        Keys keys = (Keys) doOp(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, null, predicate);
+        Collection<K> collection = new ArrayList<K>();
+        for (Data d : keys) {
+            collection.add((K) toObject(d.buffer));
+        }
+        return collection;
     }
 
     static void check(Object obj) {
