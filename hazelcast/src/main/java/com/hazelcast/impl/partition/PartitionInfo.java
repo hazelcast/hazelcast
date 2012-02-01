@@ -143,7 +143,17 @@ public class PartitionInfo {
         if (o == null || getClass() != o.getClass()) return false;
         PartitionInfo that = (PartitionInfo) o;
         if (partitionId != that.partitionId) return false;
-        if (addresses != null ? !addresses.equals(that.addresses) : that.addresses != null) return false;
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            Address a1 = addresses.get(i);
+            Address a2 = that.addresses.get(i);
+            if (a1 == null) {
+                if (a2 != null) {
+                    return false;
+                }
+            } else if (!a1.equals(a2)) {
+                return false;
+            }
+        }
         return true;
     }
 

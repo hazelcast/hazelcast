@@ -743,22 +743,20 @@ public class ConcurrentMapManager extends BaseManager {
 
     void putTransientAsync(Request request) {
         final MPut mput = new MPut();
-        mput.request.key = request.key;
-        mput.request.value = request.value;
+        mput.request.setFromRequest(request);
         mput.request.timeout = 0;
         mput.request.ttl = -1;
-        mput.request.indexes = request.indexes;
-        mput.request.indexTypes = request.indexTypes;
         mput.request.local = true;
-        mput.request.setFromRequest(request);
         mput.request.operation = CONCURRENT_MAP_PUT_TRANSIENT;
         mput.request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
         request.setBooleanRequest();
+        final Data value = request.value;
         node.executorManager.executeNow(new Runnable() {
             public void run() {
                 mput.doOp();
                 boolean success = mput.getResultAsBoolean();
                 if (success) {
+                    mput.request.value = value;
                     mput.backup(CONCURRENT_MAP_BACKUP_PUT);
                 }
             }

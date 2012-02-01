@@ -241,15 +241,14 @@ public class PartitionManager {
 
     public void shutdown() {
         try {
+            clearTaskQueues();
             final CountDownLatch stopLatch = new CountDownLatch(1);
             immediateTasksQueue.offer(new Runnable() {
                 public void run() {
-                    clearTaskQueues();
                     running = false;
                     stopLatch.countDown();
                 }
             });
-            migrationService.interrupt();
             stopLatch.await(3, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }

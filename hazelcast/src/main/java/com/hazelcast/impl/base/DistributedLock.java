@@ -106,13 +106,23 @@ public class DistributedLock implements Serializable {
         return lockCount;
     }
 
-    public int decrementAndGetLockCount() {
-        this.lockCount--;
-        if (lockCount == 0) {
-            this.lockAddress = null;
-            this.lockThreadId = -1;
-        }
-        return lockCount;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DistributedLock that = (DistributedLock) o;
+        if (lockCount != that.lockCount) return false;
+        if (lockThreadId != that.lockThreadId) return false;
+        if (lockAddress != null ? !lockAddress.equals(that.lockAddress) : that.lockAddress != null) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = lockAddress != null ? lockAddress.hashCode() : 0;
+        result = 31 * result + lockThreadId;
+        result = 31 * result + lockCount;
+        return result;
     }
 
     @Override
