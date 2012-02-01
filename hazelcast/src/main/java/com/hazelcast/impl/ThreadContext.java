@@ -111,6 +111,10 @@ public final class ThreadContext {
         return hic;
     }
 
+    public void shutdown(FactoryImpl factory) {
+        mapHazelcastInstanceContexts.remove(factory);
+    }
+
     public CallCache getCallCache(FactoryImpl factory) {
         return getHazelcastInstanceThreadContext(factory).getCallCache();
     }

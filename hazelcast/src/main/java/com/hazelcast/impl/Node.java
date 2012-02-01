@@ -400,6 +400,7 @@ public class Node {
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
             failedConnections.clear();
             serviceThreadPacketQueue.clear();
+            ThreadContext.get().shutdown(this.factory);
         }
     }
 
