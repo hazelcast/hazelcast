@@ -122,6 +122,7 @@ public class PartitionManager {
 
     public void firstArrangement() {
         if (!concurrentMapManager.isMaster()) return;
+        if (!hasStorageMember()) return;
         PartitionStateGenerator psg = getPartitionStateGenerator();
         PartitionInfo[] newState = psg.initialize(concurrentMapManager.lsMembers, PARTITION_COUNT);
         if (newState != null) {
@@ -221,25 +222,13 @@ public class PartitionManager {
         return null;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("PartitionManager{\n");
-        int count = 0;
-        for (PartitionInfo partitionInfo : partitions) {
-            sb.append(partitionInfo.toString());
-            sb.append("\n");
-            if (count++ > 10) break;
-        }
-        sb.append("\n}");
-        return sb.toString();
-    }
-
     public void reset() {
         initialized = false;
-        lsPartitionListeners.clear();
         clearTaskQueues();
         for (PartitionInfo partition : partitions) {
-            partition.setPartitionInfo(new PartitionInfo(partition.getPartitionId()));
+            for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
+                partition.setReplicaAddress(i, null);
+            }
         }
         mapActiveMigrations.clear();
         version.set(0);
@@ -266,8 +255,20 @@ public class PartitionManager {
         }
     }
 
+    public boolean hasStorageMember() {
+        for (MemberImpl member : concurrentMapManager.lsMembers) {
+            if (!member.isLiteMember()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void syncForDead(MemberImpl deadMember) {
         concurrentMapManager.partitionServiceImpl.reset();
+        if (!hasStorageMember()) {
+            reset();
+        }
         boolean isMember = !deadMember.isLiteMember();
         Address deadAddress = deadMember.getAddress();
         Address thisAddress = concurrentMapManager.getThisAddress();
@@ -431,13 +432,12 @@ public class PartitionManager {
 
     public boolean hasActiveBackupTask() {
         if (!initialized) return false;
-
+        if (concurrentMapManager.isLiteMember()) return false;
         int maxBackupCount = 0;
         for (final CMap cmap : concurrentMapManager.maps.values()) {
             maxBackupCount = Math.max(maxBackupCount, cmap.getBackupCount());
         }
         if (maxBackupCount == 0) return false;
-
         Set<MemberImpl> members = new HashSet<MemberImpl>();
         for (Member member : concurrentMapManager.node.getClusterImpl().getMembers()) {
             members.add((MemberImpl) member);
@@ -445,7 +445,6 @@ public class PartitionManager {
         MemberGroupFactory mgf = PartitionStateGeneratorFactory.newMemberGroupFactory(
                 concurrentMapManager.node.config.getPartitionGroupConfig());
         if (mgf.createMemberGroups(members).size() < 2) return false;
-
         boolean needBackup = false;
         if (immediateTasksQueue.isEmpty()) {
             for (PartitionInfo partition : partitions) {
@@ -496,10 +495,6 @@ public class PartitionManager {
 
         private Address getTargetAddress(int index) {
             return targets[index];
-        }
-
-        private Address getOwnerAddress(int index) {
-            return owners[index];
         }
 
         private boolean isEmpty() {
@@ -553,7 +548,6 @@ public class PartitionManager {
                     psg.reArrange(partitions, members, PARTITION_COUNT, scheduledQ, immediateQ);
                     logger.log(Level.INFO, "Re-partitioning cluster data... Immediate-Tasks: "
                             + immediateQ.size() + ", Scheduled-Tasks: " + scheduledQ.size());
-
                     while (!immediateQ.isEmpty()) {
                         MigrationRequestTask migrationRequestTask = immediateQ.poll();
                         immediateTasksQueue.offer(new Migrator(migrationRequestTask));
@@ -594,7 +588,6 @@ public class PartitionManager {
                     final int partitionId = migrationRequestTask.getPartitionId();
                     fromMember = getMember(partitions[partitionId].getOwner());
                 }
-
                 if (migrationRequestTask.getToAddress() == null) {
                     // A member is dead, this replica should not have an owner!
                     result = Boolean.TRUE;
@@ -706,5 +699,18 @@ public class PartitionManager {
                 Thread.sleep(immediateBackupInterval);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("PartitionManager{\n");
+        int count = 0;
+        for (PartitionInfo partitionInfo : partitions) {
+            sb.append(partitionInfo.toString());
+            sb.append("\n");
+            if (count++ > 10) break;
+        }
+        sb.append("\n}");
+        return sb.toString();
     }
 }

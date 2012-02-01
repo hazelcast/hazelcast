@@ -514,6 +514,20 @@ public class ExecutorManager extends BaseManager {
             executionId = executionIdGen.incrementAndGet();
             request.setLocal(EXECUTE, name, null, callable, -1, -1, -1, thisAddress);
             request.longValue = executionId;
+            // wait max. 10 seconds for ensuring the connection
+            // before the call
+            if (!member.localMember()) {
+                for (int i = 0; i < 10 && node.isActive(); i++) {
+                    if (node.connectionManager.getOrConnect(member.getAddress()) != null) {
+                        break;
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+            }
             doOp();
         }
 

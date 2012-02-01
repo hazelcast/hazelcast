@@ -17,7 +17,9 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.config.*;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.nio.Address;
 import junit.framework.Assert;
@@ -29,7 +31,6 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
@@ -70,7 +71,7 @@ public class HazelcastClusterTest {
 
     @Test
     public void testJoinWithCompatibleConfigs() throws Exception {
-        Config config = new XmlConfigBuilder().build();
+        Config config = new Config();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         Thread.sleep(1000);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -82,8 +83,8 @@ public class HazelcastClusterTest {
 
     @Test
     public void testJoinWithIncompatibleConfigs() throws Exception {
-        Config config1 = new XmlConfigBuilder().build();
-        Config config2 = new XmlConfigBuilder().build();
+        Config config1 = new Config();
+        Config config2 = new Config();
         config2.getMapConfig("default").setTimeToLiveSeconds(1);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
@@ -95,8 +96,8 @@ public class HazelcastClusterTest {
 
     @Test
     public void testJoinWithIncompatibleConfigsWithDisabledCheck() throws Exception {
-        Config config1 = new XmlConfigBuilder().build();
-        Config config2 = new XmlConfigBuilder().build();
+        Config config1 = new Config();
+        Config config2 = new Config();
         config1.setCheckCompatibility(false);
         config2.setCheckCompatibility(false).getMapConfig("default").setTimeToLiveSeconds(1);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
@@ -120,7 +121,6 @@ public class HazelcastClusterTest {
 
     @Ignore
     public void testTCPIPJoinWithManyNodes(final int sleepTime) throws UnknownHostException, InterruptedException {
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         final int count = 35;
         System.setProperty("hazelcast.mancenter.enabled", "false");
         final CountDownLatch latch = new CountDownLatch(count);
@@ -160,7 +160,6 @@ public class HazelcastClusterTest {
     @Test
     @Ignore
     public void testTCPIPJoinWithManyNodes3DifferentGroups() throws UnknownHostException, InterruptedException {
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         final int count = 35;
         final int groupCount = 3;
         System.setProperty("hazelcast.mancenter.enabled", "false");
@@ -210,7 +209,6 @@ public class HazelcastClusterTest {
     @Test
     @Ignore
     public void testTCPIPJoinWithManyNodesAllDifferentGroups() throws UnknownHostException, InterruptedException {
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         final int count = 35;
         System.setProperty("hazelcast.mancenter.enabled", "false");
         final CountDownLatch latch = new CountDownLatch(count);
@@ -325,20 +323,8 @@ public class HazelcastClusterTest {
     @Test
     public void testJoinWithPostConfiguration() throws Exception {
         // issue 473
-        Config hzConfig = new Config().
-                setGroupConfig(new GroupConfig("foo-group")).
-                setPort(5707).setPortAutoIncrement(false);
-        hzConfig.getNetworkConfig().setJoin(
-                new Join().
-                        setMulticastConfig(new MulticastConfig().setEnabled(false)).
-                        setTcpIpConfig(new TcpIpConfig().setEnabled(true).setMembers(Arrays.asList("127.0.0.1:5708"))));
-        Config hzConfig2 = new Config().
-                setGroupConfig(new GroupConfig("foo-group")).
-                setPort(5708).setPortAutoIncrement(false);
-        hzConfig2.getNetworkConfig().setJoin(
-                new Join().
-                        setMulticastConfig(new MulticastConfig().setEnabled(false)).
-                        setTcpIpConfig(new TcpIpConfig().setEnabled(true).setMembers(Arrays.asList("127.0.0.1:5707"))));
+        Config hzConfig = new Config();
+        Config hzConfig2 = new Config();
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(hzConfig);
         // Create the configuration for a dynamic map.
         instance1.getConfig().addMapConfig(new MapConfig("foo").setTimeToLiveSeconds(10));
@@ -351,7 +337,7 @@ public class HazelcastClusterTest {
 
     @Test(timeout = 1000 * 60)
     public void testInstanceCreationInHazelcastExecutorService() throws ExecutionException, InterruptedException {
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(new Config());
         try {
             HazelcastInstance hza = Hazelcast.getHazelcastInstanceByName(
                     hz.getExecutorService().submit(new NewInstanceCallable()).get());
@@ -387,7 +373,7 @@ public class HazelcastClusterTest {
 
     static class NewInstanceCallable implements Callable<String>, Serializable {
         public String call() throws Exception {
-            return Hazelcast.newHazelcastInstance(null).getName();
+            return Hazelcast.newHazelcastInstance(new Config()).getName();
         }
     }
 
