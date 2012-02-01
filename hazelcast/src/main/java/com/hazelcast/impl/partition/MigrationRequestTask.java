@@ -101,14 +101,16 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
             Member target = pm.getMember(to);
             if (target == null) return Boolean.FALSE;
             CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to, diffOnly);
-            DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList, replicaIndex), target);
+            DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList,
+                    replicaIndex, from), target);
             Future future = node.factory.getExecutorService().submit(task);
             return (Boolean) future.get(400, TimeUnit.SECONDS);
         } catch (Throwable e) {
             Level level = Level.WARNING;
-            if (e instanceof ExecutionException &&
-                    (e.getCause() instanceof MemberLeftException
-                            || e.getCause() instanceof IllegalStateException)) {
+            if (e instanceof ExecutionException) {
+                e = e.getCause();
+            }
+            if (e instanceof MemberLeftException || e instanceof IllegalStateException) {
                 level = Level.FINEST;
             }
             node.getLogger(MigrationRequestTask.class.getName()).log(level, e.getMessage(), e);

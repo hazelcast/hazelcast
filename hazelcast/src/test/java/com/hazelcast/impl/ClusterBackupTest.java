@@ -100,8 +100,6 @@ public class ClusterBackupTest {
         IMap m3 = h3.getMap("default");
         h1.getLifecycleService().shutdown();
         assertEquals(size, m2.size());
-        // TODO: temporary fix !! => data race between syncForDead and node shutdown
-        Thread.sleep(1000);
         h2.getLifecycleService().shutdown();
         assertEquals(size, m3.size());
     }
@@ -238,9 +236,12 @@ public class ClusterBackupTest {
         h1.getLifecycleService().shutdown();
         assertEquals(size, map3.size());
         ConcurrentMapManager c3 = getConcurrentMapManager(h3);
+        MemberImpl member3 = (MemberImpl) h3.getCluster().getLocalMember();
         for (int i = 0; i < 271; i++) {
-            assertFalse(c3.getPartitionInfo(i).isOwnerOrBackup(member1.getAddress(), PartitionInfo.MAX_REPLICA_COUNT));
-            assertFalse(c3.getPartitionInfo(i).isOwnerOrBackup(member2.getAddress(), PartitionInfo.MAX_REPLICA_COUNT));
+            PartitionInfo p = c3.getPartitionInfo(i);
+            assertTrue(p.toString(), member3.getAddress().equals(p.getOwner()));
+            assertFalse(p.toString(), p.isOwnerOrBackup(member1.getAddress(), PartitionInfo.MAX_REPLICA_COUNT));
+            assertFalse(p.toString(), p.isOwnerOrBackup(member2.getAddress(), PartitionInfo.MAX_REPLICA_COUNT));
         }
     }
 

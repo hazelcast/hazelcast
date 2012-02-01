@@ -25,6 +25,7 @@ import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.base.RecordSet;
 import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
 
@@ -39,14 +40,17 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
     private int partitionId;
     private int replicaIndex;
     private byte[] bytesRecordSet;
+    private Address from;
     private transient HazelcastInstance hazelcast;
 
     public MigrationTask() {
     }
 
-    public MigrationTask(int partitionId, CostAwareRecordList costAwareRecordList, int replicaIndex) throws IOException {
+    public MigrationTask(int partitionId, CostAwareRecordList costAwareRecordList,
+                         int replicaIndex, Address from) throws IOException {
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
+        this.from = from;
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream((int) (costAwareRecordList.getCost() / 100));
         DataOutputStream dos = null;
@@ -76,23 +80,27 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
                 r.readData(dis);
                 recordSet.addDataRecordEntry(r);
             }
-            node.concurrentMapManager.getPartitionManager().doMigrate(partitionId, replicaIndex, recordSet);
-        } catch (IOException e) {
-            node.getLogger(MigrationTask.class.getName()).log(Level.WARNING, e.getMessage(), e);
-            return Boolean.FALSE;
+            node.concurrentMapManager.getPartitionManager().doMigrate(partitionId, replicaIndex, recordSet, from);
+            return Boolean.TRUE;
+        } catch (Throwable e) {
+            Level level = Level.WARNING;
+            if (e instanceof IllegalStateException) {
+                level = Level.FINEST;
+            }
+            node.getLogger(MigrationTask.class.getName()).log(level, e.getMessage(), e);
         } finally {
             IOUtil.closeResource(dis);
         }
-        return Boolean.TRUE;
+        return Boolean.FALSE;
     }
 
     public void writeData(DataOutput out) throws IOException {
         try {
             out.writeInt(partitionId);
             out.writeInt(replicaIndex);
+            from.writeData(out);
             out.writeInt(bytesRecordSet.length);
             out.write(bytesRecordSet);
-//            System.out.println("write size " + bytesRecordSet.length);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -101,10 +109,11 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
     public void readData(DataInput in) throws IOException {
         partitionId = in.readInt();
         replicaIndex = in.readInt();
+        from = new Address();
+        from.readData(in);
         int size = in.readInt();
         bytesRecordSet = new byte[size];
         in.readFully(bytesRecordSet);
-//        System.out.println("read " + bytesRecordSet.length);
     }
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {

@@ -333,11 +333,25 @@ public class Node {
     private void doShutdown(boolean force) {
         long start = System.currentTimeMillis();
         logger.log(Level.FINE, "** we are being asked to shutdown when active = " + String.valueOf(active));
-        while (!force && isActive() && concurrentMapManager.partitionManager.hasActiveBackupTask()) {
-            try {
-                //noinspection BusyWait
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
+        if (!force && isActive()) {
+            final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
+            int waitSeconds = 0;
+            do {
+                // Although a node closes its connections to other nodes during shutdown,
+                // others will try to connect it to ensure that node is shutdown or terminated.
+                // This initial wait before active backup check is to make sure this node aware of all
+                // possible disconnecting nodes. Otherwise there may be a data race between
+                // syncForDead events and node shutdown.
+                // A better way of solving this issue is to make a node to inform others about its termination
+                // by sending shutting down message to all others.
+                try {
+                    //noinspection BusyWait
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                }
+            } while (concurrentMapManager.partitionManager.hasActiveBackupTask() && ++waitSeconds < maxWaitSeconds);
+            if (waitSeconds >= maxWaitSeconds) {
+                logger.log(Level.WARNING, "Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
         }
         if (isActive()) {

@@ -90,7 +90,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             PartitionInfo currentPartition = currentState[partitionId];
             PartitionInfo newPartition = newState[partitionId];
             boolean lost = false;
-            for (int replicaIndex = 0; replicaIndex < replicaCount; replicaIndex++) {
+            for (int replicaIndex = 0; replicaIndex < PartitionInfo.MAX_REPLICA_COUNT; replicaIndex++) {
                 Address currentOwner = currentPartition.getReplicaAddress(replicaIndex);
                 Address newOwner = newPartition.getReplicaAddress(replicaIndex);
                 MigrationRequestTask migrationRequestTask = null;
@@ -126,8 +126,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                                 partitionId, currentOwner, newOwner, replicaIndex, false);
                     }
                 } else if (currentOwner != null && newOwner == null) {
-                    // should not happen!
-                    logger.log(Level.WARNING, "Something seems wrong! Old owner is valid but new owner is null!");
+                    logger.log(Level.WARNING, "Fixing an error, owner of this replica should have been removed! " +
+                            "Partition[" + partitionId + "], Replica: " + replicaIndex + ", Owner: " + currentOwner);
+                    immediateTasksList.add(new MigrationRequestTask(partitionId, currentOwner, null, replicaIndex, false));
                 }
                 if (migrationRequestTask != null) {
                     partitionMigrationTasks.add(migrationRequestTask);
