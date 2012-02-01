@@ -17,7 +17,9 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.AbstractRemotelyCallable;
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
+import com.hazelcast.cluster.ClusterManager.AsyncRemotelyBooleanCallable;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
@@ -30,6 +32,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEvent;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,8 +46,9 @@ public class PartitionManager {
     private final int PARTITION_COUNT;
     private final PartitionInfo[] partitions;
 
-    // updates will come from ServiceThread but reads will be multithreaded. So concurrencyLevel is 1.
-    private final ConcurrentMap<Integer, MigratingPartition> mapActiveMigrations = new ConcurrentHashMap<Integer, MigratingPartition>(271, 0.75f, 1);
+    // updates will come from ServiceThread (one exception is PartitionManager.reset())
+    // but reads will be multithreaded.
+    private volatile MigratingPartition migratingPartition;
     private boolean initialized = false;
     private final AtomicInteger version = new AtomicInteger();
     private final List<PartitionListener> lsPartitionListeners = new CopyOnWriteArrayList<PartitionListener>();
@@ -76,12 +82,35 @@ public class PartitionManager {
         migrationService.start();
         node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
-                concurrentMapManager.enqueueAndReturn(new Processable() {
-                    public void process() {
-                        if (!node.isActive()) return;
-                        sendClusterRuntimeState();
+                if (concurrentMapManager.isMaster()) {
+                    concurrentMapManager.enqueueAndReturn(new Processable() {
+                        public void process() {
+                            if (!node.isActive()) return;
+                            sendClusterRuntimeState();
+                        }
+                    });
+                } else {
+                    final MigratingPartition currentMigratingPartition = migratingPartition;
+                    if (currentMigratingPartition != null) {
+                        try {
+                            AsyncRemotelyBooleanCallable rrp = node.clusterManager.new AsyncRemotelyBooleanCallable();
+                            rrp.executeProcess(node.getMasterAddress(), new CheckMigratingPartition(currentMigratingPartition));
+                            boolean valid = rrp.getResultAsBoolean(1);
+                            if (!valid) {
+                                logger.log(Level.INFO, currentMigratingPartition +
+                                        " could not be validated with master! " +
+                                        "Removing current MigratingPartition...");
+                                concurrentMapManager.enqueueAndReturn(new Processable() {
+                                    public void process() {
+                                        migratingPartition = null;
+                                    }
+                                });
+                            }
+                        } catch (Throwable t) {
+                            logger.log(Level.WARNING, t.getMessage(), t);
+                        }
                     }
-                });
+                }
             }
         }, 5, 5, TimeUnit.SECONDS);
     }
@@ -180,18 +209,37 @@ public class PartitionManager {
         return lsResultSet;
     }
 
+    private void addActiveMigration(final MigratingPartition migrationRequestTask) {
+        addActiveMigration(migrationRequestTask.getPartitionId(), migrationRequestTask.getReplicaIndex(),
+                migrationRequestTask.getFromAddress(), migrationRequestTask.getToAddress());
+    }
+
     private void addActiveMigration(final int partitionId, final int replicaIndex,
                                     final Address currentAddress, final Address newAddress) {
         concurrentMapManager.checkServiceThread();
-        MigratingPartition migratingPartition = mapActiveMigrations.get(partitionId);
-        if (migratingPartition == null) {
-            migratingPartition = new MigratingPartition(partitionId);
-            MigratingPartition existing = mapActiveMigrations.putIfAbsent(partitionId, migratingPartition);
-            if (existing != null) {
-                migratingPartition = existing;
+        final MigratingPartition currentMigratingPartition = migratingPartition;
+        final MigratingPartition newMigratingPartition = new MigratingPartition(partitionId,
+                replicaIndex, currentAddress, newAddress);
+
+        if (!newMigratingPartition.equals(currentMigratingPartition)) {
+            if (currentMigratingPartition != null) {
+                logger.log(Level.WARNING, "Replacing current " + currentMigratingPartition
+                        + " with " + newMigratingPartition);
             }
+            migratingPartition = newMigratingPartition;
         }
-        migratingPartition.setAddresses(replicaIndex, currentAddress, newAddress);
+    }
+
+    private void compareAndSetActiveMigratingPartition(final MigratingPartition expectedMigratingPartition,
+                                                       final MigratingPartition newMigratingPartition) {
+        concurrentMapManager.checkServiceThread();
+        if (expectedMigratingPartition == null) {
+            if (migratingPartition == null) {
+                migratingPartition = newMigratingPartition;
+            }
+        } else if (expectedMigratingPartition.equals(migratingPartition)) {
+            migratingPartition = newMigratingPartition;
+        }
     }
 
     public void doMigrate(final int partitionId, final int replicaIndex, final RecordSet recordSet, final Address from) {
@@ -225,12 +273,12 @@ public class PartitionManager {
     public void reset() {
         initialized = false;
         clearTaskQueues();
+        migratingPartition = null;
         for (PartitionInfo partition : partitions) {
             for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
                 partition.setReplicaAddress(i, null);
             }
         }
-        mapActiveMigrations.clear();
         version.set(0);
     }
 
@@ -254,7 +302,7 @@ public class PartitionManager {
         }
     }
 
-    public boolean hasStorageMember() {
+    private boolean hasStorageMember() {
         for (MemberImpl member : concurrentMapManager.lsMembers) {
             if (!member.isLiteMember()) {
                 return true;
@@ -271,12 +319,10 @@ public class PartitionManager {
         boolean isMember = !deadMember.isLiteMember();
         Address deadAddress = deadMember.getAddress();
         Address thisAddress = concurrentMapManager.getThisAddress();
-        Iterator<MigratingPartition> migratingPartitions = mapActiveMigrations.values().iterator();
-        while (migratingPartitions.hasNext()) {
-            MigratingPartition mp = migratingPartitions.next();
-            mp.onDeadAddress(deadAddress);
-            if (mp.isEmpty()) {
-                migratingPartitions.remove();
+        if (migratingPartition != null) {
+            if (deadAddress.equals(migratingPartition.getFromAddress())
+                    || deadAddress.equals(migratingPartition.getToAddress())) {
+                migratingPartition = null;
             }
         }
         int[] indexesOfDead = new int[partitions.length];
@@ -373,7 +419,7 @@ public class PartitionManager {
             PartitionInfo newPartition = newPartitions[i];
             PartitionInfo currentPartition = partitions[newPartition.getPartitionId()];
             currentPartition.setPartitionInfo(newPartition);
-            checkCurrentMigrations(currentPartition);
+            checkMigratingPartitionFor(currentPartition);
             Address ownerAddress = currentPartition.getOwner();
             if (ownerAddress != null) {
                 MemberImpl ownerMember = concurrentMapManager.getMember(ownerAddress);
@@ -389,27 +435,17 @@ public class PartitionManager {
         initialized = true;
     }
 
-    private void checkCurrentMigrations(PartitionInfo partition) {
+    private void checkMigratingPartitionFor(PartitionInfo partition) {
         concurrentMapManager.checkServiceThread();
-        MigratingPartition migratingPartition = mapActiveMigrations.get(partition.getPartitionId());
-        if (migratingPartition != null) {
-            boolean migrationCompleted = false;
-            for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
-                Address targetAddress = migratingPartition.getTargetAddress(i);
-                if (targetAddress != null) {
-                    if (targetAddress.equals(partition.getReplicaAddress(i))) {
-                        migratingPartition.removeAddresses(i);
-                        migrationCompleted = true;
-                    }
+        final MigratingPartition mPartition = migratingPartition;
+        if (mPartition != null) {
+            if (partition.getPartitionId() == mPartition.getPartitionId()) {
+                final Address targetAddress = mPartition.getToAddress();
+                if (targetAddress != null
+                        && targetAddress.equals(partition.getReplicaAddress(mPartition.getReplicaIndex()))) {
+                    migratingPartition = null;
                 }
             }
-            if (migratingPartition.isEmpty()) {
-                mapActiveMigrations.remove(partition.getPartitionId());
-            }
-            // do we need cleanup here? it will eventually run soon.
-//            if (migrationCompleted) {
-//                concurrentMapManager.startCleanup(false, false);
-//            }
         }
     }
 
@@ -422,7 +458,9 @@ public class PartitionManager {
 
     public boolean isMigrating(int partitionId) {
         // volatile read
-        return mapActiveMigrations.containsKey(partitionId);
+        final MigratingPartition currentMigratingPartition = migratingPartition;
+        return currentMigratingPartition != null
+                && currentMigratingPartition.getPartitionId() == partitionId;
     }
 
     public PartitionInfo getPartition(int partitionId) {
@@ -471,63 +509,38 @@ public class PartitionManager {
         }
     }
 
-    // not thread safe
-    // accessed only by ServiceThread
-    private class MigratingPartition {
-        final int partitionId;
-        final Address[] owners = new Address[PartitionInfo.MAX_REPLICA_COUNT];
-        final Address[] targets = new Address[PartitionInfo.MAX_REPLICA_COUNT];
+    public static class CheckMigratingPartition extends AbstractRemotelyCallable<Boolean> {
+        MigratingPartition migratingPartition;
 
-        private MigratingPartition(final int partitionId) {
-            this.partitionId = partitionId;
+        public CheckMigratingPartition() {
         }
 
-        private void setAddresses(int index, Address owner, Address target) {
-            owners[index] = owner;
-            targets[index] = target;
+        public CheckMigratingPartition(final MigratingPartition migratingPartition) {
+            this.migratingPartition = migratingPartition;
         }
 
-        private void removeAddresses(int index) {
-            owners[index] = null;
-            targets[index] = null;
-        }
-
-        private Address getTargetAddress(int index) {
-            return targets[index];
-        }
-
-        private boolean isEmpty() {
-            for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
-                if (targets[i] != null) {
-                    return false;
-                }
+        public Boolean call() throws Exception {
+            if (migratingPartition != null) {
+                final MigratingPartition masterMigratingPartition = node
+                        .concurrentMapManager.getPartitionManager().migratingPartition;
+                return migratingPartition.equals(masterMigratingPartition);
             }
-            return true;
+            return Boolean.FALSE;
         }
 
-        private void onDeadAddress(Address address) {
-            for (int i = 0; i < owners.length; i++) {
-                Address owner = owners[i];
-                if (owner != null && owner.equals(address)) {
-                    removeAddresses(i);
-                }
-            }
-            for (int i = 0; i < targets.length; i++) {
-                Address target = targets[i];
-                if (target != null && target.equals(address)) {
-                    removeAddresses(i);
-                }
+        public void readData(final DataInput in) throws IOException {
+            if (in.readBoolean()) {
+                migratingPartition = new MigratingPartition();
+                migratingPartition.readData(in);
             }
         }
 
-        public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("MigratingPartition");
-            sb.append("{partitionId=").append(partitionId);
-            sb.append(", owners=").append(owners == null ? "null" : Arrays.asList(owners).toString());
-            sb.append(", targets=").append(targets == null ? "null" : Arrays.asList(targets).toString());
-            sb.append('}');
-            return sb.toString();
+        public void writeData(final DataOutput out) throws IOException {
+            boolean b = migratingPartition != null;
+            out.writeBoolean(b);
+            if (b) {
+                migratingPartition.writeData(out);
+            }
         }
     }
 
@@ -578,64 +591,95 @@ public class PartitionManager {
                         }
                     }, 100);
                 }
-                MemberImpl fromMember = null;
-                Object result = Boolean.FALSE;
-                if (migrationRequestTask.isMigration()) {
-                    fromMember = getMember(migrationRequestTask.getFromAddress());
-                } else {
-                    // ignore fromAddress of task and get actual owner from partition table
-                    final int partitionId = migrationRequestTask.getPartitionId();
-                    fromMember = getMember(partitions[partitionId].getOwner());
-                }
+
                 if (migrationRequestTask.getToAddress() == null) {
                     // A member is dead, this replica should not have an owner!
-                    result = Boolean.TRUE;
-                } else if (fromMember != null) {
-                    migrationRequestTask.setFromAddress(fromMember.getAddress());
-                    DistributedTask task = new DistributedTask(migrationRequestTask, fromMember);
-                    Future future = concurrentMapManager.node.factory.getExecutorService().submit(task);
-                    try {
-                        result = future.get(600, TimeUnit.SECONDS);
-                    } catch (Throwable e) {
-                        logger.log(Level.WARNING, "Failed migrating to " + fromMember);
-                    }
-                } else {
-                    // Partition is lost! Assign new owner and exit.
-                    result = Boolean.TRUE;
-                }
-                if (Boolean.TRUE.equals(result)) {
                     concurrentMapManager.enqueueAndWait(new Processable() {
                         public void process() {
                             int partitionId = migrationRequestTask.getPartitionId();
                             int replicaIndex = migrationRequestTask.getReplicaIndex();
                             PartitionInfo partition = partitions[partitionId];
-                            if (PartitionInfo.MAX_REPLICA_COUNT < replicaIndex) {
-                                String msg = "Migrated [" + partitionId + ":" + replicaIndex
-                                        + "] but cannot assign. Length:" + PartitionInfo.MAX_REPLICA_COUNT;
-                                logger.log(Level.WARNING, msg);
-                            } else {
-                                Address newOwner = migrationRequestTask.getToAddress();
-                                MemberImpl ownerMember = concurrentMapManager.getMember(newOwner);
-                                if (ownerMember == null) return;
-                                partition.setReplicaAddress(replicaIndex, newOwner);
-                                if (replicaIndex == 0) {
-                                    concurrentMapManager.partitionServiceImpl.setOwner(partition.getPartitionId(), ownerMember);
-                                    concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
-                                }
-                                // if this partition should be copied back,
-                                // just set partition's replica address
-                                // before data is cleaned up.
-                                if (migrationRequestTask.getSelfCopyReplicaIndex() > -1) {
-                                    partition.setReplicaAddress(migrationRequestTask.getSelfCopyReplicaIndex(),
-                                            migrationRequestTask.getFromAddress());
-                                }
-                                checkCurrentMigrations(partition);
-                                sendClusterRuntimeState();
-                            }
+                            partition.setReplicaAddress(replicaIndex, null);
+                            migratingPartition = null;
                         }
-                    }, 10000);
+                    });
+                } else {
+                    MemberImpl fromMember = null;
+                    Object result = Boolean.FALSE;
+                    if (migrationRequestTask.isMigration()) {
+                        fromMember = getMember(migrationRequestTask.getFromAddress());
+                    } else {
+                        // ignore fromAddress of task and get actual owner from partition table
+                        final int partitionId = migrationRequestTask.getPartitionId();
+                        fromMember = getMember(partitions[partitionId].getOwner());
+                    }
+                    if (fromMember != null) {
+                        migrationRequestTask.setFromAddress(fromMember.getAddress());
+                        DistributedTask task = new DistributedTask(migrationRequestTask, fromMember);
+                        concurrentMapManager.enqueueAndWait(new Processable() {
+                            public void process() {
+                                addActiveMigration(migrationRequestTask);
+                            }
+                        });
+                        Future future = concurrentMapManager.node.factory.getExecutorService().submit(task);
+                        try {
+                            result = future.get(600, TimeUnit.SECONDS);
+                        } catch (Throwable e) {
+                            logger.log(Level.WARNING, "Failed migrating to " + fromMember);
+                        }
+                    } else {
+                        // Partition is lost! Assign new owner and exit.
+                        result = Boolean.TRUE;
+                    }
+                    if (Boolean.TRUE.equals(result)) {
+                        concurrentMapManager.enqueueAndWait(new ProcessMigrationResult(migrationRequestTask), 10000);
+                    } else {
+                        // remove active partition migration
+                        concurrentMapManager.enqueueAndWait(new Processable() {
+                            public void process() {
+                                compareAndSetActiveMigratingPartition(migrationRequestTask, null);
+                            }
+                        });
+                    }
                 }
             } catch (Throwable ignored) {
+            }
+        }
+    }
+
+    private class ProcessMigrationResult implements Processable {
+        final MigrationRequestTask migrationRequestTask;
+
+        private ProcessMigrationResult(final MigrationRequestTask migrationRequestTask) {
+            this.migrationRequestTask = migrationRequestTask;
+        }
+
+        public void process() {
+            int partitionId = migrationRequestTask.getPartitionId();
+            int replicaIndex = migrationRequestTask.getReplicaIndex();
+            PartitionInfo partition = partitions[partitionId];
+            if (PartitionInfo.MAX_REPLICA_COUNT < replicaIndex) {
+                String msg = "Migrated [" + partitionId + ":" + replicaIndex
+                        + "] but cannot assign. Length:" + PartitionInfo.MAX_REPLICA_COUNT;
+                logger.log(Level.WARNING, msg);
+            } else {
+                Address newOwner = migrationRequestTask.getToAddress();
+                MemberImpl ownerMember = concurrentMapManager.getMember(newOwner);
+                if (ownerMember == null) return;
+                partition.setReplicaAddress(replicaIndex, newOwner);
+                if (replicaIndex == 0) {
+                    concurrentMapManager.partitionServiceImpl.setOwner(partition.getPartitionId(), ownerMember);
+                    concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
+                }
+                // if this partition should be copied back,
+                // just set partition's replica address
+                // before data is cleaned up.
+                if (migrationRequestTask.getSelfCopyReplicaIndex() > -1) {
+                    partition.setReplicaAddress(migrationRequestTask.getSelfCopyReplicaIndex(),
+                            migrationRequestTask.getFromAddress());
+                }
+                compareAndSetActiveMigratingPartition(migrationRequestTask, null);
+                sendClusterRuntimeState();
             }
         }
     }

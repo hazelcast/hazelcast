@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.PartitionManager;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.base.RecordSet;
@@ -69,6 +70,7 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
 
     public Boolean call() throws Exception {
         Node node = ((FactoryImpl) hazelcast).node;
+        PartitionManager pm = node.concurrentMapManager.getPartitionManager();
         DataInputStream dis = null;
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(bytesRecordSet);
@@ -80,7 +82,7 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
                 r.readData(dis);
                 recordSet.addDataRecordEntry(r);
             }
-            node.concurrentMapManager.getPartitionManager().doMigrate(partitionId, replicaIndex, recordSet, from);
+            pm.doMigrate(partitionId, replicaIndex, recordSet, from);
             return Boolean.TRUE;
         } catch (Throwable e) {
             Level level = Level.WARNING;

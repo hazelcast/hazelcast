@@ -27,7 +27,7 @@ import java.util.logging.Level;
 
 class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
-    private static ILogger logger = Logger.getLogger(PartitionStateGenerator.class.getName());
+    private static final ILogger logger = Logger.getLogger(PartitionStateGenerator.class.getName());
     private static final float RANGE_CHECK_RATIO = 1.1f;
     private static final int MAX_RETRY_COUNT = 3;
     private static final int AGGRESSIVE_RETRY_THRESHOLD = 1;

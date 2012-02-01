@@ -34,11 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public class MigrationRequestTask implements Callable<Boolean>, DataSerializable, HazelcastInstanceAware {
-    private int partitionId;
-    private Address from;
-    private Address to;
-    private int replicaIndex;
+public class MigrationRequestTask extends MigratingPartition implements Callable<Boolean>, DataSerializable, HazelcastInstanceAware {
     private boolean migration; // migration or copy
     private boolean diffOnly;
     private int selfCopyReplicaIndex = -1;
@@ -53,24 +49,9 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
 
     public MigrationRequestTask(int partitionId, Address from, Address to, int replicaIndex,
                                 boolean migration, boolean diffOnly) {
-        this.partitionId = partitionId;
-        this.from = from;
-        this.to = to;
-        this.replicaIndex = replicaIndex;
+        super(partitionId, replicaIndex, from, to);
         this.migration = migration;
         this.diffOnly = diffOnly;
-    }
-
-    public Address getFromAddress() {
-        return from;
-    }
-
-    public Address getToAddress() {
-        return to;
-    }
-
-    public int getReplicaIndex() {
-        return replicaIndex;
     }
 
     public boolean isMigration() {
@@ -119,36 +100,17 @@ public class MigrationRequestTask implements Callable<Boolean>, DataSerializable
     }
 
     public void writeData(DataOutput out) throws IOException {
-        out.writeInt(partitionId);
-        out.writeInt(replicaIndex);
+        super.writeData(out);
         out.writeBoolean(migration);
         out.writeBoolean(diffOnly);
         out.writeInt(selfCopyReplicaIndex);
-        boolean hasFrom = from != null;
-        out.writeBoolean(hasFrom);
-        if (hasFrom) {
-            from.writeData(out);
-        }
-        to.writeData(out);
     }
 
     public void readData(DataInput in) throws IOException {
-        partitionId = in.readInt();
-        replicaIndex = in.readInt();
+        super.readData(in);
         migration = in.readBoolean();
         diffOnly = in.readBoolean();
         selfCopyReplicaIndex = in.readInt();
-        boolean hasFrom = in.readBoolean();
-        if (hasFrom) {
-            from = new Address();
-            from.readData(in);
-        }
-        to = new Address();
-        to.readData(in);
-    }
-
-    public int getPartitionId() {
-        return partitionId;
     }
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
