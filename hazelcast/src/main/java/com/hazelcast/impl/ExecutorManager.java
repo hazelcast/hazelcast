@@ -518,6 +518,9 @@ public class ExecutorManager extends BaseManager {
             // before the call
             if (!member.localMember()) {
                 for (int i = 0; i < 10 && node.isActive(); i++) {
+                    if (!node.getClusterImpl().getMembers().contains(member)) {
+                        break;
+                    }
                     if (node.connectionManager.getOrConnect(member.getAddress()) != null) {
                         break;
                     }

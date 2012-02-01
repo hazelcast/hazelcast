@@ -616,12 +616,11 @@ public class PartitionManager {
                                 logger.log(Level.WARNING, msg);
                             } else {
                                 Address newOwner = migrationRequestTask.getToAddress();
+                                MemberImpl ownerMember = concurrentMapManager.getMember(newOwner);
+                                if (ownerMember == null) return;
                                 partition.setReplicaAddress(replicaIndex, newOwner);
                                 if (replicaIndex == 0) {
-                                    MemberImpl ownerMember = concurrentMapManager.getMember(newOwner);
-                                    if (ownerMember != null) {
-                                        concurrentMapManager.partitionServiceImpl.setOwner(partition.getPartitionId(), ownerMember);
-                                    }
+                                    concurrentMapManager.partitionServiceImpl.setOwner(partition.getPartitionId(), ownerMember);
                                     concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
                                 }
                                 // if this partition should be copied back,

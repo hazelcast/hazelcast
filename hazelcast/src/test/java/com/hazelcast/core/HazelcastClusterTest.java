@@ -85,6 +85,7 @@ public class HazelcastClusterTest {
     public void testJoinWithIncompatibleConfigs() throws Exception {
         Config config1 = new Config();
         Config config2 = new Config();
+        config1.getMapConfig("default");
         config2.getMapConfig("default").setTimeToLiveSeconds(1);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
