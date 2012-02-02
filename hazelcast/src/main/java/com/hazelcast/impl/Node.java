@@ -348,7 +348,7 @@ public class Node {
                 // by sending shutting down message to all others.
                 try {
                     //noinspection BusyWait
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                 }
             } while (concurrentMapManager.partitionManager.hasActiveBackupTask() && ++waitSeconds < maxWaitSeconds);

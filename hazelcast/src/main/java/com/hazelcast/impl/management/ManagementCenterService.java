@@ -39,11 +39,12 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.zip.Deflater;
 
-public class ManagementCenterService implements MembershipListener {
+public class ManagementCenterService implements MembershipListener, LifecycleListener {
 
     private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
 
@@ -70,6 +71,7 @@ public class ManagementCenterService implements MembershipListener {
     private final StatsInstanceFilter instanceFilterCountDownLatch;
     private final StatsInstanceFilter instanceFilterSemaphore;
     private final int maxVisibleInstanceCount;
+    private final AtomicBoolean started = new AtomicBoolean(false);
 
     @SuppressWarnings("CallToThreadStartDuringObjectConstruction")
     public ManagementCenterService(FactoryImpl factoryImpl) throws Exception {
@@ -87,6 +89,7 @@ public class ManagementCenterService implements MembershipListener {
         }
         maxVisibleInstanceCount = factory.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         factory.getCluster().addMembershipListener(this);
+        factory.getLifecycleService().addLifecycleListener(this);
         final MemberImpl memberLocal = (MemberImpl) factory.getCluster().getLocalMember();
         thisAddress = memberLocal.getAddress();
         int port = calculatePort(thisAddress);
@@ -104,6 +107,7 @@ public class ManagementCenterService implements MembershipListener {
 
     public void shutdown() {
         if (!running) return;
+        logger.log(Level.INFO, "Shutting down Hazelcast Management Center");
         running = false;
         try {
             datagramSocket.close();
@@ -128,7 +132,7 @@ public class ManagementCenterService implements MembershipListener {
         addresses.remove(address);
     }
 
-    void updateMemberOrder() {
+    private void updateMemberOrder() {
         try {
             Set<Member> memberSet = factory.getCluster().getMembers();
             for (Member member : memberSet) {
@@ -157,13 +161,13 @@ public class ManagementCenterService implements MembershipListener {
         return port;
     }
 
-    public boolean login(String groupName, String password) {
+    boolean login(String groupName, String password) {
         logger.log(Level.INFO, "Management Center Client is trying to login.");
         GroupConfig groupConfig = factory.getConfig().getGroupConfig();
         return groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(password);
     }
 
-    public List<Edge> detectDeadlock() {
+    List<Edge> detectDeadlock() {
         Collection<Map<String, MapLockState>> collection =
                 (Collection<Map<String, MapLockState>>) callOnAllMembers(new LockInformationCallable());
         List<Vertex> graph = new ArrayList<Vertex>();
@@ -205,7 +209,7 @@ public class ManagementCenterService implements MembershipListener {
         return list;
     }
 
-    class TCPListener extends Thread {
+    private class TCPListener extends Thread {
         final SocketReadyServerSocket serverSocket;
 
         TCPListener(SocketReadyServerSocket serverSocket) {
@@ -238,7 +242,7 @@ public class ManagementCenterService implements MembershipListener {
         }
     }
 
-    class UDPListener extends Thread {
+    private class UDPListener extends Thread {
         final DatagramSocket socket;
         final InflatingPipedBuffer buffer = PipedZipBufferFactory.createInflatingBuffer(DATAGRAM_BUFFER_SIZE);
         final DatagramPacket packet = new DatagramPacket(buffer.getInputBuffer().array(), DATAGRAM_BUFFER_SIZE);
@@ -274,7 +278,7 @@ public class ManagementCenterService implements MembershipListener {
         }
     }
 
-    class UDPSender extends Thread {
+    private class UDPSender extends Thread {
         final DatagramSocket socket;
         final DatagramPacket packet = new DatagramPacket(new byte[0], 0);
         final DeflatingPipedBuffer buffer = PipedZipBufferFactory.createDeflatingBuffer(DATAGRAM_BUFFER_SIZE, Deflater.BEST_SPEED);
@@ -302,7 +306,8 @@ public class ManagementCenterService implements MembershipListener {
             }
         }
 
-        void sendState() {
+        private void sendState() {
+            if (!started.get()) return;
             boolean preparedStateData = false;
             int compressedCount = 0;
             for (Address address : socketAddresses.keySet()) {
@@ -327,18 +332,22 @@ public class ManagementCenterService implements MembershipListener {
             }
         }
 
-        int prepareStateData() throws IOException {
+        private int prepareStateData() throws IOException {
             final MemberState latestState = latestThisMemberState;
             buffer.reset();
-            latestState.writeData(buffer.getDataOutput());
-            return buffer.deflate();
+            if (latestState != null) {
+                latestState.writeData(buffer.getDataOutput());
+                return buffer.deflate();
+            }
+            return 0;
         }
     }
 
-    MemberState updateLocalState() {
-        latestThisMemberState = createMemberState();
-        memberStates.put(latestThisMemberState.getAddress(), latestThisMemberState);
-        return latestThisMemberState;
+    private void updateLocalState() {
+        if (started.get()) {
+            latestThisMemberState = createMemberState();
+            memberStates.put(latestThisMemberState.getAddress(), latestThisMemberState);
+        }
     }
 
     class LazyDataInputStream extends DataInputStream {
@@ -351,13 +360,16 @@ public class ManagementCenterService implements MembershipListener {
         }
     }
 
-    public MemberStateImpl createMemberState() {
-        final MemberStateImpl memberState = new MemberStateImpl();
-        createMemberState(memberState);
-        return memberState;
+    private MemberStateImpl createMemberState() {
+        if (started.get()) {
+            final MemberStateImpl memberState = new MemberStateImpl();
+            createMemberState(memberState);
+            return memberState;
+        }
+        return null;
     }
 
-    public void createMemberState(MemberStateImpl memberState) {
+    private void createMemberState(MemberStateImpl memberState) {
         final Node node = factory.node;
         memberState.setAddress(thisAddress);
         memberState.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
@@ -434,7 +446,7 @@ public class ManagementCenterService implements MembershipListener {
         }
     }
 
-    Set<String> getLongInstanceNames() {
+    private Set<String> getLongInstanceNames() {
         Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
         Collection<HazelcastInstanceAwareInstance> proxyObjects = new ArrayList<HazelcastInstanceAwareInstance>(factory.getProxies());
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MAP);
@@ -508,7 +520,7 @@ public class ManagementCenterService implements MembershipListener {
         }
     }
 
-    class ClientHandler extends Thread {
+    private class ClientHandler extends Thread {
         final ConsoleRequest[] consoleRequests = new ConsoleRequest[10];
         final Socket socket = new Socket();
         final LazyDataInputStream socketIn = new LazyDataInputStream();
@@ -526,7 +538,7 @@ public class ManagementCenterService implements MembershipListener {
             register(new DetectDeadlockRequest());
         }
 
-        public void register(ConsoleRequest consoleRequest) {
+        private void register(ConsoleRequest consoleRequest) {
             consoleRequests[consoleRequest.getType()] = consoleRequest;
         }
 
@@ -564,7 +576,7 @@ public class ManagementCenterService implements MembershipListener {
             }
         }
 
-        public void shutdown() {
+        private void shutdown() {
             try {
                 socket.close();
             } catch (Throwable ignored) {
@@ -572,7 +584,7 @@ public class ManagementCenterService implements MembershipListener {
         }
     }
 
-    public Object call(Address address, Callable callable) {
+    Object call(Address address, Callable callable) {
         Set<Member> members = factory.getCluster().getMembers();
         for (Member member : members) {
             if (address.equals(((MemberImpl) member).getAddress())) {
@@ -583,12 +595,12 @@ public class ManagementCenterService implements MembershipListener {
         return null;
     }
 
-    public Object call(Callable callable) {
+    Object call(Callable callable) {
         DistributedTask task = new DistributedTask(callable);
         return executeTaskAndGet(task);
     }
 
-    public Collection callOnMembers(Set<Address> addresses, Callable callable) {
+    Collection callOnMembers(Set<Address> addresses, Callable callable) {
         Set<Member> allMembers = factory.getCluster().getMembers();
         Set<Member> selectedMembers = new HashSet<Member>(addresses.size());
         for (Member member : allMembers) {
@@ -599,7 +611,7 @@ public class ManagementCenterService implements MembershipListener {
         return callOnMembers0(selectedMembers, callable);
     }
 
-    public Collection callOnAllMembers(Callable callable) {
+    Collection callOnAllMembers(Callable callable) {
         Set<Member> members = factory.getCluster().getMembers();
         return callOnMembers0(members, callable);
     }
@@ -647,6 +659,11 @@ public class ManagementCenterService implements MembershipListener {
 
     ConsoleCommandHandler getCommandHandler() {
         return commandHandler;
+    }
+
+    public void stateChanged(final LifecycleEvent event) {
+        started.set(event.getState() == LifecycleEvent.LifecycleState.STARTED);
+        logger.log(Level.FINEST, "Hazelcast Management Center enabled: " + started.get());
     }
 
     public static class SocketReadyServerSocket extends ServerSocket {
