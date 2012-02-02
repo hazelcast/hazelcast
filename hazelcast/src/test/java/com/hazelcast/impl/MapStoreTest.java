@@ -196,11 +196,15 @@ public class MapStoreTest extends TestUtil {
         }
         assertEquals(0, map1.size());
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        Set<Member> owners = new HashSet<Member>();
+        for (Object key : loaded.keySet()) {
+            owners.add(h1.getPartitionService().getPartition(key).getOwner());
+        }
         loaded = map1.getAll(keys);
         assertEquals(size, loaded.size());
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
+        for (Member owner : owners) {
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
+        }
         assertEquals(0, testMapStore.getEventCount());
         loaded = map2.getAll(keys);
         assertEquals(size, loaded.size());

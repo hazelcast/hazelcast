@@ -145,7 +145,6 @@ public class PartitionServiceImpl implements PartitionService {
     class PartitionProxy implements Partition, Comparable {
         final int partitionId;
         volatile Member owner;
-        volatile boolean migrating;
 
         PartitionProxy(int partitionId) {
             this.partitionId = partitionId;
@@ -168,10 +167,6 @@ public class PartitionServiceImpl implements PartitionService {
 
         public void resetOwner() {
             owner = null;
-        }
-
-        public boolean isMigrating() {
-            return migrating;
         }
 
         public int compareTo(Object o) {

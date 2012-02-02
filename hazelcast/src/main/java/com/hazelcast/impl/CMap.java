@@ -599,12 +599,21 @@ public class CMap {
                 }
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
-            Record rec = toRecord(req);
-            if (rec.getVersion() == 0) {
-                rec.setVersion(req.version);
-            }
-            if (rec.getLockCount() == 0 && rec.valueCount() == 0) {
-                markAsEvicted(rec);
+            if (req.lockCount == 0) {
+                //UNLOCK operation
+                Record rec = getRecord(req);
+                if (rec != null) {
+                    rec.setLock(null);
+                    if (rec.valueCount() == 0) {
+                        markAsEvicted(rec);
+                    }
+                }
+            } else {
+                // LOCK operation
+                Record rec = toRecord(req);
+                if (rec.getVersion() == 0) {
+                    rec.setVersion(req.version);
+                }
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
             add(req, true);
@@ -1023,18 +1032,10 @@ public class CMap {
         PartitionServiceImpl partitionService = concurrentMapManager.partitionServiceImpl;
         PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(concurrentMapManager.getPartitionId(key));
         Member ownerNow = partition.getOwner();
-        if (ownerNow != null && !partition.isMigrating() && ownerNow.localMember()) {
+        if (ownerNow != null && !concurrentMapManager.isMigrating(partition.getPartitionId()) && ownerNow.localMember()) {
             return getRecord(key);
         }
         return null;
-    }
-
-    boolean isBackup(Record record) {
-        PartitionServiceImpl partitionService = concurrentMapManager.partitionServiceImpl;
-        PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
-        Member owner = partition.getOwner();
-        if (owner == null) return partition.isMigrating();
-        return !owner.localMember() && partition.isMigrating();
     }
 
     public int size() {
@@ -1202,7 +1203,7 @@ public class CMap {
         for (Record record : records) {
             PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
             Member owner = partition.getOwner();
-            if (owner != null && !partition.isMigrating()) {
+            if (owner != null && !concurrentMapManager.isMigrating(partition.getPartitionId())) {
                 boolean owned = owner.localMember();
                 if (owned) {
                     if (store != null && writeDelayMillis > 0 && record.isDirty()) {
@@ -1318,7 +1319,7 @@ public class CMap {
         }
     }
 
-    void startCleanup(boolean forced) {
+    boolean startCleanup(boolean forced) {
         if (cleanupActive.compareAndSet(false, true)) {
             try {
                 final long now = System.currentTimeMillis();
@@ -1393,7 +1394,10 @@ public class CMap {
                 executePurgeUnknowns(recordsUnknown);
             } finally {
                 cleanupActive.set(false);
+                return true;
             }
+        } else {
+            return false;
         }
     }
 

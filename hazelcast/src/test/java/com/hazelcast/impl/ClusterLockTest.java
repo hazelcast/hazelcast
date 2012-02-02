@@ -141,9 +141,36 @@ public class ClusterLockTest {
     }
 
     @Test
+    public void testUnusedLocksOneNode() throws Exception {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_REMOVE_DELAY_SECONDS, "0");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        h1.getMap("default");
+        IMap map1 = h1.getMap("default");
+        CMap cmap1 = getCMap(h1, "default");
+        for (int i = 0; i < 1000; i++) {
+            map1.lock(i);
+            map1.unlock(i);
+        }
+        Thread.sleep(cmap1.removeDelayMillis + 100);
+        assertTrue(cmap1.startCleanup(true));
+        Thread.sleep(1000);
+        assertEquals(0, cmap1.mapRecords.size());
+        for (int i = 0; i < 1000; i++) {
+            map1.lock(i);
+        }
+        Thread.sleep(cmap1.removeDelayMillis + 100);
+        assertTrue(cmap1.startCleanup(true));
+        Thread.sleep(1000);
+        assertEquals(1000, cmap1.mapRecords.size());
+    }
+
+    @Test
     public void testUnusedLocks() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_REMOVE_DELAY_SECONDS, "0");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         h1.getMap("default");
         IMap map2 = h2.getMap("default");
         for (int i = 0; i < 1000; i++) {
@@ -152,7 +179,10 @@ public class ClusterLockTest {
         }
         CMap cmap1 = getCMap(h1, "default");
         CMap cmap2 = getCMap(h2, "default");
-        Thread.sleep(15000);
+        Thread.sleep(cmap1.removeDelayMillis + 100);
+        assertTrue(cmap1.startCleanup(true));
+        assertTrue(cmap2.startCleanup(true));
+        Thread.sleep(1000);
         assertEquals(0, cmap1.mapRecords.size());
         assertEquals(0, cmap2.mapRecords.size());
     }

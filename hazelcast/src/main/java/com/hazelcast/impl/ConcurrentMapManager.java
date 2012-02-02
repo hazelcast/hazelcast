@@ -523,6 +523,8 @@ public class ConcurrentMapManager extends BaseManager {
             boolean unlocked = booleanCall(CONCURRENT_MAP_UNLOCK, name, dataKey, null, timeout, -1);
             if (unlocked) {
                 cmap.mapLocalLocks.remove(dataKey, localLock);
+                request.lockAddress = null;
+                request.lockCount = 0;
                 backup(CONCURRENT_MAP_BACKUP_LOCK);
             }
             return unlocked;
@@ -605,7 +607,7 @@ public class ConcurrentMapManager extends BaseManager {
                         return true;
                     } else {
                         PartitionServiceImpl.PartitionProxy partition = partitionServiceImpl.getPartition(record.getBlockId());
-                        if (partition != null && !partition.isMigrating() && partition.getOwner() != null && partition.getOwner().localMember()) {
+                        if (partition != null && !isMigrating(partition.getPartitionId()) && partition.getOwner() != null && partition.getOwner().localMember()) {
                             return true;
                         }
                     }
@@ -840,6 +842,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
         List<Future<Pairs>> lsFutures = new ArrayList<Future<Pairs>>(targetMembers.size());
         for (Member member : targetMembers.keySet()) {
+            System.out.println("getall member " + member);
             Keys targetKeys = targetMembers.get(member);
             GetAllCallable callable = new GetAllCallable(name, targetKeys);
             DistributedTask<Pairs> dt = new DistributedTask<Pairs>(callable, member);
@@ -1058,8 +1061,7 @@ public class ConcurrentMapManager extends BaseManager {
                 }
                 if (cMap.readBackupData) {
                     final Record record = cMap.mapRecords.get(dataKey);
-                    if (record != null && cMap.isBackup(record) &&
-                            record.isActive() && record.isValid()) {
+                    if (record != null && record.isActive() && record.isValid()) {
                         final Data valueData = record.getValueData();
                         if (valueData != null && valueData.size() > 0) {
                             return tc.isClient() ? valueData : toObject(valueData);
@@ -2339,7 +2341,12 @@ public class ConcurrentMapManager extends BaseManager {
     @Override
     public boolean isMigrating(Request req) {
         final Data key = req.key;
-        return key != null && partitionManager.isMigrating(getPartitionId(key));
+        if (key == null) return false;
+        return isMigrating(getPartitionId(key));
+    }
+
+    public boolean isMigrating(int partitionId) {
+        return partitionManager.isMigrating(partitionId);
     }
 
     public int getPartitionId(Request req) {
