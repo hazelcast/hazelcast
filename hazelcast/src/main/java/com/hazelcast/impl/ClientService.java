@@ -165,6 +165,13 @@ public class ClientService implements ConnectionListener {
         if (clientOperationHandler == null) {
             clientOperationHandler = unknownOperationHandler;
         }
+        if (packet.operation != CLIENT_AUTHENTICATE && !clientEndpoint.isAuthenticated()) {
+            logger.log(Level.SEVERE, "A Client " + packet.conn + " must authenticate before any operation.");
+            node.clientService.removeClientEndpoint(packet.conn);
+            if (packet.conn != null)
+                packet.conn.close();
+            return;
+        }
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext,
                 clientOperationHandler, clientEndpoint.getSubject());
         clientEndpoint.addRequest(clientRequestHandler);
@@ -852,6 +859,8 @@ public class ClientService implements ConnectionListener {
             packet.setValue(toData(authenticated));
             if (!authenticated) {
                 node.clientService.removeClientEndpoint(packet.conn);
+            } else {
+                node.clientService.getClientEndpoint(packet.conn).authenticated();
             }
         }
     }

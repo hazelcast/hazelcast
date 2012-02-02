@@ -43,6 +43,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     final ConcurrentHashSet<ClientRequestHandler> currentRequests = new ConcurrentHashSet<ClientRequestHandler>();
     final Node node;
     final Map<String, AtomicInteger> attachedSemaphorePermits = new ConcurrentHashMap<String, AtomicInteger>();
+    volatile boolean authenticated = false;
 
     LoginContext loginContext = null;
 
@@ -312,6 +313,14 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
 
     public Subject getSubject() {
         return loginContext != null ? loginContext.getSubject() : null;
+    }
+
+    public void authenticated() {
+        this.authenticated = true;
+    }
+
+    public boolean isAuthenticated() {
+        return authenticated;
     }
 
     static class Entry implements Map.Entry {
