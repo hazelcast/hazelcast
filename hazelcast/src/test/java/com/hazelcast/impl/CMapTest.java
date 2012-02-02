@@ -140,6 +140,8 @@ public class CMapTest extends TestUtil {
         assertEquals(0, cmap1.mapRecords.size());
         assertEquals(0, cmap2.mapRecords.size());
         imap1.put(key, value, 10, TimeUnit.SECONDS);
+        assertTrue(migrateKey(key, h1, h1, 0));
+        assertTrue(migrateKey(key, h1, h2, 1));
         assertEquals(1, cmap1.mapRecords.size());
         assertEquals(1, cmap2.mapRecords.size());
         assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size() + cmap2.getMapIndexService().getOwnedRecords().size());
@@ -157,8 +159,8 @@ public class CMapTest extends TestUtil {
         assertEquals(1, record1.valueCount());
         assertEquals(1, record2.valueCount());
         assertEquals(1, cmap1.mapRecords.size());
-        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
+        assertEquals(1, cmap2.mapRecords.size());
+        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size() + cmap2.getMapIndexService().getOwnedRecords().size());
         assertTrue(migrateKey(key, h1, h2, 0));
         assertTrue(migrateKey(key, h1, h1, 1));
         cmap1.startCleanup(true);

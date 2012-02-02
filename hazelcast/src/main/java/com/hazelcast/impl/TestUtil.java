@@ -51,22 +51,21 @@ public class TestUtil {
         final PartitionInfo partitionInfoTo = concurrentMapManagerTo.getPartitionInfo(partitionId);
         final MemberImpl currentOwnerMember = concurrentMapManagerOldest.getMember(partitionInfoOldest.getReplicaAddress(replicaIndex));
         final MemberImpl toMember = (MemberImpl) to.getCluster().getLocalMember();
-        if (currentOwnerMember.equals(toMember)) {
-            return true;
+        if (!currentOwnerMember.equals(toMember)) {
+            final Address addressCurrentOwner = currentOwnerMember.getAddress();
+            final Address addressNewOwner = toMember.getAddress();
+            PartitionListenerLatch latchOldest = new PartitionListenerLatch(toMember.getAddress(), partitionId, replicaIndex);
+            PartitionListenerLatch latchTo = new PartitionListenerLatch(toMember.getAddress(), partitionId, replicaIndex);
+            concurrentMapManagerOldest.getPartitionManager().addPartitionListener(latchOldest);
+            concurrentMapManagerTo.getPartitionManager().addPartitionListener(latchTo);
+            concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
+                public void process() {
+                    concurrentMapManagerOldest.partitionManager.forcePartitionOwnerMigration(partitionId, replicaIndex, addressCurrentOwner, addressNewOwner);
+                }
+            });
+            assertTrue("Migration should get completed in 20 seconds!!", latchOldest.await(20, TimeUnit.SECONDS));
+            assertTrue("Migration should get completed in 20 seconds!!", latchTo.await(20, TimeUnit.SECONDS));
         }
-        final Address addressCurrentOwner = currentOwnerMember.getAddress();
-        final Address addressNewOwner = toMember.getAddress();
-        PartitionListenerLatch latchOldest = new PartitionListenerLatch(toMember.getAddress(), partitionId, replicaIndex);
-        PartitionListenerLatch latchTo = new PartitionListenerLatch(toMember.getAddress(), partitionId, replicaIndex);
-        concurrentMapManagerOldest.getPartitionManager().addPartitionListener(latchOldest);
-        concurrentMapManagerTo.getPartitionManager().addPartitionListener(latchTo);
-        concurrentMapManagerOldest.enqueueAndReturn(new Processable() {
-            public void process() {
-                concurrentMapManagerOldest.partitionManager.forcePartitionOwnerMigration(partitionId, replicaIndex, addressCurrentOwner, addressNewOwner);
-            }
-        });
-        assertTrue("Migration should get completed in 20 seconds!!", latchOldest.await(20, TimeUnit.SECONDS));
-        assertTrue("Migration should get completed in 20 seconds!!", latchTo.await(20, TimeUnit.SECONDS));
         assertEquals(toMember.getAddress(), partitionInfoOldest.getReplicaAddress(replicaIndex));
         assertEquals(toMember.getAddress(), partitionInfoTo.getReplicaAddress(replicaIndex));
         return true;
