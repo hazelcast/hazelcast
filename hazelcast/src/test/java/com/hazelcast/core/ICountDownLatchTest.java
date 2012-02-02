@@ -23,6 +23,7 @@ import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
@@ -97,17 +98,19 @@ public class ICountDownLatchTest {
         assertEquals(1, ((CountDownLatchProxy) cdl2).getCount());
         assertEquals(h2Member, ((CountDownLatchProxy) cdl1).getOwner());
         assertEquals(h2Member, ((CountDownLatchProxy) cdl2).getOwner());
+        final AtomicBoolean failed = new AtomicBoolean(false);
         Thread thread = new Thread() {
             @Override
             public void run() {
                 try {
-                    assertFalse(cdl1.await(5, TimeUnit.SECONDS));
-                    fail();
+                    if (!cdl1.await(5, TimeUnit.SECONDS)) {
+                        failed.set(true);
+                    }
                 } catch (MemberLeftException e) {
                     result.incrementAndGet();
                 } catch (Throwable e) {
                     e.printStackTrace();
-                    fail();
+                    failed.set(true);
                 }
             }
         };
@@ -115,7 +118,8 @@ public class ICountDownLatchTest {
         Thread.sleep(1000);
         h2.shutdown();
         thread.join();
-        assertEquals(1, result.get());
+        assertFalse("Failed latch await!", failed.get());
+        assertEquals("Should throw MemberLeftException!", 1, result.get());
     }
 
     @Test

@@ -194,6 +194,7 @@ public class ConcurrentMapManager extends BaseManager {
     public void shutdown() {
         for (CMap cmap : maps.values()) {
             try {
+                logger.log(Level.FINEST, "Destroying CMap[" + cmap.name + "]");
                 flush(cmap.name);
                 cmap.destroy();
             } catch (Throwable e) {

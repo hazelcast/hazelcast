@@ -249,6 +249,16 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
+    <xs:element name="multicast-timeout-seconds" default="2">
+        <xs:simpleType>
+            <xs:restriction base="xs:int"/>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="multicast-time-to-live-seconds" default="32">
+        <xs:simpleType>
+            <xs:restriction base="xs:int"/>
+        </xs:simpleType>
+    </xs:element>
 
     <xs:element name="access-key">
         <xs:simpleType>
@@ -275,6 +285,8 @@
             <xs:sequence>
                 <xs:element ref="multicast-group" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="multicast-port" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="multicast-timeout-seconds" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="multicast-time-to-live-seconds" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="trusted-interfaces" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>

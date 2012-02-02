@@ -481,6 +481,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 join.getMulticastConfig().setMulticastPort(Integer.parseInt(value));
             } else if ("multicast-timeout-seconds".equals(cleanNodeName(n.getNodeName()))) {
                 join.getMulticastConfig().setMulticastTimeoutSeconds(Integer.parseInt(value));
+            } else if ("multicast-time-to-live-seconds".equals(cleanNodeName(n.getNodeName()))) {
+                join.getMulticastConfig().setMulticastTimeToLive(Integer.parseInt(value));
             } else if ("trusted-interfaces".equals(cleanNodeName(n.getNodeName()))) {
                 for (org.w3c.dom.Node child : new IterableNodeList(n.getChildNodes())) {
                     if ("interface".equalsIgnoreCase(cleanNodeName(child.getNodeName()))) {

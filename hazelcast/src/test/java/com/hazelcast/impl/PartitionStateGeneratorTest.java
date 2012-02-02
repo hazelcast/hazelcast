@@ -28,7 +28,10 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.partition.*;
 import com.hazelcast.nio.Address;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.*;
@@ -138,7 +141,7 @@ public class PartitionStateGeneratorTest {
                     + members[0] + ", GROUP-COUNT= " + groups.size());
             println();
             PartitionInfo[] state = generator.initialize(memberList, partitionCount);
-            doTest(state, groups, partitionCount);
+            checkTestResult(state, groups, partitionCount);
             int previousMemberCount = memberCount;
             for (int j = 1; j < members.length; j++) {
                 memberCount = members[j];
@@ -163,7 +166,7 @@ public class PartitionStateGeneratorTest {
                     println();
                     scheduledQ.clear();
                     immediateQ.clear();
-                    doTest(state, groups, partitionCount);
+                    checkTestResult(state, groups, partitionCount);
                     previousMemberCount = memberCount;
                 }
             }
@@ -254,7 +257,7 @@ public class PartitionStateGeneratorTest {
         return members;
     }
 
-    private void doTest(final PartitionInfo[] state, final Collection<MemberGroup> groups, final int partitionCount) {
+    private void checkTestResult(final PartitionInfo[] state, final Collection<MemberGroup> groups, final int partitionCount) {
         Iterator<MemberGroup> iter = groups.iterator();
         while (iter.hasNext()) {
             if (iter.next().size() == 0) {
@@ -356,14 +359,16 @@ public class PartitionStateGeneratorTest {
                 + ", Replica: " + replica, count <= average * r);
     }
 
-    @Ignore
     @Test
     public void testPartitionAndCMapRecordCounts() throws InterruptedException {
         final int entryCount = 10000;
         final int totalPartitionCount = 271;
         final int testMapReplicaCount = 3;
         Config config = new ClasspathXmlConfig("hazelcast-default.xml");
-        config.getProperties().put(GroupProperties.PROP_CLEANUP_DELAY_SECONDS, "1");
+        config.getProperties().put(GroupProperties.PROP_CLEANUP_DELAY_SECONDS, "3");
+        config.getProperties().put(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
+        config.getProperties().put(GroupProperties.PROP_IMMEDIATE_BACKUP_INTERVAL, "0");
+        config.getProperties().put(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "10");
         config.getMapConfig("map1").setBackupCount(4);
         config.getMapConfig("map2").setBackupCount(3);
         config.getMapConfig("map3").setBackupCount(5);

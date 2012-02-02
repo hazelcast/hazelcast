@@ -163,8 +163,8 @@ public class ClusterTest {
         }
         int first = counts.take();
         int second = counts.take();
-        assertTrue(first == 0 || first == 271);
-        assertTrue(second == 0 || second == 271);
+        assertTrue("First: " + first, first == 0 || first == 271);
+        assertTrue("Second: " + second, second == 0 || second == 271);
         assertEquals(271, Math.abs(second - first));
     }
 

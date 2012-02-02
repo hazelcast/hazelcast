@@ -21,6 +21,7 @@ import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.Join;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.impl.ascii.TextCommandService;
@@ -188,21 +189,21 @@ public class Node {
         MulticastService mcService = null;
         try {
             if (join.getMulticastConfig().isEnabled()) {
+                MulticastConfig multicastConfig = join.getMulticastConfig();
                 MulticastSocket multicastSocket = new MulticastSocket(null);
                 multicastSocket.setReuseAddress(true);
                 // bind to receive interface
-                multicastSocket.bind(new InetSocketAddress(
-                        join.getMulticastConfig().getMulticastPort()));
-                multicastSocket.setTimeToLive(32);
+                multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
+                multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
                 // set the send interface
                 multicastSocket.setInterface(address.getInetAddress());
                 multicastSocket.setReceiveBufferSize(64 * 1024);
                 multicastSocket.setSendBufferSize(64 * 1024);
                 String multicastGroup = System.getProperty("hazelcast.multicast.group");
                 if (multicastGroup == null) {
-                    multicastGroup = join.getMulticastConfig().getMulticastGroup();
+                    multicastGroup = multicastConfig.getMulticastGroup();
                 }
-                join.getMulticastConfig().setMulticastGroup(multicastGroup);
+                multicastConfig.setMulticastGroup(multicastGroup);
                 multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
                 multicastSocket.setSoTimeout(1000);
                 mcService = new MulticastService(this, multicastSocket);
@@ -309,6 +310,7 @@ public class Node {
         clusterManager.checkServiceThread();
         baseVariables.qServiceThreadPacketCache.clear();
         concurrentMapManager.reset();
+        logger.log(Level.FINEST, "Shutting down the cluster manager");
         clusterManager.stop();
     }
 
@@ -370,16 +372,16 @@ public class Node {
             }
             logger.log(Level.FINEST, "Shutting down the clientService");
             clientService.shutdown();
-            logger.log(Level.FINEST, "Shutting down the cluster service");
+            logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
             concurrentMapManager.shutdown();
+            logger.log(Level.FINEST, "Shutting down the cluster service");
             clusterService.stop();
-            logger.log(Level.FINEST, "Shutting down the query service");
             if (multicastService != null) {
+                logger.log(Level.FINEST, "Shutting down the multicast service");
                 multicastService.stop();
             }
             logger.log(Level.FINEST, "Shutting down the connection manager");
             connectionManager.shutdown();
-            logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
             logger.log(Level.FINEST, "Shutting down the executorManager");
             executorManager.stop();
             textCommandService.stop();
@@ -388,7 +390,6 @@ public class Node {
                 securityContext.destroy();
             }
             initializer.destroy();
-            logger.log(Level.FINEST, "Shutting down the cluster manager");
             int numThreads = threadGroup.activeCount();
             Thread[] threads = new Thread[numThreads * 2];
             numThreads = threadGroup.enumerate(threads, false);
@@ -397,10 +398,10 @@ public class Node {
                 logger.log(Level.FINEST, "Shutting down thread " + thread.getName());
                 thread.interrupt();
             }
-            logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
             failedConnections.clear();
             serviceThreadPacketQueue.clear();
             ThreadContext.get().shutdown(this.factory);
+            logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
         }
     }
 

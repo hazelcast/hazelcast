@@ -31,6 +31,7 @@ public class MulticastConfig implements DataSerializable {
     public final static String DEFAULT_MULTICAST_GROUP = "224.2.2.3";
     public final static int DEFAULT_MULTICAST_PORT = 54327;
     public final static int DEFAULT_MULTICAST_TIMEOUT_SECONDS = 2;
+    public final static int DEFAULT_MULTICAST_TTL = 32;
 
     private boolean enabled = DEFAULT_ENABLED;
 
@@ -39,6 +40,8 @@ public class MulticastConfig implements DataSerializable {
     private int multicastPort = DEFAULT_MULTICAST_PORT;
 
     private int multicastTimeoutSeconds = DEFAULT_MULTICAST_TIMEOUT_SECONDS;
+
+    private int multicastTimeToLive = DEFAULT_MULTICAST_TTL;
 
     private final Set<String> trustedInterfaces = new HashSet<String>();
 
@@ -117,11 +120,21 @@ public class MulticastConfig implements DataSerializable {
         return this;
     }
 
+    public int getMulticastTimeToLive() {
+        return multicastTimeToLive;
+    }
+
+    public MulticastConfig setMulticastTimeToLive(final int multicastTimeToLive) {
+        this.multicastTimeToLive = multicastTimeToLive;
+        return this;
+    }
+
     public void writeData(DataOutput out) throws IOException {
         out.writeBoolean(enabled);
         out.writeUTF(multicastGroup);
         out.writeInt(multicastPort);
         out.writeInt(multicastTimeoutSeconds);
+        out.writeInt(multicastTimeToLive);
     }
 
     public void readData(DataInput in) throws IOException {
@@ -129,6 +142,7 @@ public class MulticastConfig implements DataSerializable {
         multicastGroup = in.readUTF();
         multicastPort = in.readInt();
         multicastTimeoutSeconds = in.readInt();
+        multicastTimeToLive = in.readInt();
     }
 
     @Override

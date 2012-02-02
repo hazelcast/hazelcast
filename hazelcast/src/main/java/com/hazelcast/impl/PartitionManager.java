@@ -80,9 +80,15 @@ public class PartitionManager {
         immediateBackupInterval = node.groupProperties.IMMEDIATE_BACKUP_INTERVAL.getInteger() * 1000;
         migrationService = new MigrationService(concurrentMapManager.node);
         migrationService.start();
+        int partitionTableSendInterval = node.groupProperties.PARTITION_TABLE_SEND_INTERVAL.getInteger();
+        if (partitionTableSendInterval <= 0) {
+            partitionTableSendInterval = 1;
+        }
         node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
                 if (concurrentMapManager.isMaster()) {
+                    logger.log(Level.INFO, "Remaining migration tasks in queue => Immediate-Tasks: " + immediateTasksQueue.size()
+                            + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
                     concurrentMapManager.enqueueAndReturn(new Processable() {
                         public void process() {
                             if (!node.isActive()) return;
@@ -96,7 +102,9 @@ public class PartitionManager {
                             AsyncRemotelyBooleanCallable rrp = node.clusterManager.new AsyncRemotelyBooleanCallable();
                             rrp.executeProcess(node.getMasterAddress(), new CheckMigratingPartition(currentMigratingPartition));
                             boolean valid = rrp.getResultAsBoolean(1);
-                            if (!valid) {
+                            if (valid) {
+                                logger.log(Level.FINEST, "Master has confirmed current " + currentMigratingPartition);
+                            } else {
                                 logger.log(Level.INFO, currentMigratingPartition +
                                         " could not be validated with master! " +
                                         "Removing current MigratingPartition...");
@@ -112,7 +120,7 @@ public class PartitionManager {
                     }
                 }
             }
-        }, 5, 5, TimeUnit.SECONDS);
+        }, partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
     }
 
     private void sendClusterRuntimeState() {
@@ -223,7 +231,7 @@ public class PartitionManager {
 
         if (!newMigratingPartition.equals(currentMigratingPartition)) {
             if (currentMigratingPartition != null) {
-                logger.log(Level.WARNING, "Replacing current " + currentMigratingPartition
+                logger.log(Level.FINEST, "Replacing current " + currentMigratingPartition
                         + " with " + newMigratingPartition);
             }
             migratingPartition = newMigratingPartition;
@@ -288,6 +296,7 @@ public class PartitionManager {
     }
 
     public void shutdown() {
+        logger.log(Level.FINEST, "Shutting down the partition manager");
         try {
             clearTaskQueues();
             final CountDownLatch stopLatch = new CountDownLatch(1);
@@ -297,7 +306,7 @@ public class PartitionManager {
                     stopLatch.countDown();
                 }
             });
-            stopLatch.await(3, TimeUnit.SECONDS);
+            stopLatch.await(1, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
     }
@@ -574,6 +583,7 @@ public class PartitionManager {
         }
     }
 
+
     private class Migrator implements Runnable {
         final MigrationRequestTask migrationRequestTask;
 
@@ -692,22 +702,21 @@ public class PartitionManager {
         public void run() {
             try {
                 while (running) {
-                    if (!concurrentMapManager.isMaster()) {
-                        Thread.sleep(1000);
-                        continue;
-                    }
                     Runnable r;
                     while ((r = immediateTasksQueue.poll()) != null) {
                         safeRunImmediate(r);
                     }
+                    if (!running) {
+                        break;
+                    }
                     if (scheduledTasksQueue.isEmpty()) {
-                        Thread.sleep(1000);
+                        Thread.sleep(250);
                         continue;
                     }
                     // wait for partitionMigrationInterval before executing scheduled tasks
                     // and poll immediate tasks occasionally during wait time.
                     long totalWait = 0L;
-                    while (r == null && totalWait < partitionMigrationInterval) {
+                    while (running && r == null && totalWait < partitionMigrationInterval) {
                         long start = System.currentTimeMillis();
                         r = immediateTasksQueue.poll(1, TimeUnit.SECONDS);
                         safeRunImmediate(r);
