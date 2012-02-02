@@ -457,7 +457,8 @@ public class PartitionManager {
         // volatile read
         final MigratingPartition currentMigratingPartition = migratingPartition;
         return currentMigratingPartition != null
-                && currentMigratingPartition.getPartitionId() == partitionId;
+                && currentMigratingPartition.getPartitionId() == partitionId
+                && currentMigratingPartition.getReplicaIndex() == 0;
     }
 
     public PartitionInfo getPartition(int partitionId) {

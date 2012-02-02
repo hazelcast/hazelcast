@@ -818,10 +818,19 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     Pairs getAllPairs(String name, Set keys) {
-        try {
-            return doGetAll(name, keys);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
+        while (true) {
+            try {
+                return doGetAll(name, keys);
+            } catch (Throwable e) {
+                if (e instanceof InterruptedException) {
+                    handleInterruptedException();
+                }
+                try {
+                    Thread.sleep(redoWaitMillis);
+                } catch (InterruptedException e1) {
+                    handleInterruptedException();
+                }
+            }
         }
     }
 
@@ -843,7 +852,6 @@ public class ConcurrentMapManager extends BaseManager {
         }
         List<Future<Pairs>> lsFutures = new ArrayList<Future<Pairs>>(targetMembers.size());
         for (Member member : targetMembers.keySet()) {
-            System.out.println("getall member " + member);
             Keys targetKeys = targetMembers.get(member);
             GetAllCallable callable = new GetAllCallable(name, targetKeys);
             DistributedTask<Pairs> dt = new DistributedTask<Pairs>(callable, member);
@@ -862,7 +870,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     int size(String name) {
-        for (int i = 0; i < 10; i++) {
+        while (true) {
             try {
                 int size = trySize(name);
                 TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
@@ -870,7 +878,7 @@ public class ConcurrentMapManager extends BaseManager {
                     size += txn.size(name);
                 }
                 return size;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 if (e instanceof InterruptedException) {
                     handleInterruptedException();
                 }
@@ -881,7 +889,6 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
         }
-        throw new RuntimeException("Couldn't finalized the size operation[" + name + "]");
     }
 
     int trySize(String name) throws ExecutionException, InterruptedException {
@@ -915,10 +922,19 @@ public class ConcurrentMapManager extends BaseManager {
             Object value = entries.get(key);
             pairs.addKeyValue(new KeyValue(toData(key), toData(value)));
         }
-        try {
-            doPutAll(name, pairs);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        while (true) {
+            try {
+                doPutAll(name, pairs);
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    handleInterruptedException();
+                }
+                try {
+                    Thread.sleep(redoWaitMillis);
+                } catch (InterruptedException e1) {
+                    handleInterruptedException();
+                }
+            }
         }
     }
 
@@ -2162,49 +2178,6 @@ public class ConcurrentMapManager extends BaseManager {
                 super(target);
                 setLocal(operation, name, null, null, 0, -1);
                 request.setBooleanRequest();
-            }
-        }
-    }
-
-    public class MSize extends MultiCall<Integer> {
-        int size = 0;
-        final String name;
-
-        public int getSize() {
-            int size = call();
-            TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
-            if (txn != null) {
-                size += txn.size(name);
-            }
-            return (size < 0) ? 0 : size;
-        }
-
-        public MSize(String name) {
-            this.name = name;
-        }
-
-        SubCall createNewTargetAwareOp(Address target) {
-            return new MGetSize(target);
-        }
-
-        boolean onResponse(Object response) {
-            size += ((Long) response).intValue();
-            return true;
-        }
-
-        void onCall() {
-            size = 0;
-        }
-
-        Integer returnResult() {
-            return size;
-        }
-
-        class MGetSize extends MigrationAwareSubCall {
-            public MGetSize(Address target) {
-                super(target);
-                setLocal(CONCURRENT_MAP_SIZE, name);
-                request.setLongRequest();
             }
         }
     }
