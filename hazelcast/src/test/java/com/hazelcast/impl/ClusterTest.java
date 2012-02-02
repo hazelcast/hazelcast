@@ -905,12 +905,18 @@ public class ClusterTest {
         mapConfig.setEvictionPolicy("LRU");
         mapConfig.setMaxSize(maxSize);
         mapConfig.setEvictionPercentage(25);
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(c);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
-        IMap map = h.getMap("default");
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
+        IMap map1 = h1.getMap("default");
         for (int i = 0; i < 100; i++) {
-            map.put(String.valueOf(i), String.valueOf(i));
-            int mapSize = map.size();
+            map1.put(String.valueOf(i), String.valueOf(i));
+            int mapSize = map1.size();
+            assertTrue("CurrentMapSize : " + mapSize, mapSize <= maxSize);
+        }
+        IMap map2 = h2.getMap("default");
+        for (int i = 0; i < 100; i++) {
+            map2.put(String.valueOf(i), String.valueOf(i));
+            int mapSize = map2.size();
             assertTrue("CurrentMapSize : " + mapSize, mapSize <= maxSize);
         }
     }

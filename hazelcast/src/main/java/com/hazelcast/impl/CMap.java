@@ -386,11 +386,8 @@ public class CMap {
             boolean addOp = (request.operation == ClusterOperation.CONCURRENT_MAP_PUT)
                     || (request.operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT);
             if (addOp) {
-                Record record = getRecord(request);
-                if (record == null) {
-                    concurrentMapManager.executeCleanup(CMap.this, true);
-                    return true;
-                }
+                concurrentMapManager.executeCleanup(CMap.this, true);
+                return true;
             }
         }
         return false;
