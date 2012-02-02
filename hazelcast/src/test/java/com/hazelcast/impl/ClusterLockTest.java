@@ -36,6 +36,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.impl.TestUtil.getCMap;
+import static com.hazelcast.impl.TestUtil.migrateKey;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
@@ -82,11 +83,13 @@ public class ClusterLockTest {
     public void testLockOwnerDiesWaitingMemberObtains() throws Exception {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map1 = h1.getMap("default");
-        map1.put(1, 1);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map2 = h2.getMap("default");
         final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map3 = h3.getMap("default");
+        map1.put(1, 1);
+        migrateKey(1, h1, h2, 0);
+        migrateKey(1, h1, h3, 1);
         final CountDownLatch latchShutdown = new CountDownLatch(1);
         final CountDownLatch latchLock = new CountDownLatch(1);
         Assert.assertTrue(map2.tryLock(1));
@@ -114,12 +117,17 @@ public class ClusterLockTest {
     public void testKeyOwnerDies() throws Exception {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map1 = h1.getMap("default");
-        map1.put(1, 1);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map2 = h2.getMap("default");
         final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
         final IMap map3 = h3.getMap("default");
-        assertTrue(map2.tryLock(1));
+        map1.put(1, 1);
+        migrateKey(1, h1, h2, 0);
+        migrateKey(1, h1, h3, 1);
+        assertTrue(h1.getPartitionService().getPartition(1).getOwner().equals(h2.getCluster().getLocalMember()));
+        assertTrue(h3.getPartitionService().getPartition(1).getOwner().equals(h2.getCluster().getLocalMember()));
+        assertTrue(h2.getPartitionService().getPartition(1).getOwner().localMember());
+        assertTrue(map1.tryLock(1));
         final CountDownLatch latchLock = new CountDownLatch(1);
         new Thread(new Runnable() {
             public void run() {
@@ -132,12 +140,12 @@ public class ClusterLockTest {
             }
         }).start();
         Thread.sleep(2000);
-        h1.getLifecycleService().shutdown();
+        h2.getLifecycleService().shutdown();
         Thread.sleep(2000);
-        assertEquals(1, map2.put(1, 2));
-        map2.unlock(1);
+        assertEquals(1, map1.put(1, 2));
+        map1.unlock(1);
         latchLock.countDown();
-        assertFalse(map2.tryLock(1));
+        assertFalse(map1.tryLock(1));
     }
 
     @Test

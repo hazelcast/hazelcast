@@ -41,7 +41,6 @@ public class PartitionServiceImpl implements PartitionService {
     private final List<MigrationListener> lsMigrationListeners = new CopyOnWriteArrayList<MigrationListener>();
     private final ConcurrentMapManager concurrentMapManager;
     private final Set<Partition> partitions;
-    private volatile int ownedPartitionCount = -1;
 
     public PartitionServiceImpl(ConcurrentMapManager concurrentMapManager) {
         this.logger = concurrentMapManager.node.getLogger(PartitionService.class.getName());
@@ -55,19 +54,13 @@ public class PartitionServiceImpl implements PartitionService {
     }
 
     public int getOwnedPartitionCount() {
-        int currentCount = ownedPartitionCount;
-        if (currentCount > 0) {
-            return currentCount;
-        } else {
-            currentCount = 0;
-            for (Partition partition : partitions) {
-                if (partition.getOwner() == null || partition.getOwner().localMember()) {
-                    currentCount++;
-                }
+        int currentCount = 0;
+        for (Partition partition : partitions) {
+            if (partition.getOwner() == null || partition.getOwner().localMember()) {
+                currentCount++;
             }
-            ownedPartitionCount = currentCount;
-            return currentCount;
         }
+        return currentCount;
     }
 
     public Set<Partition> getPartitions() {
@@ -133,18 +126,10 @@ public class PartitionServiceImpl implements PartitionService {
     }
 
     public void reset() {
-        for (PartitionProxy partitionProxy : mapPartitions.values()) {
-            partitionProxy.owner = null;
-        }
-    }
-
-    public void setOwner(int partitionId, MemberImpl ownerMember) {
-        mapPartitions.get(partitionId).owner = ownerMember;
     }
 
     class PartitionProxy implements Partition, Comparable {
         final int partitionId;
-        volatile Member owner;
 
         PartitionProxy(int partitionId) {
             this.partitionId = partitionId;
@@ -155,18 +140,18 @@ public class PartitionServiceImpl implements PartitionService {
         }
 
         public Member getOwner() {
-            if (owner == null) {
-                try {
-                    owner = getPartitionOwner(partitionId);
-                } catch (InterruptedException e) {
-                    owner = null;
+            Address address = concurrentMapManager.getPartitionManager().getOwner(partitionId);
+            if (address != null) {
+                Member member = concurrentMapManager.node.getClusterImpl().getMembers(address);
+                if (member != null) {
+                    return member;
                 }
             }
-            return owner;
-        }
-
-        public void resetOwner() {
-            owner = null;
+            try {
+                return getPartitionOwner(partitionId);
+            } catch (InterruptedException e) {
+                return null;
+            }
         }
 
         public int compareTo(Object o) {

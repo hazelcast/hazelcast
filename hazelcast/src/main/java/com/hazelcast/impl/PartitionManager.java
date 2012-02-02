@@ -228,7 +228,6 @@ public class PartitionManager {
         final MigratingPartition currentMigratingPartition = migratingPartition;
         final MigratingPartition newMigratingPartition = new MigratingPartition(partitionId,
                 replicaIndex, currentAddress, newAddress);
-
         if (!newMigratingPartition.equals(currentMigratingPartition)) {
             if (currentMigratingPartition != null) {
                 logger.log(Level.FINEST, "Replacing current " + currentMigratingPartition
@@ -429,17 +428,6 @@ public class PartitionManager {
             PartitionInfo currentPartition = partitions[newPartition.getPartitionId()];
             currentPartition.setPartitionInfo(newPartition);
             checkMigratingPartitionFor(currentPartition);
-            Address ownerAddress = currentPartition.getOwner();
-            if (ownerAddress != null) {
-                MemberImpl ownerMember = concurrentMapManager.getMember(ownerAddress);
-                if (ownerMember != null) {
-                    concurrentMapManager.partitionServiceImpl.setOwner(currentPartition.getPartitionId(), ownerMember);
-                } else {
-                    concurrentMapManager.partitionServiceImpl.setOwner(currentPartition.getPartitionId(), null);
-                }
-            } else {
-                concurrentMapManager.partitionServiceImpl.setOwner(currentPartition.getPartitionId(), null);
-            }
         }
         initialized = true;
     }
@@ -508,7 +496,6 @@ public class PartitionManager {
         final MemberImpl current = concurrentMapManager.getMember(from);
         final MemberImpl newOwner = concurrentMapManager.getMember(to);
         final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, partitionId, current, newOwner);
-        concurrentMapManager.partitionServiceImpl.getPartition(partitionId).resetOwner();
         concurrentMapManager.partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
     }
 
@@ -583,7 +570,6 @@ public class PartitionManager {
         }
     }
 
-
     private class Migrator implements Runnable {
         final MigrationRequestTask migrationRequestTask;
 
@@ -601,7 +587,6 @@ public class PartitionManager {
                         }
                     }, 100);
                 }
-
                 if (migrationRequestTask.getToAddress() == null) {
                     // A member is dead, this replica should not have an owner!
                     concurrentMapManager.enqueueAndWait(new Processable() {
@@ -678,7 +663,6 @@ public class PartitionManager {
                 if (ownerMember == null) return;
                 partition.setReplicaAddress(replicaIndex, newOwner);
                 if (replicaIndex == 0) {
-                    concurrentMapManager.partitionServiceImpl.setOwner(partition.getPartitionId(), ownerMember);
                     concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
                 }
                 // if this partition should be copied back,
