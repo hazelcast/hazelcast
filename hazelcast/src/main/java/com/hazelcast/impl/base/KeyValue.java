@@ -31,10 +31,10 @@ import java.util.Map;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class KeyValue implements Map.Entry, DataSerializable {
-    Data key = null;
-    Data value = null;
-    Object objKey = null;
-    Object objValue = null;
+    protected Data key = null;
+    protected Data value = null;
+    protected Object objKey = null;
+    protected Object objValue = null;
     String name = null;
     FactoryImpl factory;
 

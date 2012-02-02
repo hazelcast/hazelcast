@@ -31,6 +31,8 @@ public class ClientSerializer extends AbstractSerializer {
                 String name = className;
                 if (className.equals("com.hazelcast.impl.CMap$Values")) {
                     name = "com.hazelcast.client.impl.Values";
+                } else if (className.equals("com.hazelcast.impl.base.KeyValue")) {
+                    name = "com.hazelcast.client.impl.KeyValue";
                 }
                 return super.loadClass(name);
             }
