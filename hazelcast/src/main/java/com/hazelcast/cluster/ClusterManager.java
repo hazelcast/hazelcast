@@ -451,7 +451,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     void handleJoinRequest(JoinRequest joinRequest) {
         final long now = System.currentTimeMillis();
-        logger.log(Level.INFO, joinInProgress + " Handling join from " + joinRequest.address + " timeToStart: "
+        logger.log(Level.FINEST, joinInProgress + " Handling join from " + joinRequest.address + " timeToStart: "
                 + (timeToStartJoin - now));
         final MemberImpl member = getMember(joinRequest.address);
         final Connection conn = joinRequest.getConnection();

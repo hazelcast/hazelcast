@@ -180,6 +180,10 @@ public final class ReplicatedMapFactory {
             distributedMap.unlock(key);
         }
 
+        public void forceUnlock(K key) {
+            distributedMap.forceUnlock(key);
+        }
+
         public boolean lockMap(long time, TimeUnit timeunit) {
             return distributedMap.lockMap(time, timeunit);
         }

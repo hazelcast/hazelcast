@@ -279,6 +279,15 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     void unlock(K key);
 
     /**
+     * Releases the lock for the specified key regardless of the lock owner.
+     * It always successfully unlocks the key, never blocks
+     * and returns immediately.
+     *
+     * @param key key to lock.
+     */
+    void forceUnlock(K key);
+
+    /**
      * Tries to acquire the lock for the entire map.
      * The thread that locks the map can do all the operations
      * but other threads in the cluster cannot operate on the map.

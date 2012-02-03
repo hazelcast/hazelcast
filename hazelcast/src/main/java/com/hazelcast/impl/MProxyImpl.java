@@ -403,6 +403,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         dynamicProxy.unlock(key);
     }
 
+    public void forceUnlock(Object key) {
+        dynamicProxy.forceUnlock(key);
+    }
+
     public String getLongName() {
         return dynamicProxy.getLongName();
     }
@@ -687,6 +691,13 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             mapOperationCounter.incrementOtherOperations();
             MLock mlock = concurrentMapManager.new MLock();
             mlock.unlock(name, key, 0);
+        }
+
+        public void forceUnlock(Object key) {
+            check(key);
+            mapOperationCounter.incrementOtherOperations();
+            MLock mlock = concurrentMapManager.new MLock();
+            mlock.forceUnlock(name, key);
         }
 
         public void putAndUnlock(Object key, Object value) {

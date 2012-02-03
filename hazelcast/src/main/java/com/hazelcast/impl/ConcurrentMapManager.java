@@ -531,6 +531,26 @@ public class ConcurrentMapManager extends BaseManager {
             return unlocked;
         }
 
+        public boolean forceUnlock(String name, Object key) {
+            Data dataKey = toData(key);
+            ThreadContext tc = ThreadContext.get();
+            CMap cmap = getMap(name);
+            if (cmap == null) return false;
+            LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
+            if (localLock == null || localLock.getThreadId() != tc.getThreadId()) {
+                return false;
+            }
+            if (localLock.decrementAndGet() > 0) return true;
+            boolean unlocked = booleanCall(CONCURRENT_MAP_FORCE_UNLOCK, name, dataKey, null, 0, -1);
+            if (unlocked) {
+                cmap.mapLocalLocks.remove(dataKey, localLock);
+                request.lockAddress = null;
+                request.lockCount = 0;
+                backup(CONCURRENT_MAP_BACKUP_LOCK);
+            }
+            return unlocked;
+        }
+
         public boolean lock(String name, Object key, long timeout) {
             return lock(CONCURRENT_MAP_LOCK, name, key, null, timeout);
         }
@@ -822,13 +842,18 @@ public class ConcurrentMapManager extends BaseManager {
             try {
                 return doGetAll(name, keys);
             } catch (Throwable e) {
-                if (e instanceof InterruptedException) {
+                if (e instanceof MemberLeftException) {
+                    try {
+                        Thread.sleep(redoWaitMillis);
+                    } catch (InterruptedException e1) {
+                        handleInterruptedException();
+                    }
+                } else if (e instanceof InterruptedException) {
                     handleInterruptedException();
-                }
-                try {
-                    Thread.sleep(redoWaitMillis);
-                } catch (InterruptedException e1) {
-                    handleInterruptedException();
+                } else if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                } else {
+                    throw new RuntimeException(e);
                 }
             }
         }
@@ -879,13 +904,18 @@ public class ConcurrentMapManager extends BaseManager {
                 }
                 return size;
             } catch (Throwable e) {
-                if (e instanceof InterruptedException) {
+                if (e instanceof MemberLeftException) {
+                    try {
+                        Thread.sleep(redoWaitMillis);
+                    } catch (InterruptedException e1) {
+                        handleInterruptedException();
+                    }
+                } else if (e instanceof InterruptedException) {
                     handleInterruptedException();
-                }
-                try {
-                    Thread.sleep(redoWaitMillis);
-                } catch (InterruptedException e1) {
-                    handleInterruptedException();
+                } else if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                } else {
+                    throw new RuntimeException(e);
                 }
             }
         }
@@ -927,13 +957,18 @@ public class ConcurrentMapManager extends BaseManager {
                 doPutAll(name, pairs);
                 return;
             } catch (Exception e) {
-                if (e instanceof InterruptedException) {
+                if (e instanceof MemberLeftException) {
+                    try {
+                        Thread.sleep(redoWaitMillis);
+                    } catch (InterruptedException e1) {
+                        handleInterruptedException();
+                    }
+                } else if (e instanceof InterruptedException) {
                     handleInterruptedException();
-                }
-                try {
-                    Thread.sleep(redoWaitMillis);
-                } catch (InterruptedException e1) {
-                    handleInterruptedException();
+                } else if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                } else {
+                    throw new RuntimeException(e);
                 }
             }
         }

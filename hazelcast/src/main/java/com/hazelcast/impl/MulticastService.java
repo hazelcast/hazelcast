@@ -26,15 +26,9 @@ import com.hazelcast.nio.PipedZipBufferFactory.InflatingPipedBuffer;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -49,7 +43,6 @@ public class MulticastService implements Runnable {
     private final DatagramPacket datagramPacketSend;
     private final DatagramPacket datagramPacketReceive;
     private final Object sendLock = new Object();
-    private final Object receiveLock = new Object();
     final Node node;
     private boolean running = true;
     private List<MulticastListener> lsListeners = new CopyOnWriteArrayList<MulticastListener>();
@@ -79,19 +72,29 @@ public class MulticastService implements Runnable {
 
     public void stop() {
         try {
+            try {
+                multicastSocket.close();
+            } catch (Throwable ignored) {
+            }
             final CountDownLatch l = new CountDownLatch(1);
             queue.put(new Runnable() {
                 public void run() {
                     running = false;
-                    inflatingBuffer.destroy();
-                    deflatingBuffer.destroy();
-                    datagramPacketReceive.setData(new byte[0]);
-                    datagramPacketSend.setData(new byte[0]);
-                    l.countDown();
+                    try {
+                        inflatingBuffer.destroy();
+                        deflatingBuffer.destroy();
+                        datagramPacketReceive.setData(new byte[0]);
+                        datagramPacketSend.setData(new byte[0]);
+                    } finally {
+                        l.countDown();
+                    }
                 }
             });
-            l.await();
-        } catch (InterruptedException ignored) {
+            if (!l.await(5, TimeUnit.SECONDS)) {
+                logger.log(Level.WARNING, "Failed to shutdown MulticastService in 5 seconds!");
+            }
+        } catch (Throwable e) {
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -107,7 +110,11 @@ public class MulticastService implements Runnable {
                 final JoinInfo joinInfo = receive();
                 if (joinInfo != null) {
                     for (MulticastListener multicastListener : lsListeners) {
-                        multicastListener.onMessage(joinInfo);
+                        try {
+                            multicastListener.onMessage(joinInfo);
+                        } catch (Exception e) {
+                            logger.log(Level.WARNING, e.getMessage(), e);
+                        }
                     }
                 }
             } catch (OutOfMemoryError e) {
@@ -118,33 +125,33 @@ public class MulticastService implements Runnable {
         }
     }
 
-    public JoinInfo receive() {
-        synchronized (receiveLock) {
+    private JoinInfo receive() {
+        try {
+            inflatingBuffer.reset();
             try {
-                inflatingBuffer.reset();
-                try {
-                    multicastSocket.receive(datagramPacketReceive);
-                } catch (SocketTimeoutException ignore) {
-                    return null;
-                }
-                try {
-                    inflatingBuffer.inflate(datagramPacketReceive.getLength());
-                    JoinInfo joinInfo = new JoinInfo();
-                    joinInfo.readData(inflatingBuffer.getDataInput());
-                    return joinInfo;
-                } catch (Exception e) {
-                    if (e instanceof EOFException || e instanceof DataFormatException) {
-                        logger.log(Level.FINEST, "Received data format is invalid." +
-                                " (An old version of Hazelcast may be running here.)", e);
-                    } else {
-                        throw e;
-                    }
-                }
-            } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                multicastSocket.receive(datagramPacketReceive);
+            } catch (SocketTimeoutException ignore) {
+                return null;
+            } catch (SocketException ignore) {
+                return null;
             }
-            return null;
+            try {
+                inflatingBuffer.inflate(datagramPacketReceive.getLength());
+                JoinInfo joinInfo = new JoinInfo();
+                joinInfo.readData(inflatingBuffer.getDataInput());
+                return joinInfo;
+            } catch (Exception e) {
+                if (e instanceof EOFException || e instanceof DataFormatException) {
+                    logger.log(Level.FINEST, "Received data format is invalid." +
+                            " (An old version of Hazelcast may be running here.)", e);
+                } else {
+                    throw e;
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
+        return null;
     }
 
     public void send(JoinInfo joinInfo) {
