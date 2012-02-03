@@ -112,6 +112,11 @@ public class LockProxyImpl extends SerializationHelper implements HazelcastInsta
         base.unlock();
     }
 
+    public void forceUnlock() {
+        ensure();
+        base.forceUnlock();
+    }
+
     public Condition newCondition() {
         ensure();
         return base.newCondition();
@@ -187,6 +192,11 @@ public class LockProxyImpl extends SerializationHelper implements HazelcastInsta
 
         public void unlock() {
             factory.locksMapProxy.unlock(key);
+            lockOperationsCounter.incrementUnlocks();
+        }
+
+        public void forceUnlock() {
+            factory.locksMapProxy.forceUnlock(key);
             lockOperationsCounter.incrementUnlocks();
         }
 

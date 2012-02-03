@@ -137,7 +137,8 @@ public enum ClusterOperation {
     SEMAPHORE_RELEASE(),
     SEMAPHORE_TRY_ACQUIRE(),
     LOCK_LOCK(),
-    LOCK_UNLOCK();
+    LOCK_UNLOCK(),
+    LOCK_FORCE_UNLOCK();
 
     public final static byte OPERATION_COUNT = (byte) values().length;
     private final static ClusterOperation[] clusterOperations = new ClusterOperation[OPERATION_COUNT];

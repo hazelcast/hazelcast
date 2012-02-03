@@ -753,12 +753,14 @@ public class CMap {
                 }
             }
         }
+        DistributedLock lock = rec.getLock();
+        Long response = (lock == null || !lock.isLocked()) ? 0L : 1L;
         rec.lock(request.lockThreadId, request.lockAddress);
         rec.incrementVersion();
         request.version = rec.getVersion();
         request.lockCount = rec.getLockCount();
         markAsActive(rec);
-        request.response = Boolean.TRUE;
+        request.response = response;
     }
 
     void unlock(Record record, Request request) {

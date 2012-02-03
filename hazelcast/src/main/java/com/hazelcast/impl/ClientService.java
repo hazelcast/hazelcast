@@ -83,6 +83,7 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[CONCURRENT_MAP_TRY_LOCK_AND_GET.getValue()] = new MapTryLockAndGetHandler();
         clientOperationHandlers[CONCURRENT_MAP_LOCK.getValue()] = new MapLockHandler();
         clientOperationHandlers[CONCURRENT_MAP_UNLOCK.getValue()] = new MapUnlockHandler();
+        clientOperationHandlers[CONCURRENT_MAP_FORCE_UNLOCK.getValue()] = new MapForceUnlockHandler();
         clientOperationHandlers[CONCURRENT_MAP_LOCK_MAP.getValue()] = new MapLockMapHandler();
         clientOperationHandlers[CONCURRENT_MAP_UNLOCK_MAP.getValue()] = new MapUnlockMapHandler();
         clientOperationHandlers[CONCURRENT_MAP_CONTAINS_KEY.getValue()] = new MapContainsHandler();
@@ -138,6 +139,7 @@ public class ClientService implements ConnectionListener {
         clientOperationHandlers[SEMAPHORE_TRY_ACQUIRE.getValue()] = new SemaphoreTryAcquireHandler();
         clientOperationHandlers[LOCK_LOCK.getValue()] = new LockOperationHandler();
         clientOperationHandlers[LOCK_UNLOCK.getValue()] = new UnlockOperationHandler();
+        clientOperationHandlers[LOCK_FORCE_UNLOCK.getValue()] = new UnlockOperationHandler();
         node.connectionManager.addConnectionListener(this);
         this.THREAD_COUNT = node.getGroupProperties().EXECUTOR_CLIENT_THREAD_COUNT.getInteger();
         workers = new Worker[THREAD_COUNT];
@@ -507,7 +509,7 @@ public class ClientService implements ConnectionListener {
             Set<Member> members = cluster.getMembers();
             Set<Data> setData = new LinkedHashSet<Data>();
             if (members != null) {
-                for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
+                for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
                     Member member = iterator.next();
                     setData.add(toData(member));
                 }
@@ -528,7 +530,7 @@ public class ClientService implements ConnectionListener {
             } else {
                 Set<Partition> partitions = partitionService.getPartitions();
                 Set<Data> setData = new LinkedHashSet<Data>();
-                for (Iterator<Partition> iterator = partitions.iterator(); iterator.hasNext();) {
+                for (Iterator<Partition> iterator = partitions.iterator(); iterator.hasNext(); ) {
                     Partition partition = iterator.next();
                     setData.add(toData(new PartitionImpl(partition.getPartitionId(), (MemberImpl) partition.getOwner())));
                 }
@@ -1167,6 +1169,13 @@ public class ClientService implements ConnectionListener {
         }
     }
 
+    private class MapForceUnlockHandler extends MapUnlockHandler {
+        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+            map.forceUnlock(key);
+            return null;
+        }
+    }
+
     private class MapUnlockHandler extends ClientMapOperationHandler {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
             map.unlock(key);
@@ -1248,7 +1257,11 @@ public class ClientService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             final Object key = toObject(packet.getKeyData());
             final ILock lock = factory.getLock(key);
-            lock.unlock();
+            if (packet.operation == LOCK_UNLOCK) {
+                lock.unlock();
+            } else if (packet.operation == LOCK_FORCE_UNLOCK) {
+                lock.forceUnlock();
+            }
             packet.clearForResponse();
             packet.setValue(null);
         }

@@ -30,4 +30,6 @@ public interface ILock extends Lock, Instance {
     Object getLockObject();
 
     LocalLockStats getLocalLockStats();
+
+    void forceUnlock();
 }

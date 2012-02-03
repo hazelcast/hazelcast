@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.nio.Data;
-import com.hazelcast.partition.PartitionService;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -68,7 +67,6 @@ public class CMapTest extends TestUtil {
         Data dKey = toData("1");
         CMap cmap1 = getCMap(h1, "default");
         CMap cmap2 = getCMap(h2, "default");
-        PartitionService partitionService = h1.getPartitionService();
         DistributedLock lock = cmap1.getRecord(dKey).getLock();
         assertTrue(cmm1.thisAddress.equals(lock.getLockAddress()));
         assertTrue(lock.getLockThreadId() != -1);

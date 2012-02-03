@@ -2344,7 +2344,7 @@ public class ClusterTest {
 
     @Test
     public void testLockKeyWithUseBackupData() {
-        Config config = new XmlConfigBuilder().build();
+        Config config = new Config();
         String mapName1 = "testLockKeyWithUseBackupData";
         MapConfig mapConfig1 = new MapConfig();
         mapConfig1.setName(mapName1);
@@ -2354,7 +2354,7 @@ public class ClusterTest {
         IMap<String, String> map = h1.getMap(mapName1);
         map.lock("Hello");
         try {
-            junit.framework.Assert.assertFalse(map.containsKey("Hello"));
+            assertFalse(map.containsKey("Hello"));
         } finally {
             map.unlock("Hello");
         }
@@ -2368,7 +2368,7 @@ public class ClusterTest {
         map.remove("Hello");
         map.lock("Hello");
         try {
-            junit.framework.Assert.assertFalse(map.containsKey("Hello"));
+            assertFalse(map.containsKey("Hello"));
         } finally {
             map.unlock("Hello");
         }
@@ -2377,7 +2377,7 @@ public class ClusterTest {
     @Test
     public void testIssue290() throws Exception {
         String mapName = "testIssue290";
-        Config config = new XmlConfigBuilder().build();
+        Config config = new Config();
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName(mapName);
         mapConfig.setTimeToLiveSeconds(1);

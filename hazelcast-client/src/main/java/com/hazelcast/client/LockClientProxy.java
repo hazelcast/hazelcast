@@ -30,12 +30,10 @@ import static com.hazelcast.client.ProxyHelper.check;
 public class LockClientProxy implements ILock {
     final ProxyHelper proxyHelper;
     final Object lockObject;
-//    final HazelcastClient client;
 
     public LockClientProxy(Object object, HazelcastClient client) {
         proxyHelper = new ProxyHelper("", client);
         lockObject = object;
-//        this.client = client;
         check(lockObject);
     }
 
@@ -43,26 +41,9 @@ public class LockClientProxy implements ILock {
         return lockObject;
     }
 
-    //    public void lock() {
-//        client.mapLockProxy.lock(lockObject);
-//    }
-//
     public void lockInterruptibly() throws InterruptedException {
         throw new UnsupportedOperationException("lockInterruptibly is not implemented!");
     }
-//
-//    public boolean tryLock() {
-//        return client.mapLockProxy.tryLock(lockObject);
-//    }
-//
-//    public boolean tryLock(long l, TimeUnit timeUnit) throws InterruptedException {
-//        ProxyHelper.checkTime(l, timeUnit);
-//        return client.mapLockProxy.tryLock(lockObject, l, timeUnit);
-//    }
-//
-//    public void unlock() {
-//        client.mapLockProxy.unlock(lockObject);
-//    }
 
     public void lock() {
         doLock(-1, null);
@@ -79,6 +60,10 @@ public class LockClientProxy implements ILock {
 
     public void unlock() {
         proxyHelper.doOp(ClusterOperation.LOCK_UNLOCK, lockObject, null);
+    }
+
+    public void forceUnlock() {
+        proxyHelper.doOp(ClusterOperation.LOCK_FORCE_UNLOCK, lockObject, null);
     }
 
     private Object doLock(long timeout, TimeUnit timeUnit) {
