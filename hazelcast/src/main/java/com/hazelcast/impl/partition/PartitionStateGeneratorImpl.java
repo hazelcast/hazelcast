@@ -31,7 +31,8 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     private static final float RANGE_CHECK_RATIO = 1.1f;
     private static final int MAX_RETRY_COUNT = 3;
     private static final int AGGRESSIVE_RETRY_THRESHOLD = 1;
-    private static final int AGGRESSIVE_INDEX_THRESHOLD = 2;
+    private static final int AGGRESSIVE_INDEX_THRESHOLD = 3;
+    private static final int MIN_AVG_OWNER_DIFF = 3;
 
     private final MemberGroupFactory memberGroupFactory;
 
@@ -40,13 +41,13 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         this.memberGroupFactory = nodeGroupFactory;
     }
 
-    public PartitionInfo[] initialize(List<MemberImpl> members, int partitionCount) {
+    public PartitionInfo[] initialize(Collection<MemberImpl> members, int partitionCount) {
         final LinkedList<NodeGroup> groups = createNodeGroups(memberGroupFactory.createMemberGroups(members));
         if (groups.size() == 0) return null;
         return arrange(groups, partitionCount, new EmptyStateInitializer());
     }
 
-    public PartitionInfo[] reArrange(PartitionInfo[] currentState, List<MemberImpl> members, int partitionCount,
+    public PartitionInfo[] reArrange(PartitionInfo[] currentState, Collection<MemberImpl> members, int partitionCount,
                                      List<MigrationRequestTask> scheduledTasksList, List<MigrationRequestTask> immediateTasksList) {
         final LinkedList<NodeGroup> groups = createNodeGroups(memberGroupFactory.createMemberGroups(members));
         if (groups.size() == 0) return currentState;
@@ -72,7 +73,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 //                tryCount = 0;
             } else if (result == TestResult.RETRY) {
                 tryCount++;
-                logger.log(Level.FINEST, "Re-trying partition arrangement.. Count: " + tryCount);
+                logger.log(Level.WARNING, "Re-trying partition arrangement.. Count: " + tryCount);
             }
         }
         if (result == TestResult.FAIL) {
@@ -152,10 +153,24 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 logger.log(Level.FINEST, "Oops! " + currentPartition + " has been LOST!");
             }
         }
+        arrangeScheduledTasks(scheduledTasksList);
+    }
+
+    private void arrangeScheduledTasks(final List<MigrationRequestTask> scheduledTasksList) {
+        // hope list is random access
+        Collections.shuffle(scheduledTasksList);
         Collections.sort(scheduledTasksList, new Comparator<MigrationRequestTask>() {
             public int compare(final MigrationRequestTask t1, final MigrationRequestTask t2) {
-                return t1.getReplicaIndex() > t2.getReplicaIndex() ? 1 :
-                        (t1.getReplicaIndex() == t2.getReplicaIndex() ? 0 : -1);
+                if (t1.getReplicaIndex() == t2.getReplicaIndex()) {
+                    return 0;
+                } else if (t1.getReplicaIndex() <= 1 && t2.getReplicaIndex() <= 1) {
+                    return 0;
+                } else if (t1.getReplicaIndex() <= 1) {
+                    return -1;
+                } else if (t2.getReplicaIndex() <= 1) {
+                    return 1;
+                }
+                return t1.getReplicaIndex() > t2.getReplicaIndex() ? 1 : -1;
             }
         });
     }
@@ -411,6 +426,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         for (NodeGroup group : groups) {
             for (int i = 0; i < replicaCount; i++) {
                 int partitionCountOfGroup = group.getPartitionCount(i);
+                if (Math.abs(partitionCountOfGroup - avgPartitionPerGroup) <= MIN_AVG_OWNER_DIFF) {
+                    continue;
+                }
                 if ((partitionCountOfGroup < avgPartitionPerGroup / ratio)
                         || (partitionCountOfGroup > avgPartitionPerGroup * ratio)) {
                     logger.log(Level.FINEST, "Replica: " + i + ", PartitionCount: "

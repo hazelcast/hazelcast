@@ -142,7 +142,7 @@ public class PartitionServiceImpl implements PartitionService {
         public Member getOwner() {
             Address address = concurrentMapManager.getPartitionManager().getOwner(partitionId);
             if (address != null) {
-                Member member = concurrentMapManager.node.getClusterImpl().getMembers(address);
+                Member member = concurrentMapManager.node.getClusterImpl().getMember(address);
                 if (member != null) {
                     return member;
                 }

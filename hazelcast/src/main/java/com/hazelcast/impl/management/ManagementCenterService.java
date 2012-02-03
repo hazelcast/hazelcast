@@ -291,8 +291,10 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
         public void run() {
             try {
                 while (running) {
-                    updateLocalState();
-                    sendState();
+                    if (started.get()) {
+                        updateLocalState();
+                        sendState();
+                    }
                     //noinspection BusyWait
                     Thread.sleep(5000);
                 }
@@ -307,7 +309,6 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
         }
 
         private void sendState() {
-            if (!started.get()) return;
             boolean preparedStateData = false;
             int compressedCount = 0;
             for (Address address : socketAddresses.keySet()) {

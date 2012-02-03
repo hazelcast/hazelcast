@@ -141,7 +141,7 @@ public class ClusterImpl implements Cluster {
         return localTime + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
     }
 
-    public Member getMembers(Address address) {
+    public Member getMember(Address address) {
         return mapMembers.get(address);
     }
 
