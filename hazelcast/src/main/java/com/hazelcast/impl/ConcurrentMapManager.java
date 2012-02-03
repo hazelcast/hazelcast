@@ -925,6 +925,7 @@ public class ConcurrentMapManager extends BaseManager {
         while (true) {
             try {
                 doPutAll(name, pairs);
+                return;
             } catch (Exception e) {
                 if (e instanceof InterruptedException) {
                     handleInterruptedException();
