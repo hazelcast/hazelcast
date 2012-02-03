@@ -162,6 +162,11 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_UNLOCK, key, null);
     }
 
+    public void forceUnlock(K key) {
+        check(key);
+        proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_FORCE_UNLOCK, key, null);
+    }
+
     public Collection<V> values(Predicate predicate) {
         Set<Entry<K, V>> set = entrySet(predicate);
         return new ValueCollection<K, V>(this, set);
