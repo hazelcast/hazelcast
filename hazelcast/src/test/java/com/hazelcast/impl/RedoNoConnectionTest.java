@@ -20,6 +20,7 @@ package com.hazelcast.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Connection;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -43,9 +44,10 @@ public class RedoNoConnectionTest extends RedoTestService {
         Hazelcast.shutdownAll();
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 200000)
     public void testMultiCallToNotConnectedMember() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
         config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -55,9 +57,10 @@ public class RedoNoConnectionTest extends RedoTestService {
         t.run();
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 200000)
     public void testMultiCallToNotConnectedMember2() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
         config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -70,6 +73,8 @@ public class RedoNoConnectionTest extends RedoTestService {
     @Test(timeout = 100000)
     public void testKeyBasedCallToNotConnectedMember() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         RunAfterTester t = new RunAfterTester(
@@ -82,9 +87,10 @@ public class RedoNoConnectionTest extends RedoTestService {
         t.run();
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 200000)
     public void testQueueCallToNotConnectedMember() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
         config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -94,7 +100,7 @@ public class RedoNoConnectionTest extends RedoTestService {
         t.run();
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 200000)
     public void testMultiCallToDisconnectingMember() throws Exception {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
@@ -106,9 +112,10 @@ public class RedoNoConnectionTest extends RedoTestService {
         t.run();
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 200000)
     public void testMultiCallToDisconnectingMember2() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
         config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -118,9 +125,10 @@ public class RedoNoConnectionTest extends RedoTestService {
         t.run();
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 200000)
     public void testKeyBasedCallToDisconnectingMember() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         Runnable t = new RunAfterTester(
@@ -133,9 +141,10 @@ public class RedoNoConnectionTest extends RedoTestService {
         t.run();
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 200000)
     public void testQueueCallToDisconnectingMember() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
         config.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "6");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -158,9 +167,18 @@ public class RedoNoConnectionTest extends RedoTestService {
             this.caller = caller;
             this.target = target;
             this.callerNode = getNode(caller);
-            targetMember = (MemberImpl) target.getCluster().getLocalMember();
+            targetMember = getMember(caller, target.getCluster().getLocalMember());
             callerMember = (MemberImpl) caller.getCluster().getLocalMember();
             targetConn = callerNode.getConnectionManager().getConnection(targetMember.getAddress());
+        }
+
+        private MemberImpl getMember(HazelcastInstance h, Member member) {
+            for (Member m : h.getCluster().getMembers()) {
+                if (m.equals(member)) {
+                    return (MemberImpl) m;
+                }
+            }
+            return null;
         }
 
         @Override
@@ -198,7 +216,7 @@ public class RedoNoConnectionTest extends RedoTestService {
 
         @Override
         void before() throws Exception {
-            callerNode.connectionManager.getIOHandler().removeEndpoint(targetMember.getAddress());
+            callerNode.connectionManager.detachAndGetConnection(targetMember.getAddress());
             if (targetConn != null) {
                 try {
                     targetConn.close0();

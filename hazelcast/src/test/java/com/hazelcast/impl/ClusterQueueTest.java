@@ -82,7 +82,7 @@ public class ClusterQueueTest {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(2000);
                     h2.getLifecycleService().kill();
                     shutdownLatch.countDown();
                 } catch (InterruptedException e) {
@@ -90,7 +90,7 @@ public class ClusterQueueTest {
                 }
             }
         }).start();
-        assertTrue(shutdownLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(shutdownLatch.await(100, TimeUnit.SECONDS));
         q1.offer("item");
         assertEquals(1, q1.size());
         assertEquals("item", q1.poll());
@@ -115,9 +115,9 @@ public class ClusterQueueTest {
                 latch.countDown();
             }
         }).start();
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertTrue(latch.await(50, TimeUnit.SECONDS));
         h3.getLifecycleService().shutdown();
-        Thread.sleep(2000);
+        Thread.sleep(4000);
         assertEquals(1, h2.getMap("q:default").size());
         assertEquals("item", q2.poll());
         final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
@@ -132,9 +132,9 @@ public class ClusterQueueTest {
                 latch2.countDown();
             }
         }).start();
-        assertTrue(latch2.await(5, TimeUnit.SECONDS));
+        assertTrue(latch2.await(100, TimeUnit.SECONDS));
         h1.getLifecycleService().shutdown();
-        Thread.sleep(2000);
+        Thread.sleep(4000);
         assertEquals("item2", q2.poll());
     }
 
@@ -214,7 +214,7 @@ public class ClusterQueueTest {
                 }
             });
         }
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertTrue(latch.await(100, TimeUnit.SECONDS));
         es.shutdown();
     }
 
@@ -261,7 +261,7 @@ public class ClusterQueueTest {
                 }
             });
         }
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertTrue(latch.await(100, TimeUnit.SECONDS));
         es.shutdown();
     }
 
@@ -318,7 +318,7 @@ public class ClusterQueueTest {
                 }
             });
         }
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertTrue(latch.await(100, TimeUnit.SECONDS));
         es.shutdown();
     }
 
@@ -434,7 +434,7 @@ public class ClusterQueueTest {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 100000)
     public void storedQueueWithExistingItemsAndTransactionRollback() throws InterruptedException {
         final ConcurrentMap<Long, String> STORE =
                 new ConcurrentHashMap<Long, String>();

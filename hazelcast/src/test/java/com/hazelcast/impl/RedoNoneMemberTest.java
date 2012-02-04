@@ -49,6 +49,7 @@ public class RedoNoneMemberTest extends RedoTestService {
     @Test(timeout = 100000)
     public void testMultiCallToNoneMember() throws Exception {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         RedoTestService.BeforeAfterTester t = new BeforeAfterTester(new NoneMemberBehavior(h1), new MultiCallBuilder(h1));
         t.run();
@@ -57,6 +58,7 @@ public class RedoNoneMemberTest extends RedoTestService {
     @Test(timeout = 100000)
     public void testMapRemoteTargetNotMember() {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         new RunAfterTester(new TargetNotMemberBehavior(h1, h2), new KeyCallBuilder(h1)).run();
@@ -101,6 +103,7 @@ public class RedoNoneMemberTest extends RedoTestService {
     @Test(timeout = 100000)
     public void testQueueRemoteCallerNoneMember() {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         CallBuilder calls = new QueueCallBuilder(h2);
@@ -135,6 +138,7 @@ public class RedoNoneMemberTest extends RedoTestService {
     @Test(timeout = 100000)
     public void testQueueRemoteTargetNoneMember() {
         Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "2");
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         CallBuilder calls = new QueueCallBuilder(h2);

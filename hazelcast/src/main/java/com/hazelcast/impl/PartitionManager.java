@@ -92,7 +92,6 @@ public class PartitionManager {
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
 //        node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new CheckRepartitioningTask(),
 //                60, 60, TimeUnit.SECONDS);
-
     }
 
     private void sendClusterRuntimeState() {
@@ -499,6 +498,7 @@ public class PartitionManager {
             for (PartitionInfo partition : partitions) {
                 if (partition.getReplicaAddress(1) == null) {
                     needBackup = true;
+                    logger.log(Level.WARNING, concurrentMapManager.thisAddress + " still has no replica for partitionId:" + partition.getPartitionId());
                     break;
                 }
             }

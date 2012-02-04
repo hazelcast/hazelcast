@@ -47,8 +47,6 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BaseManager {
 
-    protected final Map<Address, Integer> mapStorageMemberIndexes;
-
     protected final List<MemberImpl> lsMembers;
 
     protected final Map<Address, MemberImpl> mapMembers;
@@ -72,7 +70,6 @@ public abstract class BaseManager {
     protected BaseManager(Node node) {
         this.node = node;
         lsMembers = node.baseVariables.lsMembers;
-        mapStorageMemberIndexes = node.baseVariables.mapStorageMemberIndexes;
         mapMembers = node.baseVariables.mapMembers;
         mapCalls = node.baseVariables.mapCalls;
         thisAddress = node.baseVariables.thisAddress;

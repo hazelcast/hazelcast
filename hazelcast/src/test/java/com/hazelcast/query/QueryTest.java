@@ -626,8 +626,7 @@ public class QueryTest extends TestUtil {
             Employee c = (Employee) entry.getValue();
             assertNull(c.getName());
         }
-        System.out.println("TookWithIndex: " + tookWithIndex + ", TookWithout:  " + tookWithout);
-        assertTrue(tookWithIndex < (tookWithout / 2));
+        assertTrue("WithIndex: " + tookWithIndex + ", without: " + tookWithout, tookWithIndex < tookWithout);
     }
 
     @Test

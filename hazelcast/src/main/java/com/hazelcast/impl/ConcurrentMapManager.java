@@ -849,7 +849,7 @@ public class ConcurrentMapManager extends BaseManager {
                 }
                 return size;
             } catch (Throwable e) {
-                if (e instanceof MemberLeftException) {
+                if (e instanceof MemberLeftException || e instanceof IllegalPartitionState) {
                     try {
                         Thread.sleep(redoWaitMillis);
                     } catch (InterruptedException e1) {
@@ -883,12 +883,18 @@ public class ConcurrentMapManager extends BaseManager {
             Integer partialSize = future.get();
             if (partialSize != null) {
                 if (partialSize == -1) {
-                    throw new IllegalStateException("Unexpected partition version!");
+                    throw new IllegalPartitionState("Unexpected partition version!");
                 }
                 totalSize += partialSize;
             }
         }
         return totalSize;
+    }
+
+    class IllegalPartitionState extends IllegalStateException {
+        IllegalPartitionState(String s) {
+            super(s);
+        }
     }
 
     void doPutAll(String name, Map entries) {
@@ -2814,7 +2820,8 @@ public class ConcurrentMapManager extends BaseManager {
                     return;
                 }
                 Record record = cmap.getRecord(request);
-                if ((record == null || !record.hasValueData()) && cmap.loader != null) {
+                if ((record == null || !record.hasValueData()) && cmap.loader != null
+                        && request.operation != ClusterOperation.CONCURRENT_MAP_PUT_TRANSIENT) {
                     storeExecutor.execute(new PutLoader(cmap, request), request.key.hashCode());
                 } else {
                     storeProceed(cmap, request);
@@ -2854,7 +2861,8 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         void storeProceed(CMap cmap, Request request) {
-            if (cmap.store != null && cmap.writeDelayMillis == 0 && cmap.isApplicable(request.operation, request, System.currentTimeMillis())) {
+            if (cmap.store != null && cmap.writeDelayMillis == 0
+                    && cmap.isApplicable(request.operation, request, System.currentTimeMillis())) {
                 storeExecutor.execute(new PutStorer(cmap, request), request.key.hashCode());
             } else {
                 doOperation(request);
@@ -3506,6 +3514,7 @@ public class ConcurrentMapManager extends BaseManager {
                     || !record.isActive()
                     || !record.isValid()
                     || !record.hasValueData())) {
+//                System.out.println(thisAddress  + " Loading record " + record + "  key " + toObject(request.key));
                 storeExecutor.execute(new GetLoader(cmap, request), request.key.hashCode());
             } else {
                 doOperation(request);

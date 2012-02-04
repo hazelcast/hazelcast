@@ -151,15 +151,14 @@ public class MapStoreTest extends TestUtil {
         instances[0].getMap("default");
         instances[1].getMap("default");
         instances[2].getMap("default");
-        System.out.println(testMapStore.callCount.get());
-        assertEquals(15, testMapStore.callCount.get());
+        assertEquals("After load:", 15, testMapStore.callCount.get());
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
         IMap map3 = h3.getMap("default");
         for (int i = 0; i < size; i++) {
             assertEquals("value" + i, map3.get(i));
         }
-        assertEquals(15, testMapStore.callCount.get());
+        assertEquals("After gets:", 15, testMapStore.callCount.get());
     }
 
     @Test
@@ -180,8 +179,17 @@ public class MapStoreTest extends TestUtil {
         IMap map2 = h2.getMap("default");
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(5));
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(5));
+        final CountDownLatch l = new CountDownLatch(1);
+        map1.addEntryListener(new EntryAdapter() {
+
+            public void entryAdded(EntryEvent entryEvent) {
+                assertEquals("value1", entryEvent.getValue());
+                l.countDown();
+            }
+        }, 1, true);
         assertEquals("value1", map1.get(1));
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(5));
+        assertTrue(l.await(10, TimeUnit.SECONDS));
         assertEquals("value1", map1.get(1));
         assertEquals(null, testMapStore.waitForEvent(3));
         Map loaded = map1.getAll(keys);

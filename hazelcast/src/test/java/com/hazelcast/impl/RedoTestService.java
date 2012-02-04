@@ -91,35 +91,37 @@ public class RedoTestService extends TestUtil {
 
         public void run() {
             try {
-                behavior.before();
-            } catch (Exception e) {
-                e.printStackTrace();
-                fail(e.getMessage());
-            }
-            List<FutureTask> lsFutureTasks = callBuilder.getCalls(es, esSingle);
-            long wait = 3;
-            for (FutureTask futureTask : lsFutureTasks) {
                 try {
-                    Object result = futureTask.get(wait, TimeUnit.SECONDS);
-                    fail("Expected: TimeoutException, got " + result + ", callTask: " + futureTask);
-                } catch (TimeoutException e) {
-                } catch (Exception e) {
-                    fail();
-                    return;
-                }
-                wait = 0; // remaining calls waited enough already.
-            }
-            behavior.after();
-            for (FutureTask futureTask : lsFutureTasks) {
-                try {
-                    futureTask.get(5, TimeUnit.SECONDS);
+                    behavior.before();
                 } catch (Exception e) {
                     e.printStackTrace();
-                    fail("Failed callTask: " + futureTask);
+                    fail(e.getMessage());
                 }
+                List<FutureTask> lsFutureTasks = callBuilder.getCalls(es, esSingle);
+                for (FutureTask futureTask : lsFutureTasks) {
+                    try {
+                        Object result = futureTask.get(0, TimeUnit.SECONDS);
+                        fail("Expected: TimeoutException, got " + result + ", callTask: " + futureTask);
+                    } catch (TimeoutException e) {
+                    } catch (Exception e) {
+                        fail();
+                        return;
+                    }
+                }
+                behavior.after();
+                for (FutureTask futureTask : lsFutureTasks) {
+                    try {
+                        futureTask.get(20, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        fail("Failed callTask: " + futureTask);
+                        return;
+                    }
+                }
+            } finally {
+                behavior.destroy();
+                destroy();
             }
-            behavior.destroy();
-            destroy();
         }
     }
 
@@ -143,23 +145,27 @@ public class RedoTestService extends TestUtil {
 
         public void run() {
             try {
-                behavior.before();
-            } catch (Exception e) {
-                e.printStackTrace();
-                fail(e.getMessage());
-            }
-            behavior.after();
-            List<FutureTask> lsFutureTasks = callBuilder.getCalls(es, esSingle);
-            for (FutureTask futureTask : lsFutureTasks) {
                 try {
-                    futureTask.get(5, TimeUnit.SECONDS);
+                    behavior.before();
                 } catch (Exception e) {
                     e.printStackTrace();
-                    fail("Failed callTask: " + futureTask);
+                    fail(e.getMessage());
                 }
+                behavior.after();
+                List<FutureTask> lsFutureTasks = callBuilder.getCalls(es, esSingle);
+                for (FutureTask futureTask : lsFutureTasks) {
+                    try {
+                        futureTask.get(20, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        fail("Failed callTask: " + futureTask);
+                        return;
+                    }
+                }
+            } finally {
+                behavior.destroy();
+                destroy();
             }
-            behavior.destroy();
-            destroy();
         }
     }
 

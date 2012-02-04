@@ -33,16 +33,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
 
 import static com.hazelcast.impl.TestUtil.OrderKey;
 import static com.hazelcast.impl.TestUtil.getCMap;
@@ -66,27 +62,6 @@ public class ClusterTest {
     @After
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
-    }
-
-    @Test
-    public void te() throws Exception {
-        String classpath = System.getProperty("java.class.path");
-        for (String classpathEntry : classpath.split(System.getProperty("path.separator"))) {
-            if (classpathEntry.endsWith(".jar")) {
-                File jar = new File(classpathEntry);
-                JarInputStream is = new JarInputStream(new FileInputStream(jar));
-                JarEntry entry;
-                while ((entry = is.getNextJarEntry()) != null) {
-                    if (entry.getName().endsWith(".class")) {
-                        // Class.forName(entry.getName()) and check
-                        // for implementation of the interface
-                        //                        System.out.println("Class in jar " + entry);
-                    }
-                }
-            } else {
-                System.out.println("path " + classpathEntry);
-            }
-        }
     }
 
     @Test
@@ -147,28 +122,6 @@ public class ClusterTest {
     }
 
     @Test
-    public void testFirstNodeNoWait() throws Exception {
-        final Config config = new Config();
-        final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
-        for (int j = 0; j < 2; j++) {
-            new Thread(new Runnable() {
-                public void run() {
-                    final HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-                    for (int i = 0; i < 3000; i++) {
-                        h.getMap("default").put(i, "value");
-                    }
-                    counts.offer(getLocalPartitions(h).size());
-                }
-            }).start();
-        }
-        int first = counts.take();
-        int second = counts.take();
-        assertTrue("First: " + first, first == 0 || first == 271);
-        assertTrue("Second: " + second, second == 0 || second == 271);
-        assertEquals(271, Math.abs(second - first));
-    }
-
-    @Test
     public void testFirstNodeWait() throws Exception {
         final Config config = new Config();
         final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(2);
@@ -206,7 +159,7 @@ public class ClusterTest {
         return localPartitions;
     }
 
-    @Test(timeout = 50000, expected = RuntimeException.class)
+    @Test(timeout = 120000, expected = RuntimeException.class)
     public void testPutAfterShutdown() throws InterruptedException {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         Map map = h1.getMap("default");
@@ -214,7 +167,7 @@ public class ClusterTest {
         map.put("1", "value");
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 120000)
     public void testSuperClientPartitionOwnership() throws Exception {
         Config configSuperClient = new Config();
         configSuperClient.setLiteMember(true);
@@ -282,7 +235,7 @@ public class ClusterTest {
         assertEquals("value", map.get("1"));
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void testSuperClientPutAfterBeforeNormalMember() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch latchSuperPut = new CountDownLatch(1);
@@ -303,7 +256,7 @@ public class ClusterTest {
         assertEquals("value", hNormal.getMap("default").get("1"));
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testRestart() throws Exception {
         final HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
         IMap map = h.getMap("default");
@@ -325,7 +278,7 @@ public class ClusterTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testRestart2() throws Exception {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
@@ -498,7 +451,7 @@ public class ClusterTest {
         return myConfig;
     }
 
-    @Test(timeout = 40000)
+    @Test(timeout = 120000)
     public void testDifferentGroups() {
         Config c1 = new Config();
         c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -616,7 +569,7 @@ public class ClusterTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testTcpIpWithMembers() throws Exception {
         Config c = new Config();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -635,7 +588,7 @@ public class ClusterTest {
         testTwoNodes(h2, h1);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testTcpIp() throws Exception {
         Config c = new Config();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -656,7 +609,7 @@ public class ClusterTest {
         testTwoNodes(h2, h1);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testTcpIpWithoutInterfaces() throws Exception {
         Config c = new Config();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -676,7 +629,7 @@ public class ClusterTest {
         testTwoNodes(h2, h1);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testMulticast() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(1, h1.getCluster().getMembers().size());
@@ -863,7 +816,7 @@ public class ClusterTest {
         map.removeEntryListener(listener);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testTcpIpWithDifferentBuildNumber() throws Exception {
         System.setProperty("hazelcast.build", "1");
         Config c = new Config();
@@ -883,7 +836,7 @@ public class ClusterTest {
         System.setProperty("hazelcast.build", "t");
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testMulticastWithDifferentBuildNumber() throws Exception {
         System.setProperty("hazelcast.build", "1");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
@@ -897,7 +850,7 @@ public class ClusterTest {
         System.setProperty("hazelcast.build", "t");
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testMapMaxSize() throws Exception {
         int maxSize = 40;
         Config c = new Config();

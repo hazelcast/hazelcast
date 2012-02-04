@@ -80,10 +80,6 @@ public class WanReplicationTest {
         HazelcastInstance h13 = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance h22 = Hazelcast.newHazelcastInstance(c2);
         int size = 100;
-        for (int i = 0; i < size; i++) {
-            h2.getMap("default").put(i, "value" + i);
-            h22.getMap("default").put(size + i, "value" + (size + i));
-        }
         MergeLatch mergeLatch1 = new MergeLatch(2 * size);
         MergeLatch mergeLatch2 = new MergeLatch(size);
         getConcurrentMapManager(h1).addWanMergeListener(mergeLatch1);
@@ -91,6 +87,10 @@ public class WanReplicationTest {
         getConcurrentMapManager(h13).addWanMergeListener(mergeLatch1);
         getConcurrentMapManager(h2).addWanMergeListener(mergeLatch2);
         getConcurrentMapManager(h22).addWanMergeListener(mergeLatch2);
+        for (int i = 0; i < size; i++) {
+            h2.getMap("default").put(i, "value" + i);
+            h22.getMap("default").put(size + i, "value" + (size + i));
+        }
         assertTrue("Latch state: " + mergeLatch1, mergeLatch1.await(60, TimeUnit.SECONDS));
         Thread.sleep(1000);
         assertEquals(0, mergeLatch2.totalOperations());
@@ -141,9 +141,6 @@ public class WanReplicationTest {
         HazelcastInstance h10 = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance h11 = Hazelcast.newHazelcastInstance(c1);
         int size = 1000;
-        for (int i = 0; i < size; i++) {
-            h11.getMap("default").put(i, "value" + i);
-        }
         HazelcastInstance h20 = Hazelcast.newHazelcastInstance(c2);
         HazelcastInstance h21 = Hazelcast.newHazelcastInstance(c2);
         HazelcastInstance h12 = Hazelcast.newHazelcastInstance(c1);
@@ -154,6 +151,9 @@ public class WanReplicationTest {
         MergeLatch mergeLatch2 = new MergeLatch(size);
         getConcurrentMapManager(h20).addWanMergeListener(mergeLatch2);
         getConcurrentMapManager(h21).addWanMergeListener(mergeLatch2);
+        for (int i = 0; i < size; i++) {
+            h11.getMap("default").put(i, "value" + i);
+        }
         assertTrue("Latch state: " + mergeLatch2, mergeLatch2.await(60, TimeUnit.SECONDS));
         Thread.sleep(1000);
         assertEquals(size, mergeLatch2.totalOperations());

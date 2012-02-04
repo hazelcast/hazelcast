@@ -394,7 +394,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void doRemoveAddress(Address deadAddress, boolean destroyConnection) {
-        mapStorageMemberIndexes.clear();
         logger.log(Level.INFO, "Removing Address " + deadAddress);
         if (!node.joined()) {
             node.failedConnection(deadAddress);
@@ -829,7 +828,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (checkServiceThread) {
             checkServiceThread();
         }
-        mapStorageMemberIndexes.clear();
         logger.log(Level.FINEST, "ClusterManager adding " + member);
         if (lsMembers.contains(member)) {
             for (MemberImpl m : lsMembers) {
@@ -847,7 +845,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     public void removeMember(MemberImpl member) {
         checkServiceThread();
-        mapStorageMemberIndexes.clear();
         logger.log(Level.FINEST, "removing  " + member);
         mapMembers.remove(member.getAddress());
         lsMembers.remove(member);
