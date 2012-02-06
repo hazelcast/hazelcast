@@ -29,7 +29,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.util.ResponseQueueFactory;
 
@@ -583,7 +582,7 @@ public class FactoryImpl implements HazelcastInstance {
                 return;
             }
             if (!cmap.isMapForQueue() && cmap.initState.notInitialized()) {
-                while (!allPartitionsOwned()) {
+                while (!node.concurrentMapManager.partitionServiceImpl.allPartitionsOwned()) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -636,17 +635,6 @@ public class FactoryImpl implements HazelcastInstance {
                 }
             }
         }
-    }
-
-    private boolean allPartitionsOwned() {
-        PartitionService partitionService = getPartitionService();
-        Set<Partition> partitions = partitionService.getPartitions();
-        for (Partition partition : partitions) {
-            if (partition.getOwner() == null) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private void loadChunks(final MProxy mProxy, final CMap cmap, final Queue<Set> chunks) throws InterruptedException {

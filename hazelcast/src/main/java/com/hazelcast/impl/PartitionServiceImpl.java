@@ -104,6 +104,16 @@ public class PartitionServiceImpl implements PartitionService {
     public void reset() {
     }
 
+    boolean allPartitionsOwned() {
+        Set<Partition> partitions = getPartitions();
+        for (Partition partition : partitions) {
+            if (partition.getOwner() == null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private MemberImpl getPartitionOwner(final int partitionId) throws InterruptedException {
         final BlockingQueue<MemberImpl> responseQ = ResponseQueueFactory.newResponseQueue();
         concurrentMapManager.enqueueAndReturn(new Processable() {
