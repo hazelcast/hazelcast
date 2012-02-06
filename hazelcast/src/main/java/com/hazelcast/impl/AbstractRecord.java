@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -170,7 +171,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
 
     public void addListener(Address address, boolean returnValue) {
         if (getListeners() == null)
-            setMapListeners(new HashMap<Address, Boolean>(1));
+            setMapListeners(new ConcurrentHashMap<Address, Boolean>(1));
         getListeners().put(address, returnValue);
     }
 

@@ -1693,7 +1693,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public void mergeOne(Record record, Data valueData) {
-            DataRecordEntry dataRecordEntry = new DataRecordEntry(record, valueData);
+            DataRecordEntry dataRecordEntry = new DataRecordEntry(record, valueData, false);
             request.setFromRecord(record);
             request.operation = CONCURRENT_MAP_MERGE;
             request.value = toData(dataRecordEntry);

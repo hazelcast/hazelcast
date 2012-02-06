@@ -430,6 +430,10 @@ public class CMap {
             if (record.getValueData() != null) {
                 updateIndexes(record);
             }
+            Map<Address, Boolean> keyListeners = dataRecordEntry.getListeners();
+            if (keyListeners != null) {
+                record.setMapListeners(keyListeners);
+            }
         }
     }
 

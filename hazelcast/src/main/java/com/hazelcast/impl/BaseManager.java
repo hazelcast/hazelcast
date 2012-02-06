@@ -1111,7 +1111,7 @@ public abstract class BaseManager {
             for (final Map.Entry<Address, Boolean> listener : listeners) {
                 final Address toAddress = listener.getKey();
                 final boolean includeValue = listener.getValue();
-                if (toAddress.isThisAddress()) {
+                if (toAddress.equals(thisAddress)) {
                     // During local event listener calls, no need to check for include value flag.
                     // ListenerManager checks internally include value flag for each listener.
                     // By this way we can handle scenario of successively registered 

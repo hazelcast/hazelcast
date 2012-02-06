@@ -26,6 +26,9 @@ import com.hazelcast.nio.DataSerializable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -50,15 +53,20 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     private Address lockAddress = null;
     private int lockThreadId = -1;
     private long remainingIdle = Long.MAX_VALUE;
+    Map<Address, Boolean> mapListeners = null;
 
     public DataRecordEntry() {
     }
 
     public DataRecordEntry(Record record) {
-        this(record, record.getValueData());
+        this(record, record.getValueData(), false);
     }
 
-    public DataRecordEntry(Record record, Data value) {
+    public DataRecordEntry(Record record, boolean includeListeners) {
+        this(record, record.getValueData(), includeListeners);
+    }
+
+    public DataRecordEntry(Record record, Data value, boolean includeListeners) {
         cost = record.getCost();
         remainingIdle = record.getRemainingIdle();
         expirationTime = record.getExpirationTime();
@@ -78,6 +86,12 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         if (lock != null && lock.getLockCount() > 0) {
             lockAddress = lock.getLockAddress();
             lockThreadId = lock.getLockThreadId();
+        }
+        if (includeListeners) {
+            Map<Address, Boolean> existing = record.getListeners();
+            if (existing != null) {
+                mapListeners = Collections.unmodifiableMap(existing);
+            }
         }
     }
 
@@ -111,6 +125,14 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         out.writeBoolean(hasLockAddress);
         if (hasLockAddress) {
             lockAddress.writeData(out);
+        }
+        int listenerCount = mapListeners == null ? 0 : mapListeners.size();
+        out.writeInt(listenerCount);
+        if (mapListeners != null) {
+            for (Map.Entry<Address, Boolean> listenerEntry : mapListeners.entrySet()) {
+                listenerEntry.getKey().writeData(out);
+                out.writeBoolean(listenerEntry.getValue());
+            }
         }
     }
 
@@ -148,6 +170,15 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         if (hasLockAddress) {
             lockAddress = new Address();
             lockAddress.readData(in);
+        }
+        int listenerCount = in.readInt();
+        if (listenerCount > 0) {
+            mapListeners = new HashMap<Address, Boolean>(listenerCount);
+            for (int i = 0; i < listenerCount; i++) {
+                Address addressListener = new Address();
+                addressListener.readData(in);
+                mapListeners.put(addressListener, in.readBoolean());
+            }
         }
     }
 
@@ -239,5 +270,9 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
 
     public int getLockThreadId() {
         return lockThreadId;
+    }
+
+    public Map<Address, Boolean> getListeners() {
+        return mapListeners;
     }
 }

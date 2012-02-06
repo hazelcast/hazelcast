@@ -190,6 +190,7 @@ public class PartitionManager {
                             throw new RuntimeException("Record.key is null or empty " + rec.getKeyData());
                         }
                         if (rec.getBlockId() == partitionId) {
+                            cmap.onMigrate(rec);
                             if (cmap.isMultiMap()) {
                                 Collection<ValueHolder> colValues = rec.getMultiValues();
                                 for (ValueHolder valueHolder : colValues) {

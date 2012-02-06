@@ -18,23 +18,26 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.base.DistributedLock;
+import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.Data;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
@@ -56,17 +59,35 @@ public class CMapTest extends TestUtil {
     @Test
     public void testMigrationOfTTLAndLock() throws Exception {
         Config config = new Config();
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         ConcurrentMapManager cmm1 = getConcurrentMapManager(h1);
         ConcurrentMapManager cmm2 = getConcurrentMapManager(h2);
-        IMap imap1 = h1.getMap("default");
-        IMap imap2 = h2.getMap("default");
+        final IMap imap1 = h1.getMap("default");
+        final IMap imap2 = h2.getMap("default");
+        final Data dKey = toData("1");
+        assertTrue(migrateKey("1", h1, h1, 0));
+        assertTrue(migrateKey("1", h1, h2, 1));
         imap1.put("1", "value1", 60, TimeUnit.SECONDS);
         imap1.lock("1");
-        Data dKey = toData("1");
+        Future put2 = imap2.putAsync("1", "value2");
+        imap2.addEntryListener(new EntryAdapter() {
+            @Override
+            public void entryUpdated(EntryEvent entryEvent) {
+                System.out.println(entryEvent);
+            }
+        }, "1", true);
+        if (put2 == null) fail();
+        Thread.sleep(1000);
         CMap cmap1 = getCMap(h1, "default");
         CMap cmap2 = getCMap(h2, "default");
+        Record record1 = cmap1.getRecord(dKey);
+        assertEquals(1, record1.getScheduledActionCount());
+        for (ScheduledAction scheduledAction : record1.getScheduledActions()) {
+            assertTrue(scheduledAction.isValid());
+        }
+        assertNotNull(record1.getListeners());
+        assertEquals(1, record1.getListeners().size());
         DistributedLock lock = cmap1.getRecord(dKey).getLock();
         assertTrue(cmm1.thisAddress.equals(lock.getLockAddress()));
         assertTrue(lock.getLockThreadId() != -1);
@@ -82,7 +103,8 @@ public class CMapTest extends TestUtil {
         assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
         assertTrue(cmap1.getRecord(dKey).getRemainingTTL() < 60000);
         assertTrue(cmap2.getRecord(dKey).getRemainingTTL() < 60000);
-        lock = cmap2.getRecord(dKey).getLock();
+        Record record2 = cmap2.getRecord(dKey);
+        lock = record2.getLock();
         assertTrue(cmm1.thisAddress.equals(lock.getLockAddress()));
         assertTrue(lock.getLockThreadId() != -1);
         assertEquals(1, lock.getLockCount());
@@ -90,6 +112,12 @@ public class CMapTest extends TestUtil {
         assertTrue(cmm1.thisAddress.equals(lock.getLockAddress()));
         assertTrue(lock.getLockThreadId() != -1);
         assertEquals(1, lock.getLockCount());
+        imap1.unlock("1");
+        put2.get(10, TimeUnit.SECONDS);
+        assertEquals("value2", imap1.get("1"));
+        assertEquals("value2", imap2.get("1"));
+        assertNotNull(record2.getListeners());
+        assertEquals(1, record2.getListeners().size());
     }
 
     @Test

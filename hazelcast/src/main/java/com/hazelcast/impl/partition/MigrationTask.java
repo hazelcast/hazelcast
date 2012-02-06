@@ -52,7 +52,6 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
         this.from = from;
-
         ByteArrayOutputStream bos = new ByteArrayOutputStream((int) (costAwareRecordList.getCost() / 100));
         DataOutputStream dos = null;
         try {
@@ -60,7 +59,7 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
             List<Record> lsRecordsToMigrate = costAwareRecordList.getRecords();
             dos.writeInt(lsRecordsToMigrate.size());
             for (Record record : lsRecordsToMigrate) {
-                new DataRecordEntry(record).writeData(dos);
+                new DataRecordEntry(record, true).writeData(dos);
             }
         } finally {
             IOUtil.closeResource(dos);
