@@ -1061,8 +1061,8 @@ public class CMap {
         int size = 0;
         Collection<Record> records = mapRecords.values();
         for (Record record : records) {
-            Address owner = concurrentMapManager.getPartitionOwner(record.getBlockId());
-            if (owner != null && thisAddress.equals(owner)) {
+            Member owner = concurrentMapManager.partitionServiceImpl.getPartition(record.getBlockId()).getOwner();
+            if (owner != null && owner.localMember()) {
                 if (record.isActive() && record.isValid(now)) {
                     size += record.valueCount();
                 }

@@ -733,7 +733,7 @@ public class PartitionManager {
                         final int partitionId = migrationRequestTask.getPartitionId();
                         fromMember = getMember(partitions[partitionId].getOwner());
                     }
-                    logger.log(Level.INFO, "Started Migration : " + migrationRequestTask);
+                    logger.log(Level.FINEST, "Started Migration : " + migrationRequestTask);
                     if (fromMember != null) {
                         migrationRequestTask.setFromAddress(fromMember.getAddress());
                         DistributedTask task = new DistributedTask(migrationRequestTask, fromMember);
@@ -752,7 +752,7 @@ public class PartitionManager {
                         // Partition is lost! Assign new owner and exit.
                         result = Boolean.TRUE;
                     }
-                    logger.log(Level.INFO, "Finished Migration : " + migrationRequestTask);
+                    logger.log(Level.FINEST, "Finished Migration : " + migrationRequestTask);
                     if (Boolean.TRUE.equals(result)) {
                         concurrentMapManager.enqueueAndWait(new ProcessMigrationResult(migrationRequestTask), 10000);
                     } else {
