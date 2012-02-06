@@ -50,7 +50,7 @@ public class PartitionManager {
     // updates will come from ServiceThread (one exception is PartitionManager.reset())
     // but reads will be multithreaded.
     private volatile MigratingPartition migratingPartition;
-    private boolean initialized = false;
+    private volatile boolean initialized = false;
     private final AtomicInteger version = new AtomicInteger();
     private final List<PartitionListener> lsPartitionListeners = new CopyOnWriteArrayList<PartitionListener>();
     private final int partitionMigrationInterval;
@@ -60,6 +60,7 @@ public class PartitionManager {
     private final BlockingQueue<Runnable> immediateTasksQueue = new LinkedBlockingQueue<Runnable>();
     private final Queue<Runnable> scheduledTasksQueue = new LinkedBlockingQueue<Runnable>();
     private final AtomicBoolean sendingDiffs = new AtomicBoolean(false);
+    private final AtomicBoolean migrationActive = new AtomicBoolean(true);
 
     public PartitionManager(final ConcurrentMapManager concurrentMapManager) {
         this.PARTITION_COUNT = concurrentMapManager.getPartitionCount();
@@ -94,6 +95,22 @@ public class PartitionManager {
 //                60, 60, TimeUnit.SECONDS);
     }
 
+    public boolean activateMigration() {
+        return migrationActive.getAndSet(true);
+    }
+
+    public boolean inactivateMigration() {
+        migrationActive.getAndSet(false);
+        while (migratingPartition != null) {
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                return true;
+            }
+        }
+        return true;
+    }
+
     private void sendClusterRuntimeState() {
         if (!concurrentMapManager.isMaster()) return;
         // do not send partition state until initialized!
@@ -118,6 +135,7 @@ public class PartitionManager {
     }
 
     public Address getOwner(int partitionId) {
+        concurrentMapManager.checkServiceThread();
         if (!initialized) {
             firstArrangement();
         }
@@ -129,17 +147,20 @@ public class PartitionManager {
     }
 
     public void firstArrangement() {
+        concurrentMapManager.checkServiceThread();
         if (!concurrentMapManager.isMaster()) return;
         if (!hasStorageMember()) return;
-        PartitionStateGenerator psg = getPartitionStateGenerator();
-        PartitionInfo[] newState = psg.initialize(concurrentMapManager.lsMembers, PARTITION_COUNT);
-        if (newState != null) {
-            for (PartitionInfo partitionInfo : newState) {
-                partitions[partitionInfo.getPartitionId()].setPartitionInfo(partitionInfo);
+        if (!initialized) {
+            PartitionStateGenerator psg = getPartitionStateGenerator();
+            PartitionInfo[] newState = psg.initialize(concurrentMapManager.lsMembers, PARTITION_COUNT);
+            if (newState != null) {
+                for (PartitionInfo partitionInfo : newState) {
+                    partitions[partitionInfo.getPartitionId()].setPartitionInfo(partitionInfo);
+                }
             }
+            sendClusterRuntimeState();
+            initialized = true;
         }
-        sendClusterRuntimeState();
-        initialized = true;
     }
 
     private PartitionStateGenerator getPartitionStateGenerator() {
@@ -432,12 +453,8 @@ public class PartitionManager {
     }
 
     public void setClusterRuntimeState(ClusterRuntimeState clusterRuntimeState) {
-        setPartitions(clusterRuntimeState.getPartitions());
-        version.set(clusterRuntimeState.getVersion());
-    }
-
-    private void setPartitions(PartitionInfo[] newPartitions) {
         concurrentMapManager.checkServiceThread();
+        PartitionInfo[] newPartitions = clusterRuntimeState.getPartitions();
         int size = newPartitions.length;
         for (int i = 0; i < size; i++) {
             PartitionInfo newPartition = newPartitions[i];
@@ -446,6 +463,7 @@ public class PartitionManager {
             checkMigratingPartitionFor(currentPartition);
         }
         initialized = true;
+        version.set(clusterRuntimeState.getVersion());
     }
 
     private void checkMigratingPartitionFor(PartitionInfo partition) {
@@ -715,6 +733,7 @@ public class PartitionManager {
                         final int partitionId = migrationRequestTask.getPartitionId();
                         fromMember = getMember(partitions[partitionId].getOwner());
                     }
+                    logger.log(Level.INFO, "Started Migration : " + migrationRequestTask);
                     if (fromMember != null) {
                         migrationRequestTask.setFromAddress(fromMember.getAddress());
                         DistributedTask task = new DistributedTask(migrationRequestTask, fromMember);
@@ -733,6 +752,7 @@ public class PartitionManager {
                         // Partition is lost! Assign new owner and exit.
                         result = Boolean.TRUE;
                     }
+                    logger.log(Level.INFO, "Finished Migration : " + migrationRequestTask);
                     if (Boolean.TRUE.equals(result)) {
                         concurrentMapManager.enqueueAndWait(new ProcessMigrationResult(migrationRequestTask), 10000);
                     } else {
@@ -793,27 +813,27 @@ public class PartitionManager {
         public void run() {
             try {
                 while (running) {
-                    Runnable r;
-                    while ((r = immediateTasksQueue.poll()) != null) {
+                    Runnable r = null;
+                    while (migrationActive.get() && (r = immediateTasksQueue.poll()) != null) {
                         safeRunImmediate(r);
                     }
                     if (!running) {
                         break;
                     }
-                    if (scheduledTasksQueue.isEmpty()) {
+                    if (!migrationActive.get() || scheduledTasksQueue.isEmpty()) {
                         Thread.sleep(250);
                         continue;
                     }
                     // wait for partitionMigrationInterval before executing scheduled tasks
                     // and poll immediate tasks occasionally during wait time.
                     long totalWait = 0L;
-                    while (running && r == null && totalWait < partitionMigrationInterval) {
+                    while (migrationActive.get() && running && r == null && totalWait < partitionMigrationInterval) {
                         long start = System.currentTimeMillis();
                         r = immediateTasksQueue.poll(1, TimeUnit.SECONDS);
                         safeRunImmediate(r);
                         totalWait += (System.currentTimeMillis() - start);
                     }
-                    if (running) {
+                    if (migrationActive.get() && running) {
                         r = scheduledTasksQueue.poll();
                         safeRun(r);
                     }

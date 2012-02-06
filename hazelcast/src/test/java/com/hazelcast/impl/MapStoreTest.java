@@ -132,7 +132,8 @@ public class MapStoreTest extends TestUtil {
             store.put(i, "value" + i);
             keys.add(i);
         }
-        Config config = newConfig(testMapStore, 2);
+        final String mapName = "mymap";
+        Config config = newConfig(mapName, testMapStore, 2);
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
@@ -142,19 +143,19 @@ public class MapStoreTest extends TestUtil {
         for (int i = 0; i < 50; i++) {
             new Thread(new Runnable() {
                 public void run() {
-                    instances[random.nextInt(3)].getMap("default");
+                    instances[random.nextInt(3)].getMap(mapName);
                     latch.countDown();
                 }
             }).start();
         }
         assertTrue(latch.await(100, TimeUnit.SECONDS));
-        instances[0].getMap("default");
-        instances[1].getMap("default");
-        instances[2].getMap("default");
+        instances[0].getMap(mapName);
+        instances[1].getMap(mapName);
+        instances[2].getMap(mapName);
         assertEquals("After load:", 15, testMapStore.callCount.get());
-        IMap map1 = h1.getMap("default");
-        IMap map2 = h2.getMap("default");
-        IMap map3 = h3.getMap("default");
+        IMap map1 = h1.getMap(mapName);
+        IMap map2 = h2.getMap(mapName);
+        IMap map3 = h3.getMap(mapName);
         for (int i = 0; i < size; i++) {
             assertEquals("value" + i, map3.get(i));
         }

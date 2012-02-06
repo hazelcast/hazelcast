@@ -77,30 +77,6 @@ public class PartitionServiceImpl implements PartitionService {
         return mapPartitions.get(partitionId);
     }
 
-    public MemberImpl getPartitionOwner(final int partitionId) throws InterruptedException {
-        final BlockingQueue<MemberImpl> responseQ = ResponseQueueFactory.newResponseQueue();
-        concurrentMapManager.enqueueAndReturn(new Processable() {
-            public void process() {
-                MemberImpl memberOwner = null;
-                try {
-                    Address ownerAddress = concurrentMapManager.getPartitionManager().getOwner(partitionId);
-                    if (ownerAddress != null) {
-                        if (concurrentMapManager.thisAddress.equals(ownerAddress)) {
-                            memberOwner = concurrentMapManager.thisMember;
-                        } else {
-                            memberOwner = concurrentMapManager.getMember(ownerAddress);
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
-                } finally {
-                    responseQ.offer(memberOwner);
-                }
-            }
-        });
-        return responseQ.poll(10, TimeUnit.SECONDS);
-    }
-
     void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
 //        System.out.println(concurrentMapManager.getThisAddress() + "  has listeners " + lsMigrationListeners.size());
         if (migrationEvent == null) throw new IllegalArgumentException("MigrationEvent is null.");
@@ -128,6 +104,30 @@ public class PartitionServiceImpl implements PartitionService {
     public void reset() {
     }
 
+    private MemberImpl getPartitionOwner(final int partitionId) throws InterruptedException {
+        final BlockingQueue<MemberImpl> responseQ = ResponseQueueFactory.newResponseQueue();
+        concurrentMapManager.enqueueAndReturn(new Processable() {
+            public void process() {
+                MemberImpl memberOwner = null;
+                try {
+                    Address ownerAddress = concurrentMapManager.getPartitionManager().getOwner(partitionId);
+                    if (ownerAddress != null) {
+                        if (concurrentMapManager.thisAddress.equals(ownerAddress)) {
+                            memberOwner = concurrentMapManager.thisMember;
+                        } else {
+                            memberOwner = concurrentMapManager.getMember(ownerAddress);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                } finally {
+                    responseQ.offer(memberOwner);
+                }
+            }
+        });
+        return responseQ.poll(10, TimeUnit.SECONDS);
+    }
+
     class PartitionProxy implements Partition, Comparable {
         final int partitionId;
 
@@ -140,7 +140,7 @@ public class PartitionServiceImpl implements PartitionService {
         }
 
         public Member getOwner() {
-            Address address = concurrentMapManager.getPartitionManager().getOwner(partitionId);
+            Address address = concurrentMapManager.getPartitionManager().getPartition(partitionId).getOwner();
             if (address != null) {
                 Member member = concurrentMapManager.node.getClusterImpl().getMember(address);
                 if (member != null) {
