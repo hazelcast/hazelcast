@@ -184,16 +184,19 @@ public final class ThreadContext {
         public ConcurrentMapManager.MPut getMPut() {
             mput.reset();
             return mput;
+//            return factory.node.concurrentMapManager.new MPut();
         }
 
         public ConcurrentMapManager.MGet getMGet() {
             mget.reset();
             return mget;
+//            return factory.node.concurrentMapManager.new MGet();
         }
 
         public ConcurrentMapManager.MRemove getMRemove() {
             mremove.reset();
             return mremove;
+//            return factory.node.concurrentMapManager.new MRemove();
         }
 
         public MEvict getMEvict() {

@@ -18,11 +18,13 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.base.Call;
+import com.hazelcast.impl.base.CallState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class NodeBaseVariables {

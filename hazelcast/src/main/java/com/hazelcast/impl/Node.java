@@ -26,10 +26,7 @@ import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
-import com.hazelcast.impl.base.CpuUtilization;
-import com.hazelcast.impl.base.NodeInitializer;
-import com.hazelcast.impl.base.NodeInitializerFactory;
-import com.hazelcast.impl.base.VersionCheck;
+import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.management.ManagementCenterService;
 import com.hazelcast.impl.wan.WanReplicationService;
 import com.hazelcast.logging.ILogger;
@@ -46,8 +43,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -123,6 +122,8 @@ public class Node {
     private final CpuUtilization cpuUtilization = new CpuUtilization();
 
     final SimpleBoundedQueue<Packet> serviceThreadPacketQueue = new SimpleBoundedQueue<Packet>(1000);
+
+    final Map<Long, CallState> mapCallStates = new ConcurrentHashMap<Long, CallState>(1000);
 
     final int id;
 
@@ -216,6 +217,10 @@ public class Node {
         wanReplicationService = new WanReplicationService(this);
         initializeListeners(config);
         joiner = createJoiner();
+    }
+    
+    public Map<Long, CallState> getCallStates() {
+        return mapCallStates;
     }
 
     private void initializeListeners(Config config) {

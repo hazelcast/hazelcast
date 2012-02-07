@@ -1081,6 +1081,16 @@ public abstract class BaseManager {
         return mapCalls.get(id);
     }
 
+    public CallState getCallState(long id) {
+        return node.getCallStates().get(id);
+    }
+
+    public CallState newCallState(long callId, Address caller, int callerThreadId) {
+        CallState callState = new CallState(callId, caller, callerThreadId);
+        node.getCallStates().put(callId, callState);
+        return callState;
+    }
+
     public long addCall(Call call) {
         final long id = localIdGen.incrementAndGet();
         call.setCallId(id);
