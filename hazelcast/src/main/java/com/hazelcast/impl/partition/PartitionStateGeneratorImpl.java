@@ -48,12 +48,12 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     public PartitionInfo[] reArrange(PartitionInfo[] currentState, Collection<MemberImpl> members, int partitionCount,
-                                     List<MigrationRequestTask> scheduledTasksList, List<MigrationRequestTask> immediateTasksList) {
+                                     List<MigrationRequestTask> lostPartitionTasksList, List<MigrationRequestTask> immediateTasksList,
+                                     List<MigrationRequestTask> scheduledTasksList) {
         final LinkedList<NodeGroup> groups = createNodeGroups(memberGroupFactory.createMemberGroups(members));
         if (groups.size() == 0) return currentState;
         PartitionInfo[] newState = arrange(groups, partitionCount, new CopyStateInitializer(currentState));
-        finalizeArrangement(currentState, newState, Math.min(groups.size(), PartitionInfo.MAX_REPLICA_COUNT),
-                scheduledTasksList, immediateTasksList);
+        finalizeArrangement(currentState, newState, lostPartitionTasksList, immediateTasksList, scheduledTasksList);
         return newState;
     }
 
@@ -82,8 +82,8 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return state;
     }
 
-    private void finalizeArrangement(PartitionInfo[] currentState, PartitionInfo[] newState, int replicaCount,
-                                     List<MigrationRequestTask> scheduledTasksList, List<MigrationRequestTask> immediateTasksList) {
+    private void finalizeArrangement(PartitionInfo[] currentState, PartitionInfo[] newState, List<MigrationRequestTask> lostPartitionTasksList,
+                                     List<MigrationRequestTask> immediateTasksList, List<MigrationRequestTask> scheduledTasksList) {
         final int partitionCount = currentState.length;
         // hold migration tasks related to a partition temporarily
         final List<MigrationRequestTask> partitionMigrationTasks = new LinkedList<MigrationRequestTask>();
@@ -101,12 +101,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                             partitionId, currentOwner, newOwner, replicaIndex, true);
                 } else if (currentOwner == null && newOwner != null) {
                     // copy of a backup
-                    if ((currentOwner = currentPartition.getOwner()) == null) {
-                        // Assuming partition table is shifted up before arrangement.
-                        // Otherwise we should iterate over backup addresses to find
-                        // current owner node.
-                        lost = true;
-                    }
+                    currentOwner = currentPartition.getOwner();
                     boolean selfCopy = false;
                     // an earlier level replica of this partition may be migrated from
                     // target of this copy task. if so, to avoid copy back partition data after migration,
@@ -133,15 +128,12 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 }
                 if (migrationRequestTask != null) {
                     partitionMigrationTasks.add(migrationRequestTask);
-                    boolean immediate = false;
-                    if (replicaIndex == 0
-                            && currentPartition.getOwner() != null
-                            && currentPartition.getOwner().equals(newPartition.getReplicaAddress(1))) {
-                        immediate = true;
+                    if (replicaIndex == 0 && currentOwner == null) {
+                        lostPartitionTasksList.add(migrationRequestTask);
+                    } else if (replicaIndex == 0 && currentOwner != null
+                            && currentOwner.equals(newPartition.getReplicaAddress(1))) {
+                        immediateTasksList.add(migrationRequestTask);
                     } else if (replicaIndex == 1 && currentPartition.getReplicaAddress(1) == null) {
-                        immediate = true;
-                    }
-                    if (immediate) {
                         immediateTasksList.add(migrationRequestTask);
                     } else {
                         scheduledTasksList.add(migrationRequestTask);
@@ -149,9 +141,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 }
             }
             partitionMigrationTasks.clear();
-            if (lost) {
-                logger.log(Level.FINEST, "Oops! " + currentPartition + " has been LOST!");
-            }
         }
         arrangeScheduledTasks(scheduledTasksList);
     }
@@ -173,6 +162,14 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 return t1.getReplicaIndex() > t2.getReplicaIndex() ? 1 : -1;
             }
         });
+//        Collections.sort(scheduledTasksList, new Comparator<MigrationRequestTask>() {
+//            public int compare(final MigrationRequestTask t1, final MigrationRequestTask t2) {
+//                if (t1.getReplicaIndex() == t2.getReplicaIndex()) {
+//                    return 0;
+//                }
+//                return t1.getReplicaIndex() > t2.getReplicaIndex() ? 1 : -1;
+//            }
+//        });
     }
 
     private void tryArrange(final PartitionInfo[] state, final LinkedList<NodeGroup> groups,

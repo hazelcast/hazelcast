@@ -577,9 +577,10 @@ public class PartitionManager {
     private class SendClusterStateTask implements Runnable {
         public void run() {
             if (concurrentMapManager.isMaster()) {
-                // TODO: Change log level to FINEST
-                logger.log(Level.INFO, "Remaining migration tasks in queue => Immediate-Tasks: " + immediateTasksQueue.size()
-                        + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
+                if (!scheduledTasksQueue.isEmpty() || !immediateTasksQueue.isEmpty()) {
+                    logger.log(Level.INFO, "Remaining migration tasks in queue => Immediate-Tasks: " + immediateTasksQueue.size()
+                            + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
+                }
                 final Node node = concurrentMapManager.node;
                 concurrentMapManager.enqueueAndReturn(new Processable() {
                     public void process() {
@@ -623,6 +624,7 @@ public class PartitionManager {
 
     private class PrepareRepartitioningTask implements Runnable {
         final Collection<MemberImpl> members = new LinkedList<MemberImpl>();
+        final List<MigrationRequestTask> lostQ = new ArrayList<MigrationRequestTask>(PARTITION_COUNT);
         final List<MigrationRequestTask> scheduledQ = new ArrayList<MigrationRequestTask>(PARTITION_COUNT);
         final List<MigrationRequestTask> immediateQ = new ArrayList<MigrationRequestTask>(PARTITION_COUNT);
 
@@ -644,11 +646,6 @@ public class PartitionManager {
         }
 
         void loadCurrentMembers() {
-            //            concurrentMapManager.enqueueAndWait(new Processable() {
-//                public void process() {
-//                    members.addAll(concurrentMapManager.lsMembers);
-//                }
-//            });
             Collection<Member> memberSet = concurrentMapManager.node.getClusterImpl().getMembers();
             for (Member member : memberSet) {
                 members.add((MemberImpl) member);
@@ -657,11 +654,16 @@ public class PartitionManager {
 
         void prepareMigrationTasks() {
             PartitionStateGenerator psg = getPartitionStateGenerator();
-            psg.reArrange(partitions, members, PARTITION_COUNT, scheduledQ, immediateQ);
+            psg.reArrange(partitions, members, PARTITION_COUNT, lostQ, immediateQ, scheduledQ);
         }
 
         void fillMigrationQueues() {
             clearTaskQueues();
+            if (!lostQ.isEmpty()) {
+                concurrentMapManager.enqueueAndReturn(new LostPartitionsAssignmentProcess(lostQ));
+                logger.log(Level.INFO, "Assigning new owners for " + lostQ.size() +
+                        " lost partitions!");
+            }
             for (MigrationRequestTask migrationRequestTask : immediateQ) {
                 immediateTasksQueue.offer(new Migrator(migrationRequestTask));
             }
@@ -670,7 +672,34 @@ public class PartitionManager {
                 scheduledTasksQueue.offer(new Migrator(migrationRequestTask));
             }
             scheduledQ.clear();
-            // sendClusterRuntimeState();
+        }
+    }
+
+    private class LostPartitionsAssignmentProcess implements Processable {
+        final List<MigrationRequestTask> lostQ;
+
+        private LostPartitionsAssignmentProcess(final List<MigrationRequestTask> lostQ) {
+            this.lostQ = lostQ;
+        }
+
+        public void process() {
+            for (MigrationRequestTask migrationRequestTask : lostQ) {
+                int partitionId = migrationRequestTask.getPartitionId();
+                int replicaIndex = migrationRequestTask.getReplicaIndex();
+                if (replicaIndex != 0 || partitionId >= PARTITION_COUNT) {
+                    logger.log(Level.WARNING, "Wrong task for lost partitions assignment process" +
+                            " => " + migrationRequestTask);
+                    continue;
+                }
+                PartitionInfo partition = partitions[partitionId];
+                Address newOwner = migrationRequestTask.getToAddress();
+                MemberImpl ownerMember = concurrentMapManager.getMember(newOwner);
+                if (ownerMember != null) {
+                    partition.setReplicaAddress(replicaIndex, newOwner);
+                    concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
+                }
+            }
+            sendClusterRuntimeState();
         }
     }
 
@@ -812,6 +841,7 @@ public class PartitionManager {
         }
 
         public void run() {
+            ThreadContext.get().setCurrentFactory(concurrentMapManager.node.factory);
             try {
                 while (running) {
                     Runnable r = null;
