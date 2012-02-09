@@ -1035,7 +1035,8 @@ public class CMap {
         PartitionServiceImpl partitionService = concurrentMapManager.partitionServiceImpl;
         PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(concurrentMapManager.getPartitionId(key));
         Member ownerNow = partition.getOwner();
-        if (ownerNow != null && !concurrentMapManager.isMigrating(partition.getPartitionId()) && ownerNow.localMember()) {
+        if (ownerNow != null && !concurrentMapManager.partitionManager.isOwnedPartitionMigrating(partition.getPartitionId())
+                && ownerNow.localMember()) {
             return getRecord(key);
         }
         return null;
@@ -1201,12 +1202,13 @@ public class CMap {
             comparator = new ComparatorWrapper(LRU_COMPARATOR);
         }
         final PartitionServiceImpl partitionService = concurrentMapManager.partitionServiceImpl;
+        final PartitionManager partitionManager = concurrentMapManager.partitionManager;
         final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(comparator));
         final Set<Record> recordsToEvict = new HashSet<Record>();
         for (Record record : records) {
             PartitionServiceImpl.PartitionProxy partition = partitionService.getPartition(record.getBlockId());
             Member owner = partition.getOwner();
-            if (owner != null && !concurrentMapManager.isMigrating(partition.getPartitionId())) {
+            if (owner != null && !partitionManager.isOwnedPartitionMigrating(partition.getPartitionId())) {
                 boolean owned = owner.localMember();
                 if (owned) {
                     if (store != null && writeDelayMillis > 0 && record.isDirty()) {
@@ -1345,7 +1347,7 @@ public class CMap {
                     Address owner = partition.getOwner();
                     boolean owned = (owner != null && thisAddress.equals(owner));
                     boolean ownedOrBackup = partition.isOwnerOrBackup(thisAddress, backupCount);
-                    if (owner != null && !partitionManager.isMigrating(partition.getPartitionId())) {
+                    if (owner != null && !partitionManager.isPartitionMigrating(partition.getPartitionId())) {
                         if (owned) {
                             if (store != null && writeDelayMillis > 0 && record.isDirty()) {
                                 if (now > record.getWriteTime()) {

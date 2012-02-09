@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -123,7 +124,7 @@ public class Node {
 
     final SimpleBoundedQueue<Packet> serviceThreadPacketQueue = new SimpleBoundedQueue<Packet>(1000);
 
-    final Map<Long, CallState> mapCallStates = new ConcurrentHashMap<Long, CallState>(1000);
+    final ConcurrentMap<Long, CallState> mapCallStates = new ConcurrentHashMap<Long, CallState>(1000);
 
     final int id;
 
@@ -218,7 +219,7 @@ public class Node {
         initializeListeners(config);
         joiner = createJoiner();
     }
-    
+
     public Map<Long, CallState> getCallStates() {
         return mapCallStates;
     }
@@ -405,6 +406,7 @@ public class Node {
             }
             failedConnections.clear();
             serviceThreadPacketQueue.clear();
+            mapCallStates.clear();
             ThreadContext.get().shutdown(this.factory);
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
         }

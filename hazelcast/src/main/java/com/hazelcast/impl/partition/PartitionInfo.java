@@ -104,11 +104,12 @@ public class PartitionInfo {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Partition [" + partitionId + "]{\n");
+        StringBuilder sb = new StringBuilder("Partition [")
+                .append(partitionId).append("]{\n");
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             Address address = addresses.get(i);
             if (address != null) {
-                sb.append(i + ":" + address);
+                sb.append(i).append(":").append(address);
                 sb.append("\n");
             }
         }

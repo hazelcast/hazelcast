@@ -71,6 +71,7 @@ public class ExecutorManager extends BaseManager {
         logger.log(Level.FINEST, "Starting ExecutorManager");
         GroupProperties gp = node.groupProperties;
         ClassLoader classLoader = node.getConfig().getClassLoader();
+
         threadPoolExecutor = new ThreadPoolExecutor(
                 0, Integer.MAX_VALUE,
                 60L,
@@ -79,18 +80,15 @@ public class ExecutorManager extends BaseManager {
                 new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"), classLoader),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
-                ThreadContext threadContext = ThreadContext.get();
-                threadContext.setCurrentFactory(node.factory);
-                CallContext callContext = mapThreadCallContexts.get(t);
-                if (callContext == null) {
-                    callContext = new CallContext(threadContext.createNewThreadId(), false);
-                    mapThreadCallContexts.put(t, callContext);
-                }
-                threadContext.setCallContext(callContext);
+                threadPoolBeforeExecute(t, r);
             }
         };
-        esScheduled = new ScheduledThreadPoolExecutor(10, new ExecutorThreadFactory(node.threadGroup,
-                node.getThreadPoolNamePrefix("scheduled"), classLoader), new RejectionHandler());
+        esScheduled = new ScheduledThreadPoolExecutor(5, new ExecutorThreadFactory(node.threadGroup,
+                node.getThreadPoolNamePrefix("scheduled"), classLoader), new RejectionHandler()) {
+            protected void beforeExecute(Thread t, Runnable r) {
+                threadPoolBeforeExecute(t, r);
+            }
+        };
         parallelExecutorService = new ParallelExecutorService(node.getLogger(ParallelExecutorService.class.getName()), threadPoolExecutor);
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
@@ -359,6 +357,17 @@ public class ExecutorManager extends BaseManager {
                 }
             }
         });
+    }
+
+    private void threadPoolBeforeExecute(Thread t, Runnable r) {
+        ThreadContext threadContext = ThreadContext.get();
+        threadContext.setCurrentFactory(node.factory);
+        CallContext callContext = mapThreadCallContexts.get(t);
+        if (callContext == null) {
+            callContext = new CallContext(threadContext.createNewThreadId(), false);
+            mapThreadCallContexts.put(t, callContext);
+        }
+        threadContext.setCallContext(callContext);
     }
 
     class MembersCall implements ExecutionManagerCallback, ExecutionListener {

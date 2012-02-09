@@ -26,6 +26,7 @@ import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.base.RecordSet;
 import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
@@ -42,6 +43,7 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
     private int replicaIndex;
     private byte[] bytesRecordSet;
     private Address from;
+    private int recordCount;
     private transient HazelcastInstance hazelcast;
 
     public MigrationTask() {
@@ -52,6 +54,7 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
         this.from = from;
+        this.recordCount = costAwareRecordList.getRecords().size();
         ByteArrayOutputStream bos = new ByteArrayOutputStream((int) (costAwareRecordList.getCost() / 100));
         DataOutputStream dos = null;
         try {
@@ -81,6 +84,11 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
                 r.readData(dis);
                 recordSet.addDataRecordEntry(r);
             }
+            if (recordCount != recordSet.getRecords().size()) {
+                getLogger().log(Level.SEVERE, "Migration record count mismatch! => " +
+                        "expected-count: " + size + ", actual-count: " + recordSet.getRecords().size() +
+                        "\nfrom: " + from + ", partition: " + partitionId + ", replica: " + replicaIndex);
+            }
             pm.doMigrate(partitionId, replicaIndex, recordSet, from);
             return Boolean.TRUE;
         } catch (Throwable e) {
@@ -88,17 +96,22 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
             if (e instanceof IllegalStateException) {
                 level = Level.FINEST;
             }
-            node.getLogger(MigrationTask.class.getName()).log(level, e.getMessage(), e);
+            getLogger().log(level, e.getMessage(), e);
         } finally {
             IOUtil.closeResource(dis);
         }
         return Boolean.FALSE;
     }
 
+    private ILogger getLogger() {
+        return ((FactoryImpl) hazelcast).node.getLogger(MigrationTask.class.getName());
+    }
+
     public void writeData(DataOutput out) throws IOException {
         try {
             out.writeInt(partitionId);
             out.writeInt(replicaIndex);
+            out.writeInt(recordCount);
             from.writeData(out);
             out.writeInt(bytesRecordSet.length);
             out.write(bytesRecordSet);
@@ -110,6 +123,7 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
     public void readData(DataInput in) throws IOException {
         partitionId = in.readInt();
         replicaIndex = in.readInt();
+        recordCount = in.readInt();
         from = new Address();
         from.readData(in);
         int size = in.readInt();

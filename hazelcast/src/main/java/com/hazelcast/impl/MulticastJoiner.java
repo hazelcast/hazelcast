@@ -120,7 +120,7 @@ public class MulticastJoiner extends AbstractJoiner {
         Connection conn = node.connectionManager.getOrConnect(masterAddress);
         logger.log(Level.FINEST, "Master connection " + conn);
         if (conn != null) {
-            return node.clusterManager.sendJoinRequest(masterAddress);
+            return node.clusterManager.sendJoinRequest(masterAddress, true);
         }
         return false;
     }

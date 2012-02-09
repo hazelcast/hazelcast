@@ -744,14 +744,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         logger.log(Level.INFO, this.toString());
     }
 
-    public List<MemberImpl> getOldMembers() {
-        return lsMembersBefore;
-    }
-
-    public boolean sendJoinRequest(Address toAddress) {
-        return sendJoinRequest(toAddress, false);
-    }
-
     public boolean sendJoinRequest(Address toAddress, boolean withCredentials) {
         if (toAddress == null) {
             toAddress = node.getMasterAddress();

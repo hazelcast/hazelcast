@@ -603,7 +603,8 @@ public class ConcurrentMapManager extends BaseManager {
                         return true;
                     } else {
                         PartitionServiceImpl.PartitionProxy partition = partitionServiceImpl.getPartition(record.getBlockId());
-                        if (partition != null && !isMigrating(partition.getPartitionId()) && partition.getOwner() != null && partition.getOwner().localMember()) {
+                        if (partition != null && !partitionManager.isOwnedPartitionMigrating(partition.getPartitionId())
+                                && partition.getOwner() != null && partition.getOwner().localMember()) {
                             return true;
                         }
                     }
@@ -2303,11 +2304,7 @@ public class ConcurrentMapManager extends BaseManager {
     public boolean isMigrating(Request req) {
         final Data key = req.key;
         if (key == null) return false;
-        return isMigrating(getPartitionId(key));
-    }
-
-    public boolean isMigrating(int partitionId) {
-        return partitionManager.isMigrating(partitionId);
+        return partitionManager.isOwnedPartitionMigrating(getPartitionId(key));
     }
 
     public int getPartitionId(Request req) {

@@ -162,14 +162,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 return t1.getReplicaIndex() > t2.getReplicaIndex() ? 1 : -1;
             }
         });
-//        Collections.sort(scheduledTasksList, new Comparator<MigrationRequestTask>() {
-//            public int compare(final MigrationRequestTask t1, final MigrationRequestTask t2) {
-//                if (t1.getReplicaIndex() == t2.getReplicaIndex()) {
-//                    return 0;
-//                }
-//                return t1.getReplicaIndex() > t2.getReplicaIndex() ? 1 : -1;
-//            }
-//        });
     }
 
     private void tryArrange(final PartitionInfo[] state, final LinkedList<NodeGroup> groups,

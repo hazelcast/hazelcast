@@ -22,6 +22,7 @@ import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.PartitionManager;
 import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
@@ -58,10 +59,6 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
         return migration;
     }
 
-    public boolean isDiffOnly() {
-        return diffOnly;
-    }
-
     public int getSelfCopyReplicaIndex() {
         return selfCopyReplicaIndex;
     }
@@ -75,12 +72,21 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
     }
 
     public Boolean call() throws Exception {
-        if (to.equals(from)) return Boolean.TRUE;
+        if (to.equals(from)) {
+            getLogger().log(Level.FINEST, "To and from addresses are same! => " + toString());
+            return Boolean.TRUE;
+        }
+        if (from == null) {
+            getLogger().log(Level.FINEST, "From address is null => " + toString());
+        }
         Node node = ((FactoryImpl) hazelcast).node;
         PartitionManager pm = node.concurrentMapManager.getPartitionManager();
         try {
             Member target = pm.getMember(to);
-            if (target == null) return Boolean.FALSE;
+            if (target == null) {
+                getLogger().log(Level.WARNING, "Target of task is null! => " + toString());
+                return Boolean.FALSE;
+            }
             CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to, diffOnly);
             DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList,
                     replicaIndex, from), target);
@@ -94,9 +100,13 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
             if (e instanceof MemberLeftException || e instanceof IllegalStateException) {
                 level = Level.FINEST;
             }
-            node.getLogger(MigrationRequestTask.class.getName()).log(level, e.getMessage(), e);
+            getLogger().log(level, e.getMessage(), e);
         }
         return Boolean.FALSE;
+    }
+
+    private ILogger getLogger() {
+        return ((FactoryImpl) hazelcast).node.getLogger(MigrationRequestTask.class.getName());
     }
 
     public void writeData(DataOutput out) throws IOException {

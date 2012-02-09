@@ -130,8 +130,9 @@ public class PartitionStateGeneratorTest {
         int maxSameHostCount = 3;
         int[] partitionCounts = new int[]{271, 787/*, 1549, 3217, 8707/**/};
         int[] members = new int[]{3, 6, 7, 9, 10, 5, 11, 13, 8, 17, 57, 100, 130, 77, 255};
-        LinkedList<MigrationRequestTask> scheduledQ = new LinkedList<MigrationRequestTask>();
+        LinkedList<MigrationRequestTask> lostQ = new LinkedList<MigrationRequestTask>();
         LinkedList<MigrationRequestTask> immediateQ = new LinkedList<MigrationRequestTask>();
+        LinkedList<MigrationRequestTask> scheduledQ = new LinkedList<MigrationRequestTask>();
         for (int i = 0; i < partitionCounts.length; i++) {
             int partitionCount = partitionCounts[i];
             int memberCount = members[0];
@@ -159,7 +160,7 @@ public class PartitionStateGeneratorTest {
                     groups = nodeGroupFactory.createMemberGroups(memberList);
                     println("PARTITION-COUNT= " + partitionCount + ", MEMBER-COUNT= "
                             + memberCount + ", GROUP-COUNT= " + groups.size());
-                    state = generator.reArrange(state, memberList, partitionCount, scheduledQ, immediateQ);
+                    state = generator.reArrange(state, memberList, partitionCount, lostQ, immediateQ, scheduledQ);
                     for (int k = 0; k < Math.min(groups.size(), PartitionInfo.MAX_REPLICA_COUNT); k++) {
                         printTaskQueueSize(scheduledQ, immediateQ, k);
                     }
