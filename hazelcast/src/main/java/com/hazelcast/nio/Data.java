@@ -17,6 +17,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.Util;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -58,8 +60,7 @@ public class Data implements DataSerializable {
 
     @Override
     public int hashCode() {
-        if (buffer == null) return Integer.MIN_VALUE;
-        return Arrays.hashCode(buffer);
+        return Util.hashCode(buffer);
     }
 
     public int getPartitionHash() {

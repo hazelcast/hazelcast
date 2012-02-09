@@ -41,6 +41,8 @@ public class Call {
 
     volatile long replied = 0;
 
+    private boolean fireNforget;
+
     public Call(Long id, Packet request) {
         this.id = id;
         this.request = request;
@@ -95,6 +97,14 @@ public class Call {
     public void setResponse(Object response) {
         this.response = response;
         this.responseQueue.offer(response);
+    }
+
+    public boolean isFireNforget() {
+        return fireNforget;
+    }
+
+    public void setFireNforget(boolean fireNforget) {
+        this.fireNforget = fireNforget;
     }
 
     @Override

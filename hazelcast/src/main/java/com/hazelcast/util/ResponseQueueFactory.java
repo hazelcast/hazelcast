@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -35,14 +35,16 @@ public class ResponseQueueFactory {
         private Object response = null;
         private final Lock lock = new ReentrantLock();
         private final Condition noValue = lock.newCondition();
+        private final static Object NULL = new Object();
 
         public Object take() throws InterruptedException {
             lock.lock();
             try {
+                //noinspection WhileLoopSpinsOnField
                 while (response == null) {
                     noValue.await();
                 }
-                return response;
+                return getAndRemoveResponse();
             } finally {
                 lock.unlock();
             }
@@ -63,7 +65,7 @@ public class ResponseQueueFactory {
                     noValue.await(remaining, TimeUnit.MILLISECONDS);
                     remaining -= (System.currentTimeMillis() - start);
                 }
-                return response;
+                return getAndRemoveResponse();
             } finally {
                 lock.unlock();
             }
@@ -74,12 +76,16 @@ public class ResponseQueueFactory {
         }
 
         public boolean offer(Object obj) {
+            if (obj == null) {
+                obj = NULL;
+            }
             lock.lock();
             try {
                 if (response != null) {
                     return false;
                 }
                 response = obj;
+                //noinspection CallToSignalInsteadOfSignalAll
                 noValue.signal();
                 return true;
             } finally {
@@ -90,10 +96,21 @@ public class ResponseQueueFactory {
         public Object poll() {
             lock.lock();
             try {
-                return response;
+                return getAndRemoveResponse();
             } finally {
                 lock.unlock();
             }
+        }
+
+        /**
+         * Internal method, should be called under lock.
+         *
+         * @return response
+         */
+        private Object getAndRemoveResponse() {
+            final Object value = response;
+            response = null;
+            return (value == NULL) ? null : value;
         }
 
         public int remainingCapacity() {
@@ -149,7 +166,8 @@ public class ResponseQueueFactory {
         public Object take() throws InterruptedException {
             while (response == null) {
                 synchronized (lock) {
-                    if (response == null) {
+                    while (response == null) {
+                        //noinspection WaitOrAwaitWithoutTimeout
                         lock.wait();
                     }
                 }
@@ -161,13 +179,14 @@ public class ResponseQueueFactory {
             return offer(o);
         }
 
+        @SuppressWarnings("CallToNativeMethodWhileLocked")
         public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
             if (timeout < 0) throw new IllegalArgumentException();
             if (timeout == 0) return response;
             long remaining = unit.toMillis(timeout);
             while (response == null && remaining > 0) {
                 synchronized (lock) {
-                    if (response == null) {
+                    while (response == null) {
                         long start = System.currentTimeMillis();
                         lock.wait(remaining);
                         remaining -= (System.currentTimeMillis() - start);
@@ -185,8 +204,12 @@ public class ResponseQueueFactory {
             if (this.response != null) {
                 return false;
             }
-            this.response = obj;
             synchronized (lock) {
+                if (this.response != null) {
+                    return false;
+                }
+                this.response = obj;
+                //noinspection CallToNotifyInsteadOfNotifyAll
                 lock.notify();
             }
             return true;

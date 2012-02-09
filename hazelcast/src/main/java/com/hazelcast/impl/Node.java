@@ -372,6 +372,7 @@ public class Node {
                 logger.log(Level.FINEST, "Shutting down thread " + thread.getName());
                 thread.interrupt();
             }
+            ThreadContext.get().shutdown(this.factory);
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
         }
     }

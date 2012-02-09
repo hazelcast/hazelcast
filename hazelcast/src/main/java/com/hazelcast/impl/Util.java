@@ -34,6 +34,17 @@ public class Util {
 
     final static ILogger logger = Logger.getLogger(Util.class.getName());
 
+    public static int hashCode(final byte[] data) {
+        if (data == null) return Integer.MIN_VALUE;
+        // FNV (Fowler/Noll/Vo) Hash "1a"
+        final int prime = 0x01000193;
+        int hash = 0x811c9dc5;
+        for (int i = data.length - 1; i >= 0; i--) {
+            hash = (hash ^ data[i]) * prime;
+        }
+        return hash;
+    }
+
     /**
      * -1 means infinite.
      * 0 means no-wait.

@@ -3466,6 +3466,7 @@ public class FactoryImpl implements HazelcastInstance {
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
                 Object result = mput.put(name, key, value, -1, -1);
                 mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+                mput.clearRequest();
                 return result;
             }
 
@@ -3476,6 +3477,7 @@ public class FactoryImpl implements HazelcastInstance {
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
                 mput.putForSync(name, key, value);
                 mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+                mput.clearRequest();
             }
 
             public void removeForSync(Object key) {
@@ -3484,6 +3486,7 @@ public class FactoryImpl implements HazelcastInstance {
                 MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
                 mremove.removeForSync(name, key);
                 mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+                mremove.clearRequest();
             }
 
             public Map getAll(Set keys) {
@@ -3537,6 +3540,7 @@ public class FactoryImpl implements HazelcastInstance {
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
                 Object result = mput.put(name, key, value, timeout, ttl);
                 mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+                mput.clearRequest();
                 return result;
             }
 
@@ -3555,6 +3559,7 @@ public class FactoryImpl implements HazelcastInstance {
                 MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
                 Boolean result = mput.tryPut(name, key, value, timeout, -1);
                 mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+                mput.clearRequest();
                 return result;
             }
 
@@ -3609,12 +3614,8 @@ public class FactoryImpl implements HazelcastInstance {
                 long begin = System.currentTimeMillis();
                 MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
                 Object result = mget.get(name, key, -1);
-                if (result == null && name.contains("testConcurrentLockPrimitive")) {
-                    boolean isClient = ThreadContext.get().isClient();
-                    Object txn = ThreadContext.get().getTransaction();
-                    throw new RuntimeException(result + " testConcurrentLockPrimitive returns null " + isClient + "  " + txn);
-                }
                 mapOperationCounter.incrementGets(System.currentTimeMillis() - begin);
+                mget.clearRequest();
                 return result;
             }
 
@@ -3624,6 +3625,7 @@ public class FactoryImpl implements HazelcastInstance {
                 MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
                 Object result = mremove.remove(name, key, -1);
                 mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+                mremove.clearRequest();
                 return result;
             }
 
@@ -3633,6 +3635,7 @@ public class FactoryImpl implements HazelcastInstance {
                 MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
                 Object result = mremove.tryRemove(name, key, toMillis(timeout, timeunit));
                 mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+                mremove.clearRequest();
                 return result;
             }
 
@@ -3925,9 +3928,11 @@ public class FactoryImpl implements HazelcastInstance {
             }
 
             public boolean evict(Object key) {
-                mapOperationCounter.incrementOtherOperations();
                 MEvict mevict = ThreadContext.get().getCallCache(factory).getMEvict();
-                return mevict.evict(name, key);
+                boolean result = mevict.evict(name, key);
+                mapOperationCounter.incrementOtherOperations();
+                mevict.clearRequest();
+                return result;
             }
         }
     }

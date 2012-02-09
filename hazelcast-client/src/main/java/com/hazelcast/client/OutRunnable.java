@@ -100,7 +100,9 @@ public class OutRunnable extends IORunnable {
                 }
             } else if (connection != null) {
                 if (call != RECONNECT_CALL) {
-                    callMap.put(call.getId(), call);
+                    if (!call.isFireNforget()) {
+                        callMap.put(call.getId(), call);
+                    }
                     writer.write(connection, call.getRequest());
                     call.written = System.nanoTime();
                 }
@@ -126,7 +128,7 @@ public class OutRunnable extends IORunnable {
             if (response != null) {
                 reconnectionCalls.remove(call);
             } else {
-                for (final Iterator<Call> it = reconnectionCalls.iterator(); it.hasNext();) {
+                for (final Iterator<Call> it = reconnectionCalls.iterator(); it.hasNext(); ) {
                     final Call c = it.next();
                     response = !c.hasResponse() ? c.getResponse(100L, TimeUnit.MILLISECONDS) : Boolean.TRUE;
                     if (response != null) {
@@ -154,7 +156,7 @@ public class OutRunnable extends IORunnable {
 
     private void clearCalls(final Collection<Call> calls) {
         if (calls == null) return;
-        for (final Iterator<Call> it = calls.iterator(); it.hasNext();) {
+        for (final Iterator<Call> it = calls.iterator(); it.hasNext(); ) {
             final Call c = it.next();
             if (c == RECONNECT_CALL) continue;
             c.setResponse(new NoMemberAvailableException());

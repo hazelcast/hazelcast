@@ -33,7 +33,9 @@ import java.util.List;
 public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
     static {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
     }
 
     public RandomBlockJUnit4ClassRunner(Class<?> klass) throws InitializationError {

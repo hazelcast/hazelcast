@@ -210,6 +210,7 @@ public class CMapTest extends TestUtil {
         assertEquals(0, cmap.mapRecords.size());
         assertEquals(0, cmap.size());
         assertEquals(0, cmap.mapIndexService.size());
+        node.shutdown(true);
     }
 
     @Test
@@ -247,5 +248,6 @@ public class CMapTest extends TestUtil {
         Thread.sleep(1500);
         assertEquals(0, cmap.size());
         assertFalse(cmap.contains(newContainsRequest(dKey, null)));
+        node.shutdown(true);
     }
 }

@@ -172,7 +172,7 @@ public class ConcurrentMapManager extends BaseManager {
             return;
         }
         cmap.cleanupState = CMap.CleanupState.CLEANING;
-        executeLocally(new FallThroughRunnable() {
+        node.executorManager.executeNow(new FallThroughRunnable() {
             public void doRun() {
                 try {
                     cmap.startCleanup(forced);
@@ -415,6 +415,7 @@ public class ConcurrentMapManager extends BaseManager {
     void putAndUnlock(String name, Object key, Object value) {
         MPut mput = ThreadContext.get().getCallCache(node.factory).getMPut();
         mput.txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, -1, -1);
+        mput.clearRequest();
     }
 
     public void destroyEndpointThreads(Address endpoint, Set<Integer> threadIds) {
@@ -682,7 +683,7 @@ public class ConcurrentMapManager extends BaseManager {
         CMap cmap = getMap(name);
         if (cmap != null && cmap.nearCache != null) {
             theKeys = new HashSet(keys);
-            for (Iterator iterator = theKeys.iterator(); iterator.hasNext();) {
+            for (Iterator iterator = theKeys.iterator(); iterator.hasNext(); ) {
                 Object key = iterator.next();
                 Object value = cmap.nearCache.get(key);
                 if (value != null) {
