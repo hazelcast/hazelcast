@@ -41,7 +41,7 @@ public class Call {
 
     volatile long replied = 0;
 
-    private volatile boolean fireNforget;
+    private boolean fireNforget;
 
     public Call(Long id, Packet request) {
         this.id = id;
@@ -99,17 +99,17 @@ public class Call {
         this.responseQueue.offer(response);
     }
 
-    @Override
-    public String toString() {
-        return "Call " + "[" + id + "] operation=" +
-                (request != null ? request.getOperation() : null);
-    }
-
     public boolean isFireNforget() {
         return fireNforget;
     }
 
     public void setFireNforget(boolean fireNforget) {
         this.fireNforget = fireNforget;
+    }
+
+    @Override
+    public String toString() {
+        return "Call " + "[" + id + "] operation=" +
+                (request != null ? request.getOperation() : null);
     }
 }

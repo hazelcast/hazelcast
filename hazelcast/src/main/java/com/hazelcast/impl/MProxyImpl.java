@@ -741,11 +741,6 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
             Object result = mget.get(name, key, -1);
             mget.clearRequest();
-            if (result == null && name.contains("testConcurrentLockPrimitive")) {
-                boolean isClient = ThreadContext.get().isClient();
-                Object txn = ThreadContext.get().getTransaction();
-                throw new RuntimeException(result + " testConcurrentLockPrimitive returns null " + isClient + "  " + txn);
-            }
             mapOperationCounter.incrementGets(System.currentTimeMillis() - begin);
             return result;
         }
@@ -772,8 +767,6 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
         public int size() {
             mapOperationCounter.incrementOtherOperations();
-//            MSize msize = concurrentMapManager.new MSize(name);
-//            return msize.getSize();
             return concurrentMapManager.size(name);
         }
 
@@ -1011,7 +1004,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         public boolean evict(Object key) {
             mapOperationCounter.incrementOtherOperations();
             MEvict mevict = ThreadContext.get().getCallCache(factory).getMEvict();
-            return mevict.evict(name, key);
+            boolean result = mevict.evict(name, key);
+            mevict.clearRequest();
+            return result;
         }
 
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
