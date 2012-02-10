@@ -376,7 +376,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
-    public void handleAddRemoveConnection(AddOrRemoveConnection connection) {
+    public void handleAddRemoveConnection(final AddOrRemoveConnection connection) {
         if (connection.add) { // Just connect to the new address if not connected already.
             if (!connection.address.equals(thisAddress)) {
                 node.connectionManager.getOrConnect(connection.address);
@@ -394,6 +394,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void doRemoveAddress(Address deadAddress, boolean destroyConnection) {
+        checkServiceThread();
         logger.log(Level.INFO, "Removing Address " + deadAddress);
         if (!node.joined()) {
             node.failedConnection(deadAddress);

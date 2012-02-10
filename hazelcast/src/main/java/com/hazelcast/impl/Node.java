@@ -368,6 +368,7 @@ public class Node {
             // events, such as remove address
             joined.set(false);
             setActive(false);
+            setMasterAddress(null);
             wanReplicationService.shutdown();
             try {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);

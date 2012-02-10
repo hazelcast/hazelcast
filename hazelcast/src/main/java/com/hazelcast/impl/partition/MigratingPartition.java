@@ -30,6 +30,8 @@ public class MigratingPartition implements DataSerializable {
     protected Address to;
     protected int replicaIndex;
 
+    private transient final long creationTime = System.currentTimeMillis();
+
     public MigratingPartition() {
     }
 
@@ -50,6 +52,10 @@ public class MigratingPartition implements DataSerializable {
 
     public int getReplicaIndex() {
         return replicaIndex;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
     }
 
     public void writeData(DataOutput out) throws IOException {

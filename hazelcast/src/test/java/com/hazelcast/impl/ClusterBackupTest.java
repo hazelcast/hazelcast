@@ -20,20 +20,18 @@ package com.hazelcast.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.AtomicNumber;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
-import junit.framework.Assert;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -144,7 +142,7 @@ public class ClusterBackupTest {
         }));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         IMap map2 = h2.getMap("def");
-        Assert.assertTrue(latch.await(60, TimeUnit.SECONDS));
+        assertTrue(latch.await(60, TimeUnit.SECONDS));
         assertEquals(size, getTotalOwnedEntryCount(map1, map2));
         assertEquals(size, getTotalBackupEntryCount(map1, map2));
     }
@@ -475,4 +473,122 @@ public class ClusterBackupTest {
             assertEquals(size, map3.size());
         }
     }
+
+    @Test
+    public void testPartitionAndCMapRecordCounts() throws InterruptedException {
+        final int[] clusterSize = new int[]{3, 5, 7, 6, 4, 2, 1};
+        final int entryCount = 10000;
+        final int totalPartitionCount = 271;
+        final int mapBackupCount = 3;
+        Config config = new Config();
+        config.getProperties().put(GroupProperties.PROP_CLEANUP_DELAY_SECONDS, "3");
+        config.getProperties().put(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
+        config.getProperties().put(GroupProperties.PROP_IMMEDIATE_BACKUP_INTERVAL, "0");
+        config.getProperties().put(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "5");
+
+        final String mapName = "testPartitionAndCMapRecordCounts";
+        int testMapReplicaCount = mapBackupCount + 1;
+        config.getMapConfig(mapName).setBackupCount(mapBackupCount);
+
+        final IMap<Integer, Integer> testMap = Hazelcast.newHazelcastInstance(config).getMap(mapName);
+        for (int i = 0; i < entryCount; i++) {
+            testMap.put(i, i);
+        }
+        int k = 0;
+        for (int i = 0; i < clusterSize.length; i++) {
+            int size = clusterSize[k++ % clusterSize.length];
+            System.out.println("Cluster size : " + size);
+            while (Hazelcast.getAllHazelcastInstances().size() < size) {
+                Hazelcast.newHazelcastInstance(config);
+            }
+            while (Hazelcast.getAllHazelcastInstances().size() > size) {
+                Collection<HazelcastInstance> all = Hazelcast.getAllHazelcastInstances();
+                for (HazelcastInstance hz : all) {
+                    if (hz.getCluster().getMembers().iterator().next().localMember()) {  // shutdown master
+                        hz.getLifecycleService().shutdown();
+                        break;
+                    }
+                }
+            }
+            Collection<HazelcastInstance> set = Hazelcast.getAllHazelcastInstances();
+            final int replicaMax = set.size();
+            int wait = replicaMax * 3;
+            System.out.println("Waiting " + wait + " seconds for partition arrangement...");
+            Thread.sleep(1000 * wait);
+            int[] partitionCounts = new int[PartitionInfo.MAX_REPLICA_COUNT];
+            for (HazelcastInstance hazelcastInstance : set) {
+                int[] pc = getPartitionCounts(getNode(hazelcastInstance));
+                for (int j = 0; j < pc.length; j++) {
+                    partitionCounts[j] += pc[j];
+                }
+            }
+            for (int j = 0; j < partitionCounts.length; j++) {
+                int partitionCount = partitionCounts[j];
+                if (j < replicaMax) {
+                    assertTrue("index: " + j + ", partitions: " + partitionCount + ", max-replica: " + replicaMax,
+                            partitionCount == totalPartitionCount);
+                } else {
+                    assertTrue("index: " + j + ", partitions: " + partitionCount + ", max-replica: " + replicaMax,
+                            partitionCount == 0);
+                }
+            }
+            int[] recordCounts = new int[PartitionInfo.MAX_REPLICA_COUNT];
+            for (HazelcastInstance hazelcastInstance : set) {
+                int[] rc = getCMapRecordCounts(getNode(hazelcastInstance), mapName);
+                for (int j = 0; j < rc.length; j++) {
+                    recordCounts[j] += rc[j];
+                }
+            }
+            for (int j = 0; j < recordCounts.length; j++) {
+                int recordCount = recordCounts[j];
+                if (j < Math.min(testMapReplicaCount, replicaMax)) {
+                    assertTrue("index: " + j + ", records: " + recordCount + ", max-replica: " + replicaMax,
+                            recordCount == entryCount);
+                } else {
+                    assertTrue("index: " + j + ", records: " + recordCount + ", max-replica: " + replicaMax,
+                            recordCount == 0);
+                }
+            }
+        }
+    }
+
+    private static int[] getPartitionCounts(Node node) {
+        int[] counts = new int[PartitionInfo.MAX_REPLICA_COUNT];
+        Address address = node.clusterManager.getThisAddress();
+        PartitionManager partitionManager = node.concurrentMapManager.getPartitionManager();
+        PartitionInfo[] partitions = partitionManager.getPartitions();
+        for (PartitionInfo p : partitions) {
+            for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
+                if (address.equals(p.getReplicaAddress(i))) {
+                    counts[i]++;
+                }
+            }
+        }
+        return counts;
+    }
+
+    private static int[] getCMapRecordCounts(Node node, String name) {
+        int[] counts = new int[PartitionInfo.MAX_REPLICA_COUNT];
+        CMap map = node.concurrentMapManager.getMap(Prefix.MAP + name);
+        Address address = node.clusterManager.getThisAddress();
+        PartitionManager partitionManager = node.concurrentMapManager.getPartitionManager();
+        Collection<Record> records = map.mapRecords.values();
+        for (Record record : records) {
+            int id = record.getBlockId();
+            PartitionInfo p = partitionManager.getPartition(id);
+            for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
+                if (address.equals(p.getReplicaAddress(i))) {
+                    counts[i]++;
+                    break;
+                }
+            }
+        }
+        return counts;
+    }
+
+    private static Node getNode(final HazelcastInstance hazelcastInstance) {
+        FactoryImpl.HazelcastInstanceProxy proxy = (FactoryImpl.HazelcastInstanceProxy) hazelcastInstance;
+        return proxy.getFactory().node;
+    }
+
 }

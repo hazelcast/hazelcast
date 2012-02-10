@@ -73,7 +73,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 //                tryCount = 0;
             } else if (result == TestResult.RETRY) {
                 tryCount++;
-                logger.log(Level.WARNING, "Re-trying partition arrangement.. Count: " + tryCount);
+                logger.log(Level.INFO, "Re-trying partition arrangement.. Count: " + tryCount);
             }
         }
         if (result == TestResult.FAIL) {
@@ -122,7 +122,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                                 partitionId, currentOwner, newOwner, replicaIndex, false);
                     }
                 } else if (currentOwner != null && newOwner == null) {
-                    logger.log(Level.WARNING, "Fixing an error, owner of this replica should have been removed! " +
+                    logger.log(Level.INFO, "Fixing partition.. Owner of this replica should have been removed! " +
                             "Partition[" + partitionId + "], Replica: " + replicaIndex + ", Owner: " + currentOwner);
                     immediateTasksList.add(new MigrationRequestTask(partitionId, currentOwner, null, replicaIndex, false));
                 }
@@ -454,7 +454,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 throw new IllegalArgumentException("Partition counts do not match!");
             }
             for (int i = 0; i < state.length; i++) {
-                state[i] = currentState[i].copy();
+                final PartitionInfo p = currentState[i]; // never update!!!
+                state[i] = new PartitionInfo(p.getPartitionId());
+                state[i].setPartitionInfo(p);
             }
         }
     }

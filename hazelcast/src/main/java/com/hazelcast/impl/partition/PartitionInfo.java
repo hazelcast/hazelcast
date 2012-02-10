@@ -70,12 +70,6 @@ public class PartitionInfo {
                 ? addresses.get(index) : null;
     }
 
-    public PartitionInfo copy() {
-        PartitionInfo p = new PartitionInfo(partitionId, partitionListener);
-        p.setPartitionInfo(this);
-        return p;
-    }
-
     public void setPartitionInfo(PartitionInfo partitionInfo) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             setReplicaAddress(i, partitionInfo.getReplicaAddress(i));

@@ -72,7 +72,7 @@ public class ConcurrentMapManager extends BaseManager {
     final RecordFactory recordFactory;
     final Collection<WanMergeListener> colWanMergeListeners = new CopyOnWriteArrayList<WanMergeListener>();
 
-    ConcurrentMapManager(Node node) {
+    ConcurrentMapManager(final Node node) {
         super(node);
         recordFactory = node.initializer.getRecordFactory();
         storeExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());

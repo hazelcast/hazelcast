@@ -49,7 +49,7 @@ public class Util {
         } else if (t instanceof RuntimeException) {
             throw (RuntimeException) t;
         } else {
-            throw new RuntimeException((Throwable) t);
+            throw new RuntimeException(t);
         }
     }
 
