@@ -86,7 +86,6 @@ public class PartitionManager {
                         logger.log(Level.WARNING, "Owner of partition is being removed! " + event);
                     }
                     if (concurrentMapManager.isMaster()) {
-                        ;
                         version.incrementAndGet();
                     }
                 }
@@ -350,7 +349,6 @@ public class PartitionManager {
         if (!concurrentMapManager.isMaster()) {
             return;
         }
-
         // list of partitions those have dead member in their replicas
         // !! this should be calculated before dead member is removed from partition table !!
         int[] indexesOfDead = new int[partitions.length];
@@ -484,7 +482,6 @@ public class PartitionManager {
 
     public void setClusterRuntimeState(ClusterRuntimeState clusterRuntimeState) {
         concurrentMapManager.checkServiceThread();
-
         final Connection conn = clusterRuntimeState.getConnection();
         final Address sender = conn != null ? conn.getEndPoint() : null;
         if (concurrentMapManager.isMaster()) {
@@ -499,7 +496,6 @@ public class PartitionManager {
                         "(Ignore if master node has changed recently.)");
             }
         }
-
         PartitionInfo[] newPartitions = clusterRuntimeState.getPartitions();
         int size = newPartitions.length;
         for (int i = 0; i < size; i++) {
@@ -597,7 +593,6 @@ public class PartitionManager {
         final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, partitionId, current, newOwner);
         concurrentMapManager.partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
     }
-
 
     private boolean shouldCheckRepartitioning() {
         return immediateTasksQueue.isEmpty() && scheduledTasksQueue.isEmpty()
@@ -755,7 +750,6 @@ public class PartitionManager {
         public void process() {
             if (!concurrentMapManager.isMaster()
                     || !concurrentMapManager.node.isActive()) return;
-
             for (MigrationRequestTask migrationRequestTask : lostQ) {
                 int partitionId = migrationRequestTask.getPartitionId();
                 int replicaIndex = migrationRequestTask.getReplicaIndex();
@@ -816,7 +810,6 @@ public class PartitionManager {
             try {
                 if (!concurrentMapManager.node.isActive()
                         || !concurrentMapManager.node.isMaster()) return;
-
                 if (migrationRequestTask.isMigration() && migrationRequestTask.getReplicaIndex() == 0) {
                     concurrentMapManager.enqueueAndWait(new Processable() {
                         public void process() {

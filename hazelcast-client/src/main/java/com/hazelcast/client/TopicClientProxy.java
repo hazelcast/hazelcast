@@ -38,7 +38,7 @@ public class TopicClientProxy<T> implements ITopic {
     }
 
     public String getName() {
-        return name.substring(Prefix.TOPIC.length());  //To change body of implemented methods use File | Settings | File Templates.
+        return name.substring(Prefix.TOPIC.length());
     }
 
     public void publish(Object message) {

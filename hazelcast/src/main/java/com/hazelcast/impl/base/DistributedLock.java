@@ -52,7 +52,7 @@ public class DistributedLock implements Serializable {
     }
 
     public boolean isLockedBy(Address address, int threadId) {
-        return (this.lockThreadId == threadId && this.lockAddress.equals(address));
+        return (this.lockThreadId == threadId && address != null && address.equals(this.lockAddress));
     }
 
     public boolean lock(Address address, int threadId) {

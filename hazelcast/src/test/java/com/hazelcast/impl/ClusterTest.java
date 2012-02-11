@@ -1747,7 +1747,7 @@ public class ClusterTest {
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
         h1.shutdown();
-        Thread.sleep(1000);
+        Thread.sleep(5000);
         assertEquals(2, q2.size());
         h1 = Hazelcast.newHazelcastInstance(new Config());
         q1 = h1.getQueue("q");
