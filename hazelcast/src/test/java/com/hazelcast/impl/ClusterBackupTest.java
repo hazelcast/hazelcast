@@ -478,9 +478,9 @@ public class ClusterBackupTest {
         final int[] clusterSize = new int[]{3, 5, 7, 6, 4, 2, 1};
         final int entryCount = 10000;
         final int totalPartitionCount = 271;
-        final int mapBackupCount = 3;
+        final int mapBackupCount = 2;
         Config config = new Config();
-        config.getProperties().put(GroupProperties.PROP_CLEANUP_DELAY_SECONDS, "3");
+        config.getProperties().put(GroupProperties.PROP_CLEANUP_DELAY_SECONDS, "1");
         config.getProperties().put(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
         config.getProperties().put(GroupProperties.PROP_IMMEDIATE_BACKUP_INTERVAL, "0");
         config.getProperties().put(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "5");

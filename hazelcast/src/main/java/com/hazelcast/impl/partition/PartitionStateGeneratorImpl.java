@@ -108,7 +108,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     ListIterator<MigrationRequestTask> iter = partitionMigrationTasks.listIterator(partitionMigrationTasks.size());
                     while (iter.hasPrevious()) {
                         MigrationRequestTask task = iter.previous();
-                        if (newOwner.equals(task.getFromAddress())) {
+                        if (task.isMigration() && newOwner.equals(task.getFromAddress())) {
                             selfCopy = true;
                             task.setSelfCopyReplicaIndex(replicaIndex);
                             break;

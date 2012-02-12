@@ -36,10 +36,7 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.Serializer;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.query.Index;
-import com.hazelcast.query.MapIndexService;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.QueryContext;
+import com.hazelcast.query.*;
 import com.hazelcast.util.DistributedTimeoutException;
 
 import java.util.*;

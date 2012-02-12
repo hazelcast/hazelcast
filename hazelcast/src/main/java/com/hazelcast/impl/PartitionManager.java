@@ -82,7 +82,9 @@ public class PartitionManager {
                         partitionListener.replicaChanged(event);
                     }
                     if (node.isActive() && event.getReplicaIndex() == 0 && event.getNewAddress() == null) {
-                        logger.log(Level.WARNING, "Owner of partition is being removed! " + event);
+                        logger.log(Level.WARNING, "Owner of partition is being removed! " +
+                                "Possible data loss for partition[" + event.getPartitionId() + "]. "
+                                + event);
                     }
                     if (concurrentMapManager.isMaster()) {
                         version.incrementAndGet();
@@ -144,6 +146,24 @@ public class PartitionManager {
         }
         ClusterRuntimeState crs = new ClusterRuntimeState(memberInfos, partitions, clusterTime, version.get());
         concurrentMapManager.sendProcessableToAll(crs, false);
+    }
+
+    // for testing purposes only
+    private void printPartitionOwnerDuplicates() {
+        for (PartitionInfo partition : partitions) {
+            L:
+            for (int index = 0; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
+                Address address = partition.getReplicaAddress(index);
+                if (address != null) {
+                    for (int k = 0; k < PartitionInfo.MAX_REPLICA_COUNT; k++) {
+                        if (k != index && address.equals(partition.getReplicaAddress(k))) {
+                            logger.log(Level.WARNING, "DUPLICATE ==> " + partition);
+                            break L;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void addPartitionListener(PartitionListener partitionListener) {
@@ -354,7 +374,12 @@ public class PartitionManager {
             clearTaskQueues();
             // shift partition table up.
             for (PartitionInfo partition : partitions) {
-                partition.onDeadAddress(deadAddress);
+                // safe removal of dead address from partition table.
+                // there might be duplicate dead address in partition table
+                // during migration tasks' execution (when there are multiple backups and
+                // copy backup tasks; see MigrationRequestTask selfCopyReplica.)
+                // or because of a bug.
+                while (partition.onDeadAddress(deadAddress)) ;
             }
         }
         fixCMapsForDead(deadAddress);
@@ -383,10 +408,15 @@ public class PartitionManager {
                     for (int replicaIndex = indexOfDead; replicaIndex < maxBackupCount; replicaIndex++) {
                         Address target = partition.getReplicaAddress(replicaIndex);
                         if (target != null && !target.equals(owner)) {
-                            MigrationRequestTask mrt = new MigrationRequestTask(partitionId, owner, target,
-                                    replicaIndex, false, true);
-                            immediateTasksQueue.offer(new Migrator(mrt));
-                            diffCount++;
+                            if (getMember(target) != null) {
+                                MigrationRequestTask mrt = new MigrationRequestTask(partitionId, owner, target,
+                                        replicaIndex, false, true);
+                                immediateTasksQueue.offer(new Migrator(mrt));
+                                diffCount++;
+                            } else {
+                                logger.log(Level.WARNING, "Target member of replica diff task couldn't found! "
+                                        + "Replica: " + replicaIndex + ", Dead: " + deadMember + "\n" + partition);
+                            }
                         }
                     }
                     // if index of dead member is equal to or less than maxBackupCount
@@ -494,14 +524,14 @@ public class PartitionManager {
         int size = newPartitions.length;
         for (int i = 0; i < size; i++) {
             PartitionInfo newPartition = newPartitions[i];
-            for (int j = 0; j < PartitionInfo.MAX_REPLICA_COUNT; j++) {
-                Address address = newPartition.getReplicaAddress(j);
+            PartitionInfo currentPartition = partitions[newPartition.getPartitionId()];
+            for (int index = 0; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
+                Address address = newPartition.getReplicaAddress(index);
                 if (address != null && concurrentMapManager.getMember(address) == null) {
                     logger.log(Level.WARNING, "Unknown " + address + " is found in received partition table from master "
                             + sender + ". Probably it is dead. Partition: " + newPartition);
                 }
             }
-            PartitionInfo currentPartition = partitions[newPartition.getPartitionId()];
             currentPartition.setPartitionInfo(newPartition);
             checkMigratingPartitionFor(currentPartition);
         }
@@ -720,8 +750,8 @@ public class PartitionManager {
             lastRepartitionTime.set(System.currentTimeMillis());
             if (!lostQ.isEmpty()) {
                 concurrentMapManager.enqueueAndReturn(new LostPartitionsAssignmentProcess(lostQ));
-                logger.log(Level.INFO, "Assigning new owners for " + lostQ.size() +
-                        " lost partitions!");
+                logger.log(Level.WARNING, "Assigning new owners for " + lostQ.size() +
+                        " LOST partitions!");
             }
             for (MigrationRequestTask migrationRequestTask : immediateQ) {
                 immediateTasksQueue.offer(new Migrator(migrationRequestTask));
@@ -845,7 +875,7 @@ public class PartitionManager {
                         try {
                             result = future.get(600, TimeUnit.SECONDS);
                         } catch (Throwable e) {
-                            logger.log(Level.WARNING, "Failed migrating to " + fromMember);
+                            logger.log(Level.WARNING, "Failed migrating from " + fromMember);
                         }
                     } else {
                         // Partition is lost! Assign new owner and exit.

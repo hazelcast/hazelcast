@@ -36,6 +36,11 @@ public class PartitionInfo {
         this(partitionId, null);
     }
 
+    public PartitionInfo(PartitionInfo partition) {
+        this(partition.getPartitionId(), null);
+        setPartitionInfo(partition);
+    }
+
     public int getPartitionId() {
         return partitionId;
     }
@@ -110,16 +115,17 @@ public class PartitionInfo {
         return sb.toString();
     }
 
-    public void onDeadAddress(Address deadAddress) {
+    public boolean onDeadAddress(Address deadAddress) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             if (deadAddress.equals(addresses.get(i))) {
                 for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
                     setReplicaAddress(a, addresses.get(a + 1));
                 }
                 setReplicaAddress(MAX_REPLICA_COUNT - 1, null);
-                return;
+                return true;
             }
         }
+        return false;
     }
 
     public int getReplicaIndexOf(Address address) {

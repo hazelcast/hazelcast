@@ -83,7 +83,7 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
         try {
             Member target = pm.getMember(to);
             if (target == null) {
-                getLogger().log(Level.WARNING, "Target of task is null! => " + toString());
+                getLogger().log(Level.WARNING, "Target member of task could not be found! => " + toString());
                 return Boolean.FALSE;
             }
             CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to, diffOnly);
