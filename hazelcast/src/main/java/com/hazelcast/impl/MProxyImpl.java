@@ -42,6 +42,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS;
 import static com.hazelcast.impl.Util.toMillis;
 import static com.hazelcast.nio.IOUtil.toData;
 
@@ -955,32 +956,31 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
         public Set localKeySet(Predicate predicate) {
             mapOperationCounter.incrementOtherOperations();
-            MIterateLocal miterate = concurrentMapManager.new MIterateLocal(name, predicate);
-            return miterate.iterate();
+            return concurrentMapManager.queryLocal(name, CONCURRENT_MAP_ITERATE_KEYS, predicate);
         }
 
         public Set entrySet(Predicate predicate) {
-            return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, predicate);
+            return (Set) query(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, predicate);
         }
 
         public Set keySet(Predicate predicate) {
-            return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, predicate);
+            return (Set) query(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, predicate);
         }
 
         public Collection values(Predicate predicate) {
-            return iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES, predicate);
+            return query(ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES, predicate);
         }
 
         public Set entrySet() {
-            return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, null);
+            return (Set) query(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, null);
         }
 
         public Set keySet() {
-            return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null);
+            return (Set) query(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null);
         }
 
         public Set allKeys() {
-            return (Set) iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS_ALL, null);
+            return (Set) query(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS_ALL, null);
         }
 
         public MapOperationsCounter getMapOperationCounter() {
@@ -988,13 +988,12 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public Collection values() {
-            return iterate(ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES, null);
+            return query(ClusterOperation.CONCURRENT_MAP_ITERATE_VALUES, null);
         }
 
-        private Collection iterate(ClusterOperation iteratorType, Predicate predicate) {
+        private Collection query(ClusterOperation iteratorType, Predicate predicate) {
             mapOperationCounter.incrementOtherOperations();
-            MIterate miterate = concurrentMapManager.new MIterate(iteratorType, name, predicate);
-            return (Collection) miterate.call();
+            return concurrentMapManager.query(name, iteratorType, predicate);
         }
 
         public void destroy() {

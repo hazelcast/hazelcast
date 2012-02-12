@@ -75,6 +75,10 @@ public class Entries extends AbstractSet {
         return new EntryIterator(colKeyValues.iterator());
     }
 
+    public void clearEntries() {
+        colKeyValues.clear();
+    }
+
     public void addEntries(Pairs pairs) {
         if (pairs == null) return;
         if (pairs.getKeyValues() == null) return;

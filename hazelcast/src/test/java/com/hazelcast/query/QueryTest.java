@@ -398,7 +398,7 @@ public class QueryTest extends TestUtil {
     public void testQueryWithIndexesWhileMigrating() throws Exception {
         HazelcastInstance h1 = newInstance();
         IMap imap = h1.getMap("employees");
-//        imap.addIndex("name", false);
+        imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         for (int i = 0; i < 500; i++) {
@@ -410,9 +410,9 @@ public class QueryTest extends TestUtil {
             imap.putAll(temp);
         }
         assertEquals(50000, imap.size());
-//        HazelcastInstance h2 = newInstance();
-//        HazelcastInstance h3 = newInstance();
-//        HazelcastInstance h4 = newInstance();
+        HazelcastInstance h2 = newInstance();
+        HazelcastInstance h3 = newInstance();
+        HazelcastInstance h4 = newInstance();
         for (int i = 0; i < 1; i++) {
             Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
             assertEquals(6400, entries.size());

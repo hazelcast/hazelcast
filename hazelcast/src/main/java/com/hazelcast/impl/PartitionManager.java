@@ -133,7 +133,7 @@ public class PartitionManager {
     }
 
     private void sendClusterRuntimeState() {
-        if (!concurrentMapManager.isMaster() || !concurrentMapManager.node.isActive()) return;
+        if (!concurrentMapManager.isMaster() || !concurrentMapManager.isActive()) return;
         // do not send partition state until initialized!
         // sending partition state makes nodes believe initialization completed.
         if (!initialized) return;
@@ -169,7 +169,7 @@ public class PartitionManager {
 
     public void firstArrangement() {
         concurrentMapManager.checkServiceThread();
-        if (!concurrentMapManager.isMaster() || !concurrentMapManager.node.isActive()) return;
+        if (!concurrentMapManager.isMaster() || !concurrentMapManager.isActive()) return;
         if (!hasStorageMember()) return;
         if (!initialized) {
             PartitionStateGenerator psg = getPartitionStateGenerator();
@@ -345,10 +345,6 @@ public class PartitionManager {
         }
         concurrentMapManager.partitionServiceImpl.reset();
         checkMigratingPartitionForDead(deadAddress);
-        fixCMapsForDead(deadAddress);
-        if (!concurrentMapManager.isMaster()) {
-            return;
-        }
         // list of partitions those have dead member in their replicas
         // !! this should be calculated before dead member is removed from partition table !!
         int[] indexesOfDead = new int[partitions.length];
@@ -362,12 +358,12 @@ public class PartitionManager {
                 partition.onDeadAddress(deadAddress);
             }
         }
+        fixCMapsForDead(deadAddress);
         fixReplicasAndPartitionsForDead(deadMember, indexesOfDead);
     }
 
     private void fixReplicasAndPartitionsForDead(final MemberImpl deadMember, final int[] indexesOfDead) {
-        boolean isMember = !deadMember.isLiteMember();
-        if (isMember && concurrentMapManager.isMaster()) {
+        if (!deadMember.isLiteMember() && concurrentMapManager.isMaster() && concurrentMapManager.isActive()) {
             sendingDiffs.set(true);
             logger.log(Level.INFO, "Starting to send partition replica diffs..." + sendingDiffs.get());
             int diffCount = 0;
@@ -386,7 +382,6 @@ public class PartitionManager {
                     }
                     // send replica diffs to new replica owners after partition table shift.
                     for (int replicaIndex = indexOfDead; replicaIndex < maxBackupCount; replicaIndex++) {
-//                  for (int replicaIndex = indexOfDead; replicaIndex <= maxBackupCount; replicaIndex++) {
                         Address target = partition.getReplicaAddress(replicaIndex);
                         if (target != null && !target.equals(owner)) {
                             MigrationRequestTask mrt = new MigrationRequestTask(partitionId, owner, target,

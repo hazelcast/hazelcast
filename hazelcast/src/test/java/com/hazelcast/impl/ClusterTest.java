@@ -1743,20 +1743,41 @@ public class ClusterTest {
         assertEquals("item0", q2.poll());
         assertEquals("item1", q2.poll());
         assertEquals("item2", q2.poll());
-        Thread.sleep(1000);
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
-        h1.shutdown();
-        Thread.sleep(5000);
+        Set keys = h2.getMap("q:q").keySet();
+        assertEquals(2, keys.size());
+        IMap m1 = h1.getMap("default");
+        IMap m2 = h2.getMap("default");
+        for (int i = 0; i < 5; i++) {
+            m1.put(i, "value" + i);
+        }
+        assertEquals(5, m1.size());
+        assertEquals(5, m2.size());
+        m2.remove(1);
+        m2.remove(2);
+        m2.remove(3);
+        assertEquals(2, m1.size());
+        assertEquals(2, m2.size());
+        assertEquals(2, m1.keySet().size());
+        assertEquals(2, m2.keySet().size());
+        h1.getLifecycleService().shutdown();
+        keys = h2.getMap("q:q").keySet();
+        assertEquals(2, keys.size());
         assertEquals(2, q2.size());
+        assertEquals(2, m2.size());
+        assertEquals(2, m2.keySet().size());
         h1 = Hazelcast.newHazelcastInstance(new Config());
         q1 = h1.getQueue("q");
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
-        Thread.sleep(1000);
-        h2.shutdown();
-        Thread.sleep(1000);
+        assertEquals(2, m2.size());
+        assertEquals(2, m2.keySet().size());
+        h2.getLifecycleService().shutdown();
         assertEquals(2, q1.size());
+        m1 = h1.getMap("default");
+        assertEquals(2, m1.size());
+        assertEquals(2, m1.keySet().size());
     }
 
     @Test

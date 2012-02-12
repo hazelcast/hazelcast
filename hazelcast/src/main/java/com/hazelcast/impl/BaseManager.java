@@ -1232,6 +1232,10 @@ public abstract class BaseManager {
         return node.isMaster();
     }
 
+    protected boolean isActive() {
+        return node.isActive();
+    }
+
     protected boolean isLiteMember() {
         return node.isLiteMember();
     }
