@@ -1,18 +1,17 @@
-/* 
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
- * 
+/*
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.hazelcast.hibernate;
@@ -71,7 +70,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         assertEquals(50, cfg.getMaxSizeConfig().getSize());
         Hazelcast.getDefaultInstance().getLifecycleService().shutdown();
         sf.close();
-
         assertTrue(hz.getLifecycleService().isRunning());
         hz.getLifecycleService().shutdown();
     }
@@ -105,7 +103,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         ClientProperties cProps = client.getProperties();
         assertEquals("dev-custom", cProps.getProperty(ClientPropertyName.GROUP_NAME));
         assertEquals("dev-pass", cProps.getProperty(ClientPropertyName.GROUP_PASSWORD));
-
         Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         assertEquals(2, hz.getCluster().getMembers().size());
         main.getLifecycleService().shutdown();
@@ -119,13 +116,11 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         Config config = new Config();
         config.setInstanceName("hibernate");
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-
         Properties props = getDefaultProperties();
         props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
         props.put(CacheEnvironment.HAZELCAST_INSTANCE_NAME, "hibernate");
         props.put(CacheEnvironment.SHUTDOWN_ON_STOP, "false");
         final SessionFactory sf = createSessionFactory(props);
-
         assertTrue(hz == HazelcastAccessor.getHazelcastInstance(sf));
         sf.close();
         assertTrue(hz.getLifecycleService().isRunning());
@@ -140,7 +135,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         final SessionFactory sf = createSessionFactory(props);
         assertEquals(3, CacheEnvironment.getLockTimeoutInSeconds(props));
         final HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
-
         final Long id = new Long(1L);
         DummyEntity e = new DummyEntity(id, "", 0, null);
         Session session = sf.openSession();
@@ -148,7 +142,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         session.save(e);
         tx.commit();
         session.close();
-
         new Thread() {
             public void run() {
                 final SessionFactoryImplementor sfi = (SessionFactoryImplementor) sf;
@@ -159,7 +152,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
 
             ;
         }.start();
-
         Thread.sleep(1000);
         session = sf.openSession();
         try {

@@ -1,18 +1,17 @@
-/* 
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
- * 
+/*
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.hazelcast.client;
@@ -128,7 +127,7 @@ public class OutRunnable extends IORunnable {
             if (response != null) {
                 reconnectionCalls.remove(call);
             } else {
-                for (final Iterator<Call> it = reconnectionCalls.iterator(); it.hasNext();) {
+                for (final Iterator<Call> it = reconnectionCalls.iterator(); it.hasNext(); ) {
                     final Call c = it.next();
                     response = !c.hasResponse() ? c.getResponse(100L, TimeUnit.MILLISECONDS) : Boolean.TRUE;
                     if (response != null) {
@@ -156,7 +155,7 @@ public class OutRunnable extends IORunnable {
 
     private void clearCalls(final Collection<Call> calls) {
         if (calls == null) return;
-        for (final Iterator<Call> it = calls.iterator(); it.hasNext();) {
+        for (final Iterator<Call> it = calls.iterator(); it.hasNext(); ) {
             final Call c = it.next();
             if (c == RECONNECT_CALL) continue;
             c.setResponse(new NoMemberAvailableException());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.hazelcast.impl;
@@ -485,11 +484,9 @@ public class ClusterBackupTest {
         config.getProperties().put(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
         config.getProperties().put(GroupProperties.PROP_IMMEDIATE_BACKUP_INTERVAL, "0");
         config.getProperties().put(GroupProperties.PROP_PARTITION_TABLE_SEND_INTERVAL, "5");
-
         final String mapName = "testPartitionAndCMapRecordCounts";
         int testMapReplicaCount = mapBackupCount + 1;
         config.getMapConfig(mapName).setBackupCount(mapBackupCount);
-
         final IMap<Integer, Integer> testMap = Hazelcast.newHazelcastInstance(config).getMap(mapName);
         for (int i = 0; i < entryCount; i++) {
             testMap.put(i, i);
@@ -590,5 +587,4 @@ public class ClusterBackupTest {
         FactoryImpl.HazelcastInstanceProxy proxy = (FactoryImpl.HazelcastInstanceProxy) hazelcastInstance;
         return proxy.getFactory().node;
     }
-
 }

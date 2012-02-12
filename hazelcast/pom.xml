@@ -198,8 +198,6 @@
                                 -Dhazelcast.mancenter.enabled=false
                             </argLine>
                             <excludes>
-                                <!--<exclude>**/ClusterTest.java</exclude>-->
-                                <!--<exclude>**/QueryTest.java</exclude>-->
                                 <exclude>**/PerformanceTest.java</exclude>
                                 <exclude>**/*StressTest.java</exclude>
                             </excludes>

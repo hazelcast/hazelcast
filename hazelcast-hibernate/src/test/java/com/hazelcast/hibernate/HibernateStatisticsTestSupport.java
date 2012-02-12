@@ -1,18 +1,17 @@
-/* 
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
- * 
+/*
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.hazelcast.hibernate;
@@ -91,12 +90,10 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         final HazelcastInstance hz = getHazelcastInstance();
         assertNotNull(hz);
         assertEquals(Hazelcast.getDefaultInstance(), hz);
-
         final int count = 100;
         final int childCount = 3;
         insertDummyEntities(count, childCount);
         sleep(1);
-
         List<DummyEntity> list = new ArrayList<DummyEntity>(count);
         Session session = sf.openSession();
         try {
@@ -108,7 +105,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         } finally {
             session.close();
         }
-
         session = sf.openSession();
         Transaction tx = session.beginTransaction();
         try {
@@ -123,11 +119,9 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         } finally {
             session.close();
         }
-
         Map<?, ?> cache = hz.getMap(DummyEntity.class.getName());
         Map<?, ?> propCache = hz.getMap(DummyProperty.class.getName());
         Map<?, ?> propCollCache = hz.getMap(DummyEntity.class.getName() + ".properties");
-
         assertEquals((childCount + 1) * count, stats.getEntityInsertCount());
         // twice put of entity and properties (on load and update) and once put of collection
         assertEquals((childCount + 1) * count * 2 + count, stats.getSecondLevelCachePutCount());
@@ -138,12 +132,10 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         assertEquals(count, cache.size());
         assertEquals(count * childCount, propCache.size());
         assertEquals(count, propCollCache.size());
-
         sf.getCache().evictEntityRegion(DummyEntity.class);
         sf.getCache().evictEntityRegion(DummyProperty.class);
         assertEquals(0, cache.size());
         assertEquals(0, propCache.size());
-
         stats.logSummary();
     }
 
@@ -152,17 +144,14 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         final HazelcastInstance hz = getHazelcastInstance();
         final int entityCount = 10;
         final int queryCount = 5;
-
         insertDummyEntities(entityCount);
         sleep(1);
-
         List<DummyEntity> list = null;
         for (int i = 0; i < queryCount; i++) {
             list = executeQuery();
             assertEquals(entityCount, list.size());
             sleep(1);
         }
-
         Session session = sf.openSession();
         Transaction tx = session.beginTransaction();
         try {
@@ -176,7 +165,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         } finally {
             session.close();
         }
-
         assertEquals(1, stats.getQueryCachePutCount());
         assertEquals(1, stats.getQueryCacheMissCount());
         assertEquals(queryCount - 1, stats.getQueryCacheHitCount());
@@ -191,7 +179,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         // collection cache miss
         assertEquals(entityCount, stats.getSecondLevelCacheMissCount());
         assertEquals(1, hz.getMap(StandardQueryCache.class.getName()).size());
-
         stats.logSummary();
     }
 

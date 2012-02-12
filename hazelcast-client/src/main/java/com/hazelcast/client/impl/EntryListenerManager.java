@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.hazelcast.client.impl;
@@ -73,7 +72,7 @@ public class EntryListenerManager {
             key = toKey(key);
             List<EntryListenerHolder> list = m.get(key);
             if (list != null) {
-                for (final Iterator<EntryListenerHolder> it = list.iterator(); it.hasNext();) {
+                for (final Iterator<EntryListenerHolder> it = list.iterator(); it.hasNext(); ) {
                     final EntryListenerHolder entryListenerHolder = it.next();
                     if (entryListenerHolder.listener.equals(entryListener)) {
                         list.remove(entryListenerHolder);

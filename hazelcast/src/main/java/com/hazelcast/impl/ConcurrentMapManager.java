@@ -1,23 +1,21 @@
-/* 
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
- * 
+/*
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at 
- * 
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.core.*;
@@ -28,11 +26,15 @@ import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
+import com.hazelcast.impl.partition.MigrationNotification;
 import com.hazelcast.impl.partition.MigrationRequestTask;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.wan.WanMergeListener;
 import com.hazelcast.merge.MergePolicy;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.Serializer;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.query.Index;
 import com.hazelcast.query.MapIndexService;
@@ -40,9 +42,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
 import com.hazelcast.util.DistributedTimeoutException;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -274,12 +273,6 @@ public class ConcurrentMapManager extends BaseManager {
             StringBuffer sbState = new StringBuffer(thisAddress + " State[" + new Date(now));
             sbState.append("]");
             Collection<Call> calls = mapCalls.values();
-//            for (Call call : calls) {
-//                if (call.getEnqueueCount() > 15 || (now - call.getFirstEnqueueTime() > 15000)) {
-//                    sbState.append("\n");
-//                    sbState.append(call);
-//                }
-//            }
             sbState.append("\nCall Count:").append(calls.size());
             sbState.append(partitionManager.toString());
             Collection<CMap> cmaps = maps.values();
@@ -446,41 +439,6 @@ public class ConcurrentMapManager extends BaseManager {
                 cmap.startCleanup(force);
             }
         });
-    }
-
-    public static class MigrationNotification extends AbstractRemotelyProcessable {
-        MigrationRequestTask migrationRequestTask;
-        boolean started;
-
-        public MigrationNotification() {
-        }
-
-        public MigrationNotification(boolean started, MigrationRequestTask migrationRequestTask) {
-            this.started = started;
-            this.migrationRequestTask = migrationRequestTask;
-        }
-
-        public void process() {
-            Address from = migrationRequestTask.getFromAddress();
-            Address to = migrationRequestTask.getToAddress();
-            int partitionId = migrationRequestTask.getPartitionId();
-            node.concurrentMapManager.partitionManager.fireMigrationEvent(started, partitionId, from, to);
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            super.readData(in);
-            migrationRequestTask = new MigrationRequestTask();
-            migrationRequestTask.readData(in);
-            started = in.readBoolean();
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            super.writeData(out);
-            migrationRequestTask.writeData(out);
-            out.writeBoolean(started);
-        }
     }
 
     class MLock extends MBackupAndMigrationAwareOp {
@@ -701,7 +659,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    void putTransient(String name, Object key, Object value, long timeout, long ttl) {
+    public void putTransient(String name, Object key, Object value, long timeout, long ttl) {
         MPut mput = new MPut();
         mput.putTransient(name, key, value, timeout, ttl);
     }
@@ -1012,58 +970,6 @@ public class ConcurrentMapManager extends BaseManager {
         }
         for (Future<Boolean> future : lsFutures) {
             future.get();
-        }
-    }
-
-    public static class PutAllCallable implements Callable<Boolean>, HazelcastInstanceAware, DataSerializable {
-
-        private String mapName;
-        private Pairs pairs;
-        private FactoryImpl factory = null;
-
-        public PutAllCallable() {
-        }
-
-        public PutAllCallable(String mapName, Pairs pairs) {
-            this.mapName = mapName;
-            this.pairs = pairs;
-        }
-
-        public Boolean call() throws Exception {
-            final ConcurrentMapManager c = factory.node.concurrentMapManager;
-            CMap cmap = c.getMap(mapName);
-            if (cmap == null) {
-                c.enqueueAndWait(new Processable() {
-                    public void process() {
-                        c.getOrCreateMap(mapName);
-                    }
-                }, 100);
-                cmap = c.getMap(mapName);
-            }
-            if (cmap != null) {
-                for (KeyValue keyValue : pairs.getKeyValues()) {
-                    Object value = (cmap.getMapIndexService().hasIndexedAttributes()) ?
-                            keyValue.getValue() : keyValue.getValueData();
-                    IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(cmap.name);
-                    map.put(keyValue.getKeyData(), value);
-                }
-            }
-            return Boolean.TRUE;
-        }
-
-        public void readData(DataInput in) throws IOException {
-            mapName = in.readUTF();
-            pairs = new Pairs();
-            pairs.readData(in);
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(mapName);
-            pairs.writeData(out);
-        }
-
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.factory = (FactoryImpl) hazelcastInstance;
         }
     }
 
