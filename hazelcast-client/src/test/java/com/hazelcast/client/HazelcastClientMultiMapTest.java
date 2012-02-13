@@ -16,8 +16,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.Values;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.impl.base.Values;
 import org.junit.Ignore;
 import org.junit.Test;
 

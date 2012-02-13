@@ -439,6 +439,15 @@ public class ClientService implements ConnectionListener {
                 String name = packet.name;
                 ExecutorService executorService = factory.getExecutorService(name);
                 ClientDistributedTask cdt = (ClientDistributedTask) toObject(packet.getKeyData());
+                if (cdt.getMember() != null && cdt.getMember() instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) cdt.getMember()).setHazelcastInstance(node.factory);
+                }
+                if (cdt.getMembers() != null) {
+                    Set<Member> set = cdt.getMembers();
+                    for (Member m : set)
+                        if (m instanceof HazelcastInstanceAware)
+                            ((HazelcastInstanceAware) m).setHazelcastInstance(node.factory);
+                }
                 final ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
                 final Callable callable = node.securityContext == null
                         ? cdt.getCallable()

@@ -229,8 +229,6 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         String name = "testListListener";
         IQueue<String> qOperation = getHazelcastInstance().getQueue(name);
         IQueue<String> qListener = getHazelcastClient().getQueue(name);
-        System.out.println(qOperation.getName());
-        System.out.println(qListener.getName());
         qListener.addItemListener(new ItemListener<String>() {
             public void itemAdded(ItemEvent<String> itemEvent) {
                 assertEquals("hello", itemEvent.getItem());
@@ -243,7 +241,7 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
             }
         }, true);
         qOperation.add("hello");
-        qOperation.remove("hello");
+        qOperation.poll();
         try {
             assertTrue(latch.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException ignored) {

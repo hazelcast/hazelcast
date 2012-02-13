@@ -16,8 +16,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.Values;
 import com.hazelcast.core.Instance;
+import com.hazelcast.impl.base.Values;
 
 import java.util.Iterator;
 import java.util.Map;

@@ -54,7 +54,8 @@ public class InstanceListenerManager {
 
     public void notifyListeners(Packet packet) {
         String id = (String) toObject(packet.getKey());
-        InstanceEvent.InstanceEventType instanceEventType = (InstanceEvent.InstanceEventType) toObject(packet.getValue());
+        int i = (Integer) toObject(packet.getValue());
+        InstanceEvent.InstanceEventType instanceEventType = (i == 0) ? InstanceEvent.InstanceEventType.CREATED : InstanceEvent.InstanceEventType.DESTROYED;
         InstanceEvent event = new InstanceEvent(instanceEventType, (Instance) client.getClientProxy(id));
         for (final InstanceListener listener : instanceListeners) {
             switch (instanceEventType) {

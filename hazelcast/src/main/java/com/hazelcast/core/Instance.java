@@ -28,6 +28,39 @@ public interface Instance {
             this.typeId = typeId;
         }
 
+        public static InstanceType valueOf(int typeId) {
+            switch (typeId) {
+                case 1:
+                    return QUEUE;
+                case 2:
+                    return MAP;
+                case 3:
+                    return SET;
+                case 4:
+                    return LIST;
+                case 5:
+                    return LOCK;
+                case 6:
+                    return TOPIC;
+                case 7:
+                    return MULTIMAP;
+                case 8:
+                    return ID_GENERATOR;
+                case 9:
+                    return ATOMIC_NUMBER;
+                case 10:
+                    return SEMAPHORE;
+                case 11:
+                    return COUNT_DOWN_LATCH;
+                default:
+                    return MAP;
+            }
+        }
+
+        public int getTypeId() {
+            return typeId;
+        }
+
         public boolean isAtomicNumber() {
             return typeId == ATOMIC_NUMBER.typeId;
         }

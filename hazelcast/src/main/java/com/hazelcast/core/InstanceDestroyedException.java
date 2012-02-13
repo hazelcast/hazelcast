@@ -16,9 +16,18 @@
 
 package com.hazelcast.core;
 
-public class InstanceDestroyedException extends Exception {
+import com.hazelcast.nio.DataSerializable;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+public class InstanceDestroyedException extends Exception implements DataSerializable {
     private Instance.InstanceType type;
     private String name;
+
+    public InstanceDestroyedException() {
+    }
 
     public InstanceDestroyedException(Instance.InstanceType type, String name) {
         this.type = type;
@@ -31,5 +40,16 @@ public class InstanceDestroyedException extends Exception {
 
     public String getName() {
         return name;
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeInt(type.getTypeId());
+        out.writeUTF(name);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        int id = in.readInt();
+        type = Instance.InstanceType.valueOf(id);
+        name = in.readUTF();
     }
 }

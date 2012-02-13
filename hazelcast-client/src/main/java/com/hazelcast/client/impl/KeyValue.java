@@ -18,8 +18,6 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.IOUtil;
 
-import static com.hazelcast.nio.IOUtil.toObject;
-
 public class KeyValue extends com.hazelcast.impl.base.KeyValue {
 
     public Object getKey() {
@@ -32,7 +30,7 @@ public class KeyValue extends com.hazelcast.impl.base.KeyValue {
     public Object getValue() {
         if (objValue == null) {
             if (value != null) {
-                objValue = toObject(value);
+                objValue = IOUtil.toObject(value.buffer);
             }
         }
         return objValue;

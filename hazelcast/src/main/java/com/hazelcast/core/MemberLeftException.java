@@ -16,10 +16,19 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.nio.DataSerializable;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
-public class MemberLeftException extends ExecutionException {
-    final Member member;
+public class MemberLeftException extends ExecutionException implements DataSerializable {
+    volatile Member member;
+
+    public MemberLeftException() {
+    }
 
     public MemberLeftException(Member member) {
         this.member = member;
@@ -31,5 +40,14 @@ public class MemberLeftException extends ExecutionException {
 
     public String getMessage() {
         return member + " has left cluster!";
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        member.writeData(out);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        Member member = new MemberImpl();
+        member.readData(in);
     }
 }

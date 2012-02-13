@@ -28,7 +28,6 @@ import org.junit.Test;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.*;
@@ -215,6 +214,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
                 unlockLatch.countDown();
                 assertTrue(map.lockMap(Long.MAX_VALUE, TimeUnit.SECONDS));
                 latch.countDown();
+                //map.unlockMap();
             }
         }).start();
         assertTrue(unlockLatch.await(10, TimeUnit.SECONDS));
@@ -877,6 +877,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     public void doFunctionalQueryTest(IMap imap) {
+        Employee em = new Employee("joe", 33, false, 14.56);
         imap.put("1", new Employee("joe", 33, false, 14.56));
         imap.put("2", new Employee("ali", 23, true, 15.00));
         for (int i = 3; i < 103; i++) {
@@ -925,7 +926,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         }
     }
 
-    public static class Employee implements Serializable {
+    public static class Employee implements DataSerializable {
         String name;
         String familyName;
         String middleName;
@@ -985,6 +986,33 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             sb.append(", salary=").append(salary);
             sb.append('}');
             return sb.toString();
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeBoolean(name == null);
+            if (name != null)
+                out.writeUTF(name);
+            out.writeBoolean(familyName == null);
+            if (familyName != null)
+                out.writeUTF(familyName);
+            out.writeBoolean(middleName == null);
+            if (middleName != null)
+                out.writeUTF(middleName);
+            out.writeInt(age);
+            out.writeBoolean(active);
+            out.writeDouble(salary);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            if (!in.readBoolean())
+                this.name = in.readUTF();
+            if (!in.readBoolean())
+                this.familyName = in.readUTF();
+            if (!in.readBoolean())
+                this.middleName = in.readUTF();
+            this.age = in.readInt();
+            this.active = in.readBoolean();
+            this.salary = in.readDouble();
         }
     }
 

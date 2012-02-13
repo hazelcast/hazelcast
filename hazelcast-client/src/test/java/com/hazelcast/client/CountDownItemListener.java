@@ -18,11 +18,9 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class CountDownItemListener<E> implements ItemListener<E> {
     final CountDownLatch itemAddLatch;
     final CountDownLatch itemRemovedLatch;

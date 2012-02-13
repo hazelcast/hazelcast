@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.nio.AbstractSerializer;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
@@ -37,10 +38,29 @@ public class ClientServiceException implements DataSerializable {
     }
 
     public void writeData(DataOutput out) throws IOException {
-        out.writeUTF(throwable.getMessage());
+        boolean isDs = throwable instanceof DataSerializable;
+        out.writeBoolean(isDs);
+        if (isDs) {
+            out.writeUTF(throwable.getClass().getName());
+            ((DataSerializable) throwable).writeData(out);
+        } else
+            out.writeUTF(throwable.getMessage());
     }
 
     public void readData(DataInput in) throws IOException {
-        throwable = new RuntimeException(in.readUTF());
+        boolean isDs = in.readBoolean();
+        if (isDs) {
+            String className = in.readUTF();
+            final DataSerializable ds;
+            try {
+                ds = (DataSerializable) AbstractSerializer.newInstance(AbstractSerializer.loadClass(className));
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
+            ds.readData(in);
+            throwable = (Throwable) ds;
+        } else {
+            throwable = new RuntimeException(in.readUTF());
+        }
     }
 }
