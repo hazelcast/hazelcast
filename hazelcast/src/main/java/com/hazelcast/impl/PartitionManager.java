@@ -510,7 +510,7 @@ public class PartitionManager {
         final Address sender = conn != null ? conn.getEndPoint() : null;
         if (concurrentMapManager.isMaster()) {
             logger.log(Level.WARNING, "This is the master node and received a ClusterRuntimeState from "
-                    + (sender != null ? sender : conn) + ". Ignoring state! ");
+                    + (sender != null ? sender : conn) + ". Ignoring incoming state! ");
             return;
         } else {
             final Address master = concurrentMapManager.getMasterAddress();
@@ -833,7 +833,9 @@ public class PartitionManager {
         public void run() {
             try {
                 if (!concurrentMapManager.node.isActive()
-                        || !concurrentMapManager.node.isMaster()) return;
+                        || !concurrentMapManager.node.isMaster()) {
+                    return;
+                }
                 if (migrationRequestTask.isMigration() && migrationRequestTask.getReplicaIndex() == 0) {
                     concurrentMapManager.enqueueAndWait(new Processable() {
                         public void process() {
@@ -843,6 +845,8 @@ public class PartitionManager {
                 }
                 if (migrationRequestTask.getToAddress() == null) {
                     // A member is dead, this replica should not have an owner!
+                    logger.log(Level.INFO, "Fixing partition, " + migrationRequestTask.getReplicaIndex()
+                            + ". replica of partition[" + migrationRequestTask.getPartitionId() + "] should be removed.");
                     concurrentMapManager.enqueueAndWait(new Processable() {
                         public void process() {
                             int partitionId = migrationRequestTask.getPartitionId();

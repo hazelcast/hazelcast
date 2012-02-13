@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.util.concurrent;
 
 import java.util.Map;
 
@@ -90,9 +90,9 @@ public class SimpleImmutableEntry<K, V>
      *    e2.getKey()==null :
      *    e1.getKey().equals(e2.getKey()))
      *   &amp;&amp;
-     *   (e1.getValueData()==null ?
-     *    e2.getValueData()==null :
-     *    e1.getValueData().equals(e2.getValueData()))</pre>
+     *   (e1.getValue()==null ?
+     *    e2.getValue()==null :
+     *    e1.getValue().equals(e2.getValue()))</pre>
      * This ensures that the {@code equals} method works properly across
      * different implementations of the {@code Map.Entry} interface.
      *
@@ -120,7 +120,7 @@ public class SimpleImmutableEntry<K, V>
      * Returns the hash code value for this map entry.  The hash code
      * of a map entry {@code e} is defined to be: <pre>
      *   (e.getKey()==null   ? 0 : e.getKey().hashCode()) ^
-     *   (e.getValueData()==null ? 0 : e.getValueData().hashCode())</pre>
+     *   (e.getValue()==null ? 0 : e.getValue().hashCode())</pre>
      * This ensures that {@code e1.equals(e2)} implies that
      * {@code e1.hashCode()==e2.hashCode()} for any two Entries
      * {@code e1} and {@code e2}, as required by the general

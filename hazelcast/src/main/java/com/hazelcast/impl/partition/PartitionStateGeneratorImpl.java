@@ -108,6 +108,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     ListIterator<MigrationRequestTask> iter = partitionMigrationTasks.listIterator(partitionMigrationTasks.size());
                     while (iter.hasPrevious()) {
                         MigrationRequestTask task = iter.previous();
+                        // task to be attached to must be a migration, not a copy of a backup!
                         if (task.isMigration() && newOwner.equals(task.getFromAddress())) {
                             selfCopy = true;
                             task.setSelfCopyReplicaIndex(replicaIndex);
@@ -121,8 +122,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                                 partitionId, currentOwner, newOwner, replicaIndex, false);
                     }
                 } else if (currentOwner != null && newOwner == null) {
-                    logger.log(Level.INFO, "Fixing partition.. Owner of this replica should have been removed! " +
-                            "Partition[" + partitionId + "], Replica: " + replicaIndex + ", Owner: " + currentOwner);
+                    // A member is dead, this replica should not have an owner!
                     immediateTasksList.add(new MigrationRequestTask(partitionId, currentOwner, null, replicaIndex, false));
                 }
                 if (migrationRequestTask != null) {
