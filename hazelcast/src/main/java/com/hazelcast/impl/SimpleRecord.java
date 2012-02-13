@@ -41,7 +41,7 @@ public class SimpleRecord extends AbstractSimpleRecord implements Record {
         return value;
     }
 
-    public void setValue(Data value) {
+    public void setValueData(Data value) {
         this.value = value;
     }
 

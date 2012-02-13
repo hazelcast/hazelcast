@@ -77,7 +77,7 @@ public final class DefaultRecord extends AbstractRecord {
         valueObject = null;
     }
 
-    public void setValue(Data value) {
+    public void setValueData(Data value) {
         invalidateValueCache();
         this.value = value;
     }

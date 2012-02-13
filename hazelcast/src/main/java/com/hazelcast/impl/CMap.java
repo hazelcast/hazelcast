@@ -453,15 +453,14 @@ public class CMap {
         if (isMultiMap()) {
             record = getRecord(dataRecordEntry.getKeyData());
             if (record == null) {
-                record = createNewRecord(dataRecordEntry.getKeyData(), null);
-                mapRecords.put(dataRecordEntry.getKeyData(), record);
+                record = createAndAddNewRecord(dataRecordEntry.getKeyData(), null);
             }
             if (record.getMultiValues() == null) {
                 record.setMultiValues(createMultiValuesCollection());
             }
             record.getMultiValues().add(new ValueHolder(dataRecordEntry.getValueData()));
         } else {
-            record = createNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
+            record = createAndAddNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
             record.setCreationTime(dataRecordEntry.getCreationTime());
             record.setExpirationTime(dataRecordEntry.getExpirationTime() - System.currentTimeMillis());
             record.setMaxIdle(dataRecordEntry.getRemainingIdle());
@@ -469,7 +468,6 @@ public class CMap {
             if (dataRecordEntry.getLockAddress() != null && dataRecordEntry.getLockThreadId() != -1) {
                 record.lock(dataRecordEntry.getLockThreadId(), dataRecordEntry.getLockAddress());
             }
-            mapRecords.put(dataRecordEntry.getKeyData(), record);
         }
         record.setVersion(dataRecordEntry.getVersion());
         markAsActive(record);
@@ -906,9 +904,9 @@ public class CMap {
         if (record != null && !record.isValid(now)) {
             if (record.isActive() && record.isEvictable()) {
                 sendEvictEvent = true;
-                evictedRecord = createNewRecord(record.getKeyData(), record.getValueData());
+                evictedRecord = createNewTransientRecord(record.getKeyData(), record.getValueData());
             }
-            record.setValue(null);
+            record.setValueData(null);
             record.setMultiValues(null);
         }
         if (req.operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
@@ -926,12 +924,11 @@ public class CMap {
         }
         Data oldValue = null;
         if (record == null) {
-            record = createNewRecord(req.key, req.value);
-            mapRecords.put(req.key, record);
+            record = createAndAddNewRecord(req.key, req.value);
         } else {
             markAsActive(record);
             oldValue = (record.isValid(now)) ? record.getValueData() : null;
-            record.setValue(req.value);
+            record.setValueData(req.value);
             record.incrementVersion();
             record.setLastUpdated();
         }
@@ -1478,15 +1475,14 @@ public class CMap {
         Record record = getRecord(req);
         if (record == null) {
             if (isMultiMap()) {
-                record = createNewRecord(req.key, null);
+                record = createAndAddNewRecord(req.key, null);
                 record.setMultiValues(createMultiValuesCollection());
                 if (req.value != null) {
                     record.getMultiValues().add(new ValueHolder(req.value));
                 }
             } else {
-                record = createNewRecord(req.key, req.value);
+                record = createAndAddNewRecord(req.key, req.value);
             }
-            mapRecords.put(req.key, record);
         } else {
             if (req.value != null) {
                 if (isMultiMap()) {
@@ -1495,7 +1491,7 @@ public class CMap {
                     }
                     record.getMultiValues().add(new ValueHolder(req.value));
                 } else {
-                    record.setValue(req.value);
+                    record.setValueData(req.value);
                 }
             }
         }
@@ -1655,7 +1651,7 @@ public class CMap {
         if (record.isActive()) {
             record.markRemoved();
         }
-        record.setValue(null);
+        record.setValueData(null);
         record.setMultiValues(null);
         updateIndexes(record);
         markAsDirty(record);
@@ -1673,7 +1669,7 @@ public class CMap {
         if (record.isActive()) {
             record.markRemoved();
         }
-        record.setValue(null);
+        record.setValueData(null);
         record.setMultiValues(null);
         updateIndexes(record);
     }
@@ -1687,12 +1683,23 @@ public class CMap {
         mapIndexService.index(record);
     }
 
-    Record createNewRecord(Data key, Data value) {
+    Record createAndAddNewRecord(Data key, Data value) {
         if (key == null || key.size() == 0) {
             throw new RuntimeException("Cannot create record from a 0 size key: " + key);
         }
         int blockId = concurrentMapManager.getPartitionId(key);
-        return concurrentMapManager.recordFactory.createNewRecord(this, blockId, key, value,
+        Record record = concurrentMapManager.recordFactory.createNewRecord(this, blockId, key, value,
+                ttl, maxIdle, concurrentMapManager.newRecordId());
+        mapRecords.put(key, record);
+        return record;
+    }
+
+    Record createNewTransientRecord(Data key, Data value) {
+        if (key == null || key.size() == 0) {
+            throw new RuntimeException("Cannot create record from a 0 size key: " + key);
+        }
+        int blockId = concurrentMapManager.getPartitionId(key);
+        return new DefaultRecord(this, blockId, key, value,
                 ttl, maxIdle, concurrentMapManager.newRecordId());
     }
 
@@ -1702,8 +1709,7 @@ public class CMap {
         } else {
             Record rec = getRecord(key);
             if (rec == null) {
-                rec = createNewRecord(key, null);
-                mapRecords.put(key, rec);
+                rec = createAndAddNewRecord(key, null);
             }
             rec.addListener(address, includeValue);
         }

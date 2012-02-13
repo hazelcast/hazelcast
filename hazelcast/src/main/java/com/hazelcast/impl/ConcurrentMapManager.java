@@ -36,7 +36,10 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.Serializer;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.query.*;
+import com.hazelcast.query.Index;
+import com.hazelcast.query.MapIndexService;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryContext;
 import com.hazelcast.util.DistributedTimeoutException;
 
 import java.util.*;
@@ -229,7 +232,7 @@ public class ConcurrentMapManager extends BaseManager {
             for (Record record : cmap.mapRecords.values()) {
                 DistributedSemaphore semaphore = (DistributedSemaphore) record.getValue();
                 if (semaphore.onDisconnect(deadAddress)) {
-                    record.setValue(toData(semaphore));
+                    record.setValueData(toData(semaphore));
                     record.incrementVersion();
                 }
             }
@@ -289,24 +292,6 @@ public class ConcurrentMapManager extends BaseManager {
             sbState.append("MB");
             logger.log(Level.INFO, sbState.toString());
             lastLogStateTime = now;
-        }
-    }
-
-    void backupRecord(final Record rec) {
-        if (rec.getMultiValues() != null) {
-            Collection<ValueHolder> values = rec.getMultiValues();
-            int initialVersion = ((int) rec.getVersion() - values.size());
-            int version = (initialVersion < 0) ? 0 : initialVersion;
-            for (ValueHolder valueHolder : values) {
-                Record record = rec.copy();
-                record.setValue(valueHolder.getData());
-                record.setVersion(++version);
-                MBackupOp backupOp = new MBackupOp();
-                backupOp.backup(record);
-            }
-        } else {
-            MBackupOp backupOp = new MBackupOp();
-            backupOp.backup(rec);
         }
     }
 
@@ -1876,28 +1861,6 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class MBackupOp extends MBackupAwareOp {
-        public void backup(Record record) {
-            request.setFromRecord(record);
-            doOp();
-            boolean stillOwner = getResultAsBoolean();
-            if (stillOwner) {
-                target = thisAddress;
-                backup(CONCURRENT_MAP_BACKUP_PUT);
-            }
-        }
-
-        @Override
-        public void process() {
-            prepareForBackup();
-            if (!thisAddress.equals(getKeyOwner(request))) {
-                setResult(Boolean.FALSE);
-            } else {
-                setResult(Boolean.TRUE);
-            }
-        }
-    }
-
     abstract class MBackupAwareOp extends MTargetAwareOp {
         protected final MBackup[] backupOps = new MBackup[MAX_BACKUP_COUNT];
         protected volatile int backupCount = 0;
@@ -2315,10 +2278,9 @@ public class ConcurrentMapManager extends BaseManager {
                 if (valueData != null) {
                     Record record = cmap.getRecord(request);
                     if (record == null) {
-                        record = cmap.createNewRecord(request.key, valueData);
-                        cmap.mapRecords.put(request.key, record);
+                        record = cmap.createAndAddNewRecord(request.key, valueData);
                     } else {
-                        record.setValue(valueData);
+                        record.setValueData(valueData);
                     }
                     storeProceed(cmap, request);
                 } else {
@@ -2669,10 +2631,9 @@ public class ConcurrentMapManager extends BaseManager {
                 if (valueData != null) {
                     Record record = cmap.getRecord(request);
                     if (record == null) {
-                        record = cmap.createNewRecord(request.key, valueData);
-                        cmap.mapRecords.put(request.key, record);
+                        record = cmap.createAndAddNewRecord(request.key, valueData);
                     } else {
-                        record.setValue(valueData);
+                        record.setValueData(valueData);
                     }
                 }
                 storeProceed(cmap, request);
@@ -2736,7 +2697,7 @@ public class ConcurrentMapManager extends BaseManager {
                 final long newValue = getNewValue(oldValue, value);
                 request.longValue = getResponseValue(oldValue, value);
                 if (oldValue != newValue) {
-                    record.setValue(toData(newValue));
+                    record.setValueData(toData(newValue));
                     record.incrementVersion();
                     request.version = record.getVersion();
                     request.response = record.getValueData();
@@ -2810,7 +2771,7 @@ public class ConcurrentMapManager extends BaseManager {
             final Record record = request.record;
             request.clearForResponse();
             if (changed) {
-                record.setValue(toData(cdl));
+                record.setValueData(toData(cdl));
                 record.incrementVersion();
                 request.version = record.getVersion();
                 request.response = record.getValueData();
@@ -2967,7 +2928,7 @@ public class ConcurrentMapManager extends BaseManager {
             final List<ScheduledAction> scheduledActions = record.getScheduledActions();
             request.clearForResponse();
             if (changed) {
-                record.setValue(toData(semaphore));
+                record.setValueData(toData(semaphore));
                 record.incrementVersion();
                 request.version = record.getVersion();
                 request.response = record.getValueData();
@@ -3257,7 +3218,7 @@ public class ConcurrentMapManager extends BaseManager {
 
             public void process() {
                 if (success) {
-                    Record record = cmap.createNewRecord(request.key, request.value);
+                    Record record = cmap.createNewTransientRecord(request.key, request.value);
                     request.response = new CMap.CMapEntry(record);
                 } else {
                     request.response = null;
@@ -3313,7 +3274,7 @@ public class ConcurrentMapManager extends BaseManager {
 
             public void process() {
                 if (success) {
-                    Record record = cmap.createNewRecord(request.key, request.value);
+                    Record record = cmap.createNewTransientRecord(request.key, request.value);
                     record.setIndexes(request.indexes, request.indexTypes);
                     request.response = new DataRecordEntry(record);
                 } else {
@@ -3870,8 +3831,7 @@ public class ConcurrentMapManager extends BaseManager {
         CMap cmap = getOrCreateMap(req.name);
         Record record = cmap.getRecord(req);
         if (record == null || !record.isActive() || !record.isValid()) {
-            record = cmap.createNewRecord(req.key, defaultValue);
-            cmap.mapRecords.put(req.key, record);
+            record = cmap.createAndAddNewRecord(req.key, defaultValue);
         }
         return record;
     }

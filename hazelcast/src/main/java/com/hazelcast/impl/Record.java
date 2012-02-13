@@ -30,6 +30,9 @@ import java.util.SortedSet;
 
 public interface Record extends MapEntry {
 
+    /**
+     * @return on-heap copy of Record
+     */
     Record copy();
 
     void runBackupOps();
@@ -48,7 +51,7 @@ public interface Record extends MapEntry {
 
     Object setValue(Object value);
 
-    void setValue(Data value);
+    void setValueData(Data value);
 
     Long[] getIndexes();
 

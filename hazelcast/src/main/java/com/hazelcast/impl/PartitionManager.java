@@ -236,7 +236,7 @@ public class PartitionManager {
                                 Collection<ValueHolder> colValues = rec.getMultiValues();
                                 for (ValueHolder valueHolder : colValues) {
                                     Record record = rec.copy();
-                                    record.setValue(valueHolder.getData());
+                                    record.setValueData(valueHolder.getData());
                                     lsResultSet.add(record);
                                 }
                             } else {
