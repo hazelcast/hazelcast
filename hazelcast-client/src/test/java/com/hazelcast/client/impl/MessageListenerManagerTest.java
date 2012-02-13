@@ -20,6 +20,7 @@ import com.hazelcast.client.Packet;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +29,7 @@ import static com.hazelcast.client.IOUtil.toByte;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MessageListenerManagerTest {
     @Test
     public void testRegisterMessageListener() throws Exception {

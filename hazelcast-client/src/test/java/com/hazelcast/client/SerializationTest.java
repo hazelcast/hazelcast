@@ -20,6 +20,7 @@ import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
 import com.hazelcast.nio.DataSerializable;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.*;
 import java.util.Date;
@@ -27,6 +28,7 @@ import java.util.Date;
 import static junit.framework.Assert.assertFalse;
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class SerializationTest {
 
     @Test(expected = RuntimeException.class)

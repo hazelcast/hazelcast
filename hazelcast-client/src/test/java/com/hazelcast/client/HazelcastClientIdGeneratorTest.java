@@ -28,11 +28,9 @@ import static org.junit.Assert.assertNull;
 
 public class HazelcastClientIdGeneratorTest extends HazelcastClientTestBase {
 
-    private HazelcastClient hClient;
-
     @Test
     public void idGenerator() {
-        hClient = getHazelcastClient();
+        HazelcastClient hClient = getHazelcastClient();
         HazelcastInstance h = getHazelcastInstance();
         IdGenerator nativeId = h.getIdGenerator("id");
         IdGenerator clientId = hClient.getIdGenerator("id");

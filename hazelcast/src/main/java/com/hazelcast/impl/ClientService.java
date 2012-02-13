@@ -1065,7 +1065,10 @@ public class ClientService implements ConnectionListener {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
             Keys keys = (Keys) toObject(value);
             Iterator it = keys.getKeys().iterator();
-            return toData(map.replace(key, it.next(), it.next()));
+            Data expected = (Data) it.next();
+            Data newValue = (Data) it.next();
+            boolean replaced = map.replace(key, expected, newValue);
+            return toData(replaced);
         }
     }
 

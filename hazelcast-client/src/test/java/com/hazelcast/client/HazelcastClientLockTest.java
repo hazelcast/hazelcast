@@ -17,6 +17,8 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.ILock;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -26,6 +28,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class HazelcastClientLockTest extends HazelcastClientTestBase {
+
+    @BeforeClass
+    @AfterClass
+    public static void before() {
+        single.destroy();
+    }
 
     @Test(expected = NullPointerException.class)
     public void testLockNull() {

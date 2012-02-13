@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.*;
 
@@ -24,6 +25,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ValueCollectionTest {
 
     @Test

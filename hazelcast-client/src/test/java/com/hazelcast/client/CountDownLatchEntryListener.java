@@ -18,9 +18,11 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class CountDownLatchEntryListener<K, V> implements EntryListener<K, V> {
     final CountDownLatch entryAddLatch;
     final CountDownLatch entryUpdatedLatch;

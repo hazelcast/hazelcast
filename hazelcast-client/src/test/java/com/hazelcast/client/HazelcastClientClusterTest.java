@@ -28,13 +28,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 
-import static com.hazelcast.client.TestUtility.destroyClients;
 import static com.hazelcast.client.TestUtility.newHazelcastClient;
 import static com.hazelcast.impl.TestUtil.OrderKey;
 import static junit.framework.Assert.assertEquals;
@@ -42,6 +42,7 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.fail;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClientClusterTest {
 
     @BeforeClass
@@ -54,12 +55,8 @@ public class HazelcastClientClusterTest {
     @After
     @Before
     public void cleanup() throws Exception {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
-    }
-
-    @After
-    public void after() throws Exception {
-        destroyClients();
     }
 
     @Test

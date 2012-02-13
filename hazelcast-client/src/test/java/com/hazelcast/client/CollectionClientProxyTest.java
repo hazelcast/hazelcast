@@ -25,12 +25,14 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class CollectionClientProxyTest {
     @Test
     public void testIterator() throws Exception {

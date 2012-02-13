@@ -23,26 +23,25 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.InstanceDestroyedException;
 import org.junit.*;
+import org.junit.runner.RunWith;
 
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.TestUtility.destroyClients;
 import static com.hazelcast.client.TestUtility.newHazelcastClient;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClientSemaphoreTest {
 
     @Before
     @After
     public void after() throws Exception {
-        System.out.flush();
-        System.err.flush();
-        destroyClients();
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 

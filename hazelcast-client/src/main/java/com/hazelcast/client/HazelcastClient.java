@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -51,6 +52,8 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 public class HazelcastClient implements HazelcastInstance {
 
     private final static AtomicInteger clientIdCounter = new AtomicInteger();
+
+    private final static List<HazelcastClient> lsClients = new CopyOnWriteArrayList<HazelcastClient>();
 
     final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>(100);
 
@@ -69,7 +72,7 @@ public class HazelcastClient implements HazelcastInstance {
 
     private final ClientProperties properties;
 
-    volatile boolean active = true;
+    private final AtomicBoolean active = new AtomicBoolean(true);
 
     private HazelcastClient(ClientProperties properties, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
         this(properties, new UsernamePasswordCredentials(properties.getProperty(ClientPropertyName.GROUP_NAME),
@@ -112,6 +115,7 @@ public class HazelcastClient implements HazelcastInstance {
         }
         lifecycleService.fireLifecycleEvent(STARTED);
         connectionManager.scheduleHeartbeatTimerTask();
+        lsClients.add(HazelcastClient.this);
     }
 
     GroupConfig groupConfig() {
@@ -471,22 +475,34 @@ public class HazelcastClient implements HazelcastInstance {
         clusterClientProxy.removeInstanceListener(instanceListener);
     }
 
+    public static void shutdownAll() {
+        for (HazelcastClient hazelcastClient : lsClients) {
+            try {
+                hazelcastClient.shutdown();
+            } catch (Exception ignored) {
+            }
+        }
+        lsClients.clear();
+    }
+
     public void shutdown() {
         lifecycleService.shutdown();
     }
 
     void doShutdown() {
-        logger.log(Level.INFO, "HazelcastClient[" + this.id + "] is shutting down.");
-        connectionManager.shutdown();
-        out.shutdown();
-        in.shutdown();
-        listenerManager.shutdown();
-        ClientThreadContext.shutdown();
-        active = false;
+        if (active.compareAndSet(true, false)) {
+            logger.log(Level.INFO, "HazelcastClient[" + this.id + "] is shutting down.");
+            connectionManager.shutdown();
+            out.shutdown();
+            in.shutdown();
+            listenerManager.shutdown();
+            ClientThreadContext.shutdown();
+            lsClients.remove(HazelcastClient.this);
+        }
     }
 
     public boolean isActive() {
-        return active;
+        return active.get();
     }
 
     protected void destroy(String proxyName) {

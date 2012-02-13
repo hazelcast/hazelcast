@@ -20,19 +20,8 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TestUtility {
-
-    static final List<HazelcastClient> clients = new CopyOnWriteArrayList<HazelcastClient>();
-
-    public synchronized static void destroyClients() {
-        for (final HazelcastClient c : clients) {
-            c.shutdown();
-        }
-        clients.clear();
-    }
 
     public synchronized static HazelcastClient newHazelcastClient(HazelcastInstance... h) {
         String name = h[0].getConfig().getGroupConfig().getName();
@@ -45,16 +34,12 @@ public class TestUtility {
         for (int i = 0; i < h.length; i++) {
             addresses[i] = h[i].getCluster().getLocalMember().getInetSocketAddress();
         }
-        final HazelcastClient client = HazelcastClient.newHazelcastClient(properties, true, addresses);
-        clients.add(client);
-        return client;
+        return HazelcastClient.newHazelcastClient(properties, true, addresses);
     }
 
     public synchronized static HazelcastClient getAutoUpdatingClient(HazelcastInstance h1) {
         String address = h1.getCluster().getLocalMember().getInetSocketAddress().toString().substring(1);
         GroupConfig gc = h1.getConfig().getGroupConfig();
-        HazelcastClient client = HazelcastClient.newHazelcastClient(gc.getName(), gc.getPassword(), address);
-        clients.add(client);
-        return client;
+        return HazelcastClient.newHazelcastClient(gc.getName(), gc.getPassword(), address);
     }
 }

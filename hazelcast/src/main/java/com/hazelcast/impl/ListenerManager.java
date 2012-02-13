@@ -368,7 +368,7 @@ public class ListenerManager extends BaseManager {
                 (event.getValue() != null ?
                         new DataAwareEntryEvent(event.getMember(),
                                 event.getEventType().getType(),
-                                event.getName(),
+                                event.getLongName(),
                                 event.getKeyData(),
                                 null,
                                 null,

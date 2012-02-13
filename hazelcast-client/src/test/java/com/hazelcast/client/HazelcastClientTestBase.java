@@ -17,8 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
@@ -43,18 +41,6 @@ abstract public class HazelcastClientTestBase {
     }
 
     protected void destroy() {
-        single.destroy();
-    }
-
-    @BeforeClass
-    public static void before() {
-        single.destroy();
-        single.init();
-    }
-
-    @AfterClass
-    public static void after() {
-        System.out.println("AfterClass " + runningTestName);
         single.destroy();
     }
 }

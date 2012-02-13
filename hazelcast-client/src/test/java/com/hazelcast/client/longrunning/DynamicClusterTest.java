@@ -45,7 +45,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.client.HazelcastClientMapTest.getAllThreads;
-import static com.hazelcast.client.TestUtility.*;
+import static com.hazelcast.client.TestUtility.getAutoUpdatingClient;
+import static com.hazelcast.client.TestUtility.newHazelcastClient;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
@@ -66,7 +67,7 @@ public class DynamicClusterTest {
     @After
     @Before
     public void after() throws Exception {
-        destroyClients();
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 

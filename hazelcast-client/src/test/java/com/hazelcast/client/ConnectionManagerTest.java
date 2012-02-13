@@ -21,6 +21,7 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ConnectionManagerTest {
     final Credentials credentials = new UsernamePasswordCredentials();
 

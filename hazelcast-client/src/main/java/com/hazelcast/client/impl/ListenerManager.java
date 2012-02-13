@@ -93,6 +93,7 @@ public class ListenerManager extends ClientRunnable {
         } catch (InterruptedException ine) {
             throw ine;
         } catch (Throwable ignored) {
+            ignored.printStackTrace();
         }
     }
 

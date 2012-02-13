@@ -58,7 +58,7 @@ public class InRunnable extends IORunnable implements Runnable {
                 Thread.sleep(10);
             } else {
                 packet = reader.readPacket(connection);
-                //logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
+//                logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
                 this.lastReceived = System.currentTimeMillis();
                 Call call = callMap.remove(packet.getCallId());
                 if (call != null) {

@@ -23,6 +23,7 @@ import com.hazelcast.client.ProxyHelper;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.impl.Keys;
 import com.hazelcast.nio.Data;
 
@@ -105,19 +106,27 @@ public class EntryListenerManager {
     }
 
     public void notifyListeners(Packet packet) {
-        Object oldValue = null;
+        Object keyObj = toObject(packet.getKey());
         Object value = toObject(packet.getValue());
+        Data newValue = null;
+        Data oldValue = null;
         if (value instanceof Keys) {
             final Keys values = (Keys) value;
             final Iterator<Data> it = values.getKeys().iterator();
-            value = (it.hasNext() ? toObject(it.next().buffer) : null);
-            oldValue = it.hasNext() ? toObject(it.next().buffer) : null;
+            newValue = it.hasNext() ? new Data(it.next().buffer) : null;
+            oldValue = it.hasNext() ? new Data(it.next().buffer) : null;
+        } else {
+            newValue = new Data(packet.getValue());
         }
-        final EntryEvent event = new EntryEvent(packet.getName(), null, (int) packet.getLongValue(),
-                toObject(packet.getKey()),
-                oldValue, value);
+        final DataAwareEntryEvent event = new DataAwareEntryEvent(null,
+                (int) packet.getLongValue(),
+                packet.getName(),
+                new Data(packet.getKey()),
+                newValue,
+                oldValue,
+                true);
         String name = packet.getName();
-        Object key = toKey(event.getKey());
+        Object key = toKey(keyObj);
         if (entryListeners.get(name) != null) {
             notifyListeners(event, entryListeners.get(name).get(NULL_KEY));
             if (key != NULL_KEY) {

@@ -23,21 +23,20 @@ import com.hazelcast.core.HazelcastInstance;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import static com.hazelcast.client.TestUtility.destroyClients;
 import static com.hazelcast.client.TestUtility.newHazelcastClient;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClientAtomicNumberTest {
 
     @Before
     @After
     public void after() throws Exception {
-        System.out.flush();
-        System.err.flush();
-        destroyClients();
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 

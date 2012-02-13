@@ -23,7 +23,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.DataInput;
@@ -39,18 +38,6 @@ import java.util.concurrent.*;
 import static org.junit.Assert.*;
 
 public class HazelcastClientMapTest extends HazelcastClientTestBase {
-
-    @BeforeClass
-    public static void before() {
-        single.destroy();
-        single.init();
-    }
-
-    @AfterClass
-    public static void after() {
-        System.out.println("AfterClass " + runningTestName);
-        single.destroy();
-    }
 
     @Test(expected = NullPointerException.class)
     public void testPutNull() {

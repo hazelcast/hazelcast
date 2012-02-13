@@ -20,6 +20,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 import org.junit.*;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -30,6 +31,7 @@ import static com.hazelcast.client.TestUtility.newHazelcastClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClientCountDownLatchTest {
 
     @BeforeClass

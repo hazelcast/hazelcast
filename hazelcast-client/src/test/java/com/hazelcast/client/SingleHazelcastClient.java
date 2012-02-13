@@ -27,20 +27,13 @@ public class SingleHazelcastClient {
     HazelcastInstance hz;
 
     public HazelcastClient getHazelcastClient() {
-        if (client == null) {
+        if (client == null || !client.isActive()) {
             Config config = new Config();
             config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
-            config.setProperty(GroupProperties.PROP_EXECUTOR_CLIENT_THREAD_COUNT, "1000");
             hz = Hazelcast.newHazelcastInstance(config);
             client = TestUtility.newHazelcastClient(hz);
         }
         return client;
-    }
-
-    public void shutdownHazelcastClient() {
-        if (client != null) {
-            client.shutdown();
-        }
     }
 
     public void init() {
@@ -49,7 +42,10 @@ public class SingleHazelcastClient {
 
     public void destroy() {
         Hazelcast.shutdownAll();
-        shutdownHazelcastClient();
+        HazelcastClient.shutdownAll();
+        if (client != null) {
+            client.shutdown();
+        }
         client = null;
         hz = null;
     }

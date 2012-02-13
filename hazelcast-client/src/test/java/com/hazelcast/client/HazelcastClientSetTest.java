@@ -58,9 +58,15 @@ public class HazelcastClientSetTest extends HazelcastClientTestBase {
         set.add("hello");
         set.remove("hello");
         set.remove("hello");
-        while (removeLatch.getCount() != 1) {
-            Thread.sleep(50);
+        for (int i = 0; i < 100; i++) {
+            if (removeLatch.getCount() != 1 || addLatch.getCount() != 1) {
+                Thread.sleep(50);
+            } else {
+                break;
+            }
         }
+        assertEquals(1, removeLatch.getCount());
+        assertEquals(1, addLatch.getCount());
         set.removeItemListener(listener);
         set.add("hello");
         set.add("hello");

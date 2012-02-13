@@ -25,6 +25,7 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +36,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MembershipListenerManagerTest {
     @Test
     public void testRegisterMembershipListener() throws Exception {
