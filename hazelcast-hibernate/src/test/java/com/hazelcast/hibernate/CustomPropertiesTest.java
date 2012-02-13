@@ -75,7 +75,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
     }
 
     @Test
-    public void testSuperClient() throws Exception {
+    public void testLiteMember() throws Exception {
         HazelcastInstance main = Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         Properties props = getDefaultProperties();
         props.setProperty(CacheEnvironment.USE_LITE_MEMBER, "true");
@@ -106,6 +106,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         assertEquals(2, hz.getCluster().getMembers().size());
         main.getLifecycleService().shutdown();
+        Thread.sleep(1000 * 2); // let client to reconnect
         assertEquals(1, hz.getCluster().getMembers().size());
         sf.close();
         Hazelcast.shutdownAll();

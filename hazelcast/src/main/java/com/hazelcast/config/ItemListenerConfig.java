@@ -40,6 +40,10 @@ public class ItemListenerConfig extends ListenerConfig {
         return (ItemListener) implementation;
     }
 
+    public void setImplementation(final ItemListener implementation) {
+        super.setImplementation(implementation);
+    }
+
     public boolean isIncludeValue() {
         return includeValue;
     }

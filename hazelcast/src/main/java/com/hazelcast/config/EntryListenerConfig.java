@@ -44,6 +44,10 @@ public class EntryListenerConfig extends ListenerConfig {
         return (EntryListener) implementation;
     }
 
+    public void setImplementation(final EntryListener implementation) {
+        super.setImplementation(implementation);
+    }
+
     public boolean isLocal() {
         return local;
     }
