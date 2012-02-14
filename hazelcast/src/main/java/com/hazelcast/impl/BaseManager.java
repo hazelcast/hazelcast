@@ -41,6 +41,7 @@ import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.*;
+import static com.hazelcast.impl.base.CallStateService.Level.CS_INFO;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -154,13 +155,24 @@ public abstract class BaseManager {
         throw new RuntimeException(msg, exception.getException());
     }
 
-    abstract class AbstractCall implements Call {
+    abstract class AbstractCall implements Call, CallStateAware {
         protected long callId = -1;
         protected long firstEnqueueTime = -1;
         protected int enqueueCount = 0;
+        protected CallState callState = null;
 
         public AbstractCall() {
+            initCall();
+        }
+
+        public CallState getCallState() {
+            return callState;
+        }
+
+        protected void initCall() {
             callId = localIdGen.incrementAndGet();
+            int threadId = ThreadContext.get().getThreadId();
+            callState = node.getCallStateService().newCallState(callId, thisAddress, threadId);
         }
 
         public long getCallId() {
@@ -178,8 +190,7 @@ public abstract class BaseManager {
         }
 
         public void redo() {
-            removeCall(getCallId());
-            callId = -1;
+            removeRemoteCall(getCallId());
             enqueueCall(this);
         }
 
@@ -188,7 +199,7 @@ public abstract class BaseManager {
         }
 
         public void reset() {
-            callId = -1;
+            initCall();
             firstEnqueueTime = -1;
             enqueueCount = 0;
         }
@@ -225,11 +236,21 @@ public abstract class BaseManager {
         @Override
         public void process(Packet packet) {
             Request remoteReq = Request.copy(packet);
-            if (isMigrating(remoteReq) || !isRightRemoteTarget(remoteReq)) {
+            boolean isMigrating = isMigrating(remoteReq);
+            boolean rightRemoteTarget = isRightRemoteTarget(remoteReq);
+            CallStateService css = node.getCallStateService();
+            if (css.shouldLog(CS_INFO)) {
+                css.logObject(remoteReq, CS_INFO, "IsMigrating " + isMigrating);
+                css.logObject(remoteReq, CS_INFO, "RightRemoteTarget " + rightRemoteTarget);
+            }
+            if (isMigrating || !rightRemoteTarget) {
                 remoteReq.clearForResponse();
                 remoteReq.response = OBJECT_REDO;
                 returnResponse(remoteReq);
             } else {
+                if (css.shouldLog(CS_INFO)) {
+                    css.logObject(remoteReq, CS_INFO, "handle");
+                }
                 handle(remoteReq);
             }
             releasePacket(packet);
@@ -283,6 +304,10 @@ public abstract class BaseManager {
     }
 
     public boolean returnResponse(Request request, Connection conn) {
+        CallStateService css = node.getCallStateService();
+        if (css.shouldLog(CS_INFO)) {
+            css.logObject(request, CS_INFO, "ReturnResponse " + conn);
+        }
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
             targetAwareOp.setResult(request.response);
@@ -343,6 +368,10 @@ public abstract class BaseManager {
     abstract class RequestBasedCall extends AbstractCall {
         final protected Request request = new Request();
 
+        protected RequestBasedCall() {
+            request.callState = callState;
+        }
+
         public boolean booleanCall(final ClusterOperation operation, final String name, final Object key,
                                    final Object value, final long timeout, final long recordId) {
             setLocal(operation, name, key, value, timeout, recordId);
@@ -353,6 +382,7 @@ public abstract class BaseManager {
 
         public void reset() {
             super.reset();
+            request.callState = callState;
         }
 
         public void clearRequest() {
@@ -613,14 +643,14 @@ public abstract class BaseManager {
 
         @Override
         public void redo() {
-            removeCall(getCallId());
+            removeRemoteCall(getCallId());
             responses.clear();
             setResult(OBJECT_REDO);
         }
 
         public void reset() {
             if (getCallId() != -1) {
-                removeCall(getCallId());
+                removeRemoteCall(getCallId());
             }
             super.reset();
         }
@@ -657,7 +687,7 @@ public abstract class BaseManager {
         }
 
         protected void handleNoneRedoResponse(final Packet packet) {
-            removeCall(getCallId());
+            removeRemoteCall(getCallId());
             if (request.isBooleanRequest()) {
                 handleBooleanNoneRedoResponse(packet);
             } else if (request.isLongRequest()) {
@@ -710,7 +740,7 @@ public abstract class BaseManager {
         }
 
         protected void invoke() {
-            addCall(ConnectionAwareOp.this);
+            addRemoteCall(ConnectionAwareOp.this);
             final Packet packet = obtainPacket();
             request.setPacket(packet);
             packet.callId = getCallId();
@@ -822,7 +852,7 @@ public abstract class BaseManager {
             if (memberOnly() && getMember(target) == null) {
                 memberDoesNotExist();
             } else {
-                addCall(TargetAwareOp.this);
+                addRemoteCall(TargetAwareOp.this);
                 final Packet packet = doObtainPacket();
                 request.setPacket(packet);
                 packet.callId = getCallId();
@@ -990,7 +1020,7 @@ public abstract class BaseManager {
         }
 
         public void onDisconnect(final Address dead) {
-            removeCall(getCallId());
+            removeRemoteCall(getCallId());
             setResult(OBJECT_REDO);
         }
 
@@ -1071,23 +1101,16 @@ public abstract class BaseManager {
         return packet;
     }
 
-    public Call getCall(long id) {
+    public Call getRemoteCall(long id) {
         return mapCalls.get(id);
     }
 
-    public long addCall(Call call) {
-        final long id = localIdGen.incrementAndGet();
-        call.setCallId(id);
-        mapCalls.put(id, call);
-        return id;
+    public void addRemoteCall(Call call) {
+        mapCalls.put(call.getCallId(), call);
     }
 
-    public Call removeCall(long id) {
-        Call callRemoved = mapCalls.remove(id);
-        if (callRemoved != null) {
-            callRemoved.setCallId(-1);
-        }
-        return callRemoved;
+    public Call removeRemoteCall(long id) {
+        return mapCalls.remove(id);
     }
 
     public void registerPacketProcessor(ClusterOperation operation, PacketProcessor packetProcessor) {
@@ -1404,7 +1427,7 @@ public abstract class BaseManager {
     }
 
     public final void handleResponse(Packet packetResponse) {
-        final Call call = getCall(packetResponse.callId);
+        final Call call = getRemoteCall(packetResponse.callId);
         if (call != null) {
             call.handleResponse(packetResponse);
         } else {

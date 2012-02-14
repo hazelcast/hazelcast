@@ -21,6 +21,7 @@ import com.hazelcast.impl.Constants;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.base.CallState;
+import com.hazelcast.impl.base.CallStateAware;
 import com.hazelcast.util.ByteUtil;
 
 import java.nio.ByteBuffer;
@@ -29,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public final class Packet implements SocketWritable {
+public final class Packet implements SocketWritable, CallStateAware {
 
     public String name;
 
@@ -84,6 +85,10 @@ public final class Packet implements SocketWritable {
     public static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
 
     public Packet() {
+    }
+
+    public CallState getCallState() {
+        return callState;
     }
 
     private static final Map<String, byte[]> mapStringByteCache = new ConcurrentHashMap<String, byte[]>(1000);

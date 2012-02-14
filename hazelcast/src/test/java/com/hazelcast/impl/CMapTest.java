@@ -18,6 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.base.CallState;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.Data;
@@ -53,6 +54,20 @@ public class CMapTest extends TestUtil {
     @After
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testCallState() throws Exception {
+        Config config = new Config();
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+//        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        Node node1 = getNode(h1);
+//        Node node2 = getNode(h2);
+        final IMap imap1 = h1.getMap("default");
+//        final IMap imap2 = h2.getMap("default");
+        imap1.put("1", "value1");
+        CallState callState = node1.getCallStateService().getCallState(node1.getThisAddress(), ThreadContext.get().getThreadId());
+        System.out.println(callState.getLogQ());
     }
 
     @Test

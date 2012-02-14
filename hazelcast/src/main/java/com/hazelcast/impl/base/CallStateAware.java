@@ -16,17 +16,6 @@
 
 package com.hazelcast.impl.base;
 
-import java.util.Date;
-
-public class CallStateStringLog extends CallStateLog {
-    private final String message;
-
-    public CallStateStringLog(String message) {
-        this.message = message;
-    }
-
-    @Override
-    public String toString() {
-        return new Date().toString() + " " + message;
-    }
+public interface CallStateAware {
+    CallState getCallState();
 }

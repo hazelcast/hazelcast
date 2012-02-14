@@ -18,11 +18,11 @@ package com.hazelcast.impl.base;
 
 import com.hazelcast.nio.Address;
 
-public class RemoteCallKey {
+public class CallKey {
     final Address remoteCallerAddress;
     final int callerThreadId;
 
-    public RemoteCallKey(Address remoteCallerAddress, int callerThreadId) {
+    public CallKey(Address remoteCallerAddress, int callerThreadId) {
         this.remoteCallerAddress = remoteCallerAddress;
         this.callerThreadId = callerThreadId;
     }
@@ -39,7 +39,7 @@ public class RemoteCallKey {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RemoteCallKey that = (RemoteCallKey) o;
+        CallKey that = (CallKey) o;
         if (callerThreadId != that.callerThreadId) return false;
         if (!remoteCallerAddress.equals(that.remoteCallerAddress)) return false;
         return true;

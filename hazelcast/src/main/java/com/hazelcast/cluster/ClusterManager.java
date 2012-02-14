@@ -609,7 +609,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         @Override
         public void onDisconnect(final Address dead) {
             if (dead.equals(target)) {
-                removeCall(getCallId());
+                removeRemoteCall(getCallId());
                 setResult(Boolean.FALSE);
             }
         }
@@ -631,7 +631,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
         @Override
         public void redo() {
-            removeCall(getCallId());
+            removeRemoteCall(getCallId());
             setResult(Boolean.FALSE);
         }
 

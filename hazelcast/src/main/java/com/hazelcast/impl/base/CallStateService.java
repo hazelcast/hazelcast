@@ -22,42 +22,53 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class CallStateService {
-    private final ConcurrentMap<Long, CallState> mapLocalCallStates = new ConcurrentHashMap<Long, CallState>(100);
-    private final ConcurrentMap<RemoteCallKey, CallState> mapRemoteCallStates = new ConcurrentHashMap<RemoteCallKey, CallState>(100);
 
-    public CallState newRemoteCallState(long callId, Address remoteCallerAddress, int callerThreadId) {
-        RemoteCallKey remoteCallKey = new RemoteCallKey(remoteCallerAddress, callerThreadId);
-        CallState callStateNew = new CallState(callId, remoteCallerAddress, callerThreadId);
-        CallState callBefore = mapRemoteCallStates.put(remoteCallKey, callStateNew);
-        return callStateNew;
+    public enum Level {
+        CS_NONE,
+        CS_INFO,
+        CS_TRACE
     }
 
-    public CallState getRemoteCallState(Address remoteCallerAddress, int callerThreadId) {
-        RemoteCallKey remoteCallKey = new RemoteCallKey(remoteCallerAddress, callerThreadId);
-        return mapRemoteCallStates.get(remoteCallKey);
-    }
+    private final ConcurrentMap<CallKey, CallState> mapCallStates = new ConcurrentHashMap<CallKey, CallState>(100, 0.75f, 32);
 
-    public CallState newLocalCallState(long callId, Address thisAddress, int callerThreadId) {
-        CallState callStateNew = new CallState(callId, thisAddress, callerThreadId);
-        CallState callBefore = mapLocalCallStates.put(callId, callStateNew);
-        return callStateNew;
-    }
+    private volatile Level currentLevel = Level.CS_NONE;
 
-    public CallState getLocalCallState(long callId) {
-        return mapLocalCallStates.get(callId);
-    }
-
-    public CallState getLocalCallStateByThreadId(int callerThreadId) {
-        for (CallState callState : mapLocalCallStates.values()) {
-            if (callerThreadId == callState.getCallerThreadId()) {
-                return callState;
-            }
+    public CallState newCallState(long callId, Address callerAddress, int callerThreadId) {
+        if (currentLevel == Level.CS_NONE) return null;
+        CallKey callKey = new CallKey(callerAddress, callerThreadId);
+        CallState callBefore = mapCallStates.get(callKey);
+        if (callBefore == null || callBefore.getCallId() != callId) {
+            CallState callStateNew = new CallState(callId, callerAddress, callerThreadId);
+            mapCallStates.put(callKey, callStateNew);
+            return callStateNew;
+        } else {
+            return callBefore;
         }
-        return null;
+    }
+
+    public CallState getCallState(Address remoteCallerAddress, int callerThreadId) {
+        if (currentLevel == Level.CS_NONE) return null;
+        return mapCallStates.get(new CallKey(remoteCallerAddress, callerThreadId));
     }
 
     public void shutdown() {
-        mapLocalCallStates.clear();
-        mapRemoteCallStates.clear();
+        mapCallStates.clear();
+    }
+
+    public void setLogLevel(Level level) {
+        this.currentLevel = level;
+    }
+
+    public boolean shouldLog(Level csInfo) {
+        return currentLevel.ordinal() >= csInfo.ordinal();
+    }
+
+    public void logObject(CallStateAware callStateAware, Level level, Object obj) {
+        if (currentLevel.ordinal() >= level.ordinal()) {
+            CallState callState = callStateAware.getCallState();
+            if (callState != null) {
+                callState.logObject(obj);
+            }
+        }
     }
 }

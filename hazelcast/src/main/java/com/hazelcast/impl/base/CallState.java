@@ -18,6 +18,7 @@ package com.hazelcast.impl.base;
 
 import com.hazelcast.nio.Address;
 
+import java.util.Date;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -26,7 +27,6 @@ public class CallState {
     private final Address caller;
     private final int callerThreadId;
     private final Queue<CallStateLog> logQ = new LinkedBlockingQueue<CallStateLog>(1000);
-    private final Queue<Address> targets = new LinkedBlockingQueue<Address>(10);
 
     public CallState(long callId, Address caller, int callerThreadId) {
         this.callId = callId;
@@ -34,12 +34,12 @@ public class CallState {
         this.callerThreadId = callerThreadId;
     }
 
-    public void addLog(CallStateLog log) {
+    void log(CallStateLog log) {
         logQ.offer(log);
     }
 
-    public void addTarget(Address target) {
-        targets.offer(target);
+    void logObject(Object obj) {
+        log(new CallStateObjectLog(obj));
     }
 
     public Address getCaller() {
@@ -50,15 +50,25 @@ public class CallState {
         return callerThreadId;
     }
 
-    public Queue<Address> getTargets() {
-        return targets;
-    }
-
     public long getCallId() {
         return callId;
     }
 
     public Queue<CallStateLog> getLogQ() {
         return logQ;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("CallState [");
+        sb.append(callId);
+        sb.append("] {");
+        sb.append("\ncaller: " + caller);
+        sb.append("\nthreadId: " + callerThreadId);
+        for (CallStateLog log : logQ) {
+            sb.append("\n\t" + new Date(log.getDate()) + " : " + log.toString());
+        }
+        sb.append("\n}");
+        return sb.toString();
     }
 }

@@ -17,12 +17,13 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.base.CallState;
+import com.hazelcast.impl.base.CallStateAware;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 
-public class Request {
+public class Request implements CallStateAware {
 
     enum ResponseType {
         OBJECT, BOOLEAN, LONG
@@ -69,6 +70,10 @@ public class Request {
 
     public boolean hasEnoughTimeToSchedule() {
         return (timeout == -1) || (timeout > 100);
+    }
+
+    public CallState getCallState() {
+        return callState;
     }
 
     @Override
@@ -188,7 +193,6 @@ public class Request {
         scheduled = req.scheduled;
         indexes = req.indexes;
         indexTypes = req.indexTypes;
-        callState = req.callState;
     }
 
     public static Request copy(Packet packet) {
@@ -266,7 +270,6 @@ public class Request {
             this.indexes = null;
             this.indexTypes = null;
             this.record = null;
-            this.callState = null;
         }
     }
 
