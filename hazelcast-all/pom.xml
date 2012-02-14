@@ -32,8 +32,6 @@
                         <phase>package</phase>
                         <configuration>
                             <tasks>
-                                <property name="source.jar.name"
-                                          value="hazelcast-all-${project.parent.version}-sources.jar"/>
                                 <property name="jar.name" value="hazelcast-all-${project.parent.version}.jar"/>
                                 <delete file="target/${jar.name}" failonerror="false"/>
                                 <jar jarfile="target/${jar.name}" manifest="src/main/resources/META-INF/MANIFEST.MF">
@@ -42,19 +40,6 @@
                                     <fileset dir="../hazelcast-hibernate/target/classes/"/>
                                     <fileset dir="../hazelcast-spring/target/classes/"/>
                                     <fileset dir="../hazelcast-cloud/target/classes/"/>
-                                    <manifest>
-                                        <attribute name="Built-By" value="Hazelcast.com"/>
-                                        <attribute name="Main-Class" value="com.hazelcast.examples.TestApp"/>
-                                    </manifest>
-                                </jar>
-                                <delete file="target/${source.jar.name}" failonerror="false"/>
-                                <jar jarfile="target/${source.jar.name}"
-                                     manifest="src/main/resources/META-INF/MANIFEST.MF">
-                                    <fileset dir="../hazelcast/src/main/java/"/>
-                                    <fileset dir="../hazelcast-client/src/main/java/"/>
-                                    <fileset dir="../hazelcast-hibernate/src/main/java/"/>
-                                    <fileset dir="../hazelcast-spring/src/main/java/"/>
-                                    <fileset dir="../hazelcast-cloud/src/main/java/"/>
                                     <manifest>
                                         <attribute name="Built-By" value="Hazelcast.com"/>
                                         <attribute name="Main-Class" value="com.hazelcast.examples.TestApp"/>
@@ -89,6 +74,7 @@
                             </execution>
                         </executions>
                     </plugin>
+
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
