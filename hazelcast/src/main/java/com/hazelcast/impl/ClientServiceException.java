@@ -55,7 +55,7 @@ public class ClientServiceException implements DataSerializable {
             try {
                 ds = (DataSerializable) AbstractSerializer.newInstance(AbstractSerializer.loadClass(className));
             } catch (Exception e) {
-                throw new IOException(e);
+                throw new IOException(e.getMessage());
             }
             ds.readData(in);
             throwable = (Throwable) ds;
