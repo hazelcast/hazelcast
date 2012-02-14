@@ -20,6 +20,7 @@ import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Constants;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.impl.base.CallState;
 import com.hazelcast.util.ByteUtil;
 
 import java.nio.ByteBuffer;
@@ -77,6 +78,8 @@ public final class Packet implements SocketWritable {
     int totalWritten = 0;
 
     public boolean client = false;
+
+    public CallState callState = null;
 
     public static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
 
@@ -289,6 +292,7 @@ public final class Packet implements SocketWritable {
         sizeRead = false;
         indexes = null;
         indexTypes = null;
+        callState = null;
     }
 
     @Override

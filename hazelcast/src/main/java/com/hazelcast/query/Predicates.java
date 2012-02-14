@@ -576,7 +576,7 @@ public final class Predicates {
                 }
             } else if (type instanceof Timestamp) {
                 if (value instanceof Date) { // one of java.util.Date or java.sql.Date
-                    result = (Date) value;
+                    result = value;
                 } else {
                     try {
                         result = new Timestamp(getTimestampFormat().parse(valueString).getTime());
@@ -586,7 +586,7 @@ public final class Predicates {
                 }
             } else if (type instanceof java.sql.Date) {
                 if (value instanceof Date) { // one of java.util.Date or java.sql.Timestamp
-                    result = (Date) value;
+                    result = value;
                 } else {
                     try {
                         result = getSqlDateFormat().parse(valueString);
@@ -596,13 +596,26 @@ public final class Predicates {
                 }
             } else if (type instanceof Date) {
                 if (value instanceof Date) { // one of java.sql.Date or java.sql.Timestamp
-                    result = (Date) value;
+                    result = value;
                 } else {
                     try {
                         result = getUtilDateFormat().parse(valueString);
                     } catch (ParseException e) {
                         Util.throwUncheckedException(e);
                     }
+                }
+            } else if (type.getClass().isEnum()) {
+                try {
+                    Enum enumType = (Enum) type;
+                    String lastEnum = valueString;
+                    if (valueString.indexOf(".") != -1) {
+                        // there is a dot  in the value specifier, keep part after last dot
+                        lastEnum = valueString.substring(1 + valueString.lastIndexOf("."));
+                    }
+                    result = enumType.valueOf(enumType.getClass(), lastEnum);
+                } catch (IllegalArgumentException iae) {
+                    // illegal enum value specification
+                    throw new IllegalArgumentException("Illegal enum value specification: " + iae.getMessage());
                 }
             } else {
                 throw new RuntimeException("Unknown type " + type + " value=" + valueString);

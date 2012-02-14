@@ -17,6 +17,7 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.impl.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -29,8 +30,14 @@ import static org.junit.Assert.*;
 public class PredicatesTest {
     @Test
     public void testEqual() {
-        Object value = new QueryTest.Employee("abc-123-xvz", 34, true, 10D);
-        Object nullNameValue = new QueryTest.Employee(null, 34, true, 10D);
+        TestUtil.Employee value = new QueryTest.Employee("abc-123-xvz", 34, true, 10D);
+        value.setState(TestUtil.State.STATE2);
+        TestUtil.Employee nullNameValue = new QueryTest.Employee(null, 34, true, 10D);
+        assertTrue(new SqlPredicate("state == TestUtil.State.STATE2").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("state == " + TestUtil.State.STATE2).apply(createEntry("1", value)));
+        assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", value)));
+        assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", nullNameValue)));
+        assertTrue(new SqlPredicate("state == NULL").apply(createEntry("1", nullNameValue)));
         assertTrue(new SqlPredicate("date >= '" + new Timestamp(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("createDate >= '" + new Date(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("sqlDate >= '" + new java.sql.Date(0) + "'").apply(createEntry("1", value)));

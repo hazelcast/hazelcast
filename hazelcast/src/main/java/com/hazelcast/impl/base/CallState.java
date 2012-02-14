@@ -19,14 +19,14 @@ package com.hazelcast.impl.base;
 import com.hazelcast.nio.Address;
 
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class CallState {
     private final long callId;
     private final Address caller;
     private final int callerThreadId;
-    private final Queue<CallStateLog> logQ = new ConcurrentLinkedQueue<CallStateLog>();
-    private final Queue<Address> targets = new ConcurrentLinkedQueue<Address>();
+    private final Queue<CallStateLog> logQ = new LinkedBlockingQueue<CallStateLog>(1000);
+    private final Queue<Address> targets = new LinkedBlockingQueue<Address>(10);
 
     public CallState(long callId, Address caller, int callerThreadId) {
         this.callId = callId;

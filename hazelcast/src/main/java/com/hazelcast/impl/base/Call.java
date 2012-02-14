@@ -32,7 +32,5 @@ public interface Call extends Processable {
 
     void onEnqueue();
 
-    long getFirstEnqueueTime();
-
     int getEnqueueCount();
 }

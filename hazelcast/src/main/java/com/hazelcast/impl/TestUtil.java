@@ -493,7 +493,7 @@ public class TestUtil {
     }
 
     public static enum State {
-        STATE1, STATE2;
+        STATE1, STATE2
     }
 
     @Ignore
@@ -558,6 +558,14 @@ public class TestUtil {
 
         public boolean isActive() {
             return active;
+        }
+
+        public State getState() {
+            return state;
+        }
+
+        public void setState(State state) {
+            this.state = state;
         }
 
         @Override

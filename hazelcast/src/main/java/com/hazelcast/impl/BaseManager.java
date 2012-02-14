@@ -160,6 +160,7 @@ public abstract class BaseManager {
         protected int enqueueCount = 0;
 
         public AbstractCall() {
+            callId = localIdGen.incrementAndGet();
         }
 
         public long getCallId() {
@@ -190,10 +191,6 @@ public abstract class BaseManager {
             callId = -1;
             firstEnqueueTime = -1;
             enqueueCount = 0;
-        }
-
-        public long getFirstEnqueueTime() {
-            return firstEnqueueTime;
         }
 
         public int getEnqueueCount() {
@@ -805,9 +802,7 @@ public abstract class BaseManager {
                 setResult(OBJECT_REDO);
             } else {
                 if (target.equals(thisAddress)) {
-                    long callId = localIdGen.incrementAndGet();
-                    request.callId = callId;
-                    setCallId(callId);
+                    request.callId = getCallId();
                     doLocalOp();
                 } else {
                     invoke();
@@ -1078,16 +1073,6 @@ public abstract class BaseManager {
 
     public Call getCall(long id) {
         return mapCalls.get(id);
-    }
-
-    public CallState getCallState(long id) {
-        return node.getCallStates().get(id);
-    }
-
-    public CallState newCallState(long callId, Address caller, int callerThreadId) {
-        CallState callState = new CallState(callId, caller, callerThreadId);
-        node.getCallStates().put(callId, callState);
-        return callState;
     }
 
     public long addCall(Call call) {

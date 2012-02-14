@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.impl.base.CallState;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -64,6 +65,7 @@ public class Request {
     public Object response = null;
     public ResponseType responseType = ResponseType.OBJECT;
     public Record record = null;
+    public CallState callState = null;
 
     public boolean hasEnoughTimeToSchedule() {
         return (timeout == -1) || (timeout > 100);
@@ -105,6 +107,7 @@ public class Request {
         this.indexTypes = null;
         this.responseType = ResponseType.OBJECT;
         this.record = null;
+        this.callState = null;
     }
 
     public void beforeRedo() {
@@ -185,6 +188,7 @@ public class Request {
         scheduled = req.scheduled;
         indexes = req.indexes;
         indexTypes = req.indexTypes;
+        callState = req.callState;
     }
 
     public static Request copy(Packet packet) {
@@ -195,6 +199,7 @@ public class Request {
                 packet.version);
         copy.indexes = packet.indexes;
         copy.indexTypes = packet.indexTypes;
+        copy.callState = packet.callState;
         return copy;
     }
 
@@ -241,6 +246,7 @@ public class Request {
         packet.version = version;
         packet.indexes = indexes;
         packet.indexTypes = indexTypes;
+        packet.callState = callState;
     }
 
     public void clearForResponse() {
@@ -260,6 +266,7 @@ public class Request {
             this.indexes = null;
             this.indexTypes = null;
             this.record = null;
+            this.callState = null;
         }
     }
 

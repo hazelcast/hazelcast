@@ -42,11 +42,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -121,9 +118,9 @@ public class Node {
 
     private final CpuUtilization cpuUtilization = new CpuUtilization();
 
-    final SimpleBoundedQueue<Packet> serviceThreadPacketQueue = new SimpleBoundedQueue<Packet>(1000);
+    private final CallStateService callStateService = new CallStateService();
 
-    final ConcurrentMap<Long, CallState> mapCallStates = new ConcurrentHashMap<Long, CallState>(1000);
+    final SimpleBoundedQueue<Packet> serviceThreadPacketQueue = new SimpleBoundedQueue<Packet>(1000);
 
     final int id;
 
@@ -219,8 +216,8 @@ public class Node {
         joiner = createJoiner();
     }
 
-    public Map<Long, CallState> getCallStates() {
-        return mapCallStates;
+    public CallStateService getCallStateService() {
+        return callStateService;
     }
 
     private void initializeListeners(Config config) {
@@ -406,7 +403,7 @@ public class Node {
             }
             failedConnections.clear();
             serviceThreadPacketQueue.clear();
-            mapCallStates.clear();
+            callStateService.shutdown();
             ThreadContext.get().shutdown(this.factory);
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
         }
