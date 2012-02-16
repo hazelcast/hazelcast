@@ -624,11 +624,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             if (timeout < 0) {
                 throw new IllegalArgumentException("timeout value cannot be negative. " + timeout);
             }
-            if (timeout == 0) {
-                timeout = -1;
-            } else {
-                timeout = toMillis(timeout, timeunit);
-            }
+            timeout = toMillis(timeout, timeunit);
             check(key);
             check(value);
             MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
@@ -682,8 +678,8 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             if (time < 0)
                 throw new IllegalArgumentException("Time cannot be negative. time = " + time);
             mapOperationCounter.incrementOtherOperations();
-            long timeoutMillis = timeunit.toMillis(time);
-            return concurrentMapManager.lock(name, key, (timeoutMillis < 0 || timeoutMillis == Long.MAX_VALUE) ? -1 : timeoutMillis);
+            long timeoutMillis = toMillis(time, timeunit);
+            return concurrentMapManager.lock(name, key, timeoutMillis);
         }
 
         public void unlock(Object key) {
@@ -724,7 +720,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             return putIfAbsent(key, value, -1, timeunit.toMillis(ttl));
         }
 
-        public Object putIfAbsent(Object key, Object value, long timeout, long ttl) {
+        private Object putIfAbsent(Object key, Object value, long timeout, long ttl) {
             long begin = System.currentTimeMillis();
             check(key);
             check(value);

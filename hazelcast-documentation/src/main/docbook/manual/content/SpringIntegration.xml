@@ -87,8 +87,7 @@
         </hz:config>
 </hz:hazelcast>
 ]]></programlisting>
-    <emphasis role="bold">As of version hazelcast 1.9.3</emphasis>, you can easily
-    configure map-store and near-cache too. (For map-store you should set either
+    You can easily configure map-store and near-cache too. (For map-store you should set either
     <emphasis>class-name</emphasis>
     or
     <emphasis>implementation</emphasis>

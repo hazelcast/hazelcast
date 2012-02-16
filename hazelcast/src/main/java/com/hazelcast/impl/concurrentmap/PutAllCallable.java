@@ -31,6 +31,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 public class PutAllCallable implements Callable<Boolean>, HazelcastInstanceAware, DataSerializable {
 
@@ -58,11 +59,11 @@ public class PutAllCallable implements Callable<Boolean>, HazelcastInstanceAware
             cmap = c.getMap(mapName);
         }
         if (cmap != null) {
+            IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(cmap.getName());
             for (KeyValue keyValue : pairs.getKeyValues()) {
                 Object value = (cmap.getMapIndexService().hasIndexedAttributes()) ?
                         keyValue.getValue() : keyValue.getValueData();
-                IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(cmap.getName());
-                map.put(keyValue.getKeyData(), value);
+                map.tryPut(keyValue.getKeyData(), value, Long.MAX_VALUE, TimeUnit.SECONDS);
             }
         }
         return Boolean.TRUE;
