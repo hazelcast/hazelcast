@@ -27,8 +27,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -60,14 +62,48 @@ public class CMapTest extends TestUtil {
     public void testCallState() throws Exception {
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-//        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        Node node1 = getNode(h1);
-//        Node node2 = getNode(h2);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final Node node1 = getNode(h1);
+        final Node node2 = getNode(h2);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        Thread.sleep(100);
+        final CountDownLatch latch = new CountDownLatch(1);
         final IMap imap1 = h1.getMap("default");
+        new Thread(new Runnable() {
+            public void run() {
+                imap1.lock("1");
+                latch.countDown();
+            }
+        }).start();
+        latch.await();
 //        final IMap imap2 = h2.getMap("default");
-        imap1.put("1", "value1");
-        CallState callState = node1.getCallStateService().getCallState(node1.getThisAddress(), ThreadContext.get().getThreadId());
-        System.out.println(callState.getLogQ());
+        final AtomicInteger threadId = new AtomicInteger();
+        new Thread(new Runnable() {
+            public void run() {
+                ThreadContext.get().setCurrentFactory(node1.factory);
+                threadId.set(ThreadContext.get().getThreadId());
+                imap1.put("1", "value1");
+            }
+        }).start();
+        Thread.sleep(1000);
+        System.out.println(node1.getThisAddress() + " thread " + threadId.get());
+        CallState callState1 = node1.getCallStateService().getCallState(node1.getThisAddress(), threadId.get());
+        if (callState1 != null) {
+            for (Object callStateLog : callState1.getLogs()) {
+                System.out.println(callStateLog);
+            }
+        }
+        CallState callState2 = node2.getCallStateService().getCallState(node1.getThisAddress(), threadId.get());
+        System.out.println("========================");
+        if (callState2 != null) {
+            for (Object callStateLog : callState2.getLogs()) {
+                System.out.println(callStateLog);
+            }
+        }
     }
 
     @Test

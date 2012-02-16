@@ -172,7 +172,7 @@ public abstract class BaseManager {
         protected void initCall() {
             callId = localIdGen.incrementAndGet();
             int threadId = ThreadContext.get().getThreadId();
-            callState = node.getCallStateService().newCallState(callId, thisAddress, threadId);
+            callState = node.getCallStateService().getOrCreateCallState(callId, thisAddress, threadId);
         }
 
         public long getCallId() {
@@ -240,8 +240,7 @@ public abstract class BaseManager {
             boolean rightRemoteTarget = isRightRemoteTarget(remoteReq);
             CallStateService css = node.getCallStateService();
             if (css.shouldLog(CS_INFO)) {
-                css.logObject(remoteReq, CS_INFO, "IsMigrating " + isMigrating);
-                css.logObject(remoteReq, CS_INFO, "RightRemoteTarget " + rightRemoteTarget);
+                css.info(remoteReq, "IsMigrating/RightRemoteTarget", isMigrating, rightRemoteTarget);
             }
             if (isMigrating || !rightRemoteTarget) {
                 remoteReq.clearForResponse();
@@ -249,7 +248,7 @@ public abstract class BaseManager {
                 returnResponse(remoteReq);
             } else {
                 if (css.shouldLog(CS_INFO)) {
-                    css.logObject(remoteReq, CS_INFO, "handle");
+                    css.info(remoteReq, "handle");
                 }
                 handle(remoteReq);
             }
@@ -306,7 +305,7 @@ public abstract class BaseManager {
     public boolean returnResponse(Request request, Connection conn) {
         CallStateService css = node.getCallStateService();
         if (css.shouldLog(CS_INFO)) {
-            css.logObject(request, CS_INFO, "ReturnResponse " + conn);
+            css.logObject(request, CS_INFO, "ReturnResponse ");
         }
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;

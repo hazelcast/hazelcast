@@ -19,16 +19,16 @@ package com.hazelcast.impl.base;
 import com.hazelcast.nio.Address;
 
 public class CallKey {
-    final Address remoteCallerAddress;
+    final Address callerAddress;
     final int callerThreadId;
 
-    public CallKey(Address remoteCallerAddress, int callerThreadId) {
-        this.remoteCallerAddress = remoteCallerAddress;
+    public CallKey(Address callerAddress, int callerThreadId) {
+        this.callerAddress = callerAddress;
         this.callerThreadId = callerThreadId;
     }
 
-    public Address getRemoteCallerAddress() {
-        return remoteCallerAddress;
+    public Address getCallerAddress() {
+        return callerAddress;
     }
 
     public int getCallerThreadId() {
@@ -41,14 +41,22 @@ public class CallKey {
         if (o == null || getClass() != o.getClass()) return false;
         CallKey that = (CallKey) o;
         if (callerThreadId != that.callerThreadId) return false;
-        if (!remoteCallerAddress.equals(that.remoteCallerAddress)) return false;
+        if (!callerAddress.equals(that.callerAddress)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = remoteCallerAddress.hashCode();
+        int result = callerAddress.hashCode();
         result = 31 * result + callerThreadId;
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "CallKey{" +
+                "callerAddress=" + callerAddress +
+                ", callerThreadId=" + callerThreadId +
+                '}';
     }
 }

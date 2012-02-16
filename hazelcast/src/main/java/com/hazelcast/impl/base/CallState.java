@@ -18,20 +18,27 @@ package com.hazelcast.impl.base;
 
 import com.hazelcast.nio.Address;
 
-import java.util.Date;
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class CallState {
-    private final long callId;
+public class CallState implements CallStateAware {
+    private volatile long callId;
     private final Address caller;
     private final int callerThreadId;
-    private final Queue<CallStateLog> logQ = new LinkedBlockingQueue<CallStateLog>(1000);
+    private final StateQueue<CallStateLog> logQ = new StateQueue<CallStateLog>(100);
 
     public CallState(long callId, Address caller, int callerThreadId) {
         this.callId = callId;
         this.caller = caller;
         this.callerThreadId = callerThreadId;
+    }
+
+    public CallState getCallState() {
+        return this;
+    }
+
+    public void reset(long callId) {
+        this.callId = callId;
+        logQ.clear();
     }
 
     void log(CallStateLog log) {
@@ -54,8 +61,57 @@ public class CallState {
         return callId;
     }
 
-    public Queue<CallStateLog> getLogQ() {
-        return logQ;
+    public Object[] getLogs() {
+        return logQ.copy();
+    }
+
+    private static final class StateQueue<E> {
+        private final ReentrantLock lock = new ReentrantLock();
+        private final int maxSize;
+        private final E[] objects;
+        int size = 0;
+
+        public StateQueue(int maxSize) {
+            this.maxSize = maxSize;
+            objects = (E[]) new Object[maxSize];
+        }
+
+        public boolean offer(E obj) {
+            final ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                if (size >= maxSize) {
+                    return false;
+                }
+                objects[size] = obj;
+                size++;
+                return true;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        public void clear() {
+            final ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                size = 0;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        public Object[] copy() {
+            final ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                Object[] copy = new Object[size];
+                System.arraycopy(objects, 0, copy, 0, size);
+                return copy;
+            } finally {
+                lock.unlock();
+            }
+        }
     }
 
     @Override
@@ -65,9 +121,9 @@ public class CallState {
         sb.append("] {");
         sb.append("\ncaller: " + caller);
         sb.append("\nthreadId: " + callerThreadId);
-        for (CallStateLog log : logQ) {
-            sb.append("\n\t" + new Date(log.getDate()) + " : " + log.toString());
-        }
+//        for (CallStateLog log : logQ) {
+//            sb.append("\n\t" + new Date(log.getDate()) + " : " + log.toString());
+//        }
         sb.append("\n}");
         return sb.toString();
     }

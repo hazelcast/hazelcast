@@ -102,9 +102,10 @@ public final class ClusterService implements Runnable, Constants {
     public void enqueuePacket(Packet packet) {
         if (packet.callId != -1) {
             CallStateService css = node.getCallStateService();
-            packet.callState = css.newCallState(packet.callId, packet.lockAddress, packet.threadId);
+            packet.callState = css.getOrCreateCallState(packet.callId, packet.lockAddress, packet.threadId);
             if (css.shouldLog(CS_INFO)) {
-                css.logObject(packet, CS_INFO, "Enqueue Packet");
+//                css.logObject(packet, CS_INFO, "Enqueue Packet ");
+                css.info(packet, "Enqueue Packet ", packet.operation);
             }
         }
         packetQueue.offer(packet);

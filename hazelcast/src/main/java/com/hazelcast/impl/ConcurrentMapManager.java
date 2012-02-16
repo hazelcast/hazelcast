@@ -51,6 +51,7 @@ import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.TransactionImpl.DEFAULT_TXN_TIMEOUT;
 import static com.hazelcast.impl.base.CallStateService.Level.CS_INFO;
+import static com.hazelcast.impl.base.CallStateService.Level.CS_TRACE;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 import static java.lang.System.currentTimeMillis;
@@ -1715,12 +1716,12 @@ public class ConcurrentMapManager extends BaseManager {
                     return successful;
                 } else {
                     request.setObjectRequest();
-                    if (css.shouldLog(CS_INFO)) {
-                        css.logObject(MPut.this, CS_INFO, "Calling doOp");
+                    if (css.shouldLog(CS_TRACE)) {
+                        css.logObject(MPut.this, CS_TRACE, "Calling doOp");
                     }
                     doOp();
-                    if (css.shouldLog(CS_INFO)) {
-                        css.logObject(MPut.this, CS_INFO, "Done doOp");
+                    if (css.shouldLog(CS_TRACE)) {
+                        css.logObject(MPut.this, CS_TRACE, "Done doOp");
                     }
                     Object returnObject = getResultAsObject();
                     if (css.shouldLog(CS_INFO)) {
@@ -1734,8 +1735,8 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                     request.longValue = Long.MIN_VALUE;
                     backup(CONCURRENT_MAP_BACKUP_PUT);
-                    if (css.shouldLog(CS_INFO)) {
-                        css.logObject(MPut.this, CS_INFO, "Backups completed returning result");
+                    if (css.shouldLog(CS_TRACE)) {
+                        css.logObject(MPut.this, CS_TRACE, "Backups completed returning result");
                     }
                     return returnObject;
                 }
@@ -1851,8 +1852,8 @@ public class ConcurrentMapManager extends BaseManager {
             this.owner = owner;
             this.distance = distance;
             CallStateService css = node.getCallStateService();
-            if (css.shouldLog(CS_INFO)) {
-                css.logObject(this, CS_INFO, "SendingBackup callId:" + callId);
+            if (css.shouldLog(CS_TRACE)) {
+                css.trace(this, "SendingBackup callId.", callId);
             }
             request.setFromRequest(reqBackup);
             request.operation = operation;
@@ -1887,13 +1888,10 @@ public class ConcurrentMapManager extends BaseManager {
         protected volatile int backupCount = 0;
 
         protected void backup(ClusterOperation operation) {
-//            request.callState.logObject(this.getClass());
-//            request.callState.logObject(operation);
             if (thisAddress.equals(target) &&
                     (operation == CONCURRENT_MAP_LOCK || operation == CONCURRENT_MAP_UNLOCK)) {
                 return;
             }
-//            request.callState.log("BackupCount " + backupCount);
             if (backupCount > 0) {
                 if (backupCount > backupOps.length) {
                     String msg = "Max backup is " + backupOps.length + " but backupCount is " + backupCount;
@@ -2603,8 +2601,8 @@ public class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             CallStateService css = node.getCallStateService();
-            if (css.shouldLog(CS_INFO)) {
-                css.logObject(request, CS_INFO, "calling cmap.put");
+            if (css.shouldLog(CS_TRACE)) {
+                css.logObject(request, CS_TRACE, "Calling cmap.put");
             }
             cmap.put(request);
             if (request.operation == CONCURRENT_MAP_TRY_PUT
@@ -2612,7 +2610,7 @@ public class ConcurrentMapManager extends BaseManager {
                 request.response = Boolean.TRUE;
             }
             if (css.shouldLog(CS_INFO)) {
-                css.logObject(request, CS_INFO, "req.response " + request.response);
+                css.info(request, "req.response", request.response);
             }
         }
 
@@ -2627,27 +2625,35 @@ public class ConcurrentMapManager extends BaseManager {
                     || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK);
             boolean overCapacity = checkCapacity && cmap.overCapacity(request);
             boolean cmapNotLocked = cmap.isNotLocked(request);
-            if (css.shouldLog(CS_INFO)) {
-                css.logObject(request, CS_INFO, "OverCapacity " + overCapacity);
-                css.logObject(request, CS_INFO, "cmapNotLocked " + cmapNotLocked);
+            if (css.shouldLog(CS_TRACE)) {
+                css.trace(request, "OverCapacity/CmapNotLocked", overCapacity, cmapNotLocked);
             }
             if (cmapNotLocked && !overCapacity) {
                 if (shouldSchedule(request)) {
                     if (request.hasEnoughTimeToSchedule()) {
+                        if (css.shouldLog(CS_INFO)) {
+                            Record r = cmap.getRecord(request);
+                            int scheduledActionCount = (r == null) ? 0 : r.getScheduledActionCount();
+                            DistributedLock lock = (r == null) ? null : r.getLock();
+                            css.info(request, MapCallStateFactory.newScheduleRequest(lock, scheduledActionCount));
+                        }
                         schedule(request);
                     } else {
+                        if (css.shouldLog(CS_INFO)) {
+                            css.info(request, "NoTimeToSchedule");
+                        }
                         onNoTimeToSchedule(request);
                     }
                     return;
                 }
                 Record record = cmap.getRecord(request);
-                if (css.shouldLog(CS_INFO)) {
-                    css.logObject(request, CS_INFO, "Record: " + record);
+                if (css.shouldLog(CS_TRACE)) {
+                    css.trace(request, "Record is", record);
                 }
                 if ((record == null || !record.hasValueData()) && cmap.loader != null
                         && request.operation != ClusterOperation.CONCURRENT_MAP_PUT_TRANSIENT) {
-                    if (css.shouldLog(CS_INFO)) {
-                        css.logObject(request, CS_INFO, "Will Load");
+                    if (css.shouldLog(CS_TRACE)) {
+                        css.trace(request, "Will Load");
                     }
                     storeExecutor.execute(new PutLoader(cmap, request), request.key.hashCode());
                 } else {
@@ -3666,13 +3672,13 @@ public class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             boolean shouldSchedule = shouldSchedule(request);
             CallStateService css = node.getCallStateService();
-            if (css.shouldLog(CS_INFO)) {
-                css.logObject(request, CS_INFO, "ShouldSchedule " + shouldSchedule);
+            if (css.shouldLog(CS_TRACE)) {
+                css.logObject(request, CS_TRACE, "ShouldSchedule ");
             }
             if (shouldSchedule) {
                 if (request.hasEnoughTimeToSchedule()) {
                     if (css.shouldLog(CS_INFO)) {
-                        css.logObject(request, CS_INFO, "Request is scheduled" + request);
+                        css.logObject(request, CS_INFO, "Request is scheduled");
                     }
                     schedule(request);
                 } else {

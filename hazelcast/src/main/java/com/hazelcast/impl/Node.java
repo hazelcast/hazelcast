@@ -118,7 +118,7 @@ public class Node {
 
     private final CpuUtilization cpuUtilization = new CpuUtilization();
 
-    private final CallStateService callStateService = new CallStateService();
+    private final CallStateService callStateService;
 
     final SimpleBoundedQueue<Packet> serviceThreadPacketQueue = new SimpleBoundedQueue<Packet>(1000);
 
@@ -161,7 +161,9 @@ public class Node {
         localMember = new MemberImpl(address, true, localNodeType);
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         this.loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, localMember);
+        callStateService = new CallStateService(Node.this);
         this.logger = loggingService.getLogger(Node.class.getName());
+        ThreadContext.get().setCurrentFactory(factory);
         initializer = NodeInitializerFactory.create();
         initializer.beforeInitialize(this);
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;

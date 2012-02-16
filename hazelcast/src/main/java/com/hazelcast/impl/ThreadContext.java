@@ -17,6 +17,8 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.ConcurrentMapManager.MEvict;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Serializer;
 
@@ -26,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 public final class ThreadContext {
 
@@ -57,6 +60,10 @@ public final class ThreadContext {
                 if (!thread.isAlive()) {
                     threads.remove();
                 }
+            }
+            if (mapContexts.size() > 1000) {
+                String msg = " ThreadContext is created!! You might have too many threads. Is that normal?";
+                Logger.getLogger(ThreadContext.class.getName()).log(Level.WARNING, mapContexts.size() + msg);
             }
         }
         return threadContext;
@@ -103,6 +110,10 @@ public final class ThreadContext {
     }
 
     public HazelcastInstanceThreadContext getHazelcastInstanceThreadContext(FactoryImpl factory) {
+        if (factory == null) {
+            ILogger logger = Logger.getLogger(ThreadContext.class.getName());
+            logger.log(Level.SEVERE, "Factory is null", new Throwable());
+        }
         HazelcastInstanceThreadContext hic = mapHazelcastInstanceContexts.get(factory);
         if (hic != null) return hic;
         hic = new HazelcastInstanceThreadContext(factory);
