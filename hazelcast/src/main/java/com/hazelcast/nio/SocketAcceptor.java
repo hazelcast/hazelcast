@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.logging.Level;
 
@@ -42,12 +43,19 @@ public class SocketAcceptor implements Runnable {
                 try {
                     socketChannelWrapper = connectionManager.wrapSocketChannel(serverSocketChannel.accept(), false);
                 } catch (Exception e) {
-                    logger.log(Level.INFO, e.getMessage(), e);
-                    try {
-                        serverSocketChannel.close();
-                    } catch (Exception ignore) {
+                    if (e instanceof ClosedChannelException && !connectionManager.isLive()) {
+                        // ClosedChannelException
+                        // or AsynchronousCloseException
+                        // or ClosedByInterruptException
+                        logger.log(Level.FINEST, "Terminating socket acceptor thread...", e);
+                    } else {
+                        logger.log(Level.WARNING, "Unexpected error while accepting connection!", e);
+                        try {
+                            serverSocketChannel.close();
+                        } catch (Exception ignore) {
+                        }
+                        connectionManager.ioService.onFatalError(e);
                     }
-                    connectionManager.ioService.onFatalError(e);
                 }
                 if (socketChannelWrapper != null) {
                     final SocketChannelWrapper socketChannel = socketChannelWrapper;
@@ -78,7 +86,7 @@ public class SocketAcceptor implements Runnable {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
     }
 }

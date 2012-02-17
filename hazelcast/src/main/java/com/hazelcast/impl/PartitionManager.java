@@ -688,11 +688,13 @@ public class PartitionManager {
             if (!concurrentMapManager.isMaster()) {
                 final MigratingPartition currentMigratingPartition = migratingPartition;
                 if (currentMigratingPartition != null
-                        && (System.currentTimeMillis() - currentMigratingPartition.getCreationTime()) > MIGRATING_PARTITION_CHECK_INTERVAL) {
+                        && (System.currentTimeMillis() - currentMigratingPartition.getCreationTime())
+                            > MIGRATING_PARTITION_CHECK_INTERVAL) {
                     try {
                         final Node node = concurrentMapManager.node;
                         AsyncRemotelyBooleanCallable rrp = node.clusterManager.new AsyncRemotelyBooleanCallable();
-                        rrp.executeProcess(node.getMasterAddress(), new RemotelyCheckMigratingPartition(currentMigratingPartition));
+                        rrp.executeProcess(node.getMasterAddress(),
+                                new RemotelyCheckMigratingPartition(currentMigratingPartition));
                         boolean valid = rrp.getResultAsBoolean(1);
                         if (valid) {
                             logger.log(Level.FINEST, "Master has confirmed current " + currentMigratingPartition);

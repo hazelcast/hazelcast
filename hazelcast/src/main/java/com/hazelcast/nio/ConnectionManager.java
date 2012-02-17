@@ -311,6 +311,7 @@ public class ConnectionManager {
                 logger.log(Level.FINEST, ignore.getMessage(), ignore);
             }
         }
+        es.shutdownNow();
     }
 
     private void stop() {
@@ -336,6 +337,8 @@ public class ConnectionManager {
         }
         setConnectionInProgress.clear();
         mapConnections.clear();
+        mapMonitors.clear();
+        setActiveConnections.clear();
     }
 
     public int getCurrentClientConnections() {
