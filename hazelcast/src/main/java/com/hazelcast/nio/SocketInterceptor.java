@@ -16,13 +16,14 @@
 
 package com.hazelcast.nio;
 
-public class InOutSelector extends SelectorBase {
+import com.hazelcast.config.SocketInterceptorConfig;
 
-    public InOutSelector(ConnectionManager connectionManager) {
-        super(connectionManager, 1);
-    }
+import java.io.IOException;
+import java.net.Socket;
 
-    @Override
-    public void publishUtilization() {
-    }
+public interface SocketInterceptor {
+
+    void init(SocketInterceptorConfig socketInterceptorConfig);
+
+    void onConnect(Socket connectedSocket) throws IOException;
 }

@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.config;
+
+import java.util.Properties;
+
+public class SocketInterceptorConfig {
+    private String className = null;
+    private Object implementation = null;
+    private Properties properties = new Properties();
+
+    /**
+     * Returns the name of the SocketInterceptor implementation class
+     *
+     * @return name of the class
+     */
+    public String getClassName() {
+        return className;
+    }
+
+    /**
+     * Sets the name for the SocketInterceptor implementation class
+     *
+     * @param className the name of the SocketInterceptor implementation class to set
+     * @return this SocketInterceptorConfig instance
+     */
+    public SocketInterceptorConfig setClassName(String className) {
+        this.className = className;
+        return this;
+    }
+
+    /**
+     * Sets the SocketInterceptor implementation object
+     *
+     * @param implementation implementation object
+     * @return this SocketInterceptorConfig instance
+     */
+    public SocketInterceptorConfig setImplementation(Object implementation) {
+        this.implementation = implementation;
+        return this;
+    }
+
+    /**
+     * Returns the SocketInterceptor implementation object
+     *
+     * @return SocketInterceptor implementation object
+     */
+    public Object getImplementation() {
+        return implementation;
+    }
+
+    public SocketInterceptorConfig setProperty(String name, String value) {
+        properties.put(name, value);
+        return this;
+    }
+
+    public String getProperty(String name) {
+        return properties.getProperty(name);
+    }
+
+    public Properties getProperties() {
+        return properties;
+    }
+
+    public SocketInterceptorConfig setProperties(Properties properties) {
+        this.properties = properties;
+        return this;
+    }
+}

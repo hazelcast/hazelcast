@@ -32,6 +32,8 @@ public class NetworkConfig implements DataSerializable {
 
     private AsymmetricEncryptionConfig asymmetricEncryptionConfig = null;
 
+    private SocketInterceptorConfig socketInterceptorConfig = null;
+
     /**
      * @return the interfaces
      */
@@ -60,6 +62,15 @@ public class NetworkConfig implements DataSerializable {
     public NetworkConfig setJoin(final Join join) {
         this.join = join;
         return this;
+    }
+
+    public NetworkConfig setSocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
+        this.socketInterceptorConfig = socketInterceptorConfig;
+        return this;
+    }
+
+    public SocketInterceptorConfig getSocketInterceptorConfig() {
+        return socketInterceptorConfig;
     }
 
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {

@@ -79,7 +79,6 @@ public class ConcurrentMapManager extends BaseManager {
         storeExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         evictionExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
-//        MAX_BACKUP_COUNT = node.groupProperties.CONCURRENT_MAP_MAX_BACKUP_COUNT.getInteger();
         MAX_BACKUP_COUNT = PartitionInfo.MAX_REPLICA_COUNT;
         GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
         int CLEANUP_DELAY_SECONDS = node.groupProperties.CLEANUP_DELAY_SECONDS.getInteger();

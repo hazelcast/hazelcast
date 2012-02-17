@@ -21,6 +21,8 @@ import java.nio.channels.ClosedChannelException;
 
 public interface SocketChannelWrapper {
 
+    boolean isBlocking();
+
     int validOps();
 
     java.net.Socket socket();

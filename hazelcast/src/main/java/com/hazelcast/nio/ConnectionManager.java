@@ -17,19 +17,19 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.Bind;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -75,6 +75,10 @@ public class ConnectionManager {
 
     private final AtomicInteger nextSelectorIndex = new AtomicInteger();
 
+    private final MemberSocketInterceptor memberSocketInterceptor;
+
+    private final ExecutorService es = Executors.newCachedThreadPool();
+
     public ConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
@@ -87,6 +91,44 @@ public class ConnectionManager {
         this.SOCKET_TIMEOUT = ioService.getSocketTimeoutSeconds() * 1000;
         int selectorCount = ioService.getSelectorThreadCount();
         selectors = new InOutSelector[selectorCount];
+        SocketInterceptorConfig sic = ioService.getSocketInterceptorConfig();
+        if (sic != null) {
+            SocketInterceptor implementation = (SocketInterceptor) sic.getImplementation();
+            if (implementation == null && sic.getClassName() != null) {
+                try {
+                    implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
+                } catch (Throwable e) {
+                    logger.log(Level.SEVERE, "SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
+                }
+            }
+            if (implementation != null) {
+                if (!(implementation instanceof MemberSocketInterceptor)) {
+                    logger.log(Level.SEVERE, "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
+                    implementation = null;
+                } else {
+                    logger.log(Level.INFO, "SocketInterceptor is enabled");
+                }
+            }
+            if (implementation != null) {
+                memberSocketInterceptor = (MemberSocketInterceptor) implementation;
+            } else {
+                memberSocketInterceptor = null;
+            }
+        } else {
+            memberSocketInterceptor = null;
+        }
+    }
+
+    public IOService getIOHandler() {
+        return ioService;
+    }
+
+    public void executeAsync(Runnable runnable) {
+        es.execute(runnable);
+    }
+
+    public MemberSocketInterceptor getMemberSocketInterceptor() {
+        return memberSocketInterceptor;
     }
 
     public InOutSelector nextSelector() {
@@ -135,9 +177,9 @@ public class ConnectionManager {
         return packet;
     }
 
-    public void assignSocketChannel(SocketChannelWrapper channel) {
+    public Connection assignSocketChannel(SocketChannelWrapper channel) {
         InOutSelector selectorAssigned = nextSelector();
-        createConnection(channel, selectorAssigned);
+        return createConnection(channel, selectorAssigned);
     }
 
     Connection createConnection(SocketChannelWrapper channel, InOutSelector selectorAssigned) {
@@ -171,7 +213,7 @@ public class ConnectionManager {
         if (connection == null) {
             if (setConnectionInProgress.add(address)) {
                 ioService.shouldConnectTo(address);
-                nextSelector().connect(address);
+                executeAsync(new SocketConnector(this, address));
             }
         }
         return connection;
@@ -220,20 +262,6 @@ public class ConnectionManager {
         }
     }
 
-    public void start() {
-        live = true;
-        for (int i = 0; i < selectors.length; i++) {
-            InOutSelector s = new InOutSelector(this, (i == 0 ? serverSocketChannel : null));
-            selectors[i] = s;
-            new Thread(ioService.getThreadGroup(), s, ioService.getThreadPrefix() + i).start();
-        }
-    }
-
-    public void onRestart() {
-        stop();
-        start();
-    }
-
     public int getTotalWriteQueueSize() {
         int count = 0;
         for (Connection conn : mapConnections.values()) {
@@ -242,6 +270,34 @@ public class ConnectionManager {
             }
         }
         return count;
+    }
+
+    protected void initSocket(Socket socket) throws Exception {
+        if (SOCKET_LINGER_SECONDS > 0) {
+            socket.setSoLinger(true, SOCKET_LINGER_SECONDS);
+        }
+        socket.setKeepAlive(SOCKET_KEEP_ALIVE);
+        socket.setTcpNoDelay(SOCKET_NO_DELAY);
+        socket.setReceiveBufferSize(SOCKET_RECEIVE_BUFFER_SIZE);
+        socket.setSendBufferSize(SOCKET_SEND_BUFFER_SIZE);
+    }
+
+    public void start() {
+        live = true;
+        for (int i = 0; i < selectors.length; i++) {
+            InOutSelector s = new InOutSelector(this);
+            selectors[i] = s;
+            new Thread(ioService.getThreadGroup(), s, ioService.getThreadPrefix() + i).start();
+        }
+        if (serverSocketChannel != null) {
+            Runnable acceptRunnable = new SocketAcceptor(serverSocketChannel, this);
+            new Thread(ioService.getThreadGroup(), acceptRunnable, ioService.getThreadPrefix() + "_Acceptor").start();
+        }
+    }
+
+    public void onRestart() {
+        stop();
+        start();
     }
 
     public void shutdown() {
@@ -282,19 +338,6 @@ public class ConnectionManager {
         mapConnections.clear();
     }
 
-    @Override
-    public String toString() {
-        final StringBuffer sb = new StringBuffer("Connections {");
-        for (Connection conn : mapConnections.values()) {
-            sb.append("\n");
-            sb.append(conn);
-        }
-        sb.append("\nlive=");
-        sb.append(live);
-        sb.append("\n}");
-        return sb.toString();
-    }
-
     public int getCurrentClientConnections() {
         int count = 0;
         for (Connection conn : setActiveConnections) {
@@ -315,6 +358,10 @@ public class ConnectionManager {
         allTextConnections.incrementAndGet();
     }
 
+    public boolean isLive() {
+        return live;
+    }
+
     public void appendState(StringBuffer sbState) {
         long now = System.currentTimeMillis();
         sbState.append("\nConnectionManager {");
@@ -332,7 +379,16 @@ public class ConnectionManager {
         sbState.append("\n}");
     }
 
-    public IOService getIOHandler() {
-        return ioService;
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("Connections {");
+        for (Connection conn : mapConnections.values()) {
+            sb.append("\n");
+            sb.append(conn);
+        }
+        sb.append("\nlive=");
+        sb.append(live);
+        sb.append("\n}");
+        return sb.toString();
     }
 }

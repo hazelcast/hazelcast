@@ -35,7 +35,7 @@ public class CallStateService {
 
     private final ConcurrentMap<CallKey, CallState> mapCallStates = new ConcurrentHashMap<CallKey, CallState>(100, 0.75f, 32);
 
-    private volatile Level currentLevel = Level.CS_TRACE;
+    private volatile Level currentLevel = Level.CS_NONE;
 
     private Node node;
 

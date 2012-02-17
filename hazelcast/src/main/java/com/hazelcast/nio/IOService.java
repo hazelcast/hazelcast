@@ -17,11 +17,14 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.config.AsymmetricEncryptionConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
 
 public interface IOService {
+
+    boolean isActive();
 
     ILogger getLogger(String name);
 
@@ -34,6 +37,8 @@ public interface IOService {
     Address getThisAddress();
 
     void onFatalError(Exception e);
+
+    SocketInterceptorConfig getSocketInterceptorConfig();
 
     SymmetricEncryptionConfig getSymmetricEncryptionConfig();
 

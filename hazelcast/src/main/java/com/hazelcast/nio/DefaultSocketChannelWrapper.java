@@ -29,6 +29,10 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
         this.socketChannel = socketChannel;
     }
 
+    public boolean isBlocking() {
+        return socketChannel.isBlocking();
+    }
+
     public int validOps() {
         return socketChannel.validOps();
     }

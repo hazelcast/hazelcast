@@ -16,13 +16,9 @@
 
 package com.hazelcast.nio;
 
-public class InOutSelector extends SelectorBase {
+import java.io.IOException;
+import java.net.Socket;
 
-    public InOutSelector(ConnectionManager connectionManager) {
-        super(connectionManager, 1);
-    }
-
-    @Override
-    public void publishUtilization() {
-    }
+public interface MemberSocketInterceptor extends SocketInterceptor {
+    void onAccept(Socket acceptedSocket) throws IOException;
 }

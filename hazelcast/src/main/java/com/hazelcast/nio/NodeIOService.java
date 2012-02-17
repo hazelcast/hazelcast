@@ -18,6 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.config.AsymmetricEncryptionConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.Processable;
@@ -31,6 +32,10 @@ public class NodeIOService implements IOService {
 
     public NodeIOService(Node node) {
         this.node = node;
+    }
+
+    public boolean isActive() {
+        return node.isActive();
     }
 
     public ILogger getLogger(String name) {
@@ -55,6 +60,10 @@ public class NodeIOService implements IOService {
 
     public void onFatalError(Exception e) {
         node.shutdown(false, false);
+    }
+
+    public SocketInterceptorConfig getSocketInterceptorConfig() {
+        return node.getConfig().getNetworkConfig().getSocketInterceptorConfig();
     }
 
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {

@@ -20,7 +20,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ThreadWatcher;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
@@ -157,6 +156,7 @@ public abstract class SelectorBase implements Runnable {
                             selectionHandler.handle();
                         }
                     } catch (Throwable e) {
+                        e.printStackTrace();
                         handleSelectorException(e);
                     }
                 }
@@ -177,15 +177,5 @@ public abstract class SelectorBase implements Runnable {
     protected void handleSelectorException(final Throwable e) {
         String msg = "Selector exception at  " + Thread.currentThread().getName() + ", cause= " + e.toString();
         logger.log(Level.WARNING, msg, e);
-    }
-
-    protected void initSocket(Socket socket) throws Exception {
-        if (connectionManager.SOCKET_LINGER_SECONDS > 0) {
-            socket.setSoLinger(true, connectionManager.SOCKET_LINGER_SECONDS);
-        }
-        socket.setKeepAlive(connectionManager.SOCKET_KEEP_ALIVE);
-        socket.setTcpNoDelay(connectionManager.SOCKET_NO_DELAY);
-        socket.setReceiveBufferSize(connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
-        socket.setSendBufferSize(connectionManager.SOCKET_SEND_BUFFER_SIZE);
     }
 }
