@@ -1403,6 +1403,9 @@ public class ClientService implements ConnectionListener {
             if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
                 IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
                 clientEndpoint.addThisAsListener(map, packet.getKeyData(), includeValue);
+            } else if (getInstanceType(packet.name).equals(InstanceType.MULTIMAP)) {
+                MultiMap<Object, Object> multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
+                clientEndpoint.addThisAsListener(multiMap, packet.getKeyData(), includeValue);
             } else if (getInstanceType(packet.name).equals(InstanceType.LIST)) {
                 ListProxyImpl listProxy = (ListProxyImpl) factory.getOrCreateProxyByName(packet.name);
                 IMap map = (IMap) factory.getOrCreateProxyByName(Prefix.MAP + (String) listProxy.getId());
@@ -1479,6 +1482,10 @@ public class ClientService implements ConnectionListener {
             if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
                 IMap map = (IMap) factory.getOrCreateProxyByName(packet.name);
                 clientEndpoint.removeThisListener(map, packet.getKeyData());
+            }
+            if (getInstanceType(packet.name).equals(InstanceType.MULTIMAP)) {
+                MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
+                clientEndpoint.removeThisListener(multiMap, packet.getKeyData());
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
                 ITopic topic = (ITopic) factory.getOrCreateProxyByName(packet.name);
                 topic.removeMessageListener(clientEndpoint.messageListeners.remove(topic));

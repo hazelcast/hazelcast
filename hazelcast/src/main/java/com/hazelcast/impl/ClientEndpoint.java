@@ -36,7 +36,9 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
     final Map<ITopic, MessageListener<Object>> messageListeners = new HashMap<ITopic, MessageListener<Object>>();
     final List<IMap> listeningMaps = new ArrayList<IMap>();
+    final List<MultiMap> listeningMultiMaps = new ArrayList<MultiMap>();
     final List<Map.Entry<IMap, Object>> listeningKeysOfMaps = new ArrayList<Map.Entry<IMap, Object>>();
+    final List<Map.Entry<MultiMap, Object>> listeningKeysOfMultiMaps = new ArrayList<Map.Entry<MultiMap, Object>>();
     final Map<IQueue, ItemListener<Object>> queueItemListeners = new ConcurrentHashMap<IQueue, ItemListener<Object>>();
     final Map<Long, DistributedTask> runningExecutorTasks = new ConcurrentHashMap<Long, DistributedTask>();
     final ConcurrentHashSet<ClientRequestHandler> currentRequests = new ConcurrentHashSet<ClientRequestHandler>();
@@ -90,8 +92,46 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         }
     }
 
+    public synchronized void addThisAsListener(MultiMap<Object, Object> multiMap, Data key, boolean includeValue) {
+        if (!listeningMultiMaps.contains(multiMap) && !(listeningKeyExist(multiMap, key))) {
+            multiMap.addEntryListener(this, includeValue);
+        }
+        if (key == null) {
+            listeningMultiMaps.add(multiMap);
+        } else {
+            listeningKeysOfMultiMaps.add(new Entry(multiMap, key));
+        }
+    }
+
+    public synchronized void removeThisListener(MultiMap multiMap, Data key) {
+        List<Map.Entry<MultiMap, Object>> entriesToRemove = new ArrayList<Map.Entry<MultiMap, Object>>();
+        if (key == null) {
+            listeningMultiMaps.remove(multiMap);
+        } else {
+            for (Map.Entry<MultiMap, Object> entry : listeningKeysOfMultiMaps) {
+                if (entry.getKey().equals(multiMap) && entry.getValue().equals(key)) {
+                    entriesToRemove.add(entry);
+                    break;
+                }
+            }
+        }
+        listeningKeysOfMultiMaps.removeAll(entriesToRemove);
+        if (!listeningMultiMaps.contains(multiMap) && !(listeningKeyExist(multiMap, key))) {
+            multiMap.removeEntryListener(this);
+        }
+    }
+
     private boolean listeningKeyExist(IMap map, Object key) {
         for (Map.Entry<IMap, Object> entry : listeningKeysOfMaps) {
+            if (entry.getKey().equals(map) && (key == null || entry.getValue().equals(key))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean listeningKeyExist(MultiMap map, Object key) {
+        for (Map.Entry<MultiMap, Object> entry : listeningKeysOfMultiMaps) {
             if (entry.getKey().equals(map) && (key == null || entry.getValue().equals(key))) {
                 return true;
             }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.impl.base.Values;
 import org.junit.Ignore;
@@ -421,5 +423,28 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         }).start();
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         running.set(false);
+    }
+
+    @Test
+    public void listener() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        final MultiMap<Integer, String> map = hClient.getMultiMap("listener");
+        final CountDownLatch added = new CountDownLatch(1);
+        map.addEntryListener(new EntryListener<Integer, String>() {
+            public void entryAdded(EntryEvent<Integer, String> integerStringEntryEvent) {
+                added.countDown();
+            }
+
+            public void entryRemoved(EntryEvent<Integer, String> integerStringEntryEvent) {
+            }
+
+            public void entryUpdated(EntryEvent<Integer, String> integerStringEntryEvent) {
+            }
+
+            public void entryEvicted(EntryEvent<Integer, String> integerStringEntryEvent) {
+            }
+        }, true);
+        map.put(1, "v");
+        assertTrue(added.await(5000, TimeUnit.MILLISECONDS));
     }
 }
