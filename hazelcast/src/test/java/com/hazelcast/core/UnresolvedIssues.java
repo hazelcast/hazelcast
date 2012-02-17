@@ -18,19 +18,12 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.impl.GroupProperties;
-import com.hazelcast.impl.ReplicatedMapFactory;
 import com.hazelcast.impl.TestUtil;
-import com.hazelcast.query.EntryObject;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.io.Serializable;
-import java.util.Collection;
 
 import static org.junit.Assert.*;
 
@@ -122,45 +115,6 @@ public class UnresolvedIssues extends TestUtil {
             } finally {
                 map.unlock(o);
             }
-        }
-    }
-
-    @Test
-    public void issue387() {
-        // fail with java.lang.ClassCastException: 
-        // java.util.concurrent.ConcurrentHashMap$WriteThroughEntry cannot be cast to com.hazelcast.core.MapEntry
-        IMap cache = ReplicatedMapFactory.getMap("exampleMap");
-        ExampleObject object1 = new ExampleObject("1", "Value");
-        cache.put(object1.getId(), object1);
-        EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate predicate = e.get("id").equal("1");
-        Collection<Object> queryResultCollection = cache.values(predicate);
-    }
-
-    static class ExampleObject implements Serializable {
-        private static final long serialVersionUID = -5966060029235919352L;
-        private String id;
-        private String value;
-
-        public ExampleObject(String id, String value) {
-            this.id = id;
-            this.value = value;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
         }
     }
 }

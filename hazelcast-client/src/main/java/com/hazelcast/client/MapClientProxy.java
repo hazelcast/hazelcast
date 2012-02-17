@@ -294,6 +294,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT, key, value, ttl, timeunit);
     }
 
+    public void set(K key, V value, long ttl, TimeUnit timeunit) {
+        check(key);
+        check(value);
+        proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_SET, key, value, ttl, timeunit);
+    }
+
     public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
         check(key);
         check(value);

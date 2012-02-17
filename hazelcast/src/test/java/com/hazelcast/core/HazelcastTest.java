@@ -205,6 +205,7 @@ public class HazelcastTest {
         MapEntry entry = map.getMapEntry("Hello");
         assertEquals("Hello", entry.getKey());
         assertEquals("New World", entry.getValue());
+        map.set("1", "value", 1, TimeUnit.SECONDS);
     }
 
     @Test

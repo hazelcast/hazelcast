@@ -61,11 +61,13 @@ public class ClientService implements ConnectionListener {
         this.logger = node.getLogger(this.getClass().getName());
         node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
         clientOperationHandlers[CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
+        clientOperationHandlers[CONCURRENT_MAP_PUT.getValue()] = new MapPutHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_AND_UNLOCK.getValue()] = new MapPutAndUnlockHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_ALL.getValue()] = new MapPutAllHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_MULTI.getValue()] = new MapPutMultiHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_IF_ABSENT.getValue()] = new MapPutIfAbsentHandler();
         clientOperationHandlers[CONCURRENT_MAP_PUT_TRANSIENT.getValue()] = new MapPutTransientHandler();
+        clientOperationHandlers[CONCURRENT_MAP_SET.getValue()] = new MapSetHandler();
         clientOperationHandlers[CONCURRENT_MAP_TRY_PUT.getValue()] = new MapTryPutHandler();
         clientOperationHandlers[CONCURRENT_MAP_GET.getValue()] = new MapGetHandler();
         clientOperationHandlers[CONCURRENT_MAP_GET_ALL.getValue()] = new MapGetAllHandler();
@@ -927,10 +929,27 @@ public class ClientService implements ConnectionListener {
     }
 
     private class MapPutTransientHandler extends ClientMapOperationHandlerWithTTL {
-
         @Override
         protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
-            map.putTransient(key, value, ttl, TimeUnit.MILLISECONDS);
+            MProxy mproxy = (MProxy) map;
+            Object v = value;
+            if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
+                v = toObject(value);
+            }
+            map.putTransient(key, v, ttl, TimeUnit.MILLISECONDS);
+            return null;
+        }
+    }
+
+    private class MapSetHandler extends ClientMapOperationHandlerWithTTL {
+        @Override
+        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
+            MProxy mproxy = (MProxy) map;
+            Object v = value;
+            if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
+                v = toObject(value);
+            }
+            map.set(key, v, ttl, TimeUnit.MILLISECONDS);
             return null;
         }
     }

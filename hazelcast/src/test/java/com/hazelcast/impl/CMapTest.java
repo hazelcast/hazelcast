@@ -24,6 +24,7 @@ import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.Data;
 import org.junit.After;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -34,12 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
@@ -59,17 +55,13 @@ public class CMapTest extends TestUtil {
     }
 
     @Test
+    @Ignore
     public void testCallState() throws Exception {
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         final Node node1 = getNode(h1);
         final Node node2 = getNode(h2);
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         Thread.sleep(100);
         final CountDownLatch latch = new CountDownLatch(1);
         final IMap imap1 = h1.getMap("default");
@@ -206,7 +198,12 @@ public class CMapTest extends TestUtil {
         assertEquals(1, record2.valueCount());
         assertEquals(dValue, record1.getValueData());
         assertEquals(dValue, record2.getValueData());
+        imap1.set("2", "value2", 5, TimeUnit.SECONDS);
+        assertEquals("value2", imap1.get("2"));
+        assertEquals("value2", imap2.get("2"));
         Thread.sleep(6000);
+        assertNull(imap1.get("2"));
+        assertNull(imap2.get("2"));
         now = System.currentTimeMillis();
         assertFalse(record1.isValid(now));
         assertFalse(record2.isValid(now));

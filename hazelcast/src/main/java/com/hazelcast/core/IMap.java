@@ -162,11 +162,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
     /**
      * Puts an entry into this map with a given ttl (time to live) value.
-     * Entry will expire and get evicted after the ttl.
+     * Entry will expire and get evicted after the ttl. If ttl is 0, then
+     * the entry lives forever.
      *
      * @param key      key of the entry
      * @param value    value of the entry
      * @param ttl      maximum time for this entry to stay in the map
+     *                 0 means infinite.
      * @param timeunit time unit for the ttl
      * @return old value of the entry
      */
@@ -174,11 +176,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
     /**
      * Same as {@link #put(K, V, long, TimeUnit)} but MapStore, if defined,
-     * will not be called to store/persist the entry.
+     * will not be called to store/persist the entry.  If ttl is 0, then
+     * the entry lives forever.
      *
      * @param key      key of the entry
      * @param value    value of the entry
-     * @param ttl      maximum time for this entry to stay in the map
+     * @param ttl      maximum time for this entry to stay in the map.
+     *                 0 means infinite.
      * @param timeunit time unit for the ttl
      */
     void putTransient(K key, V value, long ttl, TimeUnit timeunit);
@@ -195,6 +199,21 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @return old value of the entry
      */
     V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit);
+
+    /**
+     * Puts an entry into this map with a given ttl (time to live) value.
+     * Entry will expire and get evicted after the ttl. If ttl is 0, then
+     * the entry lives forever. Similar to put operation except that set
+     * doesn't return the old value which is more efficient.
+     *
+     * @param key      key of the entry
+     * @param value    value of the entry
+     * @param ttl      maximum time for this entry to stay in the map
+     *                 0 means infinite.
+     * @param timeunit time unit for the ttl
+     * @return old value of the entry
+     */
+    void set(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
      * Tries to acquire the lock for the specified key and returns
