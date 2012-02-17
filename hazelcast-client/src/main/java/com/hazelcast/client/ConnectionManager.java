@@ -16,13 +16,11 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.ClientProperties.ClientPropertyName;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.security.Credentials;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -37,7 +35,6 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 import static java.text.MessageFormat.format;
 
 public class ConnectionManager implements MembershipListener {
-    private final long TIMEOUT;
     private volatile Connection currentConnection;
     private final AtomicInteger connectionIdGenerator = new AtomicInteger(-1);
     private final List<InetSocketAddress> clusterMembers = new CopyOnWriteArrayList<InetSocketAddress>();
@@ -45,36 +42,26 @@ public class ConnectionManager implements MembershipListener {
     private final HazelcastClient client;
     private volatile int lastDisconnectedConnectionId = -1;
     private ClientBinder binder;
-    private final Credentials credentials;
 
     private volatile boolean lookingForLiveConnection = false;
     private volatile boolean running = true;
 
     private final LifecycleServiceClientImpl lifecycleService;
-    Timer heartbeatTimer = new Timer();
+    final Timer heartbeatTimer = new Timer();
+    private final ClientConfig config;
 
-    public ConnectionManager(HazelcastClient client, Credentials credentials, LifecycleServiceClientImpl lifecycleService,
-                             InetSocketAddress[] clusterMembers, boolean shuffle, long timeout) {
-        this.TIMEOUT = timeout;
+    public ConnectionManager(HazelcastClient client, ClientConfig config, LifecycleServiceClientImpl lifecycleService) {
+        this.config = config;
         this.client = client;
         this.lifecycleService = lifecycleService;
-        this.clusterMembers.addAll(Arrays.asList(clusterMembers));
-        if (shuffle) {
+        this.clusterMembers.addAll(clusterMembers);
+        if (config.isShuffle()) {
             Collections.shuffle(this.clusterMembers);
         }
-        this.credentials = credentials;
-    }
-
-    public ConnectionManager(final HazelcastClient client, Credentials credentials, LifecycleServiceClientImpl lifecycleService,
-                             InetSocketAddress address, long timeout) {
-        this.TIMEOUT = timeout;
-        this.client = client;
-        this.lifecycleService = lifecycleService;
-        this.clusterMembers.add(address);
-        this.credentials = credentials;
     }
 
     void scheduleHeartbeatTimerTask() {
+        final int TIMEOUT = config.getConnectionTimeout();
         heartbeatTimer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -109,18 +96,16 @@ public class ConnectionManager implements MembershipListener {
     public Connection getInitConnection() throws IOException {
         if (currentConnection == null) {
             synchronized (this) {
-                final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT);
-                final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
-                currentConnection = lookForLiveConnection(attemptsLimit, reconnectionTimeout);
+                final int attemptsLimit = config.getInitialConnectionAttemptLimit();
+                final int reconnectionTimeout = config.getReConnectionTimeOut();
+                currentConnection = lookForLiveConnection(config.getInitialConnectionAttemptLimit(), config.getReConnectionTimeOut());
             }
         }
         return currentConnection;
     }
 
     public Connection lookForLiveConnection() throws IOException {
-        final int attemptsLimit = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT);
-        final int reconnectionTimeout = client.getProperties().getInteger(ClientPropertyName.RECONNECTION_TIMEOUT);
-        return lookForLiveConnection(attemptsLimit, reconnectionTimeout);
+        return lookForLiveConnection(config.getReconnectionAttemptLimit(), config.getReConnectionTimeOut());
     }
 
     private Connection lookForLiveConnection(final int attemptsLimit,
@@ -231,7 +216,7 @@ public class ConnectionManager implements MembershipListener {
     }
 
     void bindConnection(Connection connection) throws IOException {
-        binder.bind(connection, credentials);
+        binder.bind(connection, config.getCredentials());
     }
 
     public void destroyConnection(final Connection connection) {
