@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.longrunning;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.TestUtility;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -36,7 +36,7 @@ public class SimpleMapTestFromClient {
 
     public static void main(String[] args) {
         HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        final HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(h.getConfig().getGroupConfig().getName(), h.getConfig().getGroupConfig().getPassword(), false, h.getCluster().getLocalMember().getInetSocketAddress());
+        final HazelcastInstance hazelcast = TestUtility.newHazelcastClient(h);
 //        final HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient("dev", "dev-pass", "192.168.1.4");
         final Stats stats = new Stats();
         if (args != null && args.length > 0) {

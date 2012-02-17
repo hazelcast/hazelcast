@@ -65,14 +65,10 @@ public class HazelcastClient implements HazelcastInstance {
     final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
 
     final int id;
-    //private final ClientProperties properties;
 
     private final ClientConfig config;
 
     private final AtomicBoolean active = new AtomicBoolean(true);
-//    private HazelcastClient(ClientConfig config, boolean shuffle, InetSocketAddress[] clusterMembers, boolean automatic) {
-//        this(config, new UsernamePasswordCredentials(config.getGroupConfig().getName(), config.getGroupConfig().getPassword()), shuffle, clusterMembers, automatic);
-//    }
 
     private HazelcastClient(ClientConfig config) {
         //this.properties = properties;
@@ -82,7 +78,6 @@ public class HazelcastClient implements HazelcastInstance {
         }
         this.config = config;
         this.id = clientIdCounter.incrementAndGet();
-        ;
         lifecycleService = new LifecycleServiceClientImpl(this);
         lifecycleService.fireLifecycleEvent(STARTING);
         //empty check
@@ -137,28 +132,27 @@ public class HazelcastClient implements HazelcastInstance {
      * @return
      */
 
-    public static HazelcastClient newHazelcastclient(ClientConfig config) {
+    public static HazelcastClient newHazelcastClient(ClientConfig config) {
         return new HazelcastClient(config);
     }
-
-    /**
-     * Giving address of one member is enough. It will connect to that member and will get addresses of all members
-     * in the cluster. If the connected member will die or leave the cluster, client will automatically
-     * switch to another member in the cluster.
-     *
-     * @param groupName     Group name of a cluster that client will connect
-     * @param groupPassword Group Password of a cluster that client will connect.
-     * @param address       Address of one of the members
-     * @return Returns a new HazelcastClient.
-     */
-    public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String address) {
-        ClientConfig config = new ClientConfig();
-        config.getGroupConfig().setName(groupName);
-        config.getGroupConfig().setPassword(groupPassword);
-        config.addAddress(address);
-        config.setUpdateAutomatic(true);
-        return newHazelcastclient(config);
-    }
+//    /**
+//     * Giving address of one member is enough. It will connect to that member and will get addresses of all members
+//     * in the cluster. If the connected member will die or leave the cluster, client will automatically
+//     * switch to another member in the cluster.
+//     *
+//     * @param groupName     Group name of a cluster that client will connect
+//     * @param groupPassword Group Password of a cluster that client will connect.
+//     * @param address       Address of one of the members
+//     * @return Returns a new HazelcastClient.
+//     */
+//    public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String address) {
+//        ClientConfig config = new ClientConfig();
+//        config.getGroupConfig().setName(groupName);
+//        config.getGroupConfig().setPassword(groupPassword);
+//        config.addAddress(address);
+//        config.setUpdateAutomatic(true);
+//        return newHazelcastClient(config);
+//    }
 //    /**
 //     * Giving address of one member is enough. It will connect to that member and will get addresses of all members
 //     * in the cluster. If the connected member will die or leave the cluster, client will automatically
@@ -419,5 +413,9 @@ public class HazelcastClient implements HazelcastInstance {
         } finally {
             es.shutdown();
         }
+    }
+
+    public ClientConfig getClientConfig() {
+        return config;
     }
 }

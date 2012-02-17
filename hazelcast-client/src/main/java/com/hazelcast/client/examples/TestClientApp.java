@@ -16,7 +16,9 @@
 
 package com.hazelcast.client.examples;
 
+import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.examples.TestApp;
 
 import java.io.BufferedReader;
@@ -109,6 +111,8 @@ public class TestClientApp {
             groupName = args[1];
             pass = args[2];
         }
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setGroupConfig(new GroupConfig(groupName, pass));
         System.out.println("Connecting to " + ip);
         String[] ips = null;
         if (ip.indexOf(':') == -1) {
@@ -116,7 +120,8 @@ public class TestClientApp {
         } else {
             ips = new String[]{ip};
         }
-        this.hz = HazelcastClient.newHazelcastClient(groupName, pass, ips);
+        clientConfig.addAddress(ips);
+        this.hz = HazelcastClient.newHazelcastClient(clientConfig);
         System.out.println(hz.getCluster().getMembers());
     }
 }

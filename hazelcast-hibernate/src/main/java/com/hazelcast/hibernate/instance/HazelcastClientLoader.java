@@ -16,7 +16,9 @@
 
 package com.hazelcast.hibernate.instance;
 
+import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.logging.ILogger;
@@ -62,7 +64,9 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
                     + CacheEnvironment.NATIVE_CLIENT_GROUP + " and " + CacheEnvironment.NATIVE_CLIENT_PASSWORD
                     + " are mandatory to use native client!");
         }
-        return (client = HazelcastClient.newHazelcastClient(group, pass, address));
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setGroupConfig(new GroupConfig("dev", "dev-pass")).addAddress("localhost:5701");
+        return (client = HazelcastClient.newHazelcastClient(clientConfig));
     }
 
     public void unloadInstance() throws CacheException {

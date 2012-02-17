@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,12 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.hazelcast.client;
 
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.Credentials;
 
 import java.net.InetSocketAddress;
@@ -37,6 +37,15 @@ public class ClientConfig {
 
     private boolean shuffle = false;
     private boolean updateAutomatic = false;
+    private SocketInterceptor socketInterceptor = null;
+
+    public SocketInterceptor getSocketInterceptor() {
+        return socketInterceptor;
+    }
+
+    public void setSocketInterceptor(SocketInterceptor socketInterceptor) {
+        this.socketInterceptor = socketInterceptor;
+    }
 
     public int getReConnectionTimeOut() {
         return reConnectionTimeOut;

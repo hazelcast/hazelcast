@@ -190,7 +190,7 @@ public class HazelcastClientClusterTest {
                 ClientProperties.createBaseClientProperties(GroupConfig.DEFAULT_GROUP_NAME, GroupConfig.DEFAULT_GROUP_PASSWORD);
         clientProperties.setPropertyValue(ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT, "2");
         clientProperties.setPropertyValue(ClientPropertyName.RECONNECTION_TIMEOUT, "500");
-        HazelcastClient.newHazelcastClient(clientProperties, "localhost:5701");
+        TestUtility.newHazelcastClient(clientProperties, "localhost:5701");
     }
 
     @Test(expected = NoMemberAvailableException.class, timeout = 50000L)

@@ -21,6 +21,7 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.SocketInterceptor;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -54,7 +55,7 @@ public class ConnectionManager implements MembershipListener {
         this.config = config;
         this.client = client;
         this.lifecycleService = lifecycleService;
-        this.clusterMembers.addAll(clusterMembers);
+        this.clusterMembers.addAll(config.getAddressList());
         if (config.isShuffle()) {
             Collections.shuffle(this.clusterMembers);
         }
@@ -96,9 +97,8 @@ public class ConnectionManager implements MembershipListener {
     public Connection getInitConnection() throws IOException {
         if (currentConnection == null) {
             synchronized (this) {
-                final int attemptsLimit = config.getInitialConnectionAttemptLimit();
-                final int reconnectionTimeout = config.getReConnectionTimeOut();
-                currentConnection = lookForLiveConnection(config.getInitialConnectionAttemptLimit(), config.getReConnectionTimeOut());
+                currentConnection = lookForLiveConnection(config.getInitialConnectionAttemptLimit(),
+                        config.getReConnectionTimeOut());
             }
         }
         return currentConnection;
@@ -122,6 +122,11 @@ public class ConnectionManager implements MembershipListener {
                         restored = connection != null;
                         if (restored) {
                             try {
+                                ClientConfig clientConfig = client.getClientConfig();
+                                SocketInterceptor socketInterceptor = clientConfig.getSocketInterceptor();
+                                if (socketInterceptor != null) {
+                                    socketInterceptor.onConnect(connection.getSocket());
+                                }
                                 bindConnection(connection);
                                 currentConnection = connection;
                             } catch (Throwable e) {

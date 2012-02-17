@@ -16,8 +16,7 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.client.ClientProperties;
-import com.hazelcast.client.ClientProperties.ClientPropertyName;
+import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
@@ -100,9 +99,9 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         assertTrue(hz instanceof HazelcastClient);
         assertEquals(1, main.getCluster().getMembers().size());
         HazelcastClient client = (HazelcastClient) hz;
-        ClientProperties cProps = client.getProperties();
-        assertEquals("dev-custom", cProps.getProperty(ClientPropertyName.GROUP_NAME));
-        assertEquals("dev-pass", cProps.getProperty(ClientPropertyName.GROUP_PASSWORD));
+        ClientConfig clientConfig = client.getClientConfig();
+        assertEquals("dev-custom", clientConfig.getGroupConfig().getName());
+        assertEquals("dev-pass", clientConfig.getGroupConfig().getPassword());
         Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         assertEquals(2, hz.getCluster().getMembers().size());
         main.getLifecycleService().shutdown();

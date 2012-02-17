@@ -16,7 +16,9 @@
 
 package com.hazelcast.client.examples;
 
+import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.IMap;
 
 import java.util.concurrent.ExecutorService;
@@ -62,7 +64,9 @@ public class SimpleMapTest {
         System.out.println("    Put Percentage: " + PUT_PERCENTAGE);
         System.out.println(" Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
         ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
-        final HazelcastClient hazelcast = HazelcastClient.newHazelcastClient("dev", "dev-pass", "localhost:5701");
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setGroupConfig(new GroupConfig("dev", "dev-pass")).addAddress("localhost:5701");
+        final HazelcastClient hazelcast = HazelcastClient.newHazelcastClient(clientConfig);
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.submit(new Runnable() {
                 public void run() {

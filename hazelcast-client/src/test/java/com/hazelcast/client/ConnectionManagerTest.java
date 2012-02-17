@@ -57,7 +57,9 @@ public class ConnectionManagerTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
+        ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -79,7 +81,9 @@ public class ConnectionManagerTest {
         InetSocketAddress inetSocketAddress = new InetSocketAddress("localhost", 5701);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
+        ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
             protected Connection getNextConnection() {
                 return null;
             }
@@ -100,7 +104,9 @@ public class ConnectionManagerTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
+        ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -126,7 +132,9 @@ public class ConnectionManagerTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
+        ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
             protected Connection getNextConnection() {
                 latch.countDown();
                 return connection;
@@ -151,7 +159,9 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
+        ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -176,7 +186,9 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
+        ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -215,7 +227,9 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
+        ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
             protected Connection getNextConnection() {
                 return connection;
             }
@@ -238,7 +252,9 @@ public class ConnectionManagerTest {
         final Connection connection = mock(Connection.class);
         final List<LifecycleState> lifecycleEvents = new ArrayList<LifecycleState>();
         final LifecycleServiceClientImpl lifecycleService = createLifecycleServiceClientImpl(client, lifecycleEvents);
-        ConnectionManager connectionManager = new ConnectionManager(client, credentials, lifecycleService, inetSocketAddress, 60000) {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
+        ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
             protected Connection getNextConnection() {
                 return connection;
             }

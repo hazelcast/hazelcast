@@ -23,23 +23,51 @@ import java.net.InetSocketAddress;
 
 public class TestUtility {
 
+    public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String address) {
+        ClientConfig config = new ClientConfig();
+        config.getGroupConfig().setName(groupName);
+        config.getGroupConfig().setPassword(groupPassword);
+        config.addAddress(address);
+        config.setUpdateAutomatic(true);
+        return HazelcastClient.newHazelcastClient(config);
+    }
+
     public synchronized static HazelcastClient newHazelcastClient(HazelcastInstance... h) {
         String name = h[0].getConfig().getGroupConfig().getName();
         String pass = h[0].getConfig().getGroupConfig().getPassword();
         return newHazelcastClient(ClientProperties.createBaseClientProperties(name, pass), h);
     }
 
+    public synchronized static HazelcastClient newHazelcastClient(ClientProperties properties, String... address) {
+        ClientConfig clientConfig = toClientConfig(properties);
+        clientConfig.addAddress(address);
+        return HazelcastClient.newHazelcastClient(clientConfig);
+    }
+
     public synchronized static HazelcastClient newHazelcastClient(ClientProperties properties, HazelcastInstance... h) {
-        InetSocketAddress[] addresses = new InetSocketAddress[h.length];
+        ClientConfig clientConfig = toClientConfig(properties);
         for (int i = 0; i < h.length; i++) {
-            addresses[i] = h[i].getCluster().getLocalMember().getInetSocketAddress();
+            InetSocketAddress inetSocketAddress = h[i].getCluster().getLocalMember().getInetSocketAddress();
+            clientConfig.addInetSocketAddress(inetSocketAddress);
         }
-        return HazelcastClient.newHazelcastClient(properties, true, addresses);
+        return HazelcastClient.newHazelcastClient(clientConfig);
+    }
+
+    public static ClientConfig toClientConfig(ClientProperties properties) {
+        String groupName = properties.getProperty(ClientProperties.ClientPropertyName.GROUP_NAME);
+        String groupPassword = properties.getProperty(ClientProperties.ClientPropertyName.GROUP_PASSWORD);
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setGroupConfig(new GroupConfig(groupName, groupPassword));
+        clientConfig.setConnectionTimeout(properties.getInteger(ClientProperties.ClientPropertyName.CONNECTION_TIMEOUT));
+        clientConfig.setInitialConnectionAttemptLimit(properties.getInteger(ClientProperties.ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT));
+        clientConfig.setReconnectionAttemptLimit(properties.getInteger(ClientProperties.ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT));
+        clientConfig.setReConnectionTimeOut(properties.getInteger(ClientProperties.ClientPropertyName.RECONNECTION_TIMEOUT));
+        return clientConfig;
     }
 
     public synchronized static HazelcastClient getAutoUpdatingClient(HazelcastInstance h1) {
         String address = h1.getCluster().getLocalMember().getInetSocketAddress().toString().substring(1);
         GroupConfig gc = h1.getConfig().getGroupConfig();
-        return HazelcastClient.newHazelcastClient(gc.getName(), gc.getPassword(), address);
+        return TestUtility.newHazelcastClient(gc.getName(), gc.getPassword(), address);
     }
 }
