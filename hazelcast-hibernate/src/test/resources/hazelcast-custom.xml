@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-2.0.xsd"
-           xmlns="http://www.hazelcast.com/schema/config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-2.0.xsd">
     <group>
         <name>dev-custom</name>
         <password>dev-pass</password>
@@ -35,14 +36,8 @@
             Integer.MAX_VALUE. Default is 0.
         -->
         <max-size-per-jvm>10000</max-size-per-jvm>
-        <!--
-            Maximum number of seconds for each item to stay in the queue. Items that are
-            not consumed in <time-to-live-seconds> will automatically
-            get evicted from the queue.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means
-            infinite. Default is 0.
-        -->
-        <time-to-live-seconds>0</time-to-live-seconds>
+
+        <backing-map-ref>default</backing-map-ref>
     </queue>
     <map name="default">
         <!--

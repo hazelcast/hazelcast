@@ -44,23 +44,26 @@ public class EntryListenerConfig extends ListenerConfig {
         return (EntryListener) implementation;
     }
 
-    public void setImplementation(final EntryListener implementation) {
+    public EntryListenerConfig setImplementation(final EntryListener implementation) {
         super.setImplementation(implementation);
+        return this;
     }
 
     public boolean isLocal() {
         return local;
     }
 
-    public void setLocal(boolean local) {
+    public EntryListenerConfig setLocal(boolean local) {
         this.local = local;
+        return this;
     }
 
     public boolean isIncludeValue() {
         return includeValue;
     }
 
-    public void setIncludeValue(boolean includeValue) {
+    public EntryListenerConfig setIncludeValue(boolean includeValue) {
         this.includeValue = includeValue;
+        return this;
     }
 }

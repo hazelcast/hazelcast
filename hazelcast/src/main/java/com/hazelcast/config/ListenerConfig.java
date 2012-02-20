@@ -40,16 +40,18 @@ public class ListenerConfig {
         return className;
     }
 
-    public void setClassName(String className) {
+    public ListenerConfig setClassName(String className) {
         this.className = className;
+        return this;
     }
 
     public Object getImplementation() {
         return implementation;
     }
 
-    public void setImplementation(Object implementation) {
+    public ListenerConfig setImplementation(Object implementation) {
         this.implementation = implementation;
+        return this;
     }
 
     public boolean isIncludeValue() {

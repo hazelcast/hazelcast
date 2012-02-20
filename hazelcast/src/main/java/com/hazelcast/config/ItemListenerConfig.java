@@ -40,15 +40,17 @@ public class ItemListenerConfig extends ListenerConfig {
         return (ItemListener) implementation;
     }
 
-    public void setImplementation(final ItemListener implementation) {
+    public ItemListenerConfig setImplementation(final ItemListener implementation) {
         super.setImplementation(implementation);
+        return this;
     }
 
     public boolean isIncludeValue() {
         return includeValue;
     }
 
-    public void setIncludeValue(boolean includeValue) {
+    public ItemListenerConfig setIncludeValue(boolean includeValue) {
         this.includeValue = includeValue;
+        return this;
     }
 }
