@@ -171,6 +171,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                     handleMergePolicies(node);
                 } else if ("wan-replication".equals(nodeName)) {
                     handleWanReplication(node);
+                } else if ("partition-group".equals(nodeName)) {
+                    handlePartitionGroup(node);
                 } else if ("security".equals(nodeName)) {
                     handleSecurity(node);
                 } else if ("instance-name".equals(nodeName)) {
@@ -400,12 +402,34 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             wanReplicationManagedMap.put(name, beanDefinition);
         }
 
+        private void handlePartitionGroup(final Node node) {
+            final BeanDefinitionBuilder partitionConfigBuilder = createBeanBuilder(PartitionGroupConfig.class, "partitionConfig");
+            fillAttributeValues(node, partitionConfigBuilder);
+
+            ManagedList memberGroups = new ManagedList();
+            for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                final String name = cleanNodeName(child.getNodeName());
+                if ("member-group".equals(name)) {
+                    BeanDefinitionBuilder memberGroupBuilder = createBeanBuilder(MemberGroupConfig.class, "memberGroup");
+                    ManagedList interfaces = new ManagedList();
+                    for (org.w3c.dom.Node n : new IterableNodeList(child.getChildNodes(), Node.ELEMENT_NODE)) {
+                        if ("interface".equals(cleanNodeName(n.getNodeName()))) {
+                            interfaces.add(getValue(n));
+                        }
+                    }
+                    memberGroupBuilder.addPropertyValue("interfaces", interfaces);
+                    memberGroups.add(memberGroupBuilder.getBeanDefinition());
+                }
+            }
+            partitionConfigBuilder.addPropertyValue("memberGroupConfigs", memberGroups);
+            configBuilder.addPropertyValue("partitionGroupConfig", partitionConfigBuilder.getBeanDefinition());
+        }
+
         public void handleNearCacheConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {
             BeanDefinitionBuilder nearCacheConfigBuilder = createBeanBuilder(NearCacheConfig.class, "nearCacheConfig");
             final AbstractBeanDefinition beanDefinition = nearCacheConfigBuilder.getBeanDefinition();
             fillValues(node, nearCacheConfigBuilder);
             mapConfigBuilder.addPropertyValue("nearCacheConfig", beanDefinition);
-            nearCacheConfigBuilder = null;
         }
 
         public void handleMapStoreConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {

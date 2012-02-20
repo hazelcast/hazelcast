@@ -33,10 +33,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.*;
@@ -403,5 +400,18 @@ public class TestFullApplicationContext {
     public void testLiteMember() {
         assertNotNull(liteConfig);
         assertTrue(liteConfig.isLiteMember());
+    }
+
+    @Test
+    public void testPartitionGroupConfig() {
+        PartitionGroupConfig pgc = config.getPartitionGroupConfig();
+        assertTrue(pgc.isEnabled());
+        assertEquals(PartitionGroupConfig.MemberGroupType.CUSTOM, pgc.getGroupType());
+        assertEquals(2, pgc.getMemberGroupConfigs().size());
+        Iterator<MemberGroupConfig> iter = pgc.getMemberGroupConfigs().iterator();
+        while (iter.hasNext()) {
+            MemberGroupConfig mgc = iter.next();
+            assertEquals(2, mgc.getInterfaces().size());
+        }
     }
 }

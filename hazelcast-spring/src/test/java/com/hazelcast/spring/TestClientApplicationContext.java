@@ -16,27 +16,32 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
+import com.hazelcast.security.Credentials;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 import java.util.concurrent.ExecutorService;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
 public class TestClientApplicationContext {
 
-    @Resource
+    @Resource (name = "client")
     private HazelcastClient client;
+
+    @Resource (name = "client2")
+    private HazelcastClient client2;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -77,19 +82,38 @@ public class TestClientApplicationContext {
     @Resource(name = "semaphore")
     private ISemaphore semaphore;
 
+    @Autowired
+    private Credentials credentials;
+
     @BeforeClass
     @AfterClass
     public static void start() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testClient() {
         assertNotNull(client);
-        final IMap<Object, Object> map = client.getMap("default");
-        map.put("Q", "q");
-        final IMap<Object, Object> map2 = instance.getMap("default");
-        assertEquals("q", map2.get("Q"));
+        assertNotNull(client2);
+
+        ClientConfig config = client.getClientConfig();
+        assertEquals(3, config.getInitialConnectionAttemptLimit());
+        assertEquals(2, config.getReconnectionAttemptLimit());
+        assertEquals(1000, config.getConnectionTimeout());
+        assertEquals(3000, config.getReConnectionTimeOut());
+        assertFalse(config.isUpdateAutomatic());
+        assertTrue(config.isShuffle());
+
+        ClientConfig config2 = client2.getClientConfig();
+        assertEquals(credentials, config2.getCredentials());
+
+        client.getMap("default").put("Q", "q");
+        client2.getMap("default").put("X", "x");
+
+        final IMap<Object, Object> map = instance.getMap("default");
+        assertEquals("q", map.get("Q"));
+        assertEquals("x", map.get("X"));
     }
 
     @Test

@@ -16,11 +16,15 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.client.ClientProperties;
+import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.GroupConfig;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
-import org.springframework.beans.factory.support.*;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
+import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
@@ -43,7 +47,9 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
 
         private ManagedList members;
 
-        private BeanDefinitionBuilder propertiesBuilder;
+        private BeanDefinitionBuilder configBuilder;
+
+        private BeanDefinitionBuilder groupConfigBuilder;
 
         public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -51,10 +57,17 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
             this.builder.setFactoryMethod("newHazelcastClient");
             this.builder.setDestroyMethodName("shutdown");
             this.members = new ManagedList();
-            this.propertiesBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientProperties.class);
-            final AbstractBeanDefinition beanDefinition = propertiesBuilder.getBeanDefinition();
-            BeanDefinitionHolder holder = new BeanDefinitionHolder(beanDefinition, "client-properties");
+            this.configBuilder = createBeanBuilder(ClientConfig.class, "client-config");
+            this.groupConfigBuilder = createBeanBuilder(GroupConfig.class, "client-group-config");
+            configBuilder.addPropertyValue("groupConfig", groupConfigBuilder.getBeanDefinition());
+        }
+
+        protected BeanDefinitionBuilder createBeanBuilder(final Class clazz, final String id) {
+            BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(clazz);
+            final AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
+            BeanDefinitionHolder holder = new BeanDefinitionHolder(beanDefinition, id);
             BeanDefinitionReaderUtils.registerBeanDefinition(holder, parserContext.getRegistry());
+            return builder;
         }
 
         public AbstractBeanDefinition getBeanDefinition() {
@@ -62,43 +75,41 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
         }
 
         public void handle(Element element) {
-            ManagedMap properties = new ManagedMap();
-            final NamedNodeMap atts = element.getAttributes();
-            if (atts != null) {
-                for (int a = 0; a < atts.getLength(); a++) {
-                    final org.w3c.dom.Node att = atts.item(a);
-                    String name = att.getNodeName();
-                    ClientProperties.ClientPropertyName key;
+            final NamedNodeMap attrs = element.getAttributes();
+            if (attrs != null) {
+                for (int a = 0; a < attrs.getLength(); a++) {
+                    final org.w3c.dom.Node att = attrs.item(a);
+                    final String name = att.getNodeName();
                     final String value = att.getNodeValue();
                     if ("group-name".equals(name)) {
-                        key = ClientProperties.ClientPropertyName.GROUP_NAME;
+                        groupConfigBuilder.addPropertyValue("name", value);
                     } else if ("group-password".equals(name)) {
-                        key = ClientProperties.ClientPropertyName.GROUP_PASSWORD;
-                    } else {
-                        continue;
+                        groupConfigBuilder.addPropertyValue("password", value);
+                    } else if ("auto-update-members".equals(name)) {
+                        configBuilder.addPropertyValue("updateAutomatic", value);
+                    } else if ("shuffle-members".equals(name)) {
+                        configBuilder.addPropertyValue("shuffle", value);
+                    } else if ("connect-attempt-limit".equals(name)) {
+                        configBuilder.addPropertyValue("initialConnectionAttemptLimit", value);
+                    } else if ("connect-timeout".equals(name)) {
+                        configBuilder.addPropertyValue("connectionTimeout", value);
+                    } else if ("reconnect-attempt-limit".equals(name)) {
+                        configBuilder.addPropertyValue("reconnectionAttemptLimit", value);
+                    } else if ("reconnect-timeout".equals(name)) {
+                        configBuilder.addPropertyValue("reConnectionTimeOut", value);
+                    } else if ("credentials-ref".equals(name)) {
+                        configBuilder.addPropertyReference("credentials", value);
                     }
-                    properties.put(key, value);
                 }
             }
             for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(node.getNodeName());
-                if ("members".equals(nodeName)) {
+                if ("member".equals(nodeName)) {
                     members.add(getValue(node));
-                } else if ("client-properties".equals(nodeName)) {
-                    for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
-                        final String name = cleanNodeName(n.getNodeName());
-                        final String propertyName;
-                        if ("client-property".equals(name)) {
-                            propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
-                            final String value = getValue(n);
-                            properties.put(propertyName, value);
-                        }
-                    }
                 }
             }
-            propertiesBuilder.addPropertyValue("properties", properties);
-            this.builder.addConstructorArgValue(propertiesBuilder.getBeanDefinition());
-            this.builder.addConstructorArgValue(members);
+            configBuilder.addPropertyValue("addresses", members);
+            builder.addConstructorArgValue(configBuilder.getBeanDefinition());
         }
     }
 }

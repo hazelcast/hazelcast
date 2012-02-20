@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns="http://www.hazelcast.com/schema/config"
+           xmlns="http://www.hazelcast.com/schema/spring"
            xmlns:beans="http://www.springframework.org/schema/beans"
-           targetNamespace="http://www.hazelcast.com/schema/config"
+           targetNamespace="http://www.hazelcast.com/schema/spring"
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
 
@@ -19,6 +19,7 @@
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="partition-group" type="partition-group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="executor-service" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence/>
@@ -181,12 +182,18 @@
             <xs:complexContent>
                 <xs:extension base="beans:identifiedType">
                     <xs:sequence>
-                        <xs:element name="client-properties" type="client-properties" minOccurs="0"/>
-                        <xs:element name="members" type="members" default="127.0.0.1" minOccurs="0"
+                        <xs:element name="member" type="member" minOccurs="0"
                                     maxOccurs="unbounded"/>
                     </xs:sequence>
-                    <xs:attribute name="group-name" type="xs:string" use="required"/>
-                    <xs:attribute name="group-password" type="xs:string" use="required"/>
+                    <xs:attribute name="group-name" type="xs:string" use="optional"/>
+                    <xs:attribute name="group-password" type="xs:string" use="optional"/>
+                    <xs:attribute name="auto-update-members" type="xs:string" use="optional" default="true"/>
+                    <xs:attribute name="shuffle-members" type="xs:string" use="optional"/>
+                    <xs:attribute name="connect-attempt-limit" type="xs:string" use="optional"/>
+                    <xs:attribute name="connect-timeout" type="xs:string" use="optional"/>
+                    <xs:attribute name="reconnect-attempt-limit" type="xs:string" use="optional"/>
+                    <xs:attribute name="reconnect-timeout" type="xs:string" use="optional"/>
+                    <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
                 </xs:extension>
             </xs:complexContent>
         </xs:complexType>
@@ -308,25 +315,6 @@
         <xs:attribute name="password" type="xs:string" use="required"/>
     </xs:complexType>
 
-    <xs:simpleType name="clientPropertyName">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="hazelcast.client.group.name"/>
-            <xs:enumeration value="hazelcast.client.group.password"/>
-            <xs:enumeration value="hazelcast.client.init.connection.attempts.limit"/>
-            <xs:enumeration value="hazelcast.client.reconnection.attempts.limit"/>
-            <xs:enumeration value="hazelcast.client.connection.timeout"/>
-            <xs:enumeration value="hazelcast.client.reconnection.timeout"/>
-        </xs:restriction>
-    </xs:simpleType>
-
-    <xs:complexType name="client-property">
-        <xs:simpleContent>
-            <xs:extension base="xs:string">
-                <xs:attribute name="name" use="required" type="clientPropertyName"/>
-            </xs:extension>
-        </xs:simpleContent>
-    </xs:complexType>
-
     <xs:simpleType name="propertyNameEnum">
         <xs:restriction base="xs:string">
             <xs:enumeration value="hazelcast.merge.first.run.delay.seconds"/>
@@ -391,12 +379,6 @@
                 <xs:attribute name="name" use="required" type="propertyName"/>
             </xs:extension>
         </xs:simpleContent>
-    </xs:complexType>
-
-    <xs:complexType name="client-properties">
-        <xs:sequence minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="client-property" type="client-property"/>
-        </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="properties">
@@ -490,6 +472,20 @@
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="partition-group">
+        <xs:sequence>
+            <xs:element name="member-group" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="interface" type="interface" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+        <xs:attribute name="group-type" type="xs:string" use="optional" />
     </xs:complexType>
 
     <xs:complexType name="listener">

@@ -2,11 +2,11 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:p="http://www.springframework.org/schema/p"
-       xmlns:hz="http://www.hazelcast.com/schema/config"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-		http://www.hazelcast.com/schema/config
-		http://www.hazelcast.com/schema/config/hazelcast-spring.xsd">
+		http://www.hazelcast.com/schema/spring
+		http://www.hazelcast.com/schema/spring/hazelcast-spring-2.0.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -43,13 +43,26 @@
     </hz:hazelcast>
 
     <hz:client id="client"
-               group-name="${cluster.group.name}" group-password="${cluster.group.password}">
-        <hz:client-properties>
-            <!--hz:client-property name="hazelcast.client.group.name"></hz:client-property>
-            <hz:client-property name="hazelcast.client.group.password"></hz:client-property-->
-        </hz:client-properties>
-        <hz:members>${cluster.members}</hz:members>
+        group-name="${cluster.group.name}" group-password="${cluster.group.password}"
+        connect-attempt-limit="3" connect-timeout="1000"
+        reconnect-attempt-limit="2" reconnect-timeout="3000"
+        auto-update-members="false" shuffle-members="true">
+        <hz:member>127.0.0.1:5700</hz:member>
+        <hz:member>127.0.0.1:5701</hz:member>
     </hz:client>
+
+    <hz:client id="client2"
+               connect-attempt-limit="3" connect-timeout="1000"
+               reconnect-attempt-limit="2" reconnect-timeout="3000"
+               auto-update-members="false" shuffle-members="true" credentials-ref="credentials" >
+        <hz:member>127.0.0.1:5700</hz:member>
+        <hz:member>127.0.0.1:5701</hz:member>
+    </hz:client>
+
+    <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
+        <property name="username" value="spring-group" />
+        <property name="password" value="spring-group-pass" />
+    </bean>
 
     <hz:map id="map1" instance-ref="client" name="map1"/>
     <hz:map id="map2" instance-ref="client" name="map2"/>
