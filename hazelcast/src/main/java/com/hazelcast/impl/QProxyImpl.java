@@ -62,7 +62,6 @@ public class QProxyImpl extends AbstractQueue implements QProxy, HazelcastInstan
     }
 
     private void ensure() {
-        ThreadContext.get().setCurrentFactory(factory);
         factory.initialChecks();
         if (qproxyReal == null) {
             qproxyReal = (QProxy) factory.getOrCreateProxyByName(name);

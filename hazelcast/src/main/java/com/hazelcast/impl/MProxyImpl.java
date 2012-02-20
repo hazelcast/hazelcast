@@ -95,7 +95,6 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     }
 
     private void beforeCall() {
-        ThreadContext.get().setCurrentFactory(factory);
         factory.initialChecks();
         if (mproxyReal == null) {
             mproxyReal = (MProxy) factory.getOrCreateProxyByName(name);

@@ -700,6 +700,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public void initialChecks() {
+        ThreadContext.get().setCurrentFactory(FactoryImpl.this);
         while (node.isActive() && lifecycleService.paused.get()) {
             try {
                 //noinspection BusyWait
