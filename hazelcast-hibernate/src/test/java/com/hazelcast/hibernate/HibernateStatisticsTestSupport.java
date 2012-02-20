@@ -43,6 +43,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 
     @Before
     public void postConstruct() {
+        Hazelcast.shutdownAll();
         sf = createSessionFactory(getCacheProperties());
         stats = sf.getStatistics();
     }
