@@ -16,26 +16,26 @@
 
 package com.hazelcast.impl.base;
 
-public class CallStateStringArgLog extends CallStateLog {
+public class SystemArgsLog extends SystemLog {
     final String msg;
     final Object arg1;
     final Object arg2;
     final Object arg3;
     final int argCount;
 
-    public CallStateStringArgLog(String msg, Object arg1) {
+    public SystemArgsLog(String msg, Object arg1) {
         this(msg, arg1, null, null, 1);
     }
 
-    public CallStateStringArgLog(String msg, Object arg1, Object arg2) {
+    public SystemArgsLog(String msg, Object arg1, Object arg2) {
         this(msg, arg1, arg2, null, 2);
     }
 
-    public CallStateStringArgLog(String msg, Object arg1, Object arg2, Object arg3) {
+    public SystemArgsLog(String msg, Object arg1, Object arg2, Object arg3) {
         this(msg, arg1, arg2, arg3, 3);
     }
 
-    private CallStateStringArgLog(String msg, Object arg1, Object arg2, Object arg3, int argCount) {
+    private SystemArgsLog(String msg, Object arg1, Object arg2, Object arg3, int argCount) {
         this.msg = msg;
         this.arg1 = arg1;
         this.arg2 = arg2;

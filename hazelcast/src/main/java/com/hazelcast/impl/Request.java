@@ -26,10 +26,11 @@ import com.hazelcast.nio.Packet;
 public class Request implements CallStateAware {
 
     enum ResponseType {
-        OBJECT, BOOLEAN, LONG
+        OBJECT, BOOLEAN, LONG;
     }
 
     public final static long DEFAULT_TIMEOUT = -1;
+
     public final static long DEFAULT_TTL = -1;
     public final static int DEFAULT_REDO_COUNT = 0;
     public final static long DEFAULT_TXN_ID = -1;
@@ -38,21 +39,21 @@ public class Request implements CallStateAware {
     public final static int DEFAULT_BLOCK_ID = -1;
     public final static long DEFAULT_CALL_ID = -1;
     public final static long DEFAULT_VERSION = -1;
-
     public String name = null;
+
     public Data key = null;
     public Data value = null;
     public long timeout = DEFAULT_TIMEOUT;
     public long ttl = DEFAULT_TTL;
-
     public boolean local = true;
+
     public boolean scheduled = false;
     public ClusterOperation operation;
-
     public Address caller = null;
-    public Address lockAddress = null;
 
+    public Address lockAddress = null;
     public int redoCount = DEFAULT_REDO_COUNT;
+
     public int lockCount = DEFAULT_LOCK_COUNT;
     public int lockThreadId = DEFAULT_LOCK_THREAD_ID;
     public int blockId = DEFAULT_BLOCK_ID;
@@ -67,6 +68,7 @@ public class Request implements CallStateAware {
     public ResponseType responseType = ResponseType.OBJECT;
     public Record record = null;
     public CallState callState = null;
+    public Address target = null;
 
     public boolean hasEnoughTimeToSchedule() {
         return (timeout == -1) || (timeout > 100);
@@ -113,6 +115,7 @@ public class Request implements CallStateAware {
         this.responseType = ResponseType.OBJECT;
         this.record = null;
         this.callState = null;
+        this.target = null;
     }
 
     public void beforeRedo() {

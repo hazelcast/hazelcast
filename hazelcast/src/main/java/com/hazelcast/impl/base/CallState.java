@@ -24,7 +24,7 @@ public class CallState implements CallStateAware {
     private volatile long callId;
     private final Address caller;
     private final int callerThreadId;
-    private final StateQueue<CallStateLog> logQ = new StateQueue<CallStateLog>(100);
+    private final StateQueue<SystemLog> logQ = new StateQueue<SystemLog>(100);
 
     public CallState(long callId, Address caller, int callerThreadId) {
         this.callId = callId;
@@ -41,12 +41,12 @@ public class CallState implements CallStateAware {
         logQ.clear();
     }
 
-    void log(CallStateLog log) {
+    void log(SystemLog log) {
         logQ.offer(log);
     }
 
     void logObject(Object obj) {
-        log(new CallStateObjectLog(obj));
+        log(new SystemObjectLog(obj));
     }
 
     public Address getCaller() {

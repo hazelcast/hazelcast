@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public abstract class AbstractJoiner implements Joiner {
+    private final long joinStartTime = System.currentTimeMillis();
     protected final Config config;
     protected final Node node;
     protected volatile ILogger logger;
@@ -60,6 +61,7 @@ public abstract class AbstractJoiner implements Joiner {
         if (!node.isMaster()) {
             boolean allConnected = false;
             int checkCount = 0;
+            long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
             if (node.joined()) {
                 while (checkCount++ < node.groupProperties.CONNECT_ALL_WAIT_SECONDS.getInteger() && !allConnected) {
                     try {
@@ -78,14 +80,18 @@ public abstract class AbstractJoiner implements Joiner {
                 }
             }
             if (!node.joined() || !allConnected) {
-                logger.log(Level.WARNING, "Failed to connect, node joined= " + node.joined() + ", allConnected= " + allConnected + " to all other members after " + checkCount + " seconds.");
-                logger.log(Level.WARNING, "Rebooting after 10 seconds.");
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    node.shutdown(false, true);
+                if (System.currentTimeMillis() - joinStartTime < maxJoinMillis) {
+                    logger.log(Level.WARNING, "Failed to connect, node joined= " + node.joined() + ", allConnected= " + allConnected + " to all other members after " + checkCount + " seconds.");
+                    logger.log(Level.WARNING, "Rebooting after 10 seconds.");
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException e) {
+                        node.shutdown(false, true);
+                    }
+                    node.rejoin();
+                } else {
+                    throw new RuntimeException("Failed to join in " + (maxJoinMillis / 1000) + " seconds!");
                 }
-                node.rejoin();
                 return;
             } else {
                 node.clusterManager.finalizeJoin();

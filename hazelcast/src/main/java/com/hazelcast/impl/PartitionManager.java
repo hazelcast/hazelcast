@@ -166,6 +166,10 @@ public class PartitionManager {
         }
     }
 
+    public MigratingPartition getMigratingPartition() {
+        return migratingPartition;
+    }
+
     public void addPartitionListener(PartitionListener partitionListener) {
         lsPartitionListeners.add(partitionListener);
     }
@@ -689,7 +693,7 @@ public class PartitionManager {
                 final MigratingPartition currentMigratingPartition = migratingPartition;
                 if (currentMigratingPartition != null
                         && (System.currentTimeMillis() - currentMigratingPartition.getCreationTime())
-                            > MIGRATING_PARTITION_CHECK_INTERVAL) {
+                        > MIGRATING_PARTITION_CHECK_INTERVAL) {
                     try {
                         final Node node = concurrentMapManager.node;
                         AsyncRemotelyBooleanCallable rrp = node.clusterManager.new AsyncRemotelyBooleanCallable();

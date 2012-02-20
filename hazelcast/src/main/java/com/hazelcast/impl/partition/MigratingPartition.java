@@ -85,18 +85,6 @@ public class MigratingPartition implements DataSerializable {
     }
 
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("MigratingPartition");
-        sb.append("{partitionId=").append(partitionId);
-        sb.append(", from=").append(from);
-        sb.append(", to=").append(to);
-        sb.append(", replicaIndex=").append(replicaIndex);
-        sb.append('}');
-        return sb.toString();
-    }
-
-    @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (!(o instanceof MigratingPartition)) return false;
@@ -113,5 +101,17 @@ public class MigratingPartition implements DataSerializable {
         int result = partitionId;
         result = 31 * result + replicaIndex;
         return result;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("MigratingPartition");
+        sb.append("{partitionId=").append(partitionId);
+        sb.append(", from=").append(from);
+        sb.append(", to=").append(to);
+        sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append('}');
+        return sb.toString();
     }
 }

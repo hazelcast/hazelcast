@@ -21,7 +21,7 @@ import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.*;
-import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.impl.concurrentmap.MapSystemLogFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -32,7 +32,6 @@ import com.hazelcast.util.ResponseQueueFactory;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -41,7 +40,7 @@ import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.Constants.ResponseTypes.*;
-import static com.hazelcast.impl.base.CallStateService.Level.CS_INFO;
+import static com.hazelcast.impl.base.SystemLogService.Level.CS_INFO;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -238,7 +237,7 @@ public abstract class BaseManager {
             Request remoteReq = Request.copy(packet);
             boolean isMigrating = isMigrating(remoteReq);
             boolean rightRemoteTarget = isRightRemoteTarget(remoteReq);
-            CallStateService css = node.getCallStateService();
+            SystemLogService css = node.getCallStateService();
             if (css.shouldLog(CS_INFO)) {
                 css.info(remoteReq, "IsMigrating/RightRemoteTarget", isMigrating, rightRemoteTarget);
             }
@@ -303,7 +302,7 @@ public abstract class BaseManager {
     }
 
     public boolean returnResponse(Request request, Connection conn) {
-        CallStateService css = node.getCallStateService();
+        SystemLogService css = node.getCallStateService();
         if (css.shouldLog(CS_INFO)) {
             css.logObject(request, CS_INFO, "ReturnResponse ");
         }
@@ -544,6 +543,10 @@ public abstract class BaseManager {
                     }
                     if (node.isActive()) {
                         logger.log(Level.FINEST, "Still no response! " + request);
+                        SystemLogService css = node.getCallStateService();
+                        if (css.shouldTrace()) {
+                            css.trace(this, "Still no response");
+                        }
                     }
                     node.checkNodeState();
                     if (Thread.interrupted()) {
@@ -569,58 +572,12 @@ public abstract class BaseManager {
                 }
                 if (result == OBJECT_REDO) {
                     request.redoCount++;
-//                    System.out.println(ResponseQueueCall.this + " request block id " + request.blockId);
+                    SystemLogService css = node.getCallStateService();
+                    if (css.shouldTrace()) {
+                        css.trace(this, MapSystemLogFactory.newRedoLog(node, request));
+                    }
                     if (request.redoCount > 19 && (request.redoCount % 10 == 0)) {
-                        final CountDownLatch l = new CountDownLatch(1);
-                        final Request reqCopy = request.hardCopy();
-                        reqCopy.redoCount = request.redoCount;
-                        final Address targetCopy = getTarget();
-                        if (!thisAddress.equals(targetCopy)) {
-                            enqueueAndReturn(new Processable() {
-                                public void process() {
-                                    Connection targetConnection = null;
-                                    MemberImpl targetMember = null;
-                                    Object key = toObject(reqCopy.key);
-//                                    System.out.println("BLOCK ID " + reqCopy.blockId);
-                                    PartitionInfo block = (reqCopy.key == null) ? null : node.concurrentMapManager.getPartitionInfo(reqCopy.blockId);
-                                    if (targetCopy != null) {
-                                        targetMember = getMember(targetCopy);
-                                        targetConnection = node.connectionManager.getConnection(targetCopy);
-                                        if (targetMember != null) {
-                                            if (!lsMembers.contains(targetMember)) {
-                                                logger.log(Level.SEVERE, targetMember + " is not in member list!");
-                                            }
-                                        }
-                                    }
-                                    final String msg =
-                                            "======= " + reqCopy.callId + ": " + reqCopy.operation + " ======== " +
-                                                    "\n\t" +
-                                                    "thisAddress= " + thisAddress + ", target= " + targetCopy +
-                                                    "\n\t" +
-                                                    "targetMember= " + targetMember + ", targetConn=" + targetConnection + ", targetBlock=" + block +
-                                                    "\n\t" +
-                                                    key + " Re-doing [" + reqCopy.redoCount + "] times! " +
-                                                    reqCopy.name + " : " + toObject(reqCopy.value);
-                                    logger.log(Level.INFO, msg);
-                                    l.countDown();
-                                }
-                            });
-                        } else {
-                            final String msg =
-                                    "======= " + reqCopy.callId + ": " + reqCopy.operation + " ======== " +
-                                            "\n\t" +
-                                            "thisAddress= " + thisAddress + ", target= " + targetCopy +
-                                            "\n\t" +
-                                            " Re-doing [" + reqCopy.redoCount + "] times! " +
-                                            reqCopy.name + " : " + toObject(reqCopy.key) + "=" + toObject(reqCopy.value);
-                            logger.log(Level.WARNING, msg);
-                            l.countDown();
-                        }
-                        try {
-                            l.await();
-                        } catch (InterruptedException e) {
-                            handleInterruptedException();
-                        }
+                        logger.log(Level.WARNING, MapSystemLogFactory.newRedoLog(node, request).toString());
                     }
                     try {
                         //noinspection BusyWait
@@ -827,6 +784,7 @@ public abstract class BaseManager {
         public void process() {
             request.caller = thisAddress;
             setTarget();
+            request.target = target;
             if (target == null) {
                 setResult(OBJECT_REDO);
             } else {

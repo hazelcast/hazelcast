@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl.base;
 
-public class CallStateLog {
+public class SystemLog {
     protected long date = System.currentTimeMillis();
 
     public long getDate() {

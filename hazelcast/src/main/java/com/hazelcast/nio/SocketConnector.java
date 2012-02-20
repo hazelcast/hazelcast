@@ -56,7 +56,7 @@ public class SocketConnector implements Runnable {
             Connection connection = connectionManager.assignSocketChannel(socketChannelWrapper);
             connectionManager.bind(address, connection, false);
         } catch (Throwable e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.log(Level.FINEST, e.getMessage(), e);
             if (socketChannel != null) {
                 try {
                     socketChannel.close();

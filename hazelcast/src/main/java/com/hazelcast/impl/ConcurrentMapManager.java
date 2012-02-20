@@ -50,8 +50,8 @@ import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.TransactionImpl.DEFAULT_TXN_TIMEOUT;
-import static com.hazelcast.impl.base.CallStateService.Level.CS_INFO;
-import static com.hazelcast.impl.base.CallStateService.Level.CS_TRACE;
+import static com.hazelcast.impl.base.SystemLogService.Level.CS_INFO;
+import static com.hazelcast.impl.base.SystemLogService.Level.CS_TRACE;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 import static java.lang.System.currentTimeMillis;
@@ -1658,7 +1658,7 @@ public class ConcurrentMapManager extends BaseManager {
         Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout, long ttl, long txnId) {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.getTransaction();
-            CallStateService css = node.getCallStateService();
+            SystemLogService css = node.getCallStateService();
             if (css.shouldLog(CS_INFO)) {
                 css.logObject(MPut.this, CS_INFO, operation);
             }
@@ -1851,7 +1851,7 @@ public class ConcurrentMapManager extends BaseManager {
             reset();
             this.owner = owner;
             this.distance = distance;
-            CallStateService css = node.getCallStateService();
+            SystemLogService css = node.getCallStateService();
             if (css.shouldLog(CS_TRACE)) {
                 css.trace(this, "SendingBackup callId.", callId);
             }
@@ -2231,7 +2231,15 @@ public class ConcurrentMapManager extends BaseManager {
     abstract class MTargetAwareOperationHandler extends TargetAwareOperationHandler {
         boolean isRightRemoteTarget(Request request) {
             boolean callerKnownMember = (request.local || getMember(request.caller) != null);
-            return callerKnownMember && thisAddress.equals(getKeyOwner(request));
+            boolean rightOwner = thisAddress.equals(getKeyOwner(request));
+            if (!callerKnownMember || !rightOwner) {
+                SystemLogService css = node.getCallStateService();
+                if (css.shouldInfo()) {
+                    css.info(request, new SystemArgsLog("isRightRemoteTarget", callerKnownMember, rightOwner));
+                    css.info(request, MapSystemLogFactory.newRedoLog(node, request));
+                }
+            }
+            return callerKnownMember && rightOwner;
         }
     }
 
@@ -2600,7 +2608,7 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            CallStateService css = node.getCallStateService();
+            SystemLogService css = node.getCallStateService();
             if (css.shouldLog(CS_TRACE)) {
                 css.logObject(request, CS_TRACE, "Calling cmap.put");
             }
@@ -2616,7 +2624,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            CallStateService css = node.getCallStateService();
+            SystemLogService css = node.getCallStateService();
             if (css.shouldLog(CS_INFO)) {
                 css.logObject(request, CS_INFO, cmap);
             }
@@ -2635,7 +2643,7 @@ public class ConcurrentMapManager extends BaseManager {
                             Record r = cmap.getRecord(request);
                             int scheduledActionCount = (r == null) ? 0 : r.getScheduledActionCount();
                             DistributedLock lock = (r == null) ? null : r.getLock();
-                            css.info(request, MapCallStateFactory.newScheduleRequest(lock, scheduledActionCount));
+                            css.info(request, MapSystemLogFactory.newScheduleRequest(lock, scheduledActionCount));
                         }
                         schedule(request);
                     } else {
@@ -3671,7 +3679,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void handle(Request request) {
             boolean shouldSchedule = shouldSchedule(request);
-            CallStateService css = node.getCallStateService();
+            SystemLogService css = node.getCallStateService();
             if (css.shouldLog(CS_TRACE)) {
                 css.logObject(request, CS_TRACE, "ShouldSchedule ");
             }

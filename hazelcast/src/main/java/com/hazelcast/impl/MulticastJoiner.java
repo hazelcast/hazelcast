@@ -40,7 +40,9 @@ public class MulticastJoiner extends AbstractJoiner {
 
     public void doJoin(AtomicBoolean joined) {
         int tryCount = 0;
-        while (node.isActive() && !joined.get()) {
+        long joinStartTime = System.currentTimeMillis();
+        long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
+        while (node.isActive() && !joined.get() && (System.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
             logger.log(Level.FINEST, "joining... " + node.getMasterAddress());
             Address masterAddressNow = findMasterWithMulticast();
             if (masterAddressNow != null && masterAddressNow.equals(node.getMasterAddress())) {

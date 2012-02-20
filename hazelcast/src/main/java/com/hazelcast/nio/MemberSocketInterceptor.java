@@ -16,9 +16,13 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.config.SocketInterceptorConfig;
+
 import java.io.IOException;
 import java.net.Socket;
 
 public interface MemberSocketInterceptor extends SocketInterceptor {
+    void init(SocketInterceptorConfig socketInterceptorConfig);
+
     void onAccept(Socket acceptedSocket) throws IOException;
 }

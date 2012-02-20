@@ -111,6 +111,7 @@ public class ConnectionManager {
             }
             if (implementation != null) {
                 memberSocketInterceptor = (MemberSocketInterceptor) implementation;
+                memberSocketInterceptor.init(sic);
             } else {
                 memberSocketInterceptor = null;
             }

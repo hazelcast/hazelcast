@@ -124,6 +124,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     }
 
     public Future getAsync(Object key) {
+        beforeCall();
         final MProxyImpl mProxy = MProxyImpl.this;
         final Data dataKey = toData(key);
         AsyncCall call = new AsyncCall() {
@@ -137,6 +138,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     }
 
     public Future putAsync(Object key, Object value) {
+        beforeCall();
         final MProxyImpl mProxy = MProxyImpl.this;
         final Data dataKey = toData(key);
         final Data dataValue = toData(value);
@@ -151,6 +153,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     }
 
     public Future removeAsync(Object key) {
+        beforeCall();
         final MProxyImpl mProxy = MProxyImpl.this;
         final Data dataKey = toData(key);
         AsyncCall call = new AsyncCall() {

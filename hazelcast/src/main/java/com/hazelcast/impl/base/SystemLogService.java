@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.util.logging.Level.WARNING;
 
-public class CallStateService {
+public class SystemLogService {
 
     public enum Level {
         CS_NONE,
@@ -39,7 +39,7 @@ public class CallStateService {
 
     private Node node;
 
-    public CallStateService(Node node) {
+    public SystemLogService(Node node) {
         this.node = node;
     }
 
@@ -53,7 +53,7 @@ public class CallStateService {
             int callStatesCount = mapCallStates.size();
             if (callStatesCount > 10000) {
                 String msg = " CallStates created! You might have too many threads accessing Hazelcast!";
-                node.getLogger(CallStateService.class.getName()).log(WARNING, callStatesCount + msg);
+                node.getLogger(SystemLogService.class.getName()).log(WARNING, callStatesCount + msg);
             }
             return callStateNew;
         } else {
@@ -87,15 +87,22 @@ public class CallStateService {
     }
 
     public boolean shouldLog(Level level) {
-        if (level == Level.CS_NONE) return false;
-        return currentLevel.ordinal() >= level.ordinal();
+        return currentLevel != Level.CS_NONE && currentLevel.ordinal() >= level.ordinal();
     }
 
-    public void info(CallStateAware callStateAware, CallStateLog callStateLog) {
+    public boolean shouldTrace() {
+        return currentLevel != Level.CS_NONE && currentLevel.ordinal() >= Level.CS_TRACE.ordinal();
+    }
+
+    public boolean shouldInfo() {
+        return currentLevel != Level.CS_NONE && currentLevel.ordinal() >= Level.CS_INFO.ordinal();
+    }
+
+    public void info(CallStateAware callStateAware, SystemLog callStateLog) {
         logState(callStateAware, Level.CS_INFO, callStateLog);
     }
 
-    public void trace(CallStateAware callStateAware, CallStateLog callStateLog) {
+    public void trace(CallStateAware callStateAware, SystemLog callStateLog) {
         logState(callStateAware, Level.CS_TRACE, callStateLog);
     }
 
@@ -108,19 +115,19 @@ public class CallStateService {
     }
 
     public void info(CallStateAware callStateAware, String msg, Object arg1) {
-        logState(callStateAware, Level.CS_INFO, new CallStateStringArgLog(msg, arg1));
+        logState(callStateAware, Level.CS_INFO, new SystemArgsLog(msg, arg1));
     }
 
     public void info(CallStateAware callStateAware, String msg, Object arg1, Object arg2) {
-        logState(callStateAware, Level.CS_INFO, new CallStateStringArgLog(msg, arg1, arg2));
+        logState(callStateAware, Level.CS_INFO, new SystemArgsLog(msg, arg1, arg2));
     }
 
     public void trace(CallStateAware callStateAware, String msg, Object arg1) {
-        logState(callStateAware, Level.CS_TRACE, new CallStateStringArgLog(msg, arg1));
+        logState(callStateAware, Level.CS_TRACE, new SystemArgsLog(msg, arg1));
     }
 
     public void trace(CallStateAware callStateAware, String msg, Object arg1, Object arg2) {
-        logState(callStateAware, Level.CS_TRACE, new CallStateStringArgLog(msg, arg1, arg2));
+        logState(callStateAware, Level.CS_TRACE, new SystemArgsLog(msg, arg1, arg2));
     }
 
     public void logObject(CallStateAware callStateAware, Level level, Object obj) {
@@ -134,7 +141,7 @@ public class CallStateService {
         }
     }
 
-    public void logState(CallStateAware callStateAware, Level level, CallStateLog callStateLog) {
+    public void logState(CallStateAware callStateAware, Level level, SystemLog callStateLog) {
         if (currentLevel.ordinal() >= level.ordinal()) {
             if (callStateAware != null) {
                 CallState callState = callStateAware.getCallState();

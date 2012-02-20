@@ -17,8 +17,8 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.*;
-import com.hazelcast.impl.base.CallStateService;
 import com.hazelcast.impl.base.PacketProcessor;
+import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.ThreadWatcher;
@@ -29,7 +29,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.impl.base.CallStateService.Level.CS_INFO;
+import static com.hazelcast.impl.base.SystemLogService.Level.CS_INFO;
 
 public final class ClusterService implements Runnable, Constants {
 
@@ -101,7 +101,7 @@ public final class ClusterService implements Runnable, Constants {
 
     public void enqueuePacket(Packet packet) {
         if (packet.callId != -1) {
-            CallStateService css = node.getCallStateService();
+            SystemLogService css = node.getCallStateService();
             packet.callState = css.getOrCreateCallState(packet.callId, packet.lockAddress, packet.threadId);
             if (css.shouldLog(CS_INFO)) {
 //                css.logObject(packet, CS_INFO, "Enqueue Packet ");
@@ -169,7 +169,7 @@ public final class ClusterService implements Runnable, Constants {
             logger.log(Level.SEVERE, msg);
             throw new RuntimeException(msg);
         }
-        CallStateService css = node.getCallStateService();
+        SystemLogService css = node.getCallStateService();
         if (css.shouldLog(CS_INFO)) {
             css.logObject(packet, CS_INFO, "Processing packet");
             css.logObject(packet, CS_INFO, packetProcessor.getClass());

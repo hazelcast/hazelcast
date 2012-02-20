@@ -16,10 +16,10 @@
 
 package com.hazelcast.impl.base;
 
-public class CallStateObjectLog extends CallStateLog {
+public class SystemObjectLog extends SystemLog {
     final Object obj;
 
-    public CallStateObjectLog(Object obj) {
+    public SystemObjectLog(Object obj) {
         this.obj = obj;
     }
 

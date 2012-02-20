@@ -63,7 +63,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                 //noinspection BusyWait
                 Thread.sleep(2000L);
             }
-            while (node.isActive() && !joined.get()) {
+            long joinStartTime = System.currentTimeMillis();
+            long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
+            while (node.isActive() && !joined.get() && (System.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 final Connection connection = node.connectionManager.getOrConnect(requiredAddress);
                 if (connection == null) {
                     joinViaRequiredMember(joined);

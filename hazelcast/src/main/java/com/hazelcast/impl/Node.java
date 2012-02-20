@@ -118,7 +118,7 @@ public class Node {
 
     private final CpuUtilization cpuUtilization = new CpuUtilization();
 
-    private final CallStateService callStateService;
+    private final SystemLogService callStateService;
 
     final SimpleBoundedQueue<Packet> serviceThreadPacketQueue = new SimpleBoundedQueue<Packet>(1000);
 
@@ -161,7 +161,7 @@ public class Node {
         localMember = new MemberImpl(address, true, localNodeType);
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         this.loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, localMember);
-        callStateService = new CallStateService(Node.this);
+        callStateService = new SystemLogService(Node.this);
         this.logger = loggingService.getLogger(Node.class.getName());
         ThreadContext.get().setCurrentFactory(factory);
         initializer = NodeInitializerFactory.create();
@@ -218,7 +218,7 @@ public class Node {
         joiner = createJoiner();
     }
 
-    public CallStateService getCallStateService() {
+    public SystemLogService getCallStateService() {
         return callStateService;
     }
 
@@ -554,6 +554,8 @@ public class Node {
     }
 
     void join() {
+        long joinStartTime = System.currentTimeMillis();
+        long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
         try {
             if (joiner == null) {
                 logger.log(Level.WARNING, "No join method is enabled! Starting standalone.");
@@ -563,7 +565,13 @@ public class Node {
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage());
-            factory.lifecycleService.restart();
+            if (System.currentTimeMillis() - joinStartTime < maxJoinMillis) {
+                factory.lifecycleService.restart();
+            } else {
+                setActive(false);
+                joined.set(false);
+                throw (RuntimeException) e;
+            }
         }
     }
 

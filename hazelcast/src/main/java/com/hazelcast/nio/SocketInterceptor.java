@@ -16,14 +16,10 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.config.SocketInterceptorConfig;
-
 import java.io.IOException;
 import java.net.Socket;
 
 public interface SocketInterceptor {
-
-    void init(SocketInterceptorConfig socketInterceptorConfig);
 
     void onConnect(Socket connectedSocket) throws IOException;
 }

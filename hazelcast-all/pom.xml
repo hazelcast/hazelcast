@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>2.0-RC1</version>
+        <version>2.0-RC2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -113,7 +113,7 @@
                                                 <![CDATA[<h1>Hazelcast</h1>]]>
                                             </doctitle>
                                             <bottom>
-                                                <![CDATA[<i>Copyright &#2.0-RC1; 2008-2011 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
+                                                <![CDATA[<i>Copyright &#2.0-RC2; 2008-2011 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
                                             <link href="http://download.oracle.com/javase/1.5.0/docs/api/"/>
                                             <link href="http://java.sun.com/products/servlet/2.3/javadoc/"/>
                                         </javadoc>
