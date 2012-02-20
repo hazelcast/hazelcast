@@ -37,16 +37,16 @@
     <itemizedlist>
         <listitem>
             <para>Add namespace
-                <emphasis>xmlns:hz="http://www.hazelcast.com/schema/config"</emphasis>
+                <emphasis>xmlns:hz="http://www.hazelcast.com/schema/spring"</emphasis>
                 to beans
                 tag in context file:
                 <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:hz="http://www.hazelcast.com/schema/config"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                 http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-                http://www.hazelcast.com/schema/config
-                http://www.hazelcast.com/schema/config/hazelcast-spring.xsd">
+                http://www.hazelcast.com/schema/spring
+                http://www.hazelcast.com/schema/spring/hazelcast-spring-2.0.xsd">
 ]]></programlisting>
             </para>
         </listitem>

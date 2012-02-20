@@ -39,7 +39,7 @@
                 </para>
                 <para>
                     <programlisting language="xml">
-                        &lt;hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-basic.xsd"
+                        &lt;hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-2.0.xsd"
                         xmlns="http://www.hazelcast.com/schema/config"
                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
 
