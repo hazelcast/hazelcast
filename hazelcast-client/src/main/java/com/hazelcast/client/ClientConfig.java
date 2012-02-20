@@ -30,11 +30,9 @@ public class ClientConfig {
     List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>(10);
     private Credentials credentials;
     private int connectionTimeout = 300000;
-
     private int initialConnectionAttemptLimit = 1;
     private int reconnectionAttemptLimit = 1;
     private int reConnectionTimeOut = 5000;
-
     private boolean shuffle = false;
     private boolean updateAutomatic = true;
     private SocketInterceptor socketInterceptor = null;
@@ -109,6 +107,14 @@ public class ClientConfig {
             this.addressList.add(parse(address));
         }
         return this;
+    }
+
+    // required for spring module
+    public void setAddresses(List<String> addresses) {
+        addressList.clear();
+        for (String address : addresses) {
+            addressList.add(parse(address));
+        }
     }
 
     private static InetSocketAddress parse(String address) {
