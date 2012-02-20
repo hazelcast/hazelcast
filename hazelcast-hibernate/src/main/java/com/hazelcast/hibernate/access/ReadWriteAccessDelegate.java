@@ -94,11 +94,11 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
                     return false;
                 }
             } else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {
-                return putTransient(key, value);
+                return putInToCache(key, value);
             }
             return false;
         } else {
-            return putTransient(key, value);
+            return putInToCache(key, value);
         }
     }
 

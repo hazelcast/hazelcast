@@ -54,7 +54,7 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
             if (hosts != null && hosts.length > 0) {
                 address = hosts[0];
                 logger.log(Level.WARNING, "Hibernate property '" + CacheEnvironment.NATIVE_CLIENT_HOSTS + "' " +
-                        "is deprecated, use '" + CacheEnvironment.NATIVE_CLIENT_ADDRESS + "' isntead!");
+                        "is deprecated, use '" + CacheEnvironment.NATIVE_CLIENT_ADDRESS + "' instead!");
             }
         }
         String group = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_GROUP, props, null);
@@ -65,7 +65,8 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
                     + " are mandatory to use native client!");
         }
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setGroupConfig(new GroupConfig("dev", "dev-pass")).addAddress("localhost:5701");
+        clientConfig.setGroupConfig(new GroupConfig(group, pass)).addAddress(address);
+        clientConfig.setUpdateAutomatic(true);
         return (client = HazelcastClient.newHazelcastClient(clientConfig));
     }
 

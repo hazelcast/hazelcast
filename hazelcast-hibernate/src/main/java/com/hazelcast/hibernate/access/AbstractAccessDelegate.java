@@ -26,6 +26,7 @@ import org.hibernate.cache.access.SoftLock;
 
 import java.util.Comparator;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -40,7 +41,8 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         super();
         this.hazelcastRegion = hazelcastRegion;
         if (hazelcastRegion instanceof AbstractTransactionalDataRegion) {
-            this.versionComparator = ((AbstractTransactionalDataRegion) hazelcastRegion).getCacheDataDescription().getVersionComparator();
+            this.versionComparator = ((AbstractTransactionalDataRegion) hazelcastRegion)
+                    .getCacheDataDescription().getVersionComparator();
         } else {
             this.versionComparator = null;
         }
@@ -54,8 +56,8 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         return hazelcastRegion.getCache();
     }
 
-    protected boolean putTransient(final Object key, final Object value) {
-        getCache().putTransient(key, value, 0, null);
+    protected boolean putInToCache(final Object key, final Object value) {
+        getCache().set(key, value, 0, TimeUnit.SECONDS);
         return true;
     }
 
@@ -63,7 +65,8 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         return getCache().get(key);
     }
 
-    public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version) throws CacheException {
+    public boolean putFromLoad(final Object key, final Object value, final long txTimestamp,
+                               final Object version) throws CacheException {
         return putFromLoad(key, value, txTimestamp, version, true);
     }
 
