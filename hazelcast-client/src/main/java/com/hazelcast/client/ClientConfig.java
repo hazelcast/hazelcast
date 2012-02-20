@@ -36,7 +36,7 @@ public class ClientConfig {
     private int reConnectionTimeOut = 5000;
 
     private boolean shuffle = false;
-    private boolean updateAutomatic = false;
+    private boolean updateAutomatic = true;
     private SocketInterceptor socketInterceptor = null;
 
     public SocketInterceptor getSocketInterceptor() {

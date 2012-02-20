@@ -71,7 +71,6 @@ public class HazelcastClient implements HazelcastInstance {
     private final AtomicBoolean active = new AtomicBoolean(true);
 
     private HazelcastClient(ClientConfig config) {
-        //this.properties = properties;
         if (config.getCredentials() == null) {
             config.setCredentials(new UsernamePasswordCredentials(config.getGroupConfig().getName(),
                     config.getGroupConfig().getPassword()));
