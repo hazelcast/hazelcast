@@ -250,8 +250,10 @@ public class ConnectionManager implements MembershipListener {
     }
 
     private void popAndPush(List<InetSocketAddress> clusterMembers) {
-        InetSocketAddress address = clusterMembers.remove(0);
-        clusterMembers.add(address);
+        if (!clusterMembers.isEmpty()) {
+            InetSocketAddress address = clusterMembers.remove(0);
+            clusterMembers.add(address);
+        }
     }
 
     private Connection searchForAvailableConnection() {
