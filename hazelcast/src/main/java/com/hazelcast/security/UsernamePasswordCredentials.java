@@ -43,8 +43,12 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
         return getPrincipal();
     }
 
-    public byte[] getPassword() {
+    public byte[] getRawPassword() {
         return password;
+    }
+
+    public String getPassword() {
+        return new String(password);
     }
 
     public void setUsername(String username) {

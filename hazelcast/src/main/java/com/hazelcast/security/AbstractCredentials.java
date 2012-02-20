@@ -23,7 +23,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * Absract implementation of {@link Credentials}
+ * Abstract implementation of {@link Credentials}
  */
 public abstract class AbstractCredentials implements Credentials, DataSerializable {
 

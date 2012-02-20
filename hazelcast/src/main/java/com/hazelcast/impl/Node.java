@@ -634,6 +634,10 @@ public class Node {
         return cpuUtilization;
     }
 
+    public boolean isServiceThread() {
+        return Thread.currentThread() == serviceThread;
+    }
+
     public String toString() {
         return "Node[" + getName() + "]";
     }

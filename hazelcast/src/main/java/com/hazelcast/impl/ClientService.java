@@ -855,7 +855,7 @@ public class ClientService implements ConnectionListener {
                     final String nodeGroupName = factory.getConfig().getGroupConfig().getName();
                     final String nodeGroupPassword = factory.getConfig().getGroupConfig().getPassword();
                     authenticated = (nodeGroupName.equals(usernamePasswordCredentials.getUsername())
-                            && nodeGroupPassword.equals(new String(usernamePasswordCredentials.getPassword())));
+                            && nodeGroupPassword.equals(usernamePasswordCredentials.getPassword()));
                 } else {
                     authenticated = false;
                     logger.log(Level.SEVERE, "Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster group-name" +
