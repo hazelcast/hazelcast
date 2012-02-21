@@ -125,11 +125,10 @@ public class TransactionImpl implements Transaction {
         status = TXN_STATUS_ROLLING_BACK;
         try {
             ThreadContext.get().setCurrentFactory(factory);
-            if (transactionRecords.size() > 1) {
-                Collections.reverse(transactionRecords);
-            }
-            for (TransactionRecord transactionRecord : transactionRecords) {
-                transactionRecord.rollback();
+            final int size = transactionRecords.size();
+            ListIterator<TransactionRecord> iter = transactionRecords.listIterator(size);
+            while (iter.hasPrevious()) {
+                iter.previous().rollback();
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
