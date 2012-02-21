@@ -83,12 +83,12 @@ public class LifecycleServiceClientImpl implements LifecycleService {
         Callable<Boolean> callable = new Callable<Boolean>() {
             public Boolean call() {
                 synchronized (lifecycleLock) {
-                    if (paused.get()) {
+                    if (!paused.get()) {
                         fireLifecycleEvent(PAUSING);
                     } else {
                         return false;
                     }
-                    paused.set(false);
+                    paused.set(true);
                     fireLifecycleEvent(PAUSED);
                     return true;
                 }
