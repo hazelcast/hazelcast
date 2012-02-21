@@ -6,63 +6,51 @@
         <itemizedlist>
             <listitem>
                 <para>
-                    <emphasis role="bold">MembershipListener</emphasis>
-                    for cluster membership events
+                    <emphasis role="bold">MembershipListener</emphasis> for cluster membership events
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">InstanceListener</emphasis>
-                    for distributed instance creation and destroy events
+                    <emphasis role="bold">InstanceListener</emphasis> for distributed instance creation and destroy events
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">MigrationListener</emphasis>
-                    for partition migration start and complete events
+                    <emphasis role="bold">MigrationListener</emphasis> for partition migration start and complete events
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">EntryListener</emphasis>
-                    for IMap and MultiMap entry events
+                    <emphasis role="bold">EntryListener</emphasis> for IMap and MultiMap entry events
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">ItemListener</emphasis>
-                    for IQueue, ISet and IList item events
+                    <emphasis role="bold">ItemListener</emphasis> for IQueue, ISet and IList item events
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">MessageListener</emphasis>
-                    for ITopic message events
+                    <emphasis role="bold">MessageListener</emphasis> for ITopic message events
                 </para>
             </listitem>
         </itemizedlist>
         These listeners can be added to and removed from related object using Hazelcast API. Such as
         <programlisting language="java">MembershipListener listener = new MyMembershipListener();
-            hazelcastInstance.getCluster().addMembershipListener(listener);
-            hazelcastInstance.getCluster().removeMembershipListener(listener);
-        </programlisting>
+hazelcastInstance.getCluster().addMembershipListener(listener);
+hazelcastInstance.getCluster().removeMembershipListener(listener);</programlisting>
         <programlisting language="java">EntryListener listener = new MyEntryListener();
-            IMap map = hazelcastInstance.getMap("default");
-            map.addEntryListener(listener, true);
-            map.removeEntryListener(listener);
-        </programlisting>
+IMap map = hazelcastInstance.getMap("default");
+map.addEntryListener(listener, true);
+map.removeEntryListener(listener);</programlisting>
         <programlisting language="java">ItemListener listener = new MyItemListener();
-            IQueue queue = hazelcastInstance.getQueue("default");
-            queue.addItemListener(listener, true);
-            queue.removeItemListener(listener);
-        </programlisting>
+IQueue queue = hazelcastInstance.getQueue("default");
+queue.addItemListener(listener, true);
+queue.removeItemListener(listener);</programlisting>
     </para>
 
     <para>
-        Downside of attaching listeners using API is possibility of missing events between creation of object and
-        registering listener. To overcome this race condition Hazelcast introduces registration of listeners in
-        configuration. Listeners can be registered using either Hazelcast XML configuration, Config API or Spring
-        configuration.
+        Downside of attaching listeners using API is possibility of missing events between creation of object and registering listener. To overcome this race condition Hazelcast introduces registration of listeners in configuration. Listeners can be registered using either Hazelcast XML configuration, Config API or Spring configuration.
     </para>
 
     <para>
@@ -78,11 +66,9 @@
         <listener>com.hazelcast.examples.MembershipListener</listener>
 </listeners>]]></programlisting>
                 </para>
-                <para>
-                    <emphasis role="italic">Config API</emphasis>
+                <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MembershipListener"));
-                    </programlisting>
+config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MembershipListener"));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
@@ -104,15 +90,13 @@
         <listener>com.hazelcast.examples.InstanceListener</listener>
 </listeners>]]></programlisting>
                 </para>
-                <para>
-                    <emphasis role="italic">Config API</emphasis>
+                <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.InstanceListener"));
-                    </programlisting>
+config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.InstanceListener"));</programlisting>
                 </para>
                 <para>
-                    <emphasis role="italic">Spring XML configuration</emphasis>
-                    <programlisting language="xml"><![CDATA[
+                <emphasis role="italic">Spring XML configuration</emphasis>
+                <programlisting language="xml"><![CDATA[
 <hz:listeners>
     <hz:listener class-name="com.hazelcast.spring.DummyInstanceListener"/>
     <hz:listener implementation="dummyInstanceListener"/>
@@ -130,11 +114,9 @@
         <listener>com.hazelcast.examples.MigrationListener</listener>
 </listeners>]]></programlisting>
                 </para>
-                <para>
-                    <emphasis role="italic">Config API</emphasis>
+                <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MigrationListener"));
-                    </programlisting>
+config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MigrationListener"));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
@@ -147,8 +129,7 @@
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">EntryListener</emphasis>
-                    for IMap
+                    <emphasis role="bold">EntryListener</emphasis> for IMap
                 </para>
                 <para>
                     <emphasis role="italic">Hazelcast XML configuration</emphasis>
@@ -160,16 +141,13 @@
     </entry-listeners>
 </map>]]></programlisting>
                 </para>
-                <para>
-                    <emphasis role="italic">Config API</emphasis>
+                <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        mapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.examples.EntryListener",
-                        false, false));
-                    </programlisting>
+mapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.examples.EntryListener", false, false));</programlisting>
                 </para>
                 <para>
-                    <emphasis role="italic">Spring XML configuration</emphasis>
-                    <programlisting language="xml"><![CDATA[
+                <emphasis role="italic">Spring XML configuration</emphasis>
+                <programlisting language="xml"><![CDATA[
 <hz:map name="default">
     <hz:entry-listeners>
         <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
@@ -180,8 +158,7 @@
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">EntryListener</emphasis>
-                    for MultiMap
+                    <emphasis role="bold">EntryListener</emphasis> for MultiMap
                 </para>
                 <para>
                     <emphasis role="italic">Hazelcast XML configuration</emphasis>
@@ -193,12 +170,9 @@
     </entry-listeners>
 </multimap>]]></programlisting>
                 </para>
-                <para>
-                    <emphasis role="italic">Config API</emphasis>
+                <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        multiMapConfig.addEntryListenerConfig(new
-                        EntryListenerConfig("com.hazelcast.examples.EntryListener", false, false));
-                    </programlisting>
+multiMapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.examples.EntryListener", false, false));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
@@ -213,8 +187,7 @@
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">ItemListener</emphasis>
-                    for IQueue
+                    <emphasis role="bold">ItemListener</emphasis> for IQueue
                 </para>
                 <para>
                     <emphasis role="italic">Hazelcast XML configuration</emphasis>
@@ -226,12 +199,9 @@
     </item-listeners>
 </queue>]]></programlisting>
                 </para>
-                <para>
-                    <emphasis role="italic">Config API</emphasis>
+                <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        queueConfig.addItemListenerConfig(new ItemListenerConfig("com.hazelcast.examples.ItemListener",
-                        true));
-                    </programlisting>
+queueConfig.addItemListenerConfig(new ItemListenerConfig("com.hazelcast.examples.ItemListener", true));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
@@ -245,8 +215,7 @@
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">MessageListener</emphasis>
-                    for ITopic
+                    <emphasis role="bold">MessageListener</emphasis> for ITopic
                 </para>
                 <para>
                     <emphasis role="italic">Hazelcast XML configuration</emphasis>
@@ -257,12 +226,9 @@
     </message-listeners>
 </topic>]]></programlisting>
                 </para>
-                <para>
-                    <emphasis role="italic">Config API</emphasis>
+                <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        topicConfig.addMessageListenerConfig(new
-                        ListenerConfig("com.hazelcast.examples.MessageListener"));
-                    </programlisting>
+topicConfig.addMessageListenerConfig(new ListenerConfig("com.hazelcast.examples.MessageListener"));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
