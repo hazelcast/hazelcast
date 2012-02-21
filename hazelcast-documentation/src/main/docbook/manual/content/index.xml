@@ -5,7 +5,7 @@
     <info>
         <title>Hazelcast Documentation</title>
         <subtitle>version 2.0</subtitle>
-        <pubdate>15 February 2012</pubdate>
+        <pubdate>21 February 2012</pubdate>
         <copyright>
             <year>2012</year>
             <holder>Hazel Bilisim Ltd. Sti.</holder>
@@ -105,7 +105,9 @@
         <xi:include href="EC2AutoDiscovery.xml"/>
         <xi:include href="ConfigGroup.xml"/>
         <xi:include href="ConfigSpecifyInterfaces.xml"/>
-        <xi:include href="PartitionGroup.xml"/>
+        <xi:include href="PartitionGroupConfig.xml"/>
+        <xi:include href="ListenerConfig.xml"/>
+        <xi:include href="MapIndexConfig.xml"/>
         <xi:include href="NetworkPartitioning.xml"/>
         <xi:include href="WildcardConfiguration.xml"/>
         <xi:include href="ConfigurationProperties.xml"/>
