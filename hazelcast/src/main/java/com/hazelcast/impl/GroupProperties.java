@@ -160,7 +160,6 @@ public class GroupProperties {
     public final GroupProperty RESTART_ON_MAX_IDLE;
 
     public final GroupProperty CONCURRENT_MAP_PARTITION_COUNT;
-//    public final GroupProperty CONCURRENT_MAP_MAX_BACKUP_COUNT;
 
     public final GroupProperty REMOVE_DELAY_SECONDS;
 

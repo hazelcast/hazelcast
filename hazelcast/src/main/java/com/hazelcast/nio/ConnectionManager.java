@@ -17,10 +17,14 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.Bind;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ssl.BasicSSLContextFactory;
+import com.hazelcast.nio.ssl.SSLContextFactory;
+import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.io.IOException;
@@ -79,6 +83,8 @@ public class ConnectionManager {
 
     private final ExecutorService es = Executors.newCachedThreadPool();
 
+    private final SocketChannelWrapperFactory socketChannelWrapperFactory;
+
     public ConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
@@ -91,6 +97,13 @@ public class ConnectionManager {
         this.SOCKET_TIMEOUT = ioService.getSocketTimeoutSeconds() * 1000;
         int selectorCount = ioService.getSelectorThreadCount();
         selectors = new InOutSelector[selectorCount];
+        SSLConfig sslConfig = ioService.getSSLConfig();
+        if (sslConfig != null && sslConfig.isEnabled()) {
+            socketChannelWrapperFactory = new SSLSocketChannelWrapperFactory(sslConfig);
+            logger.log(Level.INFO, "SSL is enabled");
+        } else {
+            socketChannelWrapperFactory = new DefaultSocketChannelWrapperFactory();
+        }
         SocketInterceptorConfig sic = ioService.getSocketInterceptorConfig();
         if (sic != null) {
             SocketInterceptor implementation = (SocketInterceptor) sic.getImplementation();
@@ -117,6 +130,47 @@ public class ConnectionManager {
             }
         } else {
             memberSocketInterceptor = null;
+        }
+    }
+
+    interface SocketChannelWrapperFactory {
+        SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
+    }
+
+    class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
+        public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
+            return new DefaultSocketChannelWrapper(socketChannel);
+        }
+    }
+
+    class SSLSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
+        final SSLContextFactory sslContextFactory;
+
+        SSLSocketChannelWrapperFactory(SSLConfig sslConfig) {
+            if (CipherHelper.isSymmetricEncryptionEnabled(ioService)) {
+                throw new RuntimeException("SSL and SymmetricEncryption cannot be both enabled!");
+            }
+            if (CipherHelper.isAsymmetricEncryptionEnabled(ioService)) {
+                throw new RuntimeException("SSL and AsymmetricEncryption cannot be both enabled!");
+            }
+            SSLContextFactory sslContextFactoryObject = (SSLContextFactory) sslConfig.getFactoryImplementation();
+            try {
+                String factoryClassName = sslConfig.getFactoryClassName();
+                if (sslContextFactoryObject == null && factoryClassName != null) {
+                    sslContextFactoryObject = (SSLContextFactory) Class.forName(factoryClassName).newInstance();
+                }
+                if (sslContextFactoryObject == null) {
+                    sslContextFactoryObject = new BasicSSLContextFactory();
+                }
+                sslContextFactoryObject.init(sslConfig.getProperties());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            sslContextFactory = sslContextFactoryObject;
+        }
+
+        public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
+            return new SSLSocketChannelWrapper(sslContextFactory.getSSLContext(), socketChannel, client);
         }
     }
 
@@ -195,8 +249,7 @@ public class ConnectionManager {
     }
 
     public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-        return new DefaultSocketChannelWrapper(socketChannel);
-//        return new SSLSocketChannelWrapper(socketChannel, client);
+        return socketChannelWrapperFactory.wrapSocketChannel(socketChannel, client);
     }
 
     public void failedConnection(Address address, Throwable t) {

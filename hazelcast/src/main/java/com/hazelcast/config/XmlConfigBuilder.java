@@ -265,6 +265,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleViaReflection(child, config.getNetworkConfig(), new SymmetricEncryptionConfig());
             } else if ("asymmetric-encryption".equals(nodeName)) {
                 handleViaReflection(child, config.getNetworkConfig(), new AsymmetricEncryptionConfig());
+            } else if ("ssl".equals(nodeName)) {
+                SSLConfig sslConfig = createSSLConfig(child);
+                config.getNetworkConfig().setSSLConfig(sslConfig);
             }
         }
     }
@@ -732,6 +735,27 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         return mapStoreConfig;
+    }
+
+    private SSLConfig createSSLConfig(final org.w3c.dom.Node node) {
+        SSLConfig sslConfig = new SSLConfig();
+        final NamedNodeMap atts = node.getAttributes();
+        for (int a = 0; a < atts.getLength(); a++) {
+            final org.w3c.dom.Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if (att.getNodeName().equals("enabled")) {
+                sslConfig.setEnabled(checkTrue(value));
+            }
+        }
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("factory-class-name".equals(nodeName)) {
+                sslConfig.setFactoryClassName(getTextContent(n).trim());
+            } else if ("properties".equals(nodeName)) {
+                handleProperties(n, sslConfig.getProperties());
+            }
+        }
+        return sslConfig;
     }
 
     private void handleTopic(final org.w3c.dom.Node node) {

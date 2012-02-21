@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.config.AsymmetricEncryptionConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.impl.ascii.TextCommandService;
@@ -43,6 +44,8 @@ public interface IOService {
     SymmetricEncryptionConfig getSymmetricEncryptionConfig();
 
     AsymmetricEncryptionConfig getAsymmetricEncryptionConfig();
+
+    SSLConfig getSSLConfig();
 
     void handleClientPacket(Packet p);
 

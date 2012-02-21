@@ -18,6 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.config.AsymmetricEncryptionConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.impl.Node;
@@ -72,6 +73,10 @@ public class NodeIOService implements IOService {
 
     public AsymmetricEncryptionConfig getAsymmetricEncryptionConfig() {
         return node.getConfig().getNetworkConfig().getAsymmetricEncryptionConfig();
+    }
+
+    public SSLConfig getSSLConfig() {
+        return node.getConfig().getNetworkConfig().getSSLConfig();
     }
 
     public void handleClientPacket(Packet p) {

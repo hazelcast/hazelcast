@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.ssl;
+
+import com.hazelcast.nio.DefaultSocketChannelWrapper;
 
 import javax.net.ssl.*;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.security.KeyStore;
 
 public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
 
@@ -32,20 +32,8 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
     private final SSLEngine sslEngine;
     private SSLEngineResult sslEngineResult;
 
-    public SSLSocketChannelWrapper(SocketChannel sc, boolean client) throws Exception {
+    public SSLSocketChannelWrapper(SSLContext sslContext, SocketChannel sc, boolean client) throws Exception {
         super(sc);
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
-        final char[] passPhrase = System.getProperty("javax.net.ssl.keyStorePassword").toCharArray();
-        final String keyStoreFile = System.getProperty("javax.net.ssl.keyStore");
-        ks.load(new FileInputStream(keyStoreFile), passPhrase);
-        ts.load(new FileInputStream(keyStoreFile), passPhrase);
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passPhrase);
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ts);
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
         sslEngine = sslContext.createSSLEngine();
         sslEngine.setUseClientMode(client);
         sslEngine.setEnableSessionCreation(true);

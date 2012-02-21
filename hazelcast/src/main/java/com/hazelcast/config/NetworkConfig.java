@@ -34,6 +34,8 @@ public class NetworkConfig implements DataSerializable {
 
     private SocketInterceptorConfig socketInterceptorConfig = null;
 
+    private SSLConfig sslConfig = null;
+
     /**
      * @return the interfaces
      */
@@ -88,6 +90,15 @@ public class NetworkConfig implements DataSerializable {
 
     public NetworkConfig setAsymmetricEncryptionConfig(final AsymmetricEncryptionConfig asymmetricEncryptionConfig) {
         this.asymmetricEncryptionConfig = asymmetricEncryptionConfig;
+        return this;
+    }
+
+    public SSLConfig getSSLConfig() {
+        return sslConfig;
+    }
+
+    public NetworkConfig setSSLConfig(SSLConfig sslConfig) {
+        this.sslConfig = sslConfig;
         return this;
     }
 

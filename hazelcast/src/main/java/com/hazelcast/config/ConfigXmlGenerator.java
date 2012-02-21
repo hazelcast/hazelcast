@@ -142,6 +142,13 @@ public class ConfigXmlGenerator {
             xml.append("<storePath>").append(asec.getStorePath()).append("</storePath>");
         }
         xml.append("</asymmetric-encryption>");
+        final SSLConfig ssl = netCfg.getSSLConfig();
+        xml.append("<ssl enabled=\"").append(ssl != null && ssl.isEnabled()).append("\">");
+        if (ssl != null) {
+            xml.append("<factory-class-name>").append(ssl.getFactoryClassName()).append("</factory-class-name>");
+            appendProperties(xml, ssl.getProperties());
+        }
+        xml.append("</ssl>");
         xml.append("</network>");
         final Collection<ExecutorConfig> exCfgs = config.getExecutorConfigs();
         for (ExecutorConfig ex : exCfgs) {
