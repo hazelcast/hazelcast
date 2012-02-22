@@ -44,6 +44,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private IList<Object> list = null;
 
+    private AtomicNumber atomicNumber;
+
     private String namespace = "default";
 
     private boolean silent = false;
@@ -79,6 +81,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         map = hazelcast.getMap(namespace);
 //        }
         return map;
+    }
+
+    public AtomicNumber getAtomicNumber() {
+        atomicNumber = hazelcast.getAtomicNumber(namespace);
+        return atomicNumber;
     }
 
     public ISet<Object> getSet() {
@@ -378,6 +385,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleListRemove(args);
         } else if (first.equals("l.contains")) {
             handleListContains(args);
+        } else if ("a.get".equals(first)) {
+            handleAtomicNumberGet(args);
+        } else if ("a.set".equals(first)) {
+            handleAtomicNumberSet(args);
+        } else if ("a.inc".equals(first)) {
+            handleAtomicNumberInc(args);
+        } else if ("a.dec".equals(first)) {
+            handleAtomicNumberDec(args);
         } else if (first.equals("execute")) {
             execute(args);
         } else if (first.equals("partitions")) {
@@ -405,6 +420,26 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else {
             println("type 'help' for help");
         }
+    }
+
+    private void handleAtomicNumberGet(String[] args) {
+        println(getAtomicNumber().get());
+    }
+
+    private void handleAtomicNumberSet(String[] args) {
+        long v = 0;
+        if (args.length > 1)
+            v = Long.valueOf(args[1]);
+        getAtomicNumber().set(v);
+        println(getAtomicNumber().get());
+    }
+
+    private void handleAtomicNumberInc(String[] args) {
+        println(getAtomicNumber().incrementAndGet());
+    }
+
+    private void handleAtomicNumberDec(String[] args) {
+        println(getAtomicNumber().decrementAndGet());
     }
 
     protected void handlePartitions(String[] args) {
@@ -1212,6 +1247,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("l.iterator [remove]");
         println("l.size");
         println("l.clear");
+        print("");
+        println("-- AtomicNumber commands:");
+        println("a.get");
+        println("a.set <long>");
+        println("a.inc");
+        println("a.dec");
+        print("");
+        println("-- Executor Service commands:");
         println("execute	<echo-input>				//executes an echo task on random member");
         println("execute0nKey	<echo-input> <key>		//executes an echo task on the member that owns the given key");
         println("execute0nMember <echo-input> <key>	//executes an echo task on the member with given index");
