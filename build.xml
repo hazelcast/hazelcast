@@ -126,7 +126,8 @@
     </target>
 
     <target name="javadoc">
-        <javadoc destdir="javadoc" author="true" version="true" use="true" windowtitle="Hazelcast API">
+        <javadoc destdir="javadoc" author="true" version="true" use="true"
+                 windowtitle="Hazelcast API - ${version}">
             <fileset dir="hazelcast/src/main/java/" defaultexcludes="true">
                 <include name="**/nio/DataSerializable*"/>
                 <include name="**/core/**"/>
@@ -136,17 +137,24 @@
                 <include name="**/jmx/**"/>
                 <include name="**/query/**"/>
                 <include name="**/partition/**"/>
+                <include name="**/security/*Credentials*"/>
+                <include name="**/security/*PermissionPolicy*"/>
+                <include name="**/security/SecurityContext*"/>
+                <exclude name="**/impl/partition/**"/>
                 <exclude name="**/*.html"/>
             </fileset>
             <fileset dir="hazelcast-client/src/main/java/" defaultexcludes="true">
                 <include name="**/HazelcastClient.java"/>
                 <exclude name="**/*.html"/>
             </fileset>
+            <fileset dir="hazelcast-hibernate/src/main/java/" defaultexcludes="true">
+                <include name="**/HazelcastAccessor.java"/>
+                <exclude name="**/*.html"/>
+            </fileset>
             <doctitle>
-                <![CDATA[<h1>Hazelcast</h1>]]>
+                <![CDATA[<h1>Hazelcast ${version}</h1>]]>
             </doctitle>
-            <bottom>
-                <![CDATA[<i>Copyright &#2.0-RC2; 2008-2011 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
+            <bottom><![CDATA[<i>Copyright © 2008-2012 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
             <link offline="false" href="http://java.sun.com/j2se/1.5.0/docs/api/" packagelistLoc="C:\tmp"/>
             <link href="http://java.sun.com/j2se/1.5.0/docs/api/"/>
             <link href="http://java.sun.com/products/servlet/2.3/javadoc/"/>
