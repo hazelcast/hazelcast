@@ -229,6 +229,8 @@
         <xs:sequence>
             <xs:element name="join" type="join" minOccurs="0" maxOccurs="1"/>
             <xs:element name="interfaces" type="interfaces" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0" maxOccurs="1"/>
             <xs:element name="asymmetric-encryption" type="asymmetric-encryption" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
@@ -385,6 +387,24 @@
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="property" type="property"/>
         </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ssl">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" default="false" type="xs:string"/>
+        <xs:attribute name="factory-class-name" type="xs:string" use="optional" />
+        <xs:attribute name="factory-implementation" type="xs:string" use="optional" />
+    </xs:complexType>
+
+    <xs:complexType name="socket-interceptor">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" default="false" type="xs:string"/>
+        <xs:attribute name="class-name" type="xs:string" use="optional" />
+        <xs:attribute name="implementation" type="xs:string" use="optional" />
     </xs:complexType>
 
     <xs:complexType name="symmetric-encryption">

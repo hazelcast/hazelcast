@@ -61,6 +61,10 @@
                 <hz:interfaces enabled="false">
                     <hz:interface>10.10.1.*</hz:interface>
                 </hz:interfaces>
+                <hz:ssl enabled="false" factory-class-name="com.hazelcast.spring.DummySSLContextFactory"
+                        factory-implementation="dummySSLContextFactory" />
+                <hz:socket-interceptor enabled="false" class-name="com.hazelcast.spring.DummySocketInterceptor"
+                        implementation="dummySocketInterceptor" />
                 <hz:symmetric-encryption enabled="true"
                                          algorithm="PBEWithMD5AndDES"
                                          salt="thesalt"
@@ -220,6 +224,8 @@
     <bean id="dummyMergePolicy" class="com.hazelcast.spring.DummyMergePolicy"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>
+    <bean id="dummySSLContextFactory" class="com.hazelcast.spring.DummySSLContextFactory"/>
+    <bean id="dummySocketInterceptor" class="com.hazelcast.spring.DummySocketInterceptor"/>
 
     <hz:config id="liteConfig">
         <hz:lite-member>true</hz:lite-member>

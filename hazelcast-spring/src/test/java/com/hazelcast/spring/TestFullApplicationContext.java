@@ -22,6 +22,8 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.wan.WanReplicationEndpoint;
 import com.hazelcast.merge.MergePolicy;
+import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.nio.ssl.SSLContextFactory;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -103,6 +105,12 @@ public class TestFullApplicationContext {
 
     @Resource(name = "liteConfig")
     private Config liteConfig;
+
+    @Resource
+    private SSLContextFactory sslContextFactory;
+
+    @Resource
+    private SocketInterceptor socketInterceptor;
 
     @BeforeClass
     @AfterClass
@@ -413,5 +421,23 @@ public class TestFullApplicationContext {
             MemberGroupConfig mgc = iter.next();
             assertEquals(2, mgc.getInterfaces().size());
         }
+    }
+
+    @Test
+    public void testSSLConfig() {
+        SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
+        assertNotNull(sslConfig);
+        assertFalse(sslConfig.isEnabled());
+        assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
+        assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
+    }
+
+    @Test
+    public void testSocketInterceptorConfig() {
+        SocketInterceptorConfig socketInterceptorConfig = config.getNetworkConfig().getSocketInterceptorConfig();
+        assertNotNull(socketInterceptorConfig);
+        assertFalse(socketInterceptorConfig.isEnabled());
+        assertEquals(DummySocketInterceptor.class.getName(), socketInterceptorConfig.getClassName());
+        assertEquals(socketInterceptor, socketInterceptorConfig.getImplementation());
     }
 }

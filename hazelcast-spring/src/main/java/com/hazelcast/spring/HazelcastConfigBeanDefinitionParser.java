@@ -200,6 +200,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                     handleSymmetricEncryption(child, networkConfigBuilder);
                 } else if ("asymmetric-encryption".equals(nodeName)) {
                     handleAsymmetricEncryption(child, networkConfigBuilder);
+                } else if ("ssl".equals(nodeName)) {
+                    handleSSLConfig(child, networkConfigBuilder);
+                } else if ("socket-interceptor".equals(nodeName)) {
+                    handleSocketInterceptorConfig(child, networkConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
@@ -267,6 +271,44 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                 }
             }
             networkConfigBuilder.addPropertyValue("join", beanDefinition);
+        }
+
+        private void handleSocketInterceptorConfig(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
+            BeanDefinitionBuilder socketInterceptorConfigBuilder = createBeanBuilder(SocketInterceptorConfig.class,
+                    "socketInterceptor");
+            final String implAttribute = "implementation";
+            fillAttributeValues(node, socketInterceptorConfigBuilder, implAttribute);
+            Node implNode = node.getAttributes().getNamedItem(implAttribute);
+            String implementation = implNode != null ? getValue(implNode) : null;
+            if (implementation != null) {
+                socketInterceptorConfigBuilder.addPropertyReference(xmlToJavaName(implAttribute), implementation);
+            }
+            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                final String name = cleanNodeName(child);
+                if ("properties".equals(name)) {
+                    handleProperties(child, socketInterceptorConfigBuilder);
+                }
+            }
+            networkConfigBuilder.addPropertyValue("socketInterceptorConfig",
+                    socketInterceptorConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleSSLConfig(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
+            BeanDefinitionBuilder sslConfigBuilder = createBeanBuilder(SSLConfig.class, "sslConfig");
+            final String implAttribute = "factory-implementation";
+            fillAttributeValues(node, sslConfigBuilder, implAttribute);
+            Node implNode = node.getAttributes().getNamedItem(implAttribute);
+            String implementation = implNode != null ? getValue(implNode) : null;
+            if (implementation != null) {
+                sslConfigBuilder.addPropertyReference(xmlToJavaName(implAttribute), implementation);
+            }
+            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                final String name = cleanNodeName(child);
+                if ("properties".equals(name)) {
+                    handleProperties(child, sslConfigBuilder);
+                }
+            }
+            networkConfigBuilder.addPropertyValue("SSLConfig", sslConfigBuilder.getBeanDefinition());
         }
 
         public void handleAsymmetricEncryption(Node node, BeanDefinitionBuilder networkConfigBuilder) {
