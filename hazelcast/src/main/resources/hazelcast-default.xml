@@ -30,6 +30,8 @@
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>
         </interfaces>
+        <ssl enabled="false" />
+        <socket-interceptor enabled="false" />
         <symmetric-encryption enabled="false">
             <!--
                encryption algorithm such as

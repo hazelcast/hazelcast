@@ -92,6 +92,18 @@
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>
         </interfaces>
+        <ssl enabled="false">
+            <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
+            <properties>
+                <property name="foo">bar</property>
+            </properties>
+        </ssl>
+        <socket-interceptor enabled="false">
+            <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
+            <properties>
+                <property name="foo">bar</property>
+            </properties>
+        </socket-interceptor>
         <symmetric-encryption enabled="false">
             <!--
                encryption algorithm such as

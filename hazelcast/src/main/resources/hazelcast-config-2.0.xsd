@@ -127,6 +127,8 @@
                 <xs:element ref="port" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="join" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="interfaces" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="ssl" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="socket-interceptor" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="symmetric-encryption" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="asymmetric-encryption" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
@@ -760,6 +762,24 @@
                     <xs:restriction base="xs:string"/>
                 </xs:simpleType>
             </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ssl">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="factory-class-name" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
+            <xs:attribute name="enabled" default="false" type="xs:boolean"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="socket-interceptor">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="class-name" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
+            <xs:attribute name="enabled" default="false" type="xs:boolean"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="storage-type" default="HEAP">

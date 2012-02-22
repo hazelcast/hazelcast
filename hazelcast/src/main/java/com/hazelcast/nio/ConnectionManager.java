@@ -105,7 +105,7 @@ public class ConnectionManager {
             socketChannelWrapperFactory = new DefaultSocketChannelWrapperFactory();
         }
         SocketInterceptorConfig sic = ioService.getSocketInterceptorConfig();
-        if (sic != null) {
+        if (sic != null && sic.isEnabled()) {
             SocketInterceptor implementation = (SocketInterceptor) sic.getImplementation();
             if (implementation == null && sic.getClassName() != null) {
                 try {

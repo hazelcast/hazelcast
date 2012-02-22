@@ -266,8 +266,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("asymmetric-encryption".equals(nodeName)) {
                 handleViaReflection(child, config.getNetworkConfig(), new AsymmetricEncryptionConfig());
             } else if ("ssl".equals(nodeName)) {
-                SSLConfig sslConfig = createSSLConfig(child);
-                config.getNetworkConfig().setSSLConfig(sslConfig);
+                handleSSLConfig(child);
+            } else if ("socket-interceptor".equals(nodeName)) {
+                handleSocketInterceptorConfig(child);
             }
         }
     }
@@ -737,16 +738,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         return mapStoreConfig;
     }
 
-    private SSLConfig createSSLConfig(final org.w3c.dom.Node node) {
+    private void handleSSLConfig(final org.w3c.dom.Node node) {
         SSLConfig sslConfig = new SSLConfig();
         final NamedNodeMap atts = node.getAttributes();
-        for (int a = 0; a < atts.getLength(); a++) {
-            final org.w3c.dom.Node att = atts.item(a);
-            final String value = getTextContent(att).trim();
-            if (att.getNodeName().equals("enabled")) {
-                sslConfig.setEnabled(checkTrue(value));
-            }
-        }
+        final Node enabledNode = atts.getNamedItem("enabled");
+        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
+        config.getSecurityConfig().setEnabled(enabled);
+        sslConfig.setEnabled(enabled);
+
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(n.getNodeName());
             if ("factory-class-name".equals(nodeName)) {
@@ -755,7 +754,26 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleProperties(n, sslConfig.getProperties());
             }
         }
-        return sslConfig;
+        config.getNetworkConfig().setSSLConfig(sslConfig);
+    }
+
+    private void handleSocketInterceptorConfig(final org.w3c.dom.Node node) {
+        SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
+        final NamedNodeMap atts = node.getAttributes();
+        final Node enabledNode = atts.getNamedItem("enabled");
+        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
+        config.getSecurityConfig().setEnabled(enabled);
+        socketInterceptorConfig.setEnabled(enabled);
+
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("class-name".equals(nodeName)) {
+                socketInterceptorConfig.setClassName(getTextContent(n).trim());
+            } else if ("properties".equals(nodeName)) {
+                handleProperties(n, socketInterceptorConfig.getProperties());
+            }
+        }
+        config.getNetworkConfig().setSocketInterceptorConfig(socketInterceptorConfig);
     }
 
     private void handleTopic(final org.w3c.dom.Node node) {

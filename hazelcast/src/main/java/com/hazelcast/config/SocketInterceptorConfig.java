@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import java.util.Properties;
 
 public class SocketInterceptorConfig {
+    private boolean enabled = false;
     private String className = null;
     private Object implementation = null;
     private Properties properties = new Properties();
@@ -61,6 +62,25 @@ public class SocketInterceptorConfig {
      */
     public Object getImplementation() {
         return implementation;
+    }
+
+    /**
+     * Returns if this configuration is enabled
+     *
+     * @return true if enabled, false otherwise
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Enables and disables this configuration
+     *
+     * @param enabled
+     */
+    public SocketInterceptorConfig setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        return this;
     }
 
     public SocketInterceptorConfig setProperty(String name, String value) {
