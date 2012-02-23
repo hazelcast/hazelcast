@@ -937,7 +937,7 @@ public class DynamicClusterTest {
     private int getNumberOfClientsConnected(HazelcastInstance h) {
         FactoryImpl.HazelcastInstanceProxy proxy = (FactoryImpl.HazelcastInstanceProxy) h;
         FactoryImpl factory = (FactoryImpl) proxy.getHazelcastInstance();
-        int size = factory.node.clientService.numberOfConnectedClients();
+        int size = factory.node.clientHandlerService.numberOfConnectedClients();
         return size;
     }
 
