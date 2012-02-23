@@ -69,6 +69,7 @@ public class Request implements CallStateAware {
     public Record record = null;
     public CallState callState = null;
     public Address target = null;
+    public long lastTime;
 
     public boolean hasEnoughTimeToSchedule() {
         return (timeout == -1) || (timeout > 100);

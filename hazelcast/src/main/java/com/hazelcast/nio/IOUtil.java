@@ -127,6 +127,12 @@ public final class IOUtil {
     }
 
     public static Data toData(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        if (obj instanceof Data) {
+            return (Data) obj;
+        }
         return ThreadContext.get().toData(obj);
     }
 

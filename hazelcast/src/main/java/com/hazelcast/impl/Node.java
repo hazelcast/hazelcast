@@ -418,7 +418,7 @@ public class Node {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
         generateMemberUuid();
-        serviceThread = new Thread(threadGroup, clusterService, getThreadNamePrefix("ServiceThread"));
+        serviceThread = clusterService.getServiceThread();
         serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
         serviceThread.start();

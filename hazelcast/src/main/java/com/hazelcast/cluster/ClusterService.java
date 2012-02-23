@@ -21,12 +21,14 @@ import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.CounterService;
 import com.hazelcast.util.ThreadWatcher;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.base.SystemLogService.Level.CS_INFO;
@@ -49,8 +51,6 @@ public final class ClusterService implements Runnable, Constants {
 
     private final Queue<Processable> processableQueue = new ConcurrentLinkedQueue<Processable>();
 
-    private final Object notEmptyLock = new Object();
-
     private final PacketProcessor[] packetProcessors = new PacketProcessor[ClusterOperation.OPERATION_COUNT];
 
     private final Runnable[] periodicRunnables = new Runnable[5];
@@ -65,11 +65,18 @@ public final class ClusterService implements Runnable, Constants {
 
     private final ThreadWatcher threadWatcher = new ThreadWatcher();
 
+    private final Thread serviceThread;
+
     public ClusterService(Node node) {
         this.node = node;
         this.logger = node.getLogger(ClusterService.class.getName());
         MAX_IDLE_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         RESTART_ON_MAX_IDLE = node.groupProperties.RESTART_ON_MAX_IDLE.getBoolean();
+        serviceThread = new Thread(node.threadGroup, this, node.getThreadNamePrefix("ServiceThread"));
+    }
+
+    public Thread getServiceThread() {
+        return serviceThread;
     }
 
     public void registerPeriodicRunnable(Runnable runnable) {
@@ -104,14 +111,11 @@ public final class ClusterService implements Runnable, Constants {
             SystemLogService css = node.getCallStateService();
             packet.callState = css.getOrCreateCallState(packet.callId, packet.lockAddress, packet.threadId);
             if (css.shouldLog(CS_INFO)) {
-//                css.logObject(packet, CS_INFO, "Enqueue Packet ");
                 css.info(packet, "Enqueue Packet ", packet.operation);
             }
         }
         packetQueue.offer(packet);
-        synchronized (notEmptyLock) {
-            notEmptyLock.notify();
-        }
+        LockSupport.unpark(serviceThread);
     }
 
     public boolean enqueueAndWait(final Processable processable, final int seconds) {
@@ -146,10 +150,10 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void enqueueAndReturn(Processable processable) {
+        long start = System.nanoTime();
         processableQueue.offer(processable);
-        synchronized (notEmptyLock) {
-            notEmptyLock.notify();
-        }
+        LockSupport.unpark(serviceThread);
+        CounterService.userCounter.add(System.nanoTime() - start);
     }
 
     private void processPacket(Packet packet) {
@@ -194,13 +198,11 @@ public final class ClusterService implements Runnable, Constants {
                 if (!readPackets && !readProcessables) {
                     try {
                         long startWait = System.nanoTime();
-                        synchronized (notEmptyLock) {
-                            notEmptyLock.wait(2);
-                        }
+                        LockSupport.parkNanos(TimeUnit.MICROSECONDS.toNanos(1000));
                         long now = System.nanoTime();
                         threadWatcher.addWait((now - startWait), now);
                         checkPeriodics();
-                    } catch (InterruptedException e) {
+                    } catch (Exception e) {
                         node.handleInterruptedException(Thread.currentThread(), e);
                     }
                 }

@@ -985,6 +985,7 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
             final CMap cMap = maps.get(name);
+            Data dataKey = null;
             if (cMap != null) {
                 NearCache nearCache = cMap.nearCache;
                 if (nearCache != null) {
@@ -993,7 +994,7 @@ public class ConcurrentMapManager extends BaseManager {
                         return value;
                     }
                 }
-                final Data dataKey = toData(key);
+                dataKey = toData(key);
                 Record ownedRecord = cMap.getOwnedRecord(dataKey);
                 if (ownedRecord != null && ownedRecord.isActive() && ownedRecord.isValid()) {
                     long version = ownedRecord.getVersion();
@@ -1024,7 +1025,10 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            Object value = objectCall(CONCURRENT_MAP_GET, name, key, null, timeout, -1);
+            if (dataKey == null) {
+                dataKey = toData(key);
+            }
+            Object value = objectCall(CONCURRENT_MAP_GET, name, dataKey, null, timeout, -1);
             if (value instanceof AddressAwareException) {
                 rethrowException(request.operation, (AddressAwareException) value);
             }
@@ -1699,7 +1703,6 @@ public class ConcurrentMapManager extends BaseManager {
             } else {
                 setLocal(operation, name, key, value, timeout, ttl);
                 request.txnId = txnId;
-                request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
                 setIndexValues(request, value);
                 if (operation == CONCURRENT_MAP_TRY_PUT
                         || operation == CONCURRENT_MAP_SET
@@ -1827,6 +1830,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void doOp() {
+//            CounterService.userCounter.add(System.nanoTime() - request.lastTime);
             target = null;
             super.doOp();
         }
@@ -1888,32 +1892,31 @@ public class ConcurrentMapManager extends BaseManager {
         protected volatile int backupCount = 0;
 
         protected void backup(ClusterOperation operation) {
+            if (backupCount <= 0) return;
             if (thisAddress.equals(target) &&
                     (operation == CONCURRENT_MAP_LOCK || operation == CONCURRENT_MAP_UNLOCK)) {
                 return;
             }
-            if (backupCount > 0) {
-                if (backupCount > backupOps.length) {
-                    String msg = "Max backup is " + backupOps.length + " but backupCount is " + backupCount;
-                    logger.log(Level.SEVERE, msg);
-                    throw new RuntimeException(msg);
+            if (backupCount > backupOps.length) {
+                String msg = "Max backup is " + backupOps.length + " but backupCount is " + backupCount;
+                logger.log(Level.SEVERE, msg);
+                throw new RuntimeException(msg);
+            }
+            for (int i = 0; i < backupCount; i++) {
+                int distance = i + 1;
+                MBackup backupOp = backupOps[i];
+                if (backupOp == null) {
+                    backupOp = new MBackup();
+                    backupOps[i] = backupOp;
                 }
-                for (int i = 0; i < backupCount; i++) {
-                    int distance = i + 1;
-                    MBackup backupOp = backupOps[i];
-                    if (backupOp == null) {
-                        backupOp = new MBackup();
-                        backupOps[i] = backupOp;
-                    }
-                    if (request.key == null || request.key.size() == 0) {
-                        throw new RuntimeException("Key is null! " + request.key);
-                    }
-                    backupOp.sendBackup(operation, target, distance, request);
+                if (request.key == null || request.key.size() == 0) {
+                    throw new RuntimeException("Key is null! " + request.key);
                 }
-                for (int i = 0; i < backupCount; i++) {
-                    MBackup backupOp = backupOps[i];
-                    backupOp.getResultAsBoolean();
-                }
+                backupOp.sendBackup(operation, target, distance, request);
+            }
+            for (int i = 0; i < backupCount; i++) {
+                MBackup backupOp = backupOps[i];
+                backupOp.getResultAsBoolean();
             }
         }
 

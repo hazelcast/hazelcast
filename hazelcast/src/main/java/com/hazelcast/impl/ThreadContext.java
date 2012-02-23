@@ -193,18 +193,21 @@ public final class ThreadContext {
 
         public ConcurrentMapManager.MPut getMPut() {
             mput.reset();
+            mput.request.lastTime = System.nanoTime();
             return mput;
 //            return factory.node.concurrentMapManager.new MPut();
         }
 
         public ConcurrentMapManager.MGet getMGet() {
             mget.reset();
+            mget.request.lastTime = System.nanoTime();
             return mget;
 //            return factory.node.concurrentMapManager.new MGet();
         }
 
         public ConcurrentMapManager.MRemove getMRemove() {
             mremove.reset();
+            mremove.request.lastTime = System.nanoTime();
             return mremove;
 //            return factory.node.concurrentMapManager.new MRemove();
         }

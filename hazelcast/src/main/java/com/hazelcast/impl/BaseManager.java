@@ -27,6 +27,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.CounterService;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
@@ -308,6 +309,7 @@ public abstract class BaseManager {
         }
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
+            CounterService.serviceCounter.add(System.nanoTime() - request.lastTime);
             targetAwareOp.setResult(request.response);
         } else {
             Packet packet = obtainPacket();
@@ -451,10 +453,6 @@ public abstract class BaseManager {
                                  final Object value, final long timeout, final long ttl) {
             setLocal(operation, name, key, value, timeout, ttl);
             return objectCall();
-        }
-
-        public void setLocal(ClusterOperation operation, String name) {
-            setLocal(operation, name, null, null, -1, -1);
         }
 
         public void setLocal(final ClusterOperation operation, final String name, final Object key,
@@ -782,6 +780,7 @@ public abstract class BaseManager {
         }
 
         public void process() {
+            request.lastTime = System.nanoTime();
             request.caller = thisAddress;
             setTarget();
             request.target = target;

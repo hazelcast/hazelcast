@@ -23,11 +23,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ResponseQueueFactory {
     public static BlockingQueue newResponseQueue() {
-        return new LockBasedResponseQueue();
+//        return new LockBasedResponseQueue();
+        return new LockSupportQueue();
     }
 
     private final static class LockBasedResponseQueue extends AbstractQueue implements BlockingQueue {
@@ -158,8 +160,8 @@ public class ResponseQueueFactory {
         }
     }
 
-    private final static class ResponseQueue extends AbstractQueue implements BlockingQueue {
-        volatile Object response;
+    private static class ResponseQueue extends AbstractQueue implements BlockingQueue {
+        protected volatile Object response;
         final Object lock = new Object();
 
         public Object take() throws InterruptedException {
@@ -246,6 +248,72 @@ public class ResponseQueueFactory {
 
         public Object peek() {
             return response;
+        }
+    }
+
+    public static class SpinQueue extends ResponseQueue {
+        private final static Object NULL = new Object();
+
+        @Override
+        public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
+            while (response == null) {
+                Thread.sleep(0, 1);
+            }
+            return (response == NULL) ? null : response;
+        }
+
+        @Override
+        public boolean offer(Object o, long timeout, TimeUnit unit) throws InterruptedException {
+            return offer(o);
+        }
+
+        @Override
+        public boolean offer(Object obj) {
+            response = (obj == null) ? NULL : obj;
+            return true;
+        }
+    }
+
+    public static class LockSupportQueue extends ResponseQueue {
+        private final static Object NULL = new Object();
+        volatile Thread waitingThread = null;
+
+        @Override
+        public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
+            waitingThread = Thread.currentThread();
+            if (timeout < 0) throw new IllegalArgumentException();
+            if (timeout == 0) return response;
+            if (timeout >= Integer.MAX_VALUE) return take();
+            long remaining = unit.toNanos(timeout);
+            while (response == null && remaining > 0) {
+                long start = System.currentTimeMillis();
+                LockSupport.parkNanos(10000);
+                remaining -= TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() - start);
+            }
+            return (response == NULL) ? null : response;
+        }
+
+        @Override
+        public Object take() throws InterruptedException {
+            waitingThread = Thread.currentThread();
+            while (response == null) {
+                LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(10));
+            }
+            return (response == NULL) ? null : response;
+        }
+
+        @Override
+        public boolean offer(Object o, long timeout, TimeUnit unit) throws InterruptedException {
+            return offer(o);
+        }
+
+        @Override
+        public boolean offer(Object obj) {
+            response = (obj == null) ? NULL : obj;
+            if (waitingThread != null) {
+                LockSupport.unpark(waitingThread);
+            }
+            return true;
         }
     }
 }
