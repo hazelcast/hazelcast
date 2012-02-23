@@ -137,20 +137,6 @@ public boolean removeCustomer (Customer customer) {
     </map>
 </hazelcast>
 ]]></programlisting>
-            <emphasis role="italic">
-                <emphasis role="bold">Q. If I have only one backup-copy
-                    then, will I always lose data if two JVMs crash at the same
-                    time?
-                </emphasis>
-            </emphasis>
-        </para>
-        <para>Not always. Cluster member list is the same on each member. Hazelcast will backup each
-            member's data onto next members in the member list. Let say you have a cluster with
-            members A, B, C, D, E, F, G and the backup-count is 1, then Hazelcast will copy A's data
-            onto B, B's data onto C... and G's data onto A. If A and B crashes at the same time then
-            you will lose data because B was the backup of A. But A and C crashes at the same time,
-            you won't lose any data because B was the backup of A and D was the backup of C. So you
-            will only lose that if<literal>sequential-JVM-crash-count &gt; backup-count</literal>.
         </para>
     </sect2>
     <sect2 xml:id="MapEviction" version='5.0' xmlns='http://docbook.org/ns/docbook'
@@ -404,8 +390,7 @@ public boolean removeCustomer (Customer customer) {
     </sect2>
     <sect2 xml:id="MapQuery" version="5.0" xmlns="http://docbook.org/ns/docbook"
            xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude"
-           xmlns:ns5="http://www.w3.org/2000/svg" xmlns:ns4="http://www.w3.org/1998/Math/MathML"
-           xmlns:ns3="http://www.w3.org/1999/xhtml" xmlns:db="http://docbook.org/ns/docbook">
+           xmlns:db="http://docbook.org/ns/docbook">
         <title>Query</title>
         <para>Hazelcast partitions your data and spreads across cluster of servers. You can surely
             iterate over the map entries and look for certain entries you are interested in but this

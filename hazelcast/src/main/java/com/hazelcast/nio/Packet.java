@@ -306,7 +306,11 @@ public final class Packet implements SocketWritable, CallStateAware {
         int valueSize = (getValueData() == null) ? 0 : getValueData().size();
         Object str = null;
         if (operation == ClusterOperation.REMOTELY_PROCESS) {
-            str = toObject(value.toData());
+            try {
+                str = toObject(value.toData());
+            } catch (Throwable e) {
+                str = e;
+            }
         }
         return "Packet [" + operation + "] name=" + name
                 + ", connection=" + conn

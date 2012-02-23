@@ -535,8 +535,8 @@ public class Node {
     }
 
     public boolean validateJoinRequest(JoinRequest joinRequest) throws Exception {
-        boolean valid = Packet.PACKET_VERSION == joinRequest.packetVersion &&
-                buildNumber == joinRequest.buildNumber;
+        boolean valid = Packet.PACKET_VERSION == joinRequest.packetVersion;
+//                && buildNumber == joinRequest.buildNumber; //check only packet version!
         if (valid) {
             try {
                 valid = config.isCompatible(joinRequest.config);

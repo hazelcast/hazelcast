@@ -19,13 +19,16 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PipedZipBufferFactory;
 import com.hazelcast.nio.PipedZipBufferFactory.DeflatingPipedBuffer;
 import com.hazelcast.nio.PipedZipBufferFactory.InflatingPipedBuffer;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -129,13 +132,17 @@ public class MulticastService implements Runnable {
             inflatingBuffer.reset();
             try {
                 multicastSocket.receive(datagramPacketReceive);
-            } catch (SocketTimeoutException ignore) {
-                return null;
-            } catch (SocketException ignore) {
+            } catch (IOException ignore) {
                 return null;
             }
             try {
                 inflatingBuffer.inflate(datagramPacketReceive.getLength());
+                final byte packetVersion = inflatingBuffer.getDataInput().readByte();
+                if (packetVersion != Packet.PACKET_VERSION) {
+                    logger.log(Level.FINEST, "Received a JoinRequest with different packet version: "
+                            + packetVersion);
+                    return null;
+                }
                 JoinInfo joinInfo = new JoinInfo();
                 joinInfo.readData(inflatingBuffer.getDataInput());
                 return joinInfo;
@@ -158,6 +165,7 @@ public class MulticastService implements Runnable {
         synchronized (sendLock) {
             try {
                 deflatingBuffer.reset();
+                deflatingBuffer.getDataOutput().writeByte(Packet.PACKET_VERSION);
                 joinInfo.writeData(deflatingBuffer.getDataOutput());
                 final int count = deflatingBuffer.deflate();
                 datagramPacketSend.setData(deflatingBuffer.getOutputBuffer().array(), 0, count);
