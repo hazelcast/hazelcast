@@ -90,7 +90,7 @@ public class Node {
 
     public final ConnectionManager connectionManager;
 
-    public final ClientService clientService;
+    public final ClientHandlerService clientHandlerService;
 
     public final TextCommandServiceImpl textCommandService;
 
@@ -113,6 +113,8 @@ public class Node {
     private final int buildNumber;
 
     public final LoggingServiceImpl loggingService;
+
+    public final ClientServiceImpl clientService;
 
     private final static AtomicInteger counter = new AtomicInteger();
 
@@ -175,10 +177,11 @@ public class Node {
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterManager = new ClusterManager(this);
         executorManager = new ExecutorManager(this);
-        clientService = new ClientService(this);
+        clientHandlerService = new ClientHandlerService(this);
         concurrentMapManager = new ConcurrentMapManager(this);
         blockingQueueManager = new BlockingQueueManager(this);
         listenerManager = new ListenerManager(this);
+        clientService = new ClientServiceImpl(concurrentMapManager);
         topicManager = new TopicManager(this);
         textCommandService = new TextCommandServiceImpl(this);
         clusterManager.addMember(false, localMember);
@@ -375,8 +378,8 @@ public class Node {
             if (managementCenterService != null) {
                 managementCenterService.shutdown();
             }
-            logger.log(Level.FINEST, "Shutting down the clientService");
-            clientService.shutdown();
+            logger.log(Level.FINEST, "Shutting down the clientHandlerService");
+            clientHandlerService.shutdown();
             logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
             concurrentMapManager.shutdown();
             logger.log(Level.FINEST, "Shutting down the cluster service");

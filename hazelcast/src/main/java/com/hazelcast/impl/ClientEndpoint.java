@@ -25,13 +25,14 @@ import com.hazelcast.util.ConcurrentHashSet;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import java.net.SocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.nio.IOUtil.toData;
 
-public class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener, ConnectionListener, ClientService.ClientListener {
+public class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener, ConnectionListener, ClientHandlerService.ClientListener, Client {
     final Connection conn;
     final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
     final Map<ITopic, MessageListener<Object>> messageListeners = new HashMap<ITopic, MessageListener<Object>>();
@@ -252,7 +253,8 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
             removeMessageListeners();
             cancelRunningOperations();
             releaseAttachedSemaphorePermits();
-            node.clusterManager.sendProcessableToAll(new ClientService.CountDownLatchLeave(conn.getEndPoint()), true);
+            node.clusterManager.sendProcessableToAll(new ClientHandlerService.CountDownLatchLeave(conn.getEndPoint()), true);
+            node.clientService.remove(this);
         }
     }
 
@@ -356,10 +358,19 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
 
     public void authenticated() {
         this.authenticated = true;
+        node.clientService.add(this);
     }
 
     public boolean isAuthenticated() {
         return authenticated;
+    }
+
+    public SocketAddress getSocketAddress() {
+        return conn.getSocketChannelWrapper().socket().getRemoteSocketAddress();
+    }
+
+    public ClientType getClientType() {
+        return ClientType.Native;
     }
 
     static class Entry implements Map.Entry {

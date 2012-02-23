@@ -71,6 +71,9 @@ public class HazelcastClient implements HazelcastInstance {
     private final AtomicBoolean active = new AtomicBoolean(true);
 
     private HazelcastClient(ClientConfig config) {
+        if (config.getAddressList().size() == 0) {
+            config.addAddress("localhost");
+        }
         if (config.getCredentials() == null) {
             config.setCredentials(new UsernamePasswordCredentials(config.getGroupConfig().getName(),
                     config.getGroupConfig().getPassword()));
@@ -132,76 +135,10 @@ public class HazelcastClient implements HazelcastInstance {
      */
 
     public static HazelcastClient newHazelcastClient(ClientConfig config) {
+        if (config == null)
+            config = new ClientConfig();
         return new HazelcastClient(config);
     }
-//    /**
-//     * Giving address of one member is enough. It will connect to that member and will get addresses of all members
-//     * in the cluster. If the connected member will die or leave the cluster, client will automatically
-//     * switch to another member in the cluster.
-//     *
-//     * @param groupName     Group name of a cluster that client will connect
-//     * @param groupPassword Group Password of a cluster that client will connect.
-//     * @param address       Address of one of the members
-//     * @return Returns a new HazelcastClient.
-//     */
-//    public static HazelcastClient newHazelcastClient(String groupName, String groupPassword, String address) {
-//        ClientConfig config = new ClientConfig();
-//        config.getGroupConfig().setName(groupName);
-//        config.getGroupConfig().setPassword(groupPassword);
-//        config.addAddress(address);
-//        config.setUpdateAutomatic(true);
-//        return newHazelcastClient(config);
-//    }
-//    /**
-//     * Giving address of one member is enough. It will connect to that member and will get addresses of all members
-//     * in the cluster. If the connected member will die or leave the cluster, client will automatically
-//     * switch to another member in the cluster.
-//     *
-//     * @param clientProperties Client Properties
-//     * @param address          Address of one of the members
-//     * @return Returns a new HazelcastClient.
-//     */
-//    public static HazelcastClient newHazelcastClient(ClientProperties clientProperties, String address) {
-//        InetSocketAddress inetSocketAddress = parse(address);
-//        return new HazelcastClient(clientProperties, inetSocketAddress);
-//    }
-//    /**
-//     * Returns a new HazelcastClient.
-//     * <p/>
-//     * Giving address of one member is enough. It will connect to that member and will get addresses of all members
-//     * in the cluster. If the connected member will die or leave the cluster, client will automatically
-//     * switch to another member in the cluster.
-//     *
-//     * @param credentials {@link Credentials} to be used in authentication
-//     * @param address     Address of one of the members that client will choose one to connect.
-//     *                    An address is in the form ip:port. If you will not specify the port, it will assume the default one, 5701.
-//     *                    ex: "10.90.0.1", "10.90.0.2:5702"
-//     * @return Returns a new Hazelcast Client instance.
-//     */
-//    public static HazelcastClient newHazelcastClient(Credentials credentials, String address) {
-//        return newHazelcastClient(credentials, new ClientProperties(), address);
-//    }
-//    /**
-//     * Returns a new HazelcastClient.
-//     * <p/>
-//     * Giving address of one member is enough. It will connect to that member and will get addresses of all members
-//     * in the cluster. If the connected member will die or leave the cluster, client will automatically
-//     * switch to another member in the cluster.
-//     *
-//     * @param credentials      {@link Credentials} to be used in authentication
-//     * @param clientProperties Client Properties
-//     * @param address          Address of one of the members that client will choose one to connect.
-//     *                         An address is in the form ip:port. If you will not specify the port, it will assume the default one, 5701.
-//     *                         ex: "10.90.0.1", "10.90.0.2:5702"
-//     * @return Returns a new Hazelcast Client instance.
-//     */
-//    public static HazelcastClient newHazelcastClient(Credentials credentials, ClientProperties clientProperties, String address) {
-//        final InetSocketAddress inetSocketAddress = parse(address);
-//        ClientConfig config = new ClientConfig();
-//        config.setCredentials(credentials);
-//        config.getTcpIpConfig().addMember(address);
-//        return new HazelcastClient(config, credentials, false, new InetSocketAddress[]{inetSocketAddress}, true);
-//    }
 
     public Config getConfig() {
         throw new UnsupportedOperationException();
@@ -209,6 +146,10 @@ public class HazelcastClient implements HazelcastInstance {
 
     public PartitionService getPartitionService() {
         return partitionClientProxy;
+    }
+
+    public ClientService getClientService() {
+        return null;
     }
 
     public LoggingService getLoggingService() {

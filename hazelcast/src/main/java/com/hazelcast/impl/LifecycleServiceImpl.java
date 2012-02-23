@@ -125,7 +125,7 @@ public class LifecycleServiceImpl implements LifecycleService {
                 }
             }
             node.onRestart();
-            node.clientService.restart();
+            node.clientHandlerService.restart();
             node.connectionManager.onRestart();
             node.clusterManager.onRestart();
             node.concurrentMapManager.onRestart();

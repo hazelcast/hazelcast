@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.ClientService.ClientOperationHandler;
+import com.hazelcast.impl.ClientHandlerService.ClientOperationHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 
@@ -28,7 +28,7 @@ public class ClientRequestHandler extends FallThroughRunnable {
     private final Packet packet;
     private final CallContext callContext;
     private final Node node;
-    private final ClientService.ClientOperationHandler clientOperationHandler;
+    private final ClientHandlerService.ClientOperationHandler clientOperationHandler;
     private volatile Thread runningThread = null;
     private volatile boolean valid = true;
     private final ILogger logger;
@@ -53,7 +53,7 @@ public class ClientRequestHandler extends FallThroughRunnable {
             final PrivilegedExceptionAction<Void> action = new PrivilegedExceptionAction<Void>() {
                 public Void run() {
                     clientOperationHandler.handle(node, packet);
-                    node.clientService.getClientEndpoint(packet.conn).removeRequest(ClientRequestHandler.this);
+                    node.clientHandlerService.getClientEndpoint(packet.conn).removeRequest(ClientRequestHandler.this);
                     clientOperationHandler.postHandle(packet);
                     return null;
                 }

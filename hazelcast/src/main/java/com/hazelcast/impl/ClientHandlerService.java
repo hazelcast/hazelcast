@@ -46,7 +46,7 @@ import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class ClientService implements ConnectionListener {
+public class ClientHandlerService implements ConnectionListener {
     private final Node node;
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
     private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[300];
@@ -56,7 +56,7 @@ public class ClientService implements ConnectionListener {
     final Worker[] workers;
     private final FactoryImpl factory;
 
-    public ClientService(Node node) {
+    public ClientHandlerService(Node node) {
         this.node = node;
         this.logger = node.getLogger(this.getClass().getName());
         node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
@@ -170,7 +170,7 @@ public class ClientService implements ConnectionListener {
         }
         if (packet.operation != CLIENT_AUTHENTICATE && !clientEndpoint.isAuthenticated()) {
             logger.log(Level.SEVERE, "A Client " + packet.conn + " must authenticate before any operation.");
-            node.clientService.removeClientEndpoint(packet.conn);
+            node.clientHandlerService.removeClientEndpoint(packet.conn);
             if (packet.conn != null)
                 packet.conn.close();
             return;
@@ -870,9 +870,10 @@ public class ClientService implements ConnectionListener {
             packet.clearForResponse();
             packet.setValue(toData(authenticated));
             if (!authenticated) {
-                node.clientService.removeClientEndpoint(packet.conn);
+                node.clientHandlerService.removeClientEndpoint(packet.conn);
             } else {
-                node.clientService.getClientEndpoint(packet.conn).authenticated();
+                ClientEndpoint clientEndpoint = node.clientHandlerService.getClientEndpoint(packet.conn);
+                clientEndpoint.authenticated();
             }
         }
     }

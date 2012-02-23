@@ -80,7 +80,7 @@ public class NodeIOService implements IOService {
     }
 
     public void handleClientPacket(Packet p) {
-        node.clientService.handle(p);
+        node.clientHandlerService.handle(p);
     }
 
     public void handleMemberPacket(Packet p) {

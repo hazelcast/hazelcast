@@ -289,6 +289,10 @@ public class FactoryImpl implements HazelcastInstance {
             return hazelcastInstance.getPartitionService();
         }
 
+        public ClientService getClientService() {
+            return hazelcastInstance.getClientService();
+        }
+
         public LoggingService getLoggingService() {
             return hazelcastInstance.getLoggingService();
         }
@@ -507,6 +511,10 @@ public class FactoryImpl implements HazelcastInstance {
 
     public PartitionService getPartitionService() {
         return node.concurrentMapManager.partitionServiceImpl;
+    }
+
+    public ClientService getClientService() {
+        return node.clientService;
     }
 
     public LoggingService getLoggingService() {
