@@ -309,8 +309,8 @@ public abstract class BaseManager {
         }
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
-            CounterService.serviceCounter.add(System.nanoTime() - request.lastTime);
             targetAwareOp.setResult(request.response);
+            CounterService.serviceCounter.add(System.nanoTime() - request.lastTime);
         } else {
             Packet packet = obtainPacket();
             request.setPacket(packet);

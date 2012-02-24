@@ -28,7 +28,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class ResponseQueueFactory {
     public static BlockingQueue newResponseQueue() {
-//        return new LockBasedResponseQueue();
         return new LockSupportQueue();
     }
 
@@ -274,11 +273,11 @@ public class ResponseQueueFactory {
         }
     }
 
-    public static class LockSupportQueue extends ResponseQueue {
+    public static class LockSupportQueue extends AbstractQueue implements BlockingQueue {
         private final static Object NULL = new Object();
-        volatile Thread waitingThread = null;
+        private volatile Object response;
+        private volatile Thread waitingThread = null;
 
-        @Override
         public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
             waitingThread = Thread.currentThread();
             if (timeout < 0) throw new IllegalArgumentException();
@@ -287,33 +286,74 @@ public class ResponseQueueFactory {
             long remaining = unit.toNanos(timeout);
             while (response == null && remaining > 0) {
                 long start = System.currentTimeMillis();
-                LockSupport.parkNanos(10000);
+                LockSupport.parkNanos(remaining);
                 remaining -= TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() - start);
             }
-            return (response == NULL) ? null : response;
+            return getAndRemoveResponse();
         }
 
-        @Override
         public Object take() throws InterruptedException {
             waitingThread = Thread.currentThread();
             while (response == null) {
                 LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(10));
             }
-            return (response == NULL) ? null : response;
+            return getAndRemoveResponse();
         }
 
-        @Override
         public boolean offer(Object o, long timeout, TimeUnit unit) throws InterruptedException {
             return offer(o);
         }
 
-        @Override
         public boolean offer(Object obj) {
             response = (obj == null) ? NULL : obj;
             if (waitingThread != null) {
                 LockSupport.unpark(waitingThread);
             }
             return true;
+        }
+
+        private Object getAndRemoveResponse() {
+            final Object value = response;
+            response = null;
+            return (value == NULL) ? null : value;
+        }
+
+        public void put(Object o) throws InterruptedException {
+            offer(o);
+        }
+
+        public Object poll() {
+            return response;
+        }
+
+        public int remainingCapacity() {
+            throw new UnsupportedOperationException();
+        }
+
+        public int drainTo(Collection c) {
+            throw new UnsupportedOperationException();
+        }
+
+        public int drainTo(Collection c, int maxElements) {
+            throw new UnsupportedOperationException();
+        }
+
+        public void clear() {
+            response = null;
+        }
+
+        @Override
+        public Iterator iterator() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int size() {
+            return (response == null) ? 0 : 1;
+        }
+
+        public Object peek() {
+            return response;
         }
     }
 }
