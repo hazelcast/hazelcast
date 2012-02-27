@@ -73,6 +73,28 @@ public class SimpleMapTest {
         logger.log(Level.INFO, " Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
         ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
         final IMap<String, byte[]> map = Hazelcast.getMap("default");
+
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            public void run() {
+                while (true) {
+                    try {
+                        //noinspection BusyWait
+                        Thread.sleep(STATS_SECONDS * 1000);
+                        logger.log(Level.INFO, "cluster size:" + Hazelcast.getCluster().getMembers().size());
+                        LocalMapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();
+                        long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
+                        if (period == 0) {
+                            continue;
+                        }
+                        logger.log(Level.INFO, mapOpStats.toString());
+                        logger.log(Level.INFO, "Operations per Second : " + mapOpStats.total() / period);
+                    } catch (InterruptedException ignored) {
+                        return;
+                    }
+                }
+            }
+        });
+
         if (load) {
             final Member thisMember = Hazelcast.getCluster().getLocalMember();
             List<String> lsOwnedEntries = new LinkedList<String>();
@@ -111,25 +133,5 @@ public class SimpleMapTest {
                 }
             });
         }
-        Executors.newSingleThreadExecutor().execute(new Runnable() {
-            public void run() {
-                while (true) {
-                    try {
-                        //noinspection BusyWait
-                        Thread.sleep(STATS_SECONDS * 1000);
-                        logger.log(Level.INFO, "cluster size:" + Hazelcast.getCluster().getMembers().size());
-                        LocalMapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();
-                        long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
-                        if (period == 0) {
-                            continue;
-                        }
-                        logger.log(Level.INFO, mapOpStats.toString());
-                        logger.log(Level.INFO, "Operations per Second : " + mapOpStats.total() / period);
-                    } catch (InterruptedException ignored) {
-                        return;
-                    }
-                }
-            }
-        });
     }
 }
