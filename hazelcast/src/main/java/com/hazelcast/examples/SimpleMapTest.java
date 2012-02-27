@@ -22,7 +22,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.util.CounterService;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -126,7 +125,6 @@ public class SimpleMapTest {
                         }
                         logger.log(Level.INFO, mapOpStats.toString());
                         logger.log(Level.INFO, "Operations per Second : " + mapOpStats.total() / period);
-                        CounterService.print();
                     } catch (InterruptedException ignored) {
                         return;
                     }
