@@ -239,7 +239,7 @@ public abstract class BaseManager {
         @Override
         public void process(Packet packet) {
             Request remoteReq = Request.copy(packet);
-            boolean isMigrating = new Random().nextBoolean(); //isMigrating(remoteReq);
+            boolean isMigrating = isMigrating(remoteReq);
             boolean rightRemoteTarget = isRightRemoteTarget(remoteReq);
             SystemLogService css = node.getSystemLogService();
             if (css.shouldLog(CS_INFO)) {
