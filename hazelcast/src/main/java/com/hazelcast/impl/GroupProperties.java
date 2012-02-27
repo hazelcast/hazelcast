@@ -56,7 +56,6 @@ public class GroupProperties {
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
     public static final String PROP_RESTART_ON_MAX_IDLE = "hazelcast.restart.on.max.idle";
     public static final String PROP_CONCURRENT_MAP_PARTITION_COUNT = "hazelcast.map.partition.count";
-    //    public static final String PROP_CONCURRENT_MAP_MAX_BACKUP_COUNT = "hazelcast.map.max.backup.count";
     public static final String PROP_REMOVE_DELAY_SECONDS = "hazelcast.map.remove.delay.seconds";
     public static final String PROP_CLEANUP_DELAY_SECONDS = "hazelcast.map.cleanup.delay.seconds";
     public static final String PROP_EXECUTOR_QUERY_THREAD_COUNT = "hazelcast.executor.query.thread.count";
@@ -87,7 +86,7 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_TOTAL_SIZE = "hazelcast.elastic.memory.total.size";
     public static final String PROP_ELASTIC_MEMORY_CHUNK_SIZE = "hazelcast.elastic.memory.chunk.size";
     public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = "hazelcast.elastic.memory.shared.storage";
-    public static final String PROP_ENTERPRISE_LICENSE_PATH = "hazelcast.enterprise.license.path";
+    public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
 
     public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
 
@@ -221,7 +220,7 @@ public class GroupProperties {
 
     public final GroupProperty ELASTIC_MEMORY_SHARED_STORAGE;
 
-    public final GroupProperty LICENSE_PATH;
+    public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
     public GroupProperties(Config config) {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
@@ -287,7 +286,7 @@ public class GroupProperties {
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
         ELASTIC_MEMORY_CHUNK_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_CHUNK_SIZE, "1K");
         ELASTIC_MEMORY_SHARED_STORAGE = new GroupProperty(config, PROP_ELASTIC_MEMORY_SHARED_STORAGE, "false");
-        LICENSE_PATH = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_PATH, null);
+        ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY, null);
     }
 
     public static class GroupProperty {

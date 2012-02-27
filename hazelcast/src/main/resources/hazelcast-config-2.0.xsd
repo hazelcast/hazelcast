@@ -6,6 +6,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="group" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="license-key" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="network" minOccurs="0" maxOccurs="1"/>
@@ -798,6 +799,7 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
+    <xs:element name="license-key" type="xs:string" />
     <xs:simpleType name="ST_port">
         <xs:restriction base="xs:short"/>
     </xs:simpleType>

@@ -261,8 +261,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 lsDeadAddresses.add(address);
                             } else if ((now - memberImpl.getLastRead()) >= 5000 && (now - memberImpl.getLastPing()) >= 5000) {
                                 ping(memberImpl);
-                            } else if ((now - memberImpl.getLastRead()) >= 10000) {
-                                node.connectionManager.destroyConnection(conn);
+//                            } else if ((now - memberImpl.getLastRead()) >= 10000) {
+//                                node.connectionManager.destroyConnection(conn);
                             }
                             if ((now - memberImpl.getLastWrite()) > 500) {
                                 sendHeartbeat(conn);
@@ -296,8 +296,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         removed = true;
                     } else if ((now - masterMember.getLastRead()) >= 5000 && (now - masterMember.getLastPing()) >= 5000) {
                         ping(masterMember);
-                    } else if ((now - masterMember.getLastRead()) >= 10000) {
-                        node.connectionManager.destroyConnection(connMaster);
+//                    } else if ((now - masterMember.getLastRead()) >= 10000) {
+//                        node.connectionManager.destroyConnection(connMaster);
                     }
                 }
                 if (!removed) {

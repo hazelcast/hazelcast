@@ -211,6 +211,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handlePartitionGroup(node);
             } else if ("security".equals(nodeName)) {
                 handleSecurity(node);
+            } else if ("license-key".equals(nodeName)) {
+                config.setLicenseKey(getValue(node));
             }
         }
     }

@@ -88,6 +88,8 @@ public class Config implements DataSerializable {
 
     private PartitionGroupConfig partitionGroupConfig = new PartitionGroupConfig();
 
+    private String licenseKey;
+
     public Config() {
         String liteMemberProp = System.getProperty("hazelcast.super.client");
         if (liteMemberProp == null) {
@@ -898,6 +900,14 @@ public class Config implements DataSerializable {
 
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
+    }
+
+    public String getLicenseKey() {
+        return licenseKey;
+    }
+
+    public void setLicenseKey(final String licenseKey) {
+        this.licenseKey = licenseKey;
     }
 
     @Override

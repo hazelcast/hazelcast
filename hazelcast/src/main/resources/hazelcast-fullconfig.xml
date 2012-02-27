@@ -6,6 +6,7 @@
         <name>dev</name>
         <password>dev-pass</password>
     </group>
+    <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <properties>
         <property name="hazelcast.executor.client.thread.count">10</property>
         <property name="hazelcast.executor.event.thread.count">10</property>
