@@ -43,17 +43,21 @@ public class MulticastJoiner extends AbstractJoiner {
         long joinStartTime = System.currentTimeMillis();
         long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
         while (node.isActive() && !joined.get() && (System.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
-            logger.log(Level.FINEST, "joining... " + node.getMasterAddress());
+            String msg = "Joining master " + node.getMasterAddress();
+            logger.log(Level.FINEST, msg);
+            systemLogService.logJoin(msg);
             Address masterAddressNow = findMasterWithMulticast();
             if (masterAddressNow != null && masterAddressNow.equals(node.getMasterAddress())) {
                 tryCount--;
             }
             node.setMasterAddress(masterAddressNow);
+            systemLogService.logJoin("Setting master " + masterAddressNow);
             if (node.getMasterAddress() == null || node.address.equals(node.getMasterAddress())) {
                 TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
                 if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {
                     doTCP(joined);
                 } else {
+                    systemLogService.logJoin("Setting as master");
                     node.setAsMaster();
                 }
                 return;
@@ -85,6 +89,7 @@ public class MulticastJoiner extends AbstractJoiner {
         final BlockingQueue q = new LinkedBlockingQueue();
         MulticastListener listener = new MulticastListener() {
             public void onMessage(Object msg) {
+                systemLogService.logJoin("MulticastListener onMessage " + msg);
                 if (msg != null && msg instanceof JoinInfo) {
                     JoinInfo joinInfo = (JoinInfo) msg;
                     if (node.address != null && !node.address.equals(joinInfo.address)) {
@@ -95,6 +100,7 @@ public class MulticastJoiner extends AbstractJoiner {
         };
         node.multicastService.addMulticastListener(listener);
         node.multicastService.send(node.createJoinInfo());
+        systemLogService.logJoin("Sent multicast join request");
         try {
             JoinInfo joinInfo = (JoinInfo) q.poll(3, TimeUnit.SECONDS);
             if (joinInfo != null) {
@@ -120,6 +126,7 @@ public class MulticastJoiner extends AbstractJoiner {
         }
         Connection conn = node.connectionManager.getOrConnect(masterAddress);
         logger.log(Level.FINEST, "Master connection " + conn);
+        systemLogService.logJoin("Master connection " + conn);
         if (conn != null) {
             return node.clusterManager.sendJoinRequest(masterAddress, true);
         }

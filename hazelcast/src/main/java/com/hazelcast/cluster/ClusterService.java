@@ -108,7 +108,7 @@ public final class ClusterService implements Runnable, Constants {
 
     public void enqueuePacket(Packet packet) {
         if (packet.callId != -1) {
-            SystemLogService css = node.getCallStateService();
+            SystemLogService css = node.getSystemLogService();
             packet.callState = css.getOrCreateCallState(packet.callId, packet.lockAddress, packet.threadId);
             if (css.shouldLog(CS_INFO)) {
                 css.info(packet, "Enqueue Packet ", packet.operation);
@@ -177,7 +177,7 @@ public final class ClusterService implements Runnable, Constants {
             logger.log(Level.SEVERE, msg);
             throw new RuntimeException(msg);
         }
-        SystemLogService css = node.getCallStateService();
+        SystemLogService css = node.getSystemLogService();
         if (css.shouldLog(CS_INFO)) {
             css.logObject(packet, CS_INFO, "Processing packet");
             css.logObject(packet, CS_INFO, packetProcessor.getClass());

@@ -111,7 +111,7 @@ public class PartitionInfo {
                 sb.append("\n");
             }
         }
-        sb.append("\n}");
+        sb.append("}");
         return sb.toString();
     }
 

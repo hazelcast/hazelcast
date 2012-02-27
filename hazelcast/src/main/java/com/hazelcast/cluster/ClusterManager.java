@@ -278,7 +278,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
             if (lsDeadAddresses != null) {
                 for (Address address : lsDeadAddresses) {
-                    logger.log(Level.FINEST, "NO HEARTBEAT should remove " + address);
+                    logger.log(Level.FINEST, "No heartbeat should remove " + address);
                     doRemoveAddress(address);
                 }
             }
@@ -451,13 +451,15 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     void handleJoinRequest(JoinRequest joinRequest) {
         final long now = System.currentTimeMillis();
-        logger.log(Level.FINEST, joinInProgress + " Handling join from " + joinRequest.address + " timeToStart: "
-                + (timeToStartJoin - now));
+        String msg = joinInProgress + " Handling join from " + joinRequest.address + " timeToStart: "
+                + (timeToStartJoin - now);
+        logger.log(Level.FINEST, msg);
         final MemberImpl member = getMember(joinRequest.address);
         final Connection conn = joinRequest.getConnection();
         if (member != null) {
             if (joinRequest.getUuid().equals(member.getUuid())) {
-                logger.log(Level.FINEST, "Ignoring join request, member already exists.. => " + joinRequest);
+                String message = "Ignoring join request, member already exists.. => " + joinRequest;
+                logger.log(Level.FINEST, message);
                 return;
             }
             logger.log(Level.WARNING, "New join request has been received from an existing endpoint! => " + member
@@ -678,8 +680,11 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 newMemberList.add(memberInfo.address);
             }
             doCall(membersUpdate, newMemberList, true);
+            systemLogService.logJoin("JoinRunnable update members done.");
             doCall(new SyncProcess(), newMemberList, false);
+            systemLogService.logJoin("JoinRunnable sync done.");
             doCall(new ConnectionCheckCall(), newMemberList, false);
+            systemLogService.logJoin("JoinRunnable connection check done.");
         }
 
         void doCall(AbstractRemotelyCallable callable, List<Address> targets, boolean ignoreThis) {
@@ -701,7 +706,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void startJoin() {
-        logger.log(Level.FINEST, "Starting join.");
+        logger.log(Level.FINEST, "Starting Join.");
         joinInProgress = true;
         final MembersUpdateCall membersUpdate = new MembersUpdateCall(lsMembers, node.getClusterImpl().getClusterTime());
         if (setJoins != null && setJoins.size() > 0) {
@@ -716,7 +721,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     void updateMembers(Collection<MemberInfo> lsMemberInfos) {
         checkServiceThread();
-        logger.log(Level.FINEST, "MEMBERS UPDATE!!");
+        logger.log(Level.FINEST, "Updating Members");
         // Copy lsMembers to lsMembersBefore
         lsMembersBefore.clear();
         Map<Address, MemberImpl> mapOldMembers = new HashMap<Address, MemberImpl>();

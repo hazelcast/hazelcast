@@ -234,10 +234,6 @@ public class ConnectionManager {
 
     public Connection assignSocketChannel(SocketChannelWrapper channel) {
         InOutSelector selectorAssigned = nextSelector();
-        return createConnection(channel, selectorAssigned);
-    }
-
-    Connection createConnection(SocketChannelWrapper channel, InOutSelector selectorAssigned) {
         final Connection connection = new Connection(this, selectorAssigned, connectionIdGen.incrementAndGet(), channel);
         setActiveConnections.add(connection);
         selectorAssigned.addTask(connection.getReadHandler());

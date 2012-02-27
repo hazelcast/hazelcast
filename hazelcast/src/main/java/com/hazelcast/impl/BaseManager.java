@@ -67,8 +67,11 @@ public abstract class BaseManager {
 
     protected final long redoWaitMillis;
 
+    protected final SystemLogService systemLogService;
+
     protected BaseManager(Node node) {
         this.node = node;
+        systemLogService = node.getSystemLogService();
         lsMembers = node.baseVariables.lsMembers;
         mapMembers = node.baseVariables.mapMembers;
         mapCalls = node.baseVariables.mapCalls;
@@ -172,7 +175,7 @@ public abstract class BaseManager {
         protected void initCall() {
             callId = localIdGen.incrementAndGet();
             int threadId = ThreadContext.get().getThreadId();
-            callState = node.getCallStateService().getOrCreateCallState(callId, thisAddress, threadId);
+            callState = node.getSystemLogService().getOrCreateCallState(callId, thisAddress, threadId);
         }
 
         public long getCallId() {
@@ -236,16 +239,15 @@ public abstract class BaseManager {
         @Override
         public void process(Packet packet) {
             Request remoteReq = Request.copy(packet);
-            boolean isMigrating = isMigrating(remoteReq);
+            boolean isMigrating = new Random().nextBoolean(); //isMigrating(remoteReq);
             boolean rightRemoteTarget = isRightRemoteTarget(remoteReq);
-            SystemLogService css = node.getCallStateService();
+            SystemLogService css = node.getSystemLogService();
             if (css.shouldLog(CS_INFO)) {
                 css.info(remoteReq, "IsMigrating/RightRemoteTarget", isMigrating, rightRemoteTarget);
             }
             if (isMigrating || !rightRemoteTarget) {
                 remoteReq.clearForResponse();
-                remoteReq.response = OBJECT_REDO;
-                returnResponse(remoteReq);
+                returnRedoResponse(remoteReq);
             } else {
                 if (css.shouldLog(CS_INFO)) {
                     css.info(remoteReq, "handle");
@@ -272,8 +274,7 @@ public abstract class BaseManager {
             Request remoteReq = Request.copy(packet);
             if (isMigrating(remoteReq)) {
                 remoteReq.clearForResponse();
-                remoteReq.response = OBJECT_REDO;
-                returnResponse(remoteReq);
+                returnRedoResponse(remoteReq);
             } else {
                 handle(remoteReq);
             }
@@ -303,9 +304,9 @@ public abstract class BaseManager {
     }
 
     public boolean returnResponse(Request request, Connection conn) {
-        SystemLogService css = node.getCallStateService();
+        SystemLogService css = node.getSystemLogService();
         if (css.shouldLog(CS_INFO)) {
-            css.logObject(request, CS_INFO, "ReturnResponse ");
+            css.logObject(request, CS_INFO, "ReturnResponse");
         }
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
@@ -323,6 +324,9 @@ public abstract class BaseManager {
             if (request.response == OBJECT_REDO) {
                 packet.lockAddress = null;
                 packet.responseType = RESPONSE_REDO;
+                if (systemLogService.shouldInfo()) {
+                    systemLogService.info(request, "Returning REDO response");
+                }
             } else if (request.response != null) {
                 if (request.response instanceof Boolean) {
                     if (request.response == Boolean.FALSE) {
@@ -541,7 +545,7 @@ public abstract class BaseManager {
                     }
                     if (node.isActive()) {
                         logger.log(Level.FINEST, "Still no response! " + request);
-                        SystemLogService css = node.getCallStateService();
+                        SystemLogService css = node.getSystemLogService();
                         if (css.shouldTrace()) {
                             css.trace(this, "Still no response");
                         }
@@ -570,7 +574,7 @@ public abstract class BaseManager {
                 }
                 if (result == OBJECT_REDO) {
                     request.redoCount++;
-                    SystemLogService css = node.getCallStateService();
+                    SystemLogService css = node.getSystemLogService();
                     if (css.shouldTrace()) {
                         css.trace(this, MapSystemLogFactory.newRedoLog(node, request));
                     }
@@ -654,6 +658,11 @@ public abstract class BaseManager {
         }
 
         protected void setResult(final Object obj) {
+            if (obj == OBJECT_REDO) {
+                if (systemLogService.shouldInfo()) {
+                    systemLogService.info(request, "setResult(REDO)");
+                }
+            }
             responses.offer(obj == null ? OBJECT_NULL : obj);
         }
     }
@@ -681,12 +690,6 @@ public abstract class BaseManager {
 
         public void reset() {
             super.reset();
-        }
-
-        @Override
-        public void beforeRedo() {
-            logger.log(Level.FINEST, request.operation + " BeforeRedo target " + targetConnection);
-            super.beforeRedo();
         }
 
         public void process() {
@@ -784,6 +787,9 @@ public abstract class BaseManager {
             request.caller = thisAddress;
             setTarget();
             request.target = target;
+            if (systemLogService.shouldTrace()) {
+                systemLogService.trace(request, "target: " + target);
+            }
             if (target == null) {
                 setResult(OBJECT_REDO);
             } else {
@@ -806,6 +812,9 @@ public abstract class BaseManager {
 
         protected void invoke() {
             if (memberOnly() && getMember(target) == null) {
+                if (systemLogService.shouldInfo()) {
+                    systemLogService.info(request, "remote target doesn't exist: " + target);
+                }
                 memberDoesNotExist();
             } else {
                 addRemoteCall(TargetAwareOp.this);

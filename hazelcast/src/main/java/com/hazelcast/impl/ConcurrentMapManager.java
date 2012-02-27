@@ -48,7 +48,6 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
-import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
 import static com.hazelcast.impl.TransactionImpl.DEFAULT_TXN_TIMEOUT;
 import static com.hazelcast.impl.base.SystemLogService.Level.CS_INFO;
 import static com.hazelcast.impl.base.SystemLogService.Level.CS_TRACE;
@@ -1662,7 +1661,7 @@ public class ConcurrentMapManager extends BaseManager {
         Object txnalPut(ClusterOperation operation, String name, Object key, Object value, long timeout, long ttl, long txnId) {
             ThreadContext threadContext = ThreadContext.get();
             TransactionImpl txn = threadContext.getTransaction();
-            SystemLogService css = node.getCallStateService();
+            SystemLogService css = node.getSystemLogService();
             if (css.shouldLog(CS_INFO)) {
                 css.logObject(MPut.this, CS_INFO, operation);
             }
@@ -1855,7 +1854,7 @@ public class ConcurrentMapManager extends BaseManager {
             reset();
             this.owner = owner;
             this.distance = distance;
-            SystemLogService css = node.getCallStateService();
+            SystemLogService css = node.getSystemLogService();
             if (css.shouldLog(CS_TRACE)) {
                 css.trace(this, "SendingBackup callId.", callId);
             }
@@ -2236,7 +2235,7 @@ public class ConcurrentMapManager extends BaseManager {
             boolean callerKnownMember = (request.local || getMember(request.caller) != null);
             boolean rightOwner = thisAddress.equals(getKeyOwner(request));
             if (!callerKnownMember || !rightOwner) {
-                SystemLogService css = node.getCallStateService();
+                SystemLogService css = node.getSystemLogService();
                 if (css.shouldInfo()) {
                     css.info(request, new SystemArgsLog("isRightRemoteTarget", callerKnownMember, rightOwner));
                     css.info(request, MapSystemLogFactory.newRedoLog(node, request));
@@ -2288,8 +2287,7 @@ public class ConcurrentMapManager extends BaseManager {
                     storeProceed(cmap, request);
                 }
             } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
+                returnRedoResponse(request);
             }
         }
 
@@ -2611,7 +2609,7 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            SystemLogService css = node.getCallStateService();
+            SystemLogService css = node.getSystemLogService();
             if (css.shouldLog(CS_TRACE)) {
                 css.logObject(request, CS_TRACE, "Calling cmap.put");
             }
@@ -2627,7 +2625,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            SystemLogService css = node.getCallStateService();
+            SystemLogService css = node.getSystemLogService();
             if (css.shouldLog(CS_INFO)) {
                 css.logObject(request, CS_INFO, cmap);
             }
@@ -2671,8 +2669,7 @@ public class ConcurrentMapManager extends BaseManager {
                     storeProceed(cmap, request);
                 }
             } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
+                returnRedoResponse(request);
             }
         }
 
@@ -3139,8 +3136,7 @@ public class ConcurrentMapManager extends BaseManager {
                     returnResponse(request);
                 }
             } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
+                returnRedoResponse(request);
             }
         }
 
@@ -3190,8 +3186,7 @@ public class ConcurrentMapManager extends BaseManager {
                 DataRecordEntry existing = (doesNotExist) ? null : new DataRecordEntry(record);
                 node.executorManager.executeNow(new MergeLoader(cmap, request, existing));
             } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
+                returnRedoResponse(request);
             }
         }
 
@@ -3307,8 +3302,7 @@ public class ConcurrentMapManager extends BaseManager {
                     returnResponse(request);
                 }
             } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
+                returnRedoResponse(request);
             }
         }
 
@@ -3413,8 +3407,7 @@ public class ConcurrentMapManager extends BaseManager {
                     returnResponse(request);
                 }
             } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
+                returnRedoResponse(request);
             }
         }
 
@@ -3584,8 +3577,7 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
+                returnRedoResponse(request);
             }
         }
 
@@ -3654,8 +3646,7 @@ public class ConcurrentMapManager extends BaseManager {
 
             @Override
             public void onMigrate() {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
+                returnRedoResponse(request);
             }
         };
         record.addScheduledAction(scheduledAction);
@@ -3682,7 +3673,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void handle(Request request) {
             boolean shouldSchedule = shouldSchedule(request);
-            SystemLogService css = node.getCallStateService();
+            SystemLogService css = node.getSystemLogService();
             if (css.shouldLog(CS_TRACE)) {
                 css.logObject(request, CS_TRACE, "ShouldSchedule ");
             }
@@ -3718,8 +3709,7 @@ public class ConcurrentMapManager extends BaseManager {
                     node.executorManager.executeQueryTask(new ContainsEntryTask(request, record));
                 }
             } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
+                returnRedoResponse(request);
             }
         }
 
@@ -3834,8 +3824,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (cmap.isNotLocked(request) && !isMigrating(request)) {
                 super.handle(request);
             } else {
-                request.response = OBJECT_REDO;
-                returnResponse(request);
+                returnRedoResponse(request);
             }
         }
     }

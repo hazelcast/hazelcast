@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
@@ -35,6 +36,8 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected final ConnectionManager connectionManager;
 
+    protected final SystemLogService systemLogService;
+
     protected SelectionKey sk = null;
 
     public AbstractSelectionHandler(final Connection connection, final InOutSelector inOutSelector) {
@@ -44,6 +47,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
+        this.systemLogService = connectionManager.ioService.getSystemLogService();
     }
 
     protected void shutdown() {

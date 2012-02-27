@@ -29,6 +29,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
     public void handle(HttpGetCommand command) {
         String uri = command.getURI();
+        System.out.println("URI " + uri);
         if (uri.startsWith(URI_MAPS)) {
             int indexEnd = uri.indexOf('/', URI_MAPS.length());
             String mapName = uri.substring(URI_MAPS.length(), indexEnd);
@@ -54,6 +55,9 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             res.append("AllConnectionCount: ").append(connectionManager.getAllTextConnections());
             res.append("\n");
             command.setResponse(null, res.toString().getBytes());
+        } else if (uri.startsWith("/hazelcast/rest/dump")) {
+            String fileName = textCommandService.getNode().getSystemLogService().dump();
+            command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, fileName.toString().getBytes());
         } else {
             command.send400();
         }

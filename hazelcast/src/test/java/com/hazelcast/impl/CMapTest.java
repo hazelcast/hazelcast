@@ -83,13 +83,13 @@ public class CMapTest extends TestUtil {
         }).start();
         Thread.sleep(1000);
         System.out.println(node1.getThisAddress() + " thread " + threadId.get());
-        CallState callState1 = node1.getCallStateService().getCallState(node1.getThisAddress(), threadId.get());
+        CallState callState1 = node1.getSystemLogService().getCallState(node1.getThisAddress(), threadId.get());
         if (callState1 != null) {
             for (Object callStateLog : callState1.getLogs()) {
                 System.out.println(callStateLog);
             }
         }
-        CallState callState2 = node2.getCallStateService().getCallState(node1.getThisAddress(), threadId.get());
+        CallState callState2 = node2.getSystemLogService().getCallState(node1.getThisAddress(), threadId.get());
         System.out.println("========================");
         if (callState2 != null) {
             for (Object callStateLog : callState2.getLogs()) {

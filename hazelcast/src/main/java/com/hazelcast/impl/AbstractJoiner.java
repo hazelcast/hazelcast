@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -35,9 +36,11 @@ public abstract class AbstractJoiner implements Joiner {
     protected final Node node;
     protected volatile ILogger logger;
     private final AtomicInteger tryCount = new AtomicInteger(0);
+    protected final SystemLogService systemLogService;
 
     public AbstractJoiner(Node node) {
         this.node = node;
+        this.systemLogService = node.getSystemLogService();
         if (node.loggingService != null) {
             this.logger = node.loggingService.getLogger(this.getClass().getName());
         }
@@ -52,6 +55,7 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private void postJoin() {
+        systemLogService.logJoin("PostJoin master:" + node.getMasterAddress() + ", isMaster " + node.isMaster());
         if (!node.isActive()) {
             return;
         }
@@ -63,6 +67,7 @@ public abstract class AbstractJoiner implements Joiner {
             int checkCount = 0;
             long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
             if (node.joined()) {
+                systemLogService.logJoin("Waiting for all connections");
                 while (checkCount++ < node.groupProperties.CONNECT_ALL_WAIT_SECONDS.getInteger() && !allConnected) {
                     try {
                         //noinspection BusyWait
@@ -75,6 +80,7 @@ public abstract class AbstractJoiner implements Joiner {
                         MemberImpl memberImpl = (MemberImpl) member;
                         if (!memberImpl.localMember() && node.connectionManager.getConnection(memberImpl.getAddress()) == null) {
                             allConnected = false;
+                            systemLogService.logJoin("Not-connected to " + memberImpl.getAddress());
                         }
                     }
                 }

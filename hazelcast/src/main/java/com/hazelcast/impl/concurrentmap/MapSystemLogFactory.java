@@ -17,10 +17,7 @@
 package com.hazelcast.impl.concurrentmap;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.PartitionManager;
-import com.hazelcast.impl.Request;
+import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.SystemLog;
 import com.hazelcast.impl.partition.MigratingPartition;
@@ -82,18 +79,35 @@ public class MapSystemLogFactory {
             this.migratingPartition = migratingPartition;
         }
 
+        private boolean contains(Address address) {
+            for (Member member : members) {
+                MemberImpl m = (MemberImpl) member;
+                if (m.getAddress().equals(address)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         @Override
         public String toString() {
-            return "RedoLog{" +
-                    "key=" + key +
+            StringBuilder sb = new StringBuilder("RedoLog{");
+            sb.append("key=" + key +
                     ", operation=" + operation +
                     ", target=" + target +
                     ", targetConnected=" + targetConnected +
                     ", redoCount=" + redoCount +
-                    ", partition=" + partition +
-                    ", migrating=" + migratingPartition +
-                    ", members=" + members +
-                    '}';
+                    ", migrating=" + migratingPartition + "\n" +
+                    "partition=" + partition +
+                    "\n");
+            for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
+                Address replicaAddress = partition.getReplicaAddress(i);
+                if (replicaAddress != null && !contains(replicaAddress)) {
+                    sb.append(replicaAddress + " not a member!\n");
+                }
+            }
+            sb.append("}");
+            return sb.toString();
         }
     }
 

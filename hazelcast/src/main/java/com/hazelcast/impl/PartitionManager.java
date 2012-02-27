@@ -24,6 +24,7 @@ import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.base.RecordSet;
+import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
 import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.impl.partition.*;
@@ -68,6 +69,7 @@ public class PartitionManager {
     private final AtomicBoolean sendingDiffs = new AtomicBoolean(false);
     private final AtomicBoolean migrationActive = new AtomicBoolean(true); // for testing purposes only
     private final AtomicLong lastRepartitionTime = new AtomicLong();
+    private final SystemLogService systemLogService;
 
     public PartitionManager(final ConcurrentMapManager concurrentMapManager) {
         this.PARTITION_COUNT = concurrentMapManager.getPartitionCount();
@@ -75,6 +77,7 @@ public class PartitionManager {
         this.logger = concurrentMapManager.node.getLogger(PartitionManager.class.getName());
         this.partitions = new PartitionInfo[PARTITION_COUNT];
         final Node node = concurrentMapManager.node;
+        systemLogService = node.getSystemLogService();
         for (int i = 0; i < PARTITION_COUNT; i++) {
             this.partitions[i] = new PartitionInfo(i, new PartitionListener() {
                 public void replicaChanged(PartitionReplicaChangeEvent event) {
@@ -619,6 +622,7 @@ public class PartitionManager {
         final MemberImpl current = concurrentMapManager.getMember(from);
         final MemberImpl newOwner = concurrentMapManager.getMember(to);
         final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, partitionId, current, newOwner);
+        systemLogService.logPartition("MigrationEvent [" + started + "] " + migrationEvent);
         concurrentMapManager.partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
     }
 
@@ -873,6 +877,7 @@ public class PartitionManager {
                         fromMember = getMember(partitions[partitionId].getOwner());
                     }
                     logger.log(Level.FINEST, "Started Migration : " + migrationRequestTask);
+                    systemLogService.logPartition("Started Migration : " + migrationRequestTask);
                     if (fromMember != null) {
                         migrationRequestTask.setFromAddress(fromMember.getAddress());
                         DistributedTask task = new DistributedTask(migrationRequestTask, fromMember);
@@ -892,11 +897,13 @@ public class PartitionManager {
                         result = Boolean.TRUE;
                     }
                     logger.log(Level.FINEST, "Finished Migration : " + migrationRequestTask);
+                    systemLogService.logPartition("Finished Migration : " + migrationRequestTask);
                     if (Boolean.TRUE.equals(result)) {
                         concurrentMapManager.enqueueAndWait(new ProcessMigrationResult(migrationRequestTask), 10000);
                     } else {
                         // remove active partition migration
                         logger.log(Level.WARNING, "Migration task has failed => " + migrationRequestTask);
+                        systemLogService.logPartition("Migration task has failed => " + migrationRequestTask);
                         concurrentMapManager.enqueueAndWait(new Processable() {
                             public void process() {
                                 compareAndSetActiveMigratingPartition(migrationRequestTask, null);
@@ -906,8 +913,8 @@ public class PartitionManager {
                 }
             } catch (Throwable t) {
                 logger.log(Level.WARNING, "Error [" + t.getClass() + ": " + t.getMessage() + "] " +
-                        "while executing " + migrationRequestTask);
-                logger.log(Level.FINEST, t.getMessage(), t);
+                        "while executing " + migrationRequestTask, t);
+                systemLogService.logPartition("Failed! " + migrationRequestTask);
             }
         }
     }
@@ -1009,13 +1016,11 @@ public class PartitionManager {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("PartitionManager{\n");
-        int count = 0;
-        for (PartitionInfo partitionInfo : partitions) {
-            sb.append(partitionInfo.toString());
-            sb.append("\n");
-            if (count++ > 10) break;
-        }
+        StringBuilder sb = new StringBuilder("PartitionManager[" + version + "] {\n");
+        sb.append("migratingPartition: " + migratingPartition);
+        sb.append("\n");
+        sb.append("immediateQ:" + immediateTasksQueue.size());
+        sb.append(", scheduledQ:" + scheduledTasksQueue.size());
         sb.append("\n}");
         return sb.toString();
     }

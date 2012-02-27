@@ -42,6 +42,7 @@ public class CallState implements CallStateAware {
     }
 
     void log(SystemLog log) {
+        log.setType(SystemLog.Type.CALL);
         logQ.offer(log);
     }
 
@@ -121,9 +122,6 @@ public class CallState implements CallStateAware {
         sb.append("] {");
         sb.append("\ncaller: " + caller);
         sb.append("\nthreadId: " + callerThreadId);
-//        for (CallStateLog log : logQ) {
-//            sb.append("\n\t" + new Date(log.getDate()) + " : " + log.toString());
-//        }
         sb.append("\n}");
         return sb.toString();
     }

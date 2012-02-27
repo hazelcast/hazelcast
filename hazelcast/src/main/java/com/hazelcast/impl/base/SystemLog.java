@@ -17,9 +17,28 @@
 package com.hazelcast.impl.base;
 
 public class SystemLog {
+    enum Type {
+        NODE,
+        JOIN,
+        CONNECTION,
+        PARTITION,
+        CALL,
+        NONE
+    }
+
     protected long date = System.currentTimeMillis();
+
+    protected Type type = Type.NONE;
 
     public long getDate() {
         return date;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 }

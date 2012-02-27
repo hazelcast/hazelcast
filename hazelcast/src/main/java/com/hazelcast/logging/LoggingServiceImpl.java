@@ -16,7 +16,9 @@
 
 package com.hazelcast.logging;
 
+import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.base.SystemLogService;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -26,6 +28,7 @@ import java.util.logging.LogRecord;
 
 public class LoggingServiceImpl implements LoggingService {
     private final Member thisMember;
+    private final SystemLogService systemLogService;
     private final String groupName;
     private final CopyOnWriteArrayList<LogListenerRegistration> lsListeners
             = new CopyOnWriteArrayList<LogListenerRegistration>();
@@ -34,7 +37,8 @@ public class LoggingServiceImpl implements LoggingService {
     private final LoggerFactory loggerFactory;
     private volatile Level minLevel = Level.OFF;
 
-    public LoggingServiceImpl(String groupName, String loggingType, Member thisMember) {
+    public LoggingServiceImpl(SystemLogService systemLogService, String groupName, String loggingType, Member thisMember) {
+        this.systemLogService = systemLogService;
         this.groupName = groupName;
         this.thisMember = thisMember;
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
@@ -111,10 +115,12 @@ public class LoggingServiceImpl implements LoggingService {
     class DefaultLogger implements ILogger {
         final String name;
         final ILogger logger;
+        final boolean addToLoggingService;
 
         DefaultLogger(String name) {
             this.name = name;
             this.logger = loggerFactory.getLogger(name);
+            addToLoggingService = (name.equals(ClusterManager.class.getName()));
         }
 
         public void log(Level level, String message) {
@@ -122,6 +128,9 @@ public class LoggingServiceImpl implements LoggingService {
         }
 
         public void log(Level level, String message, Throwable thrown) {
+            if (addToLoggingService) {
+                systemLogService.logNode(message + ((thrown == null) ? "" : ": " + thrown.getMessage()));
+            }
             boolean loggable = logger.isLoggable(level);
             if (loggable || level.intValue() >= minLevel.intValue()) {
                 message = thisMember.getInetSocketAddress() + " [" + groupName + "] " + message;

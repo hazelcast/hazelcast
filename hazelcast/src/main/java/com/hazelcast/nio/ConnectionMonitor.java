@@ -46,12 +46,16 @@ class ConnectionMonitor {
     }
 
     public synchronized void onError(Throwable t) {
-        logger.log(Level.FINEST, "An error occured on connection to " + endPoint + getCauseDescription(t));
+        String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(t);
+        logger.log(Level.FINEST, errorMessage);
+        ioService.getSystemLogService().logConnection(errorMessage);
         final long now = System.currentTimeMillis();
         final long last = lastFaultTime;
         if (now - last > minInterval) {
             if ((++faults) >= maxFaults) {
-                logger.log(Level.WARNING, "Removing connection to endpoint " + endPoint + getCauseDescription(t));
+                String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(t);
+                logger.log(Level.WARNING, removeEndpointMessage);
+                ioService.getSystemLogService().logConnection(removeEndpointMessage);
                 ioService.removeEndpoint(endPoint);
             }
             lastFaultTime = now;
@@ -59,7 +63,9 @@ class ConnectionMonitor {
     }
 
     public synchronized void reset() {
-        logger.log(Level.FINEST, "Resetting connection monitor for endpoint " + endPoint);
+        String resetMessage = "Resetting connection monitor for endpoint " + endPoint;
+        logger.log(Level.FINEST, resetMessage);
+        ioService.getSystemLogService().logConnection(resetMessage);
         faults = 0;
         lastFaultTime = 0L;
     }

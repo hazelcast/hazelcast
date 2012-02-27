@@ -25,6 +25,7 @@ import com.hazelcast.impl.Node;
 import com.hazelcast.impl.Processable;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.ascii.TextCommandService;
+import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
 
 public class NodeIOService implements IOService {
@@ -41,6 +42,10 @@ public class NodeIOService implements IOService {
 
     public ILogger getLogger(String name) {
         return node.getLogger(name);
+    }
+
+    public SystemLogService getSystemLogService() {
+        return node.getSystemLogService();
     }
 
     public void onOutOfMemory(OutOfMemoryError oom) {

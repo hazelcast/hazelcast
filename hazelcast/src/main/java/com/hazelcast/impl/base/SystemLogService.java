@@ -19,10 +19,14 @@ package com.hazelcast.impl.base;
 import com.hazelcast.impl.Node;
 import com.hazelcast.nio.Address;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static java.util.logging.Level.WARNING;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class SystemLogService {
 
@@ -35,9 +39,17 @@ public class SystemLogService {
 
     private final ConcurrentMap<CallKey, CallState> mapCallStates = new ConcurrentHashMap<CallKey, CallState>(100, 0.75f, 32);
 
-    private volatile Level currentLevel = Level.CS_NONE;
+    private final Queue<SystemLog> joinLogs = new LinkedBlockingQueue<SystemLog>(10000);
 
-    private Node node;
+    private final Queue<SystemLog> connectionLogs = new LinkedBlockingQueue<SystemLog>(10000);
+
+    private final Queue<SystemLog> migrationLogs = new LinkedBlockingQueue<SystemLog>(10000);
+
+    private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(10000);
+
+    private volatile Level currentLevel = Level.CS_TRACE;
+
+    private final Node node;
 
     public SystemLogService(Node node) {
         this.node = node;
@@ -53,7 +65,7 @@ public class SystemLogService {
             int callStatesCount = mapCallStates.size();
             if (callStatesCount > 10000) {
                 String msg = " CallStates created! You might have too many threads accessing Hazelcast!";
-                node.getLogger(SystemLogService.class.getName()).log(WARNING, callStatesCount + msg);
+                logNode(callStatesCount + msg);
             }
             return callStateNew;
         } else {
@@ -80,6 +92,86 @@ public class SystemLogService {
 
     public void shutdown() {
         mapCallStates.clear();
+    }
+
+    public String dump() {
+        StringBuilder sb = new StringBuilder();
+        Set<SystemLog> sorted = new TreeSet<SystemLog>(new Comparator<SystemLog>() {
+            public int compare(SystemLog o1, SystemLog o2) {
+                long thisVal = o1.date;
+                long anotherVal = o2.date;
+                return (thisVal < anotherVal ? -1 : (thisVal == anotherVal ? 0 : 1));
+            }
+        });
+        sorted.addAll(joinLogs);
+        sorted.addAll(nodeLogs);
+        sorted.addAll(connectionLogs);
+        sorted.addAll(migrationLogs);
+        for (SystemLog systemLog : sorted) {
+            sb.append(systemLog.getType().toString());
+            sb.append(" - ");
+            sb.append(new Date(systemLog.getDate()).toString());
+            sb.append(" - ");
+            sb.append(systemLog.toString());
+            sb.append("\n");
+        }
+        for (CallState callState : mapCallStates.values()) {
+            sb.append(callState.toString());
+            sb.append("\n");
+            for (Object log : callState.getLogs()) {
+                SystemLog systemLog = (SystemLog) log;
+                sb.append(systemLog.getType().toString());
+                sb.append(" - ");
+                sb.append(new Date(systemLog.getDate()).toString());
+                sb.append(" - ");
+                sb.append(systemLog.toString());
+                sb.append("\n");
+            }
+        }
+        sb.append(node.concurrentMapManager.getPartitionManager().toString());
+        sb.append("\n");
+        return sb.toString();
+    }
+
+    private void dumpToFile(String log) throws IOException {
+        String fileName = "hazelcast-" + node.getThisAddress() + ".dump.txt";
+        File file = new File(fileName);
+        FileWriter fileWriter = new FileWriter(file);
+        BufferedWriter out = new BufferedWriter(fileWriter);
+        out.write(log);
+        out.close();
+    }
+
+    public void logConnection(String str) {
+        if (currentLevel != Level.CS_NONE) {
+            SystemObjectLog systemLog = new SystemObjectLog(str);
+            systemLog.setType(SystemLog.Type.CONNECTION);
+            joinLogs.offer(systemLog);
+        }
+    }
+
+    public void logPartition(String str) {
+        if (currentLevel != Level.CS_NONE) {
+            SystemObjectLog systemLog = new SystemObjectLog(str);
+            systemLog.setType(SystemLog.Type.PARTITION);
+            joinLogs.offer(systemLog);
+        }
+    }
+
+    public void logNode(String str) {
+        if (currentLevel != Level.CS_NONE) {
+            SystemObjectLog systemLog = new SystemObjectLog(str);
+            systemLog.setType(SystemLog.Type.NODE);
+            joinLogs.offer(systemLog);
+        }
+    }
+
+    public void logJoin(String str) {
+        if (currentLevel != Level.CS_NONE) {
+            SystemObjectLog systemLog = new SystemObjectLog(str);
+            systemLog.setType(SystemLog.Type.JOIN);
+            joinLogs.offer(systemLog);
+        }
     }
 
     public void setLogLevel(Level level) {

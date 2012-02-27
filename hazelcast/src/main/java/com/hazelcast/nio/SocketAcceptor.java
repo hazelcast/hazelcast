@@ -61,9 +61,11 @@ public class SocketAcceptor implements Runnable {
                     final SocketChannelWrapper socketChannel = socketChannelWrapper;
                     connectionManager.executeAsync(new Runnable() {
                         public void run() {
-                            logger.log(Level.INFO, socketChannel.socket().getLocalPort()
+                            String message = socketChannel.socket().getLocalPort()
                                     + " is accepting socket connection from "
-                                    + socketChannel.socket().getRemoteSocketAddress());
+                                    + socketChannel.socket().getRemoteSocketAddress();
+                            logger.log(Level.INFO, message);
+                            connectionManager.ioService.getSystemLogService().logConnection(message);
                             try {
                                 MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
                                 if (memberSocketInterceptor != null) {
@@ -74,6 +76,7 @@ public class SocketAcceptor implements Runnable {
                                 connectionManager.assignSocketChannel(socketChannel);
                             } catch (Exception e) {
                                 logger.log(Level.WARNING, e.getMessage(), e);
+                                connectionManager.ioService.getSystemLogService().logConnection(e.getMessage());
                                 if (socketChannel != null) {
                                     try {
                                         socketChannel.close();
@@ -87,6 +90,7 @@ public class SocketAcceptor implements Runnable {
             }
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
+            connectionManager.ioService.getSystemLogService().logConnection(e.getMessage());
         }
     }
 }

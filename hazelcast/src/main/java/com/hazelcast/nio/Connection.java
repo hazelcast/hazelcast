@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.SimpleBoundedQueue;
 
@@ -43,6 +44,8 @@ public final class Connection {
 
     private final ILogger logger;
 
+    private final SystemLogService systemLogService;
+
     private final int connectionId;
 
     private final SimpleBoundedQueue<Packet> packetQueue = new SimpleBoundedQueue<Packet>(100);
@@ -53,10 +56,15 @@ public final class Connection {
         this.inOutSelector = inOutSelector;
         this.connectionId = connectionId;
         this.logger = connectionManager.ioService.getLogger(Connection.class.getName());
+        this.systemLogService = connectionManager.ioService.getSystemLogService();
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
         this.writeHandler = new WriteHandler(this);
         this.readHandler = new ReadHandler(this);
+    }
+
+    public SystemLogService getSystemLogService() {
+        return systemLogService;
     }
 
     public Type getType() {
@@ -185,7 +193,10 @@ public final class Connection {
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
         }
-        logger.log(Level.INFO, "Connection lost " + this.socketChannel.socket().getRemoteSocketAddress());
+        Object connAddress = (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
+        String message = "Connection [" + connAddress + "] lost. Reason: " + t.getMessage();
+        logger.log(Level.INFO, message);
+        systemLogService.logConnection(message);
         connectionManager.destroyConnection(this);
         connectionManager.ioService.disconnectExistingCalls(endPoint);
         if (t != null && monitor != null) {

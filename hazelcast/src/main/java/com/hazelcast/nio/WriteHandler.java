@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.base.SystemArgsLog;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 
 import java.nio.ByteBuffer;
@@ -130,7 +131,13 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                     boolean complete = socketWriter.write(lastWritable, socketBB);
                     if (complete) {
                         if (lastWritable instanceof Packet) {
-                            connection.releasePacket((Packet) lastWritable);
+                            Packet packet = (Packet) lastWritable;
+                            connection.releasePacket(packet);
+                            if (systemLogService.shouldTrace()) {
+                                systemLogService.trace(packet,
+                                        new SystemArgsLog("WrittenOut ",
+                                                connection.getEndPoint(), packet.operation));
+                            }
                         }
                         lastWritable = null;
                     } else {
@@ -159,6 +166,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             }
         } catch (Throwable t) {
             logger.log(Level.SEVERE, "Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
+            connection.getSystemLogService().logConnection("Fatal Error at WriteHandler for endPoint " +
+                    "[" + connection.getEndPoint() + "]: " + t.getMessage());
         } finally {
             ready = false;
             registerWrite();
