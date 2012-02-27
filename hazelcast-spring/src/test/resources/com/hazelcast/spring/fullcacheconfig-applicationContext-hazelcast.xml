@@ -23,6 +23,7 @@
             <hz:group
                     name="${cluster.group.name}"
                     password="${cluster.group.password}"/>
+            <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>

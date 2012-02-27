@@ -16,6 +16,7 @@
                         <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="lite-member" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>

@@ -333,6 +333,7 @@ public class TestFullApplicationContext {
         final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
         assertEquals(5700, inetSocketAddress.getPort());
         assertEquals("test-instance", config.getInstanceName());
+        assertEquals("PROP_ENTERPRISE_LICENSE_KEY", config.getLicenseKey());
     }
 
     @Test

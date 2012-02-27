@@ -182,6 +182,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                     configBuilder.addPropertyValue("listenerConfigs", listeners);
                 } else if ("lite-member".equals(nodeName)) {
                     configBuilder.addPropertyValue(xmlToJavaName(nodeName), getValue(node));
+                } else if ("license-key".equals(nodeName)) {
+                    configBuilder.addPropertyValue(xmlToJavaName(nodeName), getValue(node));
                 }
             }
         }
