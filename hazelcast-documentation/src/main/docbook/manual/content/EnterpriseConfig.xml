@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sect1 xml:id="EnterpriseConfig" version="5.0" xmlns="http://docbook.org/ns/docbook"
+        >
+    <title>Setting License Key <superscript>(Enterprise Edition Only)</superscript></title>
+    <para>To be able to use Hazelcast Enterprise Edition, you need to set license key in configuration.</para>
+    <para>
+        <itemizedlist>
+            <listitem>
+                <para><emphasis role="bold">Hazelcast XML Configuration</emphasis> </para>
+                <para>
+                    <programlisting language="xml">
+<![CDATA[<hazelcast>
+    ...
+    <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
+    ...
+</hazelcast>]]></programlisting>
+                </para>
+            </listitem>
+
+            <listitem>
+                <para><emphasis role="bold">Hazelcast Config API</emphasis> </para>
+                <para>
+                    <programlisting language="java">
+Config config = new Config();
+config.setLicenseKey("HAZELCAST_ENTERPRISE_LICENSE_KEY");
+</programlisting>
+                </para>
+            </listitem>
+
+            <listitem>
+                <para><emphasis role="bold">Spring XML Configuration</emphasis> </para>
+                <para>
+                    <programlisting language="xml">
+<![CDATA[<hz:config>
+    ...
+    <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
+    ...
+</hazelcast>]]></programlisting>
+                </para>
+            </listitem>
+
+            <listitem>
+                <para><emphasis role="bold">JVM System Property</emphasis> </para>
+                <para>
+                    <programlisting language="xml">-Dhazelcast.enterprise.license.key=HAZELCAST_ENTERPRISE_LICENSE_KEY</programlisting>
+                </para>
+            </listitem>
+        </itemizedlist>
+    </para>
+</sect1>

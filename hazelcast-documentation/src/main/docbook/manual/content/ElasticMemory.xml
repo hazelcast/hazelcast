@@ -1,6 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
-        >
+<para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
 
     <para>
         By default, Hazelcast stores your distributed data (map entries, queue items) into Java heap
@@ -81,6 +80,10 @@ mapConfig.setStorageType(StorageType.OFFHEAP);]]></programlisting>
         is defined for a map, all near cached items are also going to be
         stored on the same off-heap. So off-heap storage is used for both near cache and distributed object
         storage.
+    </para>
+
+    <para>
+        <emphasis role="italic">Also see how to <link xlink:href="#EnterpriseConfig">configure license key</link>.</emphasis>
     </para>
 
 </para>

@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<para version="5.0" xmlns="http://docbook.org/ns/docbook"
-        >Hazelcast has an extensible, JAAS based security feature
+<para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">Hazelcast has an extensible, JAAS based security feature
     which can be used to authenticate both cluster members and clients and to do access control checks
     on client operations. Access control can be done according to endpoint principal and/or endpoint address.
     Security can be enabled and configured either in configuration xml or using Config api.
@@ -19,4 +18,6 @@
 SecurityConfig securityCfg = cfg.getSecurityConfig();
 securityCfg.setEnabled(true);
 ]]></programlisting>
+
+    <emphasis role="italic">Also see how to <link xlink:href="#EnterpriseConfig">configure license key</link>.</emphasis>
 </para>
