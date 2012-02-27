@@ -23,12 +23,11 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ResponseQueueFactory {
     public static BlockingQueue newResponseQueue() {
-        return new LockSupportQueue();
+        return new LockBasedResponseQueue();
     }
 
     private final static class LockBasedResponseQueue extends AbstractQueue implements BlockingQueue {
@@ -56,10 +55,9 @@ public class ResponseQueueFactory {
 
         public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
             if (timeout < 0) throw new IllegalArgumentException();
+            long remaining = unit.toMillis(timeout);
             lock.lock();
             try {
-                if (timeout == 0) return response;
-                long remaining = unit.toMillis(timeout);
                 while (response == null && remaining > 0) {
                     long start = System.currentTimeMillis();
                     noValue.await(remaining, TimeUnit.MILLISECONDS);
@@ -213,113 +211,6 @@ public class ResponseQueueFactory {
                 lock.notify();
             }
             return true;
-        }
-
-        public Object poll() {
-            return response;
-        }
-
-        public int remainingCapacity() {
-            throw new UnsupportedOperationException();
-        }
-
-        public int drainTo(Collection c) {
-            throw new UnsupportedOperationException();
-        }
-
-        public int drainTo(Collection c, int maxElements) {
-            throw new UnsupportedOperationException();
-        }
-
-        public void clear() {
-            response = null;
-        }
-
-        @Override
-        public Iterator iterator() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int size() {
-            return (response == null) ? 0 : 1;
-        }
-
-        public Object peek() {
-            return response;
-        }
-    }
-
-    public static class SpinQueue extends ResponseQueue {
-        private final static Object NULL = new Object();
-
-        @Override
-        public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
-            while (response == null) {
-                Thread.sleep(0, 1);
-            }
-            return (response == NULL) ? null : response;
-        }
-
-        @Override
-        public boolean offer(Object o, long timeout, TimeUnit unit) throws InterruptedException {
-            return offer(o);
-        }
-
-        @Override
-        public boolean offer(Object obj) {
-            response = (obj == null) ? NULL : obj;
-            return true;
-        }
-    }
-
-    public static class LockSupportQueue extends AbstractQueue implements BlockingQueue {
-        private final static Object NULL = new Object();
-        private volatile Object response;
-        private volatile Thread waitingThread = null;
-
-        public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
-            waitingThread = Thread.currentThread();
-            if (timeout < 0) throw new IllegalArgumentException();
-            if (timeout == 0) return response;
-            if (timeout >= Integer.MAX_VALUE) return take();
-            long remaining = unit.toNanos(timeout);
-            while (response == null && remaining > 0) {
-                long start = System.currentTimeMillis();
-                LockSupport.parkNanos(remaining);
-                remaining -= TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() - start);
-            }
-            return getAndRemoveResponse();
-        }
-
-        public Object take() throws InterruptedException {
-            waitingThread = Thread.currentThread();
-            while (response == null) {
-                LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(10));
-            }
-            return getAndRemoveResponse();
-        }
-
-        public boolean offer(Object o, long timeout, TimeUnit unit) throws InterruptedException {
-            return offer(o);
-        }
-
-        public boolean offer(Object obj) {
-            response = (obj == null) ? NULL : obj;
-            if (waitingThread != null) {
-                LockSupport.unpark(waitingThread);
-            }
-            return true;
-        }
-
-        private Object getAndRemoveResponse() {
-            final Object value = response;
-            response = null;
-            return (value == NULL) ? null : value;
-        }
-
-        public void put(Object o) throws InterruptedException {
-            offer(o);
         }
 
         public Object poll() {

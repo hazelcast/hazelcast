@@ -115,7 +115,7 @@ public final class ClusterService implements Runnable, Constants {
             }
         }
         packetQueue.offer(packet);
-        LockSupport.unpark(serviceThread);
+        unpark();
     }
 
     public boolean enqueueAndWait(final Processable processable, final int seconds) {
@@ -152,8 +152,12 @@ public final class ClusterService implements Runnable, Constants {
     public void enqueueAndReturn(Processable processable) {
         long start = System.nanoTime();
         processableQueue.offer(processable);
-        LockSupport.unpark(serviceThread);
+        unpark();
         CounterService.userCounter.add(System.nanoTime() - start);
+    }
+
+    void unpark() {
+        LockSupport.unpark(serviceThread);
     }
 
     private void processPacket(Packet packet) {
@@ -198,7 +202,7 @@ public final class ClusterService implements Runnable, Constants {
                 if (!readPackets && !readProcessables) {
                     try {
                         long startWait = System.nanoTime();
-                        LockSupport.parkNanos(TimeUnit.MICROSECONDS.toNanos(1000));
+                        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
                         long now = System.nanoTime();
                         threadWatcher.addWait((now - startWait), now);
                         checkPeriodics();
