@@ -36,6 +36,7 @@ public class MemberStateImpl implements MemberState {
 
     Address address = new Address();
     MemberHealthStatsImpl memberHealthStats = new MemberHealthStatsImpl();
+    Map<String,Long> runtimeProps = new HashMap<String, Long>();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
@@ -76,6 +77,11 @@ public class MemberStateImpl implements MemberState {
         for (Map.Entry<String, LocalSemaphoreStatsImpl> entry : semaphoreStats.entrySet()) {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
+        }
+        out.writeInt(runtimeProps.size());
+        for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeLong(entry.getValue());
         }
         out.writeInt(lsPartitions.size());
         for (Integer lsPartition : lsPartitions) {
@@ -119,6 +125,10 @@ public class MemberStateImpl implements MemberState {
             semaphoreStats.put(name, (LocalSemaphoreStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            runtimeProps.put(name, in.readLong());
+        }
+        for (int i = in.readInt(); i > 0; i--) {
             lsPartitions.add(in.readInt());
         }
     }
@@ -135,8 +145,30 @@ public class MemberStateImpl implements MemberState {
         return lsPartitions;
     }
 
+    @Override
+    public int hashCode() {
+        int result = address != null ? address.hashCode() : 0;
+        result = 31 * result + (memberHealthStats != null ? memberHealthStats.hashCode() : 0);
+        result = 31 * result + (mapStats != null ? mapStats.hashCode() : 0);
+        result = 31 * result + (queueStats != null ? queueStats.hashCode() : 0);
+        result = 31 * result + (topicStats != null ? topicStats.hashCode() : 0);
+        result = 31 * result + (atomicNumberStats != null ? atomicNumberStats.hashCode() : 0);
+        result = 31 * result + (countDownLatchStats != null ? countDownLatchStats.hashCode() : 0);
+        result = 31 * result + (semaphoreStats != null ? semaphoreStats.hashCode() : 0);
+        result = 31 * result + (lsPartitions != null ? lsPartitions.hashCode() : 0);
+        return result;
+    }
+
     public MemberHealthStatsImpl getMemberHealthStats() {
         return memberHealthStats;
+    }
+
+    public void setRuntimeProps(Map<String, Long> runtimeProps) {
+        this.runtimeProps = runtimeProps;
+    }
+
+    public Map<String, Long> getRuntimeProps() {
+        return runtimeProps;
     }
 
     public LocalAtomicNumberStats getLocalAtomicNumberStats(String atomicLongName) {

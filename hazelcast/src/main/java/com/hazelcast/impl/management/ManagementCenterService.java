@@ -27,6 +27,7 @@ import com.hazelcast.impl.monitor.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.TimedClusterState;
+import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.PipedZipBufferFactory;
 import com.hazelcast.nio.PipedZipBufferFactory.DeflatingPipedBuffer;
@@ -35,6 +36,7 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 
 import java.io.*;
+import java.lang.management.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -55,6 +57,8 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
     private final UDPListener udpListener;
     private final UDPSender udpSender;
     private final TCPListener tcpListener;
+    private final TaskPoller taskPoller;
+    private final StateSender stateSender;
     private final List<ClientHandler> lsClientHandlers = new CopyOnWriteArrayList<ClientHandler>();
     private final ILogger logger;
     private final ConcurrentMap<Address, MemberState> memberStates = new ConcurrentHashMap<Address, MemberState>(1000);
@@ -98,6 +102,10 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
         udpListener.start();
         udpSender = new UDPSender(datagramSocket);
         udpSender.start();
+        taskPoller = new TaskPoller("http://localhost:9999/");
+        taskPoller.start();
+        stateSender = new StateSender("http://localhost:9999/");
+        stateSender.start();
         tcpListener = new TCPListener(serverSocket);
         tcpListener.start();
         commandHandler = new ConsoleCommandHandler(factory);
@@ -208,7 +216,7 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
         return list;
     }
 
-    private class TCPListener extends Thread {
+    class TCPListener extends Thread {
         final SocketReadyServerSocket serverSocket;
 
         TCPListener(SocketReadyServerSocket serverSocket) {
@@ -241,7 +249,116 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
         }
     }
 
-    private class UDPListener extends Thread {
+
+    class StateSender extends Thread {
+        String host;
+
+        StateSender(String url) {
+            super("hz.State.Sender");
+            this.host = url;
+        }
+
+        public void run() {
+            try {
+                while (running) {
+                    if (started.get()) {
+                        try {
+                            URL url = new URL(host+"collector.do");
+                            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                            connection.setDoOutput(true);
+                            connection.setRequestMethod("POST");
+                            final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+                            ConsoleRequest req = new GetMemberStateRequest();
+                            req.writeResponse(ManagementCenterService.this, out);
+                            out.flush();
+                            connection.getInputStream();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    Thread.sleep(2400);
+                }
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+                logger.log(Level.FINEST, "Web Management Center will be closed due to exception.", throwable);
+                shutdown();
+            }
+        }
+    }
+
+
+    class TaskPoller extends Thread {
+        final ConsoleRequest[] consoleRequests = new ConsoleRequest[10];
+        String host = null;
+
+        TaskPoller(String url) {
+            super("hz.Task.Poller");
+            this.host = url;
+            register(new LoginRequest());
+            register(new GetClusterStateRequest());
+            register(new ThreadDumpRequest());
+            register(new ExecuteScriptRequest());
+            register(new EvictLocalMapRequest());
+            register(new ConsoleCommandRequest());
+            register(new MapConfigRequest());
+        }
+
+        public void register(ConsoleRequest consoleRequest) {
+            consoleRequests[consoleRequest.getType()] = consoleRequest;
+        }
+
+        public void sendResponse(int taskId, ConsoleRequest request) {
+            try {
+                URL url = new URL(host+"putResponse.do");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setDoOutput(true);
+                connection.setRequestMethod("POST");
+                OutputStream outputStream = connection.getOutputStream();
+                DataOutputStream output = new DataOutputStream(outputStream);
+                output.writeInt(taskId);
+                output.writeInt(request.getType());
+                request.writeResponse(ManagementCenterService.this, output);
+                connection.getInputStream();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void run() {
+            try {
+                Random rand = new Random();
+                while (running) {
+                    try {
+                        Address address = ((MemberImpl) factory.node.getClusterImpl().getLocalMember()).getAddress();
+                        GroupConfig groupConfig = factory.getConfig().getGroupConfig();
+                        URL url = new URL(host+ "getTask.do?member=" + address.getHost() + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setRequestProperty("Connection", "keep-alive");
+                        InputStream inputStream = connection.getInputStream();
+                        DataInputStream input = new DataInputStream(inputStream);
+
+                        int taskId = input.readInt();
+                        if (taskId > 0) {
+                            int requestType = input.readInt();
+                            ConsoleRequest request = consoleRequests[requestType];
+                            request.readData(input);
+                            sendResponse(taskId, request);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    Thread.sleep(700 + rand.nextInt(300));
+                }
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+                logger.log(Level.FINEST, "Web Management Center will be closed due to exception.", throwable);
+                shutdown();
+            }
+        }
+    }
+
+
+    class UDPListener extends Thread {
         final DatagramSocket socket;
         final InflatingPipedBuffer buffer = PipedZipBufferFactory.createInflatingBuffer(DATAGRAM_BUFFER_SIZE);
         final DatagramPacket packet = new DatagramPacket(buffer.getInputBuffer().array(), DATAGRAM_BUFFER_SIZE);
@@ -389,10 +506,44 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
         createMemState(memberState, proxyObjects.iterator(), InstanceType.MAP);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.QUEUE);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.TOPIC);
+        createRuntimeProps(memberState);
         // uncomment when client changes are made
         //createMemState(memberState, proxyObjects.iterator(), InstanceType.ATOMIC_LONG);
         //createMemState(memberState, proxyObjects.iterator(), InstanceType.COUNT_DOWN_LATCH);
         //createMemState(memberState, proxyObjects.iterator(), InstanceType.SEMAPHORE);
+    }
+
+    private void createRuntimeProps(MemberStateImpl memberState) {
+
+        Runtime runtime = Runtime.getRuntime();
+        ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        ClassLoadingMXBean clMxBean = ManagementFactory.getClassLoadingMXBean();
+        MemoryMXBean memoryMxBean = ManagementFactory.getMemoryMXBean();
+        MemoryUsage heapMemory = memoryMxBean.getHeapMemoryUsage();
+        MemoryUsage nonHeapMemory = memoryMxBean.getNonHeapMemoryUsage();
+
+        Map<String, Long> map = new HashMap<String, Long>();
+        map.put("runtime.availableProcessors", Integer.valueOf(runtime.availableProcessors()).longValue());
+        map.put("date.startTime", runtimeMxBean.getStartTime());
+        map.put("seconds.upTime", runtimeMxBean.getUptime());
+
+        map.put("memory.maxMemory", runtime.maxMemory());
+        map.put("memory.freeMemory", runtime.freeMemory());
+        map.put("memory.totalMemory", runtime.totalMemory());
+        map.put("memory.heapMemoryMax", heapMemory.getMax());
+        map.put("memory.heapMemoryUsed", heapMemory.getUsed());
+        map.put("memory.nonHeapMemoryMax", nonHeapMemory.getMax());
+        map.put("memory.nonHeapMemoryUsed", nonHeapMemory.getUsed());
+        map.put("runtime.totalLoadedClassCount", clMxBean.getTotalLoadedClassCount());
+        map.put("runtime.loadedClassCount", Integer.valueOf(clMxBean.getLoadedClassCount()).longValue());
+        map.put("runtime.unloadedClassCount", clMxBean.getUnloadedClassCount());
+        map.put("runtime.totalStartedThreadCount", threadMxBean.getTotalStartedThreadCount());
+        map.put("runtime.threadCount", Integer.valueOf(threadMxBean.getThreadCount()).longValue());
+        map.put("runtime.peakThreadCount", Integer.valueOf(threadMxBean.getPeakThreadCount()).longValue());
+        map.put("runtime.daemonThreadCount", Integer.valueOf(threadMxBean.getDaemonThreadCount()).longValue());
+        memberState.setRuntimeProps(map);
+
     }
 
     private void createMemState(MemberStateImpl memberState,
@@ -520,7 +671,7 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
         }
     }
 
-    private class ClientHandler extends Thread {
+    class ClientHandler extends Thread {
         final ConsoleRequest[] consoleRequests = new ConsoleRequest[10];
         final Socket socket = new Socket();
         final LazyDataInputStream socketIn = new LazyDataInputStream();
@@ -638,6 +789,28 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
         }
     }
 
+    public TimedMemberState getTimedMemberState() {
+        if (latestThisMemberState == null) {
+            updateLocalState();
+        }
+        GroupConfig groupConfig = factory.getConfig().getGroupConfig();
+        TimedMemberState timedMemberState = new TimedMemberState();
+        timedMemberState.setMaster(factory.node.isMaster());
+
+
+        if (timedMemberState.getMaster()) {
+            timedMemberState.setMemberList(new ArrayList<String>());
+            for (Address addr : addresses) {
+                timedMemberState.getMemberList().add(addr.getHost() + ":" + addr.getPort());
+            }
+        }
+        timedMemberState.setMemberState(latestThisMemberState);
+        timedMemberState.setClusterName(groupConfig.getName());
+        timedMemberState.setInstanceNames(getLongInstanceNames());
+        return timedMemberState;
+    }
+
+
     TimedClusterState getState() {
         if (latestThisMemberState == null) {
             updateLocalState();
@@ -720,4 +893,5 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
             return true;
         }
     }
+
 }

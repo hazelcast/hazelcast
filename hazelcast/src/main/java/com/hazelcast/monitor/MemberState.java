@@ -20,12 +20,15 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface MemberState extends DataSerializable {
 
     Address getAddress();
 
     MemberHealthStats getMemberHealthStats();
+
+    Map<String,Long> getRuntimeProps();
 
     LocalMapStats getLocalMapStats(String mapName);
 

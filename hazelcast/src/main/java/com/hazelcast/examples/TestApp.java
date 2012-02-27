@@ -165,6 +165,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     protected void handleCommand(String command) {
+        if(command.contains("__")) {
+        namespace = command.split("__")[0];
+        command = command.substring(command.indexOf("__")+1);
+        }
+
         if (echo) {
             if (Thread.currentThread().getName().toLowerCase().indexOf("main") < 0)
                 println(" [" + Thread.currentThread().getName() + "] " + command);

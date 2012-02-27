@@ -47,14 +47,26 @@ public class MapConfigRequest implements ConsoleRequest {
         this.update = false;
     }
 
+    public Address getTarget() {
+        return target;
+    }
+
+    public void setTarget(Address target) {
+        this.target = target;
+    }
+
+  
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_MAP_CONFIG;
     }
 
     public void writeResponse(ManagementCenterService mcs, DataOutput dos)
             throws Exception {
+        dos.writeBoolean(update);
+
         if (update) {
             mcs.callOnAllMembers(new UpdateMapConfigCallable(map, config));
+            dos.writeUTF("success");
         } else {
             MapConfig cfg = (MapConfig) mcs.call(target, new GetMapConfigCallable(map));
             if (cfg != null) {
@@ -67,14 +79,19 @@ public class MapConfigRequest implements ConsoleRequest {
     }
 
     public Object readResponse(DataInput in) throws IOException {
+        update = in.readBoolean();
+
         if (!update) {
             if (in.readBoolean()) {
                 MapConfig cfg = new MapConfig();
                 cfg.readData(in);
                 return cfg;
             }
+            else {
+                return null;
+            }
         }
-        return null;
+        return in.readUTF();
     }
 
     public void writeData(DataOutput out) throws IOException {
