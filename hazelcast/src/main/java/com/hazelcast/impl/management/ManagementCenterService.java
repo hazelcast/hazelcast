@@ -130,6 +130,7 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
                 logger.log(Level.WARNING, "Hazelcast Management Center Web server url is null!");
             }
         }
+        running = true; // volatile-write
     }
 
     public void shutdown() {
