@@ -525,11 +525,11 @@
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.enterprise.license.path</db:literal>
+                    <db:literal>hazelcast.enterprise.license.key</db:literal>
                 </td>
                 <td>
                     <link xlink:href="http://www.hazelcast.com/products.jsp">Hazelcast Enterprise</link>
-                    license path (filesystem, classpath, url)
+                    license key
                 </td>
                 <td>string</td>
                 <td>null</td>
