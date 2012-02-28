@@ -48,7 +48,7 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
     }
 
     public String getPassword() {
-        return new String(password);
+        return password==null? "": new String(password);
     }
 
     public void setUsername(String username) {

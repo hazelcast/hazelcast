@@ -175,9 +175,11 @@ public class OutRunnable extends IORunnable {
                     try {
                         final Connection lookForAliveConnection = client.getConnectionManager().lookForLiveConnection();
                         if (lookForAliveConnection == null) {
-                            logger.log(Level.WARNING, "lookForAliveConnection is null, reconnection: " + reconnection);
+                            logger.log(Level.WARNING, "Could not restore the connection");
                             if (reconnection.get()) {
+                                logger.log(Level.WARNING, "Reconnection: " + reconnection.get() + ". Interrupting and shutting down the client!");
                                 interruptWaitingCalls();
+                                client.getLifecycleService().shutdown();
                             }
                         } else {
                             if (running) {
