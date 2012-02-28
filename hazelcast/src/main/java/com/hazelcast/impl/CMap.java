@@ -118,6 +118,8 @@ public class CMap {
 
     final long removeDelayMillis;
 
+    final long cleanupDelayMillis;
+
     final MapIndexService mapIndexService;
 
     final NearCache nearCache;
@@ -133,6 +135,10 @@ public class CMap {
     final boolean mapForQueue;
 
     volatile boolean ttlPerRecord = false;
+
+    volatile boolean dirty = false;
+
+    private volatile long lastCleanup = System.currentTimeMillis();
 
     @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long lastEvictionTime = 0;
@@ -233,6 +239,13 @@ public class CMap {
             }
             this.nearCache = nearCache;
         }
+        int CLEANUP_DELAY_SECONDS = node.groupProperties.CLEANUP_DELAY_SECONDS.getInteger();
+        if (CLEANUP_DELAY_SECONDS <= 0) {
+            logger.log(Level.WARNING, GroupProperties.PROP_CLEANUP_DELAY_SECONDS
+                    + " must be greater than zero. Setting to 1.");
+            CLEANUP_DELAY_SECONDS = 1;
+        }
+        cleanupDelayMillis = CLEANUP_DELAY_SECONDS * 1000;
         this.mergePolicy = getMergePolicy(mapConfig.getMergePolicy());
         this.creationTime = System.currentTimeMillis();
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
@@ -1325,12 +1338,17 @@ public class CMap {
     }
 
     boolean startCleanup(boolean forced) {
-        if (cleanupActive.compareAndSet(false, true)) {
+        final long now = System.currentTimeMillis();
+        long dirtyAge = (now - lastCleanup);
+        boolean shouldRun = (store != null && dirty && dirtyAge >= writeDelayMillis)
+                || (dirtyAge > cleanupDelayMillis);
+        if (shouldRun && cleanupActive.compareAndSet(false, true)) {
+            lastCleanup = now;
             try {
-                final long now = System.currentTimeMillis();
                 if (nearCache != null) {
                     nearCache.evict(now, false);
                 }
+                dirty = false;
                 final Set<Record> recordsDirty = new HashSet<Record>();
                 final Set<Record> recordsUnknown = new HashSet<Record>();
                 final Set<Record> recordsToPurge = new HashSet<Record>();
@@ -1353,6 +1371,8 @@ public class CMap {
                                 if (now > record.getWriteTime()) {
                                     recordsDirty.add(record);
                                     record.setDirty(false);
+                                } else {
+                                    dirty = true;
                                 }
                             } else if (shouldPurgeRecord(record, now)) {
                                 recordsToPurge.add(record);  // removed records
@@ -1397,9 +1417,9 @@ public class CMap {
                 executeEviction(recordsToEvict);
                 executePurge(recordsToPurge);
                 executePurgeUnknowns(recordsUnknown);
+                return true;
             } finally {
                 cleanupActive.set(false);
-                return true;
             }
         } else {
             return false;
@@ -1626,6 +1646,7 @@ public class CMap {
 
     void markAsDirty(Record record) {
         if (!record.isDirty()) {
+            dirty = true;
             record.setDirty(true);
             if (writeDelayMillis > 0) {
                 record.setWriteTime(System.currentTimeMillis() + writeDelayMillis);

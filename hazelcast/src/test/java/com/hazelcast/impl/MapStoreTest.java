@@ -508,6 +508,26 @@ public class MapStoreTest extends TestUtil {
     }
 
     @Test
+    public void testOneMemberWriteBehind2() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 1);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(1));
+        assertEquals(0, map.size());
+        map.put("1", "value1");
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(1));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.waitForEvent(2));
+        assertEquals(1, map.size());
+        assertEquals(1, testMapStore.getStore().size());
+        map.remove("1");
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.DELETE, testMapStore.waitForEvent(2));
+        assertEquals(0, map.size());
+        assertEquals(0, testMapStore.getStore().size());
+    }
+
+    @Test
     public void testOneMemberWriteBehind() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);

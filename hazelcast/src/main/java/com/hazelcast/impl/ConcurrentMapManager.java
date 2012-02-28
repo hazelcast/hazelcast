@@ -80,12 +80,6 @@ public class ConcurrentMapManager extends BaseManager {
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         MAX_BACKUP_COUNT = PartitionInfo.MAX_REPLICA_COUNT;
         GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
-        int CLEANUP_DELAY_SECONDS = node.groupProperties.CLEANUP_DELAY_SECONDS.getInteger();
-        if (CLEANUP_DELAY_SECONDS <= 0) {
-            logger.log(Level.WARNING, GroupProperties.PROP_CLEANUP_DELAY_SECONDS
-                    + " must be greater than zero. Setting to 1.");
-            CLEANUP_DELAY_SECONDS = 1;
-        }
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
@@ -93,9 +87,11 @@ public class ConcurrentMapManager extends BaseManager {
         partitionServiceImpl = new PartitionServiceImpl(this);
         node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
-                startCleanup(true, false);
+                for (CMap cMap : maps.values()) {
+                    cMap.startCleanup(false);
+                }
             }
-        }, 10, CLEANUP_DELAY_SECONDS, TimeUnit.SECONDS);
+        }, 1, 1, TimeUnit.SECONDS);
         registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET_DATA_RECORD_ENTRY, new GetDataRecordEntryOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_GET, new GetOperationHandler());
