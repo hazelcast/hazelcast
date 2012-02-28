@@ -280,6 +280,8 @@ public class TestFullApplicationContext {
         assertEquals(5700, config.getPort());
         assertFalse(config.isPortAutoIncrement());
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
+        assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
+        assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);
         assertFalse(networkConfig.getInterfaces().isEnabled());
         assertEquals(1, networkConfig.getInterfaces().getInterfaces().size());
         assertEquals("10.10.1.*", networkConfig.getInterfaces().getInterfaces().iterator().next());
@@ -333,7 +335,7 @@ public class TestFullApplicationContext {
         final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
         assertEquals(5700, inetSocketAddress.getPort());
         assertEquals("test-instance", config.getInstanceName());
-        assertEquals("PROP_ENTERPRISE_LICENSE_KEY", config.getLicenseKey());
+        assertEquals("HAZELCAST_ENTERPRISE_LICENSE_KEY", config.getLicenseKey());
     }
 
     @Test
@@ -440,5 +442,14 @@ public class TestFullApplicationContext {
         assertFalse(socketInterceptorConfig.isEnabled());
         assertEquals(DummySocketInterceptor.class.getName(), socketInterceptorConfig.getClassName());
         assertEquals(socketInterceptor, socketInterceptorConfig.getImplementation());
+    }
+
+    @Test
+    public void testManagementCenterConfig() {
+        ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
+        assertNotNull(managementCenterConfig);
+        assertTrue(managementCenterConfig.isEnabled());
+        assertEquals("myserver:80", managementCenterConfig.getUrl());
+        assertEquals(4, managementCenterConfig.getUpdateInterval());
     }
 }

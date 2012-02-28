@@ -184,6 +184,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
                     configBuilder.addPropertyValue(xmlToJavaName(nodeName), getValue(node));
                 } else if ("license-key".equals(nodeName)) {
                     configBuilder.addPropertyValue(xmlToJavaName(nodeName), getValue(node));
+                } else if ("management-center".equals(nodeName)) {
+                    handleManagementCenter(node);
                 }
             }
         }
@@ -467,6 +469,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             }
             partitionConfigBuilder.addPropertyValue("memberGroupConfigs", memberGroups);
             configBuilder.addPropertyValue("partitionGroupConfig", partitionConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleManagementCenter(final Node node) {
+            createAndFillBeanBuilder(node, ManagementCenterConfig.class, "managementCenterConfig", configBuilder);
         }
 
         public void handleNearCacheConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {

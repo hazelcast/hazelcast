@@ -46,9 +46,8 @@
             </hz:wan-replication>
             <hz:network port="${cluster.port}" port-auto-increment="false">
                 <hz:join>
-                    <hz:multicast enabled="${boolean.false}"
-                                  multicast-group="224.2.2.3"
-                                  multicast-port="54327"/>
+                    <hz:multicast enabled="${boolean.false}" multicast-group="224.2.2.3" multicast-port="54327"
+                                  multicast-time-to-live="16" multicast-timeout-seconds="8"/>
                     <hz:tcp-ip enabled="${boolean.true}">
                         <hz:required-member>127.0.0.1:5700</hz:required-member>
                         <!--                         <hz:members>${cluster.members}</hz:members> -->
@@ -88,6 +87,7 @@
                     <hz:interface>127.0.0.4</hz:interface>
                 </hz:member-group>
             </hz:partition-group>
+            <hz:management-center enabled="true" url="myserver:80" update-interval="4" />
             <hz:executor-service name="testExec"
                                  core-pool-size="2"
                                  max-pool-size="32"

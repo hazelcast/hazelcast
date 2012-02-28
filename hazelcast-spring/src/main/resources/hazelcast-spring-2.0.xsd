@@ -21,6 +21,7 @@
                         <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="partition-group" type="partition-group" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="management-center" type="management-center" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="executor-service" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence/>
@@ -260,6 +261,8 @@
         <xs:attribute name="enabled" type="xs:string" use="optional" default="true"/>
         <xs:attribute name="multicast-group" type="xs:string" use="optional" default="224.2.2.3"/>
         <xs:attribute name="multicast-port" type="xs:string" use="optional" default="54327"/>
+        <xs:attribute name="multicast-timeout-seconds" type="xs:string" use="optional" />
+        <xs:attribute name="multicast-time-to-live" type="xs:string" use="optional" />
     </xs:complexType>
 
     <xs:complexType name="aws">
@@ -507,6 +510,12 @@
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:boolean" use="required"/>
         <xs:attribute name="group-type" type="xs:string" use="optional" />
+    </xs:complexType>
+
+    <xs:complexType name="management-center">
+        <xs:attribute name="enabled" type="xs:string" default="false" use="optional"/>
+        <xs:attribute name="url" type="xs:string" use="optional"/>
+        <xs:attribute name="update-interval" type="xs:string" default="3" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="listener">
