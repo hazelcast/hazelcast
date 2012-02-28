@@ -83,9 +83,11 @@ public class Index {
 
     public Long extractLongValue(Object value) {
         Object extractedValue = expression.getValue(value);
+        setIndexType(extractedValue);
         if (extractedValue == null) {
             return Long.MIN_VALUE;
         } else {
+            returnType = getIndexType(extractedValue.getClass());
             if (!checkedStrength) {
                 if (extractedValue instanceof Boolean || extractedValue instanceof Number) {
                     strong = true;
@@ -137,15 +139,23 @@ public class Index {
         return results;
     }
 
-    public byte getIndexType() {
+    void setIndexType(Object extractedValue) {
         if (returnType == -1) {
-            Predicates.GetExpressionImpl ex = (Predicates.GetExpressionImpl) expression;
-            returnType = getIndexType(ex.getter.getReturnType());
+            if (expression instanceof Predicates.GetExpressionImpl) {
+                Predicates.GetExpressionImpl ex = (Predicates.GetExpressionImpl) expression;
+                returnType = getIndexType(ex.getter.getReturnType());
+            } else {
+                if (extractedValue == null) throw new RuntimeException("Indexed value cannot be null!");
+                returnType = getIndexType(extractedValue.getClass());
+            }
         }
+    }
+
+    public byte getIndexType() {
         return returnType;
     }
 
-    public byte getIndexType(Class klass) {
+    public static byte getIndexType(Class klass) {
         if (klass == String.class) {
             return TYPE_STRING;
         } else if (klass == int.class || klass == Integer.class) {
