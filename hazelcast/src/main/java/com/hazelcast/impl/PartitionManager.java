@@ -389,7 +389,7 @@ public class PartitionManager {
                 while (partition.onDeadAddress(deadAddress)) ;
             }
         }
-        fixCMapsForDead(deadAddress);
+        fixCMapsForDead(deadAddress, indexesOfDead);
         fixReplicasAndPartitionsForDead(deadMember, indexesOfDead);
     }
 
@@ -456,7 +456,7 @@ public class PartitionManager {
         }
     }
 
-    private void fixCMapsForDead(final Address deadAddress) {
+    private void fixCMapsForDead(final Address deadAddress, final int[] indexesOfDead) {
         Address thisAddress = concurrentMapManager.getThisAddress();
         for (CMap cmap : concurrentMapManager.maps.values()) {
             cmap.onDisconnect(deadAddress);
@@ -470,9 +470,15 @@ public class PartitionManager {
                         }
                     }
                     cmap.onDisconnect(record, deadAddress);
-                    if (record.isActive() && thisAddress.equals(partitions[record.getBlockId()].getOwner())) {
+                    final int partitionId = record.getBlockId();
+                    // owner of the partition is dead
+                    // and record is active
+                    // and new owner of partition is this member.
+                    if (indexesOfDead[partitionId] == 0
+                            && record.isActive()
+                            && thisAddress.equals(partitions[partitionId].getOwner())) {
                         cmap.markAsDirty(record);
-                        // you have to update the indexes
+                        // update the indexes
                         cmap.updateIndexes(record);
                     }
                 }

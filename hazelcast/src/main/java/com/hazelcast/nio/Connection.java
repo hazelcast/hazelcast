@@ -194,7 +194,12 @@ public final class Connection {
             logger.log(Level.WARNING, e.getMessage(), e);
         }
         Object connAddress = (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
-        String message = "Connection [" + connAddress + "] lost. Reason: " + t.getMessage();
+        String message = "Connection [" + connAddress + "] lost. Reason: ";
+        if (t != null) {
+            message += t.getClass().getName() + "[" + t.getMessage() + "]";
+        } else {
+            message += "Explicit close";
+        }
         logger.log(Level.INFO, message);
         systemLogService.logConnection(message);
         connectionManager.destroyConnection(this);
