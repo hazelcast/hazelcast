@@ -24,7 +24,9 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.util.CounterService;
 import com.hazelcast.util.ThreadWatcher;
 
+import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +53,7 @@ public final class ClusterService implements Runnable, Constants {
 
     private final Queue<Processable> processableQueue = new ConcurrentLinkedQueue<Processable>();
 
-    private final PacketProcessor[] packetProcessors = new PacketProcessor[ClusterOperation.OPERATION_COUNT];
+    private final Map<Byte, PacketProcessor> packetProcessors = new ConcurrentHashMap<Byte, PacketProcessor> ();
 
     private final Runnable[] periodicRunnables = new Runnable[5];
 
@@ -91,15 +93,15 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void registerPacketProcessor(ClusterOperation operation, PacketProcessor packetProcessor) {
-        if (packetProcessors[operation.getValue()] != null) {
-            logger.log(Level.SEVERE, operation + " is registered already with "
-                    + packetProcessors[operation.getValue()]);
+        PacketProcessor processor = packetProcessors.get(operation.getValue());
+        if (processor != null) {
+            logger.log(Level.SEVERE, operation + " is registered already with " + processor);
         }
-        packetProcessors[operation.getValue()] = packetProcessor;
+        packetProcessors.put(operation.getValue(), packetProcessor);
     }
 
     public PacketProcessor getPacketProcessor(ClusterOperation operation) {
-        PacketProcessor packetProcessor = packetProcessors[operation.getValue()];
+        PacketProcessor packetProcessor = packetProcessors.get(operation.getValue());
         if (packetProcessor == null) {
             logger.log(Level.SEVERE, operation + " has no registered processor!");
         }
@@ -166,12 +168,12 @@ public final class ClusterService implements Runnable, Constants {
         if (memberFrom != null) {
             memberFrom.didRead();
         }
-        if (packet.operation.getValue() < 0 || packet.operation.getValue() >= packetProcessors.length) {
+        if (packet.operation.getValue() < 0 || !packetProcessors.containsKey(packet.operation.getValue())) {
             String msg = "Unknown operation " + packet.operation;
             logger.log(Level.SEVERE, msg);
             throw new RuntimeException(msg);
         }
-        PacketProcessor packetProcessor = packetProcessors[packet.operation.getValue()];
+        PacketProcessor packetProcessor = packetProcessors.get(packet.operation.getValue());
         if (packetProcessor == null) {
             String msg = "No Packet processor found for operation : " + packet.operation + " from " + packet.conn;
             logger.log(Level.SEVERE, msg);
