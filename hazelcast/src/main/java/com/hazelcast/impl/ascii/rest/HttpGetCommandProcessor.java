@@ -29,7 +29,6 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
     public void handle(HttpGetCommand command) {
         String uri = command.getURI();
-        System.out.println("URI " + uri);
         if (uri.startsWith(URI_MAPS)) {
             int indexEnd = uri.indexOf('/', URI_MAPS.length());
             String mapName = uri.substring(URI_MAPS.length(), indexEnd);

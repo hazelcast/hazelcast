@@ -47,7 +47,7 @@ public class SystemLogService {
 
     private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(10000);
 
-    private volatile Level currentLevel = Level.CS_TRACE;
+    private volatile Level currentLevel = Level.CS_NONE;
 
     private final Node node;
 
@@ -92,6 +92,10 @@ public class SystemLogService {
 
     public void shutdown() {
         mapCallStates.clear();
+        connectionLogs.clear();
+        nodeLogs.clear();
+        joinLogs.clear();
+        migrationLogs.clear();
     }
 
     public String dump() {
