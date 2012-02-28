@@ -149,6 +149,7 @@
             <interface>10.10.2.*</interface>
         </member-group>
     </partition-group>
+    <management-center enabled="true" update-interval="5">http://mywebserver:8080</management-center>
     <executor-service name="default">
         <core-pool-size>16</core-pool-size>
         <max-pool-size>64</max-pool-size>

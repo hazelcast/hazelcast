@@ -11,6 +11,7 @@
                 <xs:element ref="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="network" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="partition-group" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="management-center" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="executor-service" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="queue" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="map" minOccurs="0" maxOccurs="unbounded"/>
@@ -900,6 +901,16 @@
             <xs:sequence>
                 <xs:element ref="interface" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="management-center">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
+                    <xs:attribute name="update-interval" type="xs:integer" default="3" use="optional"/>
+                </xs:extension>
+            </xs:simpleContent>
         </xs:complexType>
     </xs:element>
     <xs:element name="security">

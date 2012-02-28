@@ -88,6 +88,8 @@ public class Config implements DataSerializable {
 
     private PartitionGroupConfig partitionGroupConfig = new PartitionGroupConfig();
 
+    private ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig();
+
     private String licenseKey;
 
     public Config() {
@@ -637,8 +639,9 @@ public class Config implements DataSerializable {
         return securityConfig;
     }
 
-    public void setSecurityConfig(SecurityConfig securityConfig) {
+    public Config setSecurityConfig(SecurityConfig securityConfig) {
         this.securityConfig = securityConfig;
+        return this;
     }
 
     public Config addListenerConfig(ListenerConfig listenerConfig) {
@@ -653,16 +656,18 @@ public class Config implements DataSerializable {
         return listenerConfigs;
     }
 
-    public void setListenerConfigs(List<ListenerConfig> listenerConfigs) {
+    public Config setListenerConfigs(List<ListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+        return this;
     }
 
     public PartitionGroupConfig getPartitionGroupConfig() {
         return partitionGroupConfig;
     }
 
-    public void setPartitionGroupConfig(PartitionGroupConfig partitionGroupConfig) {
+    public Config setPartitionGroupConfig(PartitionGroupConfig partitionGroupConfig) {
         this.partitionGroupConfig = partitionGroupConfig;
+        return this;
     }
 
     /**
@@ -898,16 +903,27 @@ public class Config implements DataSerializable {
         return instanceName;
     }
 
-    public void setInstanceName(String instanceName) {
+    public Config setInstanceName(String instanceName) {
         this.instanceName = instanceName;
+        return this;
     }
 
     public String getLicenseKey() {
         return licenseKey;
     }
 
-    public void setLicenseKey(final String licenseKey) {
+    public Config setLicenseKey(final String licenseKey) {
         this.licenseKey = licenseKey;
+        return this;
+    }
+
+    public ManagementCenterConfig getManagementCenterConfig() {
+        return managementCenterConfig;
+    }
+
+    public Config setManagementCenterConfig(final ManagementCenterConfig managementCenterConfig) {
+        this.managementCenterConfig = managementCenterConfig;
+        return this;
     }
 
     @Override

@@ -443,7 +443,8 @@ public class Node {
             sb.append(". Some of the ports seem occupied!");
             logger.log(Level.WARNING, sb.toString());
         }
-        if (groupProperties.MANCENTER_ENABLED.getBoolean()) {
+        if (groupProperties.MANCENTER_ENABLED.getBoolean() ||
+                (config.getManagementCenterConfig() != null && config.getManagementCenterConfig().isEnabled())) {
             try {
                 managementCenterService = new ManagementCenterService(factory);
             } catch (Exception e) {

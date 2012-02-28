@@ -213,6 +213,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleSecurity(node);
             } else if ("license-key".equals(nodeName)) {
                 config.setLicenseKey(getValue(node));
+            } else if ("management-center".equals(nodeName)) {
+                handleManagementCenterConfig(node);
             }
         }
     }
@@ -867,6 +869,18 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         config.getPartitionGroupConfig().addMemberGroupConfig(memberGroupConfig);
+    }
+
+    private void handleManagementCenterConfig(final Node node) {
+        NamedNodeMap attrs = node.getAttributes();
+        final Node enabledNode = attrs.getNamedItem("enabled");
+        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
+        final Node intervalNode = attrs.getNamedItem("update-interval");
+        final int interval = intervalNode != null ? getIntegerValue("update-interval",
+                getValue(intervalNode), 3) : 3;
+        config.getManagementCenterConfig().setEnabled(enabled);
+        config.getManagementCenterConfig().setUpdateInterval(interval);
+        config.getManagementCenterConfig().setUrl(getValue(node));
     }
 
     private void handleSecurity(final org.w3c.dom.Node node) throws Exception {
