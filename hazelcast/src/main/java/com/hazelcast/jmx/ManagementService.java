@@ -49,41 +49,48 @@ import java.util.logging.Level;
 @SuppressWarnings("SynchronizedMethod")
 public class ManagementService {
 
+    private static final Object LOCK = new Object();
+
     private static final AtomicInteger counter = new AtomicInteger(0);
 
-    private volatile static ScheduledThreadPoolExecutor statCollectors;
+    private static ScheduledThreadPoolExecutor statCollectors;
 
     private final ILogger logger;
 
     private final FactoryImpl instance;
 
-    private String name;
+    private final boolean showDetails;
 
     private boolean started = false;
+
+    private String name;
 
     public ManagementService(FactoryImpl instance) {
         this.instance = instance;
         this.logger = instance.node.getLogger(ManagementService.class.getName());
+        this.showDetails = instance.node.groupProperties.ENABLE_JMX_DETAILED.getBoolean();
     }
 
     public HazelcastInstance getInstance() {
         return instance;
     }
 
-    private synchronized void start() {
-        final boolean jmxProperty = instance.node.groupProperties.ENABLE_JMX.getBoolean();
-        if (!jmxProperty) {
-            // JMX disabled
-            return;
-        }
-        logger.log(Level.INFO, "Hazelcast JMX agent enabled");
-        // Scheduler of the statistics collectors
-        if (showDetails()) {
-            if (statCollectors == null) {
-                statCollectors = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(null, "jmx", null));
+    private void start() {
+        synchronized (LOCK) {
+            final boolean jmxProperty = instance.node.groupProperties.ENABLE_JMX.getBoolean();
+            if (!jmxProperty) {
+                // JMX disabled
+                return;
             }
+            logger.log(Level.INFO, "Hazelcast JMX agent enabled");
+            // Scheduler of the statistics collectors
+            if (showDetails()) {
+                if (statCollectors == null) {
+                    statCollectors = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(null, "jmx", null));
+                }
+            }
+            started = true;
         }
-        started = true;
     }
 
     private void nameLookup() throws MalformedObjectNameException {
@@ -104,51 +111,55 @@ public class ManagementService {
     /**
      * Register all the MBeans.
      */
-    public synchronized void register() {
-        if (!started) {
-            start();
+    public void register() {
+        synchronized (LOCK) {
+            if (!started) {
+                start();
+            }
+            if (!started) {
+                return;
+            }
+            MBeanServer mbs = mBeanServer();
+            // Register the cluster monitor
+            try {
+                nameLookup();
+                ClusterMBean clusterMBean = new ClusterMBean(this, this.name);
+                mbs.registerMBean(clusterMBean, clusterMBean.getObjectName());
+                DataMBean dataMBean = new DataMBean(this);
+                dataMBean.setParentName(clusterMBean.getRootName());
+                mbs.registerMBean(dataMBean, dataMBean.getObjectName());
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to start JMX service", e);
+                return;
+            }
+            counter.incrementAndGet();
         }
-        if (!started) {
-            return;
-        }
-        MBeanServer mbs = mBeanServer();
-        // Register the cluster monitor
-        try {
-            nameLookup();
-            ClusterMBean clusterMBean = new ClusterMBean(this, this.name);
-            mbs.registerMBean(clusterMBean, clusterMBean.getObjectName());
-            DataMBean dataMBean = new DataMBean(this);
-            dataMBean.setParentName(clusterMBean.getRootName());
-            mbs.registerMBean(dataMBean, dataMBean.getObjectName());
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Unable to start JMX service", e);
-            return;
-        }
-        counter.incrementAndGet();
     }
 
     /**
      * Unregister a cluster instance.
      */
-    public synchronized void unregister() {
-        if (!started) {
-            return;
-        }
-        // Remove all entries register for the cluster
-        MBeanServer mbs = mBeanServer();
-        Set<ObjectName> entries;
-        try {
-            entries = mbs.queryNames(ObjectNameSpec.getClusterNameFilter(this.name), null);
-            for (ObjectName name : entries) {
-                // Double check, in case the entry has been removed whiletime
-                if (mbs.isRegistered(name)) {
-                    mbs.unregisterMBean(name);
-                }
+    public void unregister() {
+        synchronized (LOCK) {
+            if (!started) {
+                return;
             }
-        } catch (Exception e) {
-            logger.log(Level.FINEST, "Error unregistering MBeans", e);
+            // Remove all entries register for the cluster
+            MBeanServer mbs = mBeanServer();
+            Set<ObjectName> entries;
+            try {
+                entries = mbs.queryNames(ObjectNameSpec.getClusterNameFilter(this.name), null);
+                for (ObjectName name : entries) {
+                    // Double check, in case the entry has been removed whiletime
+                    if (mbs.isRegistered(name)) {
+                        mbs.unregisterMBean(name);
+                    }
+                }
+            } catch (Exception e) {
+                logger.log(Level.FINEST, "Error unregistering MBeans", e);
+            }
+            counter.decrementAndGet();
         }
-        counter.decrementAndGet();
     }
 
     private static MBeanServer mBeanServer() {
@@ -158,26 +169,28 @@ public class ManagementService {
     /**
      * Stop the management service
      */
-    public synchronized static void shutdown() {
-        if (counter.get() > 0) {
-            return;
-        }
-        MBeanServer mbs = mBeanServer();
-        Set<ObjectName> entries;
-        try {
-            entries = mbs.queryNames(new ObjectName(ObjectNameSpec.NAME_DOMAIN + "*"), null);
-            for (ObjectName name : entries) {
-                // Double check, in case the entry has been removed in the meantime
-                if (mbs.isRegistered(name)) {
-                    mbs.unregisterMBean(name);
-                }
+    public static void shutdown() {
+        synchronized (LOCK) {
+            if (counter.get() > 0) {
+                return;
             }
-        } catch (Exception e) {
-            Logger.getLogger("hz.ManagementCenter").log(Level.FINEST, "Error unregistering MBeans", e);
-        }
-        if (statCollectors != null) {
-            statCollectors.shutdownNow();
-            statCollectors = null;
+            MBeanServer mbs = mBeanServer();
+            Set<ObjectName> entries;
+            try {
+                entries = mbs.queryNames(new ObjectName(ObjectNameSpec.NAME_DOMAIN + "*"), null);
+                for (ObjectName name : entries) {
+                    // Double check, in case the entry has been removed in the meantime
+                    if (mbs.isRegistered(name)) {
+                        mbs.unregisterMBean(name);
+                    }
+                }
+            } catch (Exception e) {
+                Logger.getLogger("hz.ManagementCenter").log(Level.FINEST, "Error unregistering MBeans", e);
+            }
+            if (statCollectors != null) {
+                statCollectors.shutdownNow();
+                statCollectors = null;
+            }
         }
     }
 
@@ -187,7 +200,7 @@ public class ManagementService {
      * For forward compatibility, return always true.
      */
     final boolean showDetails() {
-        return instance.node.groupProperties.ENABLE_JMX_DETAILED.getBoolean();
+        return showDetails;
     }
 
     @SuppressWarnings("VolatileLongOrDoubleField")
@@ -266,14 +279,16 @@ public class ManagementService {
      */
     @SuppressWarnings("unchecked")
     public static StatisticsCollector newStatisticsCollector() {
-        if (statCollectors != null) {
-            long interval = 1L;
-            ScheduledCollector collector = new ScheduledCollector(interval);
-            ScheduledFuture future = statCollectors.scheduleWithFixedDelay(collector, interval, interval, TimeUnit.SECONDS);
-            collector.setScheduledFuture(future);
-            return collector;
-        } else {
-            return null;
+        synchronized (LOCK) {
+            if (statCollectors != null) {
+                long interval = 1L;
+                ScheduledCollector collector = new ScheduledCollector(interval);
+                ScheduledFuture future = statCollectors.scheduleWithFixedDelay(collector, interval, interval, TimeUnit.SECONDS);
+                collector.setScheduledFuture(future);
+                return collector;
+            } else {
+                return null;
+            }
         }
     }
 }

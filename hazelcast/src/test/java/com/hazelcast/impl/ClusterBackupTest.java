@@ -27,6 +27,7 @@ import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import org.junit.After;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -349,6 +350,7 @@ public class ClusterBackupTest {
     }
 
     @Test
+    @Ignore
     public void testCleanupAfterMigration() throws Exception {
         System.setProperty("hazelcast.log.state", "true");
         final int size = 10000;
@@ -370,9 +372,10 @@ public class ClusterBackupTest {
         ConcurrentMapManager c1 = getConcurrentMapManager(h1);
         ConcurrentMapManager c2 = getConcurrentMapManager(h2);
         ConcurrentMapManager c3 = getConcurrentMapManager(h3);
-        c1.startCleanup(true, false);
-        c2.startCleanup(true, false);
-        c3.startCleanup(true, false);
+        c1.startCleanup(true, true);
+        c2.startCleanup(true, true);
+        c3.startCleanup(true, true);
+        Thread.sleep(1000);
         CMap cmap1 = c1.getMap("c:default");
         CMap cmap2 = c2.getMap("c:default");
         CMap cmap3 = c3.getMap("c:default");
@@ -387,21 +390,23 @@ public class ClusterBackupTest {
         IMap map4 = h4.getMap("default");
         ConcurrentMapManager c4 = getConcurrentMapManager(h4);
         CMap cmap4 = c4.getMap("c:default");
-        Thread.sleep(5000);
-        c1.startCleanup(true, false);
-        c2.startCleanup(true, false);
-        c3.startCleanup(true, false);
-        c4.startCleanup(true, false);
+        Thread.sleep(1000);
+        c1.startCleanup(true, true);
+        c2.startCleanup(true, true);
+        c3.startCleanup(true, true);
+        c4.startCleanup(true, true);
+        Thread.sleep(8000);
         // check record counts just after cleanup
         assertEquals(cmap1.mapRecords.size(), getOwnedAndBackupCount(map1));
         assertEquals(cmap2.mapRecords.size(), getOwnedAndBackupCount(map2));
         assertEquals(cmap3.mapRecords.size(), getOwnedAndBackupCount(map3));
         assertEquals(cmap4.mapRecords.size(), getOwnedAndBackupCount(map4));
         h4.getLifecycleService().shutdown();
-        Thread.sleep(15000);
-        c1.startCleanup(true, false);
-        c2.startCleanup(true, false);
-        c3.startCleanup(true, false);
+        Thread.sleep(1000);
+        c1.startCleanup(true, true);
+        c2.startCleanup(true, true);
+        c3.startCleanup(true, true);
+        Thread.sleep(8000);
         // check record counts just after cleanup
         assertEquals(cmap1.mapRecords.size(), getOwnedAndBackupCount(map1));
         assertEquals(cmap2.mapRecords.size(), getOwnedAndBackupCount(map2));
