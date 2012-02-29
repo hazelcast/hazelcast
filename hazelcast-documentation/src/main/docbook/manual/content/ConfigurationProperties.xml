@@ -14,17 +14,15 @@
                 </para>
                 <para>
                     <programlisting language="xml">
-                        &lt;hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-2.0.xsd"
-                        xmlns="http://www.hazelcast.com/schema/config"
-                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
-
-                        ....
-
-                        &lt;properties&gt;
-                        &lt;property name="hazelcast.property.foo"&gt;value&lt;/property&gt;
-                        ....
-                        &lt;/properties&gt;
-                        &lt;/hazelcast&gt;</programlisting>
+&lt;hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-2.0.xsd"
+    xmlns="http://www.hazelcast.com/schema/config"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
+    ....
+    &lt;properties&gt;
+        &lt;property name="hazelcast.property.foo"&gt;value&lt;/property&gt;
+            ....
+    &lt;/properties&gt;
+&lt;/hazelcast&gt;</programlisting>
                 </para>
             </listitem>
             <listitem>
@@ -33,8 +31,8 @@
                 </para>
                 <para>
                     <programlisting language="java">
-                        Config cfg = ... ;
-                        cfg.setProperty("hazelcast.property.foo", "value");
+Config cfg = new Config() ;
+cfg.setProperty("hazelcast.property.foo", "value");
                     </programlisting>
                 </para>
             </listitem>

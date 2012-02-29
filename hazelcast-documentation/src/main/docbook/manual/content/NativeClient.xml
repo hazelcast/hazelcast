@@ -1,8 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <sect1 xml:id="NativeClient" version="5.0" xmlns="http://docbook.org/ns/docbook"
-       xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude"
-       xmlns:ns5="http://www.w3.org/2000/svg" xmlns:ns4="http://www.w3.org/1998/Math/MathML"
-       xmlns:ns3="http://www.w3.org/1999/xhtml" xmlns:db="http://docbook.org/ns/docbook">
+        >
     <title>Native Client</title>
     <para>Native Client enables you to do all Hazelcast operations without being a member of the
         cluster. It connects to one of the cluster members and delegates all cluster wide operations
@@ -47,24 +45,24 @@
         <title>Java Client</title>
         <para>You can do almost all hazelcast operations with Java Client. It already implements the
             same interface. You must include hazelcast-client.jar into your classpath.
-            <programlisting language="java"><![CDATA[    import com.hazelcast.core.HazelcastInstance;
-    import com.hazelcast.client.HazelcastClient;
+            <programlisting language="java"><![CDATA[import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.client.HazelcastClient;
 
-    import java.util.Map;
-    import java.util.Collection;
+import java.util.Map;
+import java.util.Collection;
 
 
-    HazelcastInstance client = HazelcastClient.newHazelcastClient("dev", "dev-pass", "10.90.0.1", "10.90.0.2:5702");
-    //All Cluster Operations that you can do with ordinary HazelcastInstance
-    Map<String, Customer> mapCustomers = client.getMap("customers");
-    mapCustomers.put("1", new Customer("Joe", "Smith"));
-    mapCustomers.put("2", new Customer("Ali", "Selam"));
-    mapCustomers.put("3", new Customer("Avi", "Noyan"));
+HazelcastInstance client = HazelcastClient.newHazelcastClient("dev", "dev-pass", "10.90.0.1", "10.90.0.2:5702");
+//All Cluster Operations that you can do with ordinary HazelcastInstance
+Map<String, Customer> mapCustomers = client.getMap("customers");
+mapCustomers.put("1", new Customer("Joe", "Smith"));
+mapCustomers.put("2", new Customer("Ali", "Selam"));
+mapCustomers.put("3", new Customer("Avi", "Noyan"));
 
-    Collection<Customer> colCustomers = mapCustomers.values();
-    for (Customer customer : colCustomers) {
-         // process customer
-    }
+Collection<Customer> colCustomers = mapCustomers.values();
+for (Customer customer : colCustomers) {
+     // process customer
+}
 ]]></programlisting>
         </para>
     </sect2>

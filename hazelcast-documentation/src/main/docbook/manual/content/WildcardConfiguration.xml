@@ -13,36 +13,25 @@
         these configurations;
     </db:para>
     <para>
-        <programlisting language="xml">
-            <![CDATA[<map name="com.hazelcast.test.*">
+        <programlisting language="xml"><![CDATA[<map name="com.hazelcast.test.*">
 ...
-</map>]]>
-        </programlisting>
-        <programlisting language="xml">
-            <![CDATA[<map name="com.hazel*">
+</map>]]></programlisting>
+        <programlisting language="xml"><![CDATA[<map name="com.hazel*">
 ...
-</map>]]>
-        </programlisting>
-        <programlisting language="xml">
-            <![CDATA[<map name="*.test.mymap">
+</map>]]></programlisting>
+        <programlisting language="xml"><![CDATA[<map name="*.test.mymap">
 ...
-</map>]]>
-        </programlisting>
-        <programlisting language="xml">
-            <![CDATA[<map name="com.*test.mymap">
+</map>]]></programlisting>
+        <programlisting language="xml"><![CDATA[<map name="com.*test.mymap">
 ...
-</map>]]>
-        </programlisting>
+</map>]]></programlisting>
+
         Or a queue '<code>com.hazelcast.test.myqueue</code>'
-        <programlisting language="xml">
-            <![CDATA[<queue name="*hazelcast.test.myqueue">
+        <programlisting language="xml"><![CDATA[<queue name="*hazelcast.test.myqueue">
 ...
-</queue>]]>
-        </programlisting>
-        <programlisting language="xml">
-            <![CDATA[<queue name="com.hazelcast.*.myqueue">
+</queue>]]></programlisting>
+        <programlisting language="xml"><![CDATA[<queue name="com.hazelcast.*.myqueue">
 ...
-</queue>]]>
-        </programlisting>
+</queue>]]></programlisting>
     </para>
 </sect1>

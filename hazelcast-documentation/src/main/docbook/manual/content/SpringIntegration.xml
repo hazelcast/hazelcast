@@ -1,15 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<para version="5.0" xmlns="http://docbook.org/ns/docbook"
-        >You can declare Hazelcast beans for Spring context
-    using
-    <emphasis>beans</emphasis>
-    namespace (default spring
-    <emphasis>beans</emphasis>
-    namespace)
+<para version="5.0" xmlns="http://docbook.org/ns/docbook">
+    You can declare Hazelcast beans for Spring context
+    using <emphasis>beans</emphasis> namespace (default spring <emphasis>beans</emphasis> namespace)
     as well to declare hazelcast maps, queues and others.
-    <emphasis role="bold">Hazelcast-Spring
-        integration requires either hazelcast-spring jar or hazelcast-all jar in the
+    <emphasis role="bold">Hazelcast-Spring integration requires either hazelcast-spring jar or hazelcast-all jar in the
         classpath.
     </emphasis>
     <programlisting language="xml"><![CDATA[<bean id="instance" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance">
@@ -60,53 +55,50 @@
     </itemizedlist>
     After that you can configure Hazelcast instance (node):
     <programlisting language="xml"><![CDATA[<hz:hazelcast id="instance">
-        <hz:config>
-            <hz:group name="dev" password="password"/>
-            <hz:properties>
-                <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
-                <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
-            </hz:properties>
-            <hz:network port="5701" port-auto-increment="false">
-                <hz:join>
-                    <hz:multicast enabled="false"
-                                  multicast-group="224.2.2.3"
-                                  multicast-port="54327"/>
-                    <hz:tcp-ip enabled="true">
-                        <hz:members>10.10.1.2, 10.10.1.3</hz:members>
-                    </hz:tcp-ip>
-                </hz:join>
-            </hz:network>
-            <hz:map name="map"
-                    backup-count="2"
-                    max-size="0"
-                    eviction-percentage="30"
-                    read-backup-data="true"
-                    cache-value="true"
-                    eviction-policy="NONE"
-                    merge-policy="hz.ADD_NEW_ENTRY"/>
-        </hz:config>
+    <hz:config>
+        <hz:group name="dev" password="password"/>
+        <hz:properties>
+            <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
+            <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
+        </hz:properties>
+        <hz:network port="5701" port-auto-increment="false">
+            <hz:join>
+                <hz:multicast enabled="false"
+                              multicast-group="224.2.2.3"
+                              multicast-port="54327"/>
+                <hz:tcp-ip enabled="true">
+                    <hz:members>10.10.1.2, 10.10.1.3</hz:members>
+                </hz:tcp-ip>
+            </hz:join>
+        </hz:network>
+        <hz:map name="map"
+                backup-count="2"
+                max-size="0"
+                eviction-percentage="30"
+                read-backup-data="true"
+                cache-value="true"
+                eviction-policy="NONE"
+                merge-policy="hz.ADD_NEW_ENTRY"/>
+    </hz:config>
 </hz:hazelcast>
 ]]></programlisting>
     You can easily configure map-store and near-cache too. (For map-store you should set either
-    <emphasis>class-name</emphasis>
-    or
-    <emphasis>implementation</emphasis>
-    attribute.)
+    <emphasis>class-name</emphasis> or <emphasis>implementation</emphasis> attribute.)
     <programlisting language="xml"><![CDATA[<hz:config>
-           <hz:map name="map1">          
-                    <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
-                       eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/>
+    <hz:map name="map1">
+            <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
+               eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/>
 
-                    <hz:map-store enabled="true" class-name="com.foo.DummyStore" 
-                        write-delay-seconds="0"/>
-           </hz:map>
-           
-          <hz:map name="map2">          
-                    <hz:map-store enabled="true" implementation="dummyMapStore" 
-                        write-delay-seconds="0"/>
-           </hz:map>
-  
-          <bean id="dummyMapStore" class="com.foo.DummyStore" />
+            <hz:map-store enabled="true" class-name="com.foo.DummyStore"
+                write-delay-seconds="0"/>
+    </hz:map>
+
+    <hz:map name="map2">
+            <hz:map-store enabled="true" implementation="dummyMapStore"
+                write-delay-seconds="0"/>
+    </hz:map>
+
+    <bean id="dummyMapStore" class="com.foo.DummyStore" />
 </hz:config>
 ]]></programlisting>
     It's possible to use placeholders instead of concrete values. For instance, use
@@ -167,16 +159,16 @@
         </listitem>
     </itemizedlist>
     Example:
-    <programlisting language="xml"><![CDATA[   <hz:map id="map" instance-ref="instance" name="map"/>
-    <hz:multiMap id="multiMap" instance-ref="instance" name="multiMap"/>
-    <hz:queue id="queue" instance-ref="instance" name="queue"/>
-    <hz:topic id="topic" instance-ref="instance" name="topic"/>
-    <hz:set id="set" instance-ref="instance" name="set"/>
-    <hz:list id="list" instance-ref="instance" name="list"/>
-    <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
-    <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
-    <hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
-    ]]></programlisting>
+    <programlisting language="xml"><![CDATA[<hz:map id="map" instance-ref="instance" name="map"/>
+<hz:multiMap id="multiMap" instance-ref="instance" name="multiMap"/>
+<hz:queue id="queue" instance-ref="instance" name="queue"/>
+<hz:topic id="topic" instance-ref="instance" name="topic"/>
+<hz:set id="set" instance-ref="instance" name="set"/>
+<hz:list id="list" instance-ref="instance" name="list"/>
+<hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
+<hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
+<hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
+]]></programlisting>
     If you are using Hibernate with Hazelcast as 2nd level cache provider, you
     can easily create
     <code>CacheProvider</code>
@@ -188,26 +180,23 @@
     as Hibernate L2
     cache instance.
     <programlisting language="xml"><![CDATA[
-    <hz:hibernate-cache-provider id="cacheProvider" instance-ref="instance" />
-            
+<hz:hibernate-cache-provider id="cacheProvider" instance-ref="instance" />
+...
+
+<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" scope="singleton">
+    <property name="dataSource" ref="dataSource"/>
+    <property name="cacheProvider" ref="cacheProvider" />
     ...
-    
-    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" scope="singleton">
-        <property name="dataSource" ref="dataSource"/>
-        <property name="cacheProvider" ref="cacheProvider" />
-        ...
-    </bean>
-    ]]></programlisting>
+</bean>
+]]></programlisting>
     Or by Spring version 3.1
     <programlisting language="xml"><![CDATA[
-    <hz:hibernate-region-factory id="regionFactory" instance-ref="instance" />
-            
+<hz:hibernate-region-factory id="regionFactory" instance-ref="instance" />
+...
+<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" scope="singleton">
+    <property name="dataSource" ref="dataSource"/>
+    <property name="cacheRegionFactory" ref="regionFactory" />
     ...
-    
-    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" scope="singleton">
-        <property name="dataSource" ref="dataSource"/>
-        <property name="cacheRegionFactory" ref="regionFactory" />
-        ...
-    </bean>
-    ]]></programlisting>
+</bean>
+]]></programlisting>
 </para>

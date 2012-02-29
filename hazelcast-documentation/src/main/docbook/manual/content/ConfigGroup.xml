@@ -12,7 +12,6 @@
         <password>dev-pass</password>
     </group>
     ...
-    
 </hazelcast>
 ]]></programlisting>
 
@@ -36,17 +35,15 @@
         <literal>app2</literal>
         cluster.
         <programlisting language="java"><![CDATA[
-        Config configApp1 = new Config();
-        configApp1.getGroupConfig().setName("app1");
+Config configApp1 = new Config();
+configApp1.getGroupConfig().setName("app1");
 
-        Config configApp2 = new Config();
-        configApp2.getGroupConfig().setName("app2");
+Config configApp2 = new Config();
+configApp2.getGroupConfig().setName("app2");
 
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(configApp1);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(configApp2);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(configApp2);
+HazelcastInstance h1 = Hazelcast.newHazelcastInstance(configApp1);
+HazelcastInstance h2 = Hazelcast.newHazelcastInstance(configApp2);
+HazelcastInstance h3 = Hazelcast.newHazelcastInstance(configApp2);
 ]]></programlisting>
     </para>
-
-
 </sect1>

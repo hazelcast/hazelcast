@@ -37,30 +37,30 @@ import java.util.concurrent.Future;
 import java.util.Set;
 
 public void echoOnTheMember(String input, Member member) throws Exception {
-       FutureTask<String> task = new DistributedTask<String>(new Echo(input), member);
-       ExecutorService executorService = Hazelcast.getExecutorService();
-       executorService.execute(task);
-       String echoResult = task.get();
+   FutureTask<String> task = new DistributedTask<String>(new Echo(input), member);
+   ExecutorService executorService = Hazelcast.getExecutorService();
+   executorService.execute(task);
+   String echoResult = task.get();
 }
 
 public void echoOnTheMemberOwningTheKey(String input, Object key) throws Exception {
-       FutureTask<String> task = new DistributedTask<String>(new Echo(input), key);
-       ExecutorService executorService = Hazelcast.getExecutorService();
-       executorService.execute(task);
-       String echoResult = task.get();
+   FutureTask<String> task = new DistributedTask<String>(new Echo(input), key);
+   ExecutorService executorService = Hazelcast.getExecutorService();
+   executorService.execute(task);
+   String echoResult = task.get();
 }
 
 public void echoOnSomewhere(String input) throws Exception { 
-       ExecutorService executorService = Hazelcast.getExecutorService();
-       Future<String> task = executorService.submit(new Echo(input));
-       String echoResult = task.get();
+   ExecutorService executorService = Hazelcast.getExecutorService();
+   Future<String> task = executorService.submit(new Echo(input));
+   String echoResult = task.get();
 }
 
 public void echoOnMembers(String input, Set<Member> members) throws Exception {
-       MultiTask<String> task = new MultiTask<String>(new Echo(input), members);
-       ExecutorService executorService = Hazelcast.getExecutorService();
-       executorService.execute(task);
-       Collection<String> results = task.get(); 
+   MultiTask<String> task = new MultiTask<String>(new Echo(input), members);
+   ExecutorService executorService = Hazelcast.getExecutorService();
+   executorService.execute(task);
+   Collection<String> results = task.get();
 } 
 ]]></programlisting>
         Note that you can obtain the set of cluster members via

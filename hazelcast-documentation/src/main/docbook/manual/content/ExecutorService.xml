@@ -15,19 +15,18 @@
 import java.io.Serializable;
 
 public class Echo implements Callable<String>, Serializable {
-       String input = null;
-    
-       public Echo() { 
-       }
-    
-       public Echo(String input) { 
-               this.input = input;
-       }
-    
-       public String call() {
-               return Hazelcast.getCluster().getLocalMember().toString() + ":"
-                               + input;
-       }
+    String input = null;
+
+    public Echo() {
+    }
+
+    public Echo(String input) {
+        this.input = input;
+    }
+
+    public String call() {
+        return Hazelcast.getCluster().getLocalMember().toString() + ":" + input;
+    }
 }
 ]]></programlisting>
 

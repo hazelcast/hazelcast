@@ -83,20 +83,20 @@
         your own merge policy by implementing<literal>com.hazelcast.merge.MergePolicy</literal>. You
         should register your custom merge policy in the configuration so that Hazelcast can find it
         by name.
-        <programlisting language="java"><![CDATA[   public interface MergePolicy {
-       /**
-        * Returns the value of the entry after the merge
-        * of entries with the same key. Returning value can be
-        * You should consider the case where existingEntry is null.
-        *
-        * @param mapName       name of the map
-        * @param mergingEntry  entry merging into the destination cluster
-        * @param existingEntry existing entry in the destination cluster
-        * @return final value of the entry. If returns null then no change on the entry.
-        */
-       Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry);
-   }
-]]></programlisting>
+        <programlisting language="java"><![CDATA[
+public interface MergePolicy {
+    /**
+    * Returns the value of the entry after the merge
+    * of entries with the same key. Returning value can be
+    * You should consider the case where existingEntry is null.
+    *
+    * @param mapName       name of the map
+    * @param mergingEntry  entry merging into the destination cluster
+    * @param existingEntry existing entry in the destination cluster
+    * @return final value of the entry. If returns null then no change on the entry.
+    */
+    Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry);
+}]]></programlisting>
         <para>
             Here is how merge policies are registered and specified per map.
         </para>
