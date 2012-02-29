@@ -62,7 +62,7 @@ public class MapQueryCallable implements Callable<Pairs>, DataSerializable, Haze
 
     public void writeData(DataOutput out) throws IOException {
         out.writeUTF(mapName);
-        out.writeByte(operation.getValue());
+        out.writeShort(operation.getValue());
         out.writeInt(partitionVersion);
         boolean hasPredicate = predicateData != null;
         out.writeBoolean(hasPredicate);
@@ -73,7 +73,7 @@ public class MapQueryCallable implements Callable<Pairs>, DataSerializable, Haze
 
     public void readData(DataInput in) throws IOException {
         mapName = in.readUTF();
-        operation = ClusterOperation.create(in.readByte());
+        operation = ClusterOperation.create(in.readShort());
         partitionVersion = in.readInt();
         boolean hasPredicate = in.readBoolean();
         if (hasPredicate) {

@@ -134,7 +134,7 @@ public final class Packet implements SocketWritable, CallStateAware {
     public void onEnqueue() {
         bbSizes.clear();
         bbHeader.clear();
-        bbHeader.put(operation.getValue());
+        bbHeader.putShort(operation.getValue());
         bbHeader.putInt(blockId);
         bbHeader.putInt(threadId);
         byte booleans = 0;
@@ -209,7 +209,7 @@ public final class Packet implements SocketWritable, CallStateAware {
     }
 
     public void read() {
-        operation = ClusterOperation.create(bbHeader.get());
+        operation = ClusterOperation.create(bbHeader.getShort());
         blockId = bbHeader.getInt();
         threadId = bbHeader.getInt();
         byte booleans = bbHeader.get();

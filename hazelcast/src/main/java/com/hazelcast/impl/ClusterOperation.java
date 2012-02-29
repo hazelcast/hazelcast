@@ -16,9 +16,6 @@
 
 package com.hazelcast.impl;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 public enum ClusterOperation {
     //GENERAL
     NONE(0),
@@ -157,25 +154,26 @@ public enum ClusterOperation {
     LOCK_UNLOCK(171),
     LOCK_FORCE_UNLOCK(172);
 
-    private final static Map<Byte, ClusterOperation> clusterOperations = new ConcurrentHashMap<Byte, ClusterOperation>();
-    private byte value;
+    public static final int LENGTH = 500;
+
+    private static final ClusterOperation[] operations = new ClusterOperation[LENGTH];
+    private final short value;
 
     static {
         for (ClusterOperation cop : ClusterOperation.values()) {
-            clusterOperations.put(cop.getValue(), cop);
+            operations[cop.getValue()] = cop;
         }
     }
 
     ClusterOperation(int value) {
-        this.value = (byte)value;
+        this.value = (short) value;
     }
 
-    public byte getValue() {
+    public short getValue() {
         return value;
     }
 
-    public static ClusterOperation create(int operation) {
-        ClusterOperation cop= clusterOperations.get((byte)operation);
-        return cop==null?NONE:cop;
+    public static ClusterOperation create(short operation) {
+        return operations[operation];
     }
 }

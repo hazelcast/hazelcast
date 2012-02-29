@@ -104,7 +104,7 @@ public class Packet {
         readHeaderBuffer.clear();
         readHeaderBuffer.limit(headerSize);
         dis.readFully(readHeaderBuffer.array(), 0, headerSize);
-        this.operation = ClusterOperation.create(readHeaderBuffer.get());
+        this.operation = ClusterOperation.create(readHeaderBuffer.getShort());
         int blockId = readHeaderBuffer.getInt();
         this.threadId = readHeaderBuffer.getInt();
         byte booleans = readHeaderBuffer.get();
@@ -140,7 +140,7 @@ public class Packet {
     private void writeHeader(PacketWriter packetWriter) throws IOException {
         final ByteBuffer writeHeaderBuffer = packetWriter.writeHeaderBuffer;
         final Map<String, byte[]> nameCache = packetWriter.nameCache;
-        writeHeaderBuffer.put(operation.getValue());
+        writeHeaderBuffer.putShort(operation.getValue());
         writeHeaderBuffer.putInt(-1); //blockId
         writeHeaderBuffer.putInt(threadId);
         byte booleans = 0;
