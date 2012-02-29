@@ -23,8 +23,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -37,6 +36,7 @@ public class LifecycleServiceClientImpl implements LifecycleService {
     final CopyOnWriteArrayList<LifecycleListener> lsLifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
     final Object lifecycleLock = new Object();
     final HazelcastClient hazelcastClient;
+    final ExecutorService es = Executors.newSingleThreadExecutor();
 
     public LifecycleServiceClientImpl(HazelcastClient hazelcastClient) {
         this.hazelcastClient = hazelcastClient;
@@ -50,8 +50,17 @@ public class LifecycleServiceClientImpl implements LifecycleService {
         lsLifecycleListeners.remove(lifecycleListener);
     }
 
-    public void fireLifecycleEvent(LifecycleState lifecycleState) {
-        fireLifecycleEvent(new LifecycleEvent(lifecycleState));
+    public void fireLifecycleEvent(final LifecycleState lifecycleState) {
+        callAsync(new Callable<Object>() {
+            public Object call() throws Exception {
+                fireLifecycleEvent(new LifecycleEvent(lifecycleState));
+                return null;
+            }
+        });
+    }
+
+    private void callAsync(final Callable callable) {
+            es.submit(callable);
     }
 
     public void fireLifecycleEvent(final LifecycleEvent event) {
@@ -113,6 +122,11 @@ public class LifecycleServiceClientImpl implements LifecycleService {
             }
         };
         hazelcastClient.callAsyncAndWait(callable);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ignore) {
+        }
+        es.shutdown();
     }
 
     public void kill() {

@@ -209,15 +209,7 @@ public class ConnectionManager implements MembershipListener {
     }
 
     void notifyConnectionIsOpened() {
-        notify(new Runnable() {
-            public void run() {
-                lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_OPENED);
-            }
-        });
-    }
-
-    private void notify(final Runnable target) {
-        client.runAsyncAndWait(target);
+        lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_OPENED);
     }
 
     void bindConnection(Connection connection) throws IOException {
@@ -241,11 +233,7 @@ public class ConnectionManager implements MembershipListener {
             }
         }
         if (lost) {
-            notify(new Runnable() {
-                public void run() {
-                    lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_LOST);
-                }
-            });
+            lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_LOST);
         }
     }
 
