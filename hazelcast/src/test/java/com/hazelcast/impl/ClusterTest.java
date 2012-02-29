@@ -39,8 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.impl.TestUtil.OrderKey;
-import static com.hazelcast.impl.TestUtil.getCMap;
+import static com.hazelcast.impl.TestUtil.*;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
 
@@ -955,20 +954,30 @@ public class ClusterTest {
 
     @Test(timeout = 60000)
     public void testMapRecovery() throws Exception {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
-        IMap mm = h.getMap("default");
-        mm.put("1", "value");
-        assertEquals(1, mm.size());
-        assertEquals(1, mm.keySet().size());
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        IMap map1 = h1.getMap("default");
+        map1.put("1", "value");
+        assertEquals(1, map1.size());
+        assertEquals(1, map1.keySet().size());
+        CMap cmap1 = getCMap(h1, "default");
+        assertEquals(1, cmap1.mapRecords.size());
+        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size());
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
-        assertEquals(1, mm.size());
-        assertEquals(1, mm.keySet().size());
-        IMap mm2 = h2.getMap("default");
-        assertEquals(1, mm2.size());
-        assertEquals(1, mm2.keySet().size());
-        h.getLifecycleService().shutdown();
-        assertEquals(1, mm2.size());
-        assertEquals(1, mm2.keySet().size());
+        IMap map2 = h2.getMap("default");
+        CMap cmap2 = getCMap(h2, "default");
+        assertEquals(1, cmap1.mapRecords.size());
+        assertEquals(1, cmap2.mapRecords.size());
+        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size()
+                + cmap2.getMapIndexService().getOwnedRecords().size());
+        assertEquals(1, map1.size());
+        assertEquals(1, map1.keySet().size());
+        assertEquals(1, map2.size());
+        assertEquals(1, map2.keySet().size());
+        h1.getLifecycleService().shutdown();
+        assertEquals(1, map2.size());
+        assertEquals(1, map2.keySet().size());
+        assertEquals(1, cmap2.mapRecords.size());
+        assertEquals(1, cmap2.getMapIndexService().getOwnedRecords().size());
     }
 
     @Test(timeout = 60000)
@@ -987,13 +996,16 @@ public class ClusterTest {
             assertTrue(expectedValues.contains(value));
         }
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        MultiMap mm2 = h2.getMultiMap("default");
+        Thread.sleep(1000);
+        getCMapForMultiMap(h, "default").startCleanup(true);
+        getCMapForMultiMap(h2, "default").startCleanup(true);
         assertEquals(2, mm.size());
         assertEquals(1, mm.keySet().size());
         values = mm.get("1");
         for (Object value : values) {
             assertTrue(expectedValues.contains(value));
         }
-        MultiMap mm2 = h2.getMultiMap("default");
         assertEquals(2, mm2.size());
         assertEquals(1, mm2.keySet().size());
         values = mm2.get("1");
@@ -1001,12 +1013,12 @@ public class ClusterTest {
             assertTrue(expectedValues.contains(value));
         }
         h.getLifecycleService().shutdown();
-        assertEquals(2, mm2.size());
-        assertEquals(1, mm2.keySet().size());
         values = mm2.get("1");
         for (Object value : values) {
             assertTrue(expectedValues.contains(value));
         }
+        assertEquals(2, mm2.size());
+        assertEquals(1, mm2.keySet().size());
     }
 
     /**

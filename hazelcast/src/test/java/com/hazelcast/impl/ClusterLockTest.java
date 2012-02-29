@@ -162,8 +162,6 @@ public class ClusterLockTest {
         assertTrue(rec2.getScheduledActions().iterator().next().isValid());
         Assert.assertNotNull(lock2);
         Assert.assertNotNull(lock3);
-        System.out.println(lock2);
-        System.out.println(lock3);
         h2.getLifecycleService().shutdown();
         Thread.sleep(3000);
         assertEquals(h3.getCluster().getLocalMember(), h1.getPartitionService().getPartition(1).getOwner());

@@ -17,9 +17,7 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.core.*;
-import com.hazelcast.impl.FactoryImpl;
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.PartitionManager;
+import com.hazelcast.impl.*;
 import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -78,7 +76,7 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
         if (from == null) {
             getLogger().log(Level.FINEST, "From address is null => " + toString());
         }
-        Node node = ((FactoryImpl) hazelcast).node;
+        final Node node = ((FactoryImpl) hazelcast).node;
         PartitionManager pm = node.concurrentMapManager.getPartitionManager();
         try {
             Member target = pm.getMember(to);
@@ -86,11 +84,26 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
                 getLogger().log(Level.WARNING, "Target member of task could not be found! => " + toString());
                 return Boolean.FALSE;
             }
-            CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to, diffOnly);
+            final CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to, diffOnly);
             DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList,
                     replicaIndex, from), target);
             Future future = node.factory.getExecutorService().submit(task);
-            return (Boolean) future.get(400, TimeUnit.SECONDS);
+            Boolean result = (Boolean) future.get(400, TimeUnit.SECONDS);
+            if (result) {
+                if (replicaIndex == 0) {
+                    node.concurrentMapManager.enqueueAndWait(new Processable() {
+                        public void process() {
+                            for (Record record : costAwareRecordList.getRecords()) {
+                                CMap cmap = node.concurrentMapManager.getMap(record.getName());
+                                if (cmap != null) {
+                                    cmap.getMapIndexService().remove(record);
+                                }
+                            }
+                        }
+                    }, 100);
+                }
+            }
+            return result;
         } catch (Throwable e) {
             Level level = Level.WARNING;
             if (e instanceof ExecutionException) {

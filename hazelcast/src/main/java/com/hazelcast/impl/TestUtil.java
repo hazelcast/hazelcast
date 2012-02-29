@@ -118,6 +118,12 @@ public class TestUtil {
         return concurrentMapManager.getMap(fullName);
     }
 
+    public static CMap getCMapForMultiMap(HazelcastInstance h, String name) {
+        ConcurrentMapManager concurrentMapManager = getConcurrentMapManager(h);
+        String fullName = Prefix.MULTIMAP + name;
+        return concurrentMapManager.getMap(fullName);
+    }
+
     public static Partition getPartitionById(PartitionService partitionService, int partitionId) {
         for (Partition partition : partitionService.getPartitions()) {
             if (partition.getPartitionId() == partitionId) {

@@ -3347,7 +3347,6 @@ public class ConcurrentMapManager extends BaseManager {
                     || !record.isActive()
                     || !record.isValid()
                     || !record.hasValueData())) {
-//                System.out.println(thisAddress  + " Loading record " + record + "  key " + toObject(request.key));
                 storeExecutor.execute(new GetLoader(cmap, request), request.key.hashCode());
             } else {
                 doOperation(request);

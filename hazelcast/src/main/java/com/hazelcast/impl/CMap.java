@@ -443,7 +443,7 @@ public class CMap {
     public void own(DataRecordEntry dataRecordEntry) {
         Record record = storeDataRecordEntry(dataRecordEntry);
         if (record != null) {
-            if (record.getValueData() != null) {
+            if (record.valueCount() > 0) {
                 updateIndexes(record);
             }
             Map<Address, Boolean> keyListeners = dataRecordEntry.getListeners();
@@ -1041,7 +1041,6 @@ public class CMap {
             }
             return size;
         } else {
-//            System.out.println("size " + mapIndexService.size());
             return mapIndexService.size();
         }
     }
@@ -1314,7 +1313,8 @@ public class CMap {
     boolean startCleanup(boolean forced) {
         final long now = System.currentTimeMillis();
         long dirtyAge = (now - lastCleanup);
-        boolean shouldRun = (store != null && dirty && dirtyAge >= writeDelayMillis)
+        boolean shouldRun = forced
+                || (store != null && dirty && dirtyAge >= writeDelayMillis)
                 || (dirtyAge > cleanupDelayMillis);
         if (shouldRun && cleanupActive.compareAndSet(false, true)) {
             lastCleanup = now;
@@ -1391,10 +1391,10 @@ public class CMap {
                 executeEviction(recordsToEvict);
                 executePurge(recordsToPurge);
                 executePurgeUnknowns(recordsUnknown);
-                return true;
             } finally {
                 cleanupActive.set(false);
             }
+            return true;
         } else {
             return false;
         }
