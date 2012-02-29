@@ -487,32 +487,6 @@ public class CMap {
         return record;
     }
 
-    public void own(Request req) {
-        if (req.key == null || req.key.size() == 0) {
-            throw new RuntimeException("Key cannot be null " + req.key);
-        }
-        if (req.value == null) {
-            if (isSet() || isList()) {
-                req.value = new Data();
-            }
-        }
-        Record record = toRecord(req);
-        if (req.ttl <= 0 || req.timeout <= 0) {
-            record.setInvalid();
-        } else {
-            record.setExpirationTime(req.ttl);
-            record.setMaxIdle(req.timeout);
-        }
-        markAsActive(record);
-        if (store != null && writeDelayMillis > 0) {
-            markAsDirty(record);
-        }
-        if (req.value != null) {
-            updateIndexes(record);
-        }
-        record.setVersion(req.version);
-    }
-
     public boolean isMultiMap() {
         return (instanceType == Instance.InstanceType.MULTIMAP);
     }

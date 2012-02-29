@@ -224,11 +224,11 @@ public class PartitionStateGeneratorTest {
         final byte[] ip = new byte[]{10, 10, 0, 0};
         if (startAfter != null) {
             Address address = startAfter.getAddress();
-            if (address.getIP()[3] < 255) {
-                ip[2] = address.getIP()[2];
-                ip[3] = (byte) (address.getIP()[3] + 1);
+            if (address.copyIP()[3] < 255) {
+                ip[2] = address.copyIP()[2];
+                ip[3] = (byte) (address.copyIP()[3] + 1);
             } else {
-                ip[2] = (byte) (address.getIP()[2] + 1);
+                ip[2] = (byte) (address.copyIP()[2] + 1);
                 ip[3] = 0;
             }
         }

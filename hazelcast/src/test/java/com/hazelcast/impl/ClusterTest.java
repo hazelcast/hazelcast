@@ -830,8 +830,8 @@ public class ClusterTest {
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         System.setProperty("hazelcast.build", "2");
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
         System.setProperty("hazelcast.build", "t");
     }
 
@@ -844,8 +844,8 @@ public class ClusterTest {
         assertEquals("value1", h1.getMap("default").put("1", "value2"));
         System.setProperty("hazelcast.build", "2");
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
         System.setProperty("hazelcast.build", "t");
     }
 
@@ -2271,7 +2271,6 @@ public class ClusterTest {
         assertEquals(3, h1.getCluster().getMembers().size());
         assertEquals(3, h2.getCluster().getMembers().size());
         assertEquals(3, h3.getCluster().getMembers().size());
-        Hazelcast.shutdownAll();
     }
 
     private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {

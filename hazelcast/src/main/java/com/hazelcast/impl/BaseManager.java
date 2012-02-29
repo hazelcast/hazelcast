@@ -1259,11 +1259,6 @@ public abstract class BaseManager {
         return sent;
     }
 
-    protected boolean sendResponseFailure(final Packet packet, final Address address) {
-        packet.conn = node.connectionManager.getOrConnect(address);
-        return sendResponseFailure(packet);
-    }
-
     protected void throwCME(final Object key) {
         throw new ConcurrentModificationException("Another thread holds a lock for the key : "
                 + key);

@@ -29,17 +29,9 @@ public final class Address implements DataSerializable {
 
     private static final long serialVersionUID = -7626390274220424603L;
 
-    private String host = null;
-
     private byte[] ip;
 
     private int port = -1;
-
-    private transient InetSocketAddress inetSocketAddress;
-
-    private int hash = -1;
-
-    private boolean thisAddress = false;
 
     public Address() {
         this.ip = new byte[4];
@@ -48,7 +40,6 @@ public final class Address implements DataSerializable {
     public Address(InetSocketAddress inetSocketAddress) {
         this.ip = inetSocketAddress.getAddress().getAddress();
         this.port = inetSocketAddress.getPort();
-        this.inetSocketAddress = inetSocketAddress;
     }
 
     public Address(InetAddress inetAddress, int port) {
@@ -56,26 +47,13 @@ public final class Address implements DataSerializable {
     }
 
     public Address(Address address) {
-        ip = new byte[4];
-        System.arraycopy(address.getIP(), 0, ip, 0, 4);
-        port = address.getPort();
-    }
-
-    public Address hardCopy() {
-        return new Address(this);
+        this.ip = address.copyIP();
+        this.port = address.getPort();
     }
 
     public Address(String address, int port) throws UnknownHostException {
         this.port = port;
         this.ip = InetAddress.getByName(address).getAddress();
-    }
-
-    public boolean isThisAddress() {
-        return thisAddress;
-    }
-
-    public void setThisAddress(boolean thisAddress) {
-        this.thisAddress = thisAddress;
     }
 
     public Address(byte[] ip, int port) {
@@ -87,10 +65,6 @@ public final class Address implements DataSerializable {
         return (ip[0] & 0xff) + "." + (ip[1] & 0xff) + "." + (ip[2] & 0xff) + "." + (ip[3] & 0xff);
     }
 
-    private void setHost() {
-        this.host = toString(ip);
-    }
-
     public void writeData(DataOutput out) throws IOException {
         out.write(ip);
         out.writeInt(port);
@@ -99,7 +73,6 @@ public final class Address implements DataSerializable {
     public void readData(DataInput in) throws IOException {
         in.readFully(ip);
         port = in.readInt();
-        // setHost();
     }
 
     public void readObject(ByteBuffer buffer) {
@@ -113,26 +86,16 @@ public final class Address implements DataSerializable {
     }
 
     public String getHost() {
-        if (host == null)
-            setHost();
-        return host;
+        return toString(ip);
     }
 
     @Override
     public String toString() {
-        if (host == null)
-            setHost();
-        return "Address[" + host + ":" + port + "]";
+        return "Address[" + getHost() + ":" + port + "]";
     }
 
     public int getPort() {
         return port;
-    }
-
-    public String addressToString() {
-        if (host == null)
-            setHost();
-        return host;
     }
 
     public InetAddress getInetAddress() throws UnknownHostException {
@@ -140,12 +103,7 @@ public final class Address implements DataSerializable {
     }
 
     public InetSocketAddress getInetSocketAddress() throws UnknownHostException {
-        if (host == null)
-            setHost();
-        if (inetSocketAddress == null) {
-            inetSocketAddress = new InetSocketAddress(InetAddress.getByName(host), port);
-        }
-        return inetSocketAddress;
+        return new InetSocketAddress(InetAddress.getByName(getHost()), port);
     }
 
     @Override
@@ -153,18 +111,12 @@ public final class Address implements DataSerializable {
         if (this == o) return true;
         if (!(o instanceof Address)) return false;
         final Address address = (Address) o;
-        return hashCode() == address.hashCode() && port == address.port && Arrays.equals(ip, address.ip);
+        return port == address.port && Arrays.equals(ip, address.ip);
     }
 
     @Override
     public int hashCode() {
-        if (hash == -1)
-            setHashCode();
-        return hash;
-    }
-
-    private void setHashCode() {
-        this.hash = hash(ip) * 29 + port;
+        return hash(ip) * 29 + port;
     }
 
     private int hash(byte[] bytes) {
@@ -175,11 +127,9 @@ public final class Address implements DataSerializable {
         return hash;
     }
 
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-    public byte[] getIP() {
-        return ip;
+    public byte[] copyIP() {
+        byte[] newOne = new byte[ip.length];
+        System.arraycopy(ip, 0, newOne, 0, ip.length);
+        return newOne;
     }
 }

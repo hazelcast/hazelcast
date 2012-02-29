@@ -155,7 +155,6 @@ public class Node {
             serverSocketChannel = ServerSocketChannel.open();
             AddressPicker addressPicker = new AddressPicker(this, serverSocketChannel);
             localAddress = addressPicker.pickAddress();
-            localAddress.setThisAddress(true);
         } catch (Throwable e) {
             Util.throwUncheckedException(e);
         }
