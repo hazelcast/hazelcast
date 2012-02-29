@@ -130,6 +130,8 @@ public interface HazelcastInstance {
      * service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
      *
+     * Note that it don't support invokeAll/Any and don't have standard shutdown behavior
+     *
      * @return distributed executor service of this Hazelcast instance
      */
     ExecutorService getExecutorService();
