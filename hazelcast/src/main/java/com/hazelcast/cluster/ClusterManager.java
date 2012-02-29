@@ -496,8 +496,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             LoginContext lc = node.securityContext.createMemberLoginContext(cr);
                             lc.login();
                         } catch (LoginException e) {
-                            securityLogger.log(Level.SEVERE, "Authentication has failed for " + cr.getPrincipal() + '@' + cr.getEndpoint()
-                                    + " => (" + e.getMessage() + ")");
+                            securityLogger.log(Level.SEVERE, "Authentication has failed for " + cr.getPrincipal()
+                                    + '@' + cr.getEndpoint() + " => (" + e.getMessage() + ")");
                             securityLogger.log(Level.FINEST, e.getMessage(), e);
                             sendAuthFail(conn);
                             return;

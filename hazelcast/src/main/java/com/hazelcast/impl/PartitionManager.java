@@ -85,9 +85,11 @@ public class PartitionManager {
                         partitionListener.replicaChanged(event);
                     }
                     if (node.isActive() && event.getReplicaIndex() == 0 && event.getNewAddress() == null) {
-                        logger.log(Level.WARNING, "Owner of partition is being removed! " +
+                        final String warning = "Owner of partition is being removed! " +
                                 "Possible data loss for partition[" + event.getPartitionId() + "]. "
-                                + event);
+                                + event;
+                        logger.log(Level.WARNING, warning);
+                        systemLogService.logPartition(warning);
                     }
                     if (concurrentMapManager.isMaster()) {
                         version.incrementAndGet();
@@ -971,28 +973,28 @@ public class PartitionManager {
             try {
                 while (running) {
                     Runnable r = null;
-                    while (migrationActive.get() && (r = immediateTasksQueue.poll()) != null) {
+                    while (isActive() && (r = immediateTasksQueue.poll()) != null) {
                         safeRunImmediate(r);
                     }
                     if (!running) {
                         break;
                     }
-                    if (!migrationActive.get() || scheduledTasksQueue.isEmpty()) {
-                        Thread.sleep(250);
-                        continue;
-                    }
                     // wait for partitionMigrationInterval before executing scheduled tasks
                     // and poll immediate tasks occasionally during wait time.
                     long totalWait = 0L;
-                    while (migrationActive.get() && running && r == null && totalWait < partitionMigrationInterval) {
+                    while (isActive() && (r != null || totalWait < partitionMigrationInterval)) {
                         long start = System.currentTimeMillis();
                         r = immediateTasksQueue.poll(1, TimeUnit.SECONDS);
                         safeRunImmediate(r);
                         totalWait += (System.currentTimeMillis() - start);
                     }
-                    if (migrationActive.get() && running) {
+                    if (isActive()) {
                         r = scheduledTasksQueue.poll();
                         safeRun(r);
+                    }
+                    if (!migrationActive.get() || hasNoTasks()) {
+                        Thread.sleep(250);
+                        continue;
                     }
                 }
             } catch (InterruptedException e) {
@@ -1001,6 +1003,14 @@ public class PartitionManager {
             } finally {
                 clearTaskQueues();
             }
+        }
+
+        private boolean hasNoTasks() {
+            return (immediateTasksQueue.isEmpty() && scheduledTasksQueue.isEmpty());
+        }
+
+        private boolean isActive() {
+            return migrationActive.get() && running;
         }
 
         boolean safeRun(final Runnable r) {
