@@ -1825,7 +1825,6 @@ public class ConcurrentMapManager extends BaseManager {
 
         @Override
         public void doOp() {
-//            CounterService.userCounter.add(System.nanoTime() - request.lastTime);
             target = null;
             super.doOp();
         }

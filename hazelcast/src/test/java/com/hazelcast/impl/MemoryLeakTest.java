@@ -35,7 +35,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.impl.TestUtil.getCMap;
 import static java.lang.Thread.sleep;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MemoryLeakTest {
@@ -131,20 +132,30 @@ public class MemoryLeakTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
+        assertTrue(waitForCleanup(200, instances));
         waitForGC(25 + usedMemoryInit, 200);
-        CMap cmap1 = getCMap(h1, "default");
-        CMap cmap2 = getCMap(h2, "default");
-        CMap cmap3 = getCMap(h3, "default");
-        CMap cmap4 = getCMap(h4, "default");
-        assertEquals(0, cmap1.mapRecords.size());
-        assertEquals(0, cmap2.mapRecords.size());
-        assertEquals(0, cmap3.mapRecords.size());
-        assertEquals(0, cmap4.mapRecords.size());
-        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap3.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap4.getMapIndexService().getOwnedRecords().size());
         System.setProperty(GroupProperties.PROP_LOG_STATE, "false");
+    }
+
+    @Ignore
+    private boolean waitForCleanup(int seconds, HazelcastInstance... instances) throws InterruptedException {
+        CMap[] cmaps = new CMap[instances.length];
+        for (int i = 0; i < instances.length; i++) {
+            cmaps[i] = getCMap(instances[i], "default");
+        }
+        boolean clean = false;
+        int sec = 0;
+        while (!clean) {
+            Thread.sleep(1000);
+            if (sec++ > seconds) return false;
+            for (CMap cmap : cmaps) {
+                if (cmap.mapRecords.size() > 0 || cmap.getMapIndexService().getOwnedRecords().size() > 0) {
+                    break;
+                }
+            }
+            clean = true;
+        }
+        return true;
     }
 
     @Ignore
@@ -199,19 +210,8 @@ public class MemoryLeakTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
+        assertTrue(waitForCleanup(200, instances));
         waitForGC(25 + usedMemoryInit, 200);
-        CMap cmap1 = getCMap(h1, "default");
-        CMap cmap2 = getCMap(h2, "default");
-        CMap cmap3 = getCMap(h3, "default");
-        CMap cmap4 = getCMap(h4, "default");
-        assertEquals(0, cmap1.mapRecords.size());
-        assertEquals(0, cmap2.mapRecords.size());
-        assertEquals(0, cmap3.mapRecords.size());
-        assertEquals(0, cmap4.mapRecords.size());
-        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap3.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap4.getMapIndexService().getOwnedRecords().size());
     }
 
     @Test
@@ -253,19 +253,8 @@ public class MemoryLeakTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
+        assertTrue(waitForCleanup(200, instances));
         waitForGC(25 + usedMemoryInit, 200);
-        CMap cmap1 = getCMap(h1, "default");
-        CMap cmap2 = getCMap(h2, "default");
-        CMap cmap3 = getCMap(h3, "default");
-        CMap cmap4 = getCMap(h4, "default");
-        assertEquals(0, cmap1.mapRecords.size());
-        assertEquals(0, cmap2.mapRecords.size());
-        assertEquals(0, cmap3.mapRecords.size());
-        assertEquals(0, cmap4.mapRecords.size());
-        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap3.getMapIndexService().getOwnedRecords().size());
-        assertEquals(0, cmap4.getMapIndexService().getOwnedRecords().size());
     }
 
     long getUsedMemoryAsMB() {
