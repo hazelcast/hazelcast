@@ -963,6 +963,8 @@ public class ClusterTest {
         assertEquals(1, cmap1.mapRecords.size());
         assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size());
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        MigrationCompletionLatch l = new MigrationCompletionLatch("1", h1, h2);
+        l.await(3, TimeUnit.SECONDS);
         IMap map2 = h2.getMap("default");
         CMap cmap2 = getCMap(h2, "default");
         assertEquals(1, cmap1.mapRecords.size());
@@ -982,8 +984,9 @@ public class ClusterTest {
 
     @Test(timeout = 60000)
     public void testMultiMapRecovery() throws Exception {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
-        MultiMap mm = h.getMultiMap("default");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        MultiMap mm = h1.getMultiMap("default");
+        CMap cmap1 = getCMapForMultiMap(h1, "default");
         Collection<String> expectedValues = new HashSet<String>();
         expectedValues.add("value1");
         expectedValues.add("value2");
@@ -995,11 +998,16 @@ public class ClusterTest {
         for (Object value : values) {
             assertTrue(expectedValues.contains(value));
         }
+        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size());
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         MultiMap mm2 = h2.getMultiMap("default");
-        Thread.sleep(1000);
-        getCMapForMultiMap(h, "default").startCleanup(true);
-        getCMapForMultiMap(h2, "default").startCleanup(true);
+        CMap cmap2 = getCMapForMultiMap(h2, "default");
+        MigrationCompletionLatch l = new MigrationCompletionLatch("1", h1, h2);
+        l.await(3, TimeUnit.SECONDS);
+        assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size()
+                + cmap2.getMapIndexService().getOwnedRecords().size());
+        cmap1.startCleanup(true);
+        cmap2.startCleanup(true);
         assertEquals(2, mm.size());
         assertEquals(1, mm.keySet().size());
         values = mm.get("1");
@@ -1012,7 +1020,7 @@ public class ClusterTest {
         for (Object value : values) {
             assertTrue(expectedValues.contains(value));
         }
-        h.getLifecycleService().shutdown();
+        h1.getLifecycleService().shutdown();
         values = mm2.get("1");
         for (Object value : values) {
             assertTrue(expectedValues.contains(value));

@@ -385,6 +385,7 @@ public abstract class BaseManager {
         }
 
         public void reset() {
+            request.reset();
             super.reset();
             request.callState = callState;
         }

@@ -1927,7 +1927,7 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         public void process() {
             prepareForBackup();
-            request.blockId = getPartitionId(request.key);
+            request.blockId = getPartitionId(request);
             super.process();
         }
 
@@ -2091,8 +2091,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public Address getKeyOwner(Request req) {
-        int partitionId = getPartitionId(req.key);
-        req.blockId = partitionId;
+        int partitionId = getPartitionId(req);
         return getPartitionOwner(partitionId);
     }
 
@@ -2109,13 +2108,11 @@ public class ConcurrentMapManager extends BaseManager {
     public boolean isMigrating(Request req) {
         final Data key = req.key;
         if (key == null) return false;
-        return partitionManager.isOwnedPartitionMigrating(getPartitionId(key));
+        return partitionManager.isOwnedPartitionMigrating(getPartitionId(req));
     }
 
     public int getPartitionId(Request req) {
-        if (req.blockId == -1) {
-            req.blockId = getPartitionId(req.key);
-        }
+        req.blockId = getPartitionId(req.key);
         return req.blockId;
     }
 
@@ -2125,6 +2122,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public long newRecordId() {
+        checkServiceThread();
         return newRecordId++;
     }
 

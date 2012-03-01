@@ -1379,14 +1379,18 @@ public class CMap {
                     }
                 }
                 Level levelLog = (concurrentMapManager.LOG_STATE) ? Level.INFO : Level.FINEST;
-                logger.log(levelLog, name + " Cleanup "
-                        + ", dirty:" + recordsDirty.size()
-                        + ", purge:" + recordsToPurge.size()
-                        + ", evict:" + recordsToEvict.size()
-                        + ", unknown:" + recordsUnknown.size()
-                        + ", stillOwned:" + recordsStillOwned
-                        + ", backupPurge:" + backupPurgeCount
-                );
+                if (logger.isLoggable(levelLog)) {
+                    logger.log(levelLog, name + " Cleanup "
+                            + ", dirty:" + recordsDirty.size()
+                            + ", purge:" + recordsToPurge.size()
+                            + ", evict:" + recordsToEvict.size()
+                            + ", unknown:" + recordsUnknown.size()
+                            + ", stillOwned:" + recordsStillOwned
+                            + ", backupPurge:" + backupPurgeCount
+                    );
+                    logger.log(levelLog, thisAddress + " mapRecords: " + mapRecords.size()
+                            + "  indexes: " + mapIndexService.getOwnedRecords().size());
+                }
                 executeStoreUpdate(recordsDirty);
                 executeEviction(recordsToEvict);
                 executePurge(recordsToPurge);
@@ -1519,6 +1523,8 @@ public class CMap {
         markAsRemoved(record);
         return true;
     }
+
+    int count = 0;
 
     boolean evict(Request req) {
         Record record = getRecord(req.key);

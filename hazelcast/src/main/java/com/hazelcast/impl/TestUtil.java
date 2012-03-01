@@ -23,6 +23,8 @@ import com.hazelcast.impl.partition.PartitionListener;
 import com.hazelcast.impl.partition.PartitionReplicaChangeEvent;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import org.junit.Ignore;
@@ -68,6 +70,32 @@ public class TestUtil {
         assertEquals(toMember.getAddress(), partitionInfoOldest.getReplicaAddress(replicaIndex));
         assertEquals(toMember.getAddress(), partitionInfoTo.getReplicaAddress(replicaIndex));
         return true;
+    }
+
+    public static class MigrationCompletionLatch implements MigrationListener {
+        final int partitionId;
+        final CountDownLatch latch;
+
+        public MigrationCompletionLatch(Object key, HazelcastInstance... h) {
+            this.partitionId = h[0].getPartitionService().getPartition(key).getPartitionId();
+            this.latch = new CountDownLatch(h.length);
+            for (HazelcastInstance hazelcastInstance : h) {
+                hazelcastInstance.getPartitionService().addMigrationListener(this);
+            }
+        }
+
+        public void migrationStarted(MigrationEvent migrationEvent) {
+        }
+
+        public void migrationCompleted(MigrationEvent migrationEvent) {
+            if (migrationEvent.getPartitionId() == partitionId) {
+                latch.countDown();
+            }
+        }
+
+        public boolean await(int time, TimeUnit timeUnit) throws InterruptedException {
+            return latch.await(time, timeUnit);
+        }
     }
 
     static class PartitionListenerLatch implements PartitionListener {

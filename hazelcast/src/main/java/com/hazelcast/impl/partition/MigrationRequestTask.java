@@ -17,7 +17,9 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.core.*;
-import com.hazelcast.impl.*;
+import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.impl.Node;
+import com.hazelcast.impl.PartitionManager;
 import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -88,20 +90,7 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
             DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList,
                     replicaIndex, from), target);
             Future future = node.factory.getExecutorService().submit(task);
-            final Boolean result = (Boolean) future.get(400, TimeUnit.SECONDS);
-            if (result && replicaIndex == 0) {
-                node.concurrentMapManager.enqueueAndWait(new Processable() {
-                    public void process() {
-                        for (Record record : costAwareRecordList.getRecords()) {
-                            CMap cmap = node.concurrentMapManager.getMap(record.getName());
-                            if (cmap != null) {
-                                cmap.getMapIndexService().remove(record);
-                            }
-                        }
-                    }
-                }, 100);
-            }
-            return result;
+            return (Boolean) future.get(400, TimeUnit.SECONDS);
         } catch (Throwable e) {
             Level level = Level.WARNING;
             if (e instanceof ExecutionException) {

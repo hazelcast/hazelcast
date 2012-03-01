@@ -33,9 +33,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.impl.TestUtil.getCMap;
 import static java.lang.Thread.sleep;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MemoryLeakTest {
@@ -88,11 +88,12 @@ public class MemoryLeakTest {
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
         Hazelcast.shutdownAll();
-        waitForGC(10 + usedMemoryInit, 100);
+        waitForGC(10 + usedMemoryInit, 200);
     }
 
     @Test
     public void testTTLAndMemoryLeak() throws Exception {
+        System.setProperty(GroupProperties.PROP_LOG_STATE, "true");
         Runtime.getRuntime().gc();
         long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new Config();
@@ -130,7 +131,20 @@ public class MemoryLeakTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
-        waitForGC(25 + usedMemoryInit, 100);
+        waitForGC(25 + usedMemoryInit, 200);
+        CMap cmap1 = getCMap(h1, "default");
+        CMap cmap2 = getCMap(h2, "default");
+        CMap cmap3 = getCMap(h3, "default");
+        CMap cmap4 = getCMap(h4, "default");
+        assertEquals(0, cmap1.mapRecords.size());
+        assertEquals(0, cmap2.mapRecords.size());
+        assertEquals(0, cmap3.mapRecords.size());
+        assertEquals(0, cmap4.mapRecords.size());
+        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap3.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap4.getMapIndexService().getOwnedRecords().size());
+        System.setProperty(GroupProperties.PROP_LOG_STATE, "false");
     }
 
     @Ignore
@@ -185,7 +199,19 @@ public class MemoryLeakTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
-        waitForGC(25 + usedMemoryInit, 100);
+        waitForGC(25 + usedMemoryInit, 200);
+        CMap cmap1 = getCMap(h1, "default");
+        CMap cmap2 = getCMap(h2, "default");
+        CMap cmap3 = getCMap(h3, "default");
+        CMap cmap4 = getCMap(h4, "default");
+        assertEquals(0, cmap1.mapRecords.size());
+        assertEquals(0, cmap2.mapRecords.size());
+        assertEquals(0, cmap3.mapRecords.size());
+        assertEquals(0, cmap4.mapRecords.size());
+        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap3.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap4.getMapIndexService().getOwnedRecords().size());
     }
 
     @Test
@@ -227,7 +253,19 @@ public class MemoryLeakTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
-        waitForGC(25 + usedMemoryInit, 100);
+        waitForGC(25 + usedMemoryInit, 200);
+        CMap cmap1 = getCMap(h1, "default");
+        CMap cmap2 = getCMap(h2, "default");
+        CMap cmap3 = getCMap(h3, "default");
+        CMap cmap4 = getCMap(h4, "default");
+        assertEquals(0, cmap1.mapRecords.size());
+        assertEquals(0, cmap2.mapRecords.size());
+        assertEquals(0, cmap3.mapRecords.size());
+        assertEquals(0, cmap4.mapRecords.size());
+        assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap2.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap3.getMapIndexService().getOwnedRecords().size());
+        assertEquals(0, cmap4.getMapIndexService().getOwnedRecords().size());
     }
 
     long getUsedMemoryAsMB() {

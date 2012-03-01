@@ -77,10 +77,24 @@ public class PartitionServiceImpl implements PartitionService {
     }
 
     void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
-//        System.out.println(concurrentMapManager.getThisAddress() + "  has listeners " + lsMigrationListeners.size());
         if (migrationEvent == null) throw new IllegalArgumentException("MigrationEvent is null.");
+        if (!started) {
+            concurrentMapManager.node.executorManager.executeNow(new Runnable() {
+                public void run() {
+                    if (migrationEvent.getOldOwner() != null && migrationEvent.getOldOwner().localMember()) {
+                        for (CMap cMap : concurrentMapManager.maps.values()) {
+                            for (Record record : cMap.getMapIndexService().getOwnedRecords()) {
+                                if (record.getBlockId() == migrationEvent.getPartitionId()) {
+                                    cMap.getMapIndexService().remove(record);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
         for (final MigrationListener migrationListener : lsMigrationListeners) {
-            concurrentMapManager.executeLocally(new Runnable() {
+            concurrentMapManager.node.executorManager.executeNow(new Runnable() {
                 public void run() {
                     if (started) {
                         migrationListener.migrationStarted(migrationEvent);
