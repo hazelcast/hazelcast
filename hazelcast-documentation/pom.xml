@@ -13,13 +13,19 @@
     <artifactId>hazelcast-documentation</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <docbkx.maven.plugin.version>2.0.13</docbkx.maven.plugin.version>
+        <xslthl.version>2.0.1</xslthl.version>
+        <docbook.xsl>1.76.1</docbook.xsl>
+        <docbook.xsl.saxon>1.0.0</docbook.xsl.saxon>
+    </properties>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>com.agilejava.docbkx</groupId>
                 <artifactId>docbkx-maven-plugin</artifactId>
-                <version>2.0.13</version>
+                <version>${docbkx.maven.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>docbook-pdf</id>
@@ -110,19 +116,19 @@
         <dependency>
             <groupId>net.sf.xslthl</groupId>
             <artifactId>xslthl</artifactId>
-            <version>2.0.1</version>
+            <version>${xslthl.version}</version>
         </dependency>
         <dependency>
             <groupId>net.sf.docbook</groupId>
             <artifactId>docbook-xsl</artifactId>
-            <version>1.76.1</version>
+            <version>${docbook.xsl}</version>
             <type>zip</type>
             <classifier>ns-resources</classifier>
         </dependency>
         <dependency>
             <groupId>net.sf.docbook</groupId>
             <artifactId>docbook-xsl-saxon</artifactId>
-            <version>1.0.0</version>
+            <version>${docbook.xsl.saxon}</version>
         </dependency>
     </dependencies>
     <modules>

@@ -13,6 +13,11 @@
     <artifactId>hazelcast-hibernate</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <hsqldb.version>1.8.0.10</hsqldb.version>
+        <javaassist.version>3.12.1.GA</javaassist.version>
+    </properties>
+
     <repositories>
         <repository>
             <id>jboss</id>
@@ -67,41 +72,34 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>3.5.0-Final</version>
+            <version>${hibernate.core.version}</version>
             <scope>provided</scope>
         </dependency>
-        <!--  		<dependency> -->
-        <!--         	<groupId>org.hibernate</groupId> -->
-        <!--         	<artifactId>hibernate</artifactId> -->
-        <!--         	<version>3.2.7.ga</version> -->
-        <!--         	<type>jar</type> -->
-        <!--         	<scope>provided</scope> -->
-        <!--         </dependency> -->
         <dependency>
             <groupId>hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>1.8.0.10</version>
+            <version>${hsqldb.version}</version>
             <type>jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.5.8</version>
+            <version>${slf4j.api.version}</version>
             <type>jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>1.5.8</version>
+            <version>${slf4j.api.version}</version>
             <type>jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>javassist</groupId>
             <artifactId>javassist</artifactId>
-            <version>3.12.1.GA</version>
+            <version>${javaassist.version}</version>
             <type>jar</type>
             <scope>test</scope>
         </dependency>

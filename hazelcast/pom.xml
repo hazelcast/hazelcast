@@ -13,6 +13,10 @@
     <artifactId>hazelcast</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <log4j.version>1.2.12</log4j.version>
+    </properties>
+
     <build>
         <filters>
             <filter>${basedir}/target/filter.properties</filter>
@@ -257,13 +261,13 @@
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-            <version>1.2.12</version>
+            <version>${log4j.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.6.0</version>
+            <version>${slf4j.api.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

@@ -15,6 +15,12 @@
     <artifactId>hazelcast-wm</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <catalina.version>6.0.16</catalina.version>
+        <jsp.api.version>2.0</jsp.api.version>
+        <servlet.api.version>2.5</servlet.api.version>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -47,19 +53,19 @@
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>catalina</artifactId>
-            <version>6.0.16</version>
+            <version>${catalina.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet.jsp</groupId>
             <artifactId>jsp-api</artifactId>
-            <version>2.0</version>
+            <version>${jsp.api.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
-            <version>2.5</version>
+            <version>${servlet.api.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
