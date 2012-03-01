@@ -435,14 +435,10 @@ public class ClusterQueueTest {
 
     @Test(timeout = 100000)
     public void storedQueueWithExistingItemsAndTransactionRollback() throws InterruptedException {
-        final ConcurrentMap<Long, String> STORE =
-                new ConcurrentHashMap<Long, String>();
-        STORE.put(1l, "Event1");
-        STORE.put(2l, "Event2");
-        STORE.put(3l, "Event3");
-        STORE.put(4l, "Event4");
-        STORE.put(5l, "Event5");
-        STORE.put(6l, "Event6");
+        final ConcurrentMap<Long, String> STORE = new ConcurrentHashMap<Long, String>();
+        for (long i = 1; i < 7; i++) {
+            STORE.put(i, "Event" + i);
+        }
         final CountDownLatch latch = new CountDownLatch(1);
         Config config = new Config();
         config
@@ -495,14 +491,33 @@ public class ClusterQueueTest {
         assertEquals(STORE.size(), q.size());
         Transaction t = h.getTransaction();
         t.begin();
-        assertEquals(STORE.get(1l), q.poll());
-        assertEquals(STORE.get(2l), q.take());
+        assertEquals(STORE.get(1L), q.poll());
+        assertEquals(STORE.get(2L), q.take());
+        CMap cmap = TestUtil.getCMap(h, "q:tasks");
+        assertEquals(2, cmap.mapRecords.size());
+        for (Record record : cmap.mapRecords.values()) {
+            assertTrue(record.isActive());
+            assertFalse(record.isRemovable());
+            assertNotNull(record.getValueData());
+            if (record.getKey().equals(1L)) {
+                assertEquals("Event1", record.getValue());
+            } else if (record.getKey().equals(2L)) {
+                assertEquals("Event2", record.getValue());
+            } else {
+                fail("Invalid key: " + record.getKey());
+            }
+        }
         t.rollback();
-        assertFalse(latch.await(10, TimeUnit.SECONDS));
+        assertFalse(latch.await(5, TimeUnit.SECONDS));
+        assertEquals(2, cmap.mapRecords.size());
         assertEquals(6, STORE.size());
         assertEquals(6, q.size());
         for (int i = 1; i < 7; i++) {
             assertEquals("Event" + i, q.poll());
+        }
+        assertEquals(0, cmap.size());
+        for (Record record : cmap.mapRecords.values()) {
+            assertFalse(record.isActive());
         }
     }
 }

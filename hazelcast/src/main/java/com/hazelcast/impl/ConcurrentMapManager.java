@@ -3609,6 +3609,14 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void process() {
+                if (valueData != null) {
+                    Record record = cmap.getRecord(request);
+                    if (record == null) {
+                        record = cmap.createAndAddNewRecord(request.key, valueData);
+                    } else {
+                        record.setValueData(valueData);
+                    }
+                }
                 doOperation(request);
                 request.value = valueData;
                 returnResponse(request);
