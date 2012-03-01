@@ -12,8 +12,7 @@
         Hazelcast cluster. Swing/Web applications at traders' desktops can use Native Java Client to
         access and modify the data in the Hazelcast cluster.
     </para>
-    <para>Currently Hazelcast has Native Java Client available. The next client implementation will
-        be CSharp.
+    <para>Currently Hazelcast has Native Java and C# Client available.
     </para>
     <para>
         <emphasis role="bold">
@@ -52,8 +51,12 @@ import java.util.Map;
 import java.util.Collection;
 
 
-HazelcastInstance client = HazelcastClient.newHazelcastClient("dev", "dev-pass", "10.90.0.1", "10.90.0.2:5702");
-//All Cluster Operations that you can do with ordinary HazelcastInstance
+ClientConfig clientConfig = new ClientConfig();
+clientConfig.getGroupConfig().setName("dev").setPassword("dev-pass");
+clientConfig.addAddress("10.90.0.1", "10.90.0.2:5702");
+
+HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+//All cluster operations that you can do with ordinary HazelcastInstance
 Map<String, Customer> mapCustomers = client.getMap("customers");
 mapCustomers.put("1", new Customer("Joe", "Smith"));
 mapCustomers.put("2", new Customer("Ali", "Selam"));
@@ -69,6 +72,38 @@ for (Customer customer : colCustomers) {
     <sect2 xml:id="CSharpClient" version="5.0" xmlns="http://docbook.org/ns/docbook"
             >
         <title>CSharp Client</title>
-        <para>CSharp client is not available yet.</para>
+        <para>You can use native C# client to connect to the running Hazelcast instances. All you need is to include
+            Hazelcast.Client.dll into your C# project. The API is very similar to Java native client. Note that C# client
+            doesn't have automatic reconnection feature. If the node that it connected dies, it will not switch to another member.
+            User must connect to another member itself.
+            <programlisting language="java"><![CDATA[import com.hazelcast.core.HazelcastInstance;
+
+using System;
+using System.Collections.Generic;
+
+using Hazelcast.Client;
+using Hazelcast.Core;
+
+ClientConfig clientConfig = new ClientConfig();
+clientConfig.GroupConfig.Name = "dev";
+clientConfig.GroupConfig.Password = "dev-pass";
+clientConfig.addAddress("10.90.0.1");
+
+HazelcastClient client = HazelcastClient.newHazelcastClient(clientConfig);
+//Allmost all cluster operations that you can do with ordinary HazelcastInstance
+//Note that the Customer class must have Serializable attribute or implement Hazelcast.IO.DataSerializable
+IMap<String, Customer> mapCustomers = client.getMap("customers");
+mapCustomers.put("1", new Customer("Joe", "Smith"));
+mapCustomers.put("2", new Customer("Ali", "Selam"));
+mapCustomers.put("3", new Customer("Avi", "Noyan"));
+
+ICollection<Customer> colCustomers = mapCustomers.values();
+foreach (Customer customer in colCustomers) {
+     // process customer
+}
+]]></programlisting>
+
+
+        </para>
     </sect2>
 </sect1>
