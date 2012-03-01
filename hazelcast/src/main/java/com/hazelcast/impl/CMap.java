@@ -398,7 +398,7 @@ public class CMap {
     }
 
     final boolean overCapacity(Request request) {
-        if (maxSizePolicy.overCapacity()) {
+        if (maxSizePolicy != null && maxSizePolicy.overCapacity()) {
             boolean addOp = (request.operation == ClusterOperation.CONCURRENT_MAP_PUT)
                     || (request.operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT);
             if (addOp) {
@@ -1329,7 +1329,7 @@ public class CMap {
                 final Set<Record> recordsToEvict = new HashSet<Record>();
                 final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(evictionComparator));
                 final Collection<Record> records = mapRecords.values();
-                final boolean overCapacity = maxSizePolicy.overCapacity();
+                final boolean overCapacity = maxSizePolicy != null && maxSizePolicy.overCapacity();
                 final boolean evictionAware = evictionComparator != null && overCapacity;
                 int recordsStillOwned = 0;
                 int backupPurgeCount = 0;

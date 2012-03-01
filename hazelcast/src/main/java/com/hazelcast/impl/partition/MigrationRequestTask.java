@@ -88,20 +88,18 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
             DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList,
                     replicaIndex, from), target);
             Future future = node.factory.getExecutorService().submit(task);
-            Boolean result = (Boolean) future.get(400, TimeUnit.SECONDS);
-            if (result) {
-                if (replicaIndex == 0) {
-                    node.concurrentMapManager.enqueueAndWait(new Processable() {
-                        public void process() {
-                            for (Record record : costAwareRecordList.getRecords()) {
-                                CMap cmap = node.concurrentMapManager.getMap(record.getName());
-                                if (cmap != null) {
-                                    cmap.getMapIndexService().remove(record);
-                                }
+            final Boolean result = (Boolean) future.get(400, TimeUnit.SECONDS);
+            if (result && replicaIndex == 0) {
+                node.concurrentMapManager.enqueueAndWait(new Processable() {
+                    public void process() {
+                        for (Record record : costAwareRecordList.getRecords()) {
+                            CMap cmap = node.concurrentMapManager.getMap(record.getName());
+                            if (cmap != null) {
+                                cmap.getMapIndexService().remove(record);
                             }
                         }
-                    }, 100);
-                }
+                    }
+                }, 100);
             }
             return result;
         } catch (Throwable e) {
