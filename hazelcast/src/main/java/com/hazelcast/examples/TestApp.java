@@ -164,10 +164,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
+
+
     protected void handleCommand(String command) {
         if(command.contains("__")) {
         namespace = command.split("__")[0];
-        command = command.substring(command.indexOf("__")+1);
+        command = command.substring(command.indexOf("__")+2);
         }
 
         if (echo) {
