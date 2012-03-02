@@ -56,6 +56,34 @@
             </plugin>
 
             <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                        <configuration>
+                            <instructions>
+                                <_include>src/main/resources/META-INF/MANIFEST.MF</_include>
+                                <Import-Package>
+                                    !junit.framework,
+                                    !org.junit,
+                                    !org.mockito,
+                                    org.apache.log4j;resolution:=optional,
+                                    org.apache.log4j.*;resolution:=optional,
+                                    org.slf4j;resolution:=optional,
+                                    *
+                                </Import-Package>
+                            </instructions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven.jar.plugin.version}</version>
@@ -63,10 +91,11 @@
                     <archive>
                         <index>true</index>
                         <compress>true</compress>
-                        <manifest>
-                            <mainClass>com.hazelcast.client.examples.TestClientApp</mainClass>
-                            <addClasspath>true</addClasspath>
-                        </manifest>
+                        <manifestFile>${basedir}/target/classes/META-INF/MANIFEST.MF</manifestFile>
+                        <!--<manifest>-->
+                            <!--<mainClass>com.hazelcast.client.examples.TestClientApp</mainClass>-->
+                            <!--<addClasspath>true</addClasspath>-->
+                        <!--</manifest>-->
                     </archive>
                 </configuration>
             </plugin>

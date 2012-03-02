@@ -40,6 +40,7 @@
                                     <fileset dir="../hazelcast-hibernate/target/classes/"/>
                                     <fileset dir="../hazelcast-spring/target/classes/"/>
                                     <fileset dir="../hazelcast-cloud/target/classes/"/>
+                                    <fileset dir="../hazelcast-wm/target/classes/"/>
                                     <manifest>
                                         <attribute name="Built-By" value="Hazelcast.com"/>
                                         <attribute name="Main-Class" value="com.hazelcast.examples.TestApp"/>
@@ -173,6 +174,12 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-cloud</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-wm</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>
         </dependency>

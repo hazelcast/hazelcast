@@ -52,6 +52,7 @@
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
         <maven.javadoc.plugin.version>2.8</maven.javadoc.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
+        <maven.bundle.plugin.version>2.3.6</maven.bundle.plugin.version>
         <findbugs.maven.plugin.version>2.0.1</findbugs.maven.plugin.version>
 
         <junit.version>4.10</junit.version>
