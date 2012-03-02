@@ -7,6 +7,124 @@
         <link xlink:href="#Todo">Todo</link>
         page for planned features.
     </para>
+
+    <para>
+        <emphasis role="bold">2.0</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para>New Elastic Memory<superscript>(Enterprise Edition Only)</superscript>: By default, Hazelcast
+                    stores your distributed data (map entries, queue items) into Java heap which is subject to garbage
+                    collection. As your heap gets bigger, garbage collection might cause your application to pause tens
+                    of seconds, badly effecting your application performance and response times. Elastic Memory is
+                    Hazelcast with off-heap memory storage to avoid GC pauses. Even if you have terabytes of cache
+                    in-memory with lots of updates, GC will have almost no effect; resulting in more predictable latency
+                    and throughput.
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>Security Framework<superscript>(Enterprise Edition Only)</superscript>: Hazelcast Security is JAAS
+                    based pluggable security framework which can be used to authenticate both cluster members and
+                    clients and do access control checks on client operations. With the security framework, take control
+                    of who can be part of the cluster or connect as client and which operations are allowed or not.
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>Native C# Client<superscript>(Enterprise Edition Only)</superscript>: Just like our Native Java
+                    Client, it supports all map, multimap, queue, topic operations including listeners and queries.
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>Distributed Backups: Data owned by a member will be evenly backed up by all the other members. In
+                    other word, every member takes equal responsibility to backup every other node. This leads to better
+                    memory usage and less influence in the cluster when you add/remove nodes. The new backup system
+                    makes it possible to form backup-groups so that you can have backups and owners fall into different
+                    groups.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Parallel IO: Number of socket selector threads can be configured. You can have more IO threads, if
+                    you have good number of CPU/cores and high-throughput network.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Connection Management: Hazelcast 2.0 is more tolerant to connection failures. On connection
+                    failure it tries to repair it
+                    before declaring the member as dead. So now it is ok to have short socket disconnections… No problem
+                    if your virtual server migrates to a new host.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Listeners such as migration, membership and map indexes can be added with configuration.</para>
+            </listitem>
+            <listitem>
+                <para>New Event Objects: Event Listeners for Queue/List/Set/Topic were delivering the item itself on
+                    event methods. That’s
+                    why the items had to be deserialized by Hazelcast Threads before invoking the listeners. Sometimes
+                    this was causing class loader problems too. With 2.0, we have introduced new event containers for
+                    Queue/List/Set and Topic just like Map has EntryEvent. The new listeners now receive ItemEvent and
+                    Message objects respectively. The actual items are deserialized only if you call the appropriate get
+                    method on the event objects. This is where we brake the compatibility with the older versions of
+                    Hazelcast.
+                </para>
+            </listitem>
+            <listitem>
+                <para>ClientConfig API: We had too many of factory methods to instantiate a HazelcastClient. Now all we
+                    need is<literal>HazelcastClient.newHazelcastClient(ClientConfig)</literal>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>SSL communication support among cluster nodes.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Distributed MultiMap value collection can be either List or Set.
+                </para>
+            </listitem>
+            <listitem>
+                <para>SuperClient is renamed to LiteMember to avoid confusion. Be careful! It is a member, not a
+                    client.
+                </para>
+            </listitem>
+            <listitem>
+                <para>New
+                    <literal>IMap.set (key, value, ttl, TimeUnit)</literal>
+                    implementation, which is optimized
+                    <literal>put(key, value)</literal>
+                    operation as set doesn’t return the old value.
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>
+                    <literal>HazelcastInstance.getLifecycleService().kill()</literal>
+                    will forcefully kill the node. Useful for testing.
+                </para>
+            </listitem>
+            <listitem>
+                <para><literal>forceUnlock</literal>, to unlock the locked entry from any node and any thread regardless
+                    of the owner.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Enum type query support..
+                    <literal>new SqlPredicate (“level = Level.WARNING”)</literal>
+                    for example
+                </para>
+            </listitem>
+            <listitem>
+                <para>Fixed issues: 430, 459, 471, 567, 574, 582, 629, 632, 646, 666, 686, 669, 690, 692, 693, 695, 698,
+                    705, 708,
+                    710, 711, 712, 713, 714, 715, 719 , 721, 722, 724, 727, 728, 729, 730, 731, 732, 733, 735, 738, 739,
+                    740, 741, 742, 747,
+                    751, 754, 756, 758, 759, 760, 761, 765, 767, 770, 773, 779, 781, 782, 783, 790, 795, 796
+                </para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
     <para>
         <emphasis role="bold">1.9.4</emphasis>
         <itemizedlist>

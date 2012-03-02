@@ -12,7 +12,7 @@ Server
 
 Serialization should handle classloading arrays properly.
 AWS connection timeout setting
-get HazelcastInstance by name
+Get HazelcastInstance by name
 Parallel IO implementation
 SuperClient to LiteMember
 Proper Multimap Equals implementation
@@ -27,11 +27,7 @@ New Distributed Backup Implementation
 Maven parallel testing
 Memory Leak clean up
 Client Protocol implementation
-
 Force unlock
-
-Java Client
-Heartbeat timer cancel on client
 
 
 Issues:

@@ -6,16 +6,13 @@
     <para>Random order of planned features.
         <itemizedlist>
             <listitem>
-                <para>Native C# Client</para>
-            </listitem>
-            <listitem>
                 <para>Native C++ Client</para>
             </listitem>
             <listitem>
                 <para>Ready-to-go Hazelcast Cache Server Image for Amazon EC2</para>
             </listitem>
             <listitem>
-                <para>Symmetric Encryption support for Java Client</para>
+                <para>Symmetric Encryption and SSL support for Java Client</para>
             </listitem>
             <listitem>
                 <para>Continuous query (events based on given criteria)</para>
