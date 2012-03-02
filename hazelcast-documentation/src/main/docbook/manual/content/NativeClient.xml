@@ -78,7 +78,7 @@ for (Customer customer : colCustomers) {
             Hazelcast.Client.dll into your C# project. The API is very similar to Java native client. Note that C# client
             doesn't have automatic reconnection feature. If the node that it connected dies, it will not switch to another member.
             User must connect to another member itself.
-            <programlisting language="java"><![CDATA[import com.hazelcast.core.HazelcastInstance;
+            <programlisting language="CSharp"><![CDATA[
 
 using System;
 using System.Collections.Generic;
@@ -106,6 +106,71 @@ foreach (Customer customer in colCustomers) {
 ]]></programlisting>
 
 
+        </para>
+        <para>
+            You can serialize back and forth Java and C# Objects between C# client and Hazelcast server.
+            All you need is to have your classes that you want to share to implement DataSerializable both on Java and C#
+            in the exact same way. And on C# ClientConfig you must set a TypeConverter implementation that will convert
+            Java Class name into C# Type and vice versa.
+
+            A basic TypeConverter might look like this.
+            <programlisting language="CSharp"><![CDATA[
+
+public class MyTypeConverter: Hazelcast.IO.ITypeConverter
+{
+    public string getJavaName(Type type)
+    {
+        if(type.Equals(typeof(Hazelcast.Client.Examples.MyCSharpClass)))
+            return "com.hazelcast.examples.MyClass";
+
+        return null;
+    }
+
+    public Type getType(String javaName)
+    {
+        if("com.hazelcast.examples.MyClass".Equals(javaName))
+            return typeof(Hazelcast.Client.Examples.MyCSharpClass);
+
+        return null;
+    }
+}
+
+            ]]></programlisting>
+
+            A basic MyCSharpClass implementing DataSerializable
+
+            <programlisting language="CSharp"><![CDATA[
+
+using System;
+using Hazelcast.IO;
+
+public class MyCSharpClass: Hazelcast.IO.DataSerializable
+{
+    String field1 = "";
+    int field2;
+
+    public MyCSharpClass ()
+    {
+    }
+
+    public MyCSharpClass (String f1, int f2)
+    {
+        this.field1 = f1;
+        this.field2 = f2;
+    }
+
+    public void writeData(IDataOutput dout){
+        dout.writeUTF(field1);
+        dout.writeInt(field2);
+    }
+
+    public void readData(IDataInput din){
+        field1 = din.readUTF();
+        field2 = din.readInt();
+    }
+}
+
+            ]]></programlisting>
         </para>
     </sect2>
 </sect1>
