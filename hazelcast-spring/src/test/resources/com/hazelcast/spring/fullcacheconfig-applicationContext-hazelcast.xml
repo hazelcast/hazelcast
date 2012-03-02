@@ -24,6 +24,7 @@
                     name="${cluster.group.name}"
                     password="${cluster.group.password}"/>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
+            <hz:management-center enabled="true" url="myserver:80" update-interval="4" />
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -87,7 +88,6 @@
                     <hz:interface>127.0.0.4</hz:interface>
                 </hz:member-group>
             </hz:partition-group>
-            <hz:management-center enabled="true" url="myserver:80" update-interval="4" />
             <hz:executor-service name="testExec"
                                  core-pool-size="2"
                                  max-pool-size="32"
