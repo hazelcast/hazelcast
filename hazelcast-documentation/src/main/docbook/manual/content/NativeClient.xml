@@ -7,7 +7,9 @@
         to it. When the relied cluster member dies, client will transparently switch to another live
         member.
     </para>
-    <para>There can be hundreds, even thousands of clients connected to the cluster.</para>
+    <para>There can be hundreds, even thousands of clients connected to the cluster. But by default there is 40 threads
+    on server side that will handle all the requests. You may want to increase hazelcast.executor.client.thread.count
+    property for better performance. </para>
     <para>Imagine a trading application where all the trading data stored and managed in a 10 node
         Hazelcast cluster. Swing/Web applications at traders' desktops can use Native Java Client to
         access and modify the data in the Hazelcast cluster.
@@ -71,7 +73,7 @@ for (Customer customer : colCustomers) {
     </sect2>
     <sect2 xml:id="CSharpClient" version="5.0" xmlns="http://docbook.org/ns/docbook"
             >
-        <title>CSharp Client</title>
+        <title>CSharp Client <superscript>(Enterprise Edition Only)</superscript></title>
         <para>You can use native C# client to connect to the running Hazelcast instances. All you need is to include
             Hazelcast.Client.dll into your C# project. The API is very similar to Java native client. Note that C# client
             doesn't have automatic reconnection feature. If the node that it connected dies, it will not switch to another member.
