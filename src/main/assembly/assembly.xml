@@ -99,7 +99,7 @@
             <directory>src/main/resources/</directory>
             <outputDirectory>/license/</outputDirectory>
             <includes>
-                <include>apache-v2-license.txt</include>
+                <include>*license.txt</include>
                 <include>notice.txt</include>
             </includes>
         </fileSet>
