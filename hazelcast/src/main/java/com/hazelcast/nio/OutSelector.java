@@ -111,7 +111,7 @@ public final class OutSelector extends SelectorBase {
 //                socketChannel.register(selector, SelectionKey.OP_CONNECT, Connector.this);
                 handle();
             } catch (Throwable e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.log(Level.WARNING, "Connection failure to " + address, e);
                 if (socketChannel != null) {
                     try {
                         socketChannel.close();
