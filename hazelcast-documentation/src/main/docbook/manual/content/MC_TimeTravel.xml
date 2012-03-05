@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 xml:id="MC_TimeTravel" version="5.0" xmlns="http://docbook.org/ns/docbook"
+<sect1 xml:id="MC_TimeTravel" version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
         >
     <title>Time Travel</title>
     <para>
@@ -12,11 +12,11 @@
         Management center stores the states in you local disk, while your web
         server is alive. So if you slide to a time when you do not have data,
         the reports will be seen as empty.
-        <inlinemediaobject>
-        <imageobject>
-            <imagedata contentwidth="800px" fileref="images/timetravel.jpg"/>
-        </imageobject>
-    </inlinemediaobject>
     </para>
+        <link xlink:href="images/timetravel.jpg"><inlinemediaobject>
+        <imageobject>
+            <imagedata width="70%" fileref="images/timetravel.jpg"/>
+        </imageobject>
+    </inlinemediaobject></link>
 
 </sect1>

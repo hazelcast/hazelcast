@@ -22,7 +22,7 @@
 
             <listitem>
                 <para>
-                    Deploy the webmancenter_VERSION.war file bundled in the to your webserver (Tomcat, Jetty etc.)
+                    Deploy the mancenter.war file bundled in the to your webserver (Tomcat, Jetty etc.)
                 </para>
             </listitem>
 
@@ -32,9 +32,9 @@
             </listitem>
 
             <listitem>
-                <para>   Configure your hazelcast by adding following to your hazelcast.xml
+                <para>   Configure your hazelcast by adding the url of your web app to your hazelcast.xml. This url will be the one which the nodes will send their states.
                     <programlisting language="java"><![CDATA[
-     <management-center enabled="true" >YOUR_URL</management-center>
+     <management-center enabled="true" >YOUR_WEB_SERVER_URL</management-center>
      ]]>
 </programlisting>
                 </para>
@@ -60,12 +60,13 @@
             >
         <title>User Administration</title>
         <para>Default credentials are for admin users. Admin users can make user operations and has read/write access to all clusters. In the "Administration" tab page you can add new users, update/remove existing ones.. If you want to restrict users to only read only operations then check the "Read Only" radio button for the clusters.
+        </para>
+        <link xlink:href="images/admin.jpg">
             <inlinemediaobject>
                 <imageobject>
-                    <imagedata contentwidth="800px"  fileref="images/admin.jpg"/>
+                    <imagedata width="70%"  fileref="images/admin.jpg"/>
                 </imageobject>
-            </inlinemediaobject>
-        </para>
+            </inlinemediaobject></link>
 
     </sect2>
 
@@ -76,11 +77,12 @@
         <para>The starter page of the tool is "Cluster Home". Here you can see cluster's main properties such as uptime, memory. Also with pie chart you can see the distribution of partitions over cluster members. You can come back to this page, by clicking the Home icon on the right top toolbar.
             On the left panel you see the instances Maps, Queues, Topics; stored in the cluster. Below them, the members in the clusters are listed.
             On top menu bar, you can change the current page to Scripting, Docs, User Administration. Note that User Administration page is viewable only for admin users. Also Scripting page is disabled for users with read only credential for current cluster. </para>
+        <link xlink:href="images/clusterhome.jpg">
         <inlinemediaobject>
             <imageobject>
-                <imagedata contentwidth="800px"  fileref="images/clusterhome.jpg"/>
+                <imagedata width="70%"  fileref="images/clusterhome.jpg"/>
             </imageobject>
-        </inlinemediaobject>
+        </inlinemediaobject></link>
     </sect2>
 
 </sect1>

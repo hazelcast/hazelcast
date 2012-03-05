@@ -63,6 +63,11 @@
                                         <include name="**/*.css"/>
                                     </fileset>
                                 </copy>
+                                <copy todir="${project.build.directory}/docbook/single_html/images/">
+                                    <fileset dir="${basedir}/src/main/docbook/manual/content/images/">
+                                        <include name="**/*.*"/>
+                                    </fileset>
+                                </copy>
                             </postProcess>
                         </configuration>
                     </execution>
@@ -83,6 +88,11 @@
                                 <copy todir="${project.build.directory}/docbook/index/">
                                     <fileset dir="${basedir}/src/main/docbook/manual/stylesheet/">
                                         <include name="**/*.css"/>
+                                    </fileset>
+                                </copy>
+                                <copy todir="${project.build.directory}/docbook/index/images/">
+                                    <fileset dir="${basedir}/src/main/docbook/manual/content/images/">
+                                        <include name="**/*.*"/>
                                     </fileset>
                                 </copy>
                                 <move file="${project.build.directory}/docbook/index"

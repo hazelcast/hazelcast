@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 xml:id="MC_Scripting" version="5.0" xmlns="http://docbook.org/ns/docbook"
+<sect1        xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xi="http://www.w3.org/2001/XInclude"
+ xml:id="MC_Scripting" version="5.0" xmlns="http://docbook.org/ns/docbook"
         >
     <title>Scripting</title>
     <para>
@@ -7,11 +8,13 @@
         In the left part you can select members, on which the code will be executed.
         Also you can select over scripting languages: Javascript, Groovy, JRuby, BeanShell.
         This part is only enabled for users with read/write permissions for current cluster.
+    </para>
+    <link xlink:href="images/scripting.jpg">
         <inlinemediaobject>
         <imageobject>
-            <imagedata contentwidth="800px"  fileref="images/scripting.jpg"/>
+            <imagedata width="70%"  fileref="images/scripting.jpg"/>
         </imageobject>
     </inlinemediaobject>
-    </para>
+    </link>
 
 </sect1>
