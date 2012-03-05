@@ -136,6 +136,18 @@
         <xi:include href="InternalsClusterMembership.xml"/>
         <xi:include href="InternalsDistributedMap.xml"/>
     </chapter>
+    <chapter xml:id="ManagementCenter">
+        <title>Management Center </title>
+        <xi:include href="MC_Intro.xml"/>
+        <xi:include href="MC_Maps.xml"/>
+        <xi:include href="MC_Queues.xml"/>
+        <xi:include href="MC_Topics.xml"/>
+        <xi:include href="MC_Members.xml"/>
+        <xi:include href="MC_Scripting.xml"/>
+        <xi:include href="MC_TimeTravel.xml"/>
+        <xi:include href="MC_Console.xml"/>
+    </chapter>
+
     <chapter xml:id="Miscellaneous">
         <title>Miscellaneous</title>
         <xi:include href="CommonGotchas.xml"/>
