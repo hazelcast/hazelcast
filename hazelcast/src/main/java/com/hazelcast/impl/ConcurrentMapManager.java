@@ -2001,6 +2001,10 @@ public class ConcurrentMapManager extends BaseManager {
             return contains;
         }
 
+        protected boolean excludeLiteMember() {
+            return true;
+        }
+
         class MGetContainsValue extends MigrationAwareSubCall {
             public MGetContainsValue(Address target) {
                 super(target);
@@ -2038,6 +2042,10 @@ public class ConcurrentMapManager extends BaseManager {
 
         Boolean returnResult() {
             return result;
+        }
+
+        protected boolean excludeLiteMember() {
+            return true;
         }
 
         @Override

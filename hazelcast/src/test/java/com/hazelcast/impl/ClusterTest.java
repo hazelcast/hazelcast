@@ -2594,4 +2594,41 @@ public class ClusterTest {
         new TestTask().test(hz2, "test2");
         assertTrue(latch.await(2, TimeUnit.SECONDS));
     }
+
+    /**
+     * issue #806
+     */
+    @Test
+    public void testLiteMemberNotReceivingTopicMessage() throws Exception {
+        HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance hLite = Hazelcast.newHazelcastInstance(new Config().setLiteMember(true));
+        final String message = "Message";
+        final String liteMessage = "LiteMessage";
+        final CountDownLatch liteLatch = new CountDownLatch(2);
+        final CountDownLatch normalLatch = new CountDownLatch(2);
+        hLite.getTopic("default").addMessageListener(new MessageListener<Object>() {
+            public void onMessage(Message<Object> objectMessage) {
+                System.out.println("Lite received: " + objectMessage.getMessageObject());
+                if (liteMessage.equals(objectMessage.getMessageObject())) {
+                    liteLatch.countDown();
+                } else {
+                    normalLatch.countDown();
+                }
+            }
+        });
+        hNormal.getTopic("default").addMessageListener(new MessageListener<Object>() {
+            public void onMessage(Message<Object> objectMessage) {
+                System.out.println("Normal received: " + objectMessage.getMessageObject());
+                if (liteMessage.equals(objectMessage.getMessageObject())) {
+                    liteLatch.countDown();
+                } else {
+                    normalLatch.countDown();
+                }
+            }
+        });
+        hNormal.getTopic("default").publish(message);
+        hLite.getTopic("default").publish(liteMessage);
+        assertTrue("Normal message publish failed!", normalLatch.await(5, TimeUnit.SECONDS));
+        assertTrue("Lite message publish failed!", liteLatch.await(5, TimeUnit.SECONDS));
+    }
 }

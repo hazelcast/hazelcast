@@ -612,7 +612,7 @@ public class Config implements DataSerializable {
      * @see #isLiteMember()
      * @deprecated as of 2.0
      */
-
+    @Deprecated
     public boolean isSuperClient() {
         return liteMember;
     }
@@ -625,6 +625,7 @@ public class Config implements DataSerializable {
      * @see #setLiteMember(boolean)
      * @deprecated as of 2.0
      */
+    @Deprecated
     public Config setSuperClient(boolean liteMember) {
         this.liteMember = liteMember;
         return this;
