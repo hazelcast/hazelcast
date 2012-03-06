@@ -56,8 +56,8 @@
             <para>You can set up Hazelcast to connect cluster as Native Client. Native client is not
                 member and it connects to one of the cluster members and delegates all cluster wide
                 operations to it. When the relied cluster member dies, client will transparently
-                switch to another live member. _(Native Client property takes precedence over Super
-                Client property.)_
+                switch to another live member. <emphasis role="italic">(Native Client property takes precedence
+                    over LiteMember property.)</emphasis>
                 <programlisting language="xml"><![CDATA[<property name="hibernate.cache.hazelcast.use_native_client">true</property>
 ]]></programlisting>
                 To setup Native Client properly, you should add Hazelcast<emphasis role="bold"
@@ -80,9 +80,7 @@
                 </emphasis>
             </para>
             <para>
-                <link xlink:href="#NativeClient">Read more about NativeClient &amp;
-                    SuperClient
-                </link>
+                <link xlink:href="#NativeClient">Read more about NativeClient &amp; LiteMember</link>
             </para>
         </listitem>
         <listitem>
