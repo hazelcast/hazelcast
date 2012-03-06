@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.aws.impl.AWSClient;
+import com.hazelcast.aws.AWSClient;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
