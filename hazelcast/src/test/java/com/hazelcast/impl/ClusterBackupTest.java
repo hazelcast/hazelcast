@@ -110,8 +110,8 @@ public class ClusterBackupTest {
     @Test
     public void testIssue505() throws InterruptedException {
         HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(new Config());
-        HazelcastInstance superClient = Hazelcast.newHazelcastInstance(new Config());
-        AtomicNumber test = superClient.getAtomicNumber("test");
+        HazelcastInstance liteMember = Hazelcast.newHazelcastInstance(new Config().setLiteMember(true));
+        AtomicNumber test = liteMember.getAtomicNumber("test");
         assertEquals(1, test.incrementAndGet());
         HazelcastInstance hazelcastInstance3 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(2, test.incrementAndGet());

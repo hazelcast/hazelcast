@@ -69,9 +69,9 @@ public class MemberMBean extends AbstractMBean<Member> {
         return getManagedObject().getInetSocketAddress().getAddress();
     }
 
-    @JMXAttribute("SuperClient")
-    @JMXDescription("The member is a superclient")
+    @JMXAttribute("LiteMember")
+    @JMXDescription("The member is a lite member")
     public boolean isSuperClient() {
-        return getManagedObject().isSuperClient();
+        return getManagedObject().isLiteMember();
     }
 }

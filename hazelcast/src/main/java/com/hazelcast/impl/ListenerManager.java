@@ -139,6 +139,10 @@ public class ListenerManager extends BaseManager {
             return Boolean.TRUE;
         }
 
+        protected boolean excludeLiteMember() {
+            return false;
+        }
+
         private final class AddListenerAtTarget extends SubCall {
             public AddListenerAtTarget(Address target) {
                 super(target);

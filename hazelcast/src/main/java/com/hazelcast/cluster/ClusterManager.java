@@ -653,7 +653,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>();
         for (Member m : members) {
             MemberImpl member = (MemberImpl) m;
-            if (!member.localMember() && !member.isSuperClient()) {
+            if (!member.localMember() && !member.isLiteMember()) {
                 AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
                 rrp.executeProcess(member.getAddress(), new FinalizeJoin());
                 calls.add(rrp);

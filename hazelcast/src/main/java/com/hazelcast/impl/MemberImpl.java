@@ -123,8 +123,9 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         return lastWrite;
     }
 
+    @Deprecated
     public boolean isSuperClient() {
-        return (nodeType == NodeType.LITE_MEMBER);
+        return isLiteMember();
     }
 
     public boolean isLiteMember() {

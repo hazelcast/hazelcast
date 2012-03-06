@@ -873,7 +873,6 @@ public abstract class BaseManager {
 
     abstract class MultiCall<T> {
         int redoCount = 0;
-        boolean excludeSuperClient = true;
 
         private void logRedo(SubCall subCall) {
             redoCount++;
@@ -927,7 +926,7 @@ public abstract class BaseManager {
                 onCall();
                 //local call first
                 Object result = null;
-                boolean excludeThisMember = excludeSuperClient && thisMember.isSuperClient();
+                final boolean excludeThisMember = excludeLiteMember() && thisMember.isLiteMember();
                 if (!excludeThisMember) {
                     SubCall localCall = createNewTargetAwareOp(getFirstAddressToMakeCall());
                     localCall.doOp();
@@ -940,13 +939,13 @@ public abstract class BaseManager {
                     }
                 }
                 // now other members
-                boolean runOnOtherMembers = excludeThisMember || onResponse(result);
+                final boolean runOnOtherMembers = excludeThisMember || onResponse(result);
                 if (runOnOtherMembers) {
                     Set<Member> members = node.getClusterImpl().getMembers();
                     List<SubCall> lsCalls = new ArrayList<SubCall>();
                     for (Member member : members) {
                         MemberImpl cMember = (MemberImpl) member;
-                        boolean excludeMember = excludeSuperClient && cMember.isSuperClient();
+                        final boolean excludeMember = excludeLiteMember() && cMember.isLiteMember();
                         if (!excludeMember && !cMember.getAddress().equals(getFirstAddressToMakeCall())) {
                             SubCall subCall = createNewTargetAwareOp(cMember.getAddress());
                             subCall.doOp();
@@ -974,6 +973,8 @@ public abstract class BaseManager {
             }
             return (T) returnResult();
         }
+
+        protected abstract boolean excludeLiteMember();
     }
 
     abstract class SubCall extends TargetAwareOp {
@@ -1191,7 +1192,7 @@ public abstract class BaseManager {
         int foundDistance = 0;
         for (int i = indexOfMember; i < size + indexOfMember; i++) {
             final MemberImpl member = lsMembers.get((1 + i) % size);
-            if (!(skipSuperClient && member.isSuperClient())) {
+            if (!(skipSuperClient && member.isLiteMember())) {
                 foundDistance++;
             }
             if (foundDistance == distance) {
