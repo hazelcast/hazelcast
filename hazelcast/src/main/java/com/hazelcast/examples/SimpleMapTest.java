@@ -16,9 +16,7 @@
 
 package com.hazelcast.examples;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.partition.Partition;
@@ -39,11 +37,13 @@ public class SimpleMapTest {
     public static int GET_PERCENTAGE = 40;
     public static int PUT_PERCENTAGE = 40;
 
-    public static void main(String[] args) throws InterruptedException {
-        final ILogger logger = Hazelcast.getLoggingService().getLogger("SimpleMapTest");
+    final static ILogger logger = Hazelcast.getLoggingService().getLogger("SimpleMapTest");
+    private static final String NAMESPACE = "default";
+
+    public static boolean parse(String... input) {
         boolean load = false;
-        if (args != null && args.length > 0) {
-            for (String arg : args) {
+        if (input != null && input.length > 0) {
+            for (String arg : input) {
                 arg = arg.trim();
                 if (arg.startsWith("t")) {
                     THREAD_COUNT = Integer.parseInt(arg.substring(1));
@@ -64,58 +64,29 @@ public class SimpleMapTest {
             logger.log(Level.INFO, "    // means 200 threads, value-size 130 bytes, 10% put, 85% get");
             logger.log(Level.INFO, "");
         }
-        logger.log(Level.INFO, "Starting Test with ");
-        logger.log(Level.INFO, "      Thread Count: " + THREAD_COUNT);
-        logger.log(Level.INFO, "       Entry Count: " + ENTRY_COUNT);
-        logger.log(Level.INFO, "        Value Size: " + VALUE_SIZE);
-        logger.log(Level.INFO, "    Get Percentage: " + GET_PERCENTAGE);
-        logger.log(Level.INFO, "    Put Percentage: " + PUT_PERCENTAGE);
-        logger.log(Level.INFO, " Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
-        ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
-        final IMap<String, byte[]> map = Hazelcast.getMap("default");
+        return load;
+    }
 
-        Executors.newSingleThreadExecutor().execute(new Runnable() {
-            public void run() {
-                while (true) {
-                    try {
-                        //noinspection BusyWait
-                        Thread.sleep(STATS_SECONDS * 1000);
-                        logger.log(Level.INFO, "cluster size:" + Hazelcast.getCluster().getMembers().size());
-                        LocalMapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();
-                        long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
-                        if (period == 0) {
-                            continue;
-                        }
-                        logger.log(Level.INFO, mapOpStats.toString());
-                        logger.log(Level.INFO, "Operations per Second : " + mapOpStats.total() / period);
-                    } catch (InterruptedException ignored) {
-                        return;
-                    }
-                }
+    public static void main(String[] args) throws InterruptedException {
+        boolean load = parse(args);
+        logger.log(Level.INFO, "Starting Test with ");
+        printVariables();
+        ITopic<String> commands = Hazelcast.getTopic(NAMESPACE);
+        commands.addMessageListener(new MessageListener<String>() {
+            public void onMessage(Message<String> stringMessage) {
+                parse(stringMessage.getMessageObject());
+                printVariables();
             }
         });
+        ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
+        startPrintStats();
+        if(load)
+            load(es);
+        run(es);
+    }
 
-        if (load) {
-            final Member thisMember = Hazelcast.getCluster().getLocalMember();
-            List<String> lsOwnedEntries = new LinkedList<String>();
-            for (int i = 0; i < ENTRY_COUNT; i++) {
-                final String key = String.valueOf(i);
-                Partition partition = Hazelcast.getPartitionService().getPartition(key);
-                if (thisMember.equals(partition.getOwner())) {
-                    lsOwnedEntries.add(key);
-                }
-            }
-            final CountDownLatch latch = new CountDownLatch(lsOwnedEntries.size());
-            for (final String ownedKey : lsOwnedEntries) {
-                es.execute(new Runnable() {
-                    public void run() {
-                        map.put(ownedKey, new byte[VALUE_SIZE]);
-                        latch.countDown();
-                    }
-                });
-            }
-            latch.await();
-        }
+    private static void run(ExecutorService es) {
+        final IMap<String, byte[]> map = Hazelcast.getMap(NAMESPACE);
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.execute(new Runnable() {
                 public void run() {
@@ -133,5 +104,60 @@ public class SimpleMapTest {
                 }
             });
         }
+    }
+
+    private static void load(ExecutorService es) throws InterruptedException {
+        final IMap<String, byte[]> map = Hazelcast.getMap("default");
+        final Member thisMember = Hazelcast.getCluster().getLocalMember();
+        List<String> lsOwnedEntries = new LinkedList<String>();
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            final String key = String.valueOf(i);
+            Partition partition = Hazelcast.getPartitionService().getPartition(key);
+            if (thisMember.equals(partition.getOwner())) {
+                lsOwnedEntries.add(key);
+            }
+        }
+        final CountDownLatch latch = new CountDownLatch(lsOwnedEntries.size());
+        for (final String ownedKey : lsOwnedEntries) {
+            es.execute(new Runnable() {
+                public void run() {
+                    map.put(ownedKey, new byte[VALUE_SIZE]);
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await();
+    }
+
+    private static void startPrintStats() {
+        final IMap<String, byte[]> map = Hazelcast.getMap("default");
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(STATS_SECONDS * 1000);
+                        logger.log(Level.INFO, "cluster size:" + Hazelcast.getCluster().getMembers().size());
+                        LocalMapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();
+                        long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
+                        if (period == 0) {
+                            continue;
+                        }
+                        logger.log(Level.INFO, mapOpStats.toString());
+                        logger.log(Level.INFO, "Operations per Second : " + mapOpStats.total() / period);
+                    } catch (InterruptedException ignored) {
+                        return;
+                    }
+                }
+            }
+        });
+    }
+
+    private static void printVariables() {
+        logger.log(Level.INFO, "      Thread Count: " + THREAD_COUNT);
+        logger.log(Level.INFO, "       Entry Count: " + ENTRY_COUNT);
+        logger.log(Level.INFO, "        Value Size: " + VALUE_SIZE);
+        logger.log(Level.INFO, "    Get Percentage: " + GET_PERCENTAGE);
+        logger.log(Level.INFO, "    Put Percentage: " + PUT_PERCENTAGE);
+        logger.log(Level.INFO, " Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
     }
 }
