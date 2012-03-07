@@ -58,6 +58,7 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
+                <version>${maven.bundle.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>bundle-manifest</id>
@@ -93,8 +94,8 @@
                         <compress>true</compress>
                         <manifestFile>${basedir}/target/classes/META-INF/MANIFEST.MF</manifestFile>
                         <!--<manifest>-->
-                            <!--<mainClass>com.hazelcast.client.examples.TestClientApp</mainClass>-->
-                            <!--<addClasspath>true</addClasspath>-->
+                        <!--<mainClass>com.hazelcast.client.examples.TestClientApp</mainClass>-->
+                        <!--<addClasspath>true</addClasspath>-->
                         <!--</manifest>-->
                     </archive>
                 </configuration>

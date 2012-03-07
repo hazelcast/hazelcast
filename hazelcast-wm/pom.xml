@@ -49,6 +49,7 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
+                <version>${maven.bundle.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>bundle-manifest</id>
