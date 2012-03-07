@@ -31,7 +31,7 @@ public class AWSClient {
         this.awsConfig = awsConfig;
     }
 
-    public List<String> getPrivateDnsNames(AwsConfig groupName) throws Exception {
+    public List<String> getPrivateIpAddresses(AwsConfig groupName) throws Exception {
         List<String> list = new DescribeInstances(awsConfig).execute(endpoint);
         return list;
     }
