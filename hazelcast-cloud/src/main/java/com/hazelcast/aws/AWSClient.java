@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.aws.impl;
+package com.hazelcast.aws;
 
+import com.hazelcast.aws.impl.Constants;
+import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.config.AwsConfig;
 
 import java.util.List;
@@ -29,7 +31,7 @@ public class AWSClient {
         this.awsConfig = awsConfig;
     }
 
-    public List<String> getPrivateDnsNames(AwsConfig groupName) throws Exception {
+    public List<String> getPrivateIpAddresses(AwsConfig groupName) throws Exception {
         List<String> list = new DescribeInstances(awsConfig).execute(endpoint);
         return list;
     }
