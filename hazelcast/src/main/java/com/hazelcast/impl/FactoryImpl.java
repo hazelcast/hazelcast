@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
@@ -56,8 +57,6 @@ public class FactoryImpl implements HazelcastInstance {
     final ConcurrentMap<ProxyKey, HazelcastInstanceAwareInstance> proxies = new ConcurrentHashMap<ProxyKey, HazelcastInstanceAwareInstance>(1000);
 
     final MProxy locksMapProxy;
-
-    final MProxy globalProxies;
 
     final ConcurrentMap<String, ExecutorService> executorServiceProxies = new ConcurrentHashMap<String, ExecutorService>(2);
 
@@ -371,7 +370,6 @@ public class FactoryImpl implements HazelcastInstance {
         node = new Node(this, config);
         proxyFactory = node.initializer.getProxyFactory();
         logger = node.getLogger(FactoryImpl.class.getName());
-        globalProxies = proxyFactory.createMapProxy(Prefix.MAP_HAZELCAST + "Proxies");
         lifecycleService = new LifecycleServiceImpl(FactoryImpl.this);
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
         locksMapProxy = proxyFactory.createMapProxy(Prefix.MAP_HAZELCAST + "Locks");
@@ -380,53 +378,32 @@ public class FactoryImpl implements HazelcastInstance {
         if (!node.isActive()) {
             throw new IllegalStateException("Node failed to start!");
         }
-        globalProxies.addEntryListener(new EntryListener() {
-            public void entryAdded(EntryEvent event) {
-                if (node.localMember.equals(event.getMember())) {
-                    return;
-                }
-                final ProxyKey proxyKey = (ProxyKey) event.getKey();
-                if (!proxies.containsKey(proxyKey)) {
-                    logger.log(Level.FINEST, "Instance created " + proxyKey);
-                    node.clusterService.enqueueAndReturn(new Processable() {
-                        public void process() {
-                            createProxy(proxyKey);
-                        }
-                    });
+
+        final Set<Member> members = node.getClusterImpl().getMembers();
+        if (members.size() > 1) {
+            Member target = null;
+            for (Member member : members) {
+                if (!member.isLiteMember() && !member.localMember()) {
+                    target = member;
+                    break;
                 }
             }
-
-            public void entryRemoved(EntryEvent event) {
-                if (node.localMember.equals(event.getMember())) {
-                    return;
-                }
-                final ProxyKey proxyKey = (ProxyKey) event.getKey();
-                logger.log(Level.FINEST, "Instance removed " + proxyKey);
-                node.clusterService.enqueueAndReturn(new Processable() {
-                    public void process() {
-                        destroyProxy(proxyKey);
+            if (target != null) {
+                DistributedTask task = new DistributedTask(new GetAllProxyKeysCallable(), target);
+                Future f = getExecutorService().submit(task);
+                try {
+                    final Set<ProxyKey> proxyKeys = (Set<ProxyKey>) f.get(10, TimeUnit.SECONDS);
+                    for (final ProxyKey proxyKey : proxyKeys) {
+                        if (!proxies.containsKey(proxyKey)) {
+                            node.clusterService.enqueueAndReturn(new Processable() {
+                                public void process() {
+                                    createProxy(proxyKey);
+                                }
+                            });
+                        }
                     }
-                });
-            }
-
-            public void entryUpdated(EntryEvent event) {
-                logger.log(Level.FINEST, "Instance updated " + event.getKey());
-            }
-
-            public void entryEvicted(EntryEvent event) {
-                // should not happen!
-                logger.log(Level.FINEST, "Instance evicted " + event.getKey());
-            }
-        }, false);
-        if (node.getClusterImpl().getMembers().size() > 1) {
-            Set<ProxyKey> proxyKeys = globalProxies.allKeys();
-            for (final ProxyKey proxyKey : proxyKeys) {
-                if (!proxies.containsKey(proxyKey)) {
-                    node.clusterService.enqueueAndReturn(new Processable() {
-                        public void process() {
-                            createProxy(proxyKey);
-                        }
-                    });
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, e.getMessage(), e);
                 }
             }
         }
@@ -734,6 +711,7 @@ public class FactoryImpl implements HazelcastInstance {
             } else if (name.startsWith(Prefix.TOPIC)) {
                 node.topicManager.destroy(name);
             }
+            logger.log(Level.FINEST, "Instance destroyed " + proxyKey);
             fireInstanceDestroyEvent(proxy);
         }
     }
@@ -783,6 +761,7 @@ public class FactoryImpl implements HazelcastInstance {
             }
         }
         if (created) {
+            logger.log(Level.FINEST, "Instance created " + proxyKey);
             fireInstanceCreateEvent(proxy);
         }
         return proxy;
@@ -837,7 +816,7 @@ public class FactoryImpl implements HazelcastInstance {
             proxy = result.take();
         } catch (InterruptedException e) {
         }
-        globalProxies.put(proxyKey, Constants.IO.EMPTY_DATA);
+        node.clusterManager.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, true), false);
         return proxy;
     }
 
@@ -847,17 +826,43 @@ public class FactoryImpl implements HazelcastInstance {
             if (name.equals("lock")) {
                 locksMapProxy.remove(key);
             }
-            globalProxies.remove(proxyKey);
-            node.clusterService.enqueueAndWait(new Processable() {
-                public void process() {
-                    try {
-                        destroyProxy(proxyKey);
-                    } catch (Exception e) {
-                    }
-                }
-            }, 5);
+            node.clusterManager.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, false), true);
         } else {
             logger.log(Level.WARNING, "Destroying unknown instance name: " + name);
+        }
+    }
+
+    public static class CreateOrDestroyInstanceProxy extends AbstractRemotelyProcessable {
+        private ProxyKey proxyKey;
+        private boolean create;
+
+        public CreateOrDestroyInstanceProxy() {
+        }
+
+        public CreateOrDestroyInstanceProxy(final ProxyKey proxyKey, final boolean create) {
+            this.proxyKey = proxyKey;
+            this.create = create;
+        }
+
+        public void process() {
+            if (create) {
+                node.factory.createProxy(proxyKey);
+            } else {
+                node.factory.destroyProxy(proxyKey);
+            }
+        }
+
+        public void readData(final DataInput in) throws IOException {
+            super.readData(in);
+            create = in.readBoolean();
+            proxyKey = new ProxyKey();
+            proxyKey.readData(in);
+        }
+
+        public void writeData(final DataOutput out) throws IOException {
+            super.writeData(out);
+            out.writeBoolean(create);
+            proxyKey.writeData(out);
         }
     }
 
@@ -917,6 +922,13 @@ public class FactoryImpl implements HazelcastInstance {
 
         public Object getKey() {
             return key;
+        }
+    }
+
+    public static class GetAllProxyKeysCallable extends HazelcastInstanceAwareObject implements Callable<Set<ProxyKey>> {
+        public Set<ProxyKey> call() throws Exception {
+            final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
+            return new HashSet<ProxyKey>(factory.proxies.keySet());
         }
     }
 }

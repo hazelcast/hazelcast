@@ -223,21 +223,18 @@ public class ClusterQueueTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
         final IQueue q1 = h1.getQueue("default");
         final IQueue q2 = h2.getQueue("default");
+        Thread.sleep(1000);
         new Thread(new Runnable() {
             public void run() {
-                try {
-                    Thread.sleep(3000);
-                    for (int i = 0; i < 100; i++) {
-                        assertTrue(q1.offer("item"));
-                        assertTrue(q2.offer("item"));
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                for (int i = 0; i < 100; i++) {
+                    assertTrue(q1.offer("item"));
+                    assertTrue(q2.offer("item"));
                 }
             }
         }).start();
         final ExecutorService es = Executors.newFixedThreadPool(50);
         final CountDownLatch latch = new CountDownLatch(200);
+        Thread.sleep(3000);
         for (int i = 0; i < 100; i++) {
             es.execute(new Runnable() {
                 public void run() {
@@ -343,7 +340,7 @@ public class ClusterQueueTest {
         assertEquals("item", q1.take());
         assertEquals(0, q1.size());
         assertEquals(0, q2.size());
-        h1.shutdown();
+        h1.getLifecycleService().shutdown();
         assertEquals(0, q2.size());
     }
 
@@ -362,7 +359,7 @@ public class ClusterQueueTest {
         assertEquals("item", q2.take());
         assertEquals(0, q1.size());
         assertEquals(0, q2.size());
-        h2.shutdown();
+        h2.getLifecycleService().shutdown();
         assertEquals(0, q1.size());
     }
 
@@ -383,7 +380,7 @@ public class ClusterQueueTest {
         Thread.sleep(10000);
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
-        h1.shutdown();
+        h1.getLifecycleService().shutdown();
         Thread.sleep(5000);
         assertEquals(2, q2.size());
     }
@@ -405,7 +402,7 @@ public class ClusterQueueTest {
         Thread.sleep(10000);
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
-        h1.shutdown();
+        h1.getLifecycleService().shutdown();
         Thread.sleep(5000);
         assertEquals(2, q2.size());
     }
