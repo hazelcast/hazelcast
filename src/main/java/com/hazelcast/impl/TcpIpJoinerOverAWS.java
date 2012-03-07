@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.aws.impl.AWSClient;
+import com.hazelcast.aws.AWSClient;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
@@ -45,7 +45,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
     @Override
     protected List<String> getMembers(Config config) {
         try {
-            List<String> list = aws.getPrivateDnsNames(config.getNetworkConfig().getJoin().getAwsConfig());
+            List<String> list = aws.getPrivateIpAddresses(config.getNetworkConfig().getJoin().getAwsConfig());
             logger.log(Level.FINEST, "The list of possible members are: " + list);
             return list;
         } catch (Exception e) {
