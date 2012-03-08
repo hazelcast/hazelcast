@@ -66,6 +66,11 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
     }
 
     public PredicateBuilder and(Predicate predicate) {
+        if (predicate != PredicateBuilder.this) {
+            throw new RuntimeException("Illegal and statement expected: "
+                    + PredicateBuilder.class.getSimpleName() + ", found: " +
+                    ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
+        }
         int index = lsPredicates.size() - 2;
         Predicate first = lsPredicates.remove(index);
         Predicate second = lsPredicates.remove(index);
@@ -74,6 +79,11 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
     }
 
     public PredicateBuilder or(Predicate predicate) {
+        if (predicate != PredicateBuilder.this) {
+            throw new RuntimeException("Illegal or statement expected: "
+                    + PredicateBuilder.class.getSimpleName() + ", found: " +
+                    ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
+        }
         int index = lsPredicates.size() - 2;
         Predicate first = lsPredicates.remove(index);
         Predicate second = lsPredicates.remove(index);
@@ -84,9 +94,9 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer();
-        sb.append("QueryBuilder");
+        sb.append("PredicateBuilder");
         sb.append("{\n");
-        sb.append(lsPredicates.get(0));
+        sb.append(lsPredicates.size() == 0 ? "" : lsPredicates.get(0));
         sb.append("\n}");
         return sb.toString();
     }

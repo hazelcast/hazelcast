@@ -32,6 +32,10 @@ public class EntryObject {
         return addPredicate(Predicates.equal(Predicates.get(property), true));
     }
 
+    public PredicateBuilder isNot(String property) {
+        return addPredicate(Predicates.notEqual(Predicates.get(property), true));
+    }
+
     public EntryObject key() {
         Expression expression = new EntryKeyObject();
         qb.exp = expression;
