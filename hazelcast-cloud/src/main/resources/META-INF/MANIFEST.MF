@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
 Implementation-Vendor: Hazel Bilisim Ltd.
 Implementation-Title: Hazelcast In-Memory DataGrid
-Implementation-Version: 2.0.1
+Implementation-Version: 2.0.2
