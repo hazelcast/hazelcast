@@ -45,6 +45,9 @@
             <fileset dir="${core.classes.dir}"/>
             <manifest>
                 <attribute name="Built-By" value="Hazelcast.com"/>
+                <attribute name="Implementation-Vendor" value="Hazelcast.com"/>
+                <attribute name="Implementation-Title" value="Hazelcast"/>
+                <attribute name="Implementation-Version" value="${version}"/>
                 <attribute name="Main-Class" value="com.hazelcast.examples.TestApp"/>
             </manifest>
         </jar>
@@ -62,6 +65,9 @@
             <fileset dir="${client.classes.dir}"/>
             <manifest>
                 <attribute name="Built-By" value="Hazelcast.com"/>
+                <attribute name="Implementation-Vendor" value="Hazelcast.com"/>
+                <attribute name="Implementation-Title" value="Hazelcast"/>
+                <attribute name="Implementation-Version" value="${version}"/>
                 <attribute name="Main-Class" value="com.hazelcast.client.examples.TestClientApp"/>
             </manifest>
         </jar>
