@@ -961,7 +961,8 @@ public class ConcurrentMapManager extends BaseManager {
             TransactionImpl txn = tc.getCallContext().getTransaction();
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (txn.has(name, key)) {
-                    return txn.get(name, key);
+                    Data value = txn.get(name, key);
+                    return tc.isClient() ? value : toObject(value);
                 } else {
                     MLock mlock = new MLock();
                     boolean locked = mlock
@@ -1161,10 +1162,10 @@ public class ConcurrentMapManager extends BaseManager {
                             removedValueCount = 1;
                         }
                     }
-                    txn.attachRemoveOp(name, key, value, (oldObject == null), removedValueCount);
+                    txn.attachRemoveOp(name, key, toData(value), (oldObject == null), removedValueCount);
                     return oldObject;
                 } else {
-                    return txn.attachRemoveOp(name, key, value, false);
+                    return txn.attachRemoveOp(name, key, toData(value), false);
                 }
             } else {
                 setLocal(operation, name, key, value, timeout, -1);
@@ -1260,7 +1261,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (txn.has(name, key, value)) {
                     return false;
                 }
-                txn.attachPutMultiOp(name, key, value);
+                txn.attachPutMultiOp(name, key, toData(value));
                 return true;
             } else {
                 boolean result = booleanCall(CONCURRENT_MAP_PUT_MULTI, name, key, value, 0, -1);
@@ -1619,15 +1620,15 @@ public class ConcurrentMapManager extends BaseManager {
                         return Boolean.FALSE;
                     } else {
                         if (expectedValue.equals(oldValue)) {
-                            txn.attachPutOp(name, key, newValue, false);
+                            txn.attachPutOp(name, key, toData(newValue), false);
                             return Boolean.TRUE;
                         } else {
                             return Boolean.FALSE;
                         }
                     }
                 } else {
-                    if (expectedValue.equals(txn.get(name, key))) {
-                        txn.attachPutOp(name, key, newValue, false);
+                    if (expectedValue.equals(toObject(txn.get(name, key)))) {
+                        txn.attachPutOp(name, key, toData(newValue), false);
                         return Boolean.TRUE;
                     } else {
                         return Boolean.FALSE;
@@ -1674,9 +1675,9 @@ public class ConcurrentMapManager extends BaseManager {
                         oldObject = threadContext.isClient() ? oldValue : threadContext.toObject(oldValue);
                     }
                     if (operation == CONCURRENT_MAP_PUT_IF_ABSENT && oldObject != null) {
-                        txn.attachPutOp(name, key, oldObject, 0, ttl, false);
+                        txn.attachPutOp(name, key, oldValue, 0, ttl, false);
                     } else {
-                        txn.attachPutOp(name, key, value, 0, ttl, (oldObject == null));
+                        txn.attachPutOp(name, key, toData(value), 0, ttl, (oldObject == null));
                     }
                     if (operation == CONCURRENT_MAP_TRY_PUT) {
                         return Boolean.TRUE;
@@ -1684,16 +1685,16 @@ public class ConcurrentMapManager extends BaseManager {
                     return oldObject;
                 } else {
                     if (operation == CONCURRENT_MAP_PUT_IF_ABSENT) {
-                        Object existingValue = txn.get(name, key);
+                        Data existingValue = txn.get(name, key);
                         if (existingValue != null) {
-                            return existingValue;
+                            return threadContext.isClient() ? existingValue : threadContext.toObject(existingValue);
                         }
                     }
-                    Object result = txn.attachPutOp(name, key, value, false);
+                    Data resultData = txn.attachPutOp(name, key, toData(value), false);
                     if (operation == CONCURRENT_MAP_TRY_PUT) {
                         return Boolean.TRUE;
                     }
-                    return result;
+                    return threadContext.isClient() ? resultData : threadContext.toObject(resultData);
                 }
             } else {
                 setLocal(operation, name, key, value, timeout, ttl);
@@ -1789,12 +1790,12 @@ public class ConcurrentMapManager extends BaseManager {
                     if (!locked) throwCME(key);
                     Data oldValue = mlock.oldValue;
                     boolean existingRecord = (oldValue != null);
-                    txn.attachRemoveOp(name, key, value, !existingRecord);
+                    txn.attachRemoveOp(name, key, toData(value), !existingRecord);
                     return existingRecord;
                 } else {
                     MContainsKey mContainsKey = new MContainsKey();
                     boolean containsEntry = mContainsKey.containsEntry(name, key, value);
-                    txn.attachRemoveOp(name, key, value, !containsEntry);
+                    txn.attachRemoveOp(name, key, toData(value), !containsEntry);
                     return containsEntry;
                 }
             } else {
@@ -1837,18 +1838,16 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    protected Address getBackupMember(final int partitionId, final int distance) {
-        return partitionManager.getPartition(partitionId).getReplicaAddress(distance);
+    protected Address getBackupMember(final int partitionId, final int replicaIndex) {
+        return partitionManager.getPartition(partitionId).getReplicaAddress(replicaIndex);
     }
 
     class MBackup extends MTargetAwareOp {
-        protected Address owner = null;
-        protected int distance = 0;
+        protected int replicaIndex = 0;
 
-        public void sendBackup(ClusterOperation operation, Address owner, int distance, Request reqBackup) {
+        public void sendBackup(ClusterOperation operation, int replicaIndex, Request reqBackup) {
             reset();
-            this.owner = owner;
-            this.distance = distance;
+            this.replicaIndex = replicaIndex;
             SystemLogService css = node.getSystemLogService();
             if (css.shouldLog(CS_TRACE)) {
                 css.trace(this, "SendingBackup callId.", callId);
@@ -1862,13 +1861,12 @@ public class ConcurrentMapManager extends BaseManager {
 
         public void reset() {
             super.reset();
-            owner = null;
-            distance = 0;
+            replicaIndex = 0;
         }
 
         @Override
         public void process() {
-            target = getBackupMember(request.blockId, distance);
+            target = getBackupMember(request.blockId, replicaIndex);
             if (target == null) {
                 setResult(Boolean.FALSE);
             } else {
@@ -1897,7 +1895,7 @@ public class ConcurrentMapManager extends BaseManager {
                 throw new RuntimeException(msg);
             }
             for (int i = 0; i < backupCount; i++) {
-                int distance = i + 1;
+                int replicaIndex = i + 1;
                 MBackup backupOp = backupOps[i];
                 if (backupOp == null) {
                     backupOp = new MBackup();
@@ -1906,7 +1904,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (request.key == null || request.key.size() == 0) {
                     throw new RuntimeException("Key is null! " + request.key);
                 }
-                backupOp.sendBackup(operation, target, distance, request);
+                backupOp.sendBackup(operation, replicaIndex, request);
             }
             for (int i = 0; i < backupCount; i++) {
                 MBackup backupOp = backupOps[i];

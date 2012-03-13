@@ -22,6 +22,7 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.impl.base.Pairs;
+import com.hazelcast.nio.Data;
 import com.hazelcast.query.Predicate;
 
 import java.util.*;
@@ -86,7 +87,7 @@ public class Entries extends AbstractSet {
             if (txn != null) {
                 Object key = entry.getKey();
                 if (txn.has(name, key)) {
-                    Object value = txn.get(name, key);
+                    Data value = txn.get(name, key);
                     if (value != null) {
                         colKeyValues.add(BaseManager.createSimpleMapEntry(concurrentMapManager.node.factory, name, key, value));
                     }

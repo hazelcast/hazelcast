@@ -95,14 +95,14 @@ public abstract class BaseManager {
         return node;
     }
 
-    public static MapEntry createSimpleMapEntry(final FactoryImpl factory, final String name, final Object key, final Object value) {
+    public static MapEntry createSimpleMapEntry(final FactoryImpl factory, final String name, final Object key, final Data value) {
         return new MapEntry() {
             public Object getKey() {
                 return key;
             }
 
             public Object getValue() {
-                return value;
+                return toObject(value);
             }
 
             public Object setValue(Object newValue) {

@@ -203,10 +203,10 @@ public class BlockingQueueManager extends BaseManager {
         ThreadContext threadContext = ThreadContext.get();
         TransactionImpl txn = threadContext.getCallContext().getTransaction();
         if (key != -1) {
+            final Data dataItem = toData(obj);
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                txn.attachPutOp(name, key, obj, timeout, true);
+                txn.attachPutOp(name, key, dataItem, timeout, true);
             } else {
-                final Data dataItem = toData(obj);
                 storeQueueItem(name, key, dataItem, index);
                 final BQ bq = getBQ(name);
                 if (bq != null && bq.mapListeners.size() > 0) {
@@ -295,10 +295,10 @@ public class BlockingQueueManager extends BaseManager {
                 if (removedItem != null) {
                     ThreadContext threadContext = ThreadContext.get();
                     TransactionImpl txn = threadContext.getCallContext().getTransaction();
-                    if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                        txn.attachRemoveOp(name, key, removedItem, true);
-                    }
                     final Data removedItemData = toData(removedItem);
+                    if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                        txn.attachRemoveOp(name, key, removedItemData, true);
+                    }
                     final BQ bq = getBQ(name);
                     if (bq != null && bq.mapListeners.size() > 0) {
                         enqueueAndReturn(new Processable() {

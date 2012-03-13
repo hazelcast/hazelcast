@@ -19,10 +19,13 @@ package com.hazelcast.impl;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Data;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
+
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class TransactionImpl implements Transaction {
 
@@ -41,21 +44,21 @@ public class TransactionImpl implements Transaction {
         this.logger = factory.getLoggingService().getLogger(this.getClass().getName());
     }
 
-    public Object attachPutOp(String name, Object key, Object value, boolean newRecord) {
+    public Data attachPutOp(String name, Object key, Data value, boolean newRecord) {
         return attachPutOp(name, key, value, 0, -1, newRecord);
     }
 
-    public void attachPutMultiOp(String name, Object key, Object value) {
+    public void attachPutMultiOp(String name, Object key, Data value) {
         transactionRecords.add(new TransactionRecord(name, key, value, true));
     }
 
-    public Object attachPutOp(String name, Object key, Object value, long timeout, boolean newRecord) {
+    public Data attachPutOp(String name, Object key, Data value, long timeout, boolean newRecord) {
         return attachPutOp(name, key, value, timeout, -1, newRecord);
     }
 
-    public Object attachPutOp(String name, Object key, Object value, long timeout, long ttl, boolean newRecord) {
+    public Data attachPutOp(String name, Object key, Data value, long timeout, long ttl, boolean newRecord) {
         Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
-        Object matchValue = (instanceType.isMultiMap()) ? value : null;
+        Object matchValue = (instanceType.isMultiMap()) ? toObject(value) : null;
         TransactionRecord rec = findTransactionRecord(name, key, matchValue);
         if (rec == null) {
             rec = new TransactionRecord(name, key, value, newRecord);
@@ -64,22 +67,22 @@ public class TransactionImpl implements Transaction {
             transactionRecords.add(rec);
             return null;
         } else {
-            Object old = rec.value;
+            Data old = rec.value;
             rec.value = value;
             rec.removed = false;
             return old;
         }
     }
 
-    public Object attachRemoveOp(String name, Object key, Object value, boolean newRecord) {
+    public Data attachRemoveOp(String name, Object key, Data value, boolean newRecord) {
         return attachRemoveOp(name, key, value, newRecord, 1);
     }
 
-    public Object attachRemoveOp(String name, Object key, Object value, boolean newRecord, int valueCount) {
+    public Data attachRemoveOp(String name, Object key, Data value, boolean newRecord, int valueCount) {
         Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
-        Object matchValue = (instanceType.isMultiMap()) ? value : null;
+        Object matchValue = (instanceType.isMultiMap()) ? toObject(value) : null;
         TransactionRecord rec = findTransactionRecord(name, key, matchValue);
-        Object oldValue = null;
+        Data oldValue = null;
         if (rec == null) {
             rec = new TransactionRecord(name, key, value, newRecord);
             transactionRecords.add(rec);
@@ -142,7 +145,7 @@ public class TransactionImpl implements Transaction {
         for (TransactionRecord transactionRecord : transactionRecords) {
             if (transactionRecord.name.equals(name)) {
                 if (!transactionRecord.removed) {
-                    if (value.equals(transactionRecord.value))
+                    if (value.equals(toObject(transactionRecord.value)))
                         return true;
                 }
             }
@@ -150,7 +153,12 @@ public class TransactionImpl implements Transaction {
         return false;
     }
 
-    public TransactionRecord findTransactionRecord(String name, Object key) {
+    public boolean containsEntry(String name, Object key, Object value) {
+        TransactionRecord transactionRecord = findTransactionRecord(name, key, value);
+        return transactionRecord != null && !transactionRecord.removed;
+    }
+
+    private TransactionRecord findTransactionRecord(String name, Object key) {
         for (TransactionRecord transactionRecord : transactionRecords) {
             if (transactionRecord.name.equals(name)) {
                 if (transactionRecord.key != null) {
@@ -163,21 +171,22 @@ public class TransactionImpl implements Transaction {
         return null;
     }
 
-    public TransactionRecord findTransactionRecord(String name, Object key, Object value) {
+    private TransactionRecord findTransactionRecord(String name, Object key, Object value) {
         for (TransactionRecord transactionRecord : transactionRecords) {
             if (transactionRecord.name.equals(name)) {
                 if (transactionRecord.key != null) {
                     if (transactionRecord.key.equals(key)) {
+                        final Object txValue = toObject(transactionRecord.value);
                         if (transactionRecord.instanceType.isMultiMap()) {
-                            if (value == null && transactionRecord.value == null) {
+                            if (value == null && txValue == null) {
                                 return transactionRecord;
-                            } else if (value != null && value.equals(transactionRecord.value)) {
+                            } else if (value != null && value.equals(txValue)) {
                                 return transactionRecord;
                             }
                         } else {
                             if (value == null) {
                                 return transactionRecord;
-                            } else if (value.equals(transactionRecord.value)) {
+                            } else if (value.equals(txValue)) {
                                 return transactionRecord;
                             }
                         }
@@ -188,7 +197,7 @@ public class TransactionImpl implements Transaction {
         return null;
     }
 
-    public Object get(String name, Object key) {
+    public Data get(String name, Object key) {
         TransactionRecord rec = findTransactionRecord(name, key);
         if (rec == null)
             return null;
@@ -238,7 +247,7 @@ public class TransactionImpl implements Transaction {
                     }
                 } else if (transactionRecord.newRecord) {
                     if (transactionRecord.instanceType.isList()) {
-                        size += (Integer) transactionRecord.value;
+                        size += (Integer) toObject(transactionRecord.value);
                     } else {
                         size++;
                     }
@@ -272,13 +281,13 @@ public class TransactionImpl implements Transaction {
             if (transactionRecord.name.equals(name)) {
                 if (key.equals(transactionRecord.key)) {
                     if (!transactionRecord.removed && transactionRecord.newRecord) {
-                        col.add(transactionRecord.value);
+                        col.add(toObject(transactionRecord.value));
                     } else if (transactionRecord.removed) {
                         if (transactionRecord.value == null) {
                             col.clear();
                             return;
                         } else {
-                            col.remove(transactionRecord.value);
+                            col.remove(toObject(transactionRecord.value));
                         }
                     }
                 }
@@ -321,7 +330,7 @@ public class TransactionImpl implements Transaction {
 
         public Object key;
 
-        public Object value;
+        public Data value;
 
         public boolean removed = false;
 
@@ -337,7 +346,7 @@ public class TransactionImpl implements Transaction {
 
         public long ttl = -1;
 
-        public TransactionRecord(String name, Object key, Object value, boolean newRecord) {
+        public TransactionRecord(String name, Object key, Data value, boolean newRecord) {
             this.name = name;
             this.key = key;
             this.value = value;

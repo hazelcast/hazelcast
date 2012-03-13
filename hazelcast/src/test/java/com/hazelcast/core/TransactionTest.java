@@ -47,11 +47,84 @@ public class TransactionTest {
     }
 
     @Test
+    public void testMapGetSimple() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapGetSimple");
+        txnMap.put("1", "value");
+        txnMap.begin();
+        assertEquals("value", txnMap.get("1"));
+        assertEquals("value", txnMap.get("1"));
+        assertEquals("value", txnMap.get("1"));
+        assertEquals(1, txnMap.size());
+        txnMap.commit();
+        assertEquals(1, txnMap.size());
+    }
+
+    @Test
     public void testMapPutSimple() {
         TransactionalMap txnMap = newTransactionalMapProxy("testMapPutSimple");
         txnMap.begin();
         txnMap.put("1", "value");
+        assertEquals(1, txnMap.size());
         txnMap.commit();
+        assertEquals(1, txnMap.size());
+    }
+
+    @Test
+    public void testMapPutAndGetSimple() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapPutAndGetSimple");
+        txnMap.put("1", "value");
+        txnMap.begin();
+        assertEquals("value", txnMap.get("1"));
+        assertEquals("value", txnMap.get("1"));
+        assertEquals("value", txnMap.put("1", "value2"));
+        assertEquals("value2", txnMap.put("1", "value3"));
+        assertEquals("value3", txnMap.get("1"));
+        assertEquals(1, txnMap.size());
+        txnMap.commit();
+        assertEquals(1, txnMap.size());
+    }
+
+
+    @Test
+    public void testMapContainsKey() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapContainsKey");
+        txnMap.put("1", "value");
+        Assert.assertTrue(txnMap.containsKey("1"));
+        txnMap.begin();
+        Assert.assertTrue(txnMap.containsKey("1"));
+        assertEquals("value", txnMap.get("1"));
+        Assert.assertTrue(txnMap.containsKey("1"));
+        txnMap.commit();
+        Assert.assertTrue(txnMap.containsKey("1"));
+        assertEquals(1, txnMap.size());
+    }
+
+    @Test
+    public void testMapContainsValue() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapContainsValue");
+        txnMap.put("1", "value");
+        txnMap.put("2", "value");
+        Assert.assertTrue(txnMap.containsValue("value"));
+        txnMap.begin();
+        Assert.assertTrue(txnMap.containsValue("value"));
+        txnMap.commit();
+        assertEquals(2, txnMap.size());
+    }
+
+    @Test
+    public void testMultiMapContainsEntry() {
+        TransactionalMultiMap txnMap = newTransactionalMultiMapProxy("testMultiMapContainsEntry");
+        txnMap.put("1", "value");
+        Assert.assertTrue(txnMap.containsEntry("1", "value"));
+        txnMap.begin();
+        txnMap.put("1", "value2");
+        Assert.assertTrue(txnMap.containsEntry("1", "value"));
+        Assert.assertTrue(txnMap.containsEntry("1", "value2"));
+        txnMap.remove("1", "value2");
+        Assert.assertTrue(txnMap.containsEntry("1", "value"));
+        Assert.assertFalse(txnMap.containsEntry("1", "value2"));
+        txnMap.commit();
+        Assert.assertTrue(txnMap.containsEntry("1", "value"));
         assertEquals(1, txnMap.size());
     }
 
@@ -158,6 +231,7 @@ public class TransactionTest {
         TransactionalSet set = newTransactionalSetProxy("testSetCommit");
         set.begin();
         set.add("item");
+        assertEquals(1, set.size());
         set.commit();
         assertEquals(1, set.size());
     }
@@ -168,6 +242,7 @@ public class TransactionTest {
         set.begin();
         set.add("item");
         set.add("item");
+        assertEquals(1, set.size());
         set.commit();
         assertEquals(1, set.size());
     }
@@ -186,6 +261,7 @@ public class TransactionTest {
         TransactionalList list = newTransactionalListProxy("testListCommit");
         list.begin();
         list.add("item");
+        assertEquals(1, list.size());
         list.commit();
         assertEquals(1, list.size());
     }
@@ -617,6 +693,7 @@ public class TransactionTest {
         txnMap.put("1", "A");
         txnMap.put("1", "B");
         Collection g1 = txnMap.get("1");
+        System.err.println(g1);
         assertTrue(g1.contains("A"));
         assertTrue(g1.contains("B"));
         assertTrue(g1.contains("C"));

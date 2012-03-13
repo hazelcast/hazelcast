@@ -893,10 +893,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(value);
             mapOperationCounter.incrementOtherOperations();
             TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
-            if (txn != null) {
-                if (txn.has(name, key)) {
-                    Object v = txn.get(name, key);
-                    return v != null;
+            if (txn != null && txn.has(name, key)) {
+                if (txn.containsEntry(name, key, value)) {
+                    return true;
                 }
             }
             MContainsKey mContainsKey = concurrentMapManager.new MContainsKey();
@@ -909,7 +908,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
             if (txn != null) {
                 if (txn.has(name, key)) {
-                    Object value = txn.get(name, key);
+                    Data value = txn.get(name, key);
                     return value != null;
                 }
             }
