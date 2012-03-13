@@ -178,9 +178,9 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     public String toString() {
         StringBuilder sb = new StringBuilder("Member [");
         sb.append(address.getHost());
+        sb.append("]");
         sb.append(":");
         sb.append(address.getPort());
-        sb.append("]");
         if (localMember) {
             sb.append(" this");
         }

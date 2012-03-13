@@ -30,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.net.InetAddress;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -224,7 +225,7 @@ public class PartitionStateGeneratorTest {
         final byte[] ip = new byte[]{10, 10, 0, 0};
         if (startAfter != null) {
             Address address = startAfter.getAddress();
-            byte[] startIp = address.copyIP();
+            byte[] startIp = address.getInetAddress().getAddress();
             if (startIp[3] < 255) {
                 ip[2] = startIp[2];
                 ip[3] = (byte) (startIp[3] + 1);
@@ -246,7 +247,8 @@ public class PartitionStateGeneratorTest {
             }
             count++;
             port++;
-            MemberImpl m = new MemberImpl(new Address(new byte[]{ip[0], ip[1], ip[2], ip[3]}, port), false);
+            MemberImpl m = new MemberImpl(new Address(InetAddress.getByAddress(new byte[]{ip[0], ip[1], ip[2], ip[3]})
+                    , port), false);
             members.add(m);
             if (ip[3] == 255) {
                 ip[2] = ++ip[2];

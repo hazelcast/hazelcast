@@ -30,15 +30,21 @@ import com.hazelcast.util.AddressUtil;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.AddressUtil.AddressHolder;
+
 public class TcpIpJoiner extends AbstractJoiner {
+
+    private static final int MAX_ADDRESS_TRIES = 3;
 
     public TcpIpJoiner(Node node) {
         super(node);
@@ -131,7 +137,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     private void joinViaPossibleMembers(AtomicBoolean joined) {
         try {
             node.getFailedConnections().clear();
-            final Collection<Address> colPossibleAddresses = getPossibleMembers(config, node.address, logger);
+            final Collection<Address> colPossibleAddresses = getPossibleAddresses(config, node.address, logger);
             colPossibleAddresses.remove(node.address);
             for (final Address possibleAddress : colPossibleAddresses) {
                 logger.log(Level.INFO, "connecting to " + possibleAddress);
@@ -253,28 +259,20 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     private Address getAddressFor(String host) {
-        int port = config.getPort();
-        final int indexColon = host.indexOf(':');
-        if (indexColon != -1) {
-            port = Integer.parseInt(host.substring(indexColon + 1));
-            host = host.substring(0, indexColon);
-        }
-        final boolean ip = isIP(host);
         try {
-            if (ip) {
-                return new Address(host, port);
+            final AddressHolder addressHolder = AddressUtil.getAddressHolder(host, config.getPort());
+            if (AddressUtil.isIpAddress(addressHolder.address)) {
+                return new Address(addressHolder.address, addressHolder.port);
             } else {
-                final InetAddress[] allAddresses = InetAddress.getAllByName(host);
+                final InetAddress[] allAddresses = InetAddress.getAllByName(addressHolder.address);
+                final Interfaces interfaces = config.getNetworkConfig().getInterfaces();
                 for (final InetAddress inetAddress : allAddresses) {
-                    boolean shouldCheck = true;
-                    Address address;
-                    Interfaces interfaces = config.getNetworkConfig().getInterfaces();
+                    boolean matchingAddress = true;
                     if (interfaces.isEnabled()) {
-                        address = new Address(inetAddress.getAddress(), port);
-                        shouldCheck = AddressPicker.matchAddress(address.getHost(), interfaces.getInterfaces());
+                        matchingAddress = AddressPicker.matchAddress(inetAddress.getHostAddress(), interfaces.getInterfaces());
                     }
-                    if (shouldCheck) {
-                        return new Address(inetAddress.getAddress(), port);
+                    if (matchingAddress) {
+                        return new Address(inetAddress, addressHolder.port);
                     }
                 }
             }
@@ -292,102 +290,38 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
-    private List<Address> getPossibleIpAddresses(final String host, final int port, boolean portSet)
-            throws UnknownHostException {
-        final List<Address> list;
-        if (portSet) {
-            list = Collections.singletonList(new Address(host, port));
-        } else {
-            list = new ArrayList<Address>(3);
-            for (int i = 0; i < 3; i++) {
-                list.add(new Address(host, port + i));
-            }
-        }
-        return list;
-    }
 
-    boolean isIP(final String address) {
-        if (address.indexOf('.') == -1) {
-            return false;
-        } else {
-            final StringTokenizer st = new StringTokenizer(address, ".");
-            int tokenCount = 0;
-            while (st.hasMoreTokens()) {
-                final String token = st.nextToken();
-                tokenCount++;
-                try {
-                    Integer.parseInt(token);
-                } catch (final Exception e) {
-                    return false;
-                }
-            }
-            if (tokenCount != 4)
-                return false;
-        }
-        return true;
-    }
-
-    Collection<Address> getPossibleMembers(Config config, Address thisAddress, ILogger logger) {
-        final Set<String> lsJoinMembers = new HashSet<String>();
-        List<String> members = getMembers(config);
-        for (String member : members) {
-            lsJoinMembers.addAll(AddressUtil.handleMember(member));
-        }
+    static Collection<Address> getPossibleAddresses(Config config, Address thisAddress, ILogger logger) {
+        final Collection<String> lsJoinMembers = getMembers(config);
         final Set<Address> setPossibleAddresses = new HashSet<Address>();
-        for (final String lsJoinMember : lsJoinMembers) {
+        for (String host : lsJoinMembers) {
             try {
-                String host = lsJoinMember;
-                int port = config.getPort();
-                final int indexColon = host.indexOf(':');
-                if (indexColon >= 0) {
-                    port = Integer.parseInt(host.substring(indexColon + 1));
-                    host = host.substring(0, indexColon);
-                }
-                // check if host is hostname of ip address
-                final boolean ip = isIP(host);
-                if (ip) {
-                    for (final Address addrs : getPossibleIpAddresses(host, port, indexColon >= 0 || !config.isPortAutoIncrement())) {
-                        if (!addrs.equals(thisAddress)) {
-                            setPossibleAddresses.add(addrs);
+                final AddressHolder addressHolder = AddressUtil.getAddressHolder(host);
+                final boolean portIsDefined = addressHolder.port != -1 || !config.isPortAutoIncrement();
+                final int maxAddressTries = portIsDefined ? 1 : MAX_ADDRESS_TRIES;
+                final int port = addressHolder.port != -1 ? addressHolder.port : config.getPort();
+                if (AddressUtil.isIpAddress(addressHolder.address)) {
+                    for (int i = 0; i < maxAddressTries; i++) {
+                        final Address addressProper = new Address(addressHolder.address, port + i);
+                        if (!addressProper.equals(thisAddress)) {
+                            setPossibleAddresses.add(addressProper);
                         }
                     }
                 } else {
-                    final InetAddress[] allAddresses = InetAddress.getAllByName(host);
+                    final InetAddress[] allAddresses = InetAddress.getAllByName(addressHolder.address);
                     for (final InetAddress inetAddress : allAddresses) {
-                        // IPv6 can not be used atm.
-                        if (inetAddress instanceof Inet6Address) {
-                            logger.log(Level.FINEST, "This address [" + inetAddress + "] is not usable. " +
-                                    "Hazelcast does not have support for IPv6 at the moment.");
-                            continue;
-                        }
-                        boolean shouldCheck = true;
-                        Address addrs;
+                        boolean matchingAddress = true;
                         Interfaces interfaces = config.getNetworkConfig().getInterfaces();
                         if (interfaces.isEnabled()) {
-                            addrs = new Address(inetAddress.getAddress(), port);
-                            shouldCheck = AddressPicker.matchAddress(addrs.getHost(), interfaces.getInterfaces());
+                            matchingAddress = AddressPicker.matchAddress(inetAddress.getHostAddress(),
+                                    interfaces.getInterfaces());
                         }
-                        if (indexColon < 0) {
-                            // port is not set
-                            if (shouldCheck) {
-                                if (config.isPortAutoIncrement()) {
-                                    for (int i = 0; i < 3; i++) {
-                                        final Address addressProper = new Address(inetAddress.getAddress(), port + i);
-                                        if (!addressProper.equals(thisAddress)) {
-                                            setPossibleAddresses.add(addressProper);
-                                        }
-                                    }
-                                } else {
-                                    final Address addressProper = new Address(inetAddress.getAddress(), port);
-                                    if (!addressProper.equals(thisAddress)) {
-                                        setPossibleAddresses.add(addressProper);
-                                    }
+                        if (matchingAddress) {
+                            for (int i = 0; i < maxAddressTries; i++) {
+                                final Address addressProper = new Address(inetAddress, port + i);
+                                if (!addressProper.equals(thisAddress)) {
+                                    setPossibleAddresses.add(addressProper);
                                 }
-                            }
-                        } else {
-                            final Address addressProper = new Address(inetAddress.getAddress(), port);
-                            if (!addressProper.equals(thisAddress)) {
-                                setPossibleAddresses.add(addressProper);
                             }
                         }
                     }
@@ -400,7 +334,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         return setPossibleAddresses;
     }
 
-    protected List<String> getMembers(Config config) {
+    protected static List<String> getMembers(Config config) {
         Join join = config.getNetworkConfig().getJoin();
         return join.getTcpIpConfig().getMembers();
     }
@@ -408,7 +342,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     public void searchForOtherClusters(SplitBrainHandler splitBrainHandler) {
         final Collection<Address> colPossibleAddresses;
         try {
-            colPossibleAddresses = getPossibleMembers(node.getConfig(), node.getThisAddress(), logger);
+            colPossibleAddresses = getPossibleAddresses(node.getConfig(), node.getThisAddress(), logger);
         } catch (Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             return;

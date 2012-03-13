@@ -20,10 +20,14 @@ import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.AddressUtil;
 
 import java.net.*;
 import java.nio.channels.ServerSocketChannel;
-import java.util.*;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 
 public class AddressPicker {
@@ -39,51 +43,12 @@ public class AddressPicker {
     }
 
     public static boolean matchAddress(final String address, final Collection<String> interfaces) {
-        if (interfaces == null || interfaces.size() == 0) return false;
-        final int[] ip = new int[4];
-        int i = 0;
-        final StringTokenizer st = new StringTokenizer(address, ".");
-        while (st.hasMoreTokens()) {
-            ip[i++] = Integer.parseInt(st.nextToken());
-        }
-        for (final String ipmask : interfaces) {
-            if (matchAddress(ipmask, ip)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean matchAddress(final String ipmask, final int[] ip) {
-        final String[] ips = new String[4];
-        final StringTokenizer st = new StringTokenizer(ipmask, ".");
-        int i = 0;
-        while (st.hasMoreTokens()) {
-            ips[i++] = st.nextToken();
-        }
-        for (int a = 0; a < 4; a++) {
-            final String mask = ips[a];
-            final int ipa = ip[a];
-            final int dashIndex = mask.indexOf('-');
-            if (mask.equals("*")) {
-            } else if (dashIndex != -1) {
-                final int start = Integer.parseInt(mask.substring(0, dashIndex).trim());
-                final int end = Integer.parseInt(mask.substring(dashIndex + 1).trim());
-                if (ipa < start || ipa > end) {
-                    return false;
-                }
-            } else {
-                final int x = Integer.parseInt(mask);
-                if (x != ipa) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return AddressUtil.matchAnyInterface(address, interfaces);
     }
 
     public Address pickAddress() throws Exception {
         String currentAddress = null;
+        InetAddress currentInetAddress = null;
         try {
             final Config config = node.getConfig();
             final String localAddress = System.getProperty("hazelcast.local.localAddress");
@@ -93,7 +58,7 @@ public class AddressPicker {
             if (currentAddress == null) {
                 final Set<String> interfaces = new HashSet<String>();
                 if (config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled()) {
-                    Collection<Address> possibleAddresses = new TcpIpJoiner(node).getPossibleMembers(config, null, logger);
+                    final Collection<Address> possibleAddresses = TcpIpJoiner.getPossibleAddresses(config, null, logger);
                     for (Address possibleAddress : possibleAddresses) {
                         interfaces.add(possibleAddress.getHost());
                     }
@@ -105,45 +70,16 @@ public class AddressPicker {
                     currentAddress = "127.0.0.1";
                 } else {
                     if (interfaces.size() > 0) {
-                        final Enumeration<NetworkInterface> enums = NetworkInterface.getNetworkInterfaces();
-                        interfaces:
-                        while (enums.hasMoreElements()) {
-                            final NetworkInterface ni = enums.nextElement();
-                            final Enumeration<InetAddress> e = ni.getInetAddresses();
-                            while (e.hasMoreElements()) {
-                                final InetAddress inetAddress = e.nextElement();
-                                if (inetAddress instanceof Inet4Address) {
-                                    final String address = inetAddress.getHostAddress();
-                                    if (matchAddress(address, interfaces)) {
-                                        currentAddress = address;
-                                        break interfaces;
-                                    }
-                                }
-                            }
-                        }
+                        currentInetAddress = pickInetAddress(interfaces);
                     }
-                    if (currentAddress == null) {
+                    if (currentInetAddress == null) {
                         if (config.getNetworkConfig().getInterfaces().isEnabled()) {
                             String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
                             msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
                             logger.log(Level.SEVERE, msg);
                             throw new RuntimeException(msg);
                         } else {
-                            final Enumeration<NetworkInterface> enums = NetworkInterface.getNetworkInterfaces();
-                            interfaces:
-                            while (enums.hasMoreElements()) {
-                                final NetworkInterface ni = enums.nextElement();
-                                final Enumeration<InetAddress> e = ni.getInetAddresses();
-                                while (e.hasMoreElements()) {
-                                    final InetAddress inetAddress = e.nextElement();
-                                    if (inetAddress instanceof Inet4Address) {
-                                        if (!inetAddress.isLoopbackAddress()) {
-                                            currentAddress = inetAddress.getHostAddress();
-                                            break interfaces;
-                                        }
-                                    }
-                                }
-                            }
+                            currentInetAddress = pickInetAddress(null);
                         }
                     }
                 }
@@ -151,7 +87,10 @@ public class AddressPicker {
             if (currentAddress == null) {
                 currentAddress = "127.0.0.1";
             }
-            final InetAddress inetAddress = InetAddress.getByName(currentAddress);
+            if (currentInetAddress == null) {
+                currentInetAddress = InetAddress.getByName(currentAddress);
+            }
+            final InetAddress inetAddress = currentInetAddress;
             final boolean reuseAddress = config.isReuseAddress();
             ServerSocket serverSocket = serverSocketChannel.socket();
             /**
@@ -204,5 +143,25 @@ public class AddressPicker {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw e;
         }
+    }
+
+    private InetAddress pickInetAddress(final Set<String> interfaces) throws SocketException {
+        final Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+        while (networkInterfaces.hasMoreElements()) {
+            final NetworkInterface ni = networkInterfaces.nextElement();
+            final Enumeration<InetAddress> e = ni.getInetAddresses();
+            while (e.hasMoreElements()) {
+                final InetAddress inetAddress = e.nextElement();
+                if (interfaces != null && !interfaces.isEmpty()) {
+                    final String address = inetAddress.getHostAddress();
+                    if (matchAddress(address, interfaces)) {
+                        return inetAddress;
+                    }
+                } else if (!inetAddress.isLoopbackAddress()) {
+                    return inetAddress;
+                }
+            }
+        }
+        return null;
     }
 }
