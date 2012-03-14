@@ -33,7 +33,7 @@ public abstract class AbstractSerializer {
     private static final int OUTPUT_STREAM_BUFFER_SIZE = 100 << 10;
 
     private static final Class[] PRIMITIVE_CLASSES_ARRAY = {int.class, long.class, boolean.class, byte.class,
-            float.class, double.class, byte.class, char.class, short.class};
+            float.class, double.class, byte.class, char.class, short.class, void.class};
     private static final int MAX_PRIM_CLASSNAME_LENGTH = 7; // boolean.class.getName().length();
 
     private final FastByteArrayOutputStream bbos;
