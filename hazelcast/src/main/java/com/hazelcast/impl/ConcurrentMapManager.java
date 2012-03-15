@@ -2280,7 +2280,7 @@ public class ConcurrentMapManager extends BaseManager {
                     return;
                 }
                 Record record = cmap.getRecord(request);
-                if ((record == null || !record.hasValueData()) && cmap.loader != null) {
+                if ((record == null || record.isLoadable()) && cmap.loader != null) {
                     storeExecutor.execute(new RemoveLoader(cmap, request), request.key.hashCode());
                 } else {
                     storeProceed(cmap, request);
@@ -2658,7 +2658,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (css.shouldLog(CS_TRACE)) {
                     css.trace(request, "Record is", record);
                 }
-                if ((record == null || !record.hasValueData()) && cmap.loader != null
+                if ((record == null || record.isLoadable()) && cmap.loader != null
                         && request.operation != ClusterOperation.CONCURRENT_MAP_PUT_TRANSIENT) {
                     if (css.shouldLog(CS_TRACE)) {
                         css.trace(request, "Will Load");
@@ -3238,11 +3238,7 @@ public class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             Record record = cmap.getRecord(request);
-            if (cmap.loader != null
-                    && (record == null
-                    || !record.isActive()
-                    || !record.isValid()
-                    || !record.hasValueData())) {
+            if (cmap.loader != null && (record == null || record.isLoadable())) {
                 storeExecutor.execute(new GetMapEntryLoader(cmap, request), request.key.hashCode());
             } else {
                 doOperation(request);
@@ -3290,11 +3286,7 @@ public class ConcurrentMapManager extends BaseManager {
             CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
                 Record record = cmap.getRecord(request);
-                if (cmap.loader != null
-                        && (record == null
-                        || !record.isActive()
-                        || !record.isValid()
-                        || !record.hasValueData())) {
+                if (cmap.loader != null && (record == null || record.isLoadable())) {
                     storeExecutor.execute(new GetDataRecordEntryLoader(cmap, request), request.key.hashCode());
                 } else {
                     doOperation(request);
@@ -3345,11 +3337,7 @@ public class ConcurrentMapManager extends BaseManager {
         public void handle(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             Record record = cmap.getRecord(request);
-            if (cmap.loader != null
-                    && (record == null
-                    || !record.isActive()
-                    || !record.isValid()
-                    || !record.hasValueData())) {
+            if (cmap.loader != null && (record == null || record.isLoadable())) {
                 storeExecutor.execute(new GetLoader(cmap, request), request.key.hashCode());
             } else {
                 doOperation(request);
@@ -3394,11 +3382,7 @@ public class ConcurrentMapManager extends BaseManager {
             CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
                 Record record = cmap.getRecord(request);
-                if (cmap.loader != null
-                        && (record == null
-                        || !record.isActive()
-                        || !record.isValid()
-                        || !record.hasValueData())) {
+                if (cmap.loader != null && (record == null || record.isLoadable())) {
                     storeExecutor.execute(new ContainsKeyLoader(cmap, request), request.key.hashCode());
                 } else {
                     doOperation(request);

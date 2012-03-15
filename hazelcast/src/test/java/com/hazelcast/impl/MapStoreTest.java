@@ -1008,6 +1008,10 @@ public class MapStoreTest extends TestUtil {
         private String mapName;
         private boolean loadAllKeys = true;
 
+        public TestMapStore() {
+            this(0, 0, 0, 0, 0, 0);
+        }
+
         public TestMapStore(int expectedStore, int expectedDelete, int expectedLoad) {
             this(expectedStore, 0, expectedDelete, 0, expectedLoad, 0);
         }
@@ -1435,5 +1439,39 @@ public class MapStoreTest extends TestUtil {
         assertEquals(initialKeys, superClient.getMap("testMapLoader-2").size());
         assertEquals(initialKeys, member.getMap("testMapLoader-2").size());
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    /**
+     * Issue 816.
+     */
+    public void testMapRemoveWithWriteBehindMapStore() {
+        Config c = new Config();
+        TestMapStore mapStore = new TestMapStore();
+        mapStore.setLoadAllKeys(false);
+        for (int i = 1; i < 5; i++) {
+            mapStore.store(i, "value" + i);
+        }
+        c.getMapConfig("test").setMapStoreConfig(new MapStoreConfig().setEnabled(true)
+                .setWriteDelaySeconds(100).setImplementation(mapStore));
+
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(c);
+        Map map = hz.getMap("test");
+
+        assertEquals("value1", map.get(1));
+        assertEquals("value1", map.remove(1));
+        assertNull(map.get(1));
+
+        assertEquals("value2", map.get(2));
+        assertEquals("value2", map.remove(2));
+        assertFalse(map.containsKey(2));
+
+        assertEquals("value3", map.get(3));
+        assertEquals("value3", map.remove(3));
+        assertNull(map.put(3, "valuex"));
+
+        assertEquals("value4", map.get(4));
+        assertEquals("value4", map.remove(4));
+        assertNull(map.remove(4));
     }
 }
