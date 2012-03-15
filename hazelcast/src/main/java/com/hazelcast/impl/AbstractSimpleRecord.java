@@ -298,6 +298,14 @@ public abstract class AbstractSimpleRecord implements Record {
         return 0;
     }
 
+    public boolean isRemoved() {
+        return !active;
+    }
+
+    public boolean isLoadable() {
+        return !isActive() || !isValid() || !hasValueData();
+    }
+
     public int hashCode() {
         return (int) (id ^ (id >>> 32));
     }

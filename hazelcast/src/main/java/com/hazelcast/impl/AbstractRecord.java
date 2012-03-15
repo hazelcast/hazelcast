@@ -157,7 +157,8 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public boolean isRemovable() {
-        return !isActive() && valueCount() <= 0 && getLockCount() <= 0 && !hasListener() && (getScheduledActionCount() == 0) && getBackupOpCount() == 0;
+        return !isActive() && valueCount() <= 0 && getLockCount() <= 0 && !hasListener()
+                && (getScheduledActionCount() == 0) && getBackupOpCount() == 0;
     }
 
     public boolean isEvictable() {
@@ -438,6 +439,18 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
 
     public long getLastStoredTime() {
         return lastStoredTime;
+    }
+
+    public boolean isRemoved() {
+        return !active && dirty && removeTime > 0;
+    }
+
+    /**
+     * True if record is not removed (map.remove() ...)
+     * and either is not active or not valid or has not value (may because of locking)
+     */
+    public boolean isLoadable() {
+        return !isRemoved() && (!isActive() || !isValid() || !hasValueData());
     }
 
     class OptionalInfo {

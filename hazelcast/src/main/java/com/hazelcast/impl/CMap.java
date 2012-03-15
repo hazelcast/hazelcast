@@ -1649,12 +1649,7 @@ public class CMap {
     }
 
     void markAsRemoved(Record record) {
-        if (record.isActive()) {
-            record.markRemoved();
-        }
-        record.setValueData(null);
-        record.setMultiValues(null);
-        updateIndexes(record);
+        markAsEvicted(record);
         markAsDirty(record);
     }
 

@@ -200,4 +200,8 @@ public interface Record extends MapEntry {
     boolean hasValueData();
 
     void invalidate();
+
+    boolean isRemoved();
+
+    boolean isLoadable();
 }
