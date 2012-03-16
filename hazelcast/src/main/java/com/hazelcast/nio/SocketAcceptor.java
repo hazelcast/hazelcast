@@ -42,14 +42,12 @@ public class SocketAcceptor implements Runnable {
             selector = Selector.open();
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            System.err.println("Listening on " + serverSocketChannel);
             while (connectionManager.isLive()) {
                 final int keyCount = selector.select(); // block until new connection or interrupt.
                 if (Thread.currentThread().isInterrupted()) {
                     break;
                 }
                 if (keyCount == 0) {
-                    System.err.println("!!!! keys= " + 0);
                     continue;
                 }
                 final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();

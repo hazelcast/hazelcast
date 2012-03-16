@@ -84,6 +84,13 @@ public class AddressPicker {
                     }
                 }
             }
+            if (currentInetAddress != null && currentInetAddress instanceof Inet6Address) {
+                // check if scope id correctly set
+                if (currentInetAddress.isLinkLocalAddress() || currentInetAddress.isSiteLocalAddress()) {
+                    NetworkInterface ni = NetworkInterface.getByInetAddress(currentInetAddress);
+                    currentInetAddress = Inet6Address.getByAddress(null, currentInetAddress.getAddress(), ni);
+                }
+            }
             if (currentInetAddress == null) {
                 currentInetAddress = InetAddress.getByName("127.0.0.1");
             }

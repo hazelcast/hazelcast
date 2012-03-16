@@ -19,8 +19,10 @@ package com.hazelcast.nio;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 
@@ -47,12 +49,10 @@ public class SocketConnector implements Runnable {
             connectionManager.ioService.onIOThreadStart();
             socketChannel = SocketChannel.open();
             final Address thisAddress = connectionManager.ioService.getThisAddress();
-            final InetAddress inetBindAddress = InetAddress.getByName(prepareHostAddress(thisAddress));
             connectionManager.initSocket(socketChannel.socket());
-            socketChannel.socket().bind(new InetSocketAddress(inetBindAddress, 0));
-            final InetAddress inetRemoteAddress = InetAddress.getByName(prepareHostAddress(address));
+            socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
             logger.log(Level.FINEST, "connecting to " + address);
-            boolean connected = socketChannel.connect(new InetSocketAddress(inetRemoteAddress, address.getPort()));
+            boolean connected = socketChannel.connect(getRemoteSocketAddress(address));
             logger.log(Level.FINEST, "connection check. connected: " + connected + ", " + address);
             MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
             if (memberSocketInterceptor != null) {
@@ -73,6 +73,16 @@ public class SocketConnector implements Runnable {
             }
             connectionManager.failedConnection(address, e);
         }
+    }
+
+    private InetSocketAddress getRemoteSocketAddress(Address address) throws UnknownHostException {
+        InetAddress inetAddress = address.getInetAddress();
+        if (inetAddress instanceof Inet6Address) {
+            if (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress()) {
+                inetAddress = Inet6Address.getByName(prepareHostAddress(address));
+            }
+        }
+        return new InetSocketAddress(inetAddress, address.getPort());
     }
 
     private String prepareHostAddress(Address address) {
