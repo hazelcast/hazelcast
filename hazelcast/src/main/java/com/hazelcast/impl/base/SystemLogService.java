@@ -47,13 +47,48 @@ public class SystemLogService {
 
     private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(10000);
 
-    private volatile Level currentLevel = Level.CS_NONE;
+    private volatile Level currentLevel = Level.CS_TRACE;
 
     private final Node node;
 
     public SystemLogService(Node node) {
         this.node = node;
     }
+
+    public List<String> getLogBundle3() {
+        ArrayList<String> systemLogList = new ArrayList<String>();
+        systemLogList.add("kljpokş");
+        return systemLogList;
+    }
+
+    public List<SystemLogRecord> getLogBundle() {
+//        SystemLogBundle logBundle = new SystemLogBundle();
+        ArrayList<SystemLogRecord> systemLogList = new ArrayList<SystemLogRecord>();
+        String node = this.node.getThisAddress().getHost() + ":" + this.node.getThisAddress().getPort();
+        for (SystemLog log : joinLogs) {
+            systemLogList.add(new SystemLogRecord(0L, node, log.getDate(), log.toString(), log.getType().toString()));
+        }
+        for (SystemLog log : nodeLogs) {
+            systemLogList.add(new SystemLogRecord(0L, node, log.getDate(), log.toString(), log.getType().toString()));
+        }
+        for (SystemLog log : connectionLogs) {
+            systemLogList.add(new SystemLogRecord(0L, node, log.getDate(), log.toString(), log.getType().toString()));
+        }
+        for (SystemLog log : migrationLogs) {
+            systemLogList.add(new SystemLogRecord(0L, node, log.getDate(), log.toString(), log.getType().toString()));
+        }
+        for (CallState callState : mapCallStates.values()) {
+            for (Object log : callState.getLogs()) {
+                SystemLog systemLog = (SystemLog) log;
+                systemLogList.add(new SystemLogRecord(callState.getCallId(), node, systemLog.getDate(), systemLog.toString(), systemLog.getType().toString()));
+            }
+        }
+
+//        logBundle.setSystemLogList(systemLogList);
+
+        return systemLogList;
+    }
+
 
     public CallState getOrCreateCallState(long callId, Address callerAddress, int callerThreadId) {
         if (currentLevel == Level.CS_NONE) return null;
