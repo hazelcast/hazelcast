@@ -102,9 +102,9 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_SET, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_AND_UNLOCK, new PutOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_PUT_TRANSIENT, new PutTransientOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_IF_ABSENT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, new PutOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_PUT_TRANSIENT, new PutTransientOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_SAME, new ReplaceOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_MULTI, new PutMultiOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE, new RemoveOperationHandler());
@@ -363,7 +363,9 @@ public class ConcurrentMapManager extends BaseManager {
             cmap.mapLocalLocks.remove(dataKey);
         } else {
             mput.txnalPut(CONCURRENT_MAP_PUT, name, key, value, -1, -1);
-            localLock.decrementAndGet();
+            if (localLock != null) {
+                localLock.decrementAndGet();
+            }
         }
         mput.clearRequest();
     }
@@ -2427,10 +2429,6 @@ public class ConcurrentMapManager extends BaseManager {
             } else {
                 Record record = cmap.getRecord(request);
                 if (record == null || record.getMultiValues() == null || !record.isValid()) {
-                    if (record == null) {
-                        record = cmap.toRecord(request);
-                    }
-                    cmap.markAsActive(record);
                     cmap.putMulti(request);
                     request.response = Boolean.TRUE;
                     returnResponse(request);
@@ -2572,13 +2570,14 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class PutTransientOperationHandler extends SchedulableOperationHandler {
-
         @Override
         protected void onNoTimeToSchedule(Request request) {
             request.response = Boolean.FALSE;
             returnResponse(request);
         }
 
+        // putTransient is not checking map capacity
+        // because it is used during initial map loading.
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             Record record = ensureRecord(request);
@@ -2586,9 +2585,9 @@ public class ConcurrentMapManager extends BaseManager {
             cmap.put(request);
             if (record != null) {
                 record.setDirty(dirty);
-            }
-            if (!dirty) {
-                record.setLastStoredTime(System.currentTimeMillis());
+                if (!dirty) {
+                    record.setLastStoredTime(System.currentTimeMillis());
+                }
             }
             request.value = null;
             request.response = Boolean.TRUE;
@@ -2596,7 +2595,6 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class PutOperationHandler extends SchedulableOperationHandler {
-
         @Override
         protected void onNoTimeToSchedule(Request request) {
             request.response = null;
@@ -2630,47 +2628,52 @@ public class ConcurrentMapManager extends BaseManager {
             if (css.shouldLog(CS_INFO)) {
                 css.logObject(request, CS_INFO, cmap);
             }
-            boolean checkCapacity = (request.operation == CONCURRENT_MAP_PUT
-                    || request.operation == CONCURRENT_MAP_TRY_PUT
-                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK);
+            boolean checkCapacity = request.operation != CONCURRENT_MAP_REPLACE_IF_NOT_NULL;
             boolean overCapacity = checkCapacity && cmap.overCapacity(request);
             boolean cmapNotLocked = cmap.isNotLocked(request);
             if (css.shouldLog(CS_TRACE)) {
                 css.trace(request, "OverCapacity/CmapNotLocked", overCapacity, cmapNotLocked);
             }
-            if (cmapNotLocked && !overCapacity) {
-                if (shouldSchedule(request)) {
-                    if (request.hasEnoughTimeToSchedule()) {
-                        if (css.shouldLog(CS_INFO)) {
-                            Record r = cmap.getRecord(request);
-                            int scheduledActionCount = (r == null) ? 0 : r.getScheduledActionCount();
-                            DistributedLock lock = (r == null) ? null : r.getLock();
-                            css.info(request, MapSystemLogFactory.newScheduleRequest(lock, scheduledActionCount));
+            if (cmapNotLocked) {
+                if (!overCapacity) {
+                    if (shouldSchedule(request)) {
+                        if (request.hasEnoughTimeToSchedule()) {
+                            if (css.shouldLog(CS_INFO)) {
+                                Record r = cmap.getRecord(request);
+                                int scheduledActionCount = (r == null) ? 0 : r.getScheduledActionCount();
+                                DistributedLock lock = (r == null) ? null : r.getLock();
+                                css.info(request, MapSystemLogFactory.newScheduleRequest(lock, scheduledActionCount));
+                            }
+                            schedule(request);
+                        } else {
+                            if (css.shouldLog(CS_INFO)) {
+                                css.info(request, "NoTimeToSchedule");
+                            }
+                            onNoTimeToSchedule(request);
                         }
-                        schedule(request);
-                    } else {
-                        if (css.shouldLog(CS_INFO)) {
-                            css.info(request, "NoTimeToSchedule");
-                        }
-                        onNoTimeToSchedule(request);
+                        return;
                     }
-                    return;
-                }
-                Record record = cmap.getRecord(request);
-                if (css.shouldLog(CS_TRACE)) {
-                    css.trace(request, "Record is", record);
-                }
-                if ((record == null || record.isLoadable()) && cmap.loader != null
-                        && request.operation != ClusterOperation.CONCURRENT_MAP_PUT_TRANSIENT) {
+                    Record record = cmap.getRecord(request);
                     if (css.shouldLog(CS_TRACE)) {
-                        css.trace(request, "Will Load");
+                        css.trace(request, "Record is", record);
                     }
-                    storeExecutor.execute(new PutLoader(cmap, request), request.key.hashCode());
+                    if ((record == null || record.isLoadable()) && cmap.loader != null
+                            && request.operation != ClusterOperation.CONCURRENT_MAP_PUT_TRANSIENT) {
+                        if (css.shouldLog(CS_TRACE)) {
+                            css.trace(request, "Will Load");
+                        }
+                        storeExecutor.execute(new PutLoader(cmap, request), request.key.hashCode());
+                    } else {
+                        storeProceed(cmap, request);
+                    }
+                } else if (request.operation == CONCURRENT_MAP_TRY_PUT) { // over capacity and tryPut
+                    request.response = Boolean.FALSE;
+                    returnResponse(request);
                 } else {
-                    storeProceed(cmap, request);
+                    returnRedoResponse(request); // overcapacity and put
                 }
             } else {
-                returnRedoResponse(request);
+                returnRedoResponse(request);  // cmap locked
             }
         }
 

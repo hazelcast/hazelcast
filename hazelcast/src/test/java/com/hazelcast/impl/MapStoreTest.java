@@ -1449,14 +1449,14 @@ public class MapStoreTest extends TestUtil {
         Config c = new Config();
         TestMapStore mapStore = new TestMapStore();
         mapStore.setLoadAllKeys(false);
-        for (int i = 1; i < 5; i++) {
+        for (int i = 1; i < 6; i++) {
             mapStore.store(i, "value" + i);
         }
         c.getMapConfig("test").setMapStoreConfig(new MapStoreConfig().setEnabled(true)
                 .setWriteDelaySeconds(100).setImplementation(mapStore));
 
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(c);
-        Map map = hz.getMap("test");
+        IMap map = hz.getMap("test");
 
         assertEquals("value1", map.get(1));
         assertEquals("value1", map.remove(1));
@@ -1473,5 +1473,9 @@ public class MapStoreTest extends TestUtil {
         assertEquals("value4", map.get(4));
         assertEquals("value4", map.remove(4));
         assertNull(map.remove(4));
+
+        assertEquals("value5", map.get(5));
+        assertEquals("value5", map.remove(5));
+        assertNull(map.putIfAbsent(5, "valuex"));
     }
 }

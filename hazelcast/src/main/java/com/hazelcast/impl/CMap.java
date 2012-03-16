@@ -399,12 +399,11 @@ public class CMap {
 
     final boolean overCapacity(Request request) {
         if (maxSizePolicy != null && maxSizePolicy.overCapacity()) {
-            boolean addOp = (request.operation == ClusterOperation.CONCURRENT_MAP_PUT)
-                    || (request.operation == ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT);
+            boolean addOp = request.operation != CONCURRENT_MAP_TRY_PUT;
             if (addOp) {
                 concurrentMapManager.executeCleanup(CMap.this, true);
-                return true;
             }
+            return true;
         }
         return false;
     }
