@@ -16,11 +16,13 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.impl.GroupProperties;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -925,6 +927,25 @@ public class HazelcastTest {
         assertTrue(map.containsEntry("Hello", "World"));
     }
 
+
+    static class CustomSerializable implements Serializable {
+        private long dummy1 = System.currentTimeMillis();
+        private String dummy2 = String.valueOf(dummy1);
+    }
+
+    @Test
+    /**
+     * Issue 818
+     */
+    public void testMultiMapWithCustomSerializable() {
+        MultiMap map = Hazelcast.getMultiMap("testMultiMapWithCustomSerializable");
+        map.put("1", new CustomSerializable());
+        assertEquals(1, map.size());
+        map.remove("1");
+        assertEquals(0, map.size());
+    }
+
+
     @Test
     public void testContains() throws Exception {
         IMap<String, ComplexValue> map = Hazelcast.getMap("testContains");
@@ -1160,5 +1181,66 @@ public class HazelcastTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
         q.offer("message");
         assertEquals(1, q.size());
+    }
+
+    @Test
+    public void testMapPutOverCapacity() throws InterruptedException {
+        final int capacity = 100;
+        Config config = new Config();
+        config.getMapConfig("test").getMaxSizeConfig().setSize(capacity);
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final IMap map = hz.getMap("test");
+        for (int i = 0; i < capacity; i++) {
+            map.put(i, i);
+        }
+
+        final int blockingOpCount = 4; // put, set, putAndUnlock, putIfAbsent
+        // putTransient is excluded because it is used during initial map loading.
+        final CountDownLatch latch = new CountDownLatch(2 * blockingOpCount);
+        ExecutorService ex = Executors.newCachedThreadPool();
+        ex.execute(new Runnable() {
+            public void run() {
+                latch.countDown();
+                map.put("a", "a");
+                latch.countDown();
+            }
+        });
+        ex.execute(new Runnable() {
+            public void run() {
+                latch.countDown();
+                map.set("b", "b", 1000, TimeUnit.SECONDS);
+                latch.countDown();
+            }
+        });
+        ex.execute(new Runnable() {
+            public void run() {
+                latch.countDown();
+                map.putAndUnlock("c", "c");
+                latch.countDown();
+            }
+        });
+        ex.execute(new Runnable() {
+            public void run() {
+                latch.countDown();
+                map.putIfAbsent("d", "d");
+                latch.countDown();
+            }
+        });
+
+        Thread.sleep(5000);
+        assertEquals(blockingOpCount, latch.getCount());
+        for (int i = 0; i < blockingOpCount; i++) {
+            map.remove(i);
+        }
+        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        ex.shutdown();
+
+        assertEquals(capacity, map.size());
+        assertFalse(map.tryPut("e", "e", 0, TimeUnit.SECONDS));
+        assertEquals(capacity, map.size());
+
+        assertEquals("a", map.replace("a", "x"));
+        assertTrue(map.replace("b", "b", "z"));
+        assertEquals(capacity, map.size());
     }
 }
