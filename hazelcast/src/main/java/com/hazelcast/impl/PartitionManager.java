@@ -84,7 +84,8 @@ public class PartitionManager {
                     for (PartitionListener partitionListener : lsPartitionListeners) {
                         partitionListener.replicaChanged(event);
                     }
-                    if (node.isActive() && event.getReplicaIndex() == 0 && event.getNewAddress() == null) {
+                    if (event.getReplicaIndex() == 0 && event.getNewAddress() == null
+                            && node.isActive() && node.joined()) {
                         final String warning = "Owner of partition is being removed! " +
                                 "Possible data loss for partition[" + event.getPartitionId() + "]. "
                                 + event;
@@ -99,7 +100,7 @@ public class PartitionManager {
         }
         partitionMigrationInterval = node.groupProperties.PARTITION_MIGRATION_INTERVAL.getInteger() * 1000;
         immediateBackupInterval = node.groupProperties.IMMEDIATE_BACKUP_INTERVAL.getInteger() * 1000;
-        migrationService = new MigrationService(concurrentMapManager.node);
+        migrationService = new MigrationService(node);
         migrationService.start();
         int partitionTableSendInterval = node.groupProperties.PARTITION_TABLE_SEND_INTERVAL.getInteger();
         if (partitionTableSendInterval <= 0) {
@@ -139,7 +140,10 @@ public class PartitionManager {
     }
 
     private void sendClusterRuntimeState() {
-        if (!concurrentMapManager.isMaster() || !concurrentMapManager.isActive()) return;
+        if (!concurrentMapManager.isMaster() || !concurrentMapManager.isActive()
+                || !concurrentMapManager.node.joined()) {
+            return;
+        }
         // do not send partition state until initialized!
         // sending partition state makes nodes believe initialization completed.
         if (!initialized) return;
@@ -489,11 +493,15 @@ public class PartitionManager {
     }
 
     private int getMaxBackupCount() {
-        int maxBackupCount = 0;
-        for (final CMap cmap : concurrentMapManager.maps.values()) {
-            maxBackupCount = Math.max(maxBackupCount, cmap.getBackupCount());
+        final Collection<CMap> cmaps = concurrentMapManager.maps.values();
+        if (!cmaps.isEmpty()) {
+            int maxBackupCount = 0;
+            for (final CMap cmap : cmaps) {
+                maxBackupCount = Math.max(maxBackupCount, cmap.getBackupCount());
+            }
+            return maxBackupCount;
         }
-        return maxBackupCount;
+        return 1; // if there is no map, avoid extra processing.
     }
 
     public void syncForAdd() {

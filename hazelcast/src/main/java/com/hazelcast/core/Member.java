@@ -89,4 +89,12 @@ public interface Member extends DataSerializable {
      *         tt>false</tt> otherwise
      */
     boolean isLiteMember();
+
+
+    /**
+     * Returns UUID of this member.
+     *
+     * @return UUID of this member.
+     */
+    public String getUuid();
 }

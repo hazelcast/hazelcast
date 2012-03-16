@@ -53,8 +53,6 @@ public class ConnectionManager {
 
     final boolean SOCKET_NO_DELAY;
 
-    final int SOCKET_TIMEOUT;
-
     private final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
 
     private final ConcurrentMap<Address, ConnectionMonitor> mapMonitors = new ConcurrentHashMap<Address, ConnectionMonitor>(100);
@@ -69,7 +67,7 @@ public class ConnectionManager {
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
-    private volatile boolean live = true;
+    private volatile boolean live = false;
 
     final IOService ioService;
 
@@ -85,8 +83,13 @@ public class ConnectionManager {
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
+    final String ipV6ScopeId;
+
+    private Thread socketAcceptorThread; // accessed only in synchronized block
+
     public ConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
+        this.ipV6ScopeId = ioService.getThisAddress().getScopeId();
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(ConnectionManager.class.getName());
         this.SOCKET_RECEIVE_BUFFER_SIZE = ioService.getSocketReceiveBufferSize() * KILO_BYTE;
@@ -94,7 +97,6 @@ public class ConnectionManager {
         this.SOCKET_LINGER_SECONDS = ioService.getSocketLingerSeconds();
         this.SOCKET_KEEP_ALIVE = ioService.getSocketKeepAlive();
         this.SOCKET_NO_DELAY = ioService.getSocketNoDelay();
-        this.SOCKET_TIMEOUT = ioService.getSocketTimeoutSeconds() * 1000;
         int selectorCount = ioService.getSelectorThreadCount();
         selectors = new InOutSelector[selectorCount];
         SSLConfig sslConfig = ioService.getSSLConfig();
@@ -178,7 +180,7 @@ public class ConnectionManager {
         return ioService;
     }
 
-    public void executeAsync(Runnable runnable) {
+    void executeAsync(Runnable runnable) {
         es.execute(runnable);
     }
 
@@ -186,7 +188,7 @@ public class ConnectionManager {
         return memberSocketInterceptor;
     }
 
-    public InOutSelector nextSelector() {
+    private InOutSelector nextSelector() {
         if (nextSelectorIndex.get() > 1000000) {
             nextSelectorIndex.set(0);
         }
@@ -224,7 +226,7 @@ public class ConnectionManager {
         return true;
     }
 
-    public Packet createBindPacket(Bind rp) {
+    private Packet createBindPacket(Bind rp) {
         Data value = ThreadContext.get().toData(rp);
         Packet packet = new Packet();
         packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
@@ -232,7 +234,7 @@ public class ConnectionManager {
         return packet;
     }
 
-    public Connection assignSocketChannel(SocketChannelWrapper channel) {
+    Connection assignSocketChannel(SocketChannelWrapper channel) {
         InOutSelector selectorAssigned = nextSelector();
         final Connection connection = new Connection(this, selectorAssigned, connectionIdGen.incrementAndGet(), channel);
         setActiveConnections.add(connection);
@@ -244,11 +246,11 @@ public class ConnectionManager {
         return connection;
     }
 
-    public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
+    SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
         return socketChannelWrapperFactory.wrapSocketChannel(socketChannel, client);
     }
 
-    public void failedConnection(Address address, Throwable t) {
+    void failedConnection(Address address, Throwable t) {
         setConnectionInProgress.remove(address);
         ioService.onFailedConnection(address);
         getConnectionMonitor(address, false).onError(t);
@@ -284,10 +286,12 @@ public class ConnectionManager {
         return monitor;
     }
 
+    // for testing purposes only
     public Connection detachAndGetConnection(Address address) {
         return mapConnections.remove(address);
     }
 
+    // for testing purposes only
     public void attachConnection(Address address, Connection conn) {
         mapConnections.put(address, conn);
     }
@@ -332,7 +336,8 @@ public class ConnectionManager {
         socket.setSendBufferSize(SOCKET_SEND_BUFFER_SIZE);
     }
 
-    public void start() {
+    public synchronized void start() {
+        if (live) return;
         live = true;
         for (int i = 0; i < selectors.length; i++) {
             InOutSelector s = new InOutSelector(this);
@@ -340,17 +345,23 @@ public class ConnectionManager {
             new Thread(ioService.getThreadGroup(), s, ioService.getThreadPrefix() + i).start();
         }
         if (serverSocketChannel != null) {
+            if (socketAcceptorThread != null) {
+                logger.log(Level.WARNING, "SocketAcceptor thread is already live! Shutting down old acceptor...");
+                shutdownSocketAcceptor();
+            }
             Runnable acceptRunnable = new SocketAcceptor(serverSocketChannel, this);
-            new Thread(ioService.getThreadGroup(), acceptRunnable, ioService.getThreadPrefix() + "_Acceptor").start();
+            socketAcceptorThread = new Thread(ioService.getThreadGroup(), acceptRunnable,
+                    ioService.getThreadPrefix() + "Acceptor");
+            socketAcceptorThread.start();
         }
     }
 
-    public void onRestart() {
+    public synchronized void onRestart() {
         stop();
         start();
     }
 
-    public void shutdown() {
+    public synchronized void shutdown() {
         if (!live) return;
         live = false;
         stop();
@@ -365,6 +376,9 @@ public class ConnectionManager {
     }
 
     private void stop() {
+        live = false;
+        shutdownSocketAcceptor(); // interrupt acceptor thread after live=false
+        ioService.onShutdown();
         for (Connection conn : mapConnections.values()) {
             try {
                 destroyConnection(conn);
@@ -379,16 +393,26 @@ public class ConnectionManager {
                 logger.log(Level.FINEST, ignore.getMessage(), ignore);
             }
         }
+        shutdownIOSelectors();
+        setConnectionInProgress.clear();
+        mapConnections.clear();
+        mapMonitors.clear();
+        setActiveConnections.clear();
+    }
+
+    private synchronized void shutdownIOSelectors() {
         for (int i = 0; i < selectors.length; i++) {
             InOutSelector ioSelector = selectors[i];
             if (ioSelector != null) {
                 ioSelector.shutdown();
             }
+            selectors[i] = null;
         }
-        setConnectionInProgress.clear();
-        mapConnections.clear();
-        mapMonitors.clear();
-        setActiveConnections.clear();
+    }
+
+    private synchronized void shutdownSocketAcceptor() {
+        socketAcceptorThread.interrupt();
+        socketAcceptorThread = null;
     }
 
     public int getCurrentClientConnections() {

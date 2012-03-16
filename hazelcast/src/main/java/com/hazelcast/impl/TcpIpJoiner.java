@@ -290,8 +290,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
-
-    static Collection<Address> getPossibleAddresses(Config config, Address thisAddress, ILogger logger) {
+    Collection<Address> getPossibleAddresses(Config config, Address thisAddress, ILogger logger) {
         final Collection<String> lsJoinMembers = getMembers(config);
         final Set<Address> setPossibleAddresses = new HashSet<Address>();
         for (String host : lsJoinMembers) {
@@ -334,7 +333,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         return setPossibleAddresses;
     }
 
-    protected static List<String> getMembers(Config config) {
+    protected List<String> getMembers(Config config) {
         Join join = config.getNetworkConfig().getJoin();
         return join.getTcpIpConfig().getMembers();
     }

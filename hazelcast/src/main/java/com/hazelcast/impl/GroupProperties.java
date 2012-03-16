@@ -41,7 +41,6 @@ public class GroupProperties {
     public static final String PROP_SOCKET_LINGER_SECONDS = "hazelcast.socket.linger.seconds";
     public static final String PROP_SOCKET_KEEP_ALIVE = "hazelcast.socket.keep.alive";
     public static final String PROP_SOCKET_NO_DELAY = "hazelcast.socket.no.delay";
-    public static final String PROP_SOCKET_TIMEOUT_SECONDS = "hazelcast.socket.timeout.seconds";
     public static final String PROP_SERIALIZER_GZIP_ENABLED = "hazelcast.serializer.gzip.enabled";
     public static final String PROP_SERIALIZER_SHARED = "hazelcast.serializer.shared";
     public static final String PROP_PACKET_VERSION = "hazelcast.packet.version";
@@ -135,8 +134,6 @@ public class GroupProperties {
     public final GroupProperty SOCKET_KEEP_ALIVE;
 
     public final GroupProperty SOCKET_NO_DELAY;
-
-    public final GroupProperty SOCKET_TIMEOUT_SECONDS;
 
     public final GroupProperty SHUTDOWNHOOK_ENABLED;
 
@@ -244,7 +241,6 @@ public class GroupProperties {
         SOCKET_LINGER_SECONDS = new GroupProperty(config, PROP_SOCKET_LINGER_SECONDS, "0");
         SOCKET_KEEP_ALIVE = new GroupProperty(config, PROP_SOCKET_KEEP_ALIVE, "true");
         SOCKET_NO_DELAY = new GroupProperty(config, PROP_SOCKET_NO_DELAY, "true");
-        SOCKET_TIMEOUT_SECONDS = new GroupProperty(config, PROP_SOCKET_TIMEOUT_SECONDS, "0");
         SHUTDOWNHOOK_ENABLED = new GroupProperty(config, PROP_SHUTDOWNHOOK_ENABLED, "true");
         WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, PROP_WAIT_SECONDS_BEFORE_JOIN, "5");
         MAX_WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, PROP_MAX_WAIT_SECONDS_BEFORE_JOIN, "20");

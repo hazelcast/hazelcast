@@ -47,18 +47,18 @@ public class AddressPicker {
     }
 
     public Address pickAddress() throws Exception {
-        String currentAddress = null;
         InetAddress currentInetAddress = null;
         try {
             final Config config = node.getConfig();
             final String localAddress = System.getProperty("hazelcast.local.localAddress");
             if (localAddress != null) {
-                currentAddress = InetAddress.getByName(localAddress.trim()).getHostAddress();
+                currentInetAddress = InetAddress.getByName(localAddress.trim());
             }
-            if (currentAddress == null) {
+            if (currentInetAddress == null) {
                 final Set<String> interfaces = new HashSet<String>();
                 if (config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled()) {
-                    final Collection<Address> possibleAddresses = TcpIpJoiner.getPossibleAddresses(config, null, logger);
+                    final Collection<Address> possibleAddresses = new TcpIpJoiner(node)
+                            .getPossibleAddresses(config, null, logger);
                     for (Address possibleAddress : possibleAddresses) {
                         interfaces.add(possibleAddress.getHost());
                     }
@@ -67,7 +67,7 @@ public class AddressPicker {
                     interfaces.addAll(config.getNetworkConfig().getInterfaces().getInterfaces());
                 }
                 if (interfaces.contains("127.0.0.1") || interfaces.contains("localhost")) {
-                    currentAddress = "127.0.0.1";
+                    currentInetAddress = InetAddress.getByName("127.0.0.1");
                 } else {
                     if (interfaces.size() > 0) {
                         currentInetAddress = pickInetAddress(interfaces);
@@ -84,11 +84,8 @@ public class AddressPicker {
                     }
                 }
             }
-            if (currentAddress == null) {
-                currentAddress = "127.0.0.1";
-            }
             if (currentInetAddress == null) {
-                currentInetAddress = InetAddress.getByName(currentAddress);
+                currentInetAddress = InetAddress.getByName("127.0.0.1");
             }
             final InetAddress inetAddress = currentInetAddress;
             final boolean reuseAddress = config.isReuseAddress();
@@ -138,7 +135,7 @@ public class AddressPicker {
                 }
             }
             serverSocketChannel.configureBlocking(false);
-            return new Address(currentAddress, port);
+            return new Address(inetAddress, port);
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw e;

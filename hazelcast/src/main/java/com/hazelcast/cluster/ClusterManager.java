@@ -847,7 +847,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         lsMembers.remove(member);
     }
 
-    protected MemberImpl createMember(Address address, NodeType nodeType, String nodeUuid) {
+    protected MemberImpl createMember(Address address, NodeType nodeType, String nodeUuid, String ipV6ScopeId) {
+        address.setScopeId(ipV6ScopeId);
         return new MemberImpl(address, thisAddress.equals(address), nodeType, nodeUuid);
     }
 
@@ -866,7 +867,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
         MemberImpl member = getMember(address);
         if (member == null) {
-            member = createMember(address, nodeType, nodeUuid);
+            member = createMember(address, nodeType, nodeUuid, thisAddress.getScopeId());
         }
         addMember(member);
         return member;

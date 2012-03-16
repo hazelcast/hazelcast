@@ -70,6 +70,14 @@ public interface IOService {
 
     void shouldConnectTo(Address address);
 
+    boolean isReuseSocketAddress();
+
+    int getSocketPort();
+
+    boolean isSocketBindAny();
+
+    boolean isSocketPortAutoIncrement();
+
     int getSocketReceiveBufferSize();
 
     int getSocketSendBufferSize();
@@ -80,8 +88,6 @@ public interface IOService {
 
     boolean getSocketNoDelay();
 
-    int getSocketTimeoutSeconds();
-
     int getSelectorThreadCount();
 
     long getConnectionMonitorInterval();
@@ -91,4 +97,6 @@ public interface IOService {
     void disconnectExistingCalls(Address deadEndpoint);
 
     boolean isClient();
+
+    void onShutdown();
 }

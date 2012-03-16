@@ -17,7 +17,7 @@
 package com.hazelcast.logging;
 
 import com.hazelcast.cluster.ClusterManager;
-import com.hazelcast.core.Member;
+import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.base.SystemLogService;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,21 +27,24 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 public class LoggingServiceImpl implements LoggingService {
-    private final Member thisMember;
+    private final MemberImpl thisMember;
     private final SystemLogService systemLogService;
     private final String groupName;
     private final CopyOnWriteArrayList<LogListenerRegistration> lsListeners
             = new CopyOnWriteArrayList<LogListenerRegistration>();
 
+    private final String thisAddressString;
+
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
     private final LoggerFactory loggerFactory;
     private volatile Level minLevel = Level.OFF;
 
-    public LoggingServiceImpl(SystemLogService systemLogService, String groupName, String loggingType, Member thisMember) {
+    public LoggingServiceImpl(SystemLogService systemLogService, String groupName, String loggingType, MemberImpl thisMember) {
         this.systemLogService = systemLogService;
         this.groupName = groupName;
         this.thisMember = thisMember;
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
+        thisAddressString = "[" + thisMember.getAddress().getHost() + "]:" + thisMember.getAddress().getPort();
     }
 
     public ILogger getLogger(String name) {
@@ -133,7 +136,7 @@ public class LoggingServiceImpl implements LoggingService {
             }
             boolean loggable = logger.isLoggable(level);
             if (loggable || level.intValue() >= minLevel.intValue()) {
-                message = thisMember.getInetSocketAddress() + " [" + groupName + "] " + message;
+                message = thisAddressString + " [" + groupName + "] " + message;
                 LogRecord logRecord = new LogRecord(level, message);
                 logRecord.setThrown(thrown);
                 logRecord.setLoggerName(name);

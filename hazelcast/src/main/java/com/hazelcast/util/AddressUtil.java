@@ -49,13 +49,14 @@ public final class AddressUtil {
         return getAddressHolder(address, -1);
     }
 
-    public static AddressHolder getAddressHolder(String address, int defaultPort) {
+    public static AddressHolder getAddressHolder(final String address, int defaultPort) {
         final int indexBracketStart = address.indexOf('[');
         final int indexBracketEnd = address.indexOf(']', indexBracketStart);
         final int indexColon = address.indexOf(':');
         final int lastIndexColon = address.lastIndexOf(':');
-        final String host;
-        final int port;
+        String host;
+        int port = defaultPort;
+        String scopeId = null;
         if (indexColon > -1 && lastIndexColon > indexColon) {
             // IPv6
             if (indexBracketStart == 0 && indexBracketEnd > indexBracketStart
@@ -64,16 +65,19 @@ public final class AddressUtil {
                 port = Integer.parseInt(address.substring(lastIndexColon + 1));
             } else {
                 host = address;
-                port = defaultPort;
+            }
+            final int indexPercent = host.indexOf('%');
+            if (indexPercent != -1) {
+                scopeId = host.substring(indexPercent + 1);
+                host = host.substring(0, indexPercent);
             }
         } else if (indexColon > 0 && indexColon == lastIndexColon) {
             host = address.substring(0, indexColon);
             port = Integer.parseInt(address.substring(indexColon + 1));
         } else {
             host = address;
-            port = defaultPort;
         }
-        return new AddressHolder(host, port);
+        return new AddressHolder(host, port, scopeId);
     }
 
     public static boolean isIpAddress(String address) {
@@ -84,7 +88,8 @@ public final class AddressUtil {
         }
     }
 
-    public static AddressMatcher getAddressMatcher(String address) {
+    public static AddressMatcher getAddressMatcher(String host) {
+        final String address = getAddressHolder(host).address;
         final AddressMatcher matcher;
         final int indexColon = address.indexOf(':');
         final int lastIndexColon = address.lastIndexOf(':');
@@ -127,7 +132,6 @@ public final class AddressUtil {
         if (address.indexOf('%') > -1) {
             String[] parts = address.split("\\%");
             address = parts[0];
-            matcher.setScopeId(parts[1]);
         }
         final String[] parts = address.split("((?<=:)|(?=:))");
         final LinkedList<String> ipString = new LinkedList<String>();
@@ -165,10 +169,13 @@ public final class AddressUtil {
 
     public static class AddressHolder {
         public final String address;
+        public final String scopeId;
         public final int port;
 
-        public AddressHolder(final String address, final int port) {
+        public AddressHolder(final String address, final int port,
+                             final String scopeId) {
             this.address = address;
+            this.scopeId = scopeId;
             this.port = port;
         }
     }
@@ -187,14 +194,6 @@ public final class AddressUtil {
         public abstract boolean isIPv4();
 
         public abstract boolean isIPv6();
-
-        public String getScopeId() {
-            return null;
-        }
-
-        public void setScopeId(final String scopeId) {
-            throw new UnsupportedOperationException();
-        }
 
         public abstract void setAddress(String ip[]);
 
@@ -292,8 +291,6 @@ public final class AddressUtil {
     }
 
     static class Ip6AddressMatcher extends AddressMatcher {
-        String scopeId;
-
         public Ip6AddressMatcher() {
             super(new String[8]);  // x:x:x:x:x:x:x:x%s
         }
@@ -306,14 +303,6 @@ public final class AddressUtil {
             return true;
         }
 
-        public String getScopeId() {
-            return scopeId;
-        }
-
-        public void setScopeId(final String scopeId) {
-            this.scopeId = scopeId;
-        }
-
         public void setAddress(String ip[]) {
             for (int i = 0; i < ip.length; i++) {
                 this.address[i] = ip[i];
@@ -323,11 +312,6 @@ public final class AddressUtil {
         public boolean match(final AddressMatcher matcher) {
             if (matcher.isIPv4()) return false;
             final Ip6AddressMatcher a = (Ip6AddressMatcher) matcher;
-            if (scopeId != null && !"*".equals(scopeId)) {
-                if (!scopeId.equals(a.scopeId)) {
-                    return false;
-                }
-            }
             final String[] mask = this.address;
             final String[] input = a.address;
             return match(mask, input, 16);
@@ -340,9 +324,6 @@ public final class AddressUtil {
                 if (i != address.length - 1) {
                     sb.append(':');
                 }
-            }
-            if (scopeId != null) {
-                sb.append('%').append(scopeId);
             }
             return sb.toString();
         }

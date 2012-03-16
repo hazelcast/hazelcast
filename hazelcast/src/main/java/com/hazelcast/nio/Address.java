@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -27,9 +28,13 @@ import java.nio.ByteBuffer;
 public final class Address implements DataSerializable {
 
     private static final long serialVersionUID = -7626390274220424603L;
+    private static final byte IPv4 = 4;
+    private static final byte IPv6 = 6;
 
     private int port = -1;
-    private String address;
+    private String host;
+    private byte type;
+    private transient String scopeId;
 
     public Address() {
     }
@@ -38,47 +43,63 @@ public final class Address implements DataSerializable {
         this(inetSocketAddress.getAddress(), inetSocketAddress.getPort());
     }
 
-    public Address(String address, int port) throws UnknownHostException {
-        this(InetAddress.getByName(address), port);
+    public Address(String host, int port) throws UnknownHostException {
+        this(InetAddress.getByName(host), port);
     }
 
     public Address(InetAddress inetAddress, int port) {
         this.port = port;
-        this.address = inetAddress.getHostAddress();
+        this.type = (inetAddress instanceof Inet4Address) ? IPv4 : IPv6;
+        String[] host = inetAddress.getHostAddress().split("\\%");
+        this.host = host[0];
+        if (host.length == 2) {
+            scopeId = host[1];
+        }
     }
 
     public Address(Address address) {
-        this.address = address.address;
+        this.host = address.host;
         this.port = address.port;
+        this.type = address.type;
+        this.scopeId = address.scopeId;
     }
 
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(port);
-        out.writeUTF(address);
+        out.write(type);
+        byte[] address = host.getBytes();
+        out.writeInt(address.length);
+        out.write(address);
     }
 
     public void readData(DataInput in) throws IOException {
         port = in.readInt();
-        address = in.readUTF();
-    }
-
-    public void readObject(ByteBuffer buffer) {
-        port = buffer.getInt();
-        int addressLength = buffer.getInt();
-        byte[] bytesAddress = new byte[addressLength];
-        buffer.get(bytesAddress);
-        address = new String(bytesAddress);
+        type = in.readByte();
+        int len = in.readInt();
+        byte[] address = new byte[len];
+        in.readFully(address);
+        host = new String(address);
     }
 
     public void writeObject(ByteBuffer buffer) {
         buffer.putInt(port);
-        byte[] bytesAddress = address.getBytes();
-        buffer.putInt(bytesAddress.length);
-        buffer.put(bytesAddress);
+        buffer.put(type);
+        byte[] address = host.getBytes();
+        buffer.putInt(address.length);
+        buffer.put(address);
+    }
+
+    public void readObject(ByteBuffer buffer) {
+        port = buffer.getInt();
+        type = buffer.get();
+        int len = buffer.getInt();
+        byte[] address = new byte[len];
+        buffer.get(address);
+        host = new String(address);
     }
 
     public String getHost() {
-        return address;
+        return host;
     }
 
     @Override
@@ -91,11 +112,11 @@ public final class Address implements DataSerializable {
     }
 
     public InetAddress getInetAddress() throws UnknownHostException {
-        return getInetSocketAddress().getAddress();
+        return InetAddress.getByName(getScopedHost());
     }
 
     public InetSocketAddress getInetSocketAddress() throws UnknownHostException {
-        return new InetSocketAddress(InetAddress.getByName(address), port);
+        return new InetSocketAddress(getInetAddress(), port);
     }
 
     @Override
@@ -103,12 +124,12 @@ public final class Address implements DataSerializable {
         if (this == o) return true;
         if (!(o instanceof Address)) return false;
         final Address address = (Address) o;
-        return port == address.port && this.address.equals(address.address);
+        return port == address.port && this.type == address.type && this.host.equals(address.host);
     }
 
     @Override
     public int hashCode() {
-        return hash(address.getBytes()) * 29 + port;
+        return hash(host.getBytes()) * 29 + port;
     }
 
     private int hash(byte[] bytes) {
@@ -117,5 +138,28 @@ public final class Address implements DataSerializable {
             hash = (hash * 29) + b;
         }
         return hash;
+    }
+
+    public boolean isIPv4() {
+        return type == IPv4;
+    }
+
+    public boolean isIPv6() {
+        return type == IPv6;
+    }
+
+    public String getScopeId() {
+        return isIPv6() ? scopeId : null;
+    }
+
+    public void setScopeId(final String scopeId) {
+        if (isIPv6()) {
+            this.scopeId = scopeId;
+        }
+    }
+
+    public String getScopedHost() {
+        return (isIPv4() || scopeId == null) ? getHost()
+                : getHost() + "%" + scopeId;
     }
 }

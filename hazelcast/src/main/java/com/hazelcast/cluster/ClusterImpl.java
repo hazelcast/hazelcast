@@ -40,16 +40,16 @@ public class ClusterImpl implements Cluster {
     volatile long clusterTimeDiff = Long.MAX_VALUE;
     final Node node;
 
-    public ClusterImpl(Node node, MemberImpl thisMember) {
+    public ClusterImpl(Node node) {
         this.node = node;
-        this.setMembers(Arrays.asList(thisMember));
+        this.setMembers(Arrays.asList(node.getLocalMember()));
     }
 
     public void reset() {
         mapMembers.clear();
         clusterMembers.clear();
         members.set(null);
-        this.setMembers(Arrays.asList((MemberImpl) localMember.get()));
+        this.setMembers(Arrays.asList(node.getLocalMember()));
     }
 
     public void setMembers(List<MemberImpl> lsMembers) {
@@ -57,7 +57,8 @@ public class ClusterImpl implements Cluster {
         ArrayList<Runnable> notifications = new ArrayList<Runnable>();
         for (MemberImpl member : lsMembers) {
             if (member != null) {
-                final MemberImpl dummy = new MemberImpl(member.getAddress(), member.localMember(), member.getNodeType());
+                final MemberImpl dummy = new MemberImpl(member.getAddress(), member.localMember(),
+                        member.getNodeType(), member.getUuid());
                 Member clusterMember = clusterMembers.get(dummy);
                 if (clusterMember == null) {
                     clusterMember = dummy;

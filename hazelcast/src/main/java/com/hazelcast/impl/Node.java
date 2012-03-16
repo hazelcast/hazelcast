@@ -159,7 +159,7 @@ public class Node {
             Util.throwUncheckedException(e);
         }
         address = localAddress;
-        localMember = new MemberImpl(address, true, localNodeType);
+        localMember = new MemberImpl(address, true, localNodeType, UUID.randomUUID().toString());
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         systemLogService = new SystemLogService(Node.this);
         this.loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
@@ -168,7 +168,7 @@ public class Node {
         initializer = NodeInitializerFactory.create();
         initializer.beforeInitialize(this);
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
-        clusterImpl = new ClusterImpl(this, localMember);
+        clusterImpl = new ClusterImpl(this);
         baseVariables = new NodeBaseVariables(address, localMember);
         //initialize managers..
         clusterService = new ClusterService(this);
@@ -269,6 +269,10 @@ public class Node {
         return address;
     }
 
+    public MemberImpl getLocalMember() {
+        return localMember;
+    }
+
     public String getName() {
         return factory.getName();
     }
@@ -318,12 +322,6 @@ public class Node {
         concurrentMapManager.reset();
         logger.log(Level.FINEST, "Shutting down the cluster manager");
         clusterManager.stop();
-    }
-
-    private void generateMemberUuid() {
-        final String uuid = UUID.randomUUID().toString();
-        logger.log(Level.FINEST, "Generated new UUID for local member: " + uuid);
-        localMember.setUuid(uuid);
     }
 
     public void shutdown(final boolean force, final boolean now) {
@@ -416,7 +414,6 @@ public class Node {
     public void start() {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
-        generateMemberUuid();
         serviceThread = clusterService.getServiceThread();
         serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
@@ -454,7 +451,10 @@ public class Node {
     }
 
     public void onRestart() {
-        generateMemberUuid();
+        joined.set(false);
+        final String uuid = UUID.randomUUID().toString();
+        logger.log(Level.FINEST, "Generated new UUID for local member: " + uuid);
+        localMember.setUuid(uuid);
     }
 
     public ILogger getLogger(String name) {

@@ -30,9 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -380,6 +378,69 @@ public class HazelcastClusterTest {
     static class EchoCallable implements Callable<String>, Serializable {
         public String call() throws Exception {
             return "hello!";
+        }
+    }
+
+    @Test
+    public void testHazelcastRestart() {
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
+        assertEquals(2, hz1.getCluster().getMembers().size());
+        assertEquals(2, hz2.getCluster().getMembers().size());
+        Map map1 = hz1.getMap("test");
+        Map map2 = hz2.getMap("test");
+        for (int i = 0; i < 1000; i++) {
+            map1.put(i, i);
+        }
+        assertEquals(1000, map2.size());
+
+        hz1.getLifecycleService().restart();
+        assertEquals(1000, map2.size());
+        assertEquals(1000, map1.size());
+        assertEquals(2, hz1.getCluster().getMembers().size());
+        assertEquals(2, hz2.getCluster().getMembers().size());
+
+        hz2.getLifecycleService().restart();
+        assertEquals(1000, map2.size());
+        assertEquals(1000, map1.size());
+        assertEquals(2, hz1.getCluster().getMembers().size());
+        assertEquals(2, hz2.getCluster().getMembers().size());
+    }
+
+    @Test
+    public void testMemberUuid() throws InterruptedException {
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(null);
+        Member m1 = hz1.getCluster().getLocalMember();
+        assertNotNull(m1.getUuid());
+
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
+        Member m2 = hz2.getCluster().getLocalMember();
+        assertNotNull(m2.getUuid());
+
+        HazelcastInstance hz3 = Hazelcast.newHazelcastInstance(null);
+        Member m3 = hz3.getCluster().getLocalMember();
+        assertNotNull(m3.getUuid());
+
+        List<Member> memberList = Arrays.asList(new Member[]{m1, m2, m3});
+        compareMemberUuids(memberList, new ArrayList<Member>(hz1.getCluster().getMembers()));
+        compareMemberUuids(memberList, new ArrayList<Member>(hz2.getCluster().getMembers()));
+        compareMemberUuids(memberList, new ArrayList<Member>(hz3.getCluster().getMembers()));
+
+        hz1.getLifecycleService().restart();
+        m1 = hz1.getCluster().getLocalMember();
+
+        Thread.sleep(2000);
+
+        memberList = Arrays.asList(new Member[]{m2, m3, m1});
+        compareMemberUuids(memberList, new ArrayList<Member>(hz1.getCluster().getMembers()));
+        compareMemberUuids(memberList, new ArrayList<Member>(hz2.getCluster().getMembers()));
+        compareMemberUuids(memberList, new ArrayList<Member>(hz3.getCluster().getMembers()));
+    }
+
+    private static void compareMemberUuids(List<Member> members1, List<Member> members2) {
+        for (int i = 0; i < members1.size(); i++) {
+            assertEquals(i + ": " + members1.get(i) + " vs " + members2.get(i),
+                    members1.get(i).getUuid(), members2.get(i).getUuid());
         }
     }
 }

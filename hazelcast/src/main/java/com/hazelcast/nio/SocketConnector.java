@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
@@ -36,15 +37,22 @@ public class SocketConnector implements Runnable {
     }
 
     public void run() {
+        if (!connectionManager.isLive()) {
+            logger.log(Level.FINEST, "ConnectionManager is not live, connection attempt to " +
+                    address + " is cancelled!");
+            return;
+        }
         SocketChannel socketChannel = null;
         try {
             connectionManager.ioService.onIOThreadStart();
             socketChannel = SocketChannel.open();
             final Address thisAddress = connectionManager.ioService.getThisAddress();
-            socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
+            final InetAddress inetBindAddress = InetAddress.getByName(prepareHostAddress(thisAddress));
+            connectionManager.initSocket(socketChannel.socket());
+            socketChannel.socket().bind(new InetSocketAddress(inetBindAddress, 0));
+            final InetAddress inetRemoteAddress = InetAddress.getByName(prepareHostAddress(address));
             logger.log(Level.FINEST, "connecting to " + address);
-            boolean connected = socketChannel.connect(new InetSocketAddress(address.getInetAddress(),
-                    address.getPort()));
+            boolean connected = socketChannel.connect(new InetSocketAddress(inetRemoteAddress, address.getPort()));
             logger.log(Level.FINEST, "connection check. connected: " + connected + ", " + address);
             MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
             if (memberSocketInterceptor != null) {
@@ -65,5 +73,13 @@ public class SocketConnector implements Runnable {
             }
             connectionManager.failedConnection(address, e);
         }
+    }
+
+    private String prepareHostAddress(Address address) {
+        String hostAddress = address.getHost();
+        if (address.isIPv6() && connectionManager.ipV6ScopeId != null) {
+            hostAddress += "%" + connectionManager.ipV6ScopeId;
+        }
+        return hostAddress;
     }
 }

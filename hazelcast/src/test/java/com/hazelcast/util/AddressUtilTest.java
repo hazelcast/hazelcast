@@ -34,8 +34,9 @@ public class AddressUtilTest {
     @Test
     public void testParsingHostAndPort() {
         AddressHolder addressHolder = AddressUtil.getAddressHolder("[fe80::62c5:*:fe05:480a%en0]:8080");
-        Assert.assertEquals("fe80::62c5:*:fe05:480a%en0", addressHolder.address);
+        Assert.assertEquals("fe80::62c5:*:fe05:480a", addressHolder.address);
         Assert.assertEquals(8080, addressHolder.port);
+        Assert.assertEquals("en0", addressHolder.scopeId);
 
         addressHolder = AddressUtil.getAddressHolder("[::ffff:192.0.2.128]:5700");
         Assert.assertEquals("::ffff:192.0.2.128", addressHolder.address);
@@ -55,17 +56,14 @@ public class AddressUtilTest {
         AddressMatcher address;
         address = AddressUtil.getAddressMatcher("fe80::62c5:*:fe05:480a%en0");
         Assert.assertTrue(address.isIPv6());
-        Assert.assertEquals("en0", address.getScopeId());
-        Assert.assertEquals("fe80:0:0:0:62c5:*:fe05:480a%en0", address.getAddress());
+        Assert.assertEquals("fe80:0:0:0:62c5:*:fe05:480a", address.getAddress());
 
         address = AddressUtil.getAddressMatcher("192.168.1.1");
         Assert.assertTrue(address instanceof Ip4AddressMatcher);
-        Assert.assertNull(address.getScopeId());
         Assert.assertEquals("192.168.1.1", address.getAddress());
 
         address = AddressUtil.getAddressMatcher("::ffff:192.0.2.128");
         Assert.assertTrue(address.isIPv4());
-        Assert.assertNull(address.getScopeId());
         Assert.assertEquals("192.0.2.128", address.getAddress());
     }
 

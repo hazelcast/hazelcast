@@ -45,19 +45,15 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     }
 
     public MemberImpl(Address address, boolean localMember) {
-        this(address, localMember, NodeType.MEMBER);
+        this(address, localMember, NodeType.MEMBER, null);
     }
 
-    public MemberImpl(Address address, boolean localMember, NodeType nodeType) {
-        super();
+    public MemberImpl(Address address, boolean localMember, NodeType nodeType, String uuid) {
+        this();
         this.nodeType = nodeType;
         this.localMember = localMember;
         this.address = address;
         this.lastRead = System.currentTimeMillis();
-    }
-
-    public MemberImpl(Address address, boolean localMember, NodeType nodeType, String uuid) {
-        this(address, localMember, nodeType);
         this.uuid = uuid;
     }
 

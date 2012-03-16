@@ -65,6 +65,7 @@ public class NodeIOService implements IOService {
     }
 
     public void onFatalError(Exception e) {
+        getSystemLogService().logConnection(e.getClass().getName() + ": " + e.getMessage());
         node.shutdown(false, false);
     }
 
@@ -130,6 +131,22 @@ public class NodeIOService implements IOService {
         }
     }
 
+    public boolean isReuseSocketAddress() {
+        return node.getConfig().isReuseAddress();
+    }
+
+    public int getSocketPort() {
+        return node.getConfig().getPort();
+    }
+
+    public boolean isSocketBindAny() {
+        return node.groupProperties.SOCKET_BIND_ANY.getBoolean();
+    }
+
+    public boolean isSocketPortAutoIncrement() {
+        return node.getConfig().isPortAutoIncrement();
+    }
+
     public int getSocketReceiveBufferSize() {
         return this.node.getGroupProperties().SOCKET_RECEIVE_BUFFER_SIZE.getInteger();
     }
@@ -148,10 +165,6 @@ public class NodeIOService implements IOService {
 
     public boolean getSocketNoDelay() {
         return this.node.getGroupProperties().SOCKET_NO_DELAY.getBoolean();
-    }
-
-    public int getSocketTimeoutSeconds() {
-        return this.node.getGroupProperties().SOCKET_TIMEOUT_SECONDS.getInteger();
     }
 
     public int getSelectorThreadCount() {
@@ -178,6 +191,15 @@ public class NodeIOService implements IOService {
 
     public int getConnectionMonitorMaxFaults() {
         return node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger();
+    }
+
+    public void onShutdown() {
+        node.clusterManager.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
+        try {
+            // wait a little to
+            Thread.sleep(100 * node.getClusterImpl().getMembers().size());
+        } catch (InterruptedException e) {
+        }
     }
 }
 

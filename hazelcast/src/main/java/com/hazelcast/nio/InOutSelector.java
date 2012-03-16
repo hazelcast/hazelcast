@@ -145,15 +145,6 @@ public final class InOutSelector implements Runnable {
                             Connection connection = (Connection) sk.attachment();
                             connection.getWriteHandler().handle();
                         }
-//                        if (sk.isValid() && sk.isConnectable()) {
-//                            sk.interestOps(sk.interestOps() & ~SelectionKey.OP_CONNECT);
-//                            SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
-//                            selectionHandler.handle();
-//                        }
-//                        if (sk.isValid() && sk.isAcceptable()) {
-//                            SelectionHandler selectionHandler = (SelectionHandler) sk.attachment();
-//                            selectionHandler.handle();
-//                        }
                     } catch (Throwable e) {
                         handleSelectorException(e);
                     }
