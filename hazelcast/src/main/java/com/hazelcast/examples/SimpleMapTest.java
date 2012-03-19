@@ -80,7 +80,7 @@ public class SimpleMapTest {
         });
         ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
         startPrintStats();
-        if(load)
+        if (load)
             load(es);
         run(es);
     }
@@ -90,16 +90,19 @@ public class SimpleMapTest {
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.execute(new Runnable() {
                 public void run() {
-                    while (true) {
-                        int key = (int) (Math.random() * ENTRY_COUNT);
-                        int operation = ((int) (Math.random() * 100));
-                        if (operation < GET_PERCENTAGE) {
-                            map.get(String.valueOf(key));
-                        } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
-                            map.put(String.valueOf(key), new byte[VALUE_SIZE]);
-                        } else {
-                            map.remove(String.valueOf(key));
+                    try {
+                        while (true) {
+                            int key = (int) (Math.random() * ENTRY_COUNT);
+                            int operation = ((int) (Math.random() * 100));
+                            if (operation < GET_PERCENTAGE) {
+                                map.get(String.valueOf(key));
+                            } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
+                                map.put(String.valueOf(key), new byte[VALUE_SIZE]);
+                            } else {
+                                map.remove(String.valueOf(key));
+                            }
                         }
+                    } catch (Exception ignored) {
                     }
                 }
             });
