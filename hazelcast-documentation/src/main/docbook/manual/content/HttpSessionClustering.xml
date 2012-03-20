@@ -73,6 +73,35 @@
         <param-name>debug</param-name>
         <param-value>true</param-value>
     </init-param>
+    <!--
+        Configuration xml location;
+            * as servlet resource OR
+            * as classpath resource OR
+            * as URL
+        Default is one of hazelcast-default.xml
+        or hazelcast.xml in classpath.
+    -->
+    <init-param>
+        <param-name>config-location</param-name>
+        <param-value>/WEB-INF/hazelcast.xml</param-value>
+    </init-param>
+    <!--
+        Do you want to use an existing HazelcastInstance?
+        Default is null.
+    -->
+    <init-param>
+        <param-name>instance-name</param-name>
+        <param-value>default</param-value>
+    </init-param>
+    <!--
+        Do you want to shutdown HazelcastInstance during
+        web application undeploy process?
+        Default is true.
+    -->
+    <init-param>
+        <param-name>shutdown-on-destroy</param-name>
+        <param-value>true</param-value>
+    </init-param>
 </filter>
 <filter-mapping>
     <filter-name>hazelcast-filter</filter-name>

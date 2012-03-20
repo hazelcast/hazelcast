@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
-<web-app xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.4"
-         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+<web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.5"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 
     <display-name>demo</display-name>
     <filter>
@@ -17,6 +17,18 @@
         <init-param>
             <param-name>debug</param-name>
             <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>config-location</param-name>
+            <param-value>/WEB-INF/hazelcast.xml</param-value>
+        </init-param>
+        <init-param>
+            <param-name>instance-name</param-name>
+            <param-value>default</param-value>
+        </init-param>
+        <init-param>
+            <param-name>shutdown-on-destroy</param-name>
+            <param-value>false</param-value>
         </init-param>
     </filter>
     <filter-mapping>

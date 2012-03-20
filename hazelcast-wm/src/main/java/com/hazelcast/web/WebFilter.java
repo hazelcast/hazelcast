@@ -46,11 +46,15 @@ public class WebFilter implements Filter {
 
     private ServletContext servletContext = null;
 
+    private HazelcastInstance hazelcastInstance;
+
     private String clusterMapName = "none";
 
     private boolean stickySession = true;
 
     private boolean debug = false;
+
+    private boolean shutdownOnDestroy = true;
 
     public WebFilter() {
     }
@@ -61,6 +65,7 @@ public class WebFilter implements Filter {
             debug = Boolean.valueOf(debugParam);
         }
         servletContext = config.getServletContext();
+        hazelcastInstance = getInstance(config);
         String mapName = config.getInitParameter("map-name");
         if (mapName != null) {
             clusterMapName = mapName;
@@ -70,6 +75,10 @@ public class WebFilter implements Filter {
         String stickySessionParam = config.getInitParameter("sticky-session");
         if (stickySessionParam != null) {
             stickySession = Boolean.valueOf(stickySessionParam);
+        }
+        String shutdownOnDestroyParam = config.getInitParameter("shutdown-on-destroy");
+        if (shutdownOnDestroyParam != null) {
+            shutdownOnDestroy = Boolean.valueOf(shutdownOnDestroyParam);
         }
         if (!stickySession) {
             getClusterMap().addEntryListener(new EntryListener() {
@@ -92,7 +101,8 @@ public class WebFilter implements Filter {
                 }
             }, false);
         }
-        log("sticky:" + stickySession + ", debug: " + debug + ", map-name: " + clusterMapName);
+        log("sticky:" + stickySession + ", debug: " + debug + ", shutdown-on-destroy: " + shutdownOnDestroy
+                + ", map-name: " + clusterMapName);
     }
 
     void removeSessionLocally(String sessionId) {
@@ -153,7 +163,7 @@ public class WebFilter implements Filter {
         mapOriginalSessions.remove(session.originalSession.getId());
         session.destroy();
         final long maxInactive = session.originalSession.getMaxInactiveInterval() * 1000; // getMaxInactiveInterval() is in seconds
-        final long clusterLastAccess = session.timestamp.get();
+        final long clusterLastAccess = session.getLastAccessed();
         final long now = System.currentTimeMillis(); // Hazelcast.getCluster().getClusterTime() ?
         if ((now - clusterLastAccess) >= maxInactive) {
             log("Destroying cluster session: " + session.getId() + " => Max-inactive: " + maxInactive
@@ -161,12 +171,11 @@ public class WebFilter implements Filter {
                     + ", Cluster-Last-Access: " + clusterLastAccess
                     + ", Now: " + now);
             getClusterMap().remove(session.getId());
-            session.timestamp.destroy();
         }
     }
 
-    public IMap getClusterMap() {
-        return Hazelcast.getMap(clusterMapName);
+    protected IMap getClusterMap() {
+        return hazelcastInstance.getMap(clusterMapName);
     }
 
     HazelcastHttpSession getSessionWithId(final String sessionId) {
@@ -323,13 +332,13 @@ public class WebFilter implements Filter {
 
         final WebFilter webFilter;
 
-        final AtomicNumber timestamp;
+        private final AtomicNumber timestamp;
 
         public HazelcastHttpSession(WebFilter webFilter, final String sessionId, HttpSession originalSession) {
             this.webFilter = webFilter;
             this.id = sessionId;
             this.originalSession = originalSession;
-            timestamp = Hazelcast.getAtomicNumber(clusterMapName + "_" + id);
+            timestamp = hazelcastInstance.getAtomicNumber(clusterMapName + "_" + id);
         }
 
         public Object getAttribute(final String name) {
@@ -371,6 +380,7 @@ public class WebFilter implements Filter {
         public void invalidate() {
             originalSession.invalidate();
             destroySession(this);
+            timestamp.destroy();
         }
 
         public boolean isNew() {
@@ -444,11 +454,16 @@ public class WebFilter implements Filter {
             // timestamp.set(Hazelcast.getCluster().getClusterTime()); ???
             timestamp.set(System.currentTimeMillis());
         }
+
+        long getLastAccessed() {
+            return hazelcastInstance.getLifecycleService().isRunning()
+                ? timestamp.get() : 0L;
+        }
     }// END of HazelSession
 
     private static synchronized String generateSessionId() {
-        String id = UUID.randomUUID().toString();
-        final StringBuilder sb = new StringBuilder();
+        final String id = UUID.randomUUID().toString();
+        final StringBuilder sb = new StringBuilder("HZ");
         final char[] chars = id.toCharArray();
         for (final char c : chars) {
             if (c != '-') {
@@ -458,7 +473,7 @@ public class WebFilter implements Filter {
                     sb.append(c);
             }
         }
-        return id = "HZ" + sb.toString();
+        return sb.toString();
     }
 
     private static void addSessionCookie(final RequestWrapper req, final String sessionId) {
@@ -540,7 +555,17 @@ public class WebFilter implements Filter {
     public void destroy() {
         mapSessions.clear();
         mapOriginalSessions.clear();
-        Hazelcast.getLifecycleService().shutdown();
+        shutdownInstance();
+    }
+
+    protected HazelcastInstance getInstance(FilterConfig filterConfig) throws ServletException {
+        return HazelcastInstanceLoader.createInstance(filterConfig);
+    }
+
+    protected void shutdownInstance() {
+        if (shutdownOnDestroy && hazelcastInstance != null) {
+            hazelcastInstance.getLifecycleService().shutdown();
+        }
     }
 }// END of WebFilter
 
