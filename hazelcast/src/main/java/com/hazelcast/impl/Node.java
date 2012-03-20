@@ -38,9 +38,7 @@ import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.lang.reflect.Constructor;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.MulticastSocket;
+import java.net.*;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Set;
 import java.util.UUID;
@@ -147,11 +145,11 @@ public class Node {
         ServerSocketChannel serverSocketChannel = null;
         Address localAddress = null;
         try {
-//            final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
-//            final String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
-//            if (preferIPv6Address == null && preferIPv4Stack == null) {
-//                System.setProperty("java.net.preferIPv4Stack", "true");
-//            }
+            final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
+            final String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
+            if (preferIPv6Address == null && preferIPv4Stack == null) {
+                System.setProperty("java.net.preferIPv4Stack", "true");
+            }
             serverSocketChannel = ServerSocketChannel.open();
             AddressPicker addressPicker = new AddressPicker(this, serverSocketChannel);
             localAddress = addressPicker.pickAddress();
@@ -198,7 +196,11 @@ public class Node {
                 multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
                 multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
                 // set the send interface
-                multicastSocket.setInterface(address.getInetAddress());
+                try {
+                    multicastSocket.setInterface(address.getInetAddress());
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, e.getMessage(), e);
+                }
                 multicastSocket.setReceiveBufferSize(64 * 1024);
                 multicastSocket.setSendBufferSize(64 * 1024);
                 String multicastGroup = System.getProperty("hazelcast.multicast.group");

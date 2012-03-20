@@ -16,7 +16,13 @@
 
 package com.hazelcast.util;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.LinkedList;
 
 public final class AddressUtil {
@@ -86,6 +92,33 @@ public final class AddressUtil {
         } catch (InvalidAddressException e) {
             return false;
         }
+    }
+
+    public static InetAddress fixInet6AddressInterface(final InetAddress inetAddress) throws SocketException {
+        Inet6Address resultInetAddress = null;
+        if (inetAddress instanceof Inet6Address &&
+                (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress())) {
+            final Inet6Address inet6Address = (Inet6Address) inetAddress;
+            if (inet6Address.getScopeId() <= 0 && inet6Address.getScopedInterface() == null) {
+                Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+                while (interfaces.hasMoreElements()) {
+                    NetworkInterface ni = interfaces.nextElement();
+                    Enumeration<InetAddress> addresses = ni.getInetAddresses();
+                    while (addresses.hasMoreElements()) {
+                        InetAddress address = addresses.nextElement();
+                        if (address instanceof Inet6Address &&
+                                Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
+                            if (resultInetAddress != null) {
+                                throw new IllegalArgumentException("This address " + inet6Address +
+                                        " is bound to more than one network interface!");
+                            }
+                            resultInetAddress = (Inet6Address) address;
+                        }
+                    }
+                }
+            }
+        }
+        return resultInetAddress == null ? inetAddress : resultInetAddress;
     }
 
     public static AddressMatcher getAddressMatcher(String host) {
