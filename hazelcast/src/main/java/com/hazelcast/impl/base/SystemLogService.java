@@ -47,7 +47,7 @@ public class SystemLogService {
 
     private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(10000);
 
-    private volatile Level currentLevel = Level.CS_TRACE;
+    private volatile Level currentLevel = Level.CS_NONE;
 
     private final Node node;
 
@@ -55,14 +55,18 @@ public class SystemLogService {
         this.node = node;
     }
 
-    public List<String> getLogBundle3() {
-        ArrayList<String> systemLogList = new ArrayList<String>();
-        systemLogList.add("kljpokş");
-        return systemLogList;
+    public void setCurrentLevel(String level) {
+        if(level.equals("trace"))
+            this.currentLevel = Level.CS_TRACE;
+        else if(level.equals("empty"))
+            this.currentLevel = Level.CS_EMPTY;
+        else if(level.equals("info"))
+            this.currentLevel = Level.CS_INFO;
+        else if(level.equals("none"))
+            this.currentLevel = Level.CS_NONE;
     }
 
     public List<SystemLogRecord> getLogBundle() {
-//        SystemLogBundle logBundle = new SystemLogBundle();
         ArrayList<SystemLogRecord> systemLogList = new ArrayList<SystemLogRecord>();
         String node = this.node.getThisAddress().getHost() + ":" + this.node.getThisAddress().getPort();
         for (SystemLog log : joinLogs) {
@@ -83,9 +87,6 @@ public class SystemLogService {
                 systemLogList.add(new SystemLogRecord(callState.getCallId(), node, systemLog.getDate(), systemLog.toString(), systemLog.getType().toString()));
             }
         }
-
-//        logBundle.setSystemLogList(systemLogList);
-
         return systemLogList;
     }
 
@@ -213,9 +214,6 @@ public class SystemLogService {
         }
     }
 
-    public void setLogLevel(Level level) {
-        this.currentLevel = level;
-    }
 
     public boolean shouldLog(Level level) {
         return currentLevel != Level.CS_NONE && currentLevel.ordinal() >= level.ordinal();

@@ -356,8 +356,8 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setDoOutput(true);
                 connection.setRequestMethod("POST");
-                connection.setConnectTimeout(1000);
-                connection.setReadTimeout(1000);
+                connection.setConnectTimeout(2000);
+                connection.setReadTimeout(2000);
                 OutputStream outputStream = connection.getOutputStream();
                 DataOutputStream output = new DataOutputStream(outputStream);
                 output.writeInt(taskId);
