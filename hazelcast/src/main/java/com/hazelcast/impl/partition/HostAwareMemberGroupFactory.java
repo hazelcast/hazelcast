@@ -19,13 +19,30 @@ package com.hazelcast.impl.partition;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class HostAwareMemberGroupFactory implements MemberGroupFactory {
 
     public Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members) {
+        final Collection<MemberGroup> groups = createHostAwareMemberGroups(members);
+        if (groups.size() == 1 && members.size() >= 2) {
+            // If there are multiple members and just one host
+            // then split members into two groups to guarantee first backup.
+            MemberGroup group1 = groups.iterator().next();
+            MemberGroup group2 = new DefaultMemberGroup();
+            final int sizePerGroup = group1.size() / 2;
+
+            Iterator<MemberImpl> iter = group1.iterator();
+            while (group2.size() < sizePerGroup && iter.hasNext()) {
+                group2.addMember(iter.next());
+                iter.remove();
+            }
+            groups.add(group2);
+        }
+        return groups;
+    }
+
+    private Collection<MemberGroup> createHostAwareMemberGroups(final Collection<MemberImpl> members) {
         Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
         for (MemberImpl member : members) {
             if (!member.isLiteMember()) {
@@ -38,6 +55,6 @@ public class HostAwareMemberGroupFactory implements MemberGroupFactory {
                 group.addMember(member);
             }
         }
-        return groups.values();
+        return new HashSet<MemberGroup> (groups.values());
     }
 }

@@ -79,7 +79,9 @@ public class SingleMemberGroup implements MemberGroup {
         }
 
         public void remove() {
-            throw new UnsupportedOperationException();
+            if (end) {
+                member = null;
+            }
         }
     }
 
@@ -106,5 +108,14 @@ public class SingleMemberGroup implements MemberGroup {
         } else if (!member.equals(other.member))
             return false;
         return true;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("SingleMemberGroup");
+        sb.append("{member=").append(member);
+        sb.append('}');
+        return sb.toString();
     }
 }

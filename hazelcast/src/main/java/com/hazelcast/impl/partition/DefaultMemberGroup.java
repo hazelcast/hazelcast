@@ -88,4 +88,13 @@ public class DefaultMemberGroup implements MemberGroup {
             return false;
         return true;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("DefaultMemberGroup");
+        sb.append("{members=").append(members);
+        sb.append('}');
+        return sb.toString();
+    }
 }

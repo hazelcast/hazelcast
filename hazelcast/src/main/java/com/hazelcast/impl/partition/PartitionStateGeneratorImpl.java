@@ -35,9 +35,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
     private final MemberGroupFactory memberGroupFactory;
 
-    public PartitionStateGeneratorImpl(MemberGroupFactory nodeGroupFactory) {
+    public PartitionStateGeneratorImpl(MemberGroupFactory memberGroupFactory) {
         super();
-        this.memberGroupFactory = nodeGroupFactory;
+        this.memberGroupFactory = memberGroupFactory;
     }
 
     public PartitionInfo[] initialize(Collection<MemberImpl> members, int partitionCount) {
