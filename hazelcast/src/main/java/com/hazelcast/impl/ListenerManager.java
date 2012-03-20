@@ -369,7 +369,8 @@ public class ListenerManager extends BaseManager {
         }
         final EntryEvent event2 = listenerItem.includeValue ?
                 event :
-                (event.getValue() != null ?
+                // if new value is already null no need to create a new value-less event
+                (event.getNewValueData() != null ?
                         new DataAwareEntryEvent(event.getMember(),
                                 event.getEventType().getType(),
                                 event.getLongName(),
@@ -378,6 +379,7 @@ public class ListenerManager extends BaseManager {
                                 null,
                                 event.firedLocally) :
                         event);
+
         switch (listenerItem.instanceType) {
             case MAP:
             case MULTIMAP:
