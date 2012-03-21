@@ -205,9 +205,7 @@ public class MapStoreTest extends TestUtil {
         }
         assertEquals(0, map1.size());
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        for (Object key : loaded.keySet()) {
-            h1.getPartitionService().getPartition(key).getOwner();
-        }
+        Thread.sleep(5000); // wait till partitions become stable
         loaded = map1.getAll(keys);
         assertEquals(size, loaded.size());
         for (int i = 0; i < 3; i++) {
