@@ -97,7 +97,7 @@ public class ManagementCenterService implements MembershipListener, LifecycleLis
         String tmpWebServerUrl = config != null ? config.getUrl() : null;
         webServerUrl = tmpWebServerUrl != null ?
                 (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
-        updateIntervalMs = (config != null && config.getUpdateInterval() > 0) ? config.getUpdateInterval() * 1000 : 3000;
+        updateIntervalMs = (config != null && config.getUpdateInterval() > 0) ? config.getUpdateInterval() * 1000 : 4000;
         
         factory.getCluster().addMembershipListener(this);
         factory.getLifecycleService().addLifecycleListener(this);

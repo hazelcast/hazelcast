@@ -1458,22 +1458,22 @@ public class MapStoreTest extends TestUtil {
 
         assertEquals("value1", map.get(1));
         assertEquals("value1", map.remove(1));
-        assertNull(map.get(1));
+        assertNull("get should be null!", map.get(1));
 
         assertEquals("value2", map.get(2));
         assertEquals("value2", map.remove(2));
-        assertFalse(map.containsKey(2));
+        assertFalse("containsKey should be false!", map.containsKey(2));
 
         assertEquals("value3", map.get(3));
         assertEquals("value3", map.remove(3));
-        assertNull(map.put(3, "valuex"));
+        assertNull("put should be null!", map.put(3, "valuex"));
 
         assertEquals("value4", map.get(4));
         assertEquals("value4", map.remove(4));
-        assertNull(map.remove(4));
+        assertNull("remove should be null!", map.remove(4));
 
         assertEquals("value5", map.get(5));
         assertEquals("value5", map.remove(5));
-        assertNull(map.putIfAbsent(5, "valuex"));
+        assertNull("putIfAbsent should be null!", map.putIfAbsent(5, "valuex"));
     }
 }
