@@ -479,7 +479,7 @@ public class PartitionManager {
                     if (indexesOfDead[partitionId] == 0
                             && record.isActive()
                             && thisAddress.equals(partitions[partitionId].getOwner())) {
-                        cmap.markAsDirty(record);
+                        cmap.markAsDirty(record, true);
                         // update the indexes
                         cmap.updateIndexes(record);
                     }

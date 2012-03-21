@@ -173,6 +173,7 @@ public class MapStoreTest extends TestUtil {
             keys.add(i);
         }
         Config config = newConfig(testMapStore, 2);
+        config.setProperty(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
@@ -204,13 +205,12 @@ public class MapStoreTest extends TestUtil {
         }
         assertEquals(0, map1.size());
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        Set<Member> owners = new HashSet<Member>();
         for (Object key : loaded.keySet()) {
-            owners.add(h1.getPartitionService().getPartition(key).getOwner());
+            h1.getPartitionService().getPartition(key).getOwner();
         }
         loaded = map1.getAll(keys);
         assertEquals(size, loaded.size());
-        for (Member owner : owners) {
+        for (int i = 0; i < 3; i++) {
             assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
         }
         assertEquals(0, testMapStore.getEventCount());
@@ -514,15 +514,15 @@ public class MapStoreTest extends TestUtil {
         Config config = newConfig(testMapStore, 1);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(1));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(2));
         assertEquals(0, map.size());
         map.put("1", "value1");
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(1));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(2));
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.waitForEvent(2));
         assertEquals(1, map.size());
         assertEquals(1, testMapStore.getStore().size());
         map.remove("1");
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.DELETE, testMapStore.waitForEvent(2));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.DELETE, testMapStore.waitForEvent(5));
         assertEquals(0, map.size());
         assertEquals(0, testMapStore.getStore().size());
     }

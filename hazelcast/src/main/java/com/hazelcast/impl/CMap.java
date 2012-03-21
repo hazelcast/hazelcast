@@ -936,7 +936,7 @@ public class CMap {
         }
         record.setIndexes(req.indexes, req.indexTypes);
         updateIndexes(record);
-        markAsDirty(record);
+        markAsDirty(record, false);
         req.clearForResponse();
         req.version = record.getVersion();
         if (localUpdateListener != null && req.txnId != Long.MIN_VALUE) {
@@ -996,6 +996,7 @@ public class CMap {
                         }
                         for (Record stored : toStore) {
                             stored.setLastStoredTime(System.currentTimeMillis());
+//                            stored.setDirty(false); // not required since we are setting dirty to false before execution
                         }
                     } catch (Exception e) {
                         for (Record dirtyRecord : dirtyRecords) {
@@ -1197,7 +1198,9 @@ public class CMap {
                 boolean owned = owner.localMember();
                 if (owned) {
                     if (store != null && writeDelayMillis > 0 && record.isDirty()) {
+                        // record should be stored, do not evict!
                     } else if (shouldPurgeRecord(record, now)) {
+                        // record should be purged, do not evict!
                     } else if (record.isActive() && !record.isValid(now)) {
                         recordsToEvict.add(record);  // expired records
                     } else if (record.isActive() && record.isEvictable()) {
@@ -1343,7 +1346,7 @@ public class CMap {
                             if (store != null && writeDelayMillis > 0 && record.isDirty()) {
                                 if (now > record.getWriteTime()) {
                                     recordsDirty.add(record);
-                                    record.setDirty(false);
+                                    record.setDirty(false); // set dirty to false, we will store these soon
                                 } else {
                                     dirty = true;
                                 }
@@ -1429,7 +1432,8 @@ public class CMap {
     }
 
     boolean shouldPurgeRecord(Record record, long now) {
-        return !record.isActive() && shouldRemove(record, now);
+        return !record.isActive() && record.isRemovable()
+                && ((now - record.getRemoveTime()) > removeDelayMillis);
     }
 
     private void executeEviction(Collection<Record> lsRecordsToEvict) {
@@ -1623,12 +1627,14 @@ public class CMap {
         }
     }
 
-    void markAsDirty(Record record) {
+    void markAsDirty(Record record, boolean force) {
         if (!record.isDirty()) {
-            dirty = true;
-            record.setDirty(true);
-            if (writeDelayMillis > 0) {
-                record.setWriteTime(System.currentTimeMillis() + writeDelayMillis);
+            if (store != null && (force || writeDelayMillis > 0)) {
+                dirty = true;
+                record.setDirty(true);
+                if (writeDelayMillis > 0) {
+                    record.setWriteTime(System.currentTimeMillis() + writeDelayMillis);
+                }
             }
         }
     }
@@ -1643,13 +1649,10 @@ public class CMap {
         }
     }
 
-    boolean shouldRemove(Record record, long now) {
-        return record.isRemovable() && ((now - record.getRemoveTime()) > removeDelayMillis);
-    }
-
     void markAsRemoved(Record record) {
+        record.markRemoved();
         markAsEvicted(record);
-        markAsDirty(record);
+        markAsDirty(record, false);
     }
 
     /**
@@ -1662,7 +1665,7 @@ public class CMap {
      */
     void markAsEvicted(Record record) {
         if (record.isActive()) {
-            record.markRemoved();
+            record.setActive(false);
         }
         record.setValueData(null);
         record.setMultiValues(null);
