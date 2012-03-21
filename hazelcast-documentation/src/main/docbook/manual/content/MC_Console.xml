@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 xml:id="MC_Console" version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
+<sect1 xml:id="MC_Console" version="5.0" xmlns="http://docbook.org/ns/docbook"
         >
     <title>Console</title>
     <para>
@@ -9,7 +9,7 @@
         To get a customer with key "Jack" you should first set the namespace with command "ns mapCustomers".
         Then you can take the object by "m.get Jack"
         Here is the command list:
-      <programlisting language="xml"><![CDATA[
+        <programlisting language="xml"><![CDATA[
   -- General commands
 echo true|false                      //turns on/off echo of commands (default false)
 silent true|false                    //turns on/off silent of command output (default false)
@@ -90,15 +90,15 @@ execute0nMembers <echo-input> 		//executes an echo task on all of the members
 
 
          ]]>
-      </programlisting>
+        </programlisting>
 
     </para>
-    <link xlink:href="images/console.jpg">
-    <inlinemediaobject>
-        <imageobject>
-            <imagedata width="70%" fileref="images/console.jpg"/>
-        </imageobject>
-    </inlinemediaobject>
-    </link>
+    <para>
+        <inlinemediaobject>
+            <imageobject>
+                <imagedata width="70%" fileref="images/console.jpg"/>
+            </imageobject>
+        </inlinemediaobject>
+    </para>
 
 </sect1>

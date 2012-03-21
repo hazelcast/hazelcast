@@ -4,8 +4,8 @@
 
     <info>
         <title>Hazelcast Documentation</title>
-        <subtitle>version 2.1</subtitle>
-        <pubdate>20 March 2012</pubdate>
+        <subtitle>version 2.0</subtitle>
+        <pubdate>21 March 2012</pubdate>
         <copyright>
             <year>2012</year>
             <holder>Hazel Bilisim Ltd. Sti.</holder>
@@ -132,13 +132,12 @@
     </chapter>
     <chapter xml:id="Internals">
         <title>Internals</title>
-        <xi:include href="InternalsThreads.xml"/>
         <xi:include href="InternalsSerialization.xml"/>
         <xi:include href="InternalsClusterMembership.xml"/>
         <xi:include href="InternalsDistributedMap.xml"/>
     </chapter>
     <chapter xml:id="ManagementCenter">
-        <title>Management Center </title>
+        <title>Management Center</title>
         <xi:include href="MC_Intro.xml"/>
         <xi:include href="MC_Maps.xml"/>
         <xi:include href="MC_Queues.xml"/>

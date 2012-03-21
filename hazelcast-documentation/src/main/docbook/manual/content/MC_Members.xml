@@ -1,15 +1,18 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 xml:id="MC_Members" version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
+<sect1 xml:id="MC_Members" version="5.0" xmlns="http://docbook.org/ns/docbook"
         >
     <title>Members</title>
     <para>
-        The current members in the cluster are listed on the bottom side of the left panel. You can monitor each member on tab page displayed by clicking on member items.
+        The current members in the cluster are listed on the bottom side of the left panel. You can monitor each member
+        on tab page displayed by clicking on member items.
     </para>
-        <link xlink:href="images/member.jpg"><inlinemediaobject>
-        <imageobject>
-            <imagedata width="70%"  fileref="images/member.jpg"/>
-        </imageobject>
-    </inlinemediaobject></link>
+    <para>
+        <inlinemediaobject>
+            <imageobject>
+                <imagedata width="70%" fileref="images/member.jpg"/>
+            </imageobject>
+        </inlinemediaobject>
+    </para>
     <sect2 xml:id="MC_MemberMonitoring" version="5.0" xmlns="http://docbook.org/ns/docbook"
             >
         <title>Monitoring</title>
@@ -19,13 +22,16 @@
             Runtime: Runtime properties about memory, threads are given. This data updates dynamically.
             Properties: System properties are displayed.
             Configuration: Configuration xml initially set can be viewed here.
-            Partitions: The partitions belongs to this member are listed.                     </para>
+            Partitions: The partitions belongs to this member are listed.
+        </para>
 
-        <link xlink:href="images/memberconf.jpg"><inlinemediaobject>
+        <para>
+            <inlinemediaobject>
                 <imageobject>
-                    <imagedata width="70%"  fileref="images/memberconf.jpg"/>
+                    <imagedata width="70%" fileref="images/memberconf.jpg"/>
                 </imageobject>
-            </inlinemediaobject></link>
+            </inlinemediaobject>
+        </para>
     </sect2>
 
     <sect2 xml:id="MC_MemberOperations" version="5.0" xmlns="http://docbook.org/ns/docbook"
@@ -36,11 +42,13 @@
             Besides monitoring you can perform certain actions on members.
             You can take thread dump of the member and you can perform garbage collection on the selected member.
         </para>
-            <link xlink:href="images/mapoperations.jpg"><inlinemediaobject>
-            <imageobject>
-                <imagedata width="70%"  fileref="images/mapoperations.jpg"/>
-            </imageobject>
-        </inlinemediaobject></link>
+        <para>
+            <inlinemediaobject>
+                <imageobject>
+                    <imagedata width="70%" fileref="images/mapoperations.jpg"/>
+                </imageobject>
+            </inlinemediaobject>
+        </para>
     </sect2>
 
 </sect1>
