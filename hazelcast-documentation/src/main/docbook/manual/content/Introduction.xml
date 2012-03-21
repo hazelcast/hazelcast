@@ -1,6 +1,7 @@
-<para version='5.0' xmlns='http://docbook.org/ns/docbook'
-      xmlns:xlink='http://www.w3.org/1999/xlink'
-        >
+<para
+version='5.0' xmlns='http://docbook.org/ns/docbook'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+xmlns:xi="http://www.w3.org/2001/XInclude">
     Hazelcast is a clustering and highly scalable data distribution platform for Java. Hazelcast helps architects and
     developers to easily design and develop faster, highly scalable and reliable applications for their businesses.
     <itemizedlist>
@@ -99,5 +100,4 @@
     TCP/IP with Java NIO beauty. Default configuration comes with 1 backup so if one node fails, no data will be lost.
     It is as simple as using<literal>java.util.{Queue, Set, List, Map}</literal>. Just add the hazelcast.jar into your
     classpath and start coding.
-
 </para>

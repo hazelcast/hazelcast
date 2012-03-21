@@ -1,0 +1,108 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<sect1 xml:id="Map" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xlink='http://www.w3.org/1999/xlink'
+       xmlns:xi='http://www.w3.org/2001/XInclude'
+       xmlns:ns5='http://www.w3.org/2000/svg'
+       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
+       xmlns:ns3='http://www.w3.org/1999/xhtml'
+       xmlns:db='http://docbook.org/ns/docbook'>
+    <title>Getting Started (Tutorial)</title>
+    <para>
+        <itemizedlist>
+            <listitem>
+                <para>Download latest <link xlink:href="downloads.jsp">hazelcast zip</link>. </para>
+            </listitem>
+            <listitem>
+                <para>Unzip and add hazelcast jar to your class path.</para>
+            </listitem>
+            <listitem>
+                <para>Create a Java class and import Hazelcast libraries.</para>
+            </listitem>
+            <listitem>
+                <para>Add following main method to test Hazelcast instance. <programlisting language="java"><![CDATA[
+import com.hazelcast.core.Hazelcast;
+import java.util.Map;
+import java.util.Queue;
+
+public class GettingStarted {
+
+    public static void main(String[] args) {
+        Map<Integer, String> mapCustomers = Hazelcast.getMap("customers");
+        mapCustomers.put(1, "Joe");
+        mapCustomers.put(2, "Ali");
+        mapCustomers.put(3, "Avi");
+
+        System.out.println("Customer with key 1: "+ mapCustomers.get(1));
+        System.out.println("Map Size:" + mapCustomers.size());
+
+        Queue<String> queueCustomers = Hazelcast.getQueue("customers");
+        queueCustomers.offer("Tom");
+        queueCustomers.offer("Mary");
+        queueCustomers.offer("Jane");
+        System.out.println("First customer: " + queueCustomers.poll());
+        System.out.println("Second customer: "+ queueCustomers.peek());
+        System.out.println("Queue size: " + queueCustomers.size());
+    }
+}
+]]></programlisting>
+                </para>
+            </listitem>
+            <listitem>
+                <para>Run the main class 2 times consecutively.</para>
+            </listitem>
+            <listitem>
+                <para>Have you seen they formed cluster? You should see something like this:
+                    <programlisting language="xml"><![CDATA[
+Members [2] {
+	Member [192.168.2.3:5701]
+	Member [192.168.2.3:5702] this
+}
+                            ]]></programlisting>
+                </para>
+            </listitem>
+        </itemizedlist>
+                Connecting Hazelcast Cluster with Java client:
+        <itemizedlist>
+            <listitem>
+                <para>First you should add hazelcast-client.jar to your classpath.</para>
+            </listitem>
+            <listitem>
+                <para>Create following class to test Hazelcast client. <programlisting language="java"><![CDATA[
+package com.hazelcast.test;
+
+import com.hazelcast.client.ClientConfig;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+
+public class GettingStartedClient {
+
+    public static void main(String[] args) {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addAddress("192.168.2.3:5701");
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        IMap map = client.getMap("customers");
+        System.out.println("Map Size:" + map.size());
+    }
+}
+]]></programlisting>
+                </para>
+            </listitem>
+            <listitem><para>When you run it, you will see the client properly connects to the cluster and print the map size as 3.</para></listitem>
+        </itemizedlist>
+
+        Next steps:
+        <itemizedlist>
+            <listitem>
+                <para>You can browse <link xlink:href="docs.jsp">documentation</link> and resources for detailed features and examples.</para>
+            </listitem>
+            <listitem>
+                <para>If you have something to ask, you can join hazelcast <link xlink:href="http://groups.google.com/group/hazelcast">mail group</link>.</para>
+            </listitem>
+            <listitem>
+                <para>You can browse hazelcast <link xlink:href="http://code.google.com/p/hazelcast/source/browse/#svn/trunk">source code</link>.</para>
+            </listitem>
+        </itemizedlist>
+
+    </para>
+</sect1>
