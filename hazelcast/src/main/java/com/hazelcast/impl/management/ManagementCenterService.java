@@ -84,7 +84,7 @@ public class ManagementCenterService implements LifecycleListener {
         String tmpWebServerUrl = config != null ? config.getUrl() : null;
         webServerUrl = tmpWebServerUrl != null ?
                 (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
-        updateIntervalMs = (config != null && config.getUpdateInterval() > 0) ? config.getUpdateInterval() * 1000 : 3000;
+        updateIntervalMs = (config != null && config.getUpdateInterval() > 0) ? config.getUpdateInterval() * 1000 : 4000;
 
         factory.getLifecycleService().addLifecycleListener(this);
         taskPoller = new TaskPoller();
