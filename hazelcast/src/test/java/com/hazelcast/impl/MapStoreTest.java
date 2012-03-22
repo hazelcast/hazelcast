@@ -1444,14 +1444,27 @@ public class MapStoreTest extends TestUtil {
      * Issue 816.
      */
     public void testMapRemoveWithWriteBehindMapStore() {
-        Config c = new Config();
+        testMapRemoveWithMapStore(100);
+    }
+
+    @Test
+    /**
+     * Issue 816.
+     */
+    public void testMapRemoveWithWriteThroughMapStore() {
+        testMapRemoveWithMapStore(0);
+    }
+
+
+    private void testMapRemoveWithMapStore(int delay) {
         TestMapStore mapStore = new TestMapStore();
+        Config c = new Config();
+        c.getMapConfig("test").setMapStoreConfig(new MapStoreConfig().setEnabled(true)
+                .setWriteDelaySeconds(delay).setImplementation(mapStore));
         mapStore.setLoadAllKeys(false);
         for (int i = 1; i < 6; i++) {
             mapStore.store(i, "value" + i);
         }
-        c.getMapConfig("test").setMapStoreConfig(new MapStoreConfig().setEnabled(true)
-                .setWriteDelaySeconds(100).setImplementation(mapStore));
 
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(c);
         IMap map = hz.getMap("test");
@@ -1475,5 +1488,55 @@ public class MapStoreTest extends TestUtil {
         assertEquals("value5", map.get(5));
         assertEquals("value5", map.remove(5));
         assertNull("putIfAbsent should be null!", map.putIfAbsent(5, "valuex"));
+    }
+
+    @Test
+    /**
+     * Issue 816.
+     */
+    public void testMapEvictWithWriteBehindMapStore() {
+        testMapEvictWithMapStore(100);
+    }
+
+    @Test
+    /**
+     * Issue 816.
+     */
+    public void testMapEvictWithWriteThroughMapStore() {
+        testMapEvictWithMapStore(0);
+    }
+
+    private void testMapEvictWithMapStore(int delay) {
+        TestMapStore mapStore = new TestMapStore();
+        Config c = new Config();
+        c.getMapConfig("test").setMapStoreConfig(new MapStoreConfig().setEnabled(true)
+                .setWriteDelaySeconds(delay).setImplementation(mapStore));
+        mapStore.setLoadAllKeys(false);
+        for (int i = 1; i < 6; i++) {
+            mapStore.store(i, "value" + i);
+        }
+
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(c);
+        IMap map = hz.getMap("test");
+
+        assertEquals("value1", map.get(1));
+        assertTrue("Evict 1", map.evict(1));
+        assertEquals("value1", map.get(1));
+
+        assertEquals("value2", map.get(2));
+        assertTrue("Evict 2", map.evict(2));
+        assertTrue("containsKey should be true!", map.containsKey(2));
+
+        assertEquals("value3", map.get(3));
+        assertTrue("Evict 3", map.evict(3));
+        assertEquals("value3", map.put(3, "valuex"));
+
+        assertEquals("value4", map.get(4));
+        assertTrue("Evict 4", map.evict(4));
+        assertEquals("value4", map.remove(4));
+
+        assertEquals("value5", map.get(5));
+        assertTrue("Evict 5", map.evict(5));
+        assertEquals("value5", map.putIfAbsent(5, "valuex"));
     }
 }

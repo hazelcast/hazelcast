@@ -2316,6 +2316,7 @@ public class ConcurrentMapManager extends BaseManager {
                     } else {
                         record.setValueData(valueData);
                     }
+                    record.setActive();
                     storeProceed(cmap, request);
                 } else {
                     returnResponse(request);
