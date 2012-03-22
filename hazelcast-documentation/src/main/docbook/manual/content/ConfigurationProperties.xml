@@ -363,14 +363,6 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <literal>hazelcast.executor.migration.thread.count</literal>
-                </td>
-                <td>Migration executor service max thread count</td>
-                <td>integer</td>
-                <td>20</td>
-            </tr>
-            <tr>
-                <td>
                     <literal>hazelcast.executor.client.thread.count</literal>
                 </td>
                 <td>Client executor service max thread count</td>
