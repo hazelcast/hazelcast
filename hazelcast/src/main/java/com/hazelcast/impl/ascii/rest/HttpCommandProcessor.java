@@ -23,6 +23,7 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_MAPS = "/hazelcast/rest/maps/";
     public static final String URI_QUEUES = "/hazelcast/rest/queues/";
     public static final String URI_CLUSTER = "/hazelcast/rest/cluster";
+    public static final String URI_STATE_DUMP = "/hazelcast/rest/dump";
 
     protected HttpCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);

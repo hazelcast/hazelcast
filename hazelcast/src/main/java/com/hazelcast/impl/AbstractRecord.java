@@ -442,7 +442,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public boolean isRemoved() {
-        return !active && dirty && removeTime > 0;
+        return !active && removeTime > 0;
     }
 
     /**

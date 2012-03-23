@@ -22,7 +22,7 @@ public class ManagementCenterConfig {
     
     private String url;
     
-    private int updateInterval = 3;
+    private int updateInterval = 4;
 
     public ManagementCenterConfig() {
     }

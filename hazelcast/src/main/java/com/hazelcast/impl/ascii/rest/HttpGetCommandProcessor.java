@@ -54,9 +54,9 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             res.append("AllConnectionCount: ").append(connectionManager.getAllTextConnections());
             res.append("\n");
             command.setResponse(null, res.toString().getBytes());
-        } else if (uri.startsWith("/hazelcast/rest/dump")) {
-            String fileName = textCommandService.getNode().getSystemLogService().dump();
-            command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, fileName.toString().getBytes());
+        } else if (uri.startsWith(URI_STATE_DUMP)) {
+            final String stateDump = textCommandService.getNode().getSystemLogService().dump();
+            command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, stateDump.getBytes());
         } else {
             command.send400();
         }

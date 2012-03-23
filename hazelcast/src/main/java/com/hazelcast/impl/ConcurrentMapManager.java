@@ -2314,6 +2314,7 @@ public class ConcurrentMapManager extends BaseManager {
                     } else {
                         record.setValueData(valueData);
                     }
+                    record.setActive();
                     storeProceed(cmap, request);
                 } else {
                     returnResponse(request);
@@ -2340,6 +2341,7 @@ public class ConcurrentMapManager extends BaseManager {
             void doMapStoreOperation() {
                 Object key = toObject(request.key);
                 cmap.store.delete(key);
+                afterMapStore();
             }
 
             public void process() {
@@ -2501,6 +2503,7 @@ public class ConcurrentMapManager extends BaseManager {
                 request.response = expectedValue.equals(record.getValue());
                 if (cmap.store != null && cmap.writeDelayMillis == 0) {
                     cmap.store.store(toObject(request.key), toObject(request.value));
+                    afterMapStore();
                 }
             }
 
@@ -2553,6 +2556,7 @@ public class ConcurrentMapManager extends BaseManager {
                 request.response = expectedValue.equals(record.getValue());
                 if (cmap.store != null && cmap.writeDelayMillis == 0) {
                     cmap.store.delete(toObject(request.key));
+                    afterMapStore();
                 }
             }
 
@@ -2729,10 +2733,7 @@ public class ConcurrentMapManager extends BaseManager {
                 }
                 Object key = toObject(request.key);
                 cmap.store.store(key, value);
-                Record storedRecord = cmap.getRecord(request);
-                if (storedRecord != null) {
-                    storedRecord.setLastStoredTime(System.currentTimeMillis());
-                }
+                afterMapStore();
             }
 
             public void process() {
@@ -3162,10 +3163,7 @@ public class ConcurrentMapManager extends BaseManager {
                 Object key = toObject(request.key);
                 Object value = toObject(request.value);
                 cmap.store.store(key, value);
-                Record storedRecord = cmap.getRecord(request);
-                if (storedRecord != null) {
-                    storedRecord.setLastStoredTime(System.currentTimeMillis());
-                }
+                afterMapStore();
             }
 
             public void process() {
@@ -3455,6 +3453,14 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         abstract void doMapStoreOperation();
+
+        protected final void afterMapStore() {
+            Record storedRecord = cmap.getRecord(request);
+            if (storedRecord != null) {
+                storedRecord.setLastStoredTime(System.currentTimeMillis());
+                storedRecord.setDirty(false);
+            }
+        }
     }
 
     class ValueCountOperationHandler extends MTargetAwareOperationHandler {

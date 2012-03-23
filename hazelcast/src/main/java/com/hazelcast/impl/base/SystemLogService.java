@@ -43,7 +43,7 @@ public class SystemLogService {
 
     private final Queue<SystemLog> connectionLogs = new LinkedBlockingQueue<SystemLog>(10000);
 
-    private final Queue<SystemLog> migrationLogs = new LinkedBlockingQueue<SystemLog>(10000);
+    private final Queue<SystemLog> partitionLogs = new LinkedBlockingQueue<SystemLog>(10000);
 
     private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(10000);
 
@@ -78,7 +78,7 @@ public class SystemLogService {
         for (SystemLog log : connectionLogs) {
             systemLogList.add(new SystemLogRecord(0L, node, log.getDate(), log.toString(), log.getType().toString()));
         }
-        for (SystemLog log : migrationLogs) {
+        for (SystemLog log : partitionLogs) {
             systemLogList.add(new SystemLogRecord(0L, node, log.getDate(), log.toString(), log.getType().toString()));
         }
         for (CallState callState : mapCallStates.values()) {
@@ -131,7 +131,7 @@ public class SystemLogService {
         connectionLogs.clear();
         nodeLogs.clear();
         joinLogs.clear();
-        migrationLogs.clear();
+        partitionLogs.clear();
     }
 
     public String dump() {
@@ -146,7 +146,7 @@ public class SystemLogService {
         sorted.addAll(joinLogs);
         sorted.addAll(nodeLogs);
         sorted.addAll(connectionLogs);
-        sorted.addAll(migrationLogs);
+        sorted.addAll(partitionLogs);
         for (SystemLog systemLog : sorted) {
             sb.append(systemLog.getType().toString());
             sb.append(" - ");
@@ -186,7 +186,7 @@ public class SystemLogService {
         if (currentLevel != Level.CS_NONE) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.CONNECTION);
-            joinLogs.offer(systemLog);
+            connectionLogs.offer(systemLog);
         }
     }
 
@@ -194,7 +194,7 @@ public class SystemLogService {
         if (currentLevel != Level.CS_NONE) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.PARTITION);
-            joinLogs.offer(systemLog);
+            partitionLogs.offer(systemLog);
         }
     }
 
@@ -202,7 +202,7 @@ public class SystemLogService {
         if (currentLevel != Level.CS_NONE) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.NODE);
-            joinLogs.offer(systemLog);
+            nodeLogs.offer(systemLog);
         }
     }
 
@@ -213,7 +213,6 @@ public class SystemLogService {
             joinLogs.offer(systemLog);
         }
     }
-
 
     public boolean shouldLog(Level level) {
         return currentLevel != Level.CS_NONE && currentLevel.ordinal() >= level.ordinal();
@@ -280,4 +279,5 @@ public class SystemLogService {
             }
         }
     }
+
 }
