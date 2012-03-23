@@ -21,6 +21,7 @@
 
 package com.hazelcast.util.concurrent;
 
+import com.hazelcast.util.AbstractMap;
 import com.hazelcast.util.NavigableSet;
 
 import java.util.*;
