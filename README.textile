@@ -1,0 +1,36 @@
+*Hazelcast is a clustering and highly scalable data distribution platform for Java.*
+
+h3. Features:
+
+* Distributed implementations of ??java.util.{Queue, Set, List, Map}??
+* Distributed implementation of ??java.util.concurrency.locks.Lock??
+* Distributed implementation of ??java.util.concurrent.ExecutorService??
+* Distributed ??MultiMap?? for one-to-many relationships
+* Distributed ??Topic?? for publish/subscribe messaging
+* Transaction support and J2EE container integration via JCA
+* Socket level encryption support for secure clusters
+* Synchronous (write-through) and asynchronous (write-behind) persistence
+* Second level cache provider for Hibernate
+* Monitoring and management of the cluster via JMX
+* Dynamic HTTP session clustering
+* Support for cluster info and membership events
+* Dynamic discovery
+* Dynamic scaling
+* Dynamic partitioning with backups
+* Dynamic fail-over
+
+
+_Hazelcast is for you if you want to;_
+
+* share data/state among many servers (e.g. web session sharing)
+* cache your data (distributed cache) for better performance
+* cluster your application
+* provide secure communication among servers
+* partition your in-memory data
+* send/receive messages among applications
+* distribute workload onto many servers
+* take advantage of parallel processing
+* provide fail-safe data management
+
+Visit "www.hazelcast.com":http://www.hazelcast.com/ for more info.
+
