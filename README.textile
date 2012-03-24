@@ -1,6 +1,8 @@
 *Hazelcast is a clustering and highly scalable data distribution platform for Java.*
 
-With its various distributed data structures, distributed caching capabilities, elastic nature, memcache support, integration with Spring and Hibernate and more importantly so many happy users, Hazelcast is feature-rich, enterprise-ready and developer-friendly in-memory data grid solution.
+With its various distributed data structures, distributed caching capabilities, elastic nature, memcache support,
+integration with Spring and Hibernate and more importantly with so many happy users, Hazelcast is feature-rich,
+enterprise-ready and developer-friendly in-memory data grid solution.
 
 h3. Features:
 
@@ -16,10 +18,7 @@ h3. Features:
 * Monitoring and management of the cluster via JMX
 * Dynamic HTTP session clustering
 * Support for cluster info and membership events
-* Dynamic discovery
-* Dynamic scaling
-* Dynamic partitioning with backups
-* Dynamic fail-over
+* Dynamic discovery, scaling, partitioning with backups and fail-over
 
 
 Visit "www.hazelcast.com":http://www.hazelcast.com/ for more info.
