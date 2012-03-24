@@ -151,6 +151,7 @@
             </fileset>
             <fileset dir="hazelcast-client/src/main/java/" defaultexcludes="true">
                 <include name="**/HazelcastClient.java"/>
+                <include name="**/ClientConfig.java"/>
                 <exclude name="**/*.html"/>
             </fileset>
             <fileset dir="hazelcast-hibernate/src/main/java/" defaultexcludes="true">
