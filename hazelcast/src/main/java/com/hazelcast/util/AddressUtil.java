@@ -16,14 +16,9 @@
 
 package com.hazelcast.util;
 
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.LinkedList;
+import java.io.IOException;
+import java.net.*;
+import java.util.*;
 
 public final class AddressUtil {
 
@@ -66,7 +61,7 @@ public final class AddressUtil {
         if (indexColon > -1 && lastIndexColon > indexColon) {
             // IPv6
             if (indexBracketStart == 0 && indexBracketEnd > indexBracketStart
-                    && lastIndexColon == indexBracketEnd + 1) {
+                && lastIndexColon == indexBracketEnd + 1) {
                 host = address.substring(indexBracketStart + 1, indexBracketEnd);
                 port = Integer.parseInt(address.substring(lastIndexColon + 1));
             } else {
@@ -94,10 +89,10 @@ public final class AddressUtil {
         }
     }
 
-    public static InetAddress fixInet6AddressInterface(final InetAddress inetAddress) throws SocketException {
+    public static InetAddress fixAndGetInetAddress(final InetAddress inetAddress) throws SocketException {
         Inet6Address resultInetAddress = null;
         if (inetAddress instanceof Inet6Address &&
-                (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress())) {
+            (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress())) {
             final Inet6Address inet6Address = (Inet6Address) inetAddress;
             if (inet6Address.getScopeId() <= 0 && inet6Address.getScopedInterface() == null) {
                 Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
@@ -107,10 +102,10 @@ public final class AddressUtil {
                     while (addresses.hasMoreElements()) {
                         InetAddress address = addresses.nextElement();
                         if (address instanceof Inet6Address &&
-                                Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
+                            Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
                             if (resultInetAddress != null) {
                                 throw new IllegalArgumentException("This address " + inet6Address +
-                                        " is bound to more than one network interface!");
+                                                                   " is bound to more than one network interface!");
                             }
                             resultInetAddress = (Inet6Address) address;
                         }
@@ -119,6 +114,38 @@ public final class AddressUtil {
             }
         }
         return resultInetAddress == null ? inetAddress : resultInetAddress;
+    }
+
+    public static Collection<Inet6Address> getPossibleInetAddressesFor(final Inet6Address inet6Address) {
+        if (inet6Address.getScopeId() <= 0 && inet6Address.getScopedInterface() == null) {
+            final Collection<Inet6Address> possibleAddresses = new LinkedList<Inet6Address>();
+            try {
+                final Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+                while (interfaces.hasMoreElements()) {
+                    NetworkInterface ni = interfaces.nextElement();
+                    Enumeration<InetAddress> addresses = ni.getInetAddresses();
+                    while (addresses.hasMoreElements()) {
+                        InetAddress address = addresses.nextElement();
+                        if (address instanceof Inet4Address) {
+                            continue;
+                        }
+                        if (inet6Address.isLinkLocalAddress() && address.isLinkLocalAddress()
+                            || inet6Address.isSiteLocalAddress() && address.isSiteLocalAddress()) {
+                            Inet6Address newAddress = Inet6Address.getByAddress(null, inet6Address.getAddress(),
+                                                                                ((Inet6Address) address).getScopeId());
+                            possibleAddresses.add(newAddress);
+                        }
+                    }
+                }
+            } catch (IOException ignored) {
+            }
+            if (possibleAddresses.isEmpty()) {
+                throw new IllegalArgumentException("Could not find a proper network interface" +
+                                                   " to connect to " + inet6Address);
+            }
+            return possibleAddresses;
+        }
+        return Collections.singleton(inet6Address);
     }
 
     public static AddressMatcher getAddressMatcher(String host) {
@@ -201,6 +228,7 @@ public final class AddressUtil {
     // ----------------- UTILITY CLASSES ------------------
 
     public static class AddressHolder {
+
         public final String address;
         public final String scopeId;
         public final int port;
@@ -211,6 +239,14 @@ public final class AddressUtil {
             this.scopeId = scopeId;
             this.port = port;
         }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("AddressHolder ");
+            sb.append('[').append(address).append("]:").append(port);
+            return sb.toString();
+        }
     }
 
     /**
@@ -218,6 +254,7 @@ public final class AddressUtil {
      */
 
     public static abstract class AddressMatcher {
+
         protected final String[] address;
 
         protected AddressMatcher(final String[] address) {
@@ -286,6 +323,7 @@ public final class AddressUtil {
     }
 
     static class Ip4AddressMatcher extends AddressMatcher {
+
         public Ip4AddressMatcher() {
             super(new String[4]);  // d.d.d.d
         }
@@ -324,6 +362,7 @@ public final class AddressUtil {
     }
 
     static class Ip6AddressMatcher extends AddressMatcher {
+
         public Ip6AddressMatcher() {
             super(new String[8]);  // x:x:x:x:x:x:x:x%s
         }
@@ -363,6 +402,7 @@ public final class AddressUtil {
     }
 
     public static class InvalidAddressException extends IllegalArgumentException {
+
         public InvalidAddressException(final String s) {
             super("Illegal IP address format: " + s);
         }

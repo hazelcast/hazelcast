@@ -253,6 +253,7 @@ public class ConnectionManager implements MembershipListener {
                 connection = getNextConnection();
                 break;
             } catch (Exception e) {
+                logger.log(Level.WARNING, e.getMessage(), e);
                 popAndPush(clusterMembers);
                 counter--;
             }

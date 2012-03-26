@@ -92,10 +92,12 @@ public class HazelcastClient implements HazelcastInstance {
             final Connection c = connectionManager.getInitConnection();
             if (c == null) {
                 connectionManager.shutdown();
+                lifecycleService.shutdown();
                 throw new IllegalStateException("Unable to connect to cluster");
             }
         } catch (IOException e) {
             connectionManager.shutdown();
+            lifecycleService.shutdown();
             throw new ClusterClientException(e.getMessage(), e);
         }
         final String prefix = "hz.client." + this.id + ".";

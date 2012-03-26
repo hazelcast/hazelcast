@@ -31,6 +31,7 @@ import java.net.UnknownHostException;
  * @author fuad-malikov
  */
 public class Connection {
+
     private static final int BUFFER_SIZE = 16 << 10; // 32k
     private final Socket socket;
     private final InetSocketAddress address;
@@ -69,6 +70,8 @@ public class Connection {
                 socket.close();
                 throw e;
             }
+
+            System.err.println(isa + " SOCKET:!!!!!!!!!!!!! " + socket);
             this.socket = socket;
             this.dos = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream(), BUFFER_SIZE));
 //            this.dos = new DataOutputStream(socket.getOutputStream());
@@ -100,7 +103,7 @@ public class Connection {
     @Override
     public String toString() {
         return "Connection [" + id + "]" + " [" + address + " -> " +
-                socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
+               socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
     }
 
     public DataOutputStream getOutputStream() {
