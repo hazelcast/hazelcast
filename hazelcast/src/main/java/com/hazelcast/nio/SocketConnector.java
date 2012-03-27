@@ -17,13 +17,13 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
 import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
+import java.util.Collection;
 import java.util.logging.Level;
 
 public class SocketConnector implements Runnable {
@@ -41,55 +41,91 @@ public class SocketConnector implements Runnable {
     public void run() {
         if (!connectionManager.isLive()) {
             logger.log(Level.FINEST, "ConnectionManager is not live, connection attempt to " +
-                    address + " is cancelled!");
+                                     address + " is cancelled!");
             return;
         }
-        SocketChannel socketChannel = null;
         try {
             connectionManager.ioService.onIOThreadStart();
-            socketChannel = SocketChannel.open();
             final Address thisAddress = connectionManager.ioService.getThisAddress();
-            connectionManager.initSocket(socketChannel.socket());
+            if (address.isIPv4()) {
+                // remote is IPv4; connect...
+                tryConnect(address.getInetSocketAddress());
+            } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
+                // remote and this is IPv6; this is local address and scope id is known
+                // find correct inet6 address for remote and connect...
+                final Inet6Address inetAddress = AddressUtil
+                        .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
+                tryConnect(new InetSocketAddress(inetAddress, address.getPort()));
+            } else {
+                // remote is IPv6 and this is either IPv4 or a global IPv6.
+                // find possible remote inet6 addresses and try each one to connect...
+                final Collection<Inet6Address> possibleInetAddresses = AddressUtil.getPossibleInetAddressesFor(
+                        (Inet6Address) address.getInetAddress());
+                boolean connected = false;
+                Exception error = null;
+                for (Inet6Address inetAddress : possibleInetAddresses) {
+                    try {
+                        tryConnect(new InetSocketAddress(inetAddress, address.getPort()));
+                        connected = true;
+                        break;
+                    } catch (Exception e) {
+                        error = e;
+                    }
+                }
+                if (!connected) {
+                    // could not connect any of addresses
+                    throw error;
+                }
+            }
+        } catch (Throwable e) {
+            logger.log(Level.FINEST, e.getMessage(), e);
+            connectionManager.failedConnection(address, e);
+        }
+    }
+
+    private void tryConnect(final InetSocketAddress socketAddress)
+            throws Exception {
+        final SocketChannel socketChannel = SocketChannel.open();
+        connectionManager.initSocket(socketChannel.socket());
+        final Address thisAddress = connectionManager.ioService.getThisAddress();
+        if (!connectionManager.ioService.isSocketBindAny()) {
             socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
-            logger.log(Level.FINEST, "connecting to " + address);
-            boolean connected = socketChannel.connect(getRemoteSocketAddress(address));
-            logger.log(Level.FINEST, "connection check. connected: " + connected + ", " + address);
+        }
+        logger.log(Level.FINEST, "connecting to " + address);
+        try {
+            socketChannel.configureBlocking(true);
+            if (thisAddress.isIPv6()) {
+                socketChannel.connect(socketAddress);
+            } else {
+                socketChannel.socket().connect(socketAddress, 5000);
+            }
+
+            logger.log(Level.FINEST, "connection check. connected to: " + address);
             MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
             if (memberSocketInterceptor != null) {
                 memberSocketInterceptor.onConnect(socketChannel.socket());
             }
             socketChannel.configureBlocking(false);
             logger.log(Level.FINEST, "connected to " + address);
-            final SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
+            final SocketChannelWrapper socketChannelWrapper = connectionManager
+                    .wrapSocketChannel(socketChannel, true);
             Connection connection = connectionManager.assignSocketChannel(socketChannelWrapper);
             connectionManager.bind(address, connection, false);
-        } catch (Throwable e) {
-            logger.log(Level.FINEST, e.getMessage(), e);
-            if (socketChannel != null) {
-                try {
-                    socketChannel.close();
-                } catch (final IOException ignored) {
-                }
-            }
-            connectionManager.failedConnection(address, e);
+        } catch (Exception e) {
+            closeSocket(socketChannel);
+            logger.log(Level.WARNING, "Could not connect to: "
+                                      + socketAddress + ". Reason: " + e.getClass().getSimpleName()
+                                      + "[" + e.getMessage() + "]");
+            throw e;
         }
     }
 
-    private InetSocketAddress getRemoteSocketAddress(Address address) throws UnknownHostException {
-        InetAddress inetAddress = address.getInetAddress();
-        if (inetAddress instanceof Inet6Address) {
-            if (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress()) {
-                inetAddress = Inet6Address.getByName(prepareHostAddress(address));
+    private void closeSocket(final SocketChannel socketChannel) {
+        if (socketChannel != null) {
+            try {
+                socketChannel.close();
+            } catch (final IOException ignored) {
             }
         }
-        return new InetSocketAddress(inetAddress, address.getPort());
-    }
-
-    private String prepareHostAddress(Address address) {
-        String hostAddress = address.getHost();
-        if (address.isIPv6() && connectionManager.ipV6ScopeId != null) {
-            hostAddress += "%" + connectionManager.ipV6ScopeId;
-        }
-        return hostAddress;
     }
 }

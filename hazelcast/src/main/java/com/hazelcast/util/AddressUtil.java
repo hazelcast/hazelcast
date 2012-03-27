@@ -116,6 +116,27 @@ public final class AddressUtil {
         return resultInetAddress == null ? inetAddress : resultInetAddress;
     }
 
+    public static Inet6Address getInetAddressFor(final Inet6Address inetAddress, String scope)
+            throws UnknownHostException, SocketException {
+        if (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress()) {
+            final char[] chars = scope.toCharArray();
+            boolean numeric = true;
+            for (char c : chars) {
+                if (!Character.isDigit(c)) {
+                    numeric = false;
+                    break;
+                }
+            }
+
+            if (numeric) {
+                return Inet6Address.getByAddress(null, inetAddress.getAddress(), Integer.parseInt(scope));
+            } else {
+                return Inet6Address.getByAddress(null, inetAddress.getAddress(), NetworkInterface.getByName(scope));
+            }
+        }
+        return inetAddress;
+    }
+
     public static Collection<Inet6Address> getPossibleInetAddressesFor(final Inet6Address inet6Address) {
         if (inet6Address.getScopeId() <= 0 && inet6Address.getScopedInterface() == null) {
             final LinkedList<Inet6Address> possibleAddresses = new LinkedList<Inet6Address>();
@@ -132,7 +153,8 @@ public final class AddressUtil {
                         if (inet6Address.isLinkLocalAddress() && address.isLinkLocalAddress()
                             || inet6Address.isSiteLocalAddress() && address.isSiteLocalAddress()) {
                             final Inet6Address newAddress = Inet6Address.getByAddress(null, inet6Address.getAddress(),
-                                                                                ((Inet6Address) address).getScopeId());
+                                                                                      ((Inet6Address) address)
+                                                                                              .getScopeId());
                             possibleAddresses.addFirst(newAddress);
                         }
                     }

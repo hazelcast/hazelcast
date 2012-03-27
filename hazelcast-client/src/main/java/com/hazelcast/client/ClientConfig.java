@@ -27,7 +27,7 @@ import java.util.*;
 
 public class ClientConfig {
     private GroupConfig groupConfig = new GroupConfig();
-    List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>(10);
+    private final List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>(10);
     private Credentials credentials;
     private int connectionTimeout = 300000;
     private int initialConnectionAttemptLimit = 1;

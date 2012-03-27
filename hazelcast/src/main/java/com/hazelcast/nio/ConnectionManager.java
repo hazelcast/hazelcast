@@ -83,13 +83,10 @@ public class ConnectionManager {
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
-    final String ipV6ScopeId;
-
     private Thread socketAcceptorThread; // accessed only in synchronized block
 
     public ConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
-        this.ipV6ScopeId = ioService.getThisAddress().getScopeId();
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(ConnectionManager.class.getName());
         this.SOCKET_RECEIVE_BUFFER_SIZE = ioService.getSocketReceiveBufferSize() * KILO_BYTE;
