@@ -118,7 +118,7 @@ public final class AddressUtil {
 
     public static Collection<Inet6Address> getPossibleInetAddressesFor(final Inet6Address inet6Address) {
         if (inet6Address.getScopeId() <= 0 && inet6Address.getScopedInterface() == null) {
-            final Collection<Inet6Address> possibleAddresses = new LinkedList<Inet6Address>();
+            final LinkedList<Inet6Address> possibleAddresses = new LinkedList<Inet6Address>();
             try {
                 final Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
                 while (interfaces.hasMoreElements()) {
@@ -131,9 +131,9 @@ public final class AddressUtil {
                         }
                         if (inet6Address.isLinkLocalAddress() && address.isLinkLocalAddress()
                             || inet6Address.isSiteLocalAddress() && address.isSiteLocalAddress()) {
-                            Inet6Address newAddress = Inet6Address.getByAddress(null, inet6Address.getAddress(),
+                            final Inet6Address newAddress = Inet6Address.getByAddress(null, inet6Address.getAddress(),
                                                                                 ((Inet6Address) address).getScopeId());
-                            possibleAddresses.add(newAddress);
+                            possibleAddresses.addFirst(newAddress);
                         }
                     }
                 }

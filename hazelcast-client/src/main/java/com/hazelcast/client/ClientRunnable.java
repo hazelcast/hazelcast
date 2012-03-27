@@ -17,14 +17,13 @@
 package com.hazelcast.client;
 
 public abstract class ClientRunnable implements Runnable {
-    protected volatile boolean running = false;
+    protected volatile boolean running = true;
     protected volatile boolean terminated = false;
     protected final Object monitor = new Object();
 
     protected abstract void customRun() throws InterruptedException;
 
     public void run() {
-        running = true;
         try {
             while (running) {
                 try {
@@ -39,7 +38,7 @@ public abstract class ClientRunnable implements Runnable {
     }
 
     public void shutdown() {
-        if (!running || terminated) {
+        if (terminated) {
             return;
         }
         synchronized (monitor) {

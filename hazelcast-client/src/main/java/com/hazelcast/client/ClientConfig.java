@@ -118,14 +118,17 @@ public class ClientConfig {
     }
 
     private static Collection<InetSocketAddress> parse(String address) {
-        AddressHolder addressHolder = AddressUtil.getAddressHolder(address, 5701);
+        final AddressHolder addressHolder = AddressUtil.getAddressHolder(address, 5701);
+        final String scopedAddress = addressHolder.scopeId != null
+                                     ? addressHolder.address + "%" + addressHolder.scopeId
+                                     : addressHolder.address;
         InetAddress inetAddress = null;
         try {
-            inetAddress = InetAddress.getByName(addressHolder.address);
+            inetAddress = InetAddress.getByName(scopedAddress);
         } catch (UnknownHostException ignored) {
         }
         if (inetAddress == null) {
-            return Collections.singleton(new InetSocketAddress(addressHolder.address, addressHolder.port));
+            return Collections.singleton(new InetSocketAddress(scopedAddress, addressHolder.port));
         }
         if (inetAddress instanceof Inet4Address) {
             return Collections.singleton(new InetSocketAddress(inetAddress, addressHolder.port));

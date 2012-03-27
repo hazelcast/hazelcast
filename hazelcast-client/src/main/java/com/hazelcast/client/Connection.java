@@ -65,13 +65,12 @@ public class Connection {
                 socket.setSoLinger(true, 5);
 //                socket.setSendBufferSize(BUFFER_SIZE);
 //                socket.setReceiveBufferSize(BUFFER_SIZE);
-                socket.connect(isa);
+                socket.connect(isa, 5000);
             } catch (IOException e) {
                 socket.close();
                 throw e;
             }
 
-            System.err.println(isa + " SOCKET:!!!!!!!!!!!!! " + socket);
             this.socket = socket;
             this.dos = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream(), BUFFER_SIZE));
 //            this.dos = new DataOutputStream(socket.getOutputStream());
