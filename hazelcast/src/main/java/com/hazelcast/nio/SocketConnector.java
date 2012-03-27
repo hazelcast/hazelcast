@@ -49,13 +49,13 @@ public class SocketConnector implements Runnable {
             final Address thisAddress = connectionManager.ioService.getThisAddress();
             if (address.isIPv4()) {
                 // remote is IPv4; connect...
-                tryConnect(address.getInetSocketAddress());
+                tryToConnect(address.getInetSocketAddress());
             } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
                 // remote and this is IPv6; this is local address and scope id is known
                 // find correct inet6 address for remote and connect...
                 final Inet6Address inetAddress = AddressUtil
                         .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
-                tryConnect(new InetSocketAddress(inetAddress, address.getPort()));
+                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()));
             } else {
                 // remote is IPv6 and this is either IPv4 or a global IPv6.
                 // find possible remote inet6 addresses and try each one to connect...
@@ -65,7 +65,7 @@ public class SocketConnector implements Runnable {
                 Exception error = null;
                 for (Inet6Address inetAddress : possibleInetAddresses) {
                     try {
-                        tryConnect(new InetSocketAddress(inetAddress, address.getPort()));
+                        tryToConnect(new InetSocketAddress(inetAddress, address.getPort()));
                         connected = true;
                         break;
                     } catch (Exception e) {
@@ -83,7 +83,7 @@ public class SocketConnector implements Runnable {
         }
     }
 
-    private void tryConnect(final InetSocketAddress socketAddress)
+    private void tryToConnect(final InetSocketAddress socketAddress)
             throws Exception {
         final SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
