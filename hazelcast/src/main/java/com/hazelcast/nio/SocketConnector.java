@@ -88,7 +88,7 @@ public class SocketConnector implements Runnable {
         final SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
         if (!connectionManager.ioService.isSocketBindAny()) {
-        final Address thisAddress = connectionManager.ioService.getThisAddress();
+            final Address thisAddress = connectionManager.ioService.getThisAddress();
             socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
         }
         logger.log(Level.FINEST, "connecting to " + address);
