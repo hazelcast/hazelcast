@@ -929,7 +929,8 @@ public class PartitionManager {
                 }
             } catch (Throwable t) {
                 logger.log(Level.WARNING, "Error [" + t.getClass() + ": " + t.getMessage() + "] " +
-                        "while executing " + migrationRequestTask, t);
+                        "while executing " + migrationRequestTask);
+                logger.log(Level.FINEST, t.getMessage(), t);
                 systemLogService.logPartition("Failed! " + migrationRequestTask);
             }
         }

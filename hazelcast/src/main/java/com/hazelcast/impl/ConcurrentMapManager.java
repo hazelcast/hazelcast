@@ -1847,7 +1847,7 @@ public class ConcurrentMapManager extends BaseManager {
     class MBackup extends MTargetAwareOp {
         protected int replicaIndex = 0;
 
-        public void sendBackup(ClusterOperation operation, int replicaIndex, Request reqBackup) {
+        public void sendBackup(ClusterOperation operation, int replicaIndex, Request reqBackup, boolean async) {
             reset();
             this.replicaIndex = replicaIndex;
             SystemLogService css = node.getSystemLogService();
@@ -1858,6 +1858,7 @@ public class ConcurrentMapManager extends BaseManager {
             request.operation = operation;
             request.caller = thisAddress;
             request.setBooleanRequest();
+            request.longValue = async ? 1L : 0L;
             doOp();
         }
 
@@ -1896,6 +1897,11 @@ public class ConcurrentMapManager extends BaseManager {
                 logger.log(Level.SEVERE, msg);
                 throw new RuntimeException(msg);
             }
+            if (request.key == null || request.key.size() == 0) {
+                throw new RuntimeException("Key is null! " + request.key);
+            }
+            
+            int syncBackups = Math.min(backupCount, 1);
             for (int i = 0; i < backupCount; i++) {
                 int replicaIndex = i + 1;
                 MBackup backupOp = backupOps[i];
@@ -1903,12 +1909,9 @@ public class ConcurrentMapManager extends BaseManager {
                     backupOp = new MBackup();
                     backupOps[i] = backupOp;
                 }
-                if (request.key == null || request.key.size() == 0) {
-                    throw new RuntimeException("Key is null! " + request.key);
-                }
-                backupOp.sendBackup(operation, replicaIndex, request);
+                backupOp.sendBackup(operation, replicaIndex, request, (i >= syncBackups));
             }
-            for (int i = 0; i < backupCount; i++) {
+            for (int i = 0; i < syncBackups; i++) {
                 MBackup backupOp = backupOps[i];
                 backupOp.getResultAsBoolean();
             }
@@ -2181,6 +2184,14 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class BackupPacketProcessor extends AbstractOperationHandler {
+        public void handle(Request request) {
+            boolean needResponse = request.longValue == 0L;
+            doOperation(request);
+            if (needResponse) {
+                returnResponse(request);
+            }
+        }
+
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             Object value = cmap.backup(request);

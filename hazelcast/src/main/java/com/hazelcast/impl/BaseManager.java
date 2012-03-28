@@ -27,7 +27,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.CounterService;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
@@ -311,7 +310,6 @@ public abstract class BaseManager {
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
             targetAwareOp.setResult(request.response);
-            CounterService.serviceCounter.add(System.nanoTime() - request.lastTime);
         } else {
             Packet packet = obtainPacket();
             request.setPacket(packet);
