@@ -61,11 +61,12 @@ public class SocketConnector implements Runnable {
                 // find possible remote inet6 addresses and try each one to connect...
                 final Collection<Inet6Address> possibleInetAddresses = AddressUtil.getPossibleInetAddressesFor(
                         (Inet6Address) address.getInetAddress());
+                logger.log(Level.INFO, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
                 boolean connected = false;
                 Exception error = null;
                 for (Inet6Address inetAddress : possibleInetAddresses) {
                     try {
-                        tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), 5000);
+                        tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), 3000);
                         connected = true;
                         break;
                     } catch (Exception e) {

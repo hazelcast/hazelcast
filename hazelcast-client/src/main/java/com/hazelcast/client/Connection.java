@@ -65,7 +65,7 @@ public class Connection {
                 socket.setSoLinger(true, 5);
 //                socket.setSendBufferSize(BUFFER_SIZE);
 //                socket.setReceiveBufferSize(BUFFER_SIZE);
-                socket.connect(isa, 5000);
+                socket.connect(isa, 3000);
             } catch (IOException e) {
                 socket.close();
                 throw e;
