@@ -49,13 +49,13 @@ public class SocketConnector implements Runnable {
             final Address thisAddress = connectionManager.ioService.getThisAddress();
             if (address.isIPv4()) {
                 // remote is IPv4; connect...
-                tryToConnect(address.getInetSocketAddress());
+                tryToConnect(address.getInetSocketAddress(), 0);
             } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
                 // remote and this is IPv6; this is local address and scope id is known
                 // find correct inet6 address for remote and connect...
                 final Inet6Address inetAddress = AddressUtil
                         .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
-                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()));
+                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), 0);
             } else {
                 // remote is IPv6 and this is either IPv4 or a global IPv6.
                 // find possible remote inet6 addresses and try each one to connect...
@@ -65,7 +65,7 @@ public class SocketConnector implements Runnable {
                 Exception error = null;
                 for (Inet6Address inetAddress : possibleInetAddresses) {
                     try {
-                        tryToConnect(new InetSocketAddress(inetAddress, address.getPort()));
+                        tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), 5000);
                         connected = true;
                         break;
                     } catch (Exception e) {
@@ -83,21 +83,21 @@ public class SocketConnector implements Runnable {
         }
     }
 
-    private void tryToConnect(final InetSocketAddress socketAddress)
+    private void tryToConnect(final InetSocketAddress socketAddress, final int timeout)
             throws Exception {
         final SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
-        final Address thisAddress = connectionManager.ioService.getThisAddress();
         if (!connectionManager.ioService.isSocketBindAny()) {
+        final Address thisAddress = connectionManager.ioService.getThisAddress();
             socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
         }
         logger.log(Level.FINEST, "connecting to " + address);
         try {
             socketChannel.configureBlocking(true);
-            if (thisAddress.isIPv6()) {
-                socketChannel.connect(socketAddress);
+            if (timeout > 0) {
+                socketChannel.socket().connect(socketAddress, timeout);
             } else {
-                socketChannel.socket().connect(socketAddress, 5000);
+                socketChannel.connect(socketAddress);
             }
 
             logger.log(Level.FINEST, "connection check. connected to: " + address);
