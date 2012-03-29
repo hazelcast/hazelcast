@@ -26,16 +26,15 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.AddressUtil.AddressMatcher;
+import com.hazelcast.util.AddressUtil.InvalidAddressException;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -90,7 +89,8 @@ public class TcpIpJoiner extends AbstractJoiner {
         public void process() {
             TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) getNode().getJoiner();
             boolean shouldApprove = (tcpIpJoiner.askingForApproval || node.isMaster()) ? false : true;
-            getNode().clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove), getConnection());
+            getNode().clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove),
+                                                       getConnection());
         }
     }
 
@@ -291,19 +291,41 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     Collection<Address> getPossibleAddresses(Config config, Address thisAddress, ILogger logger) {
-        final Collection<String> lsJoinMembers = getMembers(config);
+        final Collection<String> configMembers = getMembers(config);
+        final Set<String> possibleMembers = new HashSet<String>();
+        for (String member : configMembers) {
+            // split members defined in tcp-ip configuration by comma(,) semi-colon(;) space( ).
+            String[] members = member.split("[,; ]");
+            for (String address : members) {
+                possibleMembers.add(address);
+            }
+        }
         final Set<Address> setPossibleAddresses = new HashSet<Address>();
-        for (String host : lsJoinMembers) {
+        for (String host : possibleMembers) {
             try {
                 final AddressHolder addressHolder = AddressUtil.getAddressHolder(host);
                 final boolean portIsDefined = addressHolder.port != -1 || !config.isPortAutoIncrement();
                 final int maxAddressTries = portIsDefined ? 1 : MAX_ADDRESS_TRIES;
                 final int port = addressHolder.port != -1 ? addressHolder.port : config.getPort();
-                if (AddressUtil.isIpAddress(addressHolder.address)) {
-                    for (int i = 0; i < maxAddressTries; i++) {
-                        final Address addressProper = new Address(addressHolder.address, port + i);
-                        if (!addressProper.equals(thisAddress)) {
-                            setPossibleAddresses.add(addressProper);
+                AddressMatcher addressMatcher = null;
+                try {
+                    addressMatcher = AddressUtil.getAddressMatcher(addressHolder.address);
+                } catch (InvalidAddressException ignore) {
+                }
+                if (addressMatcher != null) {
+                    final Collection<String> matchedAddresses;
+                    if (addressMatcher.isIPv4()) {
+                        matchedAddresses = AddressUtil.getMatchingIpv4Addresses(addressMatcher);
+                    } else {
+                        // for IPv6 we are not doing wildcard matching
+                        matchedAddresses = Collections.singleton(addressHolder.address);
+                    }
+                    for (String matchedAddress : matchedAddresses) {
+                        for (int i = 0; i < maxAddressTries; i++) {
+                            final Address addressProper = new Address(matchedAddress, port + i);
+                            if (!addressProper.equals(thisAddress)) {
+                                setPossibleAddresses.add(addressProper);
+                            }
                         }
                     }
                 } else {

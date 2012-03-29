@@ -24,10 +24,7 @@ import com.hazelcast.util.AddressUtil;
 
 import java.net.*;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 
 public class AddressPicker {
@@ -55,17 +52,22 @@ public class AddressPicker {
                 currentInetAddress = InetAddress.getByName(localAddress.trim());
             }
             if (currentInetAddress == null) {
-                final Set<String> interfaces = new HashSet<String>();
-                if (config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled()) {
+                final Collection<String> interfaces = new HashSet<String>();
+                if (config.getNetworkConfig().getInterfaces().isEnabled()) {
+                    interfaces.addAll(config.getNetworkConfig().getInterfaces().getInterfaces());
+                    logger.log(Level.INFO, "Interfaces is enabled, trying to pick one address matching " +
+                                             "to one of: " + interfaces);
+                }
+                else if (config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled()) {
                     final Collection<Address> possibleAddresses = new TcpIpJoiner(node)
                             .getPossibleAddresses(config, null, logger);
                     for (Address possibleAddress : possibleAddresses) {
                         interfaces.add(possibleAddress.getHost());
                     }
+                    logger.log(Level.FINEST, "Interfaces is disabled, trying to pick one address from TCP-IP config " +
+                                             "addresses: " + interfaces);
                 }
-                if (config.getNetworkConfig().getInterfaces().isEnabled()) {
-                    interfaces.addAll(config.getNetworkConfig().getInterfaces().getInterfaces());
-                }
+
                 if (interfaces.contains("127.0.0.1") || interfaces.contains("localhost")) {
                     currentInetAddress = InetAddress.getByName("127.0.0.1");
                 } else {
@@ -146,7 +148,7 @@ public class AddressPicker {
         }
     }
 
-    private InetAddress pickInetAddress(final Set<String> interfaces) throws SocketException {
+    private InetAddress pickInetAddress(final Collection<String> interfaces) throws SocketException {
         final Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
         while (networkInterfaces.hasMoreElements()) {
             final NetworkInterface ni = networkInterfaces.nextElement();

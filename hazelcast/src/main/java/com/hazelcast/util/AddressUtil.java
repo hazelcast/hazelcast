@@ -60,10 +60,11 @@ public final class AddressUtil {
         String scopeId = null;
         if (indexColon > -1 && lastIndexColon > indexColon) {
             // IPv6
-            if (indexBracketStart == 0 && indexBracketEnd > indexBracketStart
-                && lastIndexColon == indexBracketEnd + 1) {
+            if (indexBracketStart == 0 && indexBracketEnd > indexBracketStart) {
                 host = address.substring(indexBracketStart + 1, indexBracketEnd);
-                port = Integer.parseInt(address.substring(lastIndexColon + 1));
+                if (lastIndexColon == indexBracketEnd + 1) {
+                    port = Integer.parseInt(address.substring(lastIndexColon + 1));
+                }
             } else {
                 host = address;
             }
@@ -170,8 +171,33 @@ public final class AddressUtil {
         return Collections.singleton(inet6Address);
     }
 
-    public static AddressMatcher getAddressMatcher(String host) {
-        final String address = getAddressHolder(host).address;
+    public static Collection<String> getMatchingIpv4Addresses(final AddressMatcher addressMatcher) {
+        if (addressMatcher.isIPv6()) {
+            throw new IllegalArgumentException("Cannot wildcard matching for IPv6: " + addressMatcher);
+        }
+        final Collection<String> addresses = new HashSet<String>();
+        final String first3 = addressMatcher.address[0] + "." +
+                              addressMatcher.address[1] + "." +
+                              addressMatcher.address[2]  ;
+        final String lastPart = addressMatcher.address[3];
+        final int dashPos ;
+        if ("*".equals(lastPart)) {
+            for (int j = 0; j <= 255; j++) {
+                addresses.add(first3 + "." + j);
+            }
+        } else if ((dashPos = lastPart.indexOf('-')) > 0) {
+            final int start = Integer.parseInt(lastPart.substring(0, dashPos));
+            final int end = Integer.parseInt(lastPart.substring(dashPos + 1));
+            for (int j = start; j <= end; j++) {
+                addresses.add(first3 + "." + j);
+            }
+        } else {
+            addresses.add(addressMatcher.getAddress());
+        }
+        return addresses;
+    }
+
+    public static AddressMatcher getAddressMatcher(String address) {
         final AddressMatcher matcher;
         final int indexColon = address.indexOf(':');
         final int lastIndexColon = address.lastIndexOf(':');
