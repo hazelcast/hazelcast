@@ -31,10 +31,7 @@ import com.hazelcast.impl.partition.MigrationRequestTask;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.wan.WanMergeListener;
 import com.hazelcast.merge.MergePolicy;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.Serializer;
+import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.query.Index;
 import com.hazelcast.query.MapIndexService;
@@ -75,7 +72,8 @@ public class ConcurrentMapManager extends BaseManager {
     ConcurrentMapManager(final Node node) {
         super(node);
         recordFactory = node.initializer.getRecordFactory();
-        storeExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
+        storeExecutor = node.executorManager.newParallelExecutor(
+                node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         evictionExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         MAX_BACKUP_COUNT = PartitionInfo.MAX_REPLICA_COUNT;
@@ -1896,19 +1894,51 @@ public class ConcurrentMapManager extends BaseManager {
                 logger.log(Level.SEVERE, msg);
                 throw new RuntimeException(msg);
             }
+            if (request.key == null || request.key.size() == 0) {
+                throw new RuntimeException("Key is null! " + request.key);
+            }
+            
+            int syncBackups = Math.min(backupCount, 1);
             for (int i = 0; i < backupCount; i++) {
                 int replicaIndex = i + 1;
-                MBackup backupOp = backupOps[i];
-                if (backupOp == null) {
-                    backupOp = new MBackup();
-                    backupOps[i] = backupOp;
+                if (i < syncBackups) {
+                    MBackup backupOp = backupOps[i];
+                    if (backupOp == null) {
+                        backupOp = new MBackup();
+                        backupOps[i] = backupOp;
+                    }
+                    backupOp.sendBackup(operation, replicaIndex, request);
+                } else {
+                    final Address target = getBackupMember(request.blockId, replicaIndex);
+                    if (target != null) {
+                        if (target.equals(thisAddress)) {
+                            final RequestHandler handler = (RequestHandler) getPacketProcessor(operation);
+                            final Request reqBackup = new Request() ;
+                            reqBackup.setFromRequest(request);
+                            reqBackup.operation = operation;
+                            reqBackup.longValue = 1L;
+                            reqBackup.callId = -1L;
+                            enqueueAndReturn(new Processable() {
+                                public void process() {
+                                    handler.handle(reqBackup);
+                                }
+                            });
+                        } else {
+                            final Packet packet = doObtainPacket();
+                            request.setPacket(packet);
+                            packet.operation = operation;
+                            packet.longValue = 1L;
+                            packet.callId = -1L;
+                            Connection targetConnection = node.connectionManager.getOrConnect(target);
+                            boolean sent = send(packet, targetConnection);
+                            if (!sent) {
+                                releasePacket(packet);
+                            }
+                        }
+                    }
                 }
-                if (request.key == null || request.key.size() == 0) {
-                    throw new RuntimeException("Key is null! " + request.key);
-                }
-                backupOp.sendBackup(operation, replicaIndex, request);
             }
-            for (int i = 0; i < backupCount; i++) {
+            for (int i = 0; i < syncBackups; i++) {
                 MBackup backupOp = backupOps[i];
                 backupOp.getResultAsBoolean();
             }
@@ -2181,6 +2211,14 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class BackupPacketProcessor extends AbstractOperationHandler {
+        public void handle(Request request) {
+            boolean needResponse = request.longValue != 0L;
+            doOperation(request);
+            if (needResponse) {
+                returnResponse(request);
+            }
+        }
+
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             Object value = cmap.backup(request);
@@ -2188,7 +2226,7 @@ public class ConcurrentMapManager extends BaseManager {
             request.response = value;
         }
     }
-
+    
     class AsyncMergePacketProcessor implements PacketProcessor {
         public void process(final Packet packet) {
             packet.operation = CONCURRENT_MAP_WAN_MERGE;
