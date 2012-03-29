@@ -842,8 +842,7 @@ public class ClientHandlerService implements ConnectionListener {
                 logger.log(Level.SEVERE, "Could not retrieve Credentials object!");
             } else if (node.securityContext != null) {
                 final Socket endpointSocket = packet.conn.getSocketChannelWrapper().socket();
-                // TODO: check!!!
-                credentials.setEndpoint(endpointSocket.getInetAddress().getHostAddress());
+                credentials.setEndpoint(Address.toString(endpointSocket.getInetAddress().getAddress()));
                 try {
                     LoginContext lc = node.securityContext.createClientLoginContext(credentials);
                     lc.login();
