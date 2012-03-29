@@ -86,7 +86,7 @@ public class AddressPicker {
             }
             if (currentInetAddress != null) {
                 // check if scope id correctly set
-                currentInetAddress = AddressUtil.fixInet6AddressInterface(currentInetAddress);
+                currentInetAddress = AddressUtil.fixAndGetInetAddress(currentInetAddress);
             }
             if (currentInetAddress == null) {
                 currentInetAddress = InetAddress.getByName("127.0.0.1");

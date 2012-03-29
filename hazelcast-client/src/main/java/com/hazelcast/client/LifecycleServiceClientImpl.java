@@ -129,6 +129,10 @@ public class LifecycleServiceClientImpl implements LifecycleService {
         es.shutdown();
     }
 
+    void destroy() {
+        es.shutdownNow();
+    }
+
     public void kill() {
         shutdown();
     }

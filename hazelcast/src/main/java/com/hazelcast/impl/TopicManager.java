@@ -40,7 +40,7 @@ public class TopicManager extends BaseManager {
         FLOW_CONTROL_ENABLED = node.getGroupProperties().TOPIC_FLOW_CONTROL_ENABLED.getBoolean();
     }
 
-    Map<String, TopicInstance> mapTopics = new HashMap<String, TopicInstance>();
+    final Map<String, TopicInstance> mapTopics = new HashMap<String, TopicInstance>();
 
     public TopicInstance getTopicInstance(String name) {
         TopicInstance ti = mapTopics.get(name);

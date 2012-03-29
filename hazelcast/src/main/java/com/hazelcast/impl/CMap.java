@@ -661,26 +661,26 @@ public class CMap {
         return false;
     }
 
-    public void containsValue(Request request) {
-        if (isMultiMap()) {
-            boolean found = false;
-            Collection<Record> records = mapRecords.values();
-            for (Record record : records) {
-                long now = System.currentTimeMillis();
-                if (record.isActive() && record.isValid(now)) {
-                    Address owner = concurrentMapManager.getPartitionOwner(record.getBlockId());
-                    if (thisAddress.equals(owner)) {
-                        if (record.containsValue(request.value)) {
-                            found = true;
-                        }
-                    }
-                }
-            }
-            request.response = found;
-        } else {
-            request.response = mapIndexService.containsValue(request.value);
-        }
-    }
+//    public void containsValue(Request request) {
+//        if (isMultiMap()) {
+//            boolean found = false;
+//            Collection<Record> records = mapRecords.values();
+//            for (Record record : records) {
+//                long now = System.currentTimeMillis();
+//                if (record.isActive() && record.isValid(now)) {
+//                    Address owner = concurrentMapManager.getPartitionOwner(record.getBlockId());
+//                    if (thisAddress.equals(owner)) {
+//                        if (record.containsValue(request.value)) {
+//                            found = true;
+//                        }
+//                    }
+//                }
+//            }
+//            request.response = found;
+//        } else {
+//            request.response = mapIndexService.containsValue(request.value);
+//        }
+//    }
 
     public CMapEntry getMapEntry(Request req) {
         Record record = getRecord(req);

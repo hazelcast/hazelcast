@@ -19,15 +19,15 @@ package com.hazelcast.client;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.AddressUtil.AddressHolder;
 
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.net.*;
+import java.util.*;
 
 public class ClientConfig {
     private GroupConfig groupConfig = new GroupConfig();
-    List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>(10);
+    private final List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>(10);
     private Credentials credentials;
     private int connectionTimeout = 300000;
     private int initialConnectionAttemptLimit = 1;
@@ -104,7 +104,7 @@ public class ClientConfig {
 
     public ClientConfig addAddress(String... addresses) {
         for (String address : addresses) {
-            this.addressList.add(parse(address));
+            this.addressList.addAll(parse(address));
         }
         return this;
     }
@@ -113,15 +113,32 @@ public class ClientConfig {
     public void setAddresses(List<String> addresses) {
         addressList.clear();
         for (String address : addresses) {
-            addressList.add(parse(address));
+            addressList.addAll(parse(address));
         }
     }
 
-    private static InetSocketAddress parse(String address) {
-        String[] separated = address.split(":");
-        int port = (separated.length > 1) ? Integer.valueOf(separated[1]) : 5701;
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(separated[0], port);
-        return inetSocketAddress;
+    private static Collection<InetSocketAddress> parse(String address) {
+        final AddressHolder addressHolder = AddressUtil.getAddressHolder(address, 5701);
+        final String scopedAddress = addressHolder.scopeId != null
+                                     ? addressHolder.address + "%" + addressHolder.scopeId
+                                     : addressHolder.address;
+        InetAddress inetAddress = null;
+        try {
+            inetAddress = InetAddress.getByName(scopedAddress);
+        } catch (UnknownHostException ignored) {
+        }
+        if (inetAddress == null) {
+            return Collections.singleton(new InetSocketAddress(scopedAddress, addressHolder.port));
+        }
+        if (inetAddress instanceof Inet4Address) {
+            return Collections.singleton(new InetSocketAddress(inetAddress, addressHolder.port));
+        }
+        final Collection<Inet6Address> addresses = AddressUtil.getPossibleInetAddressesFor((Inet6Address) inetAddress);
+        final Collection<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
+        for (Inet6Address inet6Address : addresses) {
+            socketAddresses.add(new InetSocketAddress(inet6Address, addressHolder.port));
+        }
+        return socketAddresses;
     }
 
     public Collection<InetSocketAddress> getAddressList() {
