@@ -123,7 +123,7 @@ public class ProxyHelper {
         request.setOperation(operation);
         request.setKey(key);
         request.setValue(value);
-        if (ttl > 0 && timeunit != null) {
+        if (ttl >= 0 && timeunit != null) {
             request.setTimeout(timeunit.toMillis(ttl));
         }
         return request;
