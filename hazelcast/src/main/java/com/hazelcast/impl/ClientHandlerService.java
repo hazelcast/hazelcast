@@ -1573,9 +1573,6 @@ public class ClientHandlerService implements ConnectionListener {
                 logger.log(Level.WARNING, "unable to send response " + request);
             }
         }
-
-        public void postHandle(Packet packet) {
-        }
     }
 
     private final class UnknownClientOperationHandler extends ClientOperationHandler {
