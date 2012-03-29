@@ -27,13 +27,24 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class TimedMemberState implements DataSerializable {
+public class TimedMemberState implements DataSerializable, Cloneable {
     long time;
     MemberState memberState = null;
     Set<String> instanceNames = null;
     List<String> memberList;
     Boolean master;
     String clusterName;
+
+    public TimedMemberState clone() {
+        TimedMemberState st = new TimedMemberState();
+        st.setTime(time);
+        st.setMemberState(memberState);
+        st.setInstanceNames(instanceNames);
+        st.setMemberList(memberList);
+        st.setMaster(master);
+        st.setClusterName(clusterName);
+        return st;
+    }
 
     public void writeData(DataOutput out) throws IOException {
         out.writeLong(time);
