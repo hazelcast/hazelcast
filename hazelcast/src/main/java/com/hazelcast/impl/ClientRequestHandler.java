@@ -53,6 +53,7 @@ public class ClientRequestHandler extends FallThroughRunnable {
             if (!valid) return;
             final PrivilegedExceptionAction<Void> action = new PrivilegedExceptionAction<Void>() {
                 public Void run() {
+                    //asds
                     Connection connection = packet.conn;
                     clientOperationHandler.handle(node, packet);
                     node.clientHandlerService.getClientEndpoint(connection).removeRequest(ClientRequestHandler.this);
