@@ -114,7 +114,7 @@ public class SocketConnector implements Runnable {
             connectionManager.bind(address, connection, false);
         } catch (Exception e) {
             closeSocket(socketChannel);
-            logger.log(Level.WARNING, "Could not connect to: "
+            logger.log(Level.INFO, "Could not connect to: "
                                       + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                                       + "[" + e.getMessage() + "]");
             throw e;

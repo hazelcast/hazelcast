@@ -59,10 +59,9 @@ public class AddressPicker {
                                              "to one of: " + interfaces);
                 }
                 else if (config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled()) {
-                    final Collection<Address> possibleAddresses = new TcpIpJoiner(node)
-                            .getPossibleAddresses(config, null, logger);
-                    for (Address possibleAddress : possibleAddresses) {
-                        interfaces.add(possibleAddress.getHost());
+                    final Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
+                    for (String possibleAddress : possibleAddresses) {
+                        interfaces.add(AddressUtil.getAddressHolder(possibleAddress).address);
                     }
                     logger.log(Level.FINEST, "Interfaces is disabled, trying to pick one address from TCP-IP config " +
                                              "addresses: " + interfaces);

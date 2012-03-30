@@ -128,7 +128,6 @@ public final class AddressUtil {
                     break;
                 }
             }
-
             if (numeric) {
                 return Inet6Address.getByAddress(null, inetAddress.getAddress(), Integer.parseInt(scope));
             } else {

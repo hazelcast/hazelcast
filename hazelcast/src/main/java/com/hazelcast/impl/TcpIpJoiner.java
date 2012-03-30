@@ -22,7 +22,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.Join;
 import com.hazelcast.core.Member;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.AddressUtil;
@@ -34,7 +33,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -137,7 +139,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     private void joinViaPossibleMembers(AtomicBoolean joined) {
         try {
             node.getFailedConnections().clear();
-            final Collection<Address> colPossibleAddresses = getPossibleAddresses(config, node.address, logger);
+            final Collection<Address> colPossibleAddresses = getPossibleAddresses();
             colPossibleAddresses.remove(node.address);
             for (final Address possibleAddress : colPossibleAddresses) {
                 logger.log(Level.INFO, "connecting to " + possibleAddress);
@@ -290,17 +292,10 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
-    Collection<Address> getPossibleAddresses(Config config, Address thisAddress, ILogger logger) {
-        final Collection<String> configMembers = getMembers(config);
-        final Set<String> possibleMembers = new HashSet<String>();
-        for (String member : configMembers) {
-            // split members defined in tcp-ip configuration by comma(,) semi-colon(;) space( ).
-            String[] members = member.split("[,; ]");
-            for (String address : members) {
-                possibleMembers.add(address);
-            }
-        }
+    private Collection<Address> getPossibleAddresses() {
+        final Collection<String> possibleMembers = getMembers();
         final Set<Address> setPossibleAddresses = new HashSet<Address>();
+        final Address thisAddress = node.address;
         for (String host : possibleMembers) {
             try {
                 final AddressHolder addressHolder = AddressUtil.getAddressHolder(host);
@@ -355,15 +350,28 @@ public class TcpIpJoiner extends AbstractJoiner {
         return setPossibleAddresses;
     }
 
-    protected List<String> getMembers(Config config) {
+    protected Collection<String> getMembers() {
+        return getConfigurationMembers(config);
+    }
+
+    public static Collection<String> getConfigurationMembers(Config config) {
         Join join = config.getNetworkConfig().getJoin();
-        return join.getTcpIpConfig().getMembers();
+        final Collection<String> configMembers = join.getTcpIpConfig().getMembers();
+        final Set<String> possibleMembers = new HashSet<String>();
+        for (String member : configMembers) {
+            // split members defined in tcp-ip configuration by comma(,) semi-colon(;) space( ).
+            String[] members = member.split("[,; ]");
+            for (String address : members) {
+                possibleMembers.add(address);
+            }
+        }
+        return possibleMembers;
     }
 
     public void searchForOtherClusters(SplitBrainHandler splitBrainHandler) {
         final Collection<Address> colPossibleAddresses;
         try {
-            colPossibleAddresses = getPossibleAddresses(node.getConfig(), node.getThisAddress(), logger);
+            colPossibleAddresses = getPossibleAddresses();
         } catch (Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             return;
