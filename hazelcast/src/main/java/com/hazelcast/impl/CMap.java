@@ -80,7 +80,7 @@ public class CMap {
 
     final Address thisAddress;
 
-    final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
+    public final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
 
     final String name;
 
@@ -91,6 +91,8 @@ public class CMap {
     final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
     int backupCount;
+
+    int asyncBackupCount;
 
     EvictionPolicy evictionPolicy;
 
@@ -330,6 +332,7 @@ public class CMap {
 
     public void setRuntimeConfig(MapConfig mapConfig) {
         backupCount = mapConfig.getBackupCount();
+        asyncBackupCount = mapConfig.getAsyncBackupCount();
         ttl = mapConfig.getTimeToLiveSeconds() * 1000L;
         maxIdle = mapConfig.getMaxIdleSeconds() * 1000L;
         evictionPolicy = mapConfig.getEvictionPolicy() != null
@@ -365,7 +368,7 @@ public class CMap {
 
     public MapConfig getRuntimeConfig() {
         MapConfig mapConfig = new MapConfig(name);
-        mapConfig.setBackupCount(backupCount);
+        mapConfig.setBackupCounts(backupCount, asyncBackupCount);
         mapConfig.setTimeToLiveSeconds((int) (ttl / 1000));
         mapConfig.setMaxIdleSeconds((int) (maxIdle / 1000));
         mapConfig.setEvictionPolicy(evictionPolicy.toString());
@@ -437,6 +440,14 @@ public class CMap {
 
     public int getBackupCount() {
         return backupCount;
+    }
+
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    public int getTotalBackupCount() {
+        return backupCount + asyncBackupCount;
     }
 
     public void own(DataRecordEntry dataRecordEntry) {
@@ -545,7 +556,7 @@ public class CMap {
         if (record != null) {
             record.setActive();
             if (req.version > record.getVersion() + 1) {
-                Request reqCopy = req.hardCopy();
+                Request reqCopy = Request.copyFromRequest(req);
                 record.addBackupOp(new VersionedBackupOp(this, reqCopy));
                 return true;
             }
@@ -558,7 +569,7 @@ public class CMap {
         return true;
     }
 
-    public void doBackup(Request req) {
+    public void doBackup(final Request req) {
         if (req.key == null || req.key.size() == 0) {
             throw new RuntimeException("Backup key size cannot be zero! " + req.key);
         }
@@ -606,18 +617,18 @@ public class CMap {
         } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
             add(req, true);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE_MULTI) {
-            Record record = getRecord(req);
+            final Record record = getRecord(req);
             if (record != null) {
-                if (req.value == null) {
+                if (req.value == null || record.valueCount() == 0) {
                     markAsEvicted(record);
                 } else {
-                    // FIXME: This should be done out of service thread
-                    // if (record.containsValue(req.value)) {
+                    // TODO: This can be done out of service thread
+                    // A simple test showed that context switching costs
+                    // nearly same. Keeping this at the moment.
                     Collection<ValueHolder> multiValues = record.getMultiValues();
                     if (multiValues != null) {
                         multiValues.remove(new ValueHolder(req.value));
                     }
-                    // }
                     if (record.valueCount() == 0) {
                         markAsEvicted(record);
                     }
@@ -628,39 +639,53 @@ public class CMap {
         }
     }
 
-    public boolean contains(Request req) {
-        Data key = req.key;
-        Data value = req.value;
-        if (key != null) {
-            Record record = getRecord(req);
-            if (record == null) {
-                return false;
-            } else {
-                if (record.isActive() && record.isValid()) {
-                    if (value == null) {
-                        return record.valueCount() > 0;
-                    } else {
-                        return record.containsValue(value);
-                    }
-                }
-            }
+    public boolean containsKey(Request req) {
+        Record record = getRecord(req);
+        if (record == null) {
+            return false;
         } else {
-            Collection<Record> records = mapRecords.values();
-            for (Record record : records) {
-                long now = System.currentTimeMillis();
-                if (record.isActive() && record.isValid(now)) {
-                    Address owner = concurrentMapManager.getPartitionManager().getOwner(record.getBlockId());
-                    if (thisAddress.equals(owner)) {
-                        if (record.containsValue(value)) {
-                            return true;
-                        }
-                    }
-                }
+            if (record.isActive() && record.isValid()) {
+                return record.valueCount() > 0;
             }
         }
         return false;
     }
 
+    // TODO: clean if safe!
+//    public boolean containsKey(Request req) {
+//        Data key = req.key;
+//        Data value = req.value;
+//        if (key != null) {
+//            Record record = getRecord(req);
+//            if (record == null) {
+//                return false;
+//            } else {
+//                if (record.isActive() && record.isValid()) {
+//                    if (value == null) {
+//                        return record.valueCount() > 0;
+//                    } else {
+//                        return record.containsValue(value);
+//                    }
+//                }
+//            }
+//        } else {
+//            Collection<Record> records = mapRecords.values();
+//            for (Record record : records) {
+//                long now = System.currentTimeMillis();
+//                if (record.isActive() && record.isValid(now)) {
+//                    Address owner = concurrentMapManager.getPartitionManager().getOwner(record.getBlockId());
+//                    if (thisAddress.equals(owner)) {
+//                        if (record.containsValue(value)) {
+//                            return true;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        return false;
+//    }
+
+    // TODO: clean if safe!
 //    public void containsValue(Request request) {
 //        if (isMultiMap()) {
 //            boolean found = false;
@@ -963,7 +988,7 @@ public class CMap {
             packet.setKey(key);
             packet.operation = ClusterOperation.BLOCKING_OFFER_KEY;
             packet.longValue = 0;
-            boolean sent = concurrentMapManager.send(packet, concurrentMapManager.getMasterAddress());
+            concurrentMapManager.sendOrReleasePacket(packet, concurrentMapManager.getMasterAddress());
         }
     }
 
@@ -1011,7 +1036,7 @@ public class CMap {
     private void purgeIfNotOwnedOrBackup(Collection<Record> records) {
         PartitionManager partitionManager = concurrentMapManager.getPartitionManager();
         for (Record record : records) {
-            if (partitionManager.shouldPurge(record.getBlockId(), backupCount)) {
+            if (partitionManager.shouldPurge(record.getBlockId(), getTotalBackupCount())) {
                 mapIndexService.remove(record);
                 mapRecords.remove(record.getKeyData());
             }
@@ -1128,7 +1153,7 @@ public class CMap {
                         lockedEntryCount++;
                         lockWaitCount += record.getScheduledActionCount();
                     }
-                } else if (partition.isBackup(thisAddress, backupCount)) {
+                } else if (partition.isBackup(thisAddress, getTotalBackupCount())) {
                     if (record.valueCount() > 0) {
                         backupEntryCount += record.valueCount();
                         backupEntryMemoryCost += record.getCost();
@@ -1340,7 +1365,7 @@ public class CMap {
                     PartitionInfo partition = partitionManager.getPartition(record.getBlockId());
                     Address owner = partition.getOwner();
                     boolean owned = (owner != null && thisAddress.equals(owner));
-                    boolean ownedOrBackup = partition.isOwnerOrBackup(thisAddress, backupCount);
+                    boolean ownedOrBackup = partition.isOwnerOrBackup(thisAddress, getTotalBackupCount());
                     if (owner != null && !partitionManager.isPartitionMigrating(partition.getPartitionId())) {
                         if (owned) {
                             if (store != null && writeDelayMillis > 0 && record.isDirty()) {
@@ -1454,10 +1479,7 @@ public class CMap {
                         packet.name = getName();
                         packet.setKey(record.getKeyData());
                         packet.operation = ClusterOperation.CONCURRENT_MAP_INVALIDATE;
-                        boolean sent = concurrentMapManager.send(packet, member.getAddress());
-                        if (!sent) {
-                            concurrentMapManager.releasePacket(packet);
-                        }
+                        concurrentMapManager.sendOrReleasePacket(packet, member.getAddress());
                     }
                 }
             }

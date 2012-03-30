@@ -188,6 +188,12 @@ public class Request implements CallStateAware {
                 DEFAULT_VERSION);
     }
 
+    public static Request copyFromRequest(Request request) {
+        final Request copy = new Request();
+        copy.setFromRequest(request);
+        return copy;
+    }
+
     public void setFromRequest(Request req) {
         set(req.local, req.operation, req.name, req.key, req.value, req.blockId, req.timeout, req.ttl,
                 req.txnId, req.callId, req.lockThreadId, req.lockAddress, req.lockCount,
@@ -199,16 +205,20 @@ public class Request implements CallStateAware {
         indexTypes = req.indexTypes;
     }
 
-    public static Request copy(Packet packet) {
+    public static Request copyFromPacket(Packet packet) {
         final Request copy = new Request();
-        copy.set(false, packet.operation, packet.name, packet.getKeyData(), packet.getValueData(),
-                packet.blockId, packet.timeout, packet.ttl, packet.txnId, packet.callId, packet.threadId,
-                packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
-                packet.version);
-        copy.indexes = packet.indexes;
-        copy.indexTypes = packet.indexTypes;
-        copy.callState = packet.callState;
+        copy.setFromPacket(packet);
         return copy;
+    }
+
+    public void setFromPacket(Packet packet) {
+        set(false, packet.operation, packet.name, packet.getKeyData(), packet.getValueData(),
+            packet.blockId, packet.timeout, packet.ttl, packet.txnId, packet.callId, packet.threadId,
+            packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
+            packet.version);
+        indexes = packet.indexes;
+        indexTypes = packet.indexTypes;
+        callState = packet.callState;
     }
 
     public void setFromRecord(Record record) {
@@ -231,31 +241,25 @@ public class Request implements CallStateAware {
         }
     }
 
-    public Request hardCopy() {
-        final Request copy = new Request();
-        copy.setFromRequest(this);
-        return copy;
-    }
-
-    public void setPacket(Packet packet) {
-        packet.operation = operation;
-        packet.name = name;
-        packet.setKey(key);
-        packet.setValue(value);
-        packet.blockId = blockId;
-        packet.timeout = timeout;
-        packet.ttl = ttl;
-        packet.txnId = txnId;
-        packet.callId = callId;
-        packet.threadId = lockThreadId;
-        packet.lockAddress = lockAddress;
-        packet.lockCount = lockCount;
-        packet.longValue = longValue;
-        packet.version = version;
-        packet.indexes = indexes;
-        packet.indexTypes = indexTypes;
-        packet.callState = callState;
-    }
+//    public void setPacket(Packet packet) {
+//        packet.operation = operation;
+//        packet.name = name;
+//        packet.setKey(key);
+//        packet.setValue(value);
+//        packet.blockId = blockId;
+//        packet.timeout = timeout;
+//        packet.ttl = ttl;
+//        packet.txnId = txnId;
+//        packet.callId = callId;
+//        packet.threadId = lockThreadId;
+//        packet.lockAddress = lockAddress;
+//        packet.lockCount = lockCount;
+//        packet.longValue = longValue;
+//        packet.version = version;
+//        packet.indexes = indexes;
+//        packet.indexTypes = indexTypes;
+//        packet.callState = callState;
+//    }
 
     public void clearForResponse() {
         if (!this.local) {

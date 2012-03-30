@@ -144,7 +144,7 @@ public class BlockingQueueManager extends BaseManager {
                     packet.setKey(key);
                     packet.operation = ClusterOperation.BLOCKING_OFFER_KEY;
                     packet.longValue = index;
-                    boolean sent = send(packet, getMasterAddress());
+                    sendOrReleasePacket(packet, getMasterAddress());
                 }
             }
         });

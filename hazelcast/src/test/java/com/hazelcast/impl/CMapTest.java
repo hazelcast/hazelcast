@@ -378,7 +378,7 @@ public class CMapTest extends TestUtil {
         assertTrue(cmap.mapRecords.containsKey(toData(key)));
         Thread.sleep(1500);
         assertEquals(0, cmap.size());
-        assertFalse(cmap.contains(newContainsRequest(dKey, null)));
+        assertFalse(cmap.containsKey(newContainsRequest(dKey, null)));
         node.connectionManager.shutdown();
     }
 }

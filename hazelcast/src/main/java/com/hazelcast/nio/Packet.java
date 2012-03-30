@@ -16,10 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.impl.Constants;
-import com.hazelcast.impl.GroupProperties;
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.CallState;
 import com.hazelcast.impl.base.CallStateAware;
 import com.hazelcast.util.ByteUtil;
@@ -298,6 +295,26 @@ public final class Packet implements SocketWritable, CallStateAware {
         indexes = null;
         indexTypes = null;
         callState = null;
+    }
+
+    public void setFromRequest(Request request) {
+        operation = request.operation;
+        name = request.name;
+        setKey(request.key);
+        setValue(request.value);
+        blockId = request.blockId;
+        timeout = request.timeout;
+        ttl = request.ttl;
+        txnId = request.txnId;
+        callId = request.callId;
+        threadId = request.lockThreadId;
+        lockAddress = request.lockAddress;
+        lockCount = request.lockCount;
+        longValue = request.longValue;
+        version = request.version;
+        indexes = request.indexes;
+        indexTypes = request.indexTypes;
+        callState = request.callState;
     }
 
     @Override
