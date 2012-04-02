@@ -5,7 +5,7 @@
     <info>
         <title>Hazelcast Documentation</title>
         <subtitle>version 2.1</subtitle>
-        <pubdate>21 March 2012</pubdate>
+        <pubdate>03 April 2012</pubdate>
         <copyright>
             <year>2012</year>
             <holder>Hazel Bilisim Ltd. Sti.</holder>
@@ -95,21 +95,13 @@
         <title>WAN Replication</title>
         <xi:include href="WanReplication.xml"/>
     </chapter>
-    <chapter xml:id="Encryption">
-        <title>Encryption</title>
-        <xi:include href="Encryption.xml"/>
-    </chapter>
     <chapter xml:id="Config">
         <title>Configuration</title>
         <xi:include href="Config.xml"/>
-        <xi:include href="ConfigFullTcpIp.xml"/>
-        <xi:include href="EC2AutoDiscovery.xml"/>
         <xi:include href="ConfigGroup.xml"/>
-        <xi:include href="ConfigSpecifyInterfaces.xml"/>
+        <xi:include href="NetworkConfig.xml" />
         <xi:include href="PartitionGroupConfig.xml"/>
         <xi:include href="ListenerConfig.xml"/>
-        <xi:include href="MapIndexConfig.xml"/>
-        <xi:include href="NetworkPartitioning.xml"/>
         <xi:include href="WildcardConfiguration.xml"/>
         <xi:include href="ConfigurationProperties.xml"/>
         <xi:include href="Logging.xml"/>

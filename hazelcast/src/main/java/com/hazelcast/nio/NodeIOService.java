@@ -196,8 +196,8 @@ public class NodeIOService implements IOService {
     public void onShutdown() {
         node.clusterManager.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
         try {
-            // wait a little to
-            Thread.sleep(100 * node.getClusterImpl().getMembers().size());
+            // wait a little
+            Thread.sleep(100);
         } catch (InterruptedException e) {
         }
     }

@@ -106,7 +106,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         registerPacketProcessor(ClusterOperation.JOIN_CHECK, new PacketProcessor() {
             public void process(Packet packet) {
                 Connection conn = packet.conn;
-                Request request = Request.copy(packet);
+                Request request = Request.copyFromPacket(packet);
                 JoinInfo joinInfo = (JoinInfo) toObject(request.value);
                 request.clearForResponse();
                 if (joinInfo != null && node.joined() && node.isActive()) {

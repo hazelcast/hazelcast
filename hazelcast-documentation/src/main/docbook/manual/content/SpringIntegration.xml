@@ -41,7 +41,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                 http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                 http://www.hazelcast.com/schema/spring
-                http://www.hazelcast.com/schema/spring/hazelcast-spring-2.0.xsd">
+                http://www.hazelcast.com/schema/spring/hazelcast-spring-2.1.xsd">
 ]]></programlisting>
             </para>
         </listitem>

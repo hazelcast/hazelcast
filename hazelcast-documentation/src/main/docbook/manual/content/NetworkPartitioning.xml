@@ -1,6 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 xml:id="NetworkPartitioning" version='5.0' xmlns='http://docbook.org/ns/docbook'
-        >
+<sect2 xml:id="NetworkPartitioning" version='5.0' xmlns='http://docbook.org/ns/docbook'>
     <title>Network Partitioning (Split-Brain Syndrome)</title>
     <para>Imagine that you have 10-node cluster and for some reason the network is divided into two
         in a way that 4 servers cannot see the other 6. As a result you ended up having two separate
@@ -137,4 +136,4 @@ public interface MergePolicy {
 </hazelcast>
 ]]></programlisting>
     </para>
-</sect1>
+</sect2>

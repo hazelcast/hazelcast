@@ -199,10 +199,7 @@ public class ListenerManager extends BaseManager {
                 Packet packet = obtainPacket();
                 packet.set(name, ADD_LISTENER_NO_RESPONSE, key, null);
                 packet.longValue = (includeValue) ? 1 : 0;
-                boolean sent = send(packet, owner);
-                if (!sent) {
-                    releasePacket(packet);
-                }
+                sendOrReleasePacket(packet, owner);
             }
         }
 
@@ -222,10 +219,7 @@ public class ListenerManager extends BaseManager {
         Packet packet = obtainPacket();
         packet.set(name, ClusterOperation.ADD_LISTENER_NO_RESPONSE, key, null);
         packet.longValue = (includeValue) ? 1 : 0;
-        boolean sent = send(packet, toAddress);
-        if (!sent) {
-            releasePacket(packet);
-        }
+        sendOrReleasePacket(packet, toAddress);
     }
 
     public synchronized void addLocalListener(final String name, Object listener, Instance.InstanceType instanceType) {

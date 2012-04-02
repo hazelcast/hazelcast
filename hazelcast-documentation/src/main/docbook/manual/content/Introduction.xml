@@ -95,7 +95,7 @@ xmlns:xi="http://www.w3.org/2001/XInclude">
     </itemizedlist>
     Hazelcast is pure Java. JVMs that are running Hazelcast will dynamically cluster. Although by default Hazelcast will
     use multicast for discovery, it can also be configured to only use TCP/IP for environments where multicast is not
-    available or preferred (<link xlink:href="#ConfigFullTcpIp">Click here for more info</link>). Communication among
+    available or preferred (<link xlink:href="#ConfigTcpIp">Click here for more info</link>). Communication among
     cluster members is always
     TCP/IP with Java NIO beauty. Default configuration comes with 1 backup so if one node fails, no data will be lost.
     It is as simple as using<literal>java.util.{Queue, Set, List, Map}</literal>. Just add the hazelcast.jar into your

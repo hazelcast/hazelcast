@@ -187,6 +187,7 @@ public class TestFullApplicationContext {
         assertNotNull(simpleMapConfig);
         assertEquals("simpleMap", simpleMapConfig.getName());
         assertEquals(3, simpleMapConfig.getBackupCount());
+        assertEquals(1, simpleMapConfig.getAsyncBackupCount());
         assertEquals("LRU", simpleMapConfig.getEvictionPolicy());
         assertEquals(10, simpleMapConfig.getMaxSizeConfig().getSize());
         assertEquals(50, simpleMapConfig.getEvictionPercentage());

@@ -235,8 +235,8 @@ public class PartitionManager {
         CostAwareRecordList lsResultSet = new CostAwareRecordList(1000);
         for (final CMap cmap : cmaps) {
             boolean includeCMap = diffOnly
-                    ? cmap.getBackupCount() == replicaIndex
-                    : cmap.getBackupCount() >= replicaIndex;
+                    ? cmap.getTotalBackupCount() == replicaIndex
+                    : cmap.getTotalBackupCount() >= replicaIndex;
             if (includeCMap) {
                 for (Record rec : cmap.mapRecords.values()) {
                     if (rec.isActive() && rec.isValid(now)) {
@@ -497,7 +497,7 @@ public class PartitionManager {
         if (!cmaps.isEmpty()) {
             int maxBackupCount = 0;
             for (final CMap cmap : cmaps) {
-                maxBackupCount = Math.max(maxBackupCount, cmap.getBackupCount());
+                maxBackupCount = Math.max(maxBackupCount, cmap.getTotalBackupCount());
             }
             return maxBackupCount;
         }
@@ -929,7 +929,8 @@ public class PartitionManager {
                 }
             } catch (Throwable t) {
                 logger.log(Level.WARNING, "Error [" + t.getClass() + ": " + t.getMessage() + "] " +
-                        "while executing " + migrationRequestTask, t);
+                        "while executing " + migrationRequestTask);
+                logger.log(Level.FINEST, t.getMessage(), t);
                 systemLogService.logPartition("Failed! " + migrationRequestTask);
             }
         }

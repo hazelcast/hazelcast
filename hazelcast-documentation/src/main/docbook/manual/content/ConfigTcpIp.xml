@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 xml:id="ConfigFullTcpIp" version='5.0' xmlns='http://docbook.org/ns/docbook'
+<sect2 xml:id="ConfigTcpIp" version='5.0' xmlns='http://docbook.org/ns/docbook'
         >
-    <title>Configuring Hazelcast for full TCP/IP cluster</title>
-    <para>If multicast is not prefered way of discovery for your environment, then you can configure Hazelcast for full
+    <title>Configuring TCP/IP Cluster</title>
+    <para>If multicast is not preferred way of discovery for your environment, then you can configure Hazelcast for full
         TCP/IP cluster. As configuration below shows, while
         <literal>enable</literal>
         attribute of
@@ -10,7 +10,7 @@
         is set to false,
         <literal>tcp-ip</literal>
         has to be set to true. For the none-multicast option, all or subset of cluster members' hostnames and/or ip
-        addreses must be listed. Note that all of the cluster members don't have to be listed there but at least one of
+        addresses must be listed. Note that all of the cluster members don't have to be listed there but at least one of
         them has to be active in cluster when a new member joins. The tcp-ip tag accepts an attribute called
         "conn-timeout-seconds".
         The default value is 5. Increasing this value is recommended if you have many IP's listed and members
@@ -40,4 +40,4 @@
 ]]></programlisting>
 
     </para>
-</sect1>
+</sect2>

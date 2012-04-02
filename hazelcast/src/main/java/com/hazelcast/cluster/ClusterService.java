@@ -21,7 +21,6 @@ import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.CounterService;
 import com.hazelcast.util.ThreadWatcher;
 
 import java.util.Queue;
@@ -150,10 +149,8 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void enqueueAndReturn(Processable processable) {
-        long start = System.nanoTime();
         processableQueue.offer(processable);
         unpark();
-        CounterService.userCounter.add(System.nanoTime() - start);
     }
 
     void unpark() {

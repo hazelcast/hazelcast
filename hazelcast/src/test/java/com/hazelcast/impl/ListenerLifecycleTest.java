@@ -341,7 +341,7 @@ public class ListenerLifecycleTest {
         }
 
         void checkCount() {
-            int c = 0;
+            int c;
             if ((c = count.get()) < 0) {
                 fail("Countdown to negative = " + c);
             }

@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-2.0.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-2.1.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -199,6 +199,12 @@
             fail-safety. 0 means no backup.
         -->
         <backup-count>1</backup-count>
+
+        <!--
+            Number of async backups. 0 means no backup.
+        -->
+        <async-backup-count>1</async-backup-count>
+
         <!--
             Maximum number of seconds for each item to live.
             Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.

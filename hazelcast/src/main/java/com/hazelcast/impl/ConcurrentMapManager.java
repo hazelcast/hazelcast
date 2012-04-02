@@ -75,10 +75,11 @@ public class ConcurrentMapManager extends BaseManager {
     ConcurrentMapManager(final Node node) {
         super(node);
         recordFactory = node.initializer.getRecordFactory();
-        storeExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
+        storeExecutor = node.executorManager.newParallelExecutor(
+                node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         evictionExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
-        MAX_BACKUP_COUNT = PartitionInfo.MAX_REPLICA_COUNT;
+        MAX_BACKUP_COUNT = MapConfig.MAX_BACKUP_COUNT;
         GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
@@ -1881,46 +1882,86 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
+    class AsyncBackupProcessable implements Processable {
+        final Request request;
+        final int replicaIndex;
+
+        AsyncBackupProcessable(final Request request, final int replicaIndex) {
+            this.request = request;
+            this.replicaIndex = replicaIndex;
+        }
+
+        public void process() {
+            final Address target = getBackupMember(request.blockId, replicaIndex);
+            if (target != null) {
+                if (target.equals(thisAddress)) {
+                    processBackupRequest(request);
+                } else {
+                    final Packet packet = obtainPacket();
+                    packet.setFromRequest(request);
+                    // this is not a call! we do not expect any response!
+                    // @see BackupPacketProcessor
+                    packet.callId = -1L;
+                    sendOrReleasePacket(packet, target);
+                }
+            }
+        }
+    }
+
     abstract class MBackupAwareOp extends MTargetAwareOp {
-        protected final MBackup[] backupOps = new MBackup[MAX_BACKUP_COUNT];
         protected volatile int backupCount = 0;
+        protected volatile int asyncBackupCount = 0;
 
         protected void backup(ClusterOperation operation) {
-            if (backupCount <= 0) return;
+            final int localBackupCount = backupCount;
+            final int localAsyncBackupCount = asyncBackupCount;
+            final int totalBackupCount = localBackupCount + localAsyncBackupCount;
+            if (localBackupCount <= 0 && localAsyncBackupCount <= 0) {
+                return;
+            }
             if (thisAddress.equals(target) &&
                     (operation == CONCURRENT_MAP_LOCK || operation == CONCURRENT_MAP_UNLOCK)) {
                 return;
             }
-            if (backupCount > backupOps.length) {
-                String msg = "Max backup is " + backupOps.length + " but backupCount is " + backupCount;
+            if (totalBackupCount > MAX_BACKUP_COUNT) {
+                String msg = "Max backup is " + MAX_BACKUP_COUNT + " but total backupCount is " + totalBackupCount;
                 logger.log(Level.SEVERE, msg);
                 throw new RuntimeException(msg);
             }
-            for (int i = 0; i < backupCount; i++) {
-                int replicaIndex = i + 1;
-                MBackup backupOp = backupOps[i];
-                if (backupOp == null) {
-                    backupOp = new MBackup();
-                    backupOps[i] = backupOp;
-                }
-                if (request.key == null || request.key.size() == 0) {
-                    throw new RuntimeException("Key is null! " + request.key);
-                }
-                backupOp.sendBackup(operation, replicaIndex, request);
+            if (request.key == null || request.key.size() == 0) {
+                throw new RuntimeException("Key is null! " + request.key);
             }
-            for (int i = 0; i < backupCount; i++) {
+
+            final MBackup[] backupOps = new MBackup[localBackupCount];
+            for (int i = 0; i < totalBackupCount; i++) {
+                int replicaIndex = i + 1;
+                if (i < localBackupCount) {
+                    MBackup backupOp = new MBackup();
+                    backupOps[i] = backupOp;
+                    backupOp.sendBackup(operation, replicaIndex, request);
+                } else {
+                    final Request reqBackup = Request.copyFromRequest(request) ;
+                    reqBackup.operation = operation;
+                    enqueueAndReturn(new AsyncBackupProcessable(reqBackup, replicaIndex));
+                }
+            }
+            for (int i = 0; i < localBackupCount; i++) {
                 MBackup backupOp = backupOps[i];
                 backupOp.getResultAsBoolean();
             }
         }
 
         void prepareForBackup() {
-            backupCount = 0;
-            if (lsMembers.size() > 1) {
+            int localBackupCount = 0;
+            int localAsyncBackupCount = 0;
+            final int members = lsMembers.size();
+            if (members > 1) {
                 CMap map = getOrCreateMap(request.name);
-                backupCount = map.getBackupCount();
-                backupCount = Math.min(backupCount, lsMembers.size());
+                localBackupCount = Math.min(map.getBackupCount(), members);
+                localAsyncBackupCount = Math.min(map.getAsyncBackupCount(), (members - localBackupCount));
             }
+            backupCount = localBackupCount > 0 ? localBackupCount : 0;
+            asyncBackupCount = localAsyncBackupCount > 0 ? localAsyncBackupCount : 0;
         }
 
         @Override
@@ -2181,14 +2222,30 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class BackupPacketProcessor extends AbstractOperationHandler {
+        public void handle(Request request) {
+            doOperation(request);
+            if (request.callId != -1) {
+                // Request is not a Call, no need to return a response
+                // @see AsyncBackupProcessable
+                returnResponse(request);
+            }
+        }
+
         void doOperation(Request request) {
-            CMap cmap = getOrCreateMap(request.name);
-            Object value = cmap.backup(request);
+            Boolean value = processBackupRequest(request);
             request.clearForResponse();
             request.response = value;
         }
     }
 
+    /**
+     * Should be called by only ServiceThread
+     */
+    private boolean processBackupRequest(Request request) {
+        CMap cmap = getOrCreateMap(request.name);
+        return cmap.backup(request);
+    }
+    
     class AsyncMergePacketProcessor implements PacketProcessor {
         public void process(final Packet packet) {
             packet.operation = CONCURRENT_MAP_WAN_MERGE;
@@ -2198,7 +2255,7 @@ public class ConcurrentMapManager extends BaseManager {
                 WanMergePacketProcessor p = (WanMergePacketProcessor) getPacketProcessor(CONCURRENT_MAP_WAN_MERGE);
                 p.process(packet);
             } else {
-                send(packet, address);
+                sendOrReleasePacket(packet, address);
             }
         }
     }
@@ -3396,7 +3453,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            request.response = cmap.contains(request);
+            request.response = cmap.containsKey(request);
         }
 
         class ContainsKeyLoader extends AbstractMapStoreOperation {
@@ -3804,7 +3861,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     abstract class ExecutedOperationHandler extends ResponsiveOperationHandler {
         public void process(Packet packet) {
-            Request request = Request.copy(packet);
+            Request request = Request.copyFromPacket(packet);
             request.local = false;
             handle(request);
         }

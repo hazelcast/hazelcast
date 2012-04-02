@@ -27,7 +27,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.CounterService;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
@@ -238,7 +237,7 @@ public abstract class BaseManager {
 
         @Override
         public void process(Packet packet) {
-            Request remoteReq = Request.copy(packet);
+            Request remoteReq = Request.copyFromPacket(packet);
             boolean isMigrating = isMigrating(remoteReq);
             boolean rightRemoteTarget = isRightRemoteTarget(remoteReq);
             SystemLogService css = node.getSystemLogService();
@@ -265,13 +264,13 @@ public abstract class BaseManager {
         }
 
         public void processSimple(Packet packet) {
-            Request request = Request.copy(packet);
+            Request request = Request.copyFromPacket(packet);
             handle(request);
             releasePacket(packet);
         }
 
         public void processMigrationAware(Packet packet) {
-            Request remoteReq = Request.copy(packet);
+            Request remoteReq = Request.copyFromPacket(packet);
             if (isMigrating(remoteReq)) {
                 remoteReq.clearForResponse();
                 returnRedoResponse(remoteReq);
@@ -311,10 +310,10 @@ public abstract class BaseManager {
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
             targetAwareOp.setResult(request.response);
-            CounterService.serviceCounter.add(System.nanoTime() - request.lastTime);
         } else {
             Packet packet = obtainPacket();
-            request.setPacket(packet);
+//            request.setPacket(packet);
+            packet.setFromRequest(request);
             packet.operation = ClusterOperation.RESPONSE;
             packet.responseType = RESPONSE_SUCCESS;
             packet.longValue = request.longValue;
@@ -700,7 +699,8 @@ public abstract class BaseManager {
         protected void invoke() {
             addRemoteCall(ConnectionAwareOp.this);
             final Packet packet = obtainPacket();
-            request.setPacket(packet);
+//            request.setPacket(packet);
+            packet.setFromRequest(request);
             packet.callId = getCallId();
             request.callId = getCallId();
             final boolean sent = send(packet, targetConnection);
@@ -756,9 +756,9 @@ public abstract class BaseManager {
         protected void onStillWaiting() {
             enqueueAndReturn(new Processable() {
                 public void process() {
-                    if (targetConnection != null && !targetConnection.live()) {
-                        redo();
-                    }
+                if (targetConnection != null && !targetConnection.live()) {
+                    redo();
+                }
                 }
             });
         }
@@ -820,7 +820,8 @@ public abstract class BaseManager {
             } else {
                 addRemoteCall(TargetAwareOp.this);
                 final Packet packet = doObtainPacket();
-                request.setPacket(packet);
+//                request.setPacket(packet);
+                packet.setFromRequest(request);
                 packet.callId = getCallId();
                 request.callId = getCallId();
                 targetConnection = node.connectionManager.getOrConnect(target);
@@ -1107,9 +1108,7 @@ public abstract class BaseManager {
                     packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
                     packet.lockAddress = callerAddress;
                     packet.longValue = eventType;
-                    final boolean sent = send(packet, toAddress);
-                    if (!sent)
-                        releasePacket(packet);
+                    sendOrReleasePacket(packet, toAddress);
                 }
             }
         }
@@ -1124,21 +1123,14 @@ public abstract class BaseManager {
 
     public void sendProcessableTo(RemotelyProcessable rp, Connection conn) {
         Packet packet = createRemotelyProcessablePacket(rp);
-        boolean sent = send(packet, conn);
-        if (!sent) {
-            releasePacket(packet);
-        }
+        sendOrReleasePacket(packet, conn);
     }
 
     public boolean sendProcessableTo(final RemotelyProcessable rp, final Address address) {
         final Data value = toData(rp);
         final Packet packet = obtainPacket();
         packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
-        final boolean sent = send(packet, address);
-        if (!sent) {
-            releasePacket(packet);
-        }
-        return sent;
+        return sendOrReleasePacket(packet, address);
     }
 
     public void sendProcessableToAll(RemotelyProcessable rp, boolean processLocally) {
@@ -1151,10 +1143,7 @@ public abstract class BaseManager {
             if (!member.localMember()) {
                 Packet packet = obtainPacket();
                 packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
-                boolean sent = send(packet, member.getAddress());
-                if (!sent) {
-                    releasePacket(packet);
-                }
+                sendOrReleasePacket(packet, member.getAddress());
             }
         }
     }
@@ -1239,11 +1228,7 @@ public abstract class BaseManager {
         } else if (packet.responseType == RESPONSE_REDO) {
             packet.lockAddress = null;
         }
-        final boolean sent = send(packet, packet.conn);
-        if (!sent) {
-            releasePacket(packet);
-        }
-        return sent;
+        return sendOrReleasePacket(packet, packet.conn);
     }
 
     protected boolean sendResponse(final Packet packet, final Address address) {
@@ -1254,11 +1239,7 @@ public abstract class BaseManager {
     protected boolean sendResponseFailure(final Packet packet) {
         packet.operation = ClusterOperation.RESPONSE;
         packet.responseType = RESPONSE_FAILURE;
-        final boolean sent = send(packet, packet.conn);
-        if (!sent) {
-            releasePacket(packet);
-        }
-        return sent;
+        return sendOrReleasePacket(packet, packet.conn);
     }
 
     protected void throwCME(final Object key) {
@@ -1398,18 +1379,34 @@ public abstract class BaseManager {
         }
     }
 
+    /**
+     * Do not forget to release packet if send fails.
+     * * Better use {@link #sendOrReleasePacket(Packet, Address)}
+     */
     protected boolean send(Packet packet, Address address) {
         if (address == null) return false;
         final Connection conn = node.connectionManager.getOrConnect(address);
-        return conn != null && conn.live() && writePacket(conn, packet);
+        return send(packet, conn);
     }
 
+    /**
+     * Do not forget to release packet if send fails.
+     * Better use {@link #sendOrReleasePacket(Packet, Connection)}
+     */
     protected final boolean send(Packet packet, Connection conn) {
         return conn != null && conn.live() && writePacket(conn, packet);
     }
 
+    protected final boolean sendOrReleasePacket(Packet packet, Address address) {
+        if (send(packet, address)) {
+            return true;
+        }
+        releasePacket(packet);
+        return false;
+    }
+
     protected final boolean sendOrReleasePacket(Packet packet, Connection conn) {
-        if (conn != null && conn.live() && writePacket(conn, packet)) {
+        if (send(packet, conn)) {
             return true;
         }
         releasePacket(packet);

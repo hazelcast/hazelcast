@@ -25,7 +25,7 @@ public class SocketInterceptorConfig {
     private Properties properties = new Properties();
 
     /**
-     * Returns the name of the SocketInterceptor implementation class
+     * Returns the name of the {@link com.hazelcast.nio.SocketInterceptor} implementation class
      *
      * @return name of the class
      */
@@ -34,9 +34,9 @@ public class SocketInterceptorConfig {
     }
 
     /**
-     * Sets the name for the SocketInterceptor implementation class
+     * Sets the name for the {@link com.hazelcast.nio.SocketInterceptor} implementation class
      *
-     * @param className the name of the SocketInterceptor implementation class to set
+     * @param className the name of the {@link com.hazelcast.nio.SocketInterceptor} implementation class to set
      * @return this SocketInterceptorConfig instance
      */
     public SocketInterceptorConfig setClassName(String className) {
@@ -45,7 +45,7 @@ public class SocketInterceptorConfig {
     }
 
     /**
-     * Sets the SocketInterceptor implementation object
+     * Sets the {@link com.hazelcast.nio.SocketInterceptor} implementation object
      *
      * @param implementation implementation object
      * @return this SocketInterceptorConfig instance
@@ -56,7 +56,7 @@ public class SocketInterceptorConfig {
     }
 
     /**
-     * Returns the SocketInterceptor implementation object
+     * Returns the {@link com.hazelcast.nio.SocketInterceptor} implementation object
      *
      * @return SocketInterceptor implementation object
      */
