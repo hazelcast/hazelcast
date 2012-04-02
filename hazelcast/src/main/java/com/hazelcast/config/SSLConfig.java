@@ -29,7 +29,7 @@ public final class SSLConfig {
     private Properties properties = new Properties();
 
     /**
-     * Returns the name of the SSLContextFactory implementation class
+     * Returns the name of the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class
      *
      * @return the name of the class
      */
@@ -38,9 +38,9 @@ public final class SSLConfig {
     }
 
     /**
-     * Sets the name for the SSLContextFactory implementation class
+     * Sets the name for the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class
      *
-     * @param factoryClassName the name of the SSLContextFactory implementation class to set
+     * @param factoryClassName the name of the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class to set
      */
     public SSLConfig setFactoryClassName(String factoryClassName) {
         this.factoryClassName = factoryClassName;
@@ -67,7 +67,7 @@ public final class SSLConfig {
     }
 
     /**
-     * Sets the SSLContextFactory implementation object
+     * Sets the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object
      *
      * @param factoryImplementation factory implementation object
      * @return this SSLConfig instance
@@ -78,9 +78,9 @@ public final class SSLConfig {
     }
 
     /**
-     * Returns the SSLContextFactory implementation object
+     * Returns the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object
      *
-     * @return SSLContextFactory implementation object
+     * @return {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object
      */
     public Object getFactoryImplementation() {
         return factoryImplementation;
