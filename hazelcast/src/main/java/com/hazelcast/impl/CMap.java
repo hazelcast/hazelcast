@@ -738,8 +738,9 @@ public class CMap {
         if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET) {
             if (reqValue == null) {
                 request.value = rec.getValueData();
-                if (rec.getMultiValues() != null) {
-                    Values values = new Values(rec.getMultiValues());
+                Collection<ValueHolder> multiValues = rec.getMultiValues();
+                if (multiValues != null) {
+                    Values values = new Values(multiValues);
                     request.value = toData(values);
                 }
             }

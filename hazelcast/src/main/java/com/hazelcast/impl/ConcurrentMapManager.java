@@ -2390,11 +2390,12 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void run() {
-                if (record.getMultiValues() == null) {
+                final Collection<ValueHolder> multiValues = record.getMultiValues();
+                if (multiValues == null) {
                     request.response = Boolean.FALSE;
                     returnResponse(request);
                 } else {
-                    request.response = record.getMultiValues().remove(new ValueHolder(request.value));
+                    request.response = multiValues.remove(new ValueHolder(request.value));
                     enqueueAndReturn(RemoveMultiSetMapTask.this);
                 }
             }
@@ -2452,7 +2453,11 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void run() {
-                request.response = !record.getMultiValues().contains(new ValueHolder(request.value));
+                request.response = Boolean.TRUE;
+                final Collection<ValueHolder> multiValues = record.getMultiValues();
+                if (multiValues != null) {
+                    request.response = !multiValues.contains(new ValueHolder(request.value));
+                }
                 enqueueAndReturn(PutMultiSetMapTask.this);
             }
 
