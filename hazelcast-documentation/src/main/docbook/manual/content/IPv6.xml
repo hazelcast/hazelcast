@@ -19,10 +19,10 @@
                 <multicast-port>54327</multicast-port>
             </multicast>
             <tcp-ip enabled="true">
+                <member>[fe80::223:6cff:fe93:7c7e]:5701</member>
                 <interface>192.168.1.0-7</interface>
                 <interface>192.168.1.*</interface>
                 <interface>fe80:0:0:0:45c5:47ee:fe15:493a</interface>
-                <interface>fe80::223:6cff:fe93:7c7e</interface>
             </tcp-ip>
         </join>
         <interfaces enabled="true">

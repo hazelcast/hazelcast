@@ -9,6 +9,33 @@
     </para>
 
     <para>
+        <emphasis role="bold">2.1</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para><link xlink:href="#IPv6">IPv6 Support.</link>
+                </para>
+            </listitem>
+
+            <listitem>
+                <para><link xlink:href="#MapBackup"> Async backup support.</link>
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>
+                    <literal>Member.getUuid()</literal> will return UUID for node.
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>Fixed issues: 809, 811, 816, 818 (http://code.google.com/p/hazelcast/issues/list)
+                      6, 92 (https://github.com/hazelcast/hazelcast/issues)
+                </para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
         <emphasis role="bold">2.0</emphasis>
         <itemizedlist>
             <listitem>

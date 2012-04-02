@@ -44,6 +44,7 @@ public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         } catch (Throwable t) {
             t.printStackTrace();
         }
+        System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
