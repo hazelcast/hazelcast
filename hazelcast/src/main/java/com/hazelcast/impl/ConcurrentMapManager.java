@@ -1931,7 +1931,6 @@ public class ConcurrentMapManager extends BaseManager {
             if (request.key == null || request.key.size() == 0) {
                 throw new RuntimeException("Key is null! " + request.key);
             }
-
             final MBackup[] backupOps = new MBackup[localBackupCount];
             for (int i = 0; i < totalBackupCount; i++) {
                 int replicaIndex = i + 1;
@@ -1940,7 +1939,7 @@ public class ConcurrentMapManager extends BaseManager {
                     backupOps[i] = backupOp;
                     backupOp.sendBackup(operation, replicaIndex, request);
                 } else {
-                    final Request reqBackup = Request.copyFromRequest(request) ;
+                    final Request reqBackup = Request.copyFromRequest(request);
                     reqBackup.operation = operation;
                     enqueueAndReturn(new AsyncBackupProcessable(reqBackup, replicaIndex));
                 }
@@ -2245,7 +2244,7 @@ public class ConcurrentMapManager extends BaseManager {
         CMap cmap = getOrCreateMap(request.name);
         return cmap.backup(request);
     }
-    
+
     class AsyncMergePacketProcessor implements PacketProcessor {
         public void process(final Packet packet) {
             packet.operation = CONCURRENT_MAP_WAN_MERGE;
@@ -2445,11 +2444,12 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void run() {
-                if (record.getMultiValues() == null) {
+                final Collection<ValueHolder> multiValues = record.getMultiValues();
+                if (multiValues == null) {
                     request.response = Boolean.FALSE;
                     returnResponse(request);
                 } else {
-                    request.response = record.getMultiValues().remove(new ValueHolder(request.value));
+                    request.response = multiValues.remove(new ValueHolder(request.value));
                     enqueueAndReturn(RemoveMultiSetMapTask.this);
                 }
             }
@@ -2507,7 +2507,11 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void run() {
-                request.response = !record.getMultiValues().contains(new ValueHolder(request.value));
+                request.response = Boolean.TRUE;
+                final Collection<ValueHolder> multiValues = record.getMultiValues();
+                if (multiValues != null) {
+                    request.response = !multiValues.contains(new ValueHolder(request.value));
+                }
                 enqueueAndReturn(PutMultiSetMapTask.this);
             }
 
