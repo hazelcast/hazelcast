@@ -1,0 +1,70 @@
+
+# /
+/target
+/*.project
+/*.patch
+
+# /hazelcast/
+/hazelcast/target
+/hazelcast/*.settings
+/hazelcast/*.classpath
+/hazelcast/*.project
+/hazelcast/.classpath
+/hazelcast/.project
+
+# /hazelcast-all/
+/hazelcast-all/*.settings
+/hazelcast-all/target
+/hazelcast-all/*.classpath
+/hazelcast-all/*.project
+/hazelcast-all/.classpath
+/hazelcast-all/.project
+
+# /hazelcast-client/
+/hazelcast-client/target
+/hazelcast-client/*.classpath
+/hazelcast-client/*.project
+/hazelcast-client/.classpath
+/hazelcast-client/.project
+
+# /hazelcast-cloud/
+/hazelcast-cloud/*.settings
+/hazelcast-cloud/target
+/hazelcast-cloud/*.classpath
+/hazelcast-cloud/*.project
+/hazelcast-cloud/.classpath
+/hazelcast-cloud/.project
+
+# /hazelcast-documentation/
+/hazelcast-documentation/*.settings
+/hazelcast-documentation/target
+/hazelcast-documentation/*.project
+/hazelcast-documentation/.project
+
+# /hazelcast-hibernate/
+/hazelcast-hibernate/*.settings
+/hazelcast-hibernate/target
+/hazelcast-hibernate/*.classpath
+/hazelcast-hibernate/*.project
+
+# /hazelcast-ra/
+/hazelcast-ra/*.settings
+/hazelcast-ra/target
+/hazelcast-ra/*.classpath
+/hazelcast-ra/*.project
+/hazelcast-ra/.classpath
+/hazelcast-ra/.project
+
+# /hazelcast-spring/
+/hazelcast-spring/.settings
+/hazelcast-spring/target
+/hazelcast-spring/.classpath
+/hazelcast-spring/.project
+
+# /hazelcast-wm/
+/hazelcast-wm/*.settings
+/hazelcast-wm/target
+/hazelcast-wm/*.classpath
+/hazelcast-wm/*.project
+/hazelcast-wm/.classpath
+/hazelcast-wm/.project
