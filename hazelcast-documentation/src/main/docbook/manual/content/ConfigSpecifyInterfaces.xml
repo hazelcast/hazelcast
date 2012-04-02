@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<sect1 xml:id="ConfigSpecifyInterfaces" version='5.0' xmlns='http://docbook.org/ns/docbook'
-        >
-    <title>Specifying network interfaces</title>
+<sect2 xml:id="ConfigSpecifyInterfaces" version='5.0' xmlns='http://docbook.org/ns/docbook'>
+    <title>Specifying Network Interfaces</title>
     <para>
         You can also specify which network interfaces that Hazelcast should use. Servers mostly have more than one
         network
@@ -26,4 +25,4 @@
 
 
     </para>
-</sect1>
+</sect2>
