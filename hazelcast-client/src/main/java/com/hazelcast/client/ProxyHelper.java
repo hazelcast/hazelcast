@@ -115,22 +115,33 @@ public class ProxyHelper {
     }
 
     public Packet createRequestPacket(ClusterOperation operation, byte[] key, byte[] value) {
-        return createRequestPacket(operation, key, value, 0, null);
+        return createRequestPacket(operation, key, value, 0, null, 0, null);
     }
 
-    private Packet createRequestPacket(ClusterOperation operation, byte[] key, byte[] value, long ttl, TimeUnit timeunit) {
+    private Packet createRequestPacket(ClusterOperation operation, byte[] key, byte[] value, long ttl, TimeUnit ttlTimeunit, long timeout, TimeUnit timeunit) {
         Packet request = createRequestPacket();
         request.setOperation(operation);
         request.setKey(key);
         request.setValue(value);
-        if (ttl >= 0 && timeunit != null) {
-            request.setTimeout(timeunit.toMillis(ttl));
+        //FIXME: sending timeout as ttl and ttl as timeout for backward compatibility
+        if (ttl >= 0 && ttlTimeunit != null) {
+            request.setTimeout(ttlTimeunit.toMillis(ttl));
+        }
+        if (timeout >= 0 && timeunit != null) {
+            request.setTtl(timeunit.toMillis(timeout));
         }
         return request;
     }
 
     <V> Future<V> doAsync(final ClusterOperation operation, final Object key, final Object value) {
         Packet request = prepareRequest(operation, key, value);
+        Call remoteCall = createCall(request);
+        sendCall(remoteCall);
+        return new AsyncClientCall<V>(remoteCall);
+    }
+
+    <V> Future<V> doAsync(final ClusterOperation operation, final Object key, final Object value, long ttl, TimeUnit timeunit) {
+        Packet request = prepareRequest(operation, key, value, ttl, timeunit);
         Call remoteCall = createCall(request);
         sendCall(remoteCall);
         return new AsyncClientCall<V>(remoteCall);
@@ -146,6 +157,12 @@ public class ProxyHelper {
         return getValue(response);
     }
 
+    public Object doOpTtlTimeout(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit ttlTimeunit, long timeout, TimeUnit timeunit) {
+        Packet request = prepareRequest(operation, key, value, ttl, ttlTimeunit, timeout, timeunit);
+        Packet response = callAndGetResult(request);
+        return getValue(response);
+    }
+
     public void doFireAndForget(ClusterOperation operation, Object key, Object value) {
         Packet request = prepareRequest(operation, key, value, 0, null);
         Call fireNForgetCall = createCall(request);
@@ -153,7 +170,7 @@ public class ProxyHelper {
         sendCall(fireNForgetCall);
     }
 
-    Packet prepareRequest(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit timeunit) {
+    Packet prepareRequest(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit ttlTimeunit, long timeout, TimeUnit timeunit) {
         byte[] k = null;
         byte[] v = null;
         if (key != null) {
@@ -162,7 +179,7 @@ public class ProxyHelper {
         if (value != null) {
             v = toByte(value);
         }
-        Packet packet = createRequestPacket(operation, k, v, ttl, timeunit);
+        Packet packet = createRequestPacket(operation, k, v, ttl, ttlTimeunit, timeout, timeunit);
         if (key instanceof PartitionAware) {
             Object partitionKey = ((PartitionAware) key).getPartitionKey();
             if (partitionKey == null) throw new IllegalArgumentException("PartitionKey cannot be null!");
@@ -174,6 +191,10 @@ public class ProxyHelper {
             packet.setValueHash(Util.hashCode(toByte(partitionKey)));
         }
         return packet;
+    }
+
+    Packet prepareRequest(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit timeunit) {
+        return prepareRequest(operation, key, value, ttl, timeunit, -1, null);
     }
 
     Packet prepareRequest(ClusterOperation operation, Object key,
