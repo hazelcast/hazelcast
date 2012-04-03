@@ -39,7 +39,7 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
 
     public boolean await(long timeout, TimeUnit unit) throws InstanceDestroyedException, MemberLeftException, InterruptedException {
         try {
-            return (Boolean) proxyHelper.doOp(COUNT_DOWN_LATCH_AWAIT, null, null, timeout, unit);
+            return (Boolean) proxyHelper.doOpTimeout(COUNT_DOWN_LATCH_AWAIT, null, null, timeout, unit);
         } catch (RuntimeException re) {
             Throwable e = re.getCause();
             if (e instanceof InstanceDestroyedException) {

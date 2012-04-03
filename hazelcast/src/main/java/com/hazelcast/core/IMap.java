@@ -121,6 +121,38 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     Future<V> putAsync(K key, V value);
 
     /**
+     * Asynchronously puts the given key and value with a given ttl (time to live) value.
+     * Entry will expire and get evicted after the ttl. If ttl is 0, then
+     * the entry lives forever.
+     * <code>
+     * Future future = map.putAsync(key, value);
+     * // do some other stuff, when ready get the result
+     * Object oldValue = future.get();
+     * </code>
+     * Future.get() will block until the actual map.get() completes.
+     * If the application requires timely response,
+     * then Future.get(timeout, timeunit) can be used.
+     * <code>
+     * try{
+     * Future future = map.putAsync(key, newValue);
+     * Object oldValue = future.get(40, TimeUnit.MILLISECOND);
+     * }catch (TimeoutException t) {
+     * // time wasn't enough
+     * }
+     * </code>
+     * ExecutionException is never thrown.
+     *
+     * @param key   the key of the map entry
+     * @param value the new value of the map entry
+     * @param ttl      maximum time for this entry to stay in the map
+     *                 0 means infinite.
+     * @param timeunit time unit for the ttl
+     * @return Future from which the old value of the key can be retrieved.
+     * @see java.util.concurrent.Future
+     */
+    Future<V> putAsync(K key, V value, long ttl, TimeUnit timeunit);
+
+    /**
      * Asynchronously removes the given key.
      *
      * @param key The key of the map entry to remove.
@@ -159,6 +191,26 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      *         otherwise.
      */
     boolean tryPut(K key, V value, long timeout, TimeUnit timeunit);
+
+    /**
+     * Tries to put the given key, value into this map within specified
+     * timeout value with a given ttl (time to live) value.
+     * Entry will expire and get evicted after the ttl. If ttl is 0, then
+     * the entry lives forever. If this method returns false, it means that
+     * the caller thread couldn't acquire the lock for the key within
+     * timeout duration, thus put operation is not successful.
+     *
+     * @param key      key of the entry
+     * @param value    value of the entry
+     * @param ttl      maximum time for this entry to stay in the map
+     *                 0 means infinite.
+     * @param ttlTimeunit time unit for the ttl
+     * @param timeout  maximum time to wait
+     * @param timeunit time unit for the timeout
+     * @return <tt>true</tt> if the put is successful, <tt>false</tt>
+     *         otherwise.
+     */
+    boolean tryPut(K key, V value, long ttl, TimeUnit ttlTimeunit, long timeout, TimeUnit timeunit);
 
     /**
      * Puts an entry into this map with a given ttl (time to live) value.

@@ -137,7 +137,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public V tryLockAndGet(K key, long timeout, TimeUnit timeunit) throws TimeoutException {
         check(key);
-        Object result = proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_TRY_LOCK_AND_GET, key, null, timeout, timeunit);
+        Object result = proxyHelper.doOpTimeout(ClusterOperation.CONCURRENT_MAP_TRY_LOCK_AND_GET, key, null, timeout, timeunit);
         if (result instanceof DistributedTimeoutException) {
             throw new TimeoutException();
         }
@@ -174,7 +174,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
         check(key);
         check(value);
-        return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, key, value, ttl, timeunit);
+        return (V) proxyHelper.doOpTtl(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, key, value, ttl, timeunit);
     }
 
     public V putIfAbsent(K key, V value) {
@@ -277,6 +277,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return proxyHelper.doAsync(ClusterOperation.CONCURRENT_MAP_PUT, key, value);
     }
 
+    public Future<V> putAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        check(key);
+        check(value);
+        return proxyHelper.doAsync(ClusterOperation.CONCURRENT_MAP_PUT, key, value, ttl, timeunit);
+    }
+
     public Future<V> removeAsync(K key) {
         check(key);
         return proxyHelper.doAsync(ClusterOperation.CONCURRENT_MAP_REMOVE, key, null);
@@ -291,25 +297,31 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
         check(key);
         check(value);
-        return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT, key, value, ttl, timeunit);
+        return (V) proxyHelper.doOpTtl(ClusterOperation.CONCURRENT_MAP_PUT, key, value, ttl, timeunit);
     }
 
     public void set(K key, V value, long ttl, TimeUnit timeunit) {
         check(key);
         check(value);
-        proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_SET, key, value, ttl, timeunit);
+        proxyHelper.doOpTtl(ClusterOperation.CONCURRENT_MAP_SET, key, value, ttl, timeunit);
     }
 
     public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
         check(key);
         check(value);
-        proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT_TRANSIENT, key, value, ttl, timeunit);
+        proxyHelper.doOpTtl(ClusterOperation.CONCURRENT_MAP_PUT_TRANSIENT, key, value, ttl, timeunit);
     }
 
     public boolean tryPut(K key, V value, long timeout, TimeUnit timeunit) {
         check(key);
         check(value);
-        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_TRY_PUT, key, value, timeout, timeunit);
+        return (Boolean) proxyHelper.doOpTimeout(ClusterOperation.CONCURRENT_MAP_TRY_PUT, key, value, timeout, timeunit);
+    }
+
+    public boolean tryPut(K key, V value, long ttl, TimeUnit ttlTimeunit, long timeout, TimeUnit timeunit) {
+        check(key);
+        check(value);
+        return (Boolean) proxyHelper.doOpTtlTimeout(ClusterOperation.CONCURRENT_MAP_TRY_PUT, key, value, ttl, ttlTimeunit, timeout, timeunit);
     }
 
     public void putAll(final Map<? extends K, ? extends V> map) {
@@ -328,7 +340,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public Object tryRemove(K key, long timeout, TimeUnit timeunit) throws TimeoutException {
         check(key);
-        Object result = proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_TRY_REMOVE, key, null, timeout, timeunit);
+        Object result = proxyHelper.doOpTimeout(ClusterOperation.CONCURRENT_MAP_TRY_REMOVE, key, null, timeout, timeunit);
         if (result instanceof DistributedTimeoutException) {
             throw new TimeoutException();
         }
