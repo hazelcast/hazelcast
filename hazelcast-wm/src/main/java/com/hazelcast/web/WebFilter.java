@@ -50,6 +50,8 @@ public class WebFilter implements Filter {
 
     private String clusterMapName = "none";
 
+    private String sessionCookieName = HAZELCAST_SESSION_COOKIE_NAME;
+
     private boolean stickySession = true;
 
     private boolean debug = false;
@@ -71,6 +73,10 @@ public class WebFilter implements Filter {
             clusterMapName = mapName;
         } else {
             clusterMapName = "_web_" + servletContext.getServletContextName();
+        }
+        String cookieName = config.getInitParameter("cookie-name");
+        if (cookieName != null) {
+            sessionCookieName = cookieName;
         }
         String stickySessionParam = config.getInitParameter("sticky-session");
         if (stickySessionParam != null) {
@@ -476,8 +482,8 @@ public class WebFilter implements Filter {
         return sb.toString();
     }
 
-    private static void addSessionCookie(final RequestWrapper req, final String sessionId) {
-        final Cookie sessionCookie = new Cookie(HAZELCAST_SESSION_COOKIE_NAME, sessionId);
+    private void addSessionCookie(final RequestWrapper req, final String sessionId) {
+        final Cookie sessionCookie = new Cookie(sessionCookieName, sessionId);
         String path = req.getContextPath();
         if ("".equals(path)) {
             path = "/";
@@ -487,13 +493,13 @@ public class WebFilter implements Filter {
         req.res.addCookie(sessionCookie);
     }
 
-    private static String getSessionCookie(final RequestWrapper req) {
+    private String getSessionCookie(final RequestWrapper req) {
         final Cookie[] cookies = req.getCookies();
         if (cookies != null) {
             for (final Cookie cookie : cookies) {
                 final String name = cookie.getName();
                 final String value = cookie.getValue();
-                if (name.equalsIgnoreCase(HAZELCAST_SESSION_COOKIE_NAME)) {
+                if (name.equalsIgnoreCase(sessionCookieName)) {
                     return value;
                 }
             }
