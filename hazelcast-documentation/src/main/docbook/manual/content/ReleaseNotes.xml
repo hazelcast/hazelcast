@@ -28,6 +28,11 @@
             </listitem>
 
             <listitem>
+                <para><link xlink:href="#HttpSessionClustering">Improved session clustering configuration.</link>
+                </para>
+            </listitem>
+
+            <listitem>
                 <para>Fixed issues: 809, 811, 816, 818 (http://code.google.com/p/hazelcast/issues/list)
                       6, 92 (https://github.com/hazelcast/hazelcast/issues)
                 </para>

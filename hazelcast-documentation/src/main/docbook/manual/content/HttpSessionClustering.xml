@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<para version='5.0' xmlns='http://docbook.org/ns/docbook'
-        >
+<para version='5.0' xmlns='http://docbook.org/ns/docbook'>
     Say you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down
     then your users on that server will be directed to one of the live servers (B or C) but their sessions will be lost!
     So we have to have all these sessions backed up somewhere if we don't want to lose the sessions upon server crashes.
@@ -65,6 +64,13 @@
     <init-param>
         <param-name>sticky-session</param-name>
         <param-value>true</param-value>
+    </init-param>
+    <!--
+        Name of session id cookie
+    -->
+    <init-param>
+        <param-name>cookie-name</param-name>
+        <param-value>hazelcast.sessionId</param-value>
     </init-param>
     <!--
         Are you debugging? Default is false.
