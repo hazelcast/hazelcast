@@ -68,9 +68,9 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:svn:http://hazelcast.googlecode.com/svn/trunk/</connection>
-        <developerConnection>scm:svn:https://hazelcast.googlecode.com/svn/trunk/</developerConnection>
-        <url>http://hazelcast.googlecode.com/svn/trunk/</url>
+        <connection>scm:git:git://github.com/hazelcast/hazelcast.git</connection>
+        <developerConnection>scm:git:git@github.com:hazelcast/hazelcast.git</developerConnection>
+        <url>https://github.com/hazelcast/hazelcast/</url>
     </scm>
     <developers>
         <developer>
@@ -85,8 +85,8 @@
         </developer>
     </developers>
     <issueManagement>
-        <system>Google Code</system>
-        <url>http://code.google.com/p/hazelcast/issues</url>
+        <system>Github</system>
+        <url>https://github.com/hazelcast/hazelcast/issues</url>
     </issueManagement>
     <organization>
         <name>Hazel Bilisim Ltd.</name>
