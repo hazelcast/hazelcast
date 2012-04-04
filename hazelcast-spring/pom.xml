@@ -14,7 +14,8 @@
     <packaging>jar</packaging>
 
     <properties>
-        <org.springframework.version>2.5.6</org.springframework.version>
+        <!--<org.springframework.version>2.5.6</org.springframework.version>-->
+        <org.springframework.version>3.1.0.RELEASE</org.springframework.version>
         <jsr250.api.version>1.0</jsr250.api.version>
     </properties>
 
@@ -29,6 +30,27 @@
                     <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <version>1.7</version>
+                <configuration>
+                    <signature>
+                        <groupId>org.codehaus.mojo.signature</groupId>
+                        <artifactId>java15</artifactId>
+                        <version>1.0</version>
+                    </signature>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>source-java5-check</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -144,11 +166,11 @@
             <scope>test</scope>
         </dependency>
         <!-- Spring 2.5.x is not compatible with junit versions after 4.4 -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.4</version>
-            <scope>test</scope>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>junit</groupId>-->
+            <!--<artifactId>junit</artifactId>-->
+            <!--<version>4.4</version>-->
+            <!--<scope>test</scope>-->
+        <!--</dependency>-->
     </dependencies>
 </project>

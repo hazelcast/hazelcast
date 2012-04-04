@@ -32,6 +32,8 @@ import java.util.*;
 
 public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
+    private static final String NAME_SPACE = HazelcastConfigBeanDefinitionParser.class.getPackage().getName();
+
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         final SpringXmlConfigBuilder springXmlConfigBuilder = new SpringXmlConfigBuilder(parserContext);
         springXmlConfigBuilder.handleConfig(element);
@@ -78,10 +80,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
         }
 
         private String nextId(final String id) {
-            Integer idx = counter.get(id);
-            idx = (idx != null ? idx.intValue() : 0) + 1;
-            counter.put(id, idx);
-            return id + idx;
+            Integer index = counter.get(id);
+            index = (index != null ? index.intValue() : 0) + 1;
+            counter.put(id, index);
+            return NAME_SPACE + "." + id + "#" + index;
         }
 
         protected BeanDefinitionBuilder createBeanBuilder(final Class clazz, final String id) {
