@@ -132,7 +132,7 @@ public class WebFilter implements Filter {
         if (hazelcastSessionId != null) {
             HazelcastHttpSession hazelSession = mapSessions.remove(hazelcastSessionId);
             if (hazelSession != null) {
-                hazelSession.webFilter.destroySession(hazelSession);
+                hazelSession.webFilter.destroySession(hazelSession, false);
             }
         }
     }
@@ -163,20 +163,32 @@ public class WebFilter implements Filter {
         return hazelcastSession;
     }
 
-    void destroySession(final HazelcastHttpSession session) {
+    /**
+     * Destroys a session, determining if it should be destroyed clusterwide automatically or via expiry.
+     *
+     * @param session       The session to be destroyed
+     * @param ignoreTimeout Boolean value - true if the session should be destroyed irrespective of active time
+     */
+    void destroySession(final HazelcastHttpSession session, final Boolean ignoreTimeout) {
         log("Destroying local session: " + session.getId());
         mapSessions.remove(session.getId());
         mapOriginalSessions.remove(session.originalSession.getId());
         session.destroy();
-        final long maxInactive = session.originalSession.getMaxInactiveInterval() * 1000; // getMaxInactiveInterval() is in seconds
-        final long clusterLastAccess = session.getLastAccessed();
-        final long now = System.currentTimeMillis(); // Hazelcast.getCluster().getClusterTime() ?
-        if ((now - clusterLastAccess) >= maxInactive) {
-            log("Destroying cluster session: " + session.getId() + " => Max-inactive: " + maxInactive
-                    + ", Local-Last-Access: " + session.originalSession.getLastAccessedTime()
-                    + ", Cluster-Last-Access: " + clusterLastAccess
-                    + ", Now: " + now);
+
+        if(ignoreTimeout) {
+            log("Destroying cluster session: " + session.getId() + " => Ignore-timeout: true");
             getClusterMap().remove(session.getId());
+        } else {
+            final long maxInactive = session.originalSession.getMaxInactiveInterval() * 1000; // getMaxInactiveInterval() is in seconds
+            final long clusterLastAccess = session.getLastAccessed();
+            final long now = System.currentTimeMillis(); // Hazelcast.getCluster().getClusterTime() ?
+            if ((now - clusterLastAccess) >= maxInactive) {
+                log("Destroying cluster session: " + session.getId() + " => Max-inactive: " + maxInactive
+                        + ", Local-Last-Access: " + session.originalSession.getLastAccessedTime()
+                        + ", Cluster-Last-Access: " + clusterLastAccess
+                        + ", Now: " + now);
+                getClusterMap().remove(session.getId());
+            }
         }
     }
 
@@ -188,7 +200,7 @@ public class WebFilter implements Filter {
         HazelcastHttpSession session = mapSessions.get(sessionId);
         if (session != null && !session.isValid()) {
             session = null;
-            destroySession(session);
+            destroySession(session, true);
         }
         return session;
     }
@@ -249,7 +261,7 @@ public class WebFilter implements Filter {
         public HazelcastHttpSession getSession(final boolean create) {
             if (hazelcastSession != null && !hazelcastSession.isValid()) {
                 log("Session is invalid!");
-                destroySession(hazelcastSession);
+                destroySession(hazelcastSession, true);
                 hazelcastSession = null;
             }
             if (hazelcastSession == null) {
@@ -385,7 +397,7 @@ public class WebFilter implements Filter {
 
         public void invalidate() {
             originalSession.invalidate();
-            destroySession(this);
+            destroySession(this, true);
             timestamp.destroy();
         }
 

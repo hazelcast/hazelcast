@@ -354,6 +354,7 @@ public class CMapTest extends TestUtil {
         Object key = "1";
         Object value = "istanbul";
         Data dKey = toData(key);
+        Data dKey2 = toData("2");
         Data dValue = toData(value);
         cmap.put(newPutRequest(dKey, dValue));
         assertTrue(cmap.mapRecords.containsKey(toData(key)));
@@ -374,11 +375,14 @@ public class CMapTest extends TestUtil {
         assertFalse(record.isValid());
         assertEquals(0, cmap.size());
         cmap.put(newPutRequest(dKey, dValue, 1000));
+        cmap.put(newPutIfAbsentRequest(dKey2, dValue, 1000));
         assertEquals(0, record.getRemoveTime());
         assertTrue(cmap.mapRecords.containsKey(toData(key)));
+        assertTrue(cmap.mapRecords.containsKey(toData("2")));
         Thread.sleep(1500);
         assertEquals(0, cmap.size());
         assertFalse(cmap.containsKey(newContainsRequest(dKey, null)));
+        assertFalse(cmap.containsKey(newContainsRequest(dKey2, null)));
         node.connectionManager.shutdown();
     }
 }

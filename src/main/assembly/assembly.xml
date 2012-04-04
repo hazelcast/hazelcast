@@ -110,9 +110,11 @@
                 <include>run.bat</include>
                 <include>test.bat</include>
                 <include>client.bat</include>
+                <include>server.bat</include>
                 <include>run.sh</include>
                 <include>test.sh</include>
                 <include>client.sh</include>
+                <include>server.sh</include>
                 <include>keystore</include>
             </includes>
         </fileSet>
