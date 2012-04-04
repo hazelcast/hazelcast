@@ -277,6 +277,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return proxyHelper.doAsync(ClusterOperation.CONCURRENT_MAP_PUT, key, value);
     }
 
+    public Future<V> putAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        check(key);
+        check(value);
+        return proxyHelper.doAsync(ClusterOperation.CONCURRENT_MAP_PUT, key, value, ttl, timeunit);
+    }
+
     public Future<V> removeAsync(K key) {
         check(key);
         return proxyHelper.doAsync(ClusterOperation.CONCURRENT_MAP_REMOVE, key, null);
@@ -310,6 +316,13 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         check(key);
         check(value);
         return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_TRY_PUT, key, value, timeout, timeunit);
+    }
+
+    public boolean tryPut(K key, V value, long ttl, TimeUnit ttlTimeunit, long timeout, TimeUnit timeunit) {
+        check(key);
+        check(value);
+        //FIXME: sending ttl as timeout and timeout as ttl for backward compatibility
+        return (Boolean) proxyHelper.doOpTtlTimeout(ClusterOperation.CONCURRENT_MAP_TRY_PUT, key, value, timeout, timeunit, ttl, ttlTimeunit);
     }
 
     public void putAll(final Map<? extends K, ? extends V> map) {

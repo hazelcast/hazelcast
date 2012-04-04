@@ -1087,6 +1087,7 @@ public final class Predicates {
     }
 
     private static DateFormat getUtilDateFormat() {
-        return new SimpleDateFormat(dateFormat);
+        //PredicatesTest.testEqual throws exceptions if not US locale
+        return new SimpleDateFormat(dateFormat, Locale.US);
     }
 }
