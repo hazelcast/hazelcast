@@ -177,6 +177,7 @@ public class WebFilter implements Filter {
 
         if(ignoreTimeout) {
             log("Destroying cluster session: " + session.getId() + " => Ignore-timeout: true");
+            getClusterMap().remove(session.getId());
         } else {
             final long maxInactive = session.originalSession.getMaxInactiveInterval() * 1000; // getMaxInactiveInterval() is in seconds
             final long clusterLastAccess = session.getLastAccessed();
