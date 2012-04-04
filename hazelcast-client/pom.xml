@@ -28,15 +28,24 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
-            <!--  this create jar file of code from src/test/java so modules with tests can share code -->
+
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <version>1.7</version>
+                <configuration>
+                    <signature>
+                        <groupId>org.codehaus.mojo.signature</groupId>
+                        <artifactId>java15</artifactId>
+                        <version>1.0</version>
+                    </signature>
+                </configuration>
                 <executions>
                     <execution>
+                        <id>source-java5-check</id>
+                        <phase>compile</phase>
                         <goals>
-                            <goal>test-jar</goal>
+                            <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -54,7 +63,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
@@ -123,7 +131,7 @@
             <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <dependency> <!-- reuse src/test/java code from moduleA! -->
+        <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <scope>test</scope>

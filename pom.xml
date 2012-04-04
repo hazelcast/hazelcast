@@ -43,6 +43,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.version>1.5</jdk.version>
         <target.dir>target</target.dir>
+        <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
+        <timestamp>${maven.build.timestamp}</timestamp>
+
         <maven.compiler.plugin.version>2.3.2</maven.compiler.plugin.version>
         <maven.jar.plugin.version>2.3.2</maven.jar.plugin.version>
         <maven.source.plugin.version>2.1.2</maven.source.plugin.version>
@@ -68,9 +71,9 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:svn:http://hazelcast.googlecode.com/svn/trunk/</connection>
-        <developerConnection>scm:svn:https://hazelcast.googlecode.com/svn/trunk/</developerConnection>
-        <url>http://hazelcast.googlecode.com/svn/trunk/</url>
+        <connection>scm:git:git://github.com/hazelcast/hazelcast.git</connection>
+        <developerConnection>scm:git:git@github.com:hazelcast/hazelcast.git</developerConnection>
+        <url>https://github.com/hazelcast/hazelcast/</url>
     </scm>
     <developers>
         <developer>
@@ -86,7 +89,7 @@
     </developers>
     <issueManagement>
         <system>Google Code</system>
-        <url>http://code.google.com/p/hazelcast/issues</url>
+        <url>https://github.com/hazelcast/hazelcast/issues</url>
     </issueManagement>
     <organization>
         <name>Hazel Bilisim Ltd.</name>
@@ -146,28 +149,6 @@
                     <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
                     <xmlOutput>true</xmlOutput>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>1.7</version>
-                <configuration>
-                    <signature>
-                        <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java15</artifactId>
-                        <version>1.0</version>
-                    </signature>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>source-java5-check</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
