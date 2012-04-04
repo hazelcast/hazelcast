@@ -741,7 +741,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             } else {
                 ttl = toMillis(ttl, timeunit);
             }
-            return putIfAbsent(key, value, -1, timeunit.toMillis(ttl));
+            return putIfAbsent(key, value, -1, ttl);
         }
 
         private Object putIfAbsent(Object key, Object value, long timeout, long ttl) {
