@@ -178,6 +178,7 @@ public class ConfigXmlGenerator {
         for (MapConfig m : mCfgs) {
             xml.append("<map name=\"").append(m.getName()).append("\">");
             xml.append("<backup-count>").append(m.getBackupCount()).append("</backup-count>");
+            xml.append("<async-backup-count>").append(m.getAsyncBackupCount()).append("</async-backup-count>");
             xml.append("<eviction-policy>").append(m.getEvictionPolicy()).append("</eviction-policy>");
             xml.append("<eviction-percentage>").append(m.getEvictionPercentage()).append("</eviction-percentage>");
 //            xml.append("<eviction-delay-seconds>").append(m.getEvictionDelaySeconds()).append("</eviction-delay-seconds>");
