@@ -1,11 +1,27 @@
 <?xml version='1.0' encoding='utf-8'?>
+<!--
+  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <book xmlns='http://docbook.org/ns/docbook'
       xmlns:xi='http://www.w3.org/2001/XInclude' version='5.0'>
 
     <info>
         <title>Hazelcast Documentation</title>
-        <subtitle>version 2.1</subtitle>
-        <pubdate>03 April 2012</pubdate>
+        <subtitle>version <?eval ${project.version}?></subtitle>
+        <pubdate><?eval ${timestamp}?> </pubdate>
         <copyright>
             <year>2012</year>
             <holder>Hazel Bilisim Ltd. Sti.</holder>
@@ -35,15 +51,15 @@
     </chapter>
     <chapter xml:id="DDS">
         <title>Distributed Data Structures</title>
-        <xi:include href="DDS.xml"/>
-        <xi:include href="Queue.xml"/>
-        <xi:include href="Topic.xml"/>
-        <xi:include href="Map.xml"/>
-        <xi:include href="MultiMap.xml"/>
-        <xi:include href="Set.xml"/>
-        <xi:include href="List.xml"/>
-        <xi:include href="Lock.xml"/>
-        <xi:include href="Events.xml"/>
+        <xi:include href="dds/DDS.xml"/>
+        <xi:include href="dds/Queue.xml"/>
+        <xi:include href="dds/Topic.xml"/>
+        <xi:include href="dds/Map.xml"/>
+        <xi:include href="dds/MultiMap.xml"/>
+        <xi:include href="dds/Set.xml"/>
+        <xi:include href="dds/List.xml"/>
+        <xi:include href="dds/Lock.xml"/>
+        <xi:include href="dds/Events.xml"/>
     </chapter>
     <chapter xml:id="ElasticMemory">
         <title>Elastic Memory
@@ -55,11 +71,11 @@
         <title>Security
             <superscript>(Enterprise Edition Only)</superscript>
         </title>
-        <xi:include href="SecurityIntro.xml"/>
-        <xi:include href="Credentials.xml"/>
-        <xi:include href="ClusterLoginModule.xml"/>
-        <xi:include href="MemberSecurity.xml"/>
-        <xi:include href="ClientSecurity.xml"/>
+        <xi:include href="security/SecurityIntro.xml"/>
+        <xi:include href="security/Credentials.xml"/>
+        <xi:include href="security/ClusterLoginModule.xml"/>
+        <xi:include href="security/MemberSecurity.xml"/>
+        <xi:include href="security/ClientSecurity.xml"/>
     </chapter>
     <chapter xml:id="DataAffinity">
         <title>Data Affinity</title>
@@ -71,21 +87,21 @@
     </chapter>
     <chapter xml:id="ClusterUtilities">
         <title>Cluster Utilities</title>
-        <xi:include href="ClusterInterface.xml"/>
-        <xi:include href="IdGenerator.xml"/>
-        <xi:include href="LiteMember.xml"/>
+        <xi:include href="cluster/ClusterInterface.xml"/>
+        <xi:include href="cluster/IdGenerator.xml"/>
+        <xi:include href="cluster/LiteMember.xml"/>
     </chapter>
     <chapter xml:id="Transactions">
         <title>Transactions</title>
-        <xi:include href="TransactionInterface.xml"/>
-        <xi:include href="JEEIntegration.xml"/>
+        <xi:include href="j2ee/TransactionInterface.xml"/>
+        <xi:include href="j2ee/JEEIntegration.xml"/>
     </chapter>
     <chapter xml:id="ExecutorService">
         <title>Distributed Executor Service</title>
-        <xi:include href="ExecutorService.xml"/>
-        <xi:include href="DistributedExecution.xml"/>
-        <xi:include href="ExecutionCancellation.xml"/>
-        <xi:include href="ExecutionCallback.xml"/>
+        <xi:include href="executor/ExecutorService.xml"/>
+        <xi:include href="executor/DistributedExecution.xml"/>
+        <xi:include href="executor/ExecutionCancellation.xml"/>
+        <xi:include href="executor/ExecutionCallback.xml"/>
     </chapter>
     <chapter xml:id="HttpSessionClustering">
         <title>Http Session Clustering with HazelcastWM</title>
@@ -97,15 +113,15 @@
     </chapter>
     <chapter xml:id="Config">
         <title>Configuration</title>
-        <xi:include href="Config.xml"/>
-        <xi:include href="ConfigGroup.xml"/>
-        <xi:include href="NetworkConfig.xml" />
-        <xi:include href="PartitionGroupConfig.xml"/>
-        <xi:include href="ListenerConfig.xml"/>
-        <xi:include href="WildcardConfiguration.xml"/>
-        <xi:include href="ConfigurationProperties.xml"/>
-        <xi:include href="Logging.xml"/>
-        <xi:include href="EnterpriseConfig.xml"/>
+        <xi:include href="config/Config.xml"/>
+        <xi:include href="config/ConfigGroup.xml"/>
+        <xi:include href="network/NetworkConfig.xml" />
+        <xi:include href="config/PartitionGroupConfig.xml"/>
+        <xi:include href="config/ListenerConfig.xml"/>
+        <xi:include href="config/WildcardConfiguration.xml"/>
+        <xi:include href="config/ConfigurationProperties.xml"/>
+        <xi:include href="config/Logging.xml"/>
+        <xi:include href="config/EnterpriseConfig.xml"/>
     </chapter>
     <chapter xml:id="HibernateSecondLevelCache">
         <title>Hibernate Second Level Cache</title>
@@ -113,38 +129,40 @@
     </chapter>
     <chapter xml:id="SpringIntegration">
         <title>Spring Integration</title>
-        <xi:include href="SpringIntegration.xml"/>
+        <xi:include href="spring/SpringConfig.xml"/>
+        <xi:include href="spring/SpringCache.xml"/>
+        <xi:include href="spring/SpringHibernate.xml"/>
     </chapter>
     <chapter xml:id="Clients">
         <title>Clients</title>
-        <xi:include href="Clients.xml"/>
-        <xi:include href="NativeClient.xml"/>
-        <xi:include href="MemcacheClient.xml"/>
-        <xi:include href="RestClient.xml"/>
+        <xi:include href="client/Clients.xml"/>
+        <xi:include href="client/NativeClient.xml"/>
+        <xi:include href="client/MemcacheClient.xml"/>
+        <xi:include href="client/RestClient.xml"/>
     </chapter>
     <chapter xml:id="Internals">
         <title>Internals</title>
-        <xi:include href="InternalsSerialization.xml"/>
-        <xi:include href="InternalsClusterMembership.xml"/>
-        <xi:include href="InternalsDistributedMap.xml"/>
+        <xi:include href="internals/InternalsSerialization.xml"/>
+        <xi:include href="internals/InternalsClusterMembership.xml"/>
+        <xi:include href="internals/InternalsDistributedMap.xml"/>
     </chapter>
     <chapter xml:id="ManagementCenter">
         <title>Management Center</title>
-        <xi:include href="MC_Intro.xml"/>
-        <xi:include href="MC_Maps.xml"/>
-        <xi:include href="MC_Queues.xml"/>
-        <xi:include href="MC_Topics.xml"/>
-        <xi:include href="MC_Members.xml"/>
-        <xi:include href="MC_Scripting.xml"/>
-        <xi:include href="MC_TimeTravel.xml"/>
-        <xi:include href="MC_Console.xml"/>
+        <xi:include href="mancenter/MC_Intro.xml"/>
+        <xi:include href="mancenter/MC_Maps.xml"/>
+        <xi:include href="mancenter/MC_Queues.xml"/>
+        <xi:include href="mancenter/MC_Topics.xml"/>
+        <xi:include href="mancenter/MC_Members.xml"/>
+        <xi:include href="mancenter/MC_Scripting.xml"/>
+        <xi:include href="mancenter/MC_TimeTravel.xml"/>
+        <xi:include href="mancenter/MC_Console.xml"/>
     </chapter>
 
     <chapter xml:id="Miscellaneous">
         <title>Miscellaneous</title>
-        <xi:include href="CommonGotchas.xml"/>
-        <xi:include href="ClusterTestHowTo.xml"/>
-        <xi:include href="Todo.xml"/>
-        <xi:include href="ReleaseNotes.xml"/>
+        <xi:include href="misc/CommonGotchas.xml"/>
+        <xi:include href="misc/ClusterTestHowTo.xml"/>
+        <xi:include href="misc/Todo.xml"/>
+        <xi:include href="misc/ReleaseNotes.xml"/>
     </chapter>
 </book>

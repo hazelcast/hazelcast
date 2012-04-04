@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<sect1 xml:id="Set" version='5.0' xmlns='http://docbook.org/ns/docbook'
+        >
+    <title>Distributed Set</title>
+    <para>Distributed Set is distributed and concurrent implementation
+        of<literal>java.util.Set</literal>. Set doesn't allow duplicate elements, so elements in
+        the set should have proper hashCode and equals methods.
+        <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
+import java.util.Set;
+import java.util.Iterator;
+
+java.util.Set set = Hazelcast.getSet("IBM-Quote-History");
+set.add(new Price(10, time1));
+set.add(new Price(11, time2));
+set.add(new Price(12, time3));
+set.add(new Price(11, time4));
+//....
+Iterator it = set.iterator();
+while (it.hasNext()) { 
+    Price price = (Price) it.next(); 
+    //analyze
+}
+
+]]></programlisting>
+    </para>
+</sect1>

@@ -15,12 +15,18 @@
   ~ limitations under the License.
   -->
 
-<para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
+<sect1 xml:id="MC_Topics" version="5.0" xmlns="http://docbook.org/ns/docbook"
         >
-    <emphasis role="bold">To learn about wildcard configuration feature, see
-        <link
-                xlink:href="#WildcardConfiguration">Wildcard Configuration
-        </link>
-        page.
-    </emphasis>
-</para>
+    <title>Topics</title>
+    <para>
+        You can monitor your topics' metrics by clicking the topic name listed on the left panel under topics part.
+        There are two charts which reflects live data, and a datatable lists the live data distributed among members.
+    </para>
+    <para>
+        <inlinemediaobject>
+            <imageobject>
+                <imagedata width="70%" fileref="images/topic.jpg"/>
+            </imageobject>
+        </inlinemediaobject>
+    </para>
+</sect1>
