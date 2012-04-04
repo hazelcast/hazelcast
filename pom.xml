@@ -88,7 +88,7 @@
         </developer>
     </developers>
     <issueManagement>
-        <system>Google Code</system>
+        <system>Github</system>
         <url>https://github.com/hazelcast/hazelcast/issues</url>
     </issueManagement>
     <organization>
