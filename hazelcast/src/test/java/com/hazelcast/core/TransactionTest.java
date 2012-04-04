@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static junit.framework.Assert.assertEquals;
@@ -41,6 +42,7 @@ import static org.junit.Assert.fail;
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class TransactionTest {
 
+    @AfterClass
     @BeforeClass
     public static void init() throws Exception {
         Hazelcast.shutdownAll();
@@ -903,7 +905,7 @@ public class TransactionTest {
 
     @Test
     public void issue581testRemoveInTwoTransactionOneShouldReturnNull() throws InterruptedException {
-        final IMap m = Hazelcast.getMap("test");
+        final IMap m = Hazelcast.getMap("issue581testRemoveInTwoTransactionOneShouldReturnNull");
         final AtomicReference<Object> t1Return = new AtomicReference<Object>();
         final AtomicReference<Object> t2Return = new AtomicReference<Object>();
 //        final CountDownLatch latch = new CountDownLatch(1);
@@ -940,7 +942,6 @@ public class TransactionTest {
         t2.join();
         Assert.assertEquals("b", t1Return.get());
         Assert.assertNull("The remove in the second thread should return null", t2Return.get());
-        Hazelcast.shutdownAll();
     }
 
     @Test
@@ -948,11 +949,57 @@ public class TransactionTest {
         final HazelcastInstance hz = Hazelcast.getDefaultInstance();
         Transaction tx = hz.getTransaction();
         tx.begin();
-        IMap<Object, Object> map = hz.getMap("test");
+        IMap<Object, Object> map = hz.getMap("issue770TestIMapTryPutUnderTransaction");
         Assert.assertTrue(map.tryPut("key", "value", 100, TimeUnit.MILLISECONDS));
         Assert.assertTrue(map.tryPut("key", "value2", 100, TimeUnit.MILLISECONDS));
         tx.commit();
-        Hazelcast.shutdownAll();
+    }
+
+    /**
+     * Github issue #99
+     */
+    @Test
+    public void issue99TestQueueTakeAndDuringRollback() throws InterruptedException {
+        final HazelcastInstance hz = Hazelcast.getDefaultInstance();
+        final IQueue q = hz.getQueue("issue99TestQueueTakeAndDuringRollback");
+        q.offer(1L);
+
+        Thread t1 = new Thread() {
+            public void run() {
+                Transaction tx = Hazelcast.getTransaction();
+                try {
+                    tx.begin();
+                    q.take();
+                    sleep(1000);
+                    throw new RuntimeException();
+                } catch (InterruptedException e) {
+                    fail(e.getMessage());
+                } catch (Exception e) {
+                    tx.rollback();
+                }
+            }
+        };
+        final AtomicBoolean fail = new AtomicBoolean(false);
+        Thread t2 = new Thread() {
+            public void run() {
+                Transaction tx = Hazelcast.getTransaction();
+                try {
+                    tx.begin();
+                    q.take();
+                    tx.commit();
+                    fail.set(false);
+                } catch (Exception e) {
+                    tx.rollback();
+                    e.printStackTrace();
+                    fail.set(true);
+                }
+            }
+        };
+
+        t1.start();
+        t2.start();
+        t2.join();
+        assertFalse("Queue take failed after rollback!", fail.get());
     }
 
     final List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();

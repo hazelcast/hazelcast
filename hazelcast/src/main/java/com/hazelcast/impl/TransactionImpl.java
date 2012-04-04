@@ -17,6 +17,8 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.Instance;
+import com.hazelcast.core.Instance.InstanceType;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.logging.ILogger;
 
@@ -93,14 +95,16 @@ public class TransactionImpl implements Transaction {
     }
 
     public void begin() throws IllegalStateException {
-        if (status == TXN_STATUS_ACTIVE)
+        if (status == TXN_STATUS_ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
+        }
         status = TXN_STATUS_ACTIVE;
     }
 
     public void commit() throws IllegalStateException {
-        if (status != TXN_STATUS_ACTIVE)
+        if (status != TXN_STATUS_ACTIVE) {
             throw new IllegalStateException("Transaction is not active");
+        }
         status = TXN_STATUS_COMMITTING;
         try {
             ThreadContext.get().setCurrentFactory(factory);
@@ -119,16 +123,21 @@ public class TransactionImpl implements Transaction {
 
     public void rollback() throws IllegalStateException {
         if (status == TXN_STATUS_NO_TXN || status == TXN_STATUS_UNKNOWN
-                || status == TXN_STATUS_COMMITTED || status == TXN_STATUS_ROLLED_BACK)
+            || status == TXN_STATUS_COMMITTED || status == TXN_STATUS_ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not ready to rollback. Status= "
-                    + status);
+                                            + status);
+        }
         status = TXN_STATUS_ROLLING_BACK;
         try {
             ThreadContext.get().setCurrentFactory(factory);
             final int size = transactionRecords.size();
             ListIterator<TransactionRecord> iter = transactionRecords.listIterator(size);
             while (iter.hasPrevious()) {
-                iter.previous().rollback();
+                TransactionRecord record = iter.previous();
+                if (record.instanceType.isQueue()) {
+                    rollbackMapTransactionRecordOfQueue(iter, record);
+                }
+                record.rollback();
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
@@ -138,12 +147,34 @@ public class TransactionImpl implements Transaction {
         }
     }
 
+    // Queues have two transaction records per operation;
+    // one for queue key, one for map item. During rollback
+    // we should rollback map record first.
+    // See github issue#99 and TransactionTest.issue99TestQueueTakeAndDuringRollback
+    private void rollbackMapTransactionRecordOfQueue(final ListIterator<TransactionRecord> iter,
+                                                     final TransactionRecord queueTxRecord) {
+        if (iter.hasPrevious()) {
+            TransactionRecord prevRecord = iter.previous();
+            if (prevRecord.instanceType != InstanceType.MAP) {
+                logger.log(Level.WARNING, "Map#TransactionRecord is expected before a " +
+                                          "Queue#TransactionRecord, but got " + prevRecord.instanceType);
+            }
+            else if (!prevRecord.name.equals(Prefix.MAP + queueTxRecord.name)) {
+                logger.log(Level.WARNING, "Expecting a record of " + Prefix.MAP + queueTxRecord.name
+                          + " but got " + prevRecord.name);
+            }
+            // Rollback previous transaction record, even if it is not expected record.
+            prevRecord.rollback();
+        }
+    }
+
     public boolean containsValue(String name, Object value) {
         for (TransactionRecord transactionRecord : transactionRecords) {
             if (transactionRecord.name.equals(name)) {
                 if (!transactionRecord.removed) {
-                    if (value.equals(transactionRecord.value))
+                    if (value.equals(transactionRecord.value)) {
                         return true;
+                    }
                 }
             }
         }
@@ -190,10 +221,12 @@ public class TransactionImpl implements Transaction {
 
     public Object get(String name, Object key) {
         TransactionRecord rec = findTransactionRecord(name, key);
-        if (rec == null)
+        if (rec == null) {
             return null;
-        if (rec.removed)
+        }
+        if (rec.removed) {
             return null;
+        }
         rec.lastAccess = System.currentTimeMillis();
         return rec.value;
     }
@@ -346,10 +379,11 @@ public class TransactionImpl implements Transaction {
         }
 
         public void commit() {
-            if (instanceType == Instance.InstanceType.QUEUE)
+            if (instanceType == Instance.InstanceType.QUEUE) {
                 commitQueue();
-            else
+            } else {
                 commitMap();
+            }
         }
 
         public void commitMap() {
@@ -386,10 +420,11 @@ public class TransactionImpl implements Transaction {
         }
 
         public void rollback() {
-            if (instanceType == Instance.InstanceType.QUEUE)
+            if (instanceType == Instance.InstanceType.QUEUE) {
                 rollbackQueue();
-            else
+            } else {
                 rollbackMap();
+            }
         }
 
         public void rollbackMap() {
