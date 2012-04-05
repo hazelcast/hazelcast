@@ -417,7 +417,7 @@ public class TransactionImpl implements Transaction {
                 if (instanceType.isMultiMap()) {
                     factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
                 } else {
-                    factory.node.concurrentMapManager.new MPut().put(name, key, value, -1, ttl, id);
+                    factory.node.concurrentMapManager.new MPut().putAfterCommit(name, key, value, -1, ttl, id);
                 }
             }
         }

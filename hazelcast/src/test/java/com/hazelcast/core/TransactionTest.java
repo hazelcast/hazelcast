@@ -1079,6 +1079,57 @@ public class TransactionTest {
         assertFalse("Queue take failed after rollback!", fail.get());
     }
 
+    /**
+     * Github issue #108
+     */
+    @Test
+    public void issue108TestNpeDuringCommit() throws InterruptedException {
+        final HazelcastInstance hz = Hazelcast.getDefaultInstance();
+        final IMap map = hz.getMap("issue108TestNpeDuringCommit");
+
+        final AtomicBoolean test1 = new AtomicBoolean(false);
+        Thread t1 = new Thread() {
+            public void run() {
+                Transaction tx = Hazelcast.getTransaction();
+                try {
+                    tx.begin();
+                    map.put(1, 1);
+                    sleep(1000);
+                    tx.commit();
+                    test1.set(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    tx.rollback();
+                    test1.set(false);
+                }
+            }
+        };
+        final AtomicBoolean test2 = new AtomicBoolean(false);
+        Thread t2 = new Thread() {
+            public void run() {
+                Transaction tx = Hazelcast.getTransaction();
+                try {
+                    tx.begin();
+                    map.put(1, 2);
+                    tx.commit();
+                    test2.set(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    tx.rollback();
+                    test2.set(true);
+                }
+            }
+        };
+
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        assertTrue("Map1 put should be successful!", test1.get());
+        assertTrue("Map2 put should be successful!", test2.get());
+    }
+
+
     final List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();
 
     TransactionalMap newTransactionalMapProxy(String name) {

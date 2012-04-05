@@ -1243,4 +1243,23 @@ public class HazelcastTest {
         assertTrue(map.replace("b", "b", "z"));
         assertEquals(capacity, map.size());
     }
+
+    @Test(expected = IllegalStateException.class)
+    public void testPutAndUnlockWhenOwnerOfLockIsDifferent() throws InterruptedException {
+        final IMap map = Hazelcast.getMap("testPutAndUnlockWhenOwnerOfLockIsDifferent");
+        Thread t1 = new Thread() {
+            public void run() {
+                map.lock(1L);
+                try {
+                    sleep(2000);
+                } catch (InterruptedException e) {
+                }
+                map.unlock(1L);
+            }
+        };
+        t1.start();
+        Thread.sleep(500);
+        map.putAndUnlock(1L, 1);
+        fail("Should not succeed putAndUnlock!");
+    }
 }
