@@ -17,6 +17,8 @@
         <!--<org.springframework.version>2.5.6</org.springframework.version>-->
         <org.springframework.version>3.1.0.RELEASE</org.springframework.version>
         <jsr250.api.version>1.0</jsr250.api.version>
+        <org.mongodb.version>2.7.3</org.mongodb.version>
+        <org.springframework.data.mongodb>1.0.1.RELEASE</org.springframework.data.mongodb>
     </properties>
 
     <build>
@@ -157,6 +159,18 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-hibernate</artifactId>
             <version>${project.parent.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>${org.mongodb.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-mongodb</artifactId>
+            <version>${org.springframework.data.mongodb}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
