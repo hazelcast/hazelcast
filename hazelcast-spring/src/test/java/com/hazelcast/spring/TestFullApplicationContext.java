@@ -44,6 +44,10 @@ import static org.junit.Assert.*;
 @ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
 public class TestFullApplicationContext {
 
+    static {
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+    }
+
     private Config config;
 
     @Resource(name = "instance")

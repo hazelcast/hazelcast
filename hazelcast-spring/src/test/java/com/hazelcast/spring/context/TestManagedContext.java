@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring.cache;
+package com.hazelcast.spring.context;
 
+import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.GroupProperties;
@@ -25,26 +26,36 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
+/**
+ * @mdogan 4/6/12
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"cacheManager-applicationContext-hazelcast.xml"})
-public class TestCacheManager {
+@ContextConfiguration(locations = {"managedContext-applicationContext-hazelcast.xml"})
+public class TestManagedContext {
 
     static {
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
     }
 
-    @Resource(name = "instance")
-    private HazelcastInstance instance;
+    @Resource(name = "instance1")
+    private HazelcastInstance instance1;
+
+    @Resource(name = "instance2")
+    private HazelcastInstance instance2;
 
     @Autowired
-    private IDummyBean bean;
+    private ApplicationContext context;
+
+    @Autowired
+    private SomeBean bean;
 
     @BeforeClass
     @AfterClass
@@ -53,44 +64,23 @@ public class TestCacheManager {
     }
 
     @Test
-    public void test() {
-        for (int i = 0; i < 100; i++) {
-            Assert.assertEquals("name:" + i, bean.getName(i));
-            Assert.assertEquals("city:" + i, bean.getCity(i));
-        }
+    public void testSerialization() throws InterruptedException {
+        instance1.getMap("test").put(1L, new SomeValue());
+        SomeValue v = (SomeValue) instance1.getMap("test").get(1L);
+        Assert.assertNotNull(v.context);
+        Assert.assertNotNull(v.someBean);
+        Assert.assertEquals(context, v.context);
+        Assert.assertTrue(v.init);
     }
 
     @Test
-    public void testNull() {
-        for (int i = 0; i < 100; i++) {
-            Assert.assertNull(bean.getNull());
-        }
+    public void testDistributedTask() throws ExecutionException, InterruptedException {
+        Future<Boolean> f = instance1.getExecutorService().submit(new SomeTask());
+        Assert.assertTrue(f.get());
+
+        Future<Boolean> f2 = (Future<Boolean>) instance1.getExecutorService()
+                .submit(new DistributedTask<Boolean>(new SomeTask()));
+        Assert.assertTrue(f2.get());
     }
 
-
-    public static class DummyBean implements IDummyBean {
-
-        @Cacheable("name")
-        public String getName(int k) {
-            Assert.fail("should not call this method!");
-            return null;
-        }
-
-        @Cacheable("city")
-        public String getCity(int k) {
-            Assert.fail("should not call this method!");
-            return null;
-        }
-
-        final AtomicBoolean nullCall = new AtomicBoolean(false);
-
-        @Cacheable("null-map")
-        public Object getNull() {
-            if (nullCall.compareAndSet(false, true)) {
-                return null;
-            }
-            Assert.fail("should not call this method!");
-            return null;
-        }
-    }
 }
