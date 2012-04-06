@@ -17,10 +17,16 @@
 package com.hazelcast.hibernate;
 
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.impl.GroupProperties;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Environment;
+import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Test;
 
+import java.util.Date;
 import java.util.Properties;
 
 public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
@@ -35,5 +41,65 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
         Properties props = new Properties();
         props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
         return props;
+    }
+
+    @Test
+    public void testInsertGetUpdateGet() {
+        Session session = sf.openSession();
+        DummyEntity e = new DummyEntity(1L, "test", 0d, null);
+        Transaction tx = session.beginTransaction();
+        try {
+            session.save(e);
+            tx.commit();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            tx.rollback();
+            Assert.fail(ex.getMessage());
+        } finally {
+            session.close();
+        }
+
+        session = sf.openSession();
+        try {
+            e = (DummyEntity) session.get(DummyEntity.class, 1L);
+            Assert.assertEquals("test", e.getName());
+            Assert.assertNull(e.getDate());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Assert.fail(ex.getMessage());
+        } finally {
+            session.close();
+        }
+
+        session = sf.openSession();
+        tx = session.beginTransaction();
+        try {
+            e = (DummyEntity) session.get(DummyEntity.class, 1L);
+            Assert.assertEquals("test", e.getName());
+            Assert.assertNull(e.getDate());
+            e.setName("dummy");
+            e.setDate(new Date());
+            session.update(e);
+            tx.commit();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            tx.rollback();
+            Assert.fail(ex.getMessage());
+        } finally {
+            session.close();
+        }
+
+        session = sf.openSession();
+        try {
+            e = (DummyEntity) session.get(DummyEntity.class, 1L);
+            Assert.assertEquals("dummy", e.getName());
+            Assert.assertNotNull(e.getDate());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Assert.fail(ex.getMessage());
+        } finally {
+            session.close();
+        }
+//        stats.logSummary();
     }
 }
