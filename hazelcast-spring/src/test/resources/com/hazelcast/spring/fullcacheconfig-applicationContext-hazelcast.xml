@@ -3,15 +3,10 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:p="http://www.springframework.org/schema/p"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
-       xmlns:cache="http://www.springframework.org/schema/cache"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-		http://www.springframework.org/schema/cache
-		http://www.springframework.org/schema/cache/spring-cache.xsd
 		http://www.hazelcast.com/schema/spring
 		http://www.hazelcast.com/schema/spring/hazelcast-spring-2.1.xsd">
-
-    <cache:annotation-driven cache-manager="cacheManager"/>
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -148,10 +143,6 @@
                 </hz:entry-listeners>
             </hz:map>
 
-            <hz:map name="storethiselements-map" backup-count="1">
-                <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0"/>
-            </hz:map>
-
             <hz:map name="testMap3"
                     backup-count="2"
                     max-size="0"
@@ -242,8 +233,4 @@
     <hz:config id="liteConfig">
         <hz:lite-member>true</hz:lite-member>
     </hz:config>
-
-    <bean id="cacheManager" class="com.hazelcast.spring.cache.HazelcastCacheManager">
-        <constructor-arg ref="hazelcast" />
-    </bean>
 </beans>

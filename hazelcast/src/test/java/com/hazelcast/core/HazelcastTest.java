@@ -1215,6 +1215,7 @@ public class HazelcastTest {
         ex.execute(new Runnable() {
             public void run() {
                 latch.countDown();
+                map.lock("c");
                 map.putAndUnlock("c", "c");
                 latch.countDown();
             }

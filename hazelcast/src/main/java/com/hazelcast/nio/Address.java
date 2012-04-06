@@ -67,35 +67,47 @@ public final class Address implements DataSerializable {
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(port);
         out.write(type);
-        byte[] address = host.getBytes();
-        out.writeInt(address.length);
-        out.write(address);
+        if (host != null) {
+            byte[] address = host.getBytes();
+            out.writeInt(address.length);
+            out.write(address);
+        } else {
+            out.writeInt(0);
+        }
     }
 
     public void readData(DataInput in) throws IOException {
         port = in.readInt();
         type = in.readByte();
         int len = in.readInt();
-        byte[] address = new byte[len];
-        in.readFully(address);
-        host = new String(address);
+        if (len > 0) {
+            byte[] address = new byte[len];
+            in.readFully(address);
+            host = new String(address);
+        }
     }
 
     public void writeObject(ByteBuffer buffer) {
         buffer.putInt(port);
         buffer.put(type);
-        byte[] address = host.getBytes();
-        buffer.putInt(address.length);
-        buffer.put(address);
+        if (host != null) {
+            byte[] address = host.getBytes();
+            buffer.putInt(address.length);
+            buffer.put(address);
+        } else {
+            buffer.putInt(0);
+        }
     }
 
     public void readObject(ByteBuffer buffer) {
         port = buffer.getInt();
         type = buffer.get();
         int len = buffer.getInt();
-        byte[] address = new byte[len];
-        buffer.get(address);
-        host = new String(address);
+        if (len > 0) {
+            byte[] address = new byte[len];
+            buffer.get(address);
+            host = new String(address);
+        }
     }
 
     public String getHost() {
@@ -160,6 +172,6 @@ public final class Address implements DataSerializable {
 
     public String getScopedHost() {
         return (isIPv4() || scopeId == null) ? getHost()
-                : getHost() + "%" + scopeId;
+                                             : getHost() + "%" + scopeId;
     }
 }

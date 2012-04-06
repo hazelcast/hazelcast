@@ -53,7 +53,7 @@ public class SocketInterceptorTest {
         Config config = new Config();
         SocketInterceptorConfig sic = new SocketInterceptorConfig();
         MySocketInterceptor mySocketInterceptor = new MySocketInterceptor(true);
-        sic.setImplementation(mySocketInterceptor);
+        sic.setImplementation(mySocketInterceptor).setEnabled(true);
         config.getNetworkConfig().setSocketInterceptorConfig(sic);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -96,7 +96,7 @@ public class SocketInterceptorTest {
         config.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "3");
         SocketInterceptorConfig sic = new SocketInterceptorConfig();
         MySocketInterceptor mySocketInterceptor = new MySocketInterceptor(false);
-        sic.setImplementation(mySocketInterceptor);
+        sic.setImplementation(mySocketInterceptor).setEnabled(true);
         config.getNetworkConfig().setSocketInterceptorConfig(sic);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -107,7 +107,7 @@ public class SocketInterceptorTest {
         Config config = new Config();
         SocketInterceptorConfig sic = new SocketInterceptorConfig();
         MySocketInterceptor mySocketInterceptor = new MySocketInterceptor(true);
-        sic.setImplementation(mySocketInterceptor);
+        sic.setImplementation(mySocketInterceptor).setEnabled(true);
         config.getNetworkConfig().setSocketInterceptorConfig(sic);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
