@@ -1129,6 +1129,38 @@ public class TransactionTest {
         assertTrue("Map2 put should be successful!", test2.get());
     }
 
+    /**
+     * Github issue #114
+     */
+    @Test
+    public void issue114TestQueueListenersUnderTransaction() throws InterruptedException {
+        final CountDownLatch offerLatch = new CountDownLatch(2);
+        final CountDownLatch pollLatch = new CountDownLatch(2);
+        final IQueue<String> testQueue = Hazelcast.getQueue("issue114TestQueueListenersUnderTransaction");
+        testQueue.addItemListener(new ItemListener<String>() {
+            public void itemAdded(ItemEvent<String> item) {
+                offerLatch.countDown();
+            }
+            public void itemRemoved(ItemEvent<String> item) {
+                pollLatch.countDown();
+            }
+        }, true);
+
+        Transaction tx = Hazelcast.getTransaction();
+        tx.begin();
+        testQueue.put("tx Hello");
+        testQueue.put("tx World");
+        tx.commit();
+
+        tx = Hazelcast.getTransaction();
+        tx.begin();
+        Assert.assertEquals("tx Hello", testQueue.poll());
+        Assert.assertEquals("tx World", testQueue.poll());
+        tx.commit();
+
+        Assert.assertTrue("Remaining offer listener count: " + offerLatch.getCount(), offerLatch.await(2, TimeUnit.SECONDS));
+        Assert.assertTrue("Remaining poll listener count: " + pollLatch.getCount(), pollLatch.await(2, TimeUnit.SECONDS));
+    }
 
     final List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();
 
