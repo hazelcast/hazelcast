@@ -17,6 +17,7 @@
         <!--<org.springframework.version>2.5.6</org.springframework.version>-->
         <org.springframework.version>3.1.0.RELEASE</org.springframework.version>
         <jsr250.api.version>1.0</jsr250.api.version>
+        <hibernate.core.version>3.5.0-Final</hibernate.core.version>
         <org.mongodb.version>2.7.3</org.mongodb.version>
         <org.springframework.data.mongodb>1.0.1.RELEASE</org.springframework.data.mongodb>
     </properties>
