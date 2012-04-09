@@ -220,6 +220,7 @@
     <hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
+    <hz:lock id="lock" instance-ref="instance" name="lock"/>
 
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>

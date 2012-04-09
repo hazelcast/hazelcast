@@ -21,6 +21,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -31,6 +33,8 @@ import java.util.concurrent.Callable;
  * @mdogan 4/6/12
  */
 @SpringAware
+@Component("someTask")
+@Scope("prototype")
 public class SomeTask implements Callable<Boolean>, ApplicationContextAware, DataSerializable {
 
     private transient ApplicationContext context;
@@ -56,5 +60,25 @@ public class SomeTask implements Callable<Boolean>, ApplicationContextAware, Dat
 
     public void readData(final DataInput in) throws IOException {
 
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SomeTask)) return false;
+
+        final SomeTask someTask = (SomeTask) o;
+
+        if (context != null ? !context.equals(someTask.context) : someTask.context != null) return false;
+        if (someBean != null ? !someBean.equals(someTask.someBean) : someTask.someBean != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = context != null ? context.hashCode() : 0;
+        result = 31 * result + (someBean != null ? someBean.hashCode() : 0);
+        return result;
     }
 }

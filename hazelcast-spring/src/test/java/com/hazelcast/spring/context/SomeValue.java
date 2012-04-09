@@ -54,6 +54,28 @@ public class SomeValue implements DataSerializable, ApplicationContextAware {
         init = true;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SomeValue)) return false;
+
+        final SomeValue someValue = (SomeValue) o;
+
+        if (init != someValue.init) return false;
+        if (context != null ? !context.equals(someValue.context) : someValue.context != null) return false;
+        if (someBean != null ? !someBean.equals(someValue.someBean) : someValue.someBean != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = context != null ? context.hashCode() : 0;
+        result = 31 * result + (someBean != null ? someBean.hashCode() : 0);
+        result = 31 * result + (init ? 1 : 0);
+        return result;
+    }
+
     public void writeData(final DataOutput out) throws IOException {
     }
 

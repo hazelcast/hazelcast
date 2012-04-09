@@ -19,11 +19,14 @@ package com.hazelcast.spring.context;
 import java.lang.annotation.*;
 
 /**
+ * Annotates a class for injection of Spring dependencies.
+ *
  * @mdogan 4/6/12
  */
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@Inherited
 @Documented
 public @interface SpringAware {
 }

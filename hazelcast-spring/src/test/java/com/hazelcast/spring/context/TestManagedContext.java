@@ -75,7 +75,8 @@ public class TestManagedContext {
 
     @Test
     public void testDistributedTask() throws ExecutionException, InterruptedException {
-        Future<Boolean> f = instance1.getExecutorService().submit(new SomeTask());
+        SomeTask task = (SomeTask) context.getBean("someTask");
+        Future<Boolean> f = instance1.getExecutorService().submit(task);
         Assert.assertTrue(f.get());
 
         Future<Boolean> f2 = (Future<Boolean>) instance1.getExecutorService()
