@@ -18,6 +18,7 @@ package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.impl.GroupProperties;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -34,6 +35,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"cacheManager-applicationContext-hazelcast.xml"})
 public class TestCacheManager {
+
+    static {
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+    }
 
     @Resource(name = "instance")
     private HazelcastInstance instance;

@@ -18,6 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.config.*;
 import com.hazelcast.config.PermissionConfig.PermissionType;
+import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.*;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
@@ -73,6 +74,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractBeanDefinitionP
             this.configBuilder.addPropertyValue("executorConfigMap", executorManagedMap);
             this.configBuilder.addPropertyValue("wanReplicationConfigs", wanReplicationManagedMap);
             this.configBuilder.addPropertyValue("mergePolicyConfigs", mergePolicyConfigMap);
+
+            BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class, "springManagedContext");
+            this.configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
         }
 
         public AbstractBeanDefinition getBeanDefinition() {

@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.config.*;
 import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.FactoryImpl.ProxyKey;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.wan.WanReplicationEndpoint;
 import com.hazelcast.merge.MergePolicy;
@@ -43,6 +44,10 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
 public class TestFullApplicationContext {
+
+    static {
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+    }
 
     private Config config;
 
@@ -84,6 +89,9 @@ public class TestFullApplicationContext {
 
     @Resource(name = "semaphore")
     private ISemaphore semaphore;
+
+    @Resource(name = "lock")
+    private ILock lock;
 
     @Resource(name = "dummyMapStore")
     private MapStore dummyMapStore;
@@ -353,6 +361,7 @@ public class TestFullApplicationContext {
         assertNotNull(atomicLong);
         assertNotNull(countDownLatch);
         assertNotNull(semaphore);
+        assertNotNull(lock);
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());
         assertEquals("testMultimap", multiMap.getName());
@@ -364,6 +373,7 @@ public class TestFullApplicationContext {
         assertEquals("atomicNumber", atomicLong.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
+        assertEquals(new ProxyKey("lock", "lock"), lock.getId());
     }
 
     @Test

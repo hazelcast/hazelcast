@@ -17,6 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.ConcurrentMapManager.MEvict;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Data;
@@ -87,6 +88,10 @@ public final class ThreadContext {
 
     public FactoryImpl getCurrentFactory() {
         return currentFactory;
+    }
+
+    public ManagedContext getCurrentManagedContext() {
+        return currentFactory != null ? currentFactory.managedContext : null ;
     }
 
     public void setCurrentFactory(FactoryImpl currentFactory) {
