@@ -208,14 +208,6 @@ public class BlockingQueueManager extends BaseManager {
             } else {
                 final Data dataItem = toData(obj);
                 storeQueueItem(name, key, dataItem, index);
-                final BQ bq = getBQ(name);
-                if (bq != null && bq.mapListeners.size() > 0) {
-                    enqueueAndReturn(new Processable() {
-                        public void process() {
-                            fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_ADDED, dataItem, thisAddress);
-                        }
-                    });
-                }
             }
             return true;
         }
@@ -267,7 +259,7 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    private void storeQueueItem(String name, Object key, Object obj, int index) {
+    private void storeQueueItem(final String name, final Object key, final Object obj, int index) {
         IMap imap = getStorageMap(name);
         final Data dataKey = toData(key);
         imap.put(dataKey, obj);
@@ -275,6 +267,20 @@ public class BlockingQueueManager extends BaseManager {
             sendKeyToMaster(name, dataKey, index);
         } else {
             addKey(name, dataKey, index);
+        }
+        final Data dataItem ;
+        if (obj instanceof Data) {
+            dataItem = (Data) obj;
+        } else {
+            dataItem = toData(obj);
+        }
+        final BQ bq = getBQ(name);
+        if (bq != null && bq.mapListeners.size() > 0) {
+            enqueueAndReturn(new Processable() {
+                public void process() {
+                    fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_ADDED, dataItem, thisAddress);
+                }
+            });
         }
     }
 

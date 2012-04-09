@@ -53,8 +53,35 @@ public class TransactionTest {
         TransactionalMap txnMap = newTransactionalMapProxy("testMapPutSimple");
         txnMap.begin();
         txnMap.put("1", "value");
+        assertEquals(1, txnMap.size());
         txnMap.commit();
         assertEquals(1, txnMap.size());
+    }
+
+    @Test
+    public void testMapContainsKey() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapContainsKey");
+        txnMap.put("1", "value");
+        Assert.assertTrue(txnMap.containsKey("1"));
+        txnMap.begin();
+        Assert.assertTrue(txnMap.containsKey("1"));
+        assertEquals("value", txnMap.get("1"));
+        Assert.assertTrue(txnMap.containsKey("1"));
+        txnMap.commit();
+        Assert.assertTrue(txnMap.containsKey("1"));
+        assertEquals(1, txnMap.size());
+    }
+
+    @Test
+    public void testMapContainsValue() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapContainsValue");
+        txnMap.put("1", "value");
+        txnMap.put("2", "value");
+        Assert.assertTrue(txnMap.containsValue("value"));
+        txnMap.begin();
+        Assert.assertTrue(txnMap.containsValue("value"));
+        txnMap.commit();
+        assertEquals(2, txnMap.size());
     }
 
     @Test
@@ -160,6 +187,7 @@ public class TransactionTest {
         TransactionalSet set = newTransactionalSetProxy("testSetCommit");
         set.begin();
         set.add("item");
+        assertEquals(1, set.size());
         set.commit();
         assertEquals(1, set.size());
     }
@@ -170,6 +198,7 @@ public class TransactionTest {
         set.begin();
         set.add("item");
         set.add("item");
+        assertEquals(1, set.size());
         set.commit();
         assertEquals(1, set.size());
     }
@@ -1000,6 +1029,39 @@ public class TransactionTest {
         t2.start();
         t2.join();
         assertFalse("Queue take failed after rollback!", fail.get());
+    }
+
+    /**
+     * Github issue #114
+     */
+    @Test
+    public void issue114TestQueueListenersUnderTransaction() throws InterruptedException {
+        final CountDownLatch offerLatch = new CountDownLatch(2);
+        final CountDownLatch pollLatch = new CountDownLatch(2);
+        final IQueue<String> testQueue = Hazelcast.getQueue("issue114TestQueueListenersUnderTransaction");
+        testQueue.addItemListener(new ItemListener<String>() {
+            public void itemAdded(ItemEvent<String> item) {
+                offerLatch.countDown();
+            }
+            public void itemRemoved(ItemEvent<String> item) {
+                pollLatch.countDown();
+            }
+        }, true);
+
+        Transaction tx = Hazelcast.getTransaction();
+        tx.begin();
+        testQueue.put("tx Hello");
+        testQueue.put("tx World");
+        tx.commit();
+
+        tx = Hazelcast.getTransaction();
+        tx.begin();
+        Assert.assertEquals("tx Hello", testQueue.poll());
+        Assert.assertEquals("tx World", testQueue.poll());
+        tx.commit();
+
+        Assert.assertTrue("Remaining offer listener count: " + offerLatch.getCount(), offerLatch.await(2, TimeUnit.SECONDS));
+        Assert.assertTrue("Remaining poll listener count: " + pollLatch.getCount(), pollLatch.await(2, TimeUnit.SECONDS));
     }
 
     final List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();
