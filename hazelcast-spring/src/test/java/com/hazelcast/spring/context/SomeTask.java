@@ -17,6 +17,7 @@
 package com.hazelcast.spring.context;
 
 import com.hazelcast.nio.DataSerializable;
+import org.junit.Assert;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -35,14 +36,16 @@ import java.util.concurrent.Callable;
 @SpringAware
 @Component("someTask")
 @Scope("prototype")
-public class SomeTask implements Callable<Boolean>, ApplicationContextAware, DataSerializable {
+public class SomeTask implements Callable<Long>, ApplicationContextAware, DataSerializable {
 
     private transient ApplicationContext context;
 
     private transient SomeBean someBean;
 
-    public Boolean call() throws Exception {
-        return context != null && someBean != null;
+    public Long call() throws Exception {
+        SomeBean bean = (SomeBean) context.getBean("someBean");
+        Assert.assertEquals(bean, someBean);
+        return bean.value;
     }
 
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {

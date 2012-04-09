@@ -70,18 +70,19 @@ public class TestManagedContext {
         Assert.assertNotNull(v.context);
         Assert.assertNotNull(v.someBean);
         Assert.assertEquals(context, v.context);
+        Assert.assertEquals(bean, v.someBean);
         Assert.assertTrue(v.init);
     }
 
     @Test
     public void testDistributedTask() throws ExecutionException, InterruptedException {
         SomeTask task = (SomeTask) context.getBean("someTask");
-        Future<Boolean> f = instance1.getExecutorService().submit(task);
-        Assert.assertTrue(f.get());
+        Future<Long> f = instance1.getExecutorService().submit(task);
+        Assert.assertEquals(bean.value, f.get().longValue());
 
-        Future<Boolean> f2 = (Future<Boolean>) instance1.getExecutorService()
-                .submit(new DistributedTask<Boolean>(new SomeTask()));
-        Assert.assertTrue(f2.get());
+        Future<Long> f2 = (Future<Long>) instance1.getExecutorService()
+                .submit(new DistributedTask<Long>(new SomeTask()));
+        Assert.assertEquals(bean.value, f2.get().longValue());
     }
 
 }

@@ -71,7 +71,7 @@ public final class Serializer extends AbstractSerializer {
         final Object obj = toObject(byteArray);
         final ManagedContext managedContext = ThreadContext.get().getCurrentManagedContext();
         if (managedContext != null) {
-            managedContext.inspect(obj);
+            managedContext.initialize(obj);
         }
         return obj;
     }

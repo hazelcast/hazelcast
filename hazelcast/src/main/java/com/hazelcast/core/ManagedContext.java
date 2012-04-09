@@ -17,10 +17,19 @@
 package com.hazelcast.core;
 
 /**
+ * Container managed context, such as Spring or Guice etc.
+ *
  * @mdogan 4/6/12
  */
+
 public interface ManagedContext {
 
-    void inspect(Object obj);
+    /**
+     * Initialize the given object instance. This is intended for repopulating select fields and
+     * methods, either for new instances or for deserialized instances.
+     *
+     * @param obj Object to initialize
+     */
+    void initialize(Object obj);
 
 }

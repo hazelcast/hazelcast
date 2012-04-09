@@ -36,7 +36,7 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
         super();
     }
 
-    public void inspect(final Object obj) {
+    public void initialize(final Object obj) {
         if (obj != null) {
             Class clazz = obj.getClass();
             if (clazz.isAnnotationPresent(SpringAware.class)) {

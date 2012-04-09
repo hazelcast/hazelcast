@@ -19,6 +19,8 @@ package com.hazelcast.spring.context;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+
 /**
  * @mdogan 4/6/12
  */
@@ -26,5 +28,12 @@ import org.springframework.stereotype.Component;
 @Component("someBean")
 @Scope("singleton")
 public class SomeBean {
+
+    long value;
+
+    @PostConstruct
+    void init() {
+        value = System.currentTimeMillis();
+    }
 
 }

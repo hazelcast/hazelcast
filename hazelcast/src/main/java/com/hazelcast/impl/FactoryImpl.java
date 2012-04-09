@@ -372,6 +372,7 @@ public class FactoryImpl implements HazelcastInstance {
     public FactoryImpl(String name, Config config) {
         this.name = name;
         node = new Node(this, config);
+        managedContext = new HazelcastManagedContext(this, config.getManagedContext());
         proxyFactory = node.initializer.getProxyFactory();
         logger = node.getLogger(FactoryImpl.class.getName());
         lifecycleService = new LifecycleServiceImpl(FactoryImpl.this);
@@ -383,7 +384,6 @@ public class FactoryImpl implements HazelcastInstance {
             throw new IllegalStateException("Node failed to start!");
         }
 
-        managedContext = new HazelcastManagedContext(this, config.getManagedContext());
         final Set<Member> members = node.getClusterImpl().getMembers();
         if (members.size() > 1) {
             Member target = null;

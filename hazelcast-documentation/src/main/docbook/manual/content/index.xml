@@ -130,6 +130,7 @@
     <chapter xml:id="SpringIntegration">
         <title>Spring Integration</title>
         <xi:include href="spring/SpringConfig.xml"/>
+        <xi:include href="spring/SpringContext.xml"/>
         <xi:include href="spring/SpringCache.xml"/>
         <xi:include href="spring/SpringHibernate.xml"/>
     </chapter>
