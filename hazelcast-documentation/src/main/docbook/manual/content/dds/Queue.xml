@@ -42,30 +42,13 @@ if (task != null) {
         <literal>MyTask</literal>
         in the example above), that are (en/de)queued have to
         be<literal>Serializable</literal>. Maximum capacity per JVM and the TTL (Time to Live)
-        for a queue can be configured as shown in the example below.
-        <programlisting language="xml"><![CDATA[<hazelcast>
-    ...
-    <queue name="tasks">
-        <!--
-            Maximum size of the queue. When a JVM's local queue size reaches the maximum,
-            all put/offer operations will get blocked until the queue size
-            of the JVM goes down below the maximum.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
-        -->
-        <max-size-per-jvm>10000</max-size-per-jvm>
-
-        <!--
-            Maximum number of seconds for each item to stay in the queue. Items that are
-            not consumed in <time-to-live-seconds> will get automatically evicted from the queue.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-        -->
-        <time-to-live-seconds>0</time-to-live-seconds>
-    </queue>
-</hazelcast>
-]]></programlisting>
-        As of version 1.9.3, distributed queues are backed by distributed maps. Thus,
-        queues can have custom backup counts and persistent storage. Hazelcast will generate
-        cluster-wide unique id for each element in the queue. Sample configuration:
+        for a queue can be configured.
+        <para>
+            Distributed queues are backed by distributed maps. Thus,
+            queues can have custom backup counts and persistent storage. Hazelcast will generate
+            cluster-wide unique id for each element in the queue.
+        </para>
+        Sample configuration:
         <programlisting language="xml"><![CDATA[<hazelcast>
     ...
     <queue name="tasks">
