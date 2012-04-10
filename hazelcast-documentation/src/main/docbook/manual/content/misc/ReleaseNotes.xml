@@ -43,6 +43,11 @@
             </listitem>
 
             <listitem>
+                <para><link xlink:href="#SpringContext">Spring Dependency Injection support.</link>
+                </para>
+            </listitem>
+
+            <listitem>
                 <para>
                     <literal>Member.getUuid()</literal> will return UUID for node.
                 </para>
@@ -55,7 +60,7 @@
 
             <listitem>
                 <para>Fixed issues: 809, 811, 816, 818 (http://code.google.com/p/hazelcast/issues/list)
-                      6, 92 (https://github.com/hazelcast/hazelcast/issues)
+                      6, 92, 99, 101, 102, 103, 104, 108, 114, 116, 118 (https://github.com/hazelcast/hazelcast/issues)
                 </para>
             </listitem>
         </itemizedlist>
