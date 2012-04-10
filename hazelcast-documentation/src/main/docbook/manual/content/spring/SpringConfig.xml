@@ -146,6 +146,17 @@
     <hz:members>10.10.1.2:5701, 10.10.1.3:5701</hz:members>
 </hz:client>
 ]]></programlisting>
+    Hazelcast also supports <code>lazy-init</code>, <code>scope</code> and <code>depends-on</code> bean attributes.
+    <programlisting language="xml"><![CDATA[
+<hz:hazelcast id="instance" lazy-init="true" scope="singleton">
+    ...
+</hz:hazelcast>
+
+<hz:client id="client" scope="prototype" depends-on="instance">
+    ...
+</hz:client>
+
+]]></programlisting>
     You can declare beans for the following Hazelcast objects:
     <itemizedlist>
         <listitem>
@@ -175,17 +186,29 @@
         <listitem>
             <para>atomicNumber</para>
         </listitem>
+        <listitem>
+            <para>semaphore</para>
+        </listitem>
+        <listitem>
+            <para>countDownLatch</para>
+        </listitem>
+        <listitem>
+            <para>lock</para>
+        </listitem>
     </itemizedlist>
     Example:
-    <programlisting language="xml"><![CDATA[<hz:map id="map" instance-ref="instance" name="map"/>
-<hz:multiMap id="multiMap" instance-ref="instance" name="multiMap"/>
-<hz:queue id="queue" instance-ref="instance" name="queue"/>
-<hz:topic id="topic" instance-ref="instance" name="topic"/>
-<hz:set id="set" instance-ref="instance" name="set"/>
+    <programlisting language="xml"><![CDATA[<hz:map id="map" instance-ref="client" name="map" lazy-init="true" />
+<hz:multiMap id="multiMap" instance-ref="instance" name="multiMap" lazy-init="false" />
+<hz:queue id="queue" instance-ref="client" name="queue" lazy-init="true" depends-on="instance"/>
+<hz:topic id="topic" instance-ref="instance" name="topic" depends-on="instance, client"/>
+<hz:set id="set" instance-ref="instance" name="set" />
 <hz:list id="list" instance-ref="instance" name="list"/>
-<hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
+<hz:executorService id="executorService" instance-ref="client" name="executorService"/>
 <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
 <hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
+<hz:atomicNumber id="semaphore" instance-ref="client" name="semaphore"/>
+<hz:atomicNumber id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
+<hz:atomicNumber id="lock" instance-ref="client" name="lock"/>
 ]]></programlisting>
     </para>
 </sect1>
