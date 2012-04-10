@@ -80,7 +80,7 @@ public class CMap {
 
     final Address thisAddress;
 
-    public final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
+    final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
 
     final String name;
 
