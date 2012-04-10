@@ -16,16 +16,14 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.impl.FactoryImpl;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-public class HazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser {
+public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
@@ -33,7 +31,7 @@ public class HazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser 
         return springXmlBuilder.getBeanDefinition();
     }
 
-    private static class SpringXmlBuilder extends AbstractXmlConfigHelper {
+    private class SpringXmlBuilder extends SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
 
@@ -51,11 +49,13 @@ public class HazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser 
         }
 
         public void handle(Element element) {
+            handleCommonBeanAttributes(element, builder, parserContext);
             for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(node.getNodeName());
                 if ("config".equals(nodeName)) {
                     final HazelcastConfigBeanDefinitionParser configParser = new HazelcastConfigBeanDefinitionParser();
-                    final AbstractBeanDefinition configBeanDef = configParser.parseInternal((Element) node, parserContext);
+                    final AbstractBeanDefinition configBeanDef = configParser
+                            .parseInternal((Element) node, parserContext);
                     this.builder.addConstructorArgValue(configBeanDef);
                 }
             }

@@ -24,7 +24,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
 
     public void init() {
         registerBeanDefinitionParser("config", new HazelcastConfigBeanDefinitionParser());
-        registerBeanDefinitionParser("hazelcast", new HazelcastBeanDefinitionParser());
+        registerBeanDefinitionParser("hazelcast", new HazelcastInstanceDefinitionParser());
         registerBeanDefinitionParser("client", new HazelcastClientBeanDefinitionParser());
         registerBeanDefinitionParser("hibernate-cache-provider", new CacheProviderBeanDefinitionParser());
         registerBeanDefinitionParser("hibernate-region-factory", new RegionFactoryBeanDefinitionParser());
@@ -33,7 +33,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                                 "executorService", "idGenerator", "atomicNumber",
                                 "countDownLatch", "semaphore", "lock"};
         for (final String type : types) {
-            registerBeanDefinitionParser(type, new HazelcastInstanceBeanDefinitionParser(type));
+            registerBeanDefinitionParser(type, new HazelcastTypeBeanDefinitionParser(type));
         }
     }
 }

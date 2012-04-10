@@ -18,20 +18,16 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.GroupConfig;
-import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
 import org.springframework.beans.factory.support.ManagedList;
-import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionParser {
+public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
@@ -39,7 +35,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
         return springXmlBuilder.getBeanDefinition();
     }
 
-    private static class SpringXmlBuilder extends AbstractXmlConfigHelper {
+    private class SpringXmlBuilder extends SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
 
@@ -57,17 +53,9 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
             this.builder.setFactoryMethod("newHazelcastClient");
             this.builder.setDestroyMethodName("shutdown");
             this.members = new ManagedList();
-            this.configBuilder = createBeanBuilder(ClientConfig.class, "client-config");
-            this.groupConfigBuilder = createBeanBuilder(GroupConfig.class, "client-group-config");
+            this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientConfig.class);
+            this.groupConfigBuilder = BeanDefinitionBuilder.rootBeanDefinition(GroupConfig.class);
             configBuilder.addPropertyValue("groupConfig", groupConfigBuilder.getBeanDefinition());
-        }
-
-        protected BeanDefinitionBuilder createBeanBuilder(final Class clazz, final String id) {
-            BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(clazz);
-            final AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
-            BeanDefinitionHolder holder = new BeanDefinitionHolder(beanDefinition, id);
-            BeanDefinitionReaderUtils.registerBeanDefinition(holder, parserContext.getRegistry());
-            return builder;
         }
 
         public AbstractBeanDefinition getBeanDefinition() {
@@ -75,6 +63,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractBeanDefinitionP
         }
 
         public void handle(Element element) {
+            handleCommonBeanAttributes(element, builder, parserContext);
             final NamedNodeMap attrs = element.getAttributes();
             if (attrs != null) {
                 for (int a = 0; a < attrs.getLength(); a++) {

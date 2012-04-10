@@ -16,20 +16,22 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.core.HazelcastInstance;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
-public class HazelcastInstanceBeanDefinitionParser extends AbstractBeanDefinitionParser {
+public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
+    private final String type;
     private final String methodName;
 
-    public HazelcastInstanceBeanDefinitionParser(final String type) {
+    public HazelcastTypeBeanDefinitionParser(final String type) {
+        super();
+        this.type = type;
         this.methodName = "get" + Character.toUpperCase(type.charAt(0)) + type.substring(1);
     }
 
@@ -41,7 +43,7 @@ public class HazelcastInstanceBeanDefinitionParser extends AbstractBeanDefinitio
         return builder.getBeanDefinition();
     }
 
-    private static class SpringXmlBuilder extends AbstractXmlConfigHelper {
+    private class SpringXmlBuilder extends SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
 
@@ -57,20 +59,23 @@ public class HazelcastInstanceBeanDefinitionParser extends AbstractBeanDefinitio
         }
 
         public void handle(Element element) {
-            final NamedNodeMap atts = element.getAttributes();
-            if (atts != null) {
-                for (int a = 0; a < atts.getLength(); a++) {
-                    final org.w3c.dom.Node att = atts.item(a);
-                    String name = att.getNodeName();
-                    final String value = att.getNodeValue();
-                    if ("name".equals(name)) {
-                        this.builder.addConstructorArgValue(value);
-                    } else if ("instance-ref".equals(name)) {
-                        this.builder.getRawBeanDefinition().setFactoryBeanName(value);
-                    } else {
-                        continue;
-                    }
+            handleCommonBeanAttributes(element, builder, parserContext);
+            final NamedNodeMap attrs = element.getAttributes();
+            if (attrs != null) {
+                Node instanceRefNode = attrs.getNamedItem("instance-ref") ;
+                if (instanceRefNode == null) {
+                    throw new IllegalStateException("'instance-ref' attribute is required for creating" +
+                                                    " Hazelcast " + type);
                 }
+                final String instanceRef = getValue(instanceRefNode);
+                builder.getRawBeanDefinition().setFactoryBeanName(instanceRef);
+                builder.addDependsOn(instanceRef);
+
+                Node nameNode = attrs.getNamedItem("name");
+                if (nameNode == null) {
+                    nameNode = attrs.getNamedItem("id");
+                }
+                builder.addConstructorArgValue(getValue(nameNode));
             }
         }
     }

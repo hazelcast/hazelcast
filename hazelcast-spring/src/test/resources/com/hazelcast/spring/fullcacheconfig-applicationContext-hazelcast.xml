@@ -9,7 +9,7 @@
 		http://www.hazelcast.com/schema/spring/hazelcast-spring-2.1.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
-          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE" >
         <property name="locations">
             <list>
                 <value>classpath:/hazelcast-default.properties</value>
