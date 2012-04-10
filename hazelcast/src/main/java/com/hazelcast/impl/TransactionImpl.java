@@ -424,7 +424,7 @@ public class TransactionImpl implements Transaction {
 
         public void commitQueue() {
             if (!removed) {
-                offerAgain();
+                factory.node.blockingQueueManager.offerCommit(name, key, value);
             }
         }
 
@@ -449,10 +449,6 @@ public class TransactionImpl implements Transaction {
             if (removed) {
                 factory.node.blockingQueueManager.rollbackPoll(name, key, value);
             }
-        }
-
-        private void offerAgain() {
-            factory.node.blockingQueueManager.offerCommit(name, key, value);
         }
 
         @Override

@@ -125,6 +125,9 @@
         <param-value>true</param-value>
     </init-param>
 </filter>
+]]></programlisting>
+
+<programlisting language="xml"><![CDATA[
 <filter-mapping>
     <filter-name>hazelcast-filter</filter-name>
     <url-pattern>/*</url-pattern>
@@ -148,5 +151,34 @@
     <literal>WebFilter</literal>
     and it will put the
     session objects into Hazelcast distributed map if needed.
+
+    <para>
+        <emphasis role="bold">Info about sticky-sessions:</emphasis>
+        Hazelcast holds whole session attributes in a distributed map and in local http session. Local session is required
+        for fast access to data and distributed map is needed for fail-safety.
+        <itemizedlist>
+            <listitem>
+                <para>
+                    <emphasis role="italic">If sticky-session is not used, whenever a session a attribute
+                    is updated in a node (in both node local session and clustered cache),
+                    that attribute should be invalidated in all other nodes' local sessions,
+                    because now they have dirty value. So when a request arrives one of those other nodes
+                    that attribute value is fetched from clustered cache.</emphasis>
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>
+                    <emphasis role="italic">To overcome performance penalty of sending invalidation messages during updates,
+                        sticky-sessions can be used.
+                        If Hazelcast knows sessions are sticky, invalidation will not be send, because Hazelcast assumes there is
+                        no other local session at the moment. When a server is down, requests belonging to a session hold
+                        in that server will routed to other one and that server will fetch session data from clustered cache.
+                        That means using sticky-sessions, one will not suffer performance penalty of accessing clustered data
+                        and can benefit recover from a server failure.</emphasis>
+                </para>
+            </listitem>
+        </itemizedlist>
+    </para>
 
 </para>
