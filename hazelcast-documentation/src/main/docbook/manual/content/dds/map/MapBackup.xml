@@ -22,12 +22,13 @@
     <para>Hazelcast will distribute map entries onto multiple JVMs (cluster members). Each JVM
         holds some portion of the data but we don't want to lose data when a member JVM crashes.
         To provide data-safety, Hazelcast allows you to specify the number of backup copies you
-        want to have. That way data on a JVM will be synchronously and/or asynchronously copied onto other JVM(s). By
-        default, Hazelcast will have one sync backup copy. Say a map configured to have one sync and one async backup;
-        when a <literal>map.put(key,value)</literal>
-        call returns, it means entry is updated on the both owner and first backup nodes. Second (async) backup will be taken
-        asynchronously and will not block <code>map.put(key, value)</code> operation. Trade-off between sync and async backup is
-        strong data safety vs lower latency and weak data safety.
+        want to have. That way data on a JVM will be copied onto other JVM(s). Hazelcast supports both
+        <literal>sync</literal> and <literal>async</literal> backups.
+        <literal>Sync</literal> backups block operations until backups are successfully copied to
+        backups nodes (or deleted from backup nodes in case of remove)
+        and acknowledgements are received. In contrast, <literal>async</literal> backups do not block
+        operations, they are fire &amp; forget and do not require acknowledgements.
+        By default, Hazelcast will have one sync backup copy.
         If backup count &gt;= 1, then each member will carry both owned entries and backup copies of other
         member(s). So for the <literal>map.get(key)</literal> call, it is possible that calling member has backup
         copy of that key but by default, <literal>map.get(key)</literal> will always read the

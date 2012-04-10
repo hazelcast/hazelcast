@@ -23,6 +23,8 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.CMap.InitializationState;
+import com.hazelcast.impl.base.HazelcastManagedContext;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
@@ -73,6 +75,8 @@ public class FactoryImpl implements HazelcastInstance {
     final ILogger logger;
 
     final LifecycleServiceImpl lifecycleService;
+
+    final ManagedContext managedContext ;
 
     public final Node node;
 
@@ -368,6 +372,7 @@ public class FactoryImpl implements HazelcastInstance {
     public FactoryImpl(String name, Config config) {
         this.name = name;
         node = new Node(this, config);
+        managedContext = new HazelcastManagedContext(this, config.getManagedContext());
         proxyFactory = node.initializer.getProxyFactory();
         logger = node.getLogger(FactoryImpl.class.getName());
         lifecycleService = new LifecycleServiceImpl(FactoryImpl.this);
@@ -409,10 +414,6 @@ public class FactoryImpl implements HazelcastInstance {
         }
         managementService = new ManagementService(this);
         managementService.register();
-    }
-
-    public Set<String> getLongInstanceNames() {
-        return proxiesByName.keySet();
     }
 
     @Override

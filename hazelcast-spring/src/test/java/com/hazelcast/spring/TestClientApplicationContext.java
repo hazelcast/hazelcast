@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.security.Credentials;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -36,6 +37,10 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
 public class TestClientApplicationContext {
+
+    static {
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+    }
 
     @Resource (name = "client")
     private HazelcastClient client;

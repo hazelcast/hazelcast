@@ -208,14 +208,6 @@ public class BlockingQueueManager extends BaseManager {
                 txn.attachPutOp(name, key, dataItem, timeout, true);
             } else {
                 storeQueueItem(name, key, dataItem, index);
-                final BQ bq = getBQ(name);
-                if (bq != null && bq.mapListeners.size() > 0) {
-                    enqueueAndReturn(new Processable() {
-                        public void process() {
-                            fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_ADDED, dataItem, thisAddress);
-                        }
-                    });
-                }
             }
             return true;
         }
@@ -254,8 +246,8 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    public void offerCommit(String name, Object key, Object obj) {
-        storeQueueItem(name, key, obj, Integer.MAX_VALUE);
+    public void offerCommit(String name, Object key, Data item) {
+        storeQueueItem(name, key, item, Integer.MAX_VALUE);
     }
 
     public void rollbackPoll(String name, Object key, Object obj) {
@@ -267,14 +259,22 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    private void storeQueueItem(String name, Object key, Object obj, int index) {
+    private void storeQueueItem(final String name, final Object key, final Data item, int index) {
         IMap imap = getStorageMap(name);
         final Data dataKey = toData(key);
-        imap.put(dataKey, obj);
+        imap.put(dataKey, item);
         if (addKeyAsync) {
             sendKeyToMaster(name, dataKey, index);
         } else {
             addKey(name, dataKey, index);
+        }
+        final BQ bq = getBQ(name);
+        if (bq != null && bq.mapListeners.size() > 0) {
+            enqueueAndReturn(new Processable() {
+                public void process() {
+                    fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_ADDED, item, thisAddress);
+                }
+            });
         }
     }
 

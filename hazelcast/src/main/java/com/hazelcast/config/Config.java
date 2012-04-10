@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.merge.AddNewEntryMergePolicy;
 import com.hazelcast.merge.HigherHitsMergePolicy;
 import com.hazelcast.merge.LatestUpdateMergePolicy;
@@ -90,7 +91,10 @@ public class Config implements DataSerializable {
 
     private ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig();
 
+    private ManagedContext managedContext;
+
     private String licenseKey;
+
 
     public Config() {
         String liteMemberProp = System.getProperty("hazelcast.super.client");
@@ -669,6 +673,14 @@ public class Config implements DataSerializable {
     public Config setPartitionGroupConfig(PartitionGroupConfig partitionGroupConfig) {
         this.partitionGroupConfig = partitionGroupConfig;
         return this;
+    }
+
+    public ManagedContext getManagedContext() {
+        return managedContext;
+    }
+
+    public void setManagedContext(final ManagedContext managedContext) {
+        this.managedContext = managedContext;
     }
 
     /**

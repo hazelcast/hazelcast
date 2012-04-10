@@ -36,6 +36,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 import static java.text.MessageFormat.format;
 
 public class ConnectionManager implements MembershipListener {
+
     private volatile Connection currentConnection;
     private final AtomicInteger connectionIdGenerator = new AtomicInteger(-1);
     private final List<InetSocketAddress> clusterMembers = new CopyOnWriteArrayList<InetSocketAddress>();
@@ -69,7 +70,8 @@ public class ConnectionManager implements MembershipListener {
                 long diff = client.getInRunnable().lastReceived - System.currentTimeMillis();
                 try {
                     if (diff >= TIMEOUT / 5 && diff < TIMEOUT) {
-                        logger.log(Level.FINEST, "Being idle for some time, Doing a getMembers() call to ping the server!");
+                        logger.log(Level.FINEST,
+                                   "Being idle for some time, Doing a getMembers() call to ping the server!");
                         final CountDownLatch latch = new CountDownLatch(1);
                         new Thread(new Runnable() {
                             public void run() {
@@ -83,7 +85,8 @@ public class ConnectionManager implements MembershipListener {
                             logger.log(Level.WARNING, "Server didn't respond to client's ping call within 10 seconds!");
                         }
                     } else if (diff >= TIMEOUT) {
-                        logger.log(Level.WARNING, "Server didn't respond to client's requests for " + TIMEOUT / 1000 + " seconds. Assuming it is dead, closing the connection!");
+                        logger.log(Level.WARNING, "Server didn't respond to client's requests for " + TIMEOUT / 1000 +
+                                                  " seconds. Assuming it is dead, closing the connection!");
                         currentConnection.close();
                     }
                 } catch (InterruptedException e) {
@@ -98,7 +101,7 @@ public class ConnectionManager implements MembershipListener {
         if (currentConnection == null) {
             synchronized (this) {
                 currentConnection = lookForLiveConnection(config.getInitialConnectionAttemptLimit(),
-                        config.getReConnectionTimeOut());
+                                                          config.getReConnectionTimeOut());
             }
         }
         return currentConnection;
@@ -148,8 +151,8 @@ public class ConnectionManager implements MembershipListener {
                 attempt++;
                 final long t = next - System.currentTimeMillis();
                 logger.log(Level.INFO, format("Unable to get alive cluster connection," +
-                        " try in {0} ms later, attempt {1} of {2}.",
-                        Math.max(0, t), attempt, attemptsLimit));
+                                              " try in {0} ms later, attempt {1} of {2}.",
+                                              Math.max(0, t), attempt, attemptsLimit));
                 if (t > 0) {
                     try {
                         Thread.sleep(t);
@@ -174,7 +177,7 @@ public class ConnectionManager implements MembershipListener {
             }
         } catch (Throwable e) {
             logger.log(Level.INFO, "got an exception on closeConnection "
-                    + connection + ":" + e.getMessage(), e);
+                                   + connection + ":" + e.getMessage(), e);
         }
     }
 
@@ -220,9 +223,12 @@ public class ConnectionManager implements MembershipListener {
         boolean lost = false;
         synchronized (this) {
             if (currentConnection != null &&
-                    connection != null &&
-                    currentConnection.getVersion() == connection.getVersion()) {
+                connection != null &&
+                currentConnection.getVersion() == connection.getVersion()) {
                 logger.log(Level.WARNING, "Connection to " + currentConnection + " is lost");
+                // remove current connection's address from member list.
+                // if address is IPv6 then remove all possible socket addresses (for all scopes)
+                while (clusterMembers.remove(currentConnection.getAddress())) ;
                 currentConnection = null;
                 lost = true;
                 try {
@@ -267,21 +273,28 @@ public class ConnectionManager implements MembershipListener {
         return new Connection(address, connectionIdGenerator.incrementAndGet());
     }
 
-    public synchronized void memberAdded(MembershipEvent membershipEvent) {
-        if (!this.clusterMembers.contains(membershipEvent.getMember().getInetSocketAddress())) {
-            this.clusterMembers.add(membershipEvent.getMember().getInetSocketAddress());
-        }
+    public void memberAdded(MembershipEvent membershipEvent) {
+        InetSocketAddress address = membershipEvent.getMember().getInetSocketAddress();
+        Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getAddress(),
+                                                                                           address.getPort());
+        clusterMembers.addAll(addresses);
     }
 
-    public synchronized void memberRemoved(MembershipEvent membershipEvent) {
-        this.clusterMembers.remove(membershipEvent.getMember().getInetSocketAddress());
+    public void memberRemoved(MembershipEvent membershipEvent) {
+        InetSocketAddress address = membershipEvent.getMember().getInetSocketAddress();
+        Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getAddress(),
+                                                                                           address.getPort());
+        clusterMembers.removeAll(addresses);
     }
 
-    public synchronized void updateMembers() {
+    public void updateMembers() {
         Set<Member> members = client.getCluster().getMembers();
         clusterMembers.clear();
         for (Member member : members) {
-            clusterMembers.add(member.getInetSocketAddress());
+            InetSocketAddress address = member.getInetSocketAddress();
+            Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getAddress(),
+                                                                                               address.getPort());
+            clusterMembers.addAll(addresses);
         }
     }
 

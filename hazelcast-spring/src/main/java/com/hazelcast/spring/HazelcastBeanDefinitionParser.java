@@ -17,7 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.impl.FactoryImpl;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
@@ -41,8 +41,8 @@ public class HazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser 
 
         public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
-            this.builder = BeanDefinitionBuilder.rootBeanDefinition(Hazelcast.class);
-            this.builder.setFactoryMethod("newHazelcastInstance");
+            this.builder = BeanDefinitionBuilder.rootBeanDefinition(FactoryImpl.class);
+            this.builder.setFactoryMethod("newHazelcastInstanceProxy");
             this.builder.setDestroyMethodName("shutdown");
         }
 

@@ -230,6 +230,7 @@
     <xs:element name="atomicNumber" type="hazelcast-instance"/>
     <xs:element name="countDownLatch" type="hazelcast-instance"/>
     <xs:element name="semaphore" type="hazelcast-instance"/>
+    <xs:element name="lock" type="hazelcast-instance"/>
 
     <xs:element name="hibernate-cache-provider" type="hibernate-cache"/>
     <xs:element name="hibernate-region-factory" type="hibernate-cache"/>

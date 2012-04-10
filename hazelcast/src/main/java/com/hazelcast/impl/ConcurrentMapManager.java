@@ -354,19 +354,24 @@ public class ConcurrentMapManager extends BaseManager {
         ThreadContext tc = ThreadContext.get();
         Data dataKey = toData(key);
         CMap cmap = getMap(name);
-        LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
-        boolean shouldUnlock = localLock != null
-                && localLock.getThreadId() == tc.getThreadId()
-                && localLock.getCount() == 1;
+        final LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
+        final boolean shouldUnlock = localLock != null
+                && localLock.getThreadId() == tc.getThreadId();
+        final boolean shouldRemove = shouldUnlock && localLock.getCount() == 1;
         MPut mput = tc.getCallCache(node.factory).getMPut();
-        if (shouldUnlock) {
+        if (shouldRemove) {
             mput.txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, -1, -1);
-            cmap.mapLocalLocks.remove(dataKey);
-        } else {
+            // remove if current LocalLock is not changed
+            cmap.mapLocalLocks.remove(dataKey, localLock);
+        } else if (shouldUnlock) {
             mput.txnalPut(CONCURRENT_MAP_PUT, name, key, value, -1, -1);
-            if (localLock != null) {
-                localLock.decrementAndGet();
-            }
+            localLock.decrementAndGet();
+        } else {
+            mput.clearRequest();
+            final String error = "Current thread is not owner of lock. putAndUnlock could not be completed! " +
+                                 "Thread-Id: " + tc.getThreadId() + ", LocalLock: " + localLock;
+            logger.log(Level.WARNING, error);
+            throw new IllegalStateException(error);
         }
         mput.clearRequest();
     }
@@ -435,6 +440,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (localLock != null && localLock.getThreadId() == tc.getThreadId()) {
                 if (localLock.decrementAndGet() > 0) return true;
                 boolean unlocked = booleanCall(CONCURRENT_MAP_UNLOCK, name, dataKey, null, timeout, -1);
+                // remove if current LocalLock is not changed
                 cmap.mapLocalLocks.remove(dataKey, localLock);
                 if (unlocked) {
                     request.lockAddress = null;
@@ -1537,22 +1543,28 @@ public class ConcurrentMapManager extends BaseManager {
             return txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl);
         }
 
-        public Object put(String name, Object key, Object value, long timeout, long ttl, long txnId) {
+        public Object putAfterCommit(String name, Object key, Object value, long timeout, long ttl, long txnId) {
             Object result = null;
             if (txnId != -1) {
                 ThreadContext tc = ThreadContext.get();
                 Data dataKey = toData(key);
                 CMap cmap = getMap(name);
-                LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
-                boolean shouldUnlock = localLock != null
-                        && localLock.getThreadId() == tc.getThreadId()
-                        && localLock.getCount() == 1;
-                if (shouldUnlock) {
+                final LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
+                final boolean shouldUnlock = localLock != null
+                                             && localLock.getThreadId() == tc.getThreadId();
+                final boolean shouldRemove = shouldUnlock && localLock.getCount() == 1;
+                if (shouldRemove) {
                     result = txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, timeout, ttl, -1);
-                    cmap.mapLocalLocks.remove(dataKey);
-                } else {
+                    // remove if current LocalLock is not changed
+                    cmap.mapLocalLocks.remove(dataKey, localLock);
+                } else if (shouldUnlock) {
                     result = txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl, -1);
                     localLock.decrementAndGet();
+                } else {
+                    final String error = "Could not commit put operation! Current thread is not owner of " +
+                                         "transaction lock! Thread-Id: " + tc.getThreadId() + ", LocalLock: " + localLock;
+                    logger.log(Level.WARNING, error);
+                    throw new IllegalStateException(error);
                 }
             }
             return result;
