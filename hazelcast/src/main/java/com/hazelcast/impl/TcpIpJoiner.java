@@ -27,6 +27,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
+import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -70,9 +71,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                 //noinspection BusyWait
                 Thread.sleep(2000L);
             }
-            long joinStartTime = System.currentTimeMillis();
+            long joinStartTime = Clock.currentTimeMillis();
             long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
-            while (node.isActive() && !joined.get() && (System.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+            while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 final Connection connection = node.connectionManager.getOrConnect(requiredAddress);
                 if (connection == null) {
                     joinViaRequiredMember(joined);

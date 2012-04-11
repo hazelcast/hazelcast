@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.nio.Address;
 import junit.framework.Assert;
@@ -123,7 +124,7 @@ public class HazelcastClusterTest {
         System.setProperty("hazelcast.mancenter.enabled", "false");
         final CountDownLatch latch = new CountDownLatch(count);
         final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        final Random random = new Random(System.currentTimeMillis());
+        final Random random = new Random(Clock.currentTimeMillis());
         for (int i = 0; i < count; i++) {
             final int seed = i;
             new Thread(new Runnable() {
@@ -163,7 +164,7 @@ public class HazelcastClusterTest {
         System.setProperty("hazelcast.mancenter.enabled", "false");
         final CountDownLatch latch = new CountDownLatch(count);
         final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        final Random random = new Random(System.currentTimeMillis());
+        final Random random = new Random(Clock.currentTimeMillis());
         final Map<String, AtomicInteger> groups = new ConcurrentHashMap<String, AtomicInteger>();
         for (int i = 0; i < groupCount; i++) {
             groups.put("group" + i, new AtomicInteger(0));
@@ -211,7 +212,7 @@ public class HazelcastClusterTest {
         System.setProperty("hazelcast.mancenter.enabled", "false");
         final CountDownLatch latch = new CountDownLatch(count);
         final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        final Random random = new Random(System.currentTimeMillis());
+        final Random random = new Random(Clock.currentTimeMillis());
         for (int i = 0; i < count; i++) {
             final int seed = i;
             new Thread(new Runnable() {

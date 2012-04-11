@@ -23,6 +23,7 @@ import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 import java.util.Set;
@@ -31,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public abstract class AbstractJoiner implements Joiner {
-    private final long joinStartTime = System.currentTimeMillis();
+    private final long joinStartTime = Clock.currentTimeMillis();
     protected final Config config;
     protected final Node node;
     protected volatile ILogger logger;
@@ -86,7 +87,7 @@ public abstract class AbstractJoiner implements Joiner {
                 }
             }
             if (!node.joined() || !allConnected) {
-                if (System.currentTimeMillis() - joinStartTime < maxJoinMillis) {
+                if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
                     logger.log(Level.WARNING, "Failed to connect, node joined= " + node.joined() + ", allConnected= " + allConnected + " to all other members after " + checkCount + " seconds.");
                     logger.log(Level.WARNING, "Rebooting after 10 seconds.");
                     try {

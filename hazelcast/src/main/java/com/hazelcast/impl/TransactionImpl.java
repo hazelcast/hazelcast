@@ -22,6 +22,7 @@ import com.hazelcast.core.Prefix;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
+import com.hazelcast.util.Clock;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -236,7 +237,7 @@ public class TransactionImpl implements Transaction {
         if (rec.removed) {
             return null;
         }
-        rec.lastAccess = System.currentTimeMillis();
+        rec.lastAccess = Clock.currentTimeMillis();
         return rec.value;
     }
 

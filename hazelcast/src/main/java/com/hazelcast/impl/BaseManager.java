@@ -27,6 +27,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
@@ -186,7 +187,7 @@ public abstract class BaseManager {
 
         public void onEnqueue() {
             if (firstEnqueueTime == -1) {
-                firstEnqueueTime = System.currentTimeMillis();
+                firstEnqueueTime = Clock.currentTimeMillis();
             }
             enqueueCount++;
         }
@@ -211,7 +212,7 @@ public abstract class BaseManager {
         }
 
         protected int getDurationSeconds() {
-            return (int) (System.currentTimeMillis() - firstEnqueueTime) / 1000;
+            return (int) (Clock.currentTimeMillis() - firstEnqueueTime) / 1000;
         }
 
         @Override
@@ -719,7 +720,7 @@ public abstract class BaseManager {
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], firstEnqueue=" + (System.currentTimeMillis() - firstEnqueueTime) / 1000 +
+                    "], firstEnqueue=" + (Clock.currentTimeMillis() - firstEnqueueTime) / 1000 +
                     "sn., enqueueCount=" + enqueueCount +
                     ", " + request +
                     ", target=" + getTarget() +
@@ -864,7 +865,7 @@ public abstract class BaseManager {
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], firstEnqueue=" + (System.currentTimeMillis() - firstEnqueueTime) / 1000 +
+                    "], firstEnqueue=" + (Clock.currentTimeMillis() - firstEnqueueTime) / 1000 +
                     "sn., enqueueCount=" + enqueueCount +
                     ", " + request +
                     ", target=" + getTarget() +

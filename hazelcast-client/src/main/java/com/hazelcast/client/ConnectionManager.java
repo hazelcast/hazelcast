@@ -22,6 +22,7 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -67,7 +68,7 @@ public class ConnectionManager implements MembershipListener {
         heartbeatTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                long diff = client.getInRunnable().lastReceived - System.currentTimeMillis();
+                long diff = client.getInRunnable().lastReceived - Clock.currentTimeMillis();
                 try {
                     if (diff >= TIMEOUT / 5 && diff < TIMEOUT) {
                         logger.log(Level.FINEST,
@@ -118,7 +119,7 @@ public class ConnectionManager implements MembershipListener {
             boolean restored = false;
             int attempt = 0;
             while (currentConnection == null && running && !Thread.interrupted()) {
-                final long next = System.currentTimeMillis() + reconnectionTimeout;
+                final long next = Clock.currentTimeMillis() + reconnectionTimeout;
                 synchronized (this) {
                     if (currentConnection == null) {
                         final Connection connection = searchForAvailableConnection();
@@ -149,7 +150,7 @@ public class ConnectionManager implements MembershipListener {
                     break;
                 }
                 attempt++;
-                final long t = next - System.currentTimeMillis();
+                final long t = next - Clock.currentTimeMillis();
                 logger.log(Level.INFO, format("Unable to get alive cluster connection," +
                                               " try in {0} ms later, attempt {1} of {2}.",
                                               Math.max(0, t), attempt, attemptsLimit));

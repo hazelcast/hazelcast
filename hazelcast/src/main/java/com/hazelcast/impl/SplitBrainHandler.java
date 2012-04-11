@@ -17,6 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.Clock;
 
 public class SplitBrainHandler implements Runnable {
     final Node node;
@@ -32,19 +33,19 @@ public class SplitBrainHandler implements Runnable {
         this.logger = node.getLogger(SplitBrainHandler.class.getName());
         FIRST_RUN_DELAY_MILLIS = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong() * 1000L;
         NEXT_RUN_DELAY_MILLIS = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000L;
-        lastRun = System.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
+        lastRun = Clock.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
     }
 
     public void run() {
         if (node.isMaster() && node.joined() && node.isActive()) {
-            long now = System.currentTimeMillis();
+            long now = Clock.currentTimeMillis();
             if (!inProgress && (now - lastRun > NEXT_RUN_DELAY_MILLIS) && node.clusterManager.shouldTryMerge()) {
                 inProgress = true;
                 node.executorManager.executeNow(new FallThroughRunnable() {
                     @Override
                     public void doRun() {
                         searchForOtherClusters();
-                        lastRun = System.currentTimeMillis();
+                        lastRun = Clock.currentTimeMillis();
                         inProgress = false;
                     }
                 });
@@ -60,7 +61,7 @@ public class SplitBrainHandler implements Runnable {
     }
 
     public void restart() {
-        lastRun = System.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
+        lastRun = Clock.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
         node.factory.restart();
     }
 }

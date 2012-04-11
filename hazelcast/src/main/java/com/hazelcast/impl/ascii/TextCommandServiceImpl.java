@@ -17,6 +17,7 @@
 package com.hazelcast.impl.ascii;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.ascii.memcache.*;
@@ -46,7 +47,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     private final AtomicLong sets = new AtomicLong();
     private final AtomicLong deletes = new AtomicLong();
     private final AtomicLong getHits = new AtomicLong();
-    private final long startTime = System.currentTimeMillis();
+    private final long startTime = Clock.currentTimeMillis();
     private volatile ResponseThreadRunnable responseThreadRunnable;
     private volatile boolean running = true;
     private final ILogger logger;
@@ -81,7 +82,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
 
     public Stats getStats() {
         Stats stats = new Stats();
-        stats.uptime = (int) ((System.currentTimeMillis() - startTime) / 1000);
+        stats.uptime = (int) ((Clock.currentTimeMillis() - startTime) / 1000);
         stats.threads = parallelExecutor.getActiveCount();
         stats.waiting_requests = parallelExecutor.getPoolSize();
         stats.cmd_get = gets.get();
@@ -131,7 +132,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         if (ttl <= MONTH_SECONDS) {
             return ttl;
         } else {
-            return ttl - (int) (System.currentTimeMillis() / 1000);
+            return ttl - (int) (Clock.currentTimeMillis() / 1000);
         }
     }
 

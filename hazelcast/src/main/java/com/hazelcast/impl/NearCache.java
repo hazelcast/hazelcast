@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.impl.concurrentmap.RecordFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.SortedHashMap;
 
 import java.util.*;
@@ -59,7 +60,7 @@ public class NearCache {
     }
 
     public boolean containsKey(Object key) {
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         CacheEntry entry = cache.get(key);
         return !(entry == null || entry.isValid(now));
     }
@@ -72,7 +73,7 @@ public class NearCache {
     }
 
     public Object get(Object key) {
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         CacheEntry entry = cache.get(key);
         if (entry == null) {
             return null;
@@ -229,7 +230,7 @@ public class NearCache {
                 throw new IllegalStateException("keyData cannot be null");
             }
             this.record = recordFactory.createNewNearCacheRecord(cmap, keyData, valueData);
-            this.createTime = System.currentTimeMillis();
+            this.createTime = Clock.currentTimeMillis();
             touch(createTime);
         }
 

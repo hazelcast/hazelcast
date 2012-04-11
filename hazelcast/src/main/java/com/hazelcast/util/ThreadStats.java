@@ -28,7 +28,7 @@ public class ThreadStats {
         this.runCount = runCount;
         this.waitCount = waitCount;
         this.running = running;
-        this.createMillis = System.currentTimeMillis();
+        this.createMillis = Clock.currentTimeMillis();
     }
 
     public long getRunCount() {

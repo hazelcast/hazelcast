@@ -75,9 +75,9 @@ public class SimpleMapTestFromClient {
                         int key = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 100));
                         if (operation < GET_PERCENTAGE) {
-//                            long start = System.currentTimeMillis();
+//                            long start = Clock.currentTimeMillis();
                             map.get(String.valueOf(key));
-//                            System.out.println("Get takes " + (System.currentTimeMillis() - start) + " ms" );
+//                            System.out.println("Get takes " + (Clock.currentTimeMillis() - start) + " ms" );
                             stats.gets.incrementAndGet();
                         } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
                             map.put(String.valueOf(key), new byte[VALUE_SIZE]);

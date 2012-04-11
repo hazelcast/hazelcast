@@ -21,6 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.Transaction;
+import com.hazelcast.util.Clock;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -209,7 +210,7 @@ public class LongRunningTransactionTest {
             es = Executors.newFixedThreadPool(threadCount);
             hazelcast = Hazelcast.newHazelcastInstance(new Config());
             esStats = Executors.newSingleThreadExecutor();
-            createTime = System.currentTimeMillis();
+            createTime = Clock.currentTimeMillis();
         }
 
         public void stop() {
@@ -285,7 +286,7 @@ public class LongRunningTransactionTest {
             return "TheNode [" + nodeId +
                     "] entryCount=" + entryCount +
                     ", threadCount=" + threadCount +
-                    ", liveSeconds=" + ((System.currentTimeMillis() - createTime) / 1000) +
+                    ", liveSeconds=" + ((Clock.currentTimeMillis() - createTime) / 1000) +
                     ", running=" + running +
                     '}';
         }

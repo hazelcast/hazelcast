@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl.base;
 
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.Request;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,7 +44,7 @@ public abstract class ScheduledAction {
     public abstract boolean consume();
 
     public boolean expired() {
-        return !valid || (timeout != -1 && System.currentTimeMillis() >= getExpireTime());
+        return !valid || (timeout != -1 && Clock.currentTimeMillis() >= getExpireTime());
     }
 
     public long getExpireTime() {
@@ -81,7 +82,7 @@ public abstract class ScheduledAction {
     public void setTimeout(long newTimeout) {
         if (newTimeout > -1) {
             this.timeout = newTimeout;
-            timeToExpire = System.currentTimeMillis() + newTimeout;
+            timeToExpire = Clock.currentTimeMillis() + newTimeout;
             if (timeToExpire < 0) {
                 this.timeout = -1;
                 this.timeToExpire = Long.MAX_VALUE;

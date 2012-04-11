@@ -16,6 +16,8 @@
 
 package com.hazelcast.impl.base;
 
+import com.hazelcast.util.Clock;
+
 public class SystemLog {
     enum Type {
         NODE,
@@ -26,7 +28,7 @@ public class SystemLog {
         NONE
     }
 
-    protected long date = System.currentTimeMillis();
+    protected long date = Clock.currentTimeMillis();
 
     protected Type type = Type.NONE;
 

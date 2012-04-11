@@ -20,6 +20,7 @@ import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.util.Clock;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -40,9 +41,9 @@ public class MulticastJoiner extends AbstractJoiner {
 
     public void doJoin(AtomicBoolean joined) {
         int tryCount = 0;
-        long joinStartTime = System.currentTimeMillis();
+        long joinStartTime = Clock.currentTimeMillis();
         long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
-        while (node.isActive() && !joined.get() && (System.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+        while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
             String msg = "Joining master " + node.getMasterAddress();
             logger.log(Level.FINEST, msg);
             systemLogService.logJoin(msg);

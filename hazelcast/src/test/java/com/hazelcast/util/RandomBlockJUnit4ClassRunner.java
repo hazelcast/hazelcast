@@ -89,7 +89,7 @@ public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
     @Override
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
         notifier.addListener(new RunListener() {
             @Override
@@ -99,7 +99,7 @@ public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         });
         System.out.println("Started Running Test: " + testName);
         super.runChild(method, notifier);
-        long took = (System.currentTimeMillis() - start) / 1000;
+        long took = (Clock.currentTimeMillis() - start) / 1000;
         System.out.println(String.format("Finished Running Test: %s in %d seconds.", testName, took));
     }
 }

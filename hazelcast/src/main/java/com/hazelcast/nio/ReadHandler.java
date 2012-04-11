@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.util.Clock;
 import com.hazelcast.nio.ascii.SocketTextReader;
 
 import java.io.EOFException;
@@ -42,7 +43,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
     }
 
     public final void handle() {
-        lastHandle = System.currentTimeMillis();
+        lastHandle = Clock.currentTimeMillis();
         if (!connection.live()) {
             String message = "We are being to asked to read, but connection is not live so we won't";
             logger.log(Level.FINEST, message);
@@ -93,7 +94,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
     }
 
     public final void run() {
-        lastRegistration = System.currentTimeMillis();
+        lastRegistration = Clock.currentTimeMillis();
         registerOp(inOutSelector.selector, SelectionKey.OP_READ);
     }
 }

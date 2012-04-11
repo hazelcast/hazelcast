@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 import com.hazelcast.cluster.Bind;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
@@ -437,7 +438,7 @@ public class ConnectionManager {
     }
 
     public void appendState(StringBuffer sbState) {
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         sbState.append("\nConnectionManager {");
         for (Connection conn : mapConnections.values()) {
             long wr = (now - conn.getWriteHandler().lastRegistration) / 1000;

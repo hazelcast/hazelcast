@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Map;
@@ -59,7 +60,7 @@ public class InRunnable extends IORunnable implements Runnable {
             } else {
                 packet = reader.readPacket(connection);
 //                logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
-                this.lastReceived = System.currentTimeMillis();
+                this.lastReceived = Clock.currentTimeMillis();
                 Call call = callMap.remove(packet.getCallId());
                 if (call != null) {
                     call.received = System.nanoTime();

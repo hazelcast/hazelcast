@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.util.Clock;
+
 import java.io.Serializable;
 
 public class PerformanceTimer implements Serializable {
@@ -26,16 +28,16 @@ public class PerformanceTimer implements Serializable {
     private long numberOfOperations;
 
     public PerformanceTimer() {
-        this.start = System.currentTimeMillis();
+        this.start = Clock.currentTimeMillis();
     }
 
     public PerformanceTimer(long numberOfOperations) {
-        this.start = System.currentTimeMillis();
+        this.start = Clock.currentTimeMillis();
         this.numberOfOperations = numberOfOperations;
     }
 
     public PerformanceTimer(String testName, long numberOfOperations) {
-        this.start = System.currentTimeMillis();
+        this.start = Clock.currentTimeMillis();
         this.numberOfOperations = numberOfOperations;
         this.testName = testName;
     }
@@ -65,7 +67,7 @@ public class PerformanceTimer implements Serializable {
     }
 
     public void stop() {
-        this.end = System.currentTimeMillis();
+        this.end = Clock.currentTimeMillis();
     }
 
     public long elapsed() {

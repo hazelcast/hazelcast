@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl.partition;
 
+import com.hazelcast.util.Clock;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
@@ -29,7 +30,7 @@ public class MigratingPartition implements DataSerializable {
     protected Address to;
     protected int replicaIndex;
 
-    private transient final long creationTime = System.currentTimeMillis();
+    private transient final long creationTime = Clock.currentTimeMillis();
 
     public MigratingPartition() {
     }

@@ -18,6 +18,7 @@ package com.hazelcast.impl.partition;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.PartitionManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
@@ -33,7 +34,7 @@ import java.util.Map;
 public class ClusterRuntimeState extends AbstractRemotelyProcessable {
     private ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
     private ArrayList<ShortPartitionInfo> partitionInfos = new ArrayList<ShortPartitionInfo>(271);
-    private long masterTime = System.currentTimeMillis();
+    private long masterTime = Clock.currentTimeMillis();
     private int version;
 
     public ClusterRuntimeState(final Collection<MemberInfo> memberInfos,

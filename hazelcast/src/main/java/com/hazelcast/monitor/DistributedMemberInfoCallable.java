@@ -18,6 +18,7 @@ package com.hazelcast.monitor;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.util.Clock;
 import com.hazelcast.partition.Partition;
 
 import java.io.Serializable;
@@ -38,7 +39,7 @@ public class DistributedMemberInfoCallable implements Callable<DistributedMember
             }
         }
         memberInfo.partitions = partitions;
-        memberInfo.time = System.currentTimeMillis();
+        memberInfo.time = Clock.currentTimeMillis();
         memberInfo.totalMemory = Runtime.getRuntime().totalMemory();
         memberInfo.freeMemory = Runtime.getRuntime().freeMemory();
         memberInfo.maxMemory = Runtime.getRuntime().maxMemory();

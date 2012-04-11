@@ -27,6 +27,7 @@ import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.SleepCallable;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
+import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -918,7 +919,7 @@ public class DynamicClusterTest {
         HazelcastClient client = TestUtility.newHazelcastClient(h2);
         ExecutorService executor = client.getExecutorService("esname");
         Map<Integer, FutureTask> taskMap = new ConcurrentHashMap<Integer, FutureTask>();
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         CountDownLatch latch = new CountDownLatch(100);
         for (int i = 0; i < 1000; i++) {
             FutureTask<Integer> task = new DistributedTask<Integer>(
@@ -1114,9 +1115,9 @@ public class DynamicClusterTest {
             while (remainingMillis >= 0) {
                 LifecycleEvent.LifecycleState received = null;
                 try {
-                    long now = System.currentTimeMillis();
+                    long now = Clock.currentTimeMillis();
                     received = eventQueue.poll(remainingMillis, TimeUnit.MILLISECONDS);
-                    remainingMillis -= (System.currentTimeMillis() - now);
+                    remainingMillis -= (Clock.currentTimeMillis() - now);
                 } catch (InterruptedException e) {
                     return false;
                 }
