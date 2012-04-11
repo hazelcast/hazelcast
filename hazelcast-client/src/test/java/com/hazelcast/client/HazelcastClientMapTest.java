@@ -22,6 +22,7 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
 import org.junit.Test;
 
@@ -234,9 +235,9 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         }
         EntryObject e = new PredicateBuilder().getEntryObject();
         Predicate predicate = e.get("age").equal(23);
-        long begin = System.currentTimeMillis();
+        long begin = Clock.currentTimeMillis();
         Set<Entry<Object, Object>> set = map.entrySet(predicate);
-        long timeWithoutIndex = System.currentTimeMillis() - begin;
+        long timeWithoutIndex = Clock.currentTimeMillis() - begin;
         assertEquals(1, set.size());
         assertEquals(size, map.size());
         map.destroy();
@@ -245,9 +246,9 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         for (int i = 0; i < size; i++) {
             map.put(String.valueOf(i), new Employee("name" + i, i, true, 0));
         }
-        begin = System.currentTimeMillis();
+        begin = Clock.currentTimeMillis();
         set = map.entrySet(predicate);
-        long timeWithIndex = System.currentTimeMillis() - begin;
+        long timeWithIndex = Clock.currentTimeMillis() - begin;
         assertEquals(1, set.size());
         assertEquals(size, map.size());
         assertTrue(timeWithoutIndex > 2 * timeWithIndex);
