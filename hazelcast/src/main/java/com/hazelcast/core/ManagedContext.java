@@ -25,8 +25,8 @@ package com.hazelcast.core;
 public interface ManagedContext {
 
     /**
-     * Initialize the given object instance. This is intended for repopulating select fields and
-     * methods, either for new instances or for deserialized instances.
+     * Initialize the given object instance.
+     * This is intended for repopulating select fields and methods for deserialized instances.
      *
      * @param obj Object to initialize
      */
