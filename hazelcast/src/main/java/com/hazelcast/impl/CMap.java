@@ -456,7 +456,7 @@ public class CMap {
         storeDataRecordEntry(dataRecordEntry);
     }
 
-    public Record storeDataRecordEntry(DataRecordEntry dataRecordEntry) {
+    private Record storeDataRecordEntry(DataRecordEntry dataRecordEntry) {
         Record existing = getRecord(dataRecordEntry.getKeyData());
         if (existing != null) {
             mapIndexService.remove(existing);
@@ -474,7 +474,7 @@ public class CMap {
         } else {
             record = createAndAddNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
             record.setCreationTime(dataRecordEntry.getCreationTime());
-            record.setExpirationTime(dataRecordEntry.getExpirationTime() - System.currentTimeMillis());
+            record.setExpirationTime(dataRecordEntry.getExpirationTime());
             record.setMaxIdle(dataRecordEntry.getRemainingIdle());
             record.setIndexes(dataRecordEntry.getIndexes(), dataRecordEntry.getIndexTypes());
             if (dataRecordEntry.getLockAddress() != null && dataRecordEntry.getLockThreadId() != -1) {
@@ -558,7 +558,7 @@ public class CMap {
         return true;
     }
 
-    public void doBackup(Request req) {
+    public void doBackup(final Request req) {
         if (req.key == null || req.key.size() == 0) {
             throw new RuntimeException("Backup key size cannot be zero! " + req.key);
         }
@@ -576,7 +576,7 @@ public class CMap {
                 record.setIndexes(req.indexes, req.indexTypes);
             }
             if (req.ttl > 0 && req.ttl < Long.MAX_VALUE) {
-                record.setExpirationTime(req.ttl);
+                record.setTTL(req.ttl);
                 ttlPerRecord = true;
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
@@ -606,9 +606,9 @@ public class CMap {
         } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
             add(req, true);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE_MULTI) {
-            Record record = getRecord(req);
+            final Record record = getRecord(req);
             if (record != null) {
-                if (req.value == null) {
+                if (req.value == null || record.valueCount() == 0) {
                     markAsEvicted(record);
                 } else {
                     // FIXME: This should be done out of service thread
@@ -920,7 +920,7 @@ public class CMap {
             record.setLastUpdated();
         }
         if (req.ttl > 0 && req.ttl < Long.MAX_VALUE) {
-            record.setExpirationTime(req.ttl);
+            record.setTTL(req.ttl);
             ttlPerRecord = true;
         }
         if (sendEvictEvent) {
@@ -1646,7 +1646,7 @@ public class CMap {
             record.setActive();
             record.setCreationTime(now);
             record.setLastUpdateTime(0L);
-            record.setExpirationTime(ttl);
+            record.setTTL(ttl);
         }
     }
 

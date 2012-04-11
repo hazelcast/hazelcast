@@ -49,7 +49,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     public AbstractRecord(CMap cmap, int blockId, Data key, long ttl, long maxIdleMillis, long id) {
         super(blockId, cmap, id, key);
         this.setCreationTime(System.currentTimeMillis());
-        this.setExpirationTime(ttl);
+        this.setTTL(ttl);
         this.maxIdleMillis = (maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis;
         this.setVersion(0);
     }
@@ -184,7 +184,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     public void setLastUpdated() {
         if (expirationTime != Long.MAX_VALUE && expirationTime > 0) {
             long ttl = expirationTime - (lastUpdateTime > 0L ? lastUpdateTime : creationTime);
-            setExpirationTime(ttl);
+            setTTL(ttl);
         }
         setLastUpdateTime(System.currentTimeMillis());
     }
@@ -225,11 +225,19 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         }
     }
 
-    public void setExpirationTime(long ttl) {
-        if (ttl <= 0 || ttl == Long.MAX_VALUE) {
-            expirationTime = Long.MAX_VALUE;
+    public void setExpirationTime(final long expTime) {
+        if (expTime <= 0) {
+            this.expirationTime = Long.MAX_VALUE;
         } else {
-            expirationTime = System.currentTimeMillis() + ttl;
+            this.expirationTime = expTime;
+        }
+    }
+
+    public void setTTL(long ttl) {
+        if (ttl <= 0 || ttl == Long.MAX_VALUE) {
+            setExpirationTime(Long.MAX_VALUE);
+        } else {
+            setExpirationTime(System.currentTimeMillis() + ttl);
         }
     }
 

@@ -95,7 +95,9 @@ public interface Record extends MapEntry {
 
     void setMaxIdle(long idle);
 
-    void setExpirationTime(long ttl);
+    void setExpirationTime(long expirationTime);
+
+    void setTTL(long ttl);
 
     void setInvalid();
 
