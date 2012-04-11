@@ -83,6 +83,7 @@ public class ConfigXmlGenerator {
         xml.append("<multicast-group>").append(mcast.getMulticastGroup()).append("</multicast-group>");
         xml.append("<multicast-port>").append(mcast.getMulticastPort()).append("</multicast-port>");
         xml.append("<multicast-timeout-seconds>").append(mcast.getMulticastTimeoutSeconds()).append("</multicast-timeout-seconds>");
+        xml.append("<multicast-time-to-live-seconds>").append(mcast.getMulticastTimeToLive()).append("</multicast-time-to-live-seconds>");
         if (!mcast.getTrustedInterfaces().isEmpty()) {
             xml.append("<trusted-interfaces>");
             for (String trustedInterface : mcast.getTrustedInterfaces()) {
