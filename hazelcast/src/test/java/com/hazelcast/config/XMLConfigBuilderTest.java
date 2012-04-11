@@ -131,7 +131,6 @@ public class XMLConfigBuilderTest {
     @Test
     public void testConfig2Xml() throws SAXException, IOException {
         String fullXml = new ConfigXmlGenerator().generate(new ClasspathXmlConfig("hazelcast-fullconfig.xml"));
-        System.out.println(fullXml);
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
         URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-2.1.xsd");
         File schemaFile = new File(schemaUrl.getFile());
