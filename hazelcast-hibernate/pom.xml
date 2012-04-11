@@ -138,6 +138,12 @@
             <artifactId>hibernate-core</artifactId>
             <version>${hibernate.core.version}</version>
             <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>hsqldb</groupId>
