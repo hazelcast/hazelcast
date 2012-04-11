@@ -322,8 +322,8 @@
         <xs:attribute name="enabled" type="xs:string" use="optional" default="true"/>
         <xs:attribute name="multicast-group" type="xs:string" use="optional" default="224.2.2.3"/>
         <xs:attribute name="multicast-port" type="xs:string" use="optional" default="54327"/>
-        <xs:attribute name="multicast-timeout-seconds" type="xs:string" use="optional"/>
-        <xs:attribute name="multicast-time-to-live" type="xs:string" use="optional"/>
+        <xs:attribute name="multicast-timeout-seconds" type="xs:string" use="optional" default="2"/>
+        <xs:attribute name="multicast-time-to-live" type="xs:string" use="optional" default="32"/>
     </xs:complexType>
 
     <xs:complexType name="aws">
