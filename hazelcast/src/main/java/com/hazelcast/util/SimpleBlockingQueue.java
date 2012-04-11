@@ -91,13 +91,13 @@ public class SimpleBlockingQueue<E> extends AbstractQueue<E> implements Blocking
     @SuppressWarnings("CallToNativeMethodWhileLocked")
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         long timeLeft = unit.toMillis(timeout);
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         synchronized (lock) {
             E e = removeFirst();
             while (e == null && timeLeft > 0) {
                 lock.wait(timeLeft);
                 e = removeFirst();
-                long now = System.currentTimeMillis();
+                long now = Clock.currentTimeMillis();
                 timeLeft -= (now - start);
                 start = now;
             }

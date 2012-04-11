@@ -20,6 +20,7 @@ import com.hazelcast.impl.monitor.LocalMapOperationStatsImpl;
 import com.hazelcast.impl.monitor.MapOperationsCounter;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -80,14 +81,14 @@ public class MapOperationsCounterTest {
     @Test
     public void putInLessThanSubInterval() throws InterruptedException {
         MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         long counter = 0;
         boolean run = true;
         while (run) {
             mapOperationStats.incrementPuts(0);
             counter++;
             Thread.sleep(1);
-            if (System.currentTimeMillis() - start > 5) {
+            if (Clock.currentTimeMillis() - start > 5) {
                 run = false;
             }
         }
@@ -99,13 +100,13 @@ public class MapOperationsCounterTest {
     @Test
     public void putInHalfOfInterval() throws InterruptedException {
         MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         long counter = 0;
         boolean run = true;
         while (run) {
             counter++;
             mapOperationStats.incrementPuts(0);
-            if (System.currentTimeMillis() - start > 50) {
+            if (Clock.currentTimeMillis() - start > 50) {
                 run = false;
             }
             Thread.sleep(1);
@@ -115,7 +116,7 @@ public class MapOperationsCounterTest {
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
-        double totalTps = (double) counter / (System.currentTimeMillis() - start);
+        double totalTps = (double) counter / (Clock.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
     }
@@ -123,13 +124,13 @@ public class MapOperationsCounterTest {
     @Test
     public void putLittleLessThanInterval() throws InterruptedException {
         MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         long counter = 0;
         boolean run = true;
         while (run) {
             counter++;
             mapOperationStats.incrementPuts(0);
-            if (System.currentTimeMillis() - start > 95) {
+            if (Clock.currentTimeMillis() - start > 95) {
                 run = false;
             }
             Thread.sleep(1);
@@ -139,7 +140,7 @@ public class MapOperationsCounterTest {
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
-        double totalTps = (double) counter / (System.currentTimeMillis() - start);
+        double totalTps = (double) counter / (Clock.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
     }
@@ -147,13 +148,13 @@ public class MapOperationsCounterTest {
     @Test
     public void putLittleMoreThanInterval() throws InterruptedException {
         MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         long counter = 0;
         boolean run = true;
         while (run) {
             counter++;
             mapOperationStats.incrementPuts(0);
-            if (System.currentTimeMillis() - start > 105) {
+            if (Clock.currentTimeMillis() - start > 105) {
                 run = false;
             }
             Thread.sleep(1);
@@ -163,7 +164,7 @@ public class MapOperationsCounterTest {
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
-        double totalTps = (double) counter / (System.currentTimeMillis() - start);
+        double totalTps = (double) counter / (Clock.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
     }
@@ -171,13 +172,13 @@ public class MapOperationsCounterTest {
     @Test
     public void putWayMoreThanInterval() throws InterruptedException {
         MapOperationsCounter mapOperationStats = new MapOperationsCounter(100);
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         long counter = 0;
         boolean run = true;
         while (run) {
             counter++;
             mapOperationStats.incrementPuts(0);
-            if (System.currentTimeMillis() - start > 205) {
+            if (Clock.currentTimeMillis() - start > 205) {
                 run = false;
             }
             Thread.sleep(1);
@@ -187,7 +188,7 @@ public class MapOperationsCounterTest {
         LocalMapOperationStats stats = mapOperationStats.getPublishedStats();
         long interval = stats.getPeriodEnd() - stats.getPeriodStart();
         double statTps = stats.getNumberOfPuts() / interval;
-        double totalTps = (double) counter / (System.currentTimeMillis() - start);
+        double totalTps = (double) counter / (Clock.currentTimeMillis() - start);
         assertTrue(statTps < totalTps + 5);
         assertTrue(statTps > totalTps - 5);
     }

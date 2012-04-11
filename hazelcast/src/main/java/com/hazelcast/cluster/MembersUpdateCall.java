@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.MemberImpl;
 
 import java.io.DataInput;
@@ -31,7 +32,7 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
 
     private Collection<MemberInfo> memberInfos;
 
-    private long masterTime = System.currentTimeMillis();
+    private long masterTime = Clock.currentTimeMillis();
 
     public MembersUpdateCall() {
         memberInfos = new ArrayList<MemberInfo>();

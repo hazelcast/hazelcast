@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.GroupProperties;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -545,17 +546,17 @@ public class HazelcastTest {
         assertEquals(false, map.containsKey(1));
         map.put(1, "value1", 10, TimeUnit.SECONDS);
         assertEquals(true, map.containsKey(1));
-        long ttl = map.getMapEntry(1).getExpirationTime() - System.currentTimeMillis();
+        long ttl = map.getMapEntry(1).getExpirationTime() - Clock.currentTimeMillis();
         assertTrue("TTL is now " + ttl, ttl > 6000 && ttl < 11000);
         Thread.sleep(5000);
         assertEquals(true, map.containsKey(1));
         map.put(1, "value2", 10, TimeUnit.SECONDS);
-        ttl = map.getMapEntry(1).getExpirationTime() - System.currentTimeMillis();
+        ttl = map.getMapEntry(1).getExpirationTime() - Clock.currentTimeMillis();
         assertTrue("TTL is now " + ttl, ttl > 6000 && ttl < 11000);
         Thread.sleep(5000);
         assertEquals(true, map.containsKey(1));
         map.put(1, "value3", 10, TimeUnit.SECONDS);
-        ttl = map.getMapEntry(1).getExpirationTime() - System.currentTimeMillis();
+        ttl = map.getMapEntry(1).getExpirationTime() - Clock.currentTimeMillis();
         assertTrue("TTL is now " + ttl, ttl > 6000 && ttl < 11000);
         assertEquals(true, map.containsKey(1));
     }
@@ -929,7 +930,7 @@ public class HazelcastTest {
 
 
     static class CustomSerializable implements Serializable {
-        private long dummy1 = System.currentTimeMillis();
+        private long dummy1 = Clock.currentTimeMillis();
         private String dummy2 = String.valueOf(dummy1);
     }
 

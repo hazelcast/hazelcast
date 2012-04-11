@@ -123,7 +123,10 @@ public abstract class AbstractSimpleRecord implements Record {
     public void setMaxIdle(long idle) {
     }
 
-    public void setExpirationTime(long ttl) {
+    public void setExpirationTime(final long expirationTime) {
+    }
+
+    public void setTTL(long ttl) {
     }
 
     public void setInvalid() {

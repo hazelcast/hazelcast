@@ -18,6 +18,7 @@ package com.hazelcast.examples;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.util.Clock;
 
 import java.util.List;
 import java.util.Map;
@@ -147,7 +148,7 @@ public class LongRunningTest {
             es = Executors.newFixedThreadPool(threadCount);
             hazelcast = Hazelcast.newHazelcastInstance(null);
             esStats = Executors.newSingleThreadExecutor();
-            createTime = System.currentTimeMillis();
+            createTime = Clock.currentTimeMillis();
         }
 
         public void stop() {
@@ -213,7 +214,7 @@ public class LongRunningTest {
                     ", entryCount=" + entryCount +
                     ", threadCount=" + threadCount +
                     ", valueSize=" + valueSize +
-                    ", liveSeconds=" + ((System.currentTimeMillis() - createTime) / 1000) +
+                    ", liveSeconds=" + ((Clock.currentTimeMillis() - createTime) / 1000) +
                     ", running=" + running +
                     '}';
         }

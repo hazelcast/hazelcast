@@ -25,6 +25,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentHashSet;
 import org.junit.After;
 import org.junit.Assert;
@@ -1091,9 +1092,9 @@ public class ClusterTest {
             es.execute(new Runnable() {
                 public void run() {
                     latchStart.countDown();
-                    long start = System.currentTimeMillis();
+                    long start = Clock.currentTimeMillis();
                     mapWaiter.put(key, "value");
-                    assertTrue((System.currentTimeMillis() - start) >= 1000);
+                    assertTrue((Clock.currentTimeMillis() - start) >= 1000);
                     latchEnd.countDown();
                 }
             });
@@ -1132,9 +1133,9 @@ public class ClusterTest {
             es.execute(new Runnable() {
                 public void run() {
                     latchStart.countDown();
-                    long start = System.currentTimeMillis();
+                    long start = Clock.currentTimeMillis();
                     mapWaiter.put(key, "value");
-                    assertTrue((System.currentTimeMillis() - start) >= 1000);
+                    assertTrue((Clock.currentTimeMillis() - start) >= 1000);
                     latchEnd.countDown();
                 }
             });
@@ -1927,9 +1928,9 @@ public class ClusterTest {
             while (remainingMillis >= 0) {
                 LifecycleEvent.LifecycleState received = null;
                 try {
-                    long now = System.currentTimeMillis();
+                    long now = Clock.currentTimeMillis();
                     received = eventQueue.poll(remainingMillis, TimeUnit.MILLISECONDS);
-                    remainingMillis -= (System.currentTimeMillis() - now);
+                    remainingMillis -= (Clock.currentTimeMillis() - now);
                 } catch (InterruptedException e) {
                     return false;
                 }

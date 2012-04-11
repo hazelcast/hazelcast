@@ -32,6 +32,7 @@ import com.hazelcast.nio.*;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.MapIndexService;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.SortedHashMap;
 
@@ -80,7 +81,7 @@ public class CMap {
 
     final Address thisAddress;
 
-    public final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
+    final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
 
     final String name;
 
@@ -140,7 +141,7 @@ public class CMap {
 
     volatile boolean dirty = false;
 
-    private volatile long lastCleanup = System.currentTimeMillis();
+    private volatile long lastCleanup = Clock.currentTimeMillis();
 
     @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long lastEvictionTime = 0;
@@ -249,7 +250,7 @@ public class CMap {
         }
         cleanupDelayMillis = CLEANUP_DELAY_SECONDS * 1000;
         this.mergePolicy = getMergePolicy(mapConfig.getMergePolicy());
-        this.creationTime = System.currentTimeMillis();
+        this.creationTime = Clock.currentTimeMillis();
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         if (wanReplicationRef != null) {
             this.localUpdateListener = node.wanReplicationService.getWanReplication(wanReplicationRef.getName());
@@ -467,7 +468,7 @@ public class CMap {
         storeDataRecordEntry(dataRecordEntry);
     }
 
-    public Record storeDataRecordEntry(DataRecordEntry dataRecordEntry) {
+    private Record storeDataRecordEntry(DataRecordEntry dataRecordEntry) {
         Record existing = getRecord(dataRecordEntry.getKeyData());
         if (existing != null) {
             mapIndexService.remove(existing);
@@ -485,7 +486,7 @@ public class CMap {
         } else {
             record = createAndAddNewRecord(dataRecordEntry.getKeyData(), dataRecordEntry.getValueData());
             record.setCreationTime(dataRecordEntry.getCreationTime());
-            record.setExpirationTime(dataRecordEntry.getExpirationTime() - System.currentTimeMillis());
+            record.setExpirationTime(dataRecordEntry.getExpirationTime());
             record.setMaxIdle(dataRecordEntry.getRemainingIdle());
             record.setIndexes(dataRecordEntry.getIndexes(), dataRecordEntry.getIndexTypes());
             if (dataRecordEntry.getLockAddress() != null && dataRecordEntry.getLockThreadId() != -1) {
@@ -587,7 +588,7 @@ public class CMap {
                 record.setIndexes(req.indexes, req.indexTypes);
             }
             if (req.ttl > 0 && req.ttl < Long.MAX_VALUE) {
-                record.setExpirationTime(req.ttl);
+                record.setTTL(req.ttl);
                 ttlPerRecord = true;
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
@@ -671,7 +672,7 @@ public class CMap {
 //        } else {
 //            Collection<Record> records = mapRecords.values();
 //            for (Record record : records) {
-//                long now = System.currentTimeMillis();
+//                long now = Clock.currentTimeMillis();
 //                if (record.isActive() && record.isValid(now)) {
 //                    Address owner = concurrentMapManager.getPartitionManager().getOwner(record.getBlockId());
 //                    if (thisAddress.equals(owner)) {
@@ -691,7 +692,7 @@ public class CMap {
 //            boolean found = false;
 //            Collection<Record> records = mapRecords.values();
 //            for (Record record : records) {
-//                long now = System.currentTimeMillis();
+//                long now = Clock.currentTimeMillis();
 //                if (record.isActive() && record.isValid(now)) {
 //                    Address owner = concurrentMapManager.getPartitionOwner(record.getBlockId());
 //                    if (thisAddress.equals(owner)) {
@@ -905,7 +906,7 @@ public class CMap {
     }
 
     public void put(Request req) {
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         boolean sendEvictEvent = false;
         Record evictedRecord = null;
         if (req.value == null) {
@@ -944,7 +945,7 @@ public class CMap {
             record.setLastUpdated();
         }
         if (req.ttl > 0 && req.ttl < Long.MAX_VALUE) {
-            record.setExpirationTime(req.ttl);
+            record.setTTL(req.ttl);
             ttlPerRecord = true;
         }
         if (sendEvictEvent) {
@@ -1020,7 +1021,7 @@ public class CMap {
                             store.storeAll(updates);
                         }
                         for (Record stored : toStore) {
-                            stored.setLastStoredTime(System.currentTimeMillis());
+                            stored.setLastStoredTime(Clock.currentTimeMillis());
                             // stored.setDirty(false); // not required since we are setting dirty false before execution
                         }
                     } catch (Exception e) {
@@ -1056,7 +1057,7 @@ public class CMap {
 
     public int size() {
         if (maxIdle > 0 || ttl > 0 || ttlPerRecord || isList() || isMultiMap()) {
-            long now = System.currentTimeMillis();
+            long now = Clock.currentTimeMillis();
             int size = 0;
             Collection<Record> records = mapIndexService.getOwnedRecords();
             for (Record record : records) {
@@ -1073,7 +1074,7 @@ public class CMap {
     public int size(int expectedPartitionVersion) {
         PartitionManager partitionManager = concurrentMapManager.partitionManager;
         if (partitionManager.getVersion() != expectedPartitionVersion) return -1;
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         int size = 0;
         Collection<Record> records = mapRecords.values();
         for (Record record : records) {
@@ -1108,7 +1109,7 @@ public class CMap {
     }
 
     public int valueCount(Data key) {
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         int count = 0;
         Record record = mapRecords.get(key);
         if (record != null && record.isValid(now)) {
@@ -1119,7 +1120,7 @@ public class CMap {
 
     LocalMapStatsImpl getLocalMapStats() {
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
         long markedAsRemovedEntryCount = 0;
@@ -1206,7 +1207,7 @@ public class CMap {
     }
 
     void evict(int percentage) {
-        final long now = System.currentTimeMillis();
+        final long now = Clock.currentTimeMillis();
         final Collection<Record> records = mapRecords.values();
         Comparator<MapEntry> comparator = evictionComparator;
         if (comparator == null) {
@@ -1338,7 +1339,7 @@ public class CMap {
     }
 
     boolean startCleanup(boolean forced) {
-        final long now = System.currentTimeMillis();
+        final long now = Clock.currentTimeMillis();
         long dirtyAge = (now - lastCleanup);
         boolean shouldRun = forced
                 || (store != null && dirty && dirtyAge >= writeDelayMillis)
@@ -1445,7 +1446,7 @@ public class CMap {
         if (recordsToPurge.size() > 0) {
             concurrentMapManager.enqueueAndReturn(new Processable() {
                 public void process() {
-                    final long now = System.currentTimeMillis();
+                    final long now = Clock.currentTimeMillis();
                     for (Record recordToPurge : recordsToPurge) {
                         if (shouldPurgeRecord(recordToPurge, now)) {
                             removeAndPurgeRecord(recordToPurge);
@@ -1553,7 +1554,7 @@ public class CMap {
 
     boolean evict(Request req) {
         Record record = getRecord(req.key);
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         if (record != null && record.isActive() && record.valueCount() > 0) {
             concurrentMapManager.checkServiceThread();
             fireInvalidation(record);
@@ -1655,19 +1656,19 @@ public class CMap {
                 dirty = true;
                 record.setDirty(true);
                 if (writeDelayMillis > 0) {
-                    record.setWriteTime(System.currentTimeMillis() + writeDelayMillis);
+                    record.setWriteTime(Clock.currentTimeMillis() + writeDelayMillis);
                 }
             }
         }
     }
 
     void markAsActive(Record record) {
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         if (!record.isActive() || !record.isValid(now)) {
             record.setActive();
             record.setCreationTime(now);
             record.setLastUpdateTime(0L);
-            record.setExpirationTime(ttl);
+            record.setTTL(ttl);
         }
     }
 

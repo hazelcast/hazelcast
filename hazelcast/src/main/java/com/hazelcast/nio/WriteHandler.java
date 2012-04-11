@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.base.SystemArgsLog;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 
@@ -109,7 +110,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void handle() {
-        lastHandle = System.currentTimeMillis();
+        lastHandle = Clock.currentTimeMillis();
         if (socketWriter == null) {
             setProtocol("HZC");
         }
@@ -185,7 +186,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     private void registerWrite() {
-        lastRegistration = System.currentTimeMillis();
+        lastRegistration = Clock.currentTimeMillis();
         registerOp(inOutSelector.selector, SelectionKey.OP_WRITE);
     }
 

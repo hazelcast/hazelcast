@@ -61,12 +61,12 @@ public class DoubleBlockingQueue<E> extends AbstractQueue<E> implements Blocking
         if (e != null) return e;
         long timeLeft = unit.toMillis(timeout);
         while (e == null && timeLeft > 0) {
-            long start = System.currentTimeMillis();
+            long start = Clock.currentTimeMillis();
             synchronized (notEmptyLock) {
                 notEmptyLock.wait(100);
             }
             e = tryPoll();
-            long now = System.currentTimeMillis();
+            long now = Clock.currentTimeMillis();
             timeLeft -= (now - start);
             start = now;
         }

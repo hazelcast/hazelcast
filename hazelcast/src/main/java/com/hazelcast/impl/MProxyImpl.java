@@ -28,6 +28,7 @@ import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.util.Clock;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -532,11 +533,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public MapEntry getMapEntry(Object key) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             MGetMapEntry mgetMapEntry = concurrentMapManager.new MGetMapEntry();
             MapEntry mapEntry = mgetMapEntry.get(name, key);
-            mapOperationCounter.incrementGets(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementGets(Clock.currentTimeMillis() - begin);
             return mapEntry;
         }
 
@@ -552,22 +553,22 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public void putForSync(Object key, Object value) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
             mput.putForSync(name, key, value);
             mput.clearRequest();
-            mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
         }
 
         public void removeForSync(Object key) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
             mremove.removeForSync(name, key);
             mremove.clearRequest();
-            mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
         }
 
         public Map getAll(Set keys) {
@@ -615,18 +616,18 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public Object put(Object key, Object value, long timeout, long ttl) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
             Object result = mput.put(name, key, value, timeout, ttl);
             mput.clearRequest();
-            mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return result;
         }
 
         public void set(Object key, Object value, long ttl, TimeUnit timeunit) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             if (ttl < 0) {
                 throw new IllegalArgumentException("ttl value cannot be negative. " + ttl);
             }
@@ -640,11 +641,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
             mput.set(name, key, value, ttl);
             mput.clearRequest();
-            mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
         }
 
         public boolean tryPut(Object key, Object value, long timeout, TimeUnit timeunit) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             if (timeout < 0) {
                 throw new IllegalArgumentException("timeout value cannot be negative. " + timeout);
             }
@@ -654,19 +655,19 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
             Boolean result = mput.tryPut(name, key, value, timeout, -1);
             mput.clearRequest();
-            mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return result;
         }
 
         public Object tryLockAndGet(Object key, long timeout, TimeUnit timeunit) throws TimeoutException {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             if (timeout < 0) {
                 throw new IllegalArgumentException("timeout value cannot be negative. " + timeout);
             }
             timeout = toMillis(timeout, timeunit);
             check(key);
             Object result = concurrentMapManager.tryLockAndGet(name, key, timeout);
-            mapOperationCounter.incrementGets(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementGets(Clock.currentTimeMillis() - begin);
             return result;
         }
 
@@ -721,11 +722,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public void putAndUnlock(Object key, Object value) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             concurrentMapManager.putAndUnlock(name, key, value);
-            mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
         }
 
         public Object putIfAbsent(Object key, Object value) {
@@ -745,43 +746,43 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         private Object putIfAbsent(Object key, Object value, long timeout, long ttl) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MPut mput = concurrentMapManager.new MPut();
             Object result = mput.putIfAbsent(name, key, value, timeout, ttl);
             mput.clearRequest();
-            mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return result;
         }
 
         public Object get(Object key) {
             check(key);
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
             Object result = mget.get(name, key, -1);
             mget.clearRequest();
-            mapOperationCounter.incrementGets(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementGets(Clock.currentTimeMillis() - begin);
             return result;
         }
 
         public Object remove(Object key) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
             Object result = mremove.remove(name, key, -1);
             mremove.clearRequest();
-            mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
             return result;
         }
 
         public Object tryRemove(Object key, long timeout, TimeUnit timeunit) throws TimeoutException {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
             Object result = mremove.tryRemove(name, key, toMillis(timeout, timeunit));
             mremove.clearRequest();
-            mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
             return result;
         }
 
@@ -806,33 +807,33 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public boolean remove(Object key, Object value) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MRemove mremove = concurrentMapManager.new MRemove();
             boolean result = mremove.removeIfSame(name, key, value, -1);
-            mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
             return result;
         }
 
         public Object replace(Object key, Object value) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MPut mput = concurrentMapManager.new MPut();
             Object result = mput.replace(name, key, value, -1, -1);
-            mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return result;
         }
 
         public boolean replace(Object key, Object oldValue, Object newValue) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(oldValue);
             check(newValue);
             MPut mput = concurrentMapManager.new MPut();
             Boolean result = mput.replace(name, key, oldValue, newValue, -1);
-            mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return result;
         }
 
@@ -953,11 +954,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public boolean removeKey(Object key) {
-            long begin = System.currentTimeMillis();
+            long begin = Clock.currentTimeMillis();
             check(key);
             MRemoveItem mRemoveItem = concurrentMapManager.new MRemoveItem();
             boolean result = mRemoveItem.removeItem(name, key);
-            mapOperationCounter.incrementRemoves(System.currentTimeMillis() - begin);
+            mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
             return result;
         }
 

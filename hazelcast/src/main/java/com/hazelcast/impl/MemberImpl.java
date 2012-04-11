@@ -22,6 +22,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -53,7 +54,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         this.nodeType = nodeType;
         this.localMember = localMember;
         this.address = address;
-        this.lastRead = System.currentTimeMillis();
+        this.lastRead = Clock.currentTimeMillis();
         this.uuid = uuid;
     }
 
@@ -96,15 +97,15 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     }
 
     public void didWrite() {
-        lastWrite = System.currentTimeMillis();
+        lastWrite = Clock.currentTimeMillis();
     }
 
     public void didRead() {
-        lastRead = System.currentTimeMillis();
+        lastRead = Clock.currentTimeMillis();
     }
 
     public void didPing() {
-        lastPing = System.currentTimeMillis();
+        lastPing = Clock.currentTimeMillis();
     }
 
     public long getLastPing() {
@@ -154,7 +155,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         address = new Address();
         address.readData(in);
         nodeType = NodeType.create(in.readInt());
-        lastRead = System.currentTimeMillis();
+        lastRead = Clock.currentTimeMillis();
         if (in.readBoolean()) {
             uuid = in.readUTF();
         }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.util.Clock;
 import com.hazelcast.logging.ILogger;
 
 import java.util.logging.Level;
@@ -49,7 +50,7 @@ class ConnectionMonitor {
         String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(t);
         logger.log(Level.FINEST, errorMessage);
         ioService.getSystemLogService().logConnection(errorMessage);
-        final long now = System.currentTimeMillis();
+        final long now = Clock.currentTimeMillis();
         final long last = lastFaultTime;
         if (now - last > minInterval) {
             if ((++faults) >= maxFaults) {

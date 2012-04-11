@@ -25,6 +25,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.security.SecureCallable;
+import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -437,7 +438,7 @@ public class ExecutorManager extends BaseManager {
             long remainingMillis = timeoutMillis;
             try {
                 for (MemberCall memberCall : lsMemberCalls) {
-                    long now = System.currentTimeMillis();
+                    long now = Clock.currentTimeMillis();
                     if (timeoutMillis == -1) {
                         memberCall.get();
                     } else {
@@ -448,7 +449,7 @@ public class ExecutorManager extends BaseManager {
                         }
                         memberCall.get(remainingMillis, TimeUnit.MILLISECONDS);
                     }
-                    remainingMillis -= (System.currentTimeMillis() - now);
+                    remainingMillis -= (Clock.currentTimeMillis() - now);
                 }
             } catch (Exception e) {
                 innerFutureTask.innerSetException(e, done);

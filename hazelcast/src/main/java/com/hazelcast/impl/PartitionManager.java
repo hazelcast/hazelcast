@@ -32,6 +32,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -230,7 +231,7 @@ public class PartitionManager {
                 addActiveMigration(partitionId, replicaIndex, thisAddress, newAddress);
             }
         });
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         final Collection<CMap> cmaps = concurrentMapManager.maps.values();
         CostAwareRecordList lsResultSet = new CostAwareRecordList(1000);
         for (final CMap cmap : cmaps) {
@@ -644,7 +645,7 @@ public class PartitionManager {
 
     private boolean shouldCheckRepartitioning() {
         return immediateTasksQueue.isEmpty() && scheduledTasksQueue.isEmpty()
-                && lastRepartitionTime.get() < (System.currentTimeMillis() - REPARTITIONING_CHECK_INTERVAL)
+                && lastRepartitionTime.get() < (Clock.currentTimeMillis() - REPARTITIONING_CHECK_INTERVAL)
                 && migratingPartition == null;
     }
 
@@ -712,7 +713,7 @@ public class PartitionManager {
             if (!concurrentMapManager.isMaster()) {
                 final MigratingPartition currentMigratingPartition = migratingPartition;
                 if (currentMigratingPartition != null
-                        && (System.currentTimeMillis() - currentMigratingPartition.getCreationTime())
+                        && (Clock.currentTimeMillis() - currentMigratingPartition.getCreationTime())
                         > MIGRATING_PARTITION_CHECK_INTERVAL) {
                     try {
                         final Node node = concurrentMapManager.node;
@@ -773,7 +774,7 @@ public class PartitionManager {
         }
 
         void fillMigrationQueues() {
-            lastRepartitionTime.set(System.currentTimeMillis());
+            lastRepartitionTime.set(Clock.currentTimeMillis());
             if (!lostQ.isEmpty()) {
                 concurrentMapManager.enqueueAndReturn(new LostPartitionsAssignmentProcess(lostQ));
                 logger.log(Level.WARNING, "Assigning new owners for " + lostQ.size() +
@@ -992,10 +993,10 @@ public class PartitionManager {
                     // and poll immediate tasks occasionally during wait time.
                     long totalWait = 0L;
                     while (isActive() && (r != null || totalWait < partitionMigrationInterval)) {
-                        long start = System.currentTimeMillis();
+                        long start = Clock.currentTimeMillis();
                         r = immediateTasksQueue.poll(1, TimeUnit.SECONDS);
                         safeRunImmediate(r);
-                        totalWait += (System.currentTimeMillis() - start);
+                        totalWait += (Clock.currentTimeMillis() - start);
                     }
                     if (isActive()) {
                         r = scheduledTasksQueue.poll();

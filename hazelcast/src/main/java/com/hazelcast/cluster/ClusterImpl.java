@@ -20,6 +20,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
 import com.hazelcast.nio.Address;
@@ -127,11 +128,11 @@ public class ClusterImpl implements Cluster {
     }
 
     public long getClusterTime() {
-        return System.currentTimeMillis() + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
+        return Clock.currentTimeMillis() + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
     }
 
     public void setMasterTime(long masterTime) {
-        long diff = masterTime - System.currentTimeMillis();
+        long diff = masterTime - Clock.currentTimeMillis();
         if (Math.abs(diff) < Math.abs(clusterTimeDiff)) {
             this.clusterTimeDiff = diff;
         }

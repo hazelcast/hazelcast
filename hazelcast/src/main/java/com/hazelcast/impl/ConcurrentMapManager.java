@@ -40,6 +40,7 @@ import com.hazelcast.query.Index;
 import com.hazelcast.query.MapIndexService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.DistributedTimeoutException;
 
 import java.util.*;
@@ -2661,7 +2662,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (record != null) {
                 record.setDirty(dirty);
                 if (!dirty) {
-                    record.setLastStoredTime(System.currentTimeMillis());
+                    record.setLastStoredTime(Clock.currentTimeMillis());
                 }
             }
             request.value = null;
@@ -2781,7 +2782,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         void storeProceed(CMap cmap, Request request) {
             if (cmap.store != null && cmap.writeDelayMillis == 0
-                    && cmap.isApplicable(request.operation, request, System.currentTimeMillis())) {
+                    && cmap.isApplicable(request.operation, request, Clock.currentTimeMillis())) {
                 storeExecutor.execute(new PutStorer(cmap, request), request.key.hashCode());
             } else {
                 doOperation(request);
@@ -3530,7 +3531,7 @@ public class ConcurrentMapManager extends BaseManager {
         protected final void afterMapStore() {
             Record storedRecord = cmap.getRecord(request);
             if (storedRecord != null) {
-                storedRecord.setLastStoredTime(System.currentTimeMillis());
+                storedRecord.setLastStoredTime(Clock.currentTimeMillis());
                 storedRecord.setDirty(false);
             }
         }
@@ -3833,7 +3834,7 @@ public class ConcurrentMapManager extends BaseManager {
                 request.response = Boolean.FALSE;
                 if (cmap != null) {
                     MapIndexService mapIndexService = cmap.getMapIndexService();
-                    long now = System.currentTimeMillis();
+                    long now = Clock.currentTimeMillis();
                     if (cmap.isMultiMap()) {
                         Collection<Record> records = mapIndexService.getOwnedRecords();
                         ValueHolder theValueHolder = new ValueHolder(value);

@@ -34,6 +34,7 @@ import com.hazelcast.nio.*;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.SimpleBoundedQueue;
 
@@ -339,7 +340,7 @@ public class Node {
     }
 
     private void doShutdown(boolean force) {
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         logger.log(Level.FINE, "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!force && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
@@ -409,7 +410,7 @@ public class Node {
             serviceThreadPacketQueue.clear();
             systemLogService.shutdown();
             ThreadContext.get().shutdown(this.factory);
-            logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
+            logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
     }
 
@@ -562,7 +563,7 @@ public class Node {
     }
 
     void join() {
-        long joinStartTime = System.currentTimeMillis();
+        long joinStartTime = Clock.currentTimeMillis();
         long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
         try {
             if (joiner == null) {
@@ -573,7 +574,7 @@ public class Node {
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage());
-            if (System.currentTimeMillis() - joinStartTime < maxJoinMillis) {
+            if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
                 factory.lifecycleService.restart();
             } else {
                 setActive(false);

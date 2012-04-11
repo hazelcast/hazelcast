@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.util.Clock;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -409,9 +410,9 @@ public class TransactionTest {
         TransactionalMap txnMap = newTransactionalMapProxy("testTryLock");
         TransactionalMap txnMap2 = newTransactionalMapProxy("testTryLock");
         txnMap.lock("1");
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         assertFalse(txnMap2.tryLock("1", 2, TimeUnit.SECONDS));
-        long end = System.currentTimeMillis();
+        long end = Clock.currentTimeMillis();
         long took = (end - start);
         assertTrue((took > 1000) ? (took < 4000) : false);
         assertFalse(txnMap2.tryLock("1"));
@@ -490,9 +491,9 @@ public class TransactionTest {
         TransactionalMap txnMap = newTransactionalMapProxy("testTryPut");
         TransactionalMap txnMap2 = newTransactionalMapProxy("testTryPut");
         txnMap.lock("1");
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         assertFalse(txnMap2.tryPut("1", "value2", 2, TimeUnit.SECONDS));
-        long end = System.currentTimeMillis();
+        long end = Clock.currentTimeMillis();
         long took = (end - start);
         assertTrue((took > 1000) ? (took < 4000) : false);
         assertEquals("value", map.get("1"));
@@ -545,19 +546,19 @@ public class TransactionTest {
         txnMap.lock("1");
         assertEquals("value1", txnMap.get("1"));
         assertEquals("value1", txnMap2.get("1"));
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         try {
             assertNull(txnMap2.tryRemove("1", 0, TimeUnit.SECONDS));
             fail("Shouldn't be able to remove");
         } catch (TimeoutException e) {
-            assertTrue(System.currentTimeMillis() - start < 1000);
+            assertTrue(Clock.currentTimeMillis() - start < 1000);
         }
-        start = System.currentTimeMillis();
+        start = Clock.currentTimeMillis();
         try {
             assertNull(txnMap2.tryRemove("1", 3, TimeUnit.SECONDS));
             fail("Shouldn't be able to remove");
         } catch (TimeoutException e) {
-            long took = (System.currentTimeMillis() - start);
+            long took = (Clock.currentTimeMillis() - start);
             assertTrue(took >= 3000 && took < 5000);
         }
         txnMap.unlock("1");
@@ -584,19 +585,19 @@ public class TransactionTest {
         }
         assertEquals("value1", txnMap.get("1"));
         assertEquals("value1", txnMap2.get("1"));
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         try {
             txnMap2.tryLockAndGet("1", 0, TimeUnit.SECONDS);
             fail("Shouldn't be able to lock");
         } catch (TimeoutException e) {
-            assertTrue(System.currentTimeMillis() - start < 1000);
+            assertTrue(Clock.currentTimeMillis() - start < 1000);
         }
-        start = System.currentTimeMillis();
+        start = Clock.currentTimeMillis();
         try {
             assertNull(txnMap2.tryLockAndGet("1", 3, TimeUnit.SECONDS));
             fail("Shouldn't be able to lock");
         } catch (TimeoutException e) {
-            long took = (System.currentTimeMillis() - start);
+            long took = (Clock.currentTimeMillis() - start);
             assertTrue(took >= 3000 && took < 5000);
         }
         txnMap.putAndUnlock("1", "value2");

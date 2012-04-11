@@ -34,14 +34,14 @@ public class Parallel {
         final Thread[] threads = new Thread[concurrencyLevel];
         System.out.println(format.format(new Date()) + " PARALLEL TESTS STARTED concurrency:"
                 + concurrencyLevel + " profile:" + profile);
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         final Collection<Process> colProcesses = new CopyOnWriteArrayList<Process>();
         for (int i = 0; i < concurrencyLevel; i++) {
             final String index = Integer.toString(i);
             Thread t = new Thread(new Runnable() {
                 public void run() {
                     try {
-                        long processStart = System.currentTimeMillis();
+                        long processStart = Clock.currentTimeMillis();
                         //mvn -Dhazelcast.test.index=0 -Dhazelcast.test.concurrency.level=2 -P all test -DreportNameSuffix=0
                         String[] exec = new String[]{"mvn", "-Dhazelcast.test.index=" + index,
                                 "-Dhazelcast.test.concurrency.level=" + concurrencyLevel,
@@ -67,7 +67,7 @@ public class Parallel {
                         }
                         System.out.println(proc.exitValue());
                         br.close();
-                        long now = System.currentTimeMillis();
+                        long now = Clock.currentTimeMillis();
                         long seconds = (now - processStart) / 1000;
                         long minutes = seconds / 60;
                         long remainingSeconds = seconds % 60;
@@ -104,7 +104,7 @@ public class Parallel {
                 e.printStackTrace();
             }
         }
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         long seconds = (now - start) / 1000;
         long minutes = seconds / 60;
         long remainingSeconds = seconds % 60;

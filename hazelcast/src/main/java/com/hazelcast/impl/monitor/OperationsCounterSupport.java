@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl.monitor;
 
+import com.hazelcast.util.Clock;
 import com.hazelcast.monitor.LocalInstanceOperationStats;
 
 import java.util.ArrayList;
@@ -81,7 +82,7 @@ abstract class OperationsCounterSupport<T extends LocalInstanceOperationStats> {
     abstract T aggregateSubCounterStats();
 
     final long now() {
-        return System.currentTimeMillis();
+        return Clock.currentTimeMillis();
     }
 
     class OperationCounter {

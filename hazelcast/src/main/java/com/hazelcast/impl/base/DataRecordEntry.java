@@ -17,6 +17,7 @@
 package com.hazelcast.impl.base;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -95,7 +96,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     }
 
     public void writeData(DataOutput out) throws IOException {
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         out.writeBoolean(valid);
         out.writeLong(cost);
         out.writeLong(remainingIdle);
@@ -136,7 +137,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     }
 
     public void readData(DataInput in) throws IOException {
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         valid = in.readBoolean();
         cost = in.readLong();
         remainingIdle = in.readLong();
