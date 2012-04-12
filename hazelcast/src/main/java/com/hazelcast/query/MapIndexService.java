@@ -247,27 +247,6 @@ public class MapIndexService {
         return indexValue;
     }
 
-    // TODO: clean if safe!
-//    public boolean containsValue(Data value) {
-//        if (indexValue != null) {
-//            Set<MapEntry> results = indexValue.getRecords((long) value.hashCode());
-//            if (results == null || results.size() == 0) return false;
-//            for (MapEntry entry : results) {
-//                Record record = (Record) entry;
-//                if (record.containsValue(value)) {
-//                    return true;
-//                }
-//            }
-//        } else {
-//            for (Record record : records.values()) {
-//                if (record.containsValue(value)) {
-//                    return true;
-//                }
-//            }
-//        }
-//        return false;
-//    }
-
     public Index[] getIndexesInOrder() {
         if (mapIndexes.size() == 0) return null;
         Index[] indexes = new Index[mapIndexes.size()];

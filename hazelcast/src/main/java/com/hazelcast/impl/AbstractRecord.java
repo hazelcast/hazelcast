@@ -117,19 +117,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         }
     }
 
-    // TODO: clean if safe!
-//    public boolean containsValue(Data value) {
-//        if (hasValueData()) {
-//            return this.getValueData().equals(value);
-//        } else if (getMultiValues() != null) {
-//            int count = getMultiValues().size();
-//            if (count > 0) {
-//                return getMultiValues().contains(value);
-//            }
-//        }
-//        return false;
-//    }
-
     public boolean unlock(int threadId, Address address) {
         invalidateValueCache();
         return lock == null || lock.unlock(address, threadId);

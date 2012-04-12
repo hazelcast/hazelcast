@@ -653,7 +653,32 @@ public class ConcurrentMapManager extends BaseManager {
         mput.putTransient(name, key, value, timeout, ttl);
     }
 
-    void putTransientAsync(Request request) {
+    // TODO: remove when safe!
+//    void putTransientAsync(Request request) {
+//        final MPut mput = new MPut();
+//        mput.request.setFromRequest(request);
+//        mput.request.timeout = 0;
+//        mput.request.ttl = -1;
+//        mput.request.local = true;
+//        mput.request.operation = CONCURRENT_MAP_PUT_TRANSIENT;
+//        mput.request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
+//        request.setBooleanRequest();
+//        final Data value = request.value;
+//        node.executorManager.executeNow(new Runnable() {
+//            public void run() {
+//                mput.doOp();
+//                boolean success = mput.getResultAsBoolean();
+//                if (success) {
+//                    mput.request.value = value;
+//                    mput.backup(CONCURRENT_MAP_BACKUP_PUT);
+//                }
+//            }
+//        });
+//    }
+
+    // used by GetMapEntryLoader, GetOperationHandler, ContainsKeyOperationHandler
+    // this method replaces 'putTransientAsync'
+    private void putTransient(Request request) {
         final MPut mput = new MPut();
         mput.request.setFromRequest(request);
         mput.request.timeout = 0;
@@ -663,16 +688,12 @@ public class ConcurrentMapManager extends BaseManager {
         mput.request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
         request.setBooleanRequest();
         final Data value = request.value;
-        node.executorManager.executeNow(new Runnable() {
-            public void run() {
-                mput.doOp();
-                boolean success = mput.getResultAsBoolean();
-                if (success) {
-                    mput.request.value = value;
-                    mput.backup(CONCURRENT_MAP_BACKUP_PUT);
-                }
-            }
-        });
+        mput.doOp();
+        boolean success = mput.getResultAsBoolean();
+        if (success) {
+            mput.request.value = value;
+            mput.backup(CONCURRENT_MAP_BACKUP_PUT);
+        }
     }
 
     Map getAll(String name, Set keys) {
@@ -2236,9 +2257,9 @@ public class ConcurrentMapManager extends BaseManager {
     class BackupPacketProcessor extends AbstractOperationHandler {
         public void handle(Request request) {
             doOperation(request);
+            // If request is not a Call, no need to return a response
+            // @see AsyncBackupProcessable
             if (request.callId != -1) {
-                // Request is not a Call, no need to return a response
-                // @see AsyncBackupProcessable
                 returnResponse(request);
             }
         }
@@ -3338,7 +3359,8 @@ public class ConcurrentMapManager extends BaseManager {
                 if (value != null) {
                     setIndexValues(request, value);
                     request.value = toData(value);
-                    putTransientAsync(request);
+//                    putTransientAsync(request);
+                    putTransient(request);
                 } else {
                     success = false;
                 }
@@ -3439,7 +3461,8 @@ public class ConcurrentMapManager extends BaseManager {
                 if (value != null) {
                     setIndexValues(request, value);
                     request.value = toData(value);
-                    putTransientAsync(request);
+//                    putTransientAsync(request);
+                    putTransient(request);
                 } else {
                     success = false;
                 }
@@ -3485,7 +3508,8 @@ public class ConcurrentMapManager extends BaseManager {
                 if (value != null) {
                     setIndexValues(request, value);
                     request.value = toData(value);
-                    putTransientAsync(request);
+//                    putTransientAsync(request);
+                    putTransient(request);
                 } else {
                     success = false;
                 }

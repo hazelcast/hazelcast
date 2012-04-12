@@ -652,62 +652,6 @@ public class CMap {
         return false;
     }
 
-    // TODO: clean if safe!
-//    public boolean containsKey(Request req) {
-//        Data key = req.key;
-//        Data value = req.value;
-//        if (key != null) {
-//            Record record = getRecord(req);
-//            if (record == null) {
-//                return false;
-//            } else {
-//                if (record.isActive() && record.isValid()) {
-//                    if (value == null) {
-//                        return record.valueCount() > 0;
-//                    } else {
-//                        return record.containsValue(value);
-//                    }
-//                }
-//            }
-//        } else {
-//            Collection<Record> records = mapRecords.values();
-//            for (Record record : records) {
-//                long now = Clock.currentTimeMillis();
-//                if (record.isActive() && record.isValid(now)) {
-//                    Address owner = concurrentMapManager.getPartitionManager().getOwner(record.getBlockId());
-//                    if (thisAddress.equals(owner)) {
-//                        if (record.containsValue(value)) {
-//                            return true;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        return false;
-//    }
-
-    // TODO: clean if safe!
-//    public void containsValue(Request request) {
-//        if (isMultiMap()) {
-//            boolean found = false;
-//            Collection<Record> records = mapRecords.values();
-//            for (Record record : records) {
-//                long now = Clock.currentTimeMillis();
-//                if (record.isActive() && record.isValid(now)) {
-//                    Address owner = concurrentMapManager.getPartitionOwner(record.getBlockId());
-//                    if (thisAddress.equals(owner)) {
-//                        if (record.containsValue(request.value)) {
-//                            found = true;
-//                        }
-//                    }
-//                }
-//            }
-//            request.response = found;
-//        } else {
-//            request.response = mapIndexService.containsValue(request.value);
-//        }
-//    }
-
     public CMapEntry getMapEntry(Request req) {
         Record record = getRecord(req);
         if (record == null || !record.isActive() || !record.isValid()) {
