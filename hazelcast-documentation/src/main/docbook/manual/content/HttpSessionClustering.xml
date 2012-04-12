@@ -1,7 +1,22 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<para version='5.0' xmlns='http://docbook.org/ns/docbook'
-        >
+<!--
+  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<para version='5.0' xmlns='http://docbook.org/ns/docbook'>
     Say you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down
     then your users on that server will be directed to one of the live servers (B or C) but their sessions will be lost!
     So we have to have all these sessions backed up somewhere if we don't want to lose the sessions upon server crashes.
@@ -67,13 +82,30 @@
         <param-value>true</param-value>
     </init-param>
     <!--
+        Name of session id cookie
+    -->
+    <init-param>
+        <param-name>cookie-name</param-name>
+        <param-value>hazelcast.sessionId</param-value>
+    </init-param>
+    <!--
         Are you debugging? Default is false.
     -->
     <init-param>
         <param-name>debug</param-name>
         <param-value>true</param-value>
     </init-param>
+    <!--
+        Do you want to shutdown HazelcastInstance during
+        web application undeploy process?
+        Default is true.
+    -->
+    <init-param>
+        <param-name>shutdown-on-destroy</param-name>
+        <param-value>true</param-value>
+    </init-param>
 </filter>
+
 <filter-mapping>
     <filter-name>hazelcast-filter</filter-name>
     <url-pattern>/*</url-pattern>
@@ -97,5 +129,34 @@
     <literal>WebFilter</literal>
     and it will put the
     session objects into Hazelcast distributed map if needed.
+
+    <para>
+        <emphasis role="bold">Info about sticky-sessions:</emphasis>
+        Hazelcast holds whole session attributes in a distributed map and in local http session. Local session is required
+        for fast access to data and distributed map is needed for fail-safety.
+        <itemizedlist>
+            <listitem>
+                <para>
+                    <emphasis role="italic">If sticky-session is not used, whenever a session a attribute
+                    is updated in a node (in both node local session and clustered cache),
+                    that attribute should be invalidated in all other nodes' local sessions,
+                    because now they have dirty value. So when a request arrives one of those other nodes
+                    that attribute value is fetched from clustered cache.</emphasis>
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>
+                    <emphasis role="italic">To overcome performance penalty of sending invalidation messages during updates,
+                        sticky-sessions can be used.
+                        If Hazelcast knows sessions are sticky, invalidation will not be send, because Hazelcast assumes there is
+                        no other local session at the moment. When a server is down, requests belonging to a session hold
+                        in that server will routed to other one and that server will fetch session data from clustered cache.
+                        That means using sticky-sessions, one will not suffer performance penalty of accessing clustered data
+                        and can benefit recover from a server failure.</emphasis>
+                </para>
+            </listitem>
+        </itemizedlist>
+    </para>
 
 </para>

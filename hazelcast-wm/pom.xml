@@ -19,6 +19,7 @@
         <catalina.version>6.0.16</catalina.version>
         <jsp.api.version>2.0</jsp.api.version>
         <servlet.api.version>2.5</servlet.api.version>
+        <jetty.maven.plugin.version>8.1.2.v20120308</jetty.maven.plugin.version>
     </properties>
 
     <build>
@@ -32,6 +33,27 @@
                     <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <version>1.7</version>
+                <configuration>
+                    <signature>
+                        <groupId>org.codehaus.mojo.signature</groupId>
+                        <artifactId>java15</artifactId>
+                        <version>1.0</version>
+                    </signature>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>source-java5-check</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -90,7 +112,24 @@
                     </archive>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.mortbay.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>${jetty.maven.plugin.version}</version>
+                <configuration>
+                    <webAppSourceDirectory>${basedir}/src/test/webapp</webAppSourceDirectory>
+                    <useTestScope>true</useTestScope>
+                    <webAppConfig>
+                        <contextPath>/</contextPath>
+                        <descriptor>${basedir}/src/test/webapp/WEB-INF/web.xml</descriptor>
+                    </webAppConfig>
+                    <stopPort>9966</stopPort>
+                    <stopKey>stop</stopKey>
+                </configuration>
+            </plugin>
         </plugins>
+
     </build>
 
     <dependencies>
