@@ -90,7 +90,7 @@ public class WanReplicationTest {
             h2.getMap("default").put(i, "value" + i);
             h22.getMap("default").put(size + i, "value" + (size + i));
         }
-        assertTrue("Latch state: " + mergeLatch1, mergeLatch1.await(60, TimeUnit.SECONDS));
+        assertTrue("Latch state 1: " + mergeLatch1, mergeLatch1.await(60, TimeUnit.SECONDS));
         Thread.sleep(1000);
         assertEquals(0, mergeLatch2.totalOperations());
         assertEquals(2 * size, mergeLatch1.getUpdateCount());
@@ -105,7 +105,7 @@ public class WanReplicationTest {
             h1.getMap("default").remove(i);
             h13.getMap("default").remove(size + i);
         }
-        assertTrue("Latch state: " + mergeLatch2, mergeLatch2.await(60, TimeUnit.SECONDS));
+        assertTrue("Latch state 2: " + mergeLatch2, mergeLatch2.await(60, TimeUnit.SECONDS));
         Thread.sleep(1000);
         assertEquals(size, mergeLatch2.getRemoveCount());
         assertEquals(size, mergeLatch2.totalOperations());
