@@ -57,7 +57,8 @@ public class ConnectionManager {
 
     private final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
 
-    private final ConcurrentMap<Address, ConnectionMonitor> mapMonitors = new ConcurrentHashMap<Address, ConnectionMonitor>(100);
+    private final ConcurrentMap<Address, ConnectionMonitor> mapMonitors
+            = new ConcurrentHashMap<Address, ConnectionMonitor>(100);
 
     private final Set<Address> setConnectionInProgress = new ConcurrentHashSet<Address>();
 
@@ -116,7 +117,8 @@ public class ConnectionManager {
             }
             if (implementation != null) {
                 if (!(implementation instanceof MemberSocketInterceptor)) {
-                    logger.log(Level.SEVERE, "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
+                    logger.log(Level.SEVERE,
+                               "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
                     implementation = null;
                 } else {
                     logger.log(Level.INFO, "SocketInterceptor is enabled");
@@ -134,16 +136,19 @@ public class ConnectionManager {
     }
 
     interface SocketChannelWrapperFactory {
+
         SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
     }
 
     class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
+
         public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
             return new DefaultSocketChannelWrapper(socketChannel);
         }
     }
 
     class SSLSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
+
         final SSLContextFactory sslContextFactory;
 
         SSLSocketChannelWrapperFactory(SSLConfig sslConfig) {
@@ -234,13 +239,14 @@ public class ConnectionManager {
 
     public Connection assignSocketChannel(SocketChannelWrapper channel) {
         InOutSelector selectorAssigned = nextSelector();
-        final Connection connection = new Connection(this, selectorAssigned, connectionIdGen.incrementAndGet(), channel);
+        final Connection connection = new Connection(this, selectorAssigned, connectionIdGen.incrementAndGet(),
+                                                     channel);
         setActiveConnections.add(connection);
         selectorAssigned.addTask(connection.getReadHandler());
         selectorAssigned.selector.wakeup();
         logger.log(Level.INFO, channel.socket().getLocalPort()
-                + " accepted socket connection from "
-                + channel.socket().getRemoteSocketAddress());
+                               + " accepted socket connection from "
+                               + channel.socket().getRemoteSocketAddress());
         return connection;
     }
 
@@ -293,8 +299,9 @@ public class ConnectionManager {
     }
 
     public void destroyConnection(Connection connection) {
-        if (connection == null)
+        if (connection == null) {
             return;
+        }
         setActiveConnections.remove(connection);
         final Address endPoint = connection.getEndPoint();
         if (endPoint != null) {
