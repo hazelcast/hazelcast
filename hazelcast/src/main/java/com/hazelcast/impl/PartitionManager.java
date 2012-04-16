@@ -84,7 +84,8 @@ public class PartitionManager {
                     for (PartitionListener partitionListener : lsPartitionListeners) {
                         partitionListener.replicaChanged(event);
                     }
-                    if (node.isActive() && event.getReplicaIndex() == 0 && event.getNewAddress() == null) {
+                    if (event.getReplicaIndex() == 0 && event.getNewAddress() == null
+                            && node.isActive() && node.joined()) {
                         final String warning = "Owner of partition is being removed! " +
                                 "Possible data loss for partition[" + event.getPartitionId() + "]. "
                                 + event;
@@ -99,7 +100,7 @@ public class PartitionManager {
         }
         partitionMigrationInterval = node.groupProperties.PARTITION_MIGRATION_INTERVAL.getInteger() * 1000;
         immediateBackupInterval = node.groupProperties.IMMEDIATE_BACKUP_INTERVAL.getInteger() * 1000;
-        migrationService = new MigrationService(concurrentMapManager.node);
+        migrationService = new MigrationService(node);
         migrationService.start();
         int partitionTableSendInterval = node.groupProperties.PARTITION_TABLE_SEND_INTERVAL.getInteger();
         if (partitionTableSendInterval <= 0) {
@@ -122,12 +123,12 @@ public class PartitionManager {
 
     // for testing purposes only
     public boolean activateMigration() {
-        return migrationActive.getAndSet(true);
+        return migrationActive.compareAndSet(false, true);
     }
 
     // for testing purposes only
     public boolean inactivateMigration() {
-        migrationActive.getAndSet(false);
+        migrationActive.compareAndSet(true, false);
         while (migratingPartition != null) {
             try {
                 Thread.sleep(250);
@@ -139,7 +140,14 @@ public class PartitionManager {
     }
 
     private void sendClusterRuntimeState() {
-        if (!concurrentMapManager.isMaster() || !concurrentMapManager.isActive()) return;
+        if (!concurrentMapManager.isMaster() || !concurrentMapManager.isActive()
+                || !concurrentMapManager.node.joined()) {
+            return;
+        }
+        if (!migrationActive.get()) {
+            // migration is disabled because of a member leave, wait till enabled!
+            return;
+        }
         // do not send partition state until initialized!
         // sending partition state makes nodes believe initialization completed.
         if (!initialized) return;
@@ -371,6 +379,11 @@ public class PartitionManager {
         if (!hasStorageMember()) {
             reset();
         }
+        // inactivate migration and sending of ClusterRuntimeState (@see #sendClusterRuntimeState)
+        // let all members notice the dead and fix their own records and indexes.
+        // otherwise new master may take action fast and send new partition state
+        // before other members realize the dead one and fix their records.
+        final boolean migrationStatus = migrationActive.getAndSet(false);
         concurrentMapManager.partitionServiceImpl.reset();
         checkMigratingPartitionForDead(deadAddress);
         // list of partitions those have dead member in their replicas
@@ -393,6 +406,17 @@ public class PartitionManager {
         }
         fixCMapsForDead(deadAddress, indexesOfDead);
         fixReplicasAndPartitionsForDead(deadMember, indexesOfDead);
+
+        final Node node = concurrentMapManager.node;
+        // activate migration back after connectionDropTime x 10 milliseconds,
+        // thinking optimistically that all nodes notice the dead one in this period.
+        final long waitBeforeMigrationActivate = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
+                * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 10;
+        node.executorManager.getScheduledExecutorService().schedule(new Runnable() {
+            public void run() {
+                migrationActive.compareAndSet(false, migrationStatus);
+    }
+        }, waitBeforeMigrationActivate, TimeUnit.MILLISECONDS);
     }
 
     private void fixReplicasAndPartitionsForDead(final MemberImpl deadMember, final int[] indexesOfDead) {
@@ -489,11 +513,15 @@ public class PartitionManager {
     }
 
     private int getMaxBackupCount() {
+        final Collection<CMap> cmaps = concurrentMapManager.maps.values();
+        if (!cmaps.isEmpty()) {
         int maxBackupCount = 0;
-        for (final CMap cmap : concurrentMapManager.maps.values()) {
-            maxBackupCount = Math.max(maxBackupCount, cmap.getBackupCount());
+            for (final CMap cmap : cmaps) {
+                maxBackupCount = Math.max(maxBackupCount, cmap.getBackupCount());
+            }
+            return maxBackupCount;
         }
-        return maxBackupCount;
+        return 1; // if there is no map, avoid extra processing.
     }
 
     public void syncForAdd() {
@@ -921,7 +949,8 @@ public class PartitionManager {
                 }
             } catch (Throwable t) {
                 logger.log(Level.WARNING, "Error [" + t.getClass() + ": " + t.getMessage() + "] " +
-                        "while executing " + migrationRequestTask, t);
+                        "while executing " + migrationRequestTask);
+                logger.log(Level.FINEST, t.getMessage(), t);
                 systemLogService.logPartition("Failed! " + migrationRequestTask);
             }
         }
