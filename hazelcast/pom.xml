@@ -74,7 +74,6 @@
                         </goals>
                         <configuration>
                             <instructions>
-                                <_include>src/main/resources/META-INF/MANIFEST.MF</_include>
                                 <Import-Package>
                                     !junit.framework,
                                     !org.junit,
@@ -98,8 +97,13 @@
                     <archive>
                         <index>true</index>
                         <compress>true</compress>
-                        <manifestFile>${basedir}/target/classes/META-INF/MANIFEST.MF</manifestFile>
-                        <!--<manifestFile>src/main/resources/META-INF/MANIFEST.MF</manifestFile>-->
+                        <manifest>
+                            <mainClass>com.hazelcast.examples.SimpleMapTest</mainClass>
+                            <!--<addClasspath>true</addClasspath>-->
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
             </plugin>
