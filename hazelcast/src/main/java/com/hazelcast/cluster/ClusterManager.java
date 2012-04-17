@@ -262,8 +262,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 lsDeadAddresses.add(address);
                             } else if ((now - memberImpl.getLastRead()) >= 5000 && (now - memberImpl.getLastPing()) >= 5000) {
                                 ping(memberImpl);
-//                            } else if ((now - memberImpl.getLastRead()) >= 10000) {
-//                                node.connectionManager.destroyConnection(conn);
                             }
                             if ((now - memberImpl.getLastWrite()) > 500) {
                                 sendHeartbeat(conn);
@@ -297,8 +295,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         removed = true;
                     } else if ((now - masterMember.getLastRead()) >= 5000 && (now - masterMember.getLastPing()) >= 5000) {
                         ping(masterMember);
-//                    } else if ((now - masterMember.getLastRead()) >= 10000) {
-//                        node.connectionManager.destroyConnection(connMaster);
                     }
                 }
                 if (!removed) {
@@ -452,8 +448,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     void handleJoinRequest(JoinRequest joinRequest) {
         final long now = Clock.currentTimeMillis();
-        String msg = joinInProgress + " Handling join from " + joinRequest.address + " timeToStart: "
-                + (timeToStartJoin - now);
+        String msg = "Handling join from " + joinRequest.address + ", inProgress: " + joinInProgress
+                     + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
         logger.log(Level.FINEST, msg);
         final MemberImpl member = getMember(joinRequest.address);
         final Connection conn = joinRequest.getConnection();

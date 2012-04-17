@@ -371,11 +371,11 @@ public class FactoryImpl implements HazelcastInstance {
 
     public FactoryImpl(String name, Config config) {
         this.name = name;
-        node = new Node(this, config);
+        lifecycleService = new LifecycleServiceImpl(FactoryImpl.this);
         managedContext = new HazelcastManagedContext(this, config.getManagedContext());
+        node = new Node(this, config);
         proxyFactory = node.initializer.getProxyFactory();
         logger = node.getLogger(FactoryImpl.class.getName());
-        lifecycleService = new LifecycleServiceImpl(FactoryImpl.this);
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
         locksMapProxy = proxyFactory.createMapProxy(Prefix.MAP_HAZELCAST + "Locks");
         lifecycleService.fireLifecycleEvent(STARTING);
