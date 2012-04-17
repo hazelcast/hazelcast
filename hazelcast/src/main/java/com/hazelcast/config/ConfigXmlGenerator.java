@@ -216,7 +216,14 @@ public class ConfigXmlGenerator {
             if (m.getMapStoreConfig() != null) {
                 final MapStoreConfig s = m.getMapStoreConfig();
                 xml.append("<map-store enabled=\"").append(s.isEnabled()).append("\">");
-                xml.append("<class-name>").append(s.getClassName()).append("</class-name>");
+                final String clazz = s.getImplementation() != null ? s.getImplementation().getClass().getName() : s.getClassName();
+                xml.append("<class-name>").append(clazz).append("</class-name>");
+                final String factoryClass = s.getFactoryImplementation() != null
+                                            ? s.getFactoryImplementation().getClass().getName()
+                                            : s.getFactoryClassName();
+                if (factoryClass != null) {
+                    xml.append("<factory-class-name>").append(factoryClass).append("</factory-class-name>");
+                }
                 xml.append("<write-delay-seconds>").append(s.getWriteDelaySeconds()).append("</write-delay-seconds>");
                 appendProperties(xml, s.getProperties());
                 xml.append("</map-store>");
@@ -250,7 +257,8 @@ public class ConfigXmlGenerator {
                 xml.append("<entry-listeners>");
                 for (EntryListenerConfig lc : m.getEntryListenerConfigs()) {
                     xml.append("<entry-listener include-value=\"").append(lc.isIncludeValue()).append("\" local=\"").append(lc.isLocal()).append("\">");
-                    xml.append(lc.getClassName());
+                    final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    xml.append(clazz);
                     xml.append("</entry-listener>");
                 }
                 xml.append("</entry-listeners>");
@@ -268,7 +276,8 @@ public class ConfigXmlGenerator {
                 xml.append("<entry-listeners>");
                 for (EntryListenerConfig lc : mm.getEntryListenerConfigs()) {
                     xml.append("<entry-listener include-value=\"").append(lc.isIncludeValue()).append("\" local=\"").append(lc.isLocal()).append("\">");
-                    xml.append(lc.getClassName());
+                    final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    xml.append(clazz);
                     xml.append("</entry-listener>");
                 }
                 xml.append("</entry-listeners>");
@@ -283,7 +292,8 @@ public class ConfigXmlGenerator {
                 xml.append("<message-listeners>");
                 for (ListenerConfig lc : t.getMessageListenerConfigs()) {
                     xml.append("<message-listener>");
-                    xml.append(lc.getClassName());
+                    final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    xml.append(clazz);
                     xml.append("</message-listener>");
                 }
                 xml.append("</message-listeners>");
@@ -312,7 +322,8 @@ public class ConfigXmlGenerator {
             xml.append("<listeners>");
             for (ListenerConfig lc : config.getListenerConfigs()) {
                 xml.append("<listener>");
-                xml.append(lc.getClassName());
+                final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                xml.append(clazz);
                 xml.append("</listener>");
             }
             xml.append("</listeners>");
