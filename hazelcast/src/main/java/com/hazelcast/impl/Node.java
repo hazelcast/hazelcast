@@ -22,6 +22,7 @@ import com.hazelcast.config.Join;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.InstanceListener;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
@@ -240,6 +241,8 @@ public class Node {
                 clusterImpl.addMembershipListener((MembershipListener) listener);
             } else if (listener instanceof MigrationListener) {
                 concurrentMapManager.partitionServiceImpl.addMigrationListener((MigrationListener) listener);
+            } else if (listener instanceof LifecycleListener) {
+                factory.lifecycleService.addLifecycleListener((LifecycleListener) listener);
             } else if (listener != null) {
                 final String error = "Unknown listener type: " + listener.getClass();
                 Throwable t = new IllegalArgumentException(error);

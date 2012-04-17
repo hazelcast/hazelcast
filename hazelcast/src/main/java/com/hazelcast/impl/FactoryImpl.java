@@ -367,13 +367,13 @@ public class FactoryImpl implements HazelcastInstance {
 
     public FactoryImpl(String name, Config config) {
         this.name = name;
+        lifecycleService = new LifecycleServiceImpl(FactoryImpl.this);
         node = new Node(this, config);
+        lifecycleService.fireLifecycleEvent(STARTING);
         proxyFactory = node.initializer.getProxyFactory();
         logger = node.getLogger(FactoryImpl.class.getName());
-        lifecycleService = new LifecycleServiceImpl(FactoryImpl.this);
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
         locksMapProxy = proxyFactory.createMapProxy(Prefix.MAP_HAZELCAST + "Locks");
-        lifecycleService.fireLifecycleEvent(STARTING);
         node.start();
         if (!node.isActive()) {
             throw new IllegalStateException("Node failed to start!");
