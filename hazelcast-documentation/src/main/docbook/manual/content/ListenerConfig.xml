@@ -89,7 +89,7 @@
                 </para>
                 <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MembershipListener"));</programlisting>
+config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MembershipListener"));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
@@ -113,7 +113,7 @@
                 </para>
                 <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.InstanceListener"));</programlisting>
+config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.InstanceListener"));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
@@ -137,7 +137,7 @@
                 </para>
                 <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MigrationListener"));</programlisting>
+config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MigrationListener"));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
@@ -188,7 +188,7 @@
                 </para>
                 <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        mapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.examples.EntryListener", false, false));</programlisting>
+mapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.examples.EntryListener", false, false));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
@@ -217,7 +217,7 @@
                 </para>
                 <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        multiMapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.examples.EntryListener", false, false));</programlisting>
+multiMapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.examples.EntryListener", false, false));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
@@ -246,7 +246,7 @@
                 </para>
                 <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        queueConfig.addItemListenerConfig(new ItemListenerConfig("com.hazelcast.examples.ItemListener", true));</programlisting>
+queueConfig.addItemListenerConfig(new ItemListenerConfig("com.hazelcast.examples.ItemListener", true));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
@@ -273,7 +273,7 @@
                 </para>
                 <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        topicConfig.addMessageListenerConfig(new ListenerConfig("com.hazelcast.examples.MessageListener"));</programlisting>
+topicConfig.addMessageListenerConfig(new ListenerConfig("com.hazelcast.examples.MessageListener"));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
