@@ -28,6 +28,7 @@ import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URL;
 
 import static org.junit.Assert.*;
@@ -125,6 +126,23 @@ public class XMLConfigBuilderTest {
     @Test
     public void testFullConfigXML() throws SAXException, IOException {
         testXSDConfigXML("hazelcast-fullconfig.xml");
+    }
+
+    @Test
+    public void testConfig2Xml() throws SAXException, IOException {
+        String fullXml = new ConfigXmlGenerator().generate(new ClasspathXmlConfig("hazelcast-fullconfig.xml"));
+        SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
+        URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-2.0.xsd");
+        File schemaFile = new File(schemaUrl.getFile());
+        Schema schema = factory.newSchema(schemaFile);
+        Validator validator = schema.newValidator();
+        Source source = new StreamSource(new StringReader(fullXml));
+        try {
+            validator.validate(source);
+        } catch (SAXException ex) {
+            fail(ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
     private void testXSDConfigXML(String xmlResource) throws SAXException, IOException {
