@@ -63,8 +63,10 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("name='abc-123-xvz'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("name='abc 123-xvz'").apply(createEntry("1", new QueryTest.Employee("abc 123-xvz", 34, true, 10D))));
         assertTrue(new SqlPredicate("name='abc 123-xvz+(123)'").apply(createEntry("1", new QueryTest.Employee("abc 123-xvz+(123)", 34, true, 10D))));
-        assertFalse(new SqlPredicate("name='abc 123-xvz+(123)'").apply(createEntry("1", new QueryTest.Employee("abc123-xvz+(123)", 34, true, 10D))));
-        assertTrue(new SqlPredicate("name LIKE 'abc-%'").apply(createEntry("1", new QueryTest.Employee("abc-123", 34, true, 10D))));
+        assertFalse(new SqlPredicate("name='abc 123-xvz+(123)'")
+                            .apply(createEntry("1", new QueryTest.Employee("abc123-xvz+(123)", 34, true, 10D))));
+        assertTrue(new SqlPredicate("name LIKE 'abc-%'")
+                           .apply(createEntry("1", new QueryTest.Employee("abc-123", 34, true, 10D))));
         assertTrue(Predicates.equal(new DummyExpression("value"), "value").apply(null));
         assertFalse(Predicates.equal(new DummyExpression("value1"), "value").apply(null));
         assertFalse(Predicates.equal(new DummyExpression("value"), "value1").apply(null));
@@ -78,13 +80,19 @@ public class PredicatesTest {
         assertTrue(Predicates.greaterThan(new DummyExpression(6), 5).apply(null));
         assertFalse(Predicates.greaterThan(new DummyExpression(4), 5).apply(null));
         assertFalse(Predicates.greaterThan(new DummyExpression(5), 5).apply(null));
+        assertTrue(Predicates.greaterThan(new DummyExpression("xa"), "aa").apply(null));
+        assertFalse(Predicates.greaterThan(new DummyExpression("cz"), "da").apply(null));
         assertTrue(Predicates.greaterEqual(new DummyExpression(5), 5).apply(null));
         assertTrue(Predicates.lessThan(new DummyExpression(6), 7).apply(null));
         assertFalse(Predicates.lessThan(new DummyExpression(4), 3).apply(null));
         assertFalse(Predicates.lessThan(new DummyExpression(4), 4).apply(null));
+        assertTrue(Predicates.lessThan(new DummyExpression("bz"), "tc").apply(null));
+        assertFalse(Predicates.lessThan(new DummyExpression("h0"), "gx").apply(null));
         assertTrue(Predicates.lessEqual(new DummyExpression(4), 4).apply(null));
         assertTrue(Predicates.between(new DummyExpression(5), 4, 6).apply(null));
         assertTrue(Predicates.between(new DummyExpression(5), 5, 6).apply(null));
+        assertTrue(Predicates.between(new DummyExpression("prs"), "abc", "xyz").apply(null));
+        assertFalse(Predicates.between(new DummyExpression("efgh"), "klmn", "xyz").apply(null));
         assertFalse(Predicates.between(new DummyExpression(5), 6, 7).apply(null));
         assertTrue(Predicates.in(new DummyExpression(5), 4, 7, 8, 5).apply(null));
         assertTrue(Predicates.in(new DummyExpression(5), 5, 7, 8).apply(null));

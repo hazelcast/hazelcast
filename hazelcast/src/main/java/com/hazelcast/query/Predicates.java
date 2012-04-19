@@ -60,9 +60,8 @@ public final class Predicates {
         }
 
         protected boolean doApply(Object first, Object second) {
-            int expectedResult = (less) ? -1 : 1;
-            int result = ((Comparable) first).compareTo(second);
-            return equal && result == 0 || (expectedResult == result);
+            final int result = ((Comparable) first).compareTo(second);
+            return equal && result == 0 || (less ? (result < 0) : (result > 0));
         }
 
         public Set<MapEntry> filter(QueryContext queryContext) {
