@@ -23,10 +23,31 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * A specialized map whose keys can be associated with multiple values.
+ * <p/>
+ * <p>
+ * <b>Gotchas:</b>
+ * <ul>
+ * <li>
+ * Methods, including but not limited to <tt>get</tt>, <tt>containsKey</tt>,
+ * <tt>containsValue</tt>, <tt>remove</tt>, <tt>put</tt>,
+ * <tt>lock</tt>, <tt>unlock</tt>, do not use <tt>hashCode</tt> and <tt>equals</tt>
+ * implementations of keys (or values),
+ * instead they use <tt>hashCode</tt> and <tt>equals</tt> of binary (serialized) forms of the objects.
+ * </li>
+ * <li>
+ * Methods, including but not limited to <tt>get</tt>, <tt>remove</tt>,
+ * <tt>keySet</tt>, <tt>values</tt>, <tt>entrySet</tt>,
+ * return a collection clone of the values. The collection is <b>NOT</b> backed by the map,
+ * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+ * </li>
+ * </ul>
+ * </p>
  *
  * @author oztalip
+ * @see IMap
  */
 public interface MultiMap<K, V> extends Instance {
+
     /**
      * Returns the name of this multimap.
      *
@@ -36,6 +57,13 @@ public interface MultiMap<K, V> extends Instance {
 
     /**
      * Stores a key-value pair in the multimap.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
      *
      * @param key   the key to be stored
      * @param value the value to be stored
@@ -46,6 +74,17 @@ public interface MultiMap<K, V> extends Instance {
 
     /**
      * Returns the collection of values associated with the key.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
+     * <p/>
+     * <p><b>Warning-2:</b></p>
+     * The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
      *
      * @param key the key whose associated values are to be returned
      * @return the collection of the values associated with the key.
@@ -54,6 +93,11 @@ public interface MultiMap<K, V> extends Instance {
 
     /**
      * Removes the given key value pair from the multimap.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary forms of
+     * the <tt>key</tt> and <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s and <tt>value</tt>'s classes.
      *
      * @param key   the key of the entry to remove
      * @param value the value of the entry to remove
@@ -63,6 +107,17 @@ public interface MultiMap<K, V> extends Instance {
 
     /**
      * Removes all the entries with the given key.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
+     * <p/>
+     * <p><b>Warning-2:</b></p>
+     * The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
      *
      * @param key the key of the entries to remove
      * @return the collection of removed values associated with the given key. Returned collection
@@ -79,6 +134,10 @@ public interface MultiMap<K, V> extends Instance {
      * Note that ownership of these keys might change over time
      * so that key ownerships can be almost evenly distributed
      * in the cluster.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * The set is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      *
      * @return locally owned keys.
      */
@@ -86,6 +145,10 @@ public interface MultiMap<K, V> extends Instance {
 
     /**
      * Returns the set of keys in the multimap.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * The set is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      *
      * @return the set of keys in the multimap. Returned set might be modifiable
      *         but it has no effect on the multimap
@@ -94,6 +157,10 @@ public interface MultiMap<K, V> extends Instance {
 
     /**
      * Returns the collection of values in the multimap.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
      *
      * @return the collection of values in the multimap. Returned collection might be modifiable
      *         but it has no effect on the multimap
@@ -102,6 +169,10 @@ public interface MultiMap<K, V> extends Instance {
 
     /**
      * Returns the set of key-value pairs in the multimap.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * The set is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      *
      * @return the set of key-value pairs in the multimap. Returned set might be modifiable
      *         but it has no effect on the multimap
@@ -110,6 +181,13 @@ public interface MultiMap<K, V> extends Instance {
 
     /**
      * Returns whether the multimap contains an entry with the key.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
      *
      * @param key the key whose existence is checked.
      * @return true if the multimap contains an entry with the key, false otherwise.
@@ -118,6 +196,13 @@ public interface MultiMap<K, V> extends Instance {
 
     /**
      * Returns whether the multimap contains an entry with the value.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>value</tt>'s class.
+     * </p>
      *
      * @param value the value whose existence is checked.
      * @return true if the multimap contains an entry with the value, false otherwise.
@@ -126,6 +211,11 @@ public interface MultiMap<K, V> extends Instance {
 
     /**
      * Returns whether the multimap contains the given key-value pair.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary forms of
+     * the <tt>key</tt> and <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s and <tt>value</tt>'s classes.
      *
      * @param key   the key whose existence is checked.
      * @param value the value whose existence is checked.
@@ -147,6 +237,13 @@ public interface MultiMap<K, V> extends Instance {
 
     /**
      * Returns number of values matching to given key in the multimap.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
      *
      * @param key the key whose values count are to be returned
      * @return number of values matching to given key in the multimap.
@@ -194,6 +291,13 @@ public interface MultiMap<K, V> extends Instance {
      * Adds the specified entry listener for the specified key.
      * The listener will get notified for all
      * add/remove/update/evict events of the specified key only.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
      *
      * @param listener     entry listener
      * @param key          the key to listen
@@ -206,6 +310,13 @@ public interface MultiMap<K, V> extends Instance {
      * Removes the specified entry listener for the specified key.
      * Returns silently if there is no such listener added before for
      * the key.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
      *
      * @param listener
      * @param key
@@ -223,6 +334,13 @@ public interface MultiMap<K, V> extends Instance {
      * <p/>
      * Locks are re-entrant so if the key is locked N times then
      * it should be unlocked N times before another thread can acquire it.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
      *
      * @param key key to lock.
      */
@@ -232,6 +350,13 @@ public interface MultiMap<K, V> extends Instance {
      * Tries to acquire the lock for the specified key.
      * <p>If the lock is not available then the current thread
      * doesn't wait and returns false immediately.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
      *
      * @param key key to lock.
      * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
@@ -247,6 +372,13 @@ public interface MultiMap<K, V> extends Instance {
      * <li>The lock is acquired by the current thread; or
      * <li>The specified waiting time elapses
      * </ul>
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
      *
      * @param time     the maximum time to wait for the lock
      * @param timeunit the time unit of the <tt>time</tt> argument.
@@ -258,6 +390,13 @@ public interface MultiMap<K, V> extends Instance {
     /**
      * Releases the lock for the specified key. It never blocks and
      * returns immediately.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
      *
      * @param key key to lock.
      */
@@ -274,6 +413,13 @@ public interface MultiMap<K, V> extends Instance {
      * <li>The lock is acquired by the current thread; or
      * <li>The specified waiting time elapses
      * </ul>
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * </p>
      *
      * @param time     the maximum time to wait for the lock
      * @param timeunit the time unit of the <tt>time</tt> argument.
