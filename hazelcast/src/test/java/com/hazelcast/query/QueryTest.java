@@ -783,7 +783,7 @@ public class QueryTest extends TestUtil {
 
     @Test
     public void queryWithThis() {
-        IMap<String, String> map = Hazelcast.getMap("map");
+        IMap<String, String> map = Hazelcast.getMap("queryWithThis");
         map.addIndex("this", false);
         for (int i = 0; i < 1000; i++) {
             map.put("" + i, "" + i);
@@ -799,7 +799,7 @@ public class QueryTest extends TestUtil {
      */
     @Test
     public void testPredicateWithEntryKeyObject() {
-        IMap map = Hazelcast.getMap("test");
+        IMap map = Hazelcast.getMap("testPredicateWithEntryKeyObject");
         map.put("1", 11);
         map.put("2", 22);
         map.put("3", 33);
@@ -808,6 +808,52 @@ public class QueryTest extends TestUtil {
         predicate = new PredicateBuilder().getEntryObject().key().in("2", "3");
         assertEquals(2, map.keySet(predicate).size());
         Hazelcast.shutdownAll();
+    }
+
+    /**
+     *  Github issues 98 and 131
+     */
+    @Test
+    public void testPredicateStringAttribute() {
+        IMap map = Hazelcast.getMap("testPredicateStringWithString");
+        map.put(1, new Value("abc"));
+        map.put(2, new Value("xyz"));
+        map.put(3, new Value("aaa"));
+        map.put(4, new Value("zzz"));
+        map.put(5, new Value("klm"));
+        map.put(6, new Value("prs"));
+        map.put(7, new Value("prs"));
+        map.put(8, new Value("def"));
+        map.put(9, new Value("qwx"));
+
+        assertEquals(8, map.values(new SqlPredicate("name > 'aac'")).size());
+        assertEquals(9, map.values(new SqlPredicate("name between 'aaa' and 'zzz'")).size());
+        assertEquals(7, map.values(new SqlPredicate("name < 't'")).size());
+        assertEquals(6, map.values(new SqlPredicate("name >= 'gh'")).size());
+    }
+
+    /**
+     *  Github issues 98 and 131
+     */
+    @Test
+    public void testPredicateStringAttributesWithIndex() {
+        IMap map = Hazelcast.getMap("testPredicateStringWithStringIndex");
+        map.addIndex("name", false);
+        map.put(1, new Value("abc"));
+        map.put(2, new Value("xyz"));
+        map.put(3, new Value("aaa"));
+        map.put(4, new Value("zzz"));
+        map.put(5, new Value("klm"));
+        map.put(6, new Value("prs"));
+        map.put(7, new Value("prs"));
+        map.put(8, new Value("def"));
+        map.put(9, new Value("qwx"));
+
+        assertEquals(8, map.values(new SqlPredicate("name > 'aac'")).size());
+        assertEquals(9, map.values(new SqlPredicate("name between 'aaa' and 'zzz'")).size());
+        assertEquals(7, map.values(new SqlPredicate("name < 't'")).size());
+        assertEquals(6, map.values(new SqlPredicate("name >= 'gh'")).size());
+
     }
 
     public void doFunctionalSQLQueryTest(IMap imap) {

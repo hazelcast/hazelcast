@@ -188,7 +188,7 @@ public class Index {
         } else if (value instanceof Boolean) {
             return (Boolean.TRUE.equals(value)) ? 1 : -1;
         } else if (value instanceof String) {
-            return value.hashCode();
+            return getLongValueForString((String) value);
         } else {
             return value.hashCode();
         }
@@ -218,6 +218,19 @@ public class Index {
             }
         }
         return getLongValueByType(value);
+    }
+
+    /**
+     * @see String#compareTo(String)
+     */
+    private static long getLongValueForString(String s) {
+        final int maxCharsToIndex = 5;  // just index first 5 chars
+        final char[] chars = s.toCharArray();
+        long result = 0L;
+        for (int i = 0; i < Math.min(maxCharsToIndex, chars.length); i++) {
+            result += Math.pow(127, (maxCharsToIndex - i)) * chars[i];
+        }
+        return result;
     }
 
     public int getAttributeIndex() {
