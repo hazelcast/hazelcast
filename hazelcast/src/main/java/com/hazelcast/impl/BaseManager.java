@@ -1244,8 +1244,8 @@ public abstract class BaseManager {
     }
 
     protected void throwCME(final Object key) {
-        throw new ConcurrentModificationException("Another thread holds a lock for the key : "
-                + key);
+        throw new ConcurrentModificationException("Could not acquire resource under transaction! " +
+                                                  "Another thread holds a lock for the key : " + key);
     }
 
     void enqueueEvent(int eventType, String name, Data key, Data value, Address from, boolean localEvent) {

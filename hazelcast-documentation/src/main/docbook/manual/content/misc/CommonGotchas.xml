@@ -45,6 +45,53 @@
                     List.
                 </para>
             </listitem>
+
+            <listitem>
+                <para>
+                    Hazelcast always return a clone copy of a value. Modifying the returned value does not change
+                    the actual value in the map (or multimap or list or set).
+                    You should put modified value back to make changes visible to all nodes.
+                    <programlisting language="java"><![CDATA[
+V value = map.get(key);
+value.updateSomeProperty();
+map.put(key, value);
+]]></programlisting>
+                    If <code>cache-value</code> is true (default is true), Hazelcast caches that returned value
+                    for fast access in local node. Modifications done to this cached value without
+                    putting it back to map will be visible to only local node, successive <code>get</code> calls will
+                    return the same cached value.
+                    To reflect modifications to distributed map, you should put modified value back into map.
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>
+                    Collections which return values of methods such as <code>IMap.keySet</code>, <code>IMap.values</code>,
+                    <code>IMap.entrySet</code>, <code>MultiMap.get</code>, <code>MultiMap.remove</code>,
+                    <code>IMap.keySet</code>, <code>IMap.values</code>, contain cloned values. These collections are NOT
+                    backup by related Hazelcast objects.
+                    So changes to the these are <b>NOT</b> reflected in the originals, and vice-versa.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Most of the Hazelcast operations throw an <code>RuntimeInterruptedException</code>
+                    (which is unchecked version of <code>InterruptedException</code>)
+                    if a user thread is interrupted while waiting a response.
+                    Hazelcast uses RuntimeInterruptedException to pass InterruptedException up through interfaces
+                    that don't have InterruptedException in their signatures. Users should be able to catch and handle
+                    <code>RuntimeInterruptedException</code> in such cases as if their threads are interrupted on
+                    a blocking operation.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Some of Hazelcast operations can throw <code>ConcurrentModificationException</code> under transaction
+                    while trying to acquire a resource, although operation signatures don't define such an exception.
+                    Exception is thrown if resource can not be acquired in a specific time. Users should be able to catch
+                    and handle <code>ConcurrentModificationException</code> while they are using Hazelcast transactions.
+                </para>
+            </listitem>
         </orderedlist>
     </para>
 </sect1>
