@@ -20,6 +20,7 @@ import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Prefix;
+import com.hazelcast.core.RuntimeInterruptedException;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.MapSystemLogFactory;
 import com.hazelcast.logging.ILogger;

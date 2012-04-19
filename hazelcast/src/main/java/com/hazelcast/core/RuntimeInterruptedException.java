@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.base;
+package com.hazelcast.core;
 
 /**
  * An unchecked version of {@link InterruptedException}.
@@ -23,7 +23,8 @@ package com.hazelcast.impl.base;
  * if a user thread is interrupted while waiting a response.
  * Hazelcast uses RuntimeInterruptedException to pass InterruptedException up through interfaces
  * that don't have InterruptedException in their signatures. Users should be able to catch and handle
- * <tt>RuntimeInterruptedException</tt> in such cases.
+ * <tt>RuntimeInterruptedException</tt> in such cases as if their threads are interrupted on
+ a blocking operation.
  * </p>
  *
  * @see InterruptedException
