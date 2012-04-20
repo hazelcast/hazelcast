@@ -52,19 +52,19 @@ public class JPAMapStore implements MapStore<Serializable, Object> {
         return crudRepository.findOne(key);
     }
 
-    // override this method after implementing deleteAll in your custom repository
+    // override this method after implementing deleteAll in your custom repository implementation
     public void deleteAll(Collection keys) {
         for(Object key: keys ) {
             crudRepository.delete(key);
         }
     }
 
-    // override this method after implementing findAllByIds in your custom repository
+    // override this method after implementing findAllByIds in your custom repository implementation
     public Map loadAll(Collection collection) {
         return null;
     }
 
-    // override this method after implementing findAllIds in your custom repository
+    // override this method after implementing findAllIds in your custom repository implementation
     public Set loadAllKeys() {
         return null;
     }
