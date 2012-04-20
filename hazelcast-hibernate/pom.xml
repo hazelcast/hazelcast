@@ -86,7 +86,6 @@
                         </goals>
                         <configuration>
                             <instructions>
-                                <_include>src/main/resources/META-INF/MANIFEST.MF</_include>
                                 <Import-Package>
                                     !junit.framework,
                                     !org.junit,
@@ -96,6 +95,7 @@
                                     org.slf4j;resolution:=optional,
                                     *
                                 </Import-Package>
+                                <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
                             </instructions>
                         </configuration>
                     </execution>
@@ -110,7 +110,12 @@
                     <archive>
                         <index>true</index>
                         <compress>true</compress>
-                        <manifestFile>${basedir}/target/classes/META-INF/MANIFEST.MF</manifestFile>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
             </plugin>

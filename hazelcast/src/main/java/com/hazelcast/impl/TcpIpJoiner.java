@@ -395,10 +395,10 @@ public class TcpIpJoiner extends AbstractJoiner {
             } catch (InterruptedException e) {
                 return;
             }
-            final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
+            final Connection conn = node.connectionManager.getConnection(possibleAddress);
             if (conn != null) {
-                JoinInfo response = node.clusterManager.checkJoin(conn);
-                if (shouldMerge(response)) {
+                final JoinInfo response = node.clusterManager.checkJoin(conn);
+                if (response != null && shouldMerge(response)) {
                     // we will join so delay the merge checks.
                     logger.log(Level.WARNING, node.address + " is merging [tcp/ip] to " + possibleAddress);
                     splitBrainHandler.restart();

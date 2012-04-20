@@ -37,6 +37,11 @@
             </listitem>
             <listitem>
                 <para>
+                    <emphasis role="bold">LifecycleListener</emphasis> for HazelcastInstance lifecycle events
+                </para>
+            </listitem>
+            <listitem>
+                <para>
                     <emphasis role="bold">EntryListener</emphasis> for IMap and MultiMap entry events
                 </para>
             </listitem>
@@ -140,6 +145,30 @@ config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MigrationLis
 <hz:listeners>
     <hz:listener class-name="com.hazelcast.spring.DummyMigrationListener"/>
     <hz:listener implementation="dummyMigrationListener"/>
+</hz:listeners>]]></programlisting>
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    <emphasis role="bold">LifecycleListener</emphasis>
+                </para>
+                <para>
+                    <emphasis role="italic">Hazelcast XML configuration</emphasis>
+                    <programlisting language="xml"><![CDATA[
+<listeners>
+        <listener>com.hazelcast.examples.LifecycleListener</listener>
+</listeners>]]></programlisting>
+                </para>
+                <para><emphasis role="italic">Config API</emphasis>
+                    <programlisting language="java">
+                        config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.LifecycleListener"));</programlisting>
+                </para>
+                <para>
+                    <emphasis role="italic">Spring XML configuration</emphasis>
+                    <programlisting language="xml"><![CDATA[
+<hz:listeners>
+    <hz:listener class-name="com.hazelcast.spring.DummyLifecycleListener"/>
+    <hz:listener implementation="dummyLifecycleListener"/>
 </hz:listeners>]]></programlisting>
                 </para>
             </listitem>

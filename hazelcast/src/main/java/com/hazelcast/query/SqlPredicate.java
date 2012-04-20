@@ -172,8 +172,8 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                         int position = i - 3;
                         validateOperandPosition(position);
                         Object expression = tokens.remove(position);
-                        Object from = tokens.remove(position);
-                        Object to = tokens.remove(position);
+                        Object from = toValue(tokens.remove(position), mapPhrases);
+                        Object to = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, between(get((String) expression), (Comparable) from, (Comparable) to));
                     } else if ("AND".equalsIgnoreCase(token)) {
                         int position = i - 2;

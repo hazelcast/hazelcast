@@ -514,7 +514,7 @@ public class ClusterBackupTest {
             }
             Collection<HazelcastInstance> set = Hazelcast.getAllHazelcastInstances();
             final int replicaMax = set.size();
-            int wait = replicaMax * 3;
+            int wait = replicaMax * 5;
             System.out.println("Waiting " + wait + " seconds for partition arrangement...");
             Thread.sleep(1000 * wait);
             int[] partitionCounts = new int[PartitionInfo.MAX_REPLICA_COUNT];

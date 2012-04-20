@@ -149,18 +149,26 @@ public abstract class AbstractJoiner implements Joiner {
                     for (Member member : node.getClusterImpl().getMembers()) {
                         MemberImpl memberImpl = (MemberImpl) member;
                         if (memberImpl.getAddress().equals(joinInfo.address)) {
+                            logger.log(Level.FINEST, "Should not merge to " + joinInfo.address
+                                      + ", because it is already member of this cluster.");
                             return false;
                         }
                     }
                     int currentMemberCount = node.getClusterImpl().getMembers().size();
                     if (joinInfo.getMemberCount() > currentMemberCount) {
                         // I should join the other cluster
-                        logger.log(Level.FINEST, node.address + "Merging because : joinInfo.getMemberCount() > currentMemberCount" + joinInfo + ", this node member count: " + node.getClusterImpl().getMembers().size());
+                        logger.log(Level.INFO, node.address + " is merging to " + joinInfo.address
+                                                 + ", because : joinInfo.getMemberCount() > currentMemberCount ["
+                                                 + (joinInfo.getMemberCount() + " > " + currentMemberCount) + "]");
+                        logger.log(Level.FINEST, joinInfo.toString());
                         shouldMerge = true;
                     } else if (joinInfo.getMemberCount() == currentMemberCount) {
                         // compare the hashes
                         if (node.getThisAddress().hashCode() > joinInfo.address.hashCode()) {
-                            logger.log(Level.FINEST, node.address + "Merging because : node.getThisAddress().hashCode() > joinInfo.address.hashCode()" + joinInfo + ", this node member count: " + node.getClusterImpl().getMembers().size());
+                            logger.log(Level.INFO, node.address + " is merging to " + joinInfo.address
+                                                     + ", because : node.getThisAddress().hashCode() > joinInfo.address.hashCode() "
+                                                     + ", this node member count: " + currentMemberCount);
+                            logger.log(Level.FINEST, joinInfo.toString());
                             shouldMerge = true;
                         }
                     }

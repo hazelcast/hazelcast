@@ -44,7 +44,7 @@ public class MulticastJoiner extends AbstractJoiner {
         long joinStartTime = Clock.currentTimeMillis();
         long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
         while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
-            String msg = "Joining master " + node.getMasterAddress();
+            String msg = "Joining master: " + node.getMasterAddress();
             logger.log(Level.FINEST, msg);
             systemLogService.logJoin(msg);
             Address masterAddressNow = findMasterWithMulticast();
@@ -105,6 +105,12 @@ public class MulticastJoiner extends AbstractJoiner {
         try {
             JoinInfo joinInfo = (JoinInfo) q.poll(3, TimeUnit.SECONDS);
             if (joinInfo != null) {
+                if (joinInfo.getMemberCount() == 1) {
+                    // if the other cluster has just single member, that may be a newly starting node
+                    // instead of a split node. (Note: TcpIpJoiner can handle this issue with JOIN_CHECK call.)
+                    // Wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinInfo.
+                    Thread.sleep(node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L * 2);
+                }
                 if (shouldMerge(joinInfo)) {
                     logger.log(Level.WARNING, node.address + " is merging [multicast] to " + joinInfo.address);
                     node.factory.restart();

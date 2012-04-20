@@ -1106,7 +1106,6 @@ public class CMap {
                 }
             }
         }
-//        System.out.println(thisAddress + "  >> " + ownedEntryCount + "  backup: " + backupEntryCount + "   map.size " + mapRecords.size());
         localMapStats.setDirtyEntryCount(zeroOrPositive(dirtyCount));
         localMapStats.setMarkedAsRemovedEntryCount(zeroOrPositive(markedAsRemovedEntryCount));
         localMapStats.setMarkedAsRemovedMemoryCost(zeroOrPositive(markedAsRemovedMemoryCost));

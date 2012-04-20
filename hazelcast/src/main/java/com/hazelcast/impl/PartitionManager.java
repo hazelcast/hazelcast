@@ -124,12 +124,12 @@ public class PartitionManager {
 
     // for testing purposes only
     public boolean activateMigration() {
-        return migrationActive.getAndSet(true);
+        return migrationActive.compareAndSet(false, true);
     }
 
     // for testing purposes only
     public boolean inactivateMigration() {
-        migrationActive.getAndSet(false);
+        migrationActive.compareAndSet(true, false);
         while (migratingPartition != null) {
             try {
                 Thread.sleep(250);
@@ -143,6 +143,10 @@ public class PartitionManager {
     private void sendClusterRuntimeState() {
         if (!concurrentMapManager.isMaster() || !concurrentMapManager.isActive()
                 || !concurrentMapManager.node.joined()) {
+            return;
+        }
+        if (!migrationActive.get()) {
+            // migration is disabled because of a member leave, wait till enabled!
             return;
         }
         // do not send partition state until initialized!
@@ -376,6 +380,11 @@ public class PartitionManager {
         if (!hasStorageMember()) {
             reset();
         }
+        // inactivate migration and sending of ClusterRuntimeState (@see #sendClusterRuntimeState)
+        // let all members notice the dead and fix their own records and indexes.
+        // otherwise new master may take action fast and send new partition state
+        // before other members realize the dead one and fix their records.
+        final boolean migrationStatus = migrationActive.getAndSet(false);
         concurrentMapManager.partitionServiceImpl.reset();
         checkMigratingPartitionForDead(deadAddress);
         // list of partitions those have dead member in their replicas
@@ -398,6 +407,17 @@ public class PartitionManager {
         }
         fixCMapsForDead(deadAddress, indexesOfDead);
         fixReplicasAndPartitionsForDead(deadMember, indexesOfDead);
+
+        final Node node = concurrentMapManager.node;
+        // activate migration back after connectionDropTime x 10 milliseconds,
+        // thinking optimistically that all nodes notice the dead one in this period.
+        final long waitBeforeMigrationActivate = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
+                * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 10;
+        node.executorManager.getScheduledExecutorService().schedule(new Runnable() {
+            public void run() {
+                migrationActive.compareAndSet(false, migrationStatus);
+            }
+        }, waitBeforeMigrationActivate, TimeUnit.MILLISECONDS);
     }
 
     private void fixReplicasAndPartitionsForDead(final MemberImpl deadMember, final int[] indexesOfDead) {

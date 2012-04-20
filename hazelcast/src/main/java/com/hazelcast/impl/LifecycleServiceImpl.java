@@ -35,16 +35,16 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
 public class LifecycleServiceImpl implements LifecycleService {
     final FactoryImpl factory;
-    final Node node;
-    final ILogger logger;
     final AtomicBoolean paused = new AtomicBoolean(false);
     final CopyOnWriteArrayList<LifecycleListener> lsLifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
     final Object lifecycleLock = new Object();
 
     public LifecycleServiceImpl(FactoryImpl factory) {
         this.factory = factory;
-        this.node = factory.node;
-        logger = node.getLogger(LifecycleServiceImpl.class.getName());
+    }
+
+    private ILogger getLogger() {
+        return factory.node.getLogger(LifecycleServiceImpl.class.getName());
     }
 
     public void addLifecycleListener(LifecycleListener lifecycleListener) {
@@ -60,7 +60,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void fireLifecycleEvent(LifecycleEvent lifecycleEvent) {
-        logger.log(Level.INFO, node.getThisAddress() + " is " + lifecycleEvent.getState());
+        getLogger().log(Level.INFO, factory.node.getThisAddress() + " is " + lifecycleEvent.getState());
         for (LifecycleListener lifecycleListener : lsLifecycleListeners) {
             lifecycleListener.stateChanged(lifecycleEvent);
         }
@@ -94,7 +94,7 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     public boolean isRunning() {
         synchronized (lifecycleLock) {
-            return node.isActive();
+            return factory.node.isActive();
         }
     }
 
@@ -118,6 +118,8 @@ public class LifecycleServiceImpl implements LifecycleService {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(RESTARTING);
             paused.set(true);
+            final Node node = factory.node;
+            final ILogger logger = getLogger();
             List<Record> lsOwnedRecords = new ArrayList<Record>();
             for (CMap cmap : node.concurrentMapManager.getCMaps().values()) {
                 if (cmap.isUserMap()) {
