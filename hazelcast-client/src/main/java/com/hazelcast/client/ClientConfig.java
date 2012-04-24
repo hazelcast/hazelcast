@@ -23,6 +23,7 @@ import com.hazelcast.security.Credentials;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
 public class ClientConfig {
@@ -37,6 +38,7 @@ public class ClientConfig {
     private boolean shuffle = false;
     private boolean updateAutomatic = true;
     private SocketInterceptor socketInterceptor = null;
+    private final Collection listeners = new HashSet();
 
     public SocketInterceptor getSocketInterceptor() {
         return socketInterceptor;
@@ -145,5 +147,20 @@ public class ClientConfig {
 
     public void setUpdateAutomatic(boolean updateAutomatic) {
         this.updateAutomatic = updateAutomatic;
+    }
+
+    public Collection getListeners() {
+        return listeners;
+    }
+
+    /**
+     * Adds a listener object to configuration to be registered when {@code HazelcastClient} starts.
+     * @param listener one of {@link com.hazelcast.core.LifecycleListener}, {@link com.hazelcast.core.InstanceListener}
+     *                 or {@link com.hazelcast.core.MembershipListener}
+     * @return
+     */
+    public ClientConfig addListener(Object listener) {
+        listeners.add(listener);
+        return this;
     }
 }
