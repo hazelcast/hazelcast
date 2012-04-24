@@ -89,9 +89,7 @@ public class ConcurrentMapManager extends BaseManager {
         partitionServiceImpl = new PartitionServiceImpl(this);
         node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
-                for (CMap cMap : maps.values()) {
-                    cMap.startCleanup(false);
-                }
+                startCleanup(true, false);
             }
         }, 1, 1, TimeUnit.SECONDS);
         registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEntryOperationHandler());
@@ -2726,7 +2724,7 @@ public class ConcurrentMapManager extends BaseManager {
                 css.logObject(request, CS_INFO, cmap);
             }
             boolean checkCapacity = request.operation != CONCURRENT_MAP_REPLACE_IF_NOT_NULL;
-            boolean overCapacity = checkCapacity && cmap.overCapacity(request);
+            boolean overCapacity = checkCapacity && cmap.overCapacity();
             boolean cmapNotLocked = cmap.isNotLocked(request);
             if (css.shouldLog(CS_TRACE)) {
                 css.trace(request, "OverCapacity/CmapNotLocked", overCapacity, cmapNotLocked);
