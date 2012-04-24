@@ -1033,6 +1033,18 @@ public class CMap {
         return size;
     }
 
+    //Note: Calling this is potentially expensive, so we shouldn't make it public.
+    private long cost() {
+        long cost = 0L;
+        long now = System.currentTimeMillis();
+        for (Record record : mapRecords.values()) {
+            if (record.isActive() && record.isValid(now)) {
+                cost += record.getCost();
+            }
+        }
+        return cost;
+    }
+
     public void collectScheduledLocks(Map<Object, DistributedLock> lockOwners, Map<Object, DistributedLock> lockRequested) {
         Collection<Record> records = mapRecords.values();
         for (Record record : records) {
@@ -1214,31 +1226,34 @@ public class CMap {
 
         MaxSizeHeapPolicy(MaxSizeConfig maxSizeConfig) {
             super(maxSizeConfig);
-            memoryLimit = maxSizeConfig.getSize() * 1000 * 1000; // MB to byte
+            memoryLimit = maxSizeConfig.getSize() * 1024 * 1024; // MB to byte
         }
 
         public boolean overCapacity() {
-            boolean over = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) > memoryLimit;
+            long cost = cost();
+            boolean over = cost > memoryLimit;
             if (over) {
-                Runtime.getRuntime().gc();
+                logger.log(Level.FINEST, "Map " + getName() + " is over-capacity (" + cost + "/" + memoryLimit + " bytes)");
             }
             return over;
         }
     }
 
     class MaxSizeHeapPercentagePolicy extends MaxSizePerJVMPolicy {
+        int maxPercent = 0;
 
         MaxSizeHeapPercentagePolicy(MaxSizeConfig maxSizeConfig) {
             super(maxSizeConfig);
+            maxPercent = maxSizeConfig.getSize();
         }
 
         public boolean overCapacity() {
-            long total = Runtime.getRuntime().totalMemory();
-            long free = Runtime.getRuntime().freeMemory();
-            int usedPercentage = (int) (((total - free) / total) * 100D);
-            boolean over = usedPercentage > maxSizeConfig.getSize();
+            long total = Runtime.getRuntime().maxMemory();
+            long cost = cost();
+            int usedPercent = (int)(((float)cost / total) * 100);
+            boolean over = usedPercent >= maxPercent;
             if (over) {
-                Runtime.getRuntime().gc();
+                logger.log(Level.FINEST, "Map " + getName() + " is over-capacity (" + usedPercent + "/" + maxPercent + "% of heap)");
             }
             return over;
         }
@@ -1300,10 +1315,11 @@ public class CMap {
                 final Set<Record> recordsToEvict = new HashSet<Record>();
                 final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(evictionComparator));
                 final Collection<Record> records = mapRecords.values();
-                final boolean overCapacity = maxSizePolicy != null && maxSizePolicy.overCapacity();
+                final boolean overCapacity = forced || (maxSizePolicy != null && maxSizePolicy.overCapacity());
                 final boolean evictionAware = evictionComparator != null && overCapacity;
                 int recordsStillOwned = 0;
                 int backupPurgeCount = 0;
+                long totalCost = 0L;
                 PartitionManager partitionManager = concurrentMapManager.partitionManager;
                 for (Record record : records) {
                     PartitionInfo partition = partitionManager.getPartition(record.getBlockId());
@@ -1335,9 +1351,10 @@ public class CMap {
                         } else {
                             recordsUnknown.add(record);
                         }
+                        totalCost += record.getCost();
                     }
                 }
-                if (evictionAware && (forced || overCapacity)) {
+                if (evictionAware) {
                     int numberOfRecordsToEvict = (int) (recordsStillOwned * evictionRate);
                     int evictedCount = 0;
                     for (Record record : sortedRecords) {
@@ -1360,7 +1377,8 @@ public class CMap {
                             + ", backupPurge:" + backupPurgeCount
                     );
                     logger.log(levelLog, thisAddress + " mapRecords: " + mapRecords.size()
-                            + "  indexes: " + mapIndexService.getOwnedRecords().size());
+                            + "  indexes: " + mapIndexService.getOwnedRecords().size()
+                            + "  cost(bytes): " + totalCost);
                 }
                 executeStoreUpdate(recordsDirty);
                 executeEviction(recordsToEvict);
