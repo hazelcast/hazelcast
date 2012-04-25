@@ -542,7 +542,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (cMap != null) {
                 Record record = cMap.getOwnedRecord(dataKey);
                 if (record != null && record.isActive() && record.isValid() && record.hasValueData()) {
-                    if (cMap.readBackupData) {
+                    if (cMap.isReadBackupData()) {
                         return true;
                     } else {
                         PartitionServiceImpl.PartitionProxy partition = partitionServiceImpl.getPartition(record.getBlockId());
@@ -1042,7 +1042,7 @@ public class ConcurrentMapManager extends BaseManager {
                         return result;
                     }
                 }
-                if (cMap.readBackupData) {
+                if (cMap.isReadBackupData()) {
                     final Record record = cMap.mapRecords.get(dataKey);
                     if (record != null && record.isActive() && record.isValid()) {
                         final Data valueData = record.getValueData();
@@ -2148,7 +2148,7 @@ public class ConcurrentMapManager extends BaseManager {
                 long now = currentTimeMillis();
                 for (Record record : cMap.mapRecords.values()) {
                     if (record.isActive() && record.isValid(now) && record.hasValueData()) {
-                        if (cMap.readBackupData) {
+                        if (cMap.isReadBackupData()) {
                             return false;
                         } else {
                             Partition partition = partitionServiceImpl.getPartition(record.getBlockId());

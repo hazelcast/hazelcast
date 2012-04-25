@@ -65,55 +65,66 @@ public class CMap {
         NONE,
         INITIALIZING,
         INITIALIZED;
-
-        boolean notInitialized() {
-            return NONE == this;
-        }
     }
 
-    final ILogger logger;
+    private final ILogger logger;
 
-    final ConcurrentMapManager concurrentMapManager;
+    private volatile InitializationState initState = InitializationState.NONE;
 
-    final Node node;
+    private final Node node;
 
-    final int PARTITION_COUNT;
+    private final Address thisAddress;
 
-    final Address thisAddress;
+    private final MapConfig mapConfig;
 
-    final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
+    private final MultiMapConfig multiMapConfig;
 
-    final String name;
+    private final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
-    final MapConfig mapConfig;
+    private int backupCount;
 
-    final MultiMapConfig multiMapConfig;
+    private int asyncBackupCount;
 
-    final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
+    private EvictionPolicy evictionPolicy;
 
-    int backupCount;
+    private Comparator<MapEntry> evictionComparator;
 
-    int asyncBackupCount;
+    private MapMaxSizePolicy maxSizePolicy;
 
-    EvictionPolicy evictionPolicy;
+    private float evictionRate;
 
-    Comparator<MapEntry> evictionComparator;
+    private long ttl; //ttl for entries
 
-    MapMaxSizePolicy maxSizePolicy;
+    private long maxIdle; //maxIdle for entries
 
-    float evictionRate;
+    private final Instance.InstanceType instanceType;
 
-    long ttl; //ttl for entries
+    private boolean readBackupData;
 
-    long maxIdle; //maxIdle for entries
+    private boolean cacheValue;
 
-    final Instance.InstanceType instanceType;
+    private volatile boolean ttlPerRecord = false;
+
+    private volatile boolean dirty = false;
+
+    private volatile long lastCleanup = Clock.currentTimeMillis();
+
+    @SuppressWarnings("VolatileLongOrDoubleField")
+    private volatile long lastEvictionTime = 0;
+
+    private DistributedLock lockEntireMap = null;
+
+    private MapStoreWrapper mapStoreWrapper;
 
     final MapLoader loader;
 
     final MapStore store;
 
-    private MapStoreWrapper mapStoreWrapper;
+    final ConcurrentMapManager concurrentMapManager;
+
+    final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
+
+    final String name;
 
     final MergePolicy mergePolicy;
 
@@ -131,24 +142,7 @@ public class CMap {
 
     final boolean multiMapSet;
 
-    boolean readBackupData;
-
-    boolean cacheValue;
-
     final boolean mapForQueue;
-
-    volatile boolean ttlPerRecord = false;
-
-    volatile boolean dirty = false;
-
-    private volatile long lastCleanup = Clock.currentTimeMillis();
-
-    @SuppressWarnings("VolatileLongOrDoubleField")
-    volatile long lastEvictionTime = 0;
-
-    DistributedLock lockEntireMap = null;
-
-    volatile InitializationState initState = InitializationState.NONE;
 
     final Object initLock = new Object();
 
@@ -163,7 +157,6 @@ public class CMap {
     CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
         this.logger = concurrentMapManager.node.getLogger(CMap.class.getName());
-        this.PARTITION_COUNT = concurrentMapManager.PARTITION_COUNT;
         this.node = concurrentMapManager.node;
         this.thisAddress = concurrentMapManager.thisAddress;
         this.name = name;
@@ -449,6 +442,14 @@ public class CMap {
 
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
+    }
+
+    public boolean isCacheValue() {
+        return cacheValue;
+    }
+
+    public boolean isReadBackupData() {
+        return readBackupData;
     }
 
     public void own(DataRecordEntry dataRecordEntry) {
@@ -1881,6 +1882,14 @@ public class CMap {
         } else {
             return new CopyOnWriteArrayList<ValueHolder>();
         }
+    }
+
+    boolean notInitialized() {
+        return (initState == InitializationState.NONE);
+    }
+
+    void setInitState(final InitializationState state) {
+        initState = state;
     }
 
     /**

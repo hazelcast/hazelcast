@@ -566,19 +566,20 @@ public class FactoryImpl implements HazelcastInstance {
                 logger.log(Level.WARNING, "CMap[" + mProxy.getLongName() + "] has not been created yet! Initialization attempt failed!");
                 return;
             }
-            if (!cmap.isMapForQueue() && cmap.initState.notInitialized()) {
+            if (!cmap.isMapForQueue() && cmap.notInitialized()) {
                 while (!node.concurrentMapManager.partitionServiceImpl.allPartitionsOwned()) {
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(250);
+                        logger.log(Level.FINEST, "Waiting for all partitions to be owned...");
                     } catch (InterruptedException e) {
                         return;
                     }
                 }
                 synchronized (cmap.getInitLock()) {
-                    if (cmap.initState.notInitialized()) {
-                        final MapStoreConfig mapStoreConfig = cmap.mapConfig.getMapStoreConfig();
+                    if (cmap.notInitialized()) {
+                        final MapStoreConfig mapStoreConfig = cmap.getMapConfig().getMapStoreConfig();
                         if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
-                            cmap.initState = InitializationState.INITIALIZING;
+                            cmap.setInitState(InitializationState.INITIALIZING);
                             try {
                                 ExecutorService es = getExecutorService();
                                 final Set<Member> members = new HashSet<Member>(getCluster().getMembers());
@@ -616,7 +617,7 @@ public class FactoryImpl implements HazelcastInstance {
                             }
                         }
                     }
-                    cmap.initState = InitializationState.INITIALIZED;
+                    cmap.setInitState(InitializationState.INITIALIZED);
                 }
             }
         }

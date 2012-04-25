@@ -22,10 +22,10 @@ import com.hazelcast.nio.Data;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
-@SuppressWarnings("SynchronizeOnThis")
+//@SuppressWarnings("SynchronizeOnThis")
 public final class DefaultRecord extends AbstractRecord {
 
-    private volatile Object valueObject = null;
+    private volatile Object valueObject ;
     private volatile Data value;
 
     public DefaultRecord(CMap cmap, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
@@ -51,19 +51,22 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     public Object getValue() {
-        final Object currentValue = valueObject;
-        if (currentValue != null) {
-            return currentValue;
-        }
-        synchronized (DefaultRecord.this) {
-            if (valueObject != null) {
-                return valueObject;
+        if (cmap.isCacheValue()) {
+            final Object currentValue = valueObject;
+            if (currentValue != null) {
+                return currentValue;
             }
-            Object v = toObject(value);
-            if (cmap.cacheValue) {
+            synchronized (this) {
+                if (valueObject != null) {
+                    return valueObject;
+                }
+                final Object v = toObject(value);
                 valueObject = v;
+                return v;
             }
-            return v;
+
+        } else {
+            return toObject(value);
         }
     }
 
@@ -74,7 +77,9 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     protected void invalidateValueCache() {
-        valueObject = null;
+        if (cmap.isCacheValue()) {
+            valueObject = null;
+        }
     }
 
     public void setValueData(Data value) {
