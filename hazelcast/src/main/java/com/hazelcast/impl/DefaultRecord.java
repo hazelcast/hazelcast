@@ -78,8 +78,11 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     public void setValueData(Data value) {
-        invalidateValueCache();
         this.value = value;
+        // invalidation should be called after value is set!
+        // otherwise a call to getValue() from another thread
+        // may cause stale data to be read when cacheValue is true.
+        invalidateValueCache();
     }
 
     public int valueCount() {
@@ -117,7 +120,7 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     public void invalidate() {
-        invalidateValueCache();
         value = null;
+        invalidateValueCache();
     }
 }
