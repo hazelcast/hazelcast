@@ -153,7 +153,7 @@ public class NearCache {
         if (cacheEntry == null) {
             cacheEntry = new CacheEntry(key, keyData, value);
         } else {
-            cacheEntry.setValue(value);
+            cacheEntry.setValueData(value);
         }
         cache.put(key, cacheEntry);
     }
@@ -252,7 +252,7 @@ public class NearCache {
             return true;
         }
 
-        public void setValue(Data valueData) {
+        public void setValueData(Data valueData) {
             record.setValueData(valueData);
         }
 
