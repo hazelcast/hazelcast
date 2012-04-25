@@ -241,26 +241,6 @@ public class Request implements CallStateAware {
         }
     }
 
-//    public void setPacket(Packet packet) {
-//        packet.operation = operation;
-//        packet.name = name;
-//        packet.setKey(key);
-//        packet.setValue(value);
-//        packet.blockId = blockId;
-//        packet.timeout = timeout;
-//        packet.ttl = ttl;
-//        packet.txnId = txnId;
-//        packet.callId = callId;
-//        packet.threadId = lockThreadId;
-//        packet.lockAddress = lockAddress;
-//        packet.lockCount = lockCount;
-//        packet.longValue = longValue;
-//        packet.version = version;
-//        packet.indexes = indexes;
-//        packet.indexTypes = indexTypes;
-//        packet.callState = callState;
-//    }
-
     public void clearForResponse() {
         if (!this.local) {
             this.name = null;
