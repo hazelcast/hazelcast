@@ -534,7 +534,7 @@ public class CMap {
      */
     private boolean backupOneValue(Request req) {
         Record record = getRecord(req);
-        if (record != null && record.isActive() && req.version < record.getVersion()) {
+        if (record != null /* && record.isActive() */ && req.version < record.getVersion()) {
             return false;
         }
         doBackup(req);
@@ -592,33 +592,38 @@ public class CMap {
                 ttlPerRecord = true;
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
-            Record record = getRecord(req);
-            if (record != null) {
-                if (record.isActive()) {
-                    markAsEvicted(record);
-                }
+//            Record record = getRecord(req);
+//            if (record != null) {
+//                if (record.isActive()) {
+//                    markAsEvicted(record);
+//                }
+//            }
+            Record record = toRecord(req);
+            if (record.isActive()) {
+                markAsEvicted(record);
             }
+            record.setVersion(req.version);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
             if (req.lockCount == 0) {
                 //UNLOCK operation
-                Record rec = getRecord(req);
-                if (rec != null) {
-                    rec.setLock(null);
-                    if (rec.valueCount() == 0) {
-                        markAsEvicted(rec);
+                Record record = getRecord(req);
+                if (record != null) {
+                    record.setLock(null);
+                    if (record.valueCount() == 0) {
+                        markAsEvicted(record);
                     }
                 }
             } else {
                 // LOCK operation
-                Record rec = toRecord(req);
-                if (rec.getVersion() == 0) {
-                    rec.setVersion(req.version);
+                Record record = toRecord(req);
+                if (record.getVersion() == 0) {
+                    record.setVersion(req.version);
                 }
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
             add(req, true);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE_MULTI) {
-            final Record record = getRecord(req);
+            Record record = getRecord(req);
             if (record != null) {
                 if (req.value == null || record.valueCount() == 0) {
                     markAsEvicted(record);

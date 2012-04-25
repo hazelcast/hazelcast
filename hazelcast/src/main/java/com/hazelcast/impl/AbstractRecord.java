@@ -56,20 +56,19 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public void runBackupOps() {
-        if (getBackupOps() != null) {
-            if (getBackupOps().size() > 0) {
-                Iterator<VersionedBackupOp> it = getBackupOps().iterator();
-                while (it.hasNext()) {
-                    VersionedBackupOp bo = it.next();
-                    if (bo.getVersion() < getVersion() + 1) {
-                        it.remove();
-                    } else if (bo.getVersion() == getVersion() + 1) {
-                        bo.run();
-                        setVersion(bo.getVersion());
-                        it.remove();
-                    } else {
-                        return;
-                    }
+        final Set<VersionedBackupOp> backupOps = getBackupOps();
+        if (backupOps != null && !backupOps.isEmpty()) {
+            Iterator<VersionedBackupOp> it = backupOps.iterator();
+            while (it.hasNext()) {
+                VersionedBackupOp bo = it.next();
+                if (bo.getVersion() < getVersion() + 1) {
+                    it.remove();
+                } else if (bo.getVersion() == getVersion() + 1) {
+                    bo.run();
+                    setVersion(bo.getVersion());
+                    it.remove();
+                } else {
+                    return;
                 }
             }
         }
@@ -147,7 +146,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
 
     public boolean isRemovable() {
         return !isActive() && valueCount() <= 0 && getLockCount() <= 0 && !hasListener()
-                && (getScheduledActionCount() == 0) && getBackupOpCount() == 0;
+               && (getScheduledActionCount() == 0) && getBackupOpCount() == 0;
     }
 
     public boolean isEvictable() {
@@ -159,14 +158,16 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public void addListener(Address address, boolean returnValue) {
-        if (getListeners() == null)
+        if (getListeners() == null) {
             setMapListeners(new ConcurrentHashMap<Address, Boolean>(1));
+        }
         getListeners().put(address, returnValue);
     }
 
     public void removeListener(Address address) {
-        if (getListeners() == null)
+        if (getListeners() == null) {
             return;
+        }
         getListeners().remove(address);
     }
 
@@ -266,7 +267,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
 
     public String toString() {
         return "Record key=" + getKeyData() + ", active=" + isActive()
-                + ", version=" + getVersion() + ", removable=" + isRemovable();
+               + ", version=" + getVersion() + ", removable=" + isRemovable();
     }
 
     public long getVersion() {
@@ -377,7 +378,8 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public boolean hasScheduledAction() {
-        return optionalInfo != null && optionalInfo.lsScheduledActions != null && optionalInfo.lsScheduledActions.size() > 0;
+        return optionalInfo != null && optionalInfo.lsScheduledActions != null &&
+               optionalInfo.lsScheduledActions.size() > 0;
     }
 
     public List<ScheduledAction> getScheduledActions() {
@@ -451,6 +453,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     class OptionalInfo {
+
         volatile Collection<ValueHolder> lsMultiValues = null; // multimap values
         Long[] indexes; // indexes of the current value;
         byte[] indexTypes; // index types of the current value;
