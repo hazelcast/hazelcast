@@ -1213,6 +1213,7 @@ public class CMap {
         }
 
         public boolean overCapacity() {
+            System.err.println("TotalCost: " + totalCostOfRecords);
 //            boolean over = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) > memoryLimit;
             boolean over = totalCostOfRecords > memoryLimit;
             if (over) {

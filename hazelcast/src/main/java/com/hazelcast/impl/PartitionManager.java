@@ -163,22 +163,22 @@ public class PartitionManager {
     }
 
     // for testing purposes only
-    private void printPartitionOwnerDuplicates() {
-        for (PartitionInfo partition : partitions) {
-            L:
-            for (int index = 0; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
-                Address address = partition.getReplicaAddress(index);
-                if (address != null) {
-                    for (int k = 0; k < PartitionInfo.MAX_REPLICA_COUNT; k++) {
-                        if (k != index && address.equals(partition.getReplicaAddress(k))) {
-                            logger.log(Level.WARNING, "DUPLICATE ==> " + partition);
-                            break L;
-                        }
-                    }
-                }
-            }
-        }
-    }
+//    private void printPartitionOwnerDuplicates() {
+//        for (PartitionInfo partition : partitions) {
+//            L:
+//            for (int index = 0; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
+//                Address address = partition.getReplicaAddress(index);
+//                if (address != null) {
+//                    for (int k = 0; k < PartitionInfo.MAX_REPLICA_COUNT; k++) {
+//                        if (k != index && address.equals(partition.getReplicaAddress(k))) {
+//                            logger.log(Level.WARNING, "DUPLICATE ==> " + partition);
+//                            break L;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     public MigratingPartition getMigratingPartition() {
         return migratingPartition;
@@ -591,6 +591,7 @@ public class PartitionManager {
             if (targetAddress != null
                     && targetAddress.equals(partition.getReplicaAddress(mPartition.getReplicaIndex()))) {
                 migratingPartition = null;
+//                concurrentMapManager.startCleanup(false, false);
             }
         }
     }
