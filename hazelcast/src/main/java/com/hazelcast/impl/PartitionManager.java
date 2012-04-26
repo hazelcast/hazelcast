@@ -591,7 +591,6 @@ public class PartitionManager {
             if (targetAddress != null
                     && targetAddress.equals(partition.getReplicaAddress(mPartition.getReplicaIndex()))) {
                 migratingPartition = null;
-//                concurrentMapManager.startCleanup(false, false);
             }
         }
     }

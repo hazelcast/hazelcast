@@ -1213,22 +1213,17 @@ public class CMap {
         }
 
         public boolean overCapacity() {
-            System.err.println("TotalCost: " + totalCostOfRecords);
 //            boolean over = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) > memoryLimit;
-            boolean over = totalCostOfRecords > memoryLimit;
-            if (over) {
-                Runtime.getRuntime().gc();
-            }
-            return over;
+            return totalCostOfRecords > memoryLimit;
         }
     }
 
     class MaxSizeHeapPercentagePolicy extends MaxSizePerJVMPolicy {
-        final int maxPercent ;
+        final int maxPercentage ;
 
         MaxSizeHeapPercentagePolicy(MaxSizeConfig maxSizeConfig) {
             super(maxSizeConfig);
-            maxPercent = maxSizeConfig.getSize();
+            maxPercentage = maxSizeConfig.getSize();
         }
 
         public boolean overCapacity() {
@@ -1238,12 +1233,8 @@ public class CMap {
 //            boolean over = usedPercentage > maxSizeConfig.getSize();
             final long total = Runtime.getRuntime().maxMemory();
             final long cost = totalCostOfRecords;
-            int usedPercent = (int) (((float) cost / total) * 100);
-            boolean over = usedPercent >= maxPercent;
-            if (over) {
-                Runtime.getRuntime().gc();
-            }
-            return over;
+            final int usedPercentage = (int) (((float) cost / total) * 100);
+            return usedPercentage >= maxPercentage;
         }
     }
 
@@ -1310,7 +1301,6 @@ public class CMap {
                 long costOfRecords = 0L;
                 PartitionManager partitionManager = concurrentMapManager.partitionManager;
                 for (Record record : records) {
-                    costOfRecords += record.getCost();
                     PartitionInfo partition = partitionManager.getPartition(record.getBlockId());
                     Address owner = partition.getOwner();
                     boolean owned = (owner != null && thisAddress.equals(owner));
@@ -1331,6 +1321,10 @@ public class CMap {
                             } else if (evictionAware && record.isActive() && record.isEvictable()) {
                                 sortedRecords.add(record);   // sorting for eviction
                                 recordsStillOwned++;
+                            }
+
+                            if (record.isActive() && record.isValid(now)) {
+                                costOfRecords += record.getCost();
                             }
                         } else if (ownedOrBackup) {
                             if (shouldPurgeRecord(record, now)) {
@@ -1366,7 +1360,8 @@ public class CMap {
                             + ", backupPurge:" + backupPurgeCount
                     );
                     logger.log(levelLog, thisAddress + " mapRecords: " + mapRecords.size()
-                            + "  indexes: " + mapIndexService.getOwnedRecords().size());
+                            + "  indexes: " + mapIndexService.getOwnedRecords().size()
+                            + "  totalCost: " + costOfRecords);
                 }
                 executeStoreUpdate(recordsDirty);
                 executeEviction(recordsToEvict);
