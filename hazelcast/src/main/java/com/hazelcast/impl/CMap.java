@@ -69,6 +69,8 @@ public class CMap {
 
     private final ILogger logger;
 
+    private final Object initLock = new Object();
+
     private volatile InitializationState initState = InitializationState.NONE;
 
     private final Node node;
@@ -114,6 +116,10 @@ public class CMap {
 
     private DistributedLock lockEntireMap = null;
 
+    private final LocalUpdateListener localUpdateListener;
+
+    private final AtomicBoolean cleanupActive = new AtomicBoolean(false);
+
     private MapStoreWrapper mapStoreWrapper;
 
     final MapLoader loader;
@@ -144,15 +150,9 @@ public class CMap {
 
     final boolean mapForQueue;
 
-    final Object initLock = new Object();
-
-    final LocalUpdateListener localUpdateListener;
-
     final MergePolicy wanMergePolicy;
 
     final ConcurrentMap<Data, LocalLock> mapLocalLocks = new ConcurrentHashMap<Data, LocalLock>(10000);
-
-    final AtomicBoolean cleanupActive = new AtomicBoolean(false);
 
     CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
