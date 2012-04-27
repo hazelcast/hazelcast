@@ -14,20 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.web;
+package com.hazelcast.config;
 
-import javax.servlet.ServletContext;
+import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
 public class ConfigLoader {
 
-    public static URL locateConfig(ServletContext context, final String path) {
-        URL url = null;
-        try {
-            url = context.getResource(path);
-        } catch (MalformedURLException e) {
+    public static Config load(final String path) throws IOException {
+        final URL url = locateConfig(path);
+        if (url == null) {
+            return null;
         }
+        return new UrlXmlConfig(url);
+    }
+
+    public static URL locateConfig(final String path) {
+        URL url = asFile(path);
         if (url == null) {
             url = asURL(path);
         }
@@ -35,6 +40,17 @@ public class ConfigLoader {
             url = asResource(path);
         }
         return url;
+    }
+
+    private static URL asFile(final String path) {
+        File file = new File(path);
+        if (file.exists()) {
+            try {
+                return file.toURI().toURL();
+            } catch (MalformedURLException e) {
+            }
+        }
+        return null;
     }
 
     private static URL asURL(final String path) {

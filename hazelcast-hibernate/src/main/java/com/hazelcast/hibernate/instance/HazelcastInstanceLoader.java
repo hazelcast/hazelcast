@@ -17,7 +17,7 @@
 package com.hazelcast.hibernate.instance;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.UrlXmlConfig;
+import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
@@ -27,11 +27,8 @@ import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheException;
-import org.hibernate.util.ConfigHelper;
-import org.hibernate.util.StringHelper;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Properties;
 import java.util.logging.Level;
 
@@ -72,18 +69,20 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
                     "Creating Hazelcast node as Lite-Member. "
                             + "Be sure this node has access to an already running cluster...");
         }
-        if (StringHelper.isEmpty(configResourcePath)) {
+        if (isEmpty(configResourcePath)) {
             // If both useLiteMember and instanceName is not set
             // then just use default instance.
             if (!useLiteMember && instanceName == null) {
                 staticInstance = true;
             }
         } else {
-            URL url = ConfigHelper.locateConfig(configResourcePath);
             try {
-                config = new UrlXmlConfig(url);
+                config = ConfigLoader.load(configResourcePath);
             } catch (IOException e) {
-                throw new CacheException(e);
+                logger.log(Level.WARNING, "IOException: " + e.getMessage());
+            }
+            if (config == null) {
+                throw new CacheException("Could not find configuration file: " + configResourcePath);
             }
         }
         if (instanceName != null) {
@@ -131,5 +130,9 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
         } catch (Exception e) {
             throw new CacheException(e);
         }
+    }
+
+    private static boolean isEmpty(String s) {
+        return s == null || s.trim().length() == 0;
     }
 }
