@@ -1885,6 +1885,14 @@ public class CMap {
         }
     }
 
+    boolean notInitialized() {
+        return (initState == InitializationState.NONE);
+    }
+
+    void setInitState(final InitializationState state) {
+        initState = state;
+    }
+
     /**
      * @return the name
      */
