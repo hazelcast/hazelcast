@@ -27,7 +27,6 @@ import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheException;
-import org.hibernate.util.ConfigHelper;
 import org.hibernate.util.StringHelper;
 
 import java.io.IOException;
@@ -79,7 +78,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
                 staticInstance = true;
             }
         } else {
-            URL url = ConfigHelper.locateConfig(configResourcePath);
+            URL url = ConfigLoader.locateConfig(configResourcePath);
             try {
                 config = new UrlXmlConfig(url);
             } catch (IOException e) {
