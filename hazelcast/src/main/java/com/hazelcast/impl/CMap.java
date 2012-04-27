@@ -154,6 +154,8 @@ public class CMap {
 
     final ConcurrentMap<Data, LocalLock> mapLocalLocks = new ConcurrentHashMap<Data, LocalLock>(10000);
 
+    private volatile long totalCostOfRecords = 0L;
+
     CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
         this.logger = concurrentMapManager.node.getLogger(CMap.class.getName());
@@ -394,15 +396,8 @@ public class CMap {
                 || lockEntireMap.isLockedBy(request.lockAddress, request.lockThreadId));
     }
 
-    final boolean overCapacity(Request request) {
-        if (maxSizePolicy != null && maxSizePolicy.overCapacity()) {
-            boolean addOp = request.operation != CONCURRENT_MAP_TRY_PUT;
-            if (addOp) {
-                concurrentMapManager.executeCleanup(CMap.this, true);
-            }
-            return true;
-        }
-        return false;
+    final boolean overCapacity() {
+        return maxSizePolicy != null && maxSizePolicy.overCapacity();
     }
 
     public void lockMap(Request request) {
@@ -631,7 +626,7 @@ public class CMap {
                 } else {
                     // TODO: This can be done out of service thread
                     // A simple test showed that context switching costs
-                    // nearly same. Keeping this at the moment.
+                    // nearly the same. Keeping this at the moment.
                     Collection<ValueHolder> multiValues = record.getMultiValues();
                     if (multiValues != null) {
                         multiValues.remove(new ValueHolder(req.value));
@@ -1044,12 +1039,12 @@ public class CMap {
         for (Record record : records) {
             DistributedLock dLock = record.getLock();
             if (dLock != null && dLock.isLocked()) {
+                lockOwners.put(record.getKey(), dLock);
                 List<ScheduledAction> scheduledActions = record.getScheduledActions();
                 if (scheduledActions != null) {
                     for (ScheduledAction scheduledAction : scheduledActions) {
                         Request request = scheduledAction.getRequest();
                         if (ClusterOperation.CONCURRENT_MAP_LOCK.equals(request.operation)) {
-                            lockOwners.put(record.getKey(), dLock);
                             lockRequested.put(record.getKey(), new DistributedLock(request.lockAddress, request.lockThreadId));
                         }
                     }
@@ -1216,37 +1211,36 @@ public class CMap {
     }
 
     class MaxSizeHeapPolicy extends MaxSizePerJVMPolicy {
-        long memoryLimit = 0;
+        final long memoryLimit ;
 
         MaxSizeHeapPolicy(MaxSizeConfig maxSizeConfig) {
             super(maxSizeConfig);
-            memoryLimit = maxSizeConfig.getSize() * 1000 * 1000; // MB to byte
+            memoryLimit = maxSizeConfig.getSize() * 1024L * 1024L; // MB to byte
         }
 
         public boolean overCapacity() {
-            boolean over = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) > memoryLimit;
-            if (over) {
-                Runtime.getRuntime().gc();
-            }
-            return over;
+//            boolean over = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) > memoryLimit;
+            return totalCostOfRecords > memoryLimit;
         }
     }
 
     class MaxSizeHeapPercentagePolicy extends MaxSizePerJVMPolicy {
+        final int maxPercentage ;
 
         MaxSizeHeapPercentagePolicy(MaxSizeConfig maxSizeConfig) {
             super(maxSizeConfig);
+            maxPercentage = maxSizeConfig.getSize();
         }
 
         public boolean overCapacity() {
-            long total = Runtime.getRuntime().totalMemory();
-            long free = Runtime.getRuntime().freeMemory();
-            int usedPercentage = (int) (((total - free) / total) * 100D);
-            boolean over = usedPercentage > maxSizeConfig.getSize();
-            if (over) {
-                Runtime.getRuntime().gc();
-            }
-            return over;
+//            long total = Runtime.getRuntime().totalMemory();
+//            long free = Runtime.getRuntime().freeMemory();
+//            int usedPercentage = (int) (((total - free) / total) * 100D);
+//            boolean over = usedPercentage > maxSizeConfig.getSize();
+            final long total = Runtime.getRuntime().maxMemory();
+            final long cost = totalCostOfRecords;
+            final int usedPercentage = (int) (((float) cost / total) * 100);
+            return usedPercentage >= maxPercentage;
         }
     }
 
@@ -1306,10 +1300,11 @@ public class CMap {
                 final Set<Record> recordsToEvict = new HashSet<Record>();
                 final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(evictionComparator));
                 final Collection<Record> records = mapRecords.values();
-                final boolean overCapacity = maxSizePolicy != null && maxSizePolicy.overCapacity();
+                final boolean overCapacity = overCapacity();
                 final boolean evictionAware = evictionComparator != null && overCapacity;
                 int recordsStillOwned = 0;
                 int backupPurgeCount = 0;
+                long costOfRecords = 0L;
                 PartitionManager partitionManager = concurrentMapManager.partitionManager;
                 for (Record record : records) {
                     PartitionInfo partition = partitionManager.getPartition(record.getBlockId());
@@ -1333,6 +1328,10 @@ public class CMap {
                                 sortedRecords.add(record);   // sorting for eviction
                                 recordsStillOwned++;
                             }
+
+                            if (record.isActive() && record.isValid(now)) {
+                                costOfRecords += record.getCost();
+                            }
                         } else if (ownedOrBackup) {
                             if (shouldPurgeRecord(record, now)) {
                                 recordsToPurge.add(record);
@@ -1343,6 +1342,7 @@ public class CMap {
                         }
                     }
                 }
+                totalCostOfRecords = costOfRecords;
                 if (evictionAware && (forced || overCapacity)) {
                     int numberOfRecordsToEvict = (int) (recordsStillOwned * evictionRate);
                     int evictedCount = 0;
@@ -1366,7 +1366,8 @@ public class CMap {
                             + ", backupPurge:" + backupPurgeCount
                     );
                     logger.log(levelLog, thisAddress + " mapRecords: " + mapRecords.size()
-                            + "  indexes: " + mapIndexService.getOwnedRecords().size());
+                            + "  indexes: " + mapIndexService.getOwnedRecords().size()
+                            + "  totalCost: " + costOfRecords);
                 }
                 executeStoreUpdate(recordsDirty);
                 executeEviction(recordsToEvict);
@@ -1882,14 +1883,6 @@ public class CMap {
         } else {
             return new CopyOnWriteArrayList<ValueHolder>();
         }
-    }
-
-    boolean notInitialized() {
-        return (initState == InitializationState.NONE);
-    }
-
-    void setInitState(final InitializationState state) {
-        initState = state;
     }
 
     /**

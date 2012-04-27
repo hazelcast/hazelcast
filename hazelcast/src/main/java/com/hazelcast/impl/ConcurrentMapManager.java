@@ -81,7 +81,13 @@ public class ConcurrentMapManager extends BaseManager {
         evictionExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         MAX_BACKUP_COUNT = MapConfig.MAX_BACKUP_COUNT;
-        GLOBAL_REMOVE_DELAY_MILLIS = node.groupProperties.REMOVE_DELAY_SECONDS.getLong() * 1000L;
+        int removeDelaySeconds = node.groupProperties.REMOVE_DELAY_SECONDS.getInteger();
+        if (removeDelaySeconds <= 0) {
+            logger.log(Level.WARNING, GroupProperties.PROP_REMOVE_DELAY_SECONDS
+                                      + " must be greater than zero. Setting to 1.");
+            removeDelaySeconds = 1;
+        }
+        GLOBAL_REMOVE_DELAY_MILLIS = removeDelaySeconds * 1000L;
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
@@ -89,9 +95,7 @@ public class ConcurrentMapManager extends BaseManager {
         partitionServiceImpl = new PartitionServiceImpl(this);
         node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
-                for (CMap cMap : maps.values()) {
-                    cMap.startCleanup(false);
-                }
+                startCleanup(true, false);
             }
         }, 1, 1, TimeUnit.SECONDS);
         registerPacketProcessor(CONCURRENT_MAP_GET_MAP_ENTRY, new GetMapEntryOperationHandler());
@@ -421,13 +425,13 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public void executeCleanup(final CMap cmap, final boolean force) {
-        node.executorManager.executeNow(new Runnable() {
-            public void run() {
-                cmap.startCleanup(force);
-            }
-        });
-    }
+//    public void executeCleanup(final CMap cmap, final boolean force) {
+//        node.executorManager.executeNow(new Runnable() {
+//            public void run() {
+//                cmap.startCleanup(force);
+//            }
+//        });
+//    }
 
     class MLock extends MBackupAndMigrationAwareOp {
         volatile Data oldValue = null;
@@ -2726,7 +2730,7 @@ public class ConcurrentMapManager extends BaseManager {
                 css.logObject(request, CS_INFO, cmap);
             }
             boolean checkCapacity = request.operation != CONCURRENT_MAP_REPLACE_IF_NOT_NULL;
-            boolean overCapacity = checkCapacity && cmap.overCapacity(request);
+            boolean overCapacity = checkCapacity && cmap.overCapacity();
             boolean cmapNotLocked = cmap.isNotLocked(request);
             if (css.shouldLog(CS_TRACE)) {
                 css.trace(request, "OverCapacity/CmapNotLocked", overCapacity, cmapNotLocked);
