@@ -807,7 +807,6 @@ public class QueryTest extends TestUtil {
         assertEquals(1, map.values(predicate).size());
         predicate = new PredicateBuilder().getEntryObject().key().in("2", "3");
         assertEquals(2, map.keySet(predicate).size());
-        Hazelcast.shutdownAll();
     }
 
     /**
@@ -816,20 +815,7 @@ public class QueryTest extends TestUtil {
     @Test
     public void testPredicateStringAttribute() {
         IMap map = Hazelcast.getMap("testPredicateStringWithString");
-        map.put(1, new Value("abc"));
-        map.put(2, new Value("xyz"));
-        map.put(3, new Value("aaa"));
-        map.put(4, new Value("zzz"));
-        map.put(5, new Value("klm"));
-        map.put(6, new Value("prs"));
-        map.put(7, new Value("prs"));
-        map.put(8, new Value("def"));
-        map.put(9, new Value("qwx"));
-
-        assertEquals(8, map.values(new SqlPredicate("name > 'aac'")).size());
-        assertEquals(9, map.values(new SqlPredicate("name between 'aaa' and 'zzz'")).size());
-        assertEquals(7, map.values(new SqlPredicate("name < 't'")).size());
-        assertEquals(6, map.values(new SqlPredicate("name >= 'gh'")).size());
+        testPredicateStringAttribute(map);
     }
 
     /**
@@ -839,6 +825,10 @@ public class QueryTest extends TestUtil {
     public void testPredicateStringAttributesWithIndex() {
         IMap map = Hazelcast.getMap("testPredicateStringWithStringIndex");
         map.addIndex("name", false);
+        testPredicateStringAttribute(map);
+    }
+
+    private void testPredicateStringAttribute(IMap map) {
         map.put(1, new Value("abc"));
         map.put(2, new Value("xyz"));
         map.put(3, new Value("aaa"));
@@ -854,6 +844,52 @@ public class QueryTest extends TestUtil {
         assertEquals(7, map.values(new SqlPredicate("name < 't'")).size());
         assertEquals(6, map.values(new SqlPredicate("name >= 'gh'")).size());
 
+        assertEquals(8, map.values(new PredicateBuilder().getEntryObject().get("name").greaterThan("aac")).size());
+        assertEquals(9, map.values(new PredicateBuilder().getEntryObject().get("name").between("aaa", "zzz")).size());
+        assertEquals(7, map.values(new PredicateBuilder().getEntryObject().get("name").lessThan("t")).size());
+        assertEquals(6, map.values(new PredicateBuilder().getEntryObject().get("name").greaterEqual("gh")).size());
+    }
+
+    @Test
+    public void testPredicateDateAttribute() {
+        IMap map = Hazelcast.getMap("testPredicateDateAttribute");
+        testPredicateDateAttribute(map);
+    }
+
+    @Test
+    public void testPredicateDateAttributeWithIndex() {
+        IMap map = Hazelcast.getMap("testPredicateDateAttribute");
+        map.addIndex("this", true);
+        testPredicateDateAttribute(map);
+    }
+
+    private void testPredicateDateAttribute(IMap map) {
+        Calendar cal = Calendar.getInstance();
+        cal.set(2012, 5, 5);
+        map.put(1, cal.getTime());
+        cal.set(2011, 10, 10);
+        map.put(2, cal.getTime());
+        cal.set(2011, 1, 1);
+        map.put(3, cal.getTime());
+        cal.set(2010, 8, 5);
+        map.put(4, cal.getTime());
+        cal.set(2000, 5, 5);
+        map.put(5, cal.getTime());
+
+        cal.set(2011, 0, 1);
+        assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").greaterThan(cal.getTime())).size());
+        assertEquals(3, map.values(new SqlPredicate("this > 'Sat Jan 01 11:43:05 EET 2011'")).size());
+
+        assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("this").lessThan(cal.getTime())).size());
+        assertEquals(2, map.values(new SqlPredicate("this < 'Sat Jan 01 11:43:05 EET 2011'")).size());
+
+        cal.set(2003, 10, 10);
+        Date d1 = cal.getTime();
+        cal.set(2012, 1, 10);
+        Date d2 = cal.getTime();
+        assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").between(d1, d2)).size());
+        assertEquals(3, map.values(new SqlPredicate("this between 'Mon Nov 10 11:43:05 EET 2003'" +
+                                                    " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
     }
 
     public void doFunctionalSQLQueryTest(IMap imap) {
