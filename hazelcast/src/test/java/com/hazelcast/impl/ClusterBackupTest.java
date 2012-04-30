@@ -50,7 +50,6 @@ public class ClusterBackupTest {
     public static void init() throws Exception {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-//        System.setProperty(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
         Hazelcast.shutdownAll();
     }
 

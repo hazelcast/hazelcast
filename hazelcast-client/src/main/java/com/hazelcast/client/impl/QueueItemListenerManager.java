@@ -37,7 +37,7 @@ import static com.hazelcast.client.IOUtil.toObject;
 public class QueueItemListenerManager {
     final private ConcurrentHashMap<String, List<ItemListener>> queueItemListeners = new ConcurrentHashMap<String, List<ItemListener>>();
 
-    public QueueItemListenerManager(HazelcastClient client) {
+    public QueueItemListenerManager() {
     }
 
     public Collection<? extends Call> calls(HazelcastClient client) {

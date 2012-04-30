@@ -65,55 +65,74 @@ public class CMap {
         NONE,
         INITIALIZING,
         INITIALIZED;
-
-        boolean notInitialized() {
-            return NONE == this;
-        }
     }
 
-    final ILogger logger;
+    private final ILogger logger;
 
-    final ConcurrentMapManager concurrentMapManager;
+    private final Object initLock = new Object();
 
-    final Node node;
+    private volatile InitializationState initState = InitializationState.NONE;
 
-    final int PARTITION_COUNT;
+    private final Node node;
 
-    final Address thisAddress;
+    private final Address thisAddress;
 
-    final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
+    private final MapConfig mapConfig;
 
-    final String name;
+    private final MultiMapConfig multiMapConfig;
 
-    final MapConfig mapConfig;
+    private final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
 
-    final MultiMapConfig multiMapConfig;
+    private int backupCount;
 
-    final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>(1);
+    private int asyncBackupCount;
 
-    int backupCount;
+    private EvictionPolicy evictionPolicy;
 
-    int asyncBackupCount;
+    private Comparator<MapEntry> evictionComparator;
 
-    EvictionPolicy evictionPolicy;
+    private MapMaxSizePolicy maxSizePolicy;
 
-    Comparator<MapEntry> evictionComparator;
+    private float evictionRate;
 
-    MapMaxSizePolicy maxSizePolicy;
+    private long ttl; //ttl for entries
 
-    float evictionRate;
+    private long maxIdle; //maxIdle for entries
 
-    long ttl; //ttl for entries
+    private final Instance.InstanceType instanceType;
 
-    long maxIdle; //maxIdle for entries
+    private boolean readBackupData;
 
-    final Instance.InstanceType instanceType;
+    private boolean cacheValue;
+
+    private volatile boolean ttlPerRecord = false;
+
+    private volatile boolean dirty = false;
+
+    private volatile long lastCleanup = Clock.currentTimeMillis();
+
+    @SuppressWarnings("VolatileLongOrDoubleField")
+    private volatile long lastEvictionTime = 0;
+
+    private DistributedLock lockEntireMap = null;
+
+    private final LocalUpdateListener localUpdateListener;
+
+    private final AtomicBoolean cleanupActive = new AtomicBoolean(false);
+
+    private volatile long totalCostOfRecords = 0L;
+
+    private MapStoreWrapper mapStoreWrapper;
 
     final MapLoader loader;
 
     final MapStore store;
 
-    private MapStoreWrapper mapStoreWrapper;
+    final ConcurrentMapManager concurrentMapManager;
+
+    final ConcurrentMap<Data, Record> mapRecords = new ConcurrentHashMap<Data, Record>(10000, 0.75f, 1);
+
+    final String name;
 
     final MergePolicy mergePolicy;
 
@@ -131,39 +150,15 @@ public class CMap {
 
     final boolean multiMapSet;
 
-    boolean readBackupData;
-
-    boolean cacheValue;
-
     final boolean mapForQueue;
-
-    volatile boolean ttlPerRecord = false;
-
-    volatile boolean dirty = false;
-
-    private volatile long lastCleanup = Clock.currentTimeMillis();
-
-    @SuppressWarnings("VolatileLongOrDoubleField")
-    volatile long lastEvictionTime = 0;
-
-    DistributedLock lockEntireMap = null;
-
-    volatile InitializationState initState = InitializationState.NONE;
-
-    final Object initLock = new Object();
-
-    final LocalUpdateListener localUpdateListener;
 
     final MergePolicy wanMergePolicy;
 
     final ConcurrentMap<Data, LocalLock> mapLocalLocks = new ConcurrentHashMap<Data, LocalLock>(10000);
 
-    final AtomicBoolean cleanupActive = new AtomicBoolean(false);
-
     CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
         this.logger = concurrentMapManager.node.getLogger(CMap.class.getName());
-        this.PARTITION_COUNT = concurrentMapManager.PARTITION_COUNT;
         this.node = concurrentMapManager.node;
         this.thisAddress = concurrentMapManager.thisAddress;
         this.name = name;
@@ -401,12 +396,9 @@ public class CMap {
                 || lockEntireMap.isLockedBy(request.lockAddress, request.lockThreadId));
     }
 
-    final boolean overCapacity(Request request) {
+    final boolean overCapacity() {
         if (maxSizePolicy != null && maxSizePolicy.overCapacity()) {
-            boolean addOp = request.operation != CONCURRENT_MAP_TRY_PUT;
-            if (addOp) {
-                concurrentMapManager.executeCleanup(CMap.this, true);
-            }
+            concurrentMapManager.executeCleanup(this, true);
             return true;
         }
         return false;
@@ -449,6 +441,14 @@ public class CMap {
 
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
+    }
+
+    public boolean isCacheValue() {
+        return cacheValue;
+    }
+
+    public boolean isReadBackupData() {
+        return readBackupData;
     }
 
     public void own(DataRecordEntry dataRecordEntry) {
@@ -534,7 +534,7 @@ public class CMap {
      */
     private boolean backupOneValue(Request req) {
         Record record = getRecord(req);
-        if (record != null && record.isActive() && req.version < record.getVersion()) {
+        if (record != null /* && record.isActive() */ && req.version < record.getVersion()) {
             return false;
         }
         doBackup(req);
@@ -592,40 +592,45 @@ public class CMap {
                 ttlPerRecord = true;
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
-            Record record = getRecord(req);
-            if (record != null) {
-                if (record.isActive()) {
-                    markAsEvicted(record);
-                }
+//            Record record = getRecord(req);
+//            if (record != null) {
+//                if (record.isActive()) {
+//                    markAsEvicted(record);
+//                }
+//            }
+            Record record = toRecord(req);
+            if (record.isActive()) {
+                markAsEvicted(record);
             }
+            record.setVersion(req.version);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
             if (req.lockCount == 0) {
                 //UNLOCK operation
-                Record rec = getRecord(req);
-                if (rec != null) {
-                    rec.setLock(null);
-                    if (rec.valueCount() == 0) {
-                        markAsEvicted(rec);
+                Record record = getRecord(req);
+                if (record != null) {
+                    record.setLock(null);
+                    if (record.valueCount() == 0) {
+                        markAsEvicted(record);
                     }
                 }
             } else {
                 // LOCK operation
-                Record rec = toRecord(req);
-                if (rec.getVersion() == 0) {
-                    rec.setVersion(req.version);
+                Record record = toRecord(req);
+                if (record.getVersion() == 0) {
+                    record.setVersion(req.version);
                 }
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
             add(req, true);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE_MULTI) {
-            final Record record = getRecord(req);
+            Record record = getRecord(req);
             if (record != null) {
                 if (req.value == null || record.valueCount() == 0) {
                     markAsEvicted(record);
                 } else {
                     // TODO: This can be done out of service thread
                     // A simple test showed that context switching costs
-                    // nearly same. Keeping this at the moment.
+                    // nearly the same. Keeping this at the moment.
                     Collection<ValueHolder> multiValues = record.getMultiValues();
                     if (multiValues != null) {
                         multiValues.remove(new ValueHolder(req.value));
@@ -662,8 +667,9 @@ public class CMap {
 
     public Data get(Request req) {
         Record record = getRecord(req);
-        if (record == null)
+        if (record == null) {
             return null;
+        }
         if (!record.isActive()) return null;
         if (!record.isValid()) {
             if (record.isEvictable()) {
@@ -1038,12 +1044,12 @@ public class CMap {
         for (Record record : records) {
             DistributedLock dLock = record.getLock();
             if (dLock != null && dLock.isLocked()) {
+                lockOwners.put(record.getKey(), dLock);
                 List<ScheduledAction> scheduledActions = record.getScheduledActions();
                 if (scheduledActions != null) {
                     for (ScheduledAction scheduledAction : scheduledActions) {
                         Request request = scheduledAction.getRequest();
                         if (ClusterOperation.CONCURRENT_MAP_LOCK.equals(request.operation)) {
-                            lockOwners.put(record.getKey(), dLock);
                             lockRequested.put(record.getKey(), new DistributedLock(request.lockAddress, request.lockThreadId));
                         }
                     }
@@ -1210,37 +1216,36 @@ public class CMap {
     }
 
     class MaxSizeHeapPolicy extends MaxSizePerJVMPolicy {
-        long memoryLimit = 0;
+        final long memoryLimit ;
 
         MaxSizeHeapPolicy(MaxSizeConfig maxSizeConfig) {
             super(maxSizeConfig);
-            memoryLimit = maxSizeConfig.getSize() * 1000 * 1000; // MB to byte
+            memoryLimit = maxSizeConfig.getSize() * 1024L * 1024L; // MB to byte
         }
 
         public boolean overCapacity() {
-            boolean over = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) > memoryLimit;
-            if (over) {
-                Runtime.getRuntime().gc();
-            }
-            return over;
+//            boolean over = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) > memoryLimit;
+            return totalCostOfRecords >= memoryLimit;
         }
     }
 
     class MaxSizeHeapPercentagePolicy extends MaxSizePerJVMPolicy {
+        final int maxPercentage ;
 
         MaxSizeHeapPercentagePolicy(MaxSizeConfig maxSizeConfig) {
             super(maxSizeConfig);
+            maxPercentage = maxSizeConfig.getSize();
         }
 
         public boolean overCapacity() {
-            long total = Runtime.getRuntime().totalMemory();
-            long free = Runtime.getRuntime().freeMemory();
-            int usedPercentage = (int) (((total - free) / total) * 100D);
-            boolean over = usedPercentage > maxSizeConfig.getSize();
-            if (over) {
-                Runtime.getRuntime().gc();
-            }
-            return over;
+//            long total = Runtime.getRuntime().totalMemory();
+//            long free = Runtime.getRuntime().freeMemory();
+//            int usedPercentage = (int) (((total - free) / total) * 100D);
+//            boolean over = usedPercentage > maxSizeConfig.getSize();
+            final long total = Runtime.getRuntime().maxMemory();
+            final long cost = totalCostOfRecords;
+            final int usedPercentage = (int) (((float) cost / total) * 100);
+            return usedPercentage >= maxPercentage;
         }
     }
 
@@ -1300,10 +1305,11 @@ public class CMap {
                 final Set<Record> recordsToEvict = new HashSet<Record>();
                 final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(evictionComparator));
                 final Collection<Record> records = mapRecords.values();
-                final boolean overCapacity = maxSizePolicy != null && maxSizePolicy.overCapacity();
+                final boolean overCapacity = overCapacity();
                 final boolean evictionAware = evictionComparator != null && overCapacity;
                 int recordsStillOwned = 0;
                 int backupPurgeCount = 0;
+                long costOfRecords = 0L;
                 PartitionManager partitionManager = concurrentMapManager.partitionManager;
                 for (Record record : records) {
                     PartitionInfo partition = partitionManager.getPartition(record.getBlockId());
@@ -1327,6 +1333,10 @@ public class CMap {
                                 sortedRecords.add(record);   // sorting for eviction
                                 recordsStillOwned++;
                             }
+
+                            if (record.isActive() && record.isValid(now)) {
+                                costOfRecords += record.getCost();
+                            }
                         } else if (ownedOrBackup) {
                             if (shouldPurgeRecord(record, now)) {
                                 recordsToPurge.add(record);
@@ -1337,6 +1347,7 @@ public class CMap {
                         }
                     }
                 }
+                totalCostOfRecords = costOfRecords;
                 if (evictionAware && (forced || overCapacity)) {
                     int numberOfRecordsToEvict = (int) (recordsStillOwned * evictionRate);
                     int evictedCount = 0;
@@ -1360,7 +1371,8 @@ public class CMap {
                             + ", backupPurge:" + backupPurgeCount
                     );
                     logger.log(levelLog, thisAddress + " mapRecords: " + mapRecords.size()
-                            + "  indexes: " + mapIndexService.getOwnedRecords().size());
+                            + "  indexes: " + mapIndexService.getOwnedRecords().size()
+                            + "  totalCost: " + costOfRecords);
                 }
                 executeStoreUpdate(recordsDirty);
                 executeEviction(recordsToEvict);
@@ -1876,6 +1888,14 @@ public class CMap {
         } else {
             return new CopyOnWriteArrayList<ValueHolder>();
         }
+    }
+
+    boolean notInitialized() {
+        return (initState == InitializationState.NONE);
+    }
+
+    void setInitState(final InitializationState state) {
+        initState = state;
     }
 
     /**

@@ -868,7 +868,6 @@ public class ClientHandlerService implements ConnectionListener {
                 }
             }
             logger.log((authenticated ? Level.INFO : Level.WARNING), "received auth from " + packet.conn
-//            		+ ", this group name:" + nodeGroupName + ", auth group name:" + groupName
                     + ", " + (authenticated ?
                     "successfully authenticated" : "authentication failed"));
             packet.clearForResponse();

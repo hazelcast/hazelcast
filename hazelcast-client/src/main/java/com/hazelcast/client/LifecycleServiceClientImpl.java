@@ -24,6 +24,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -44,6 +46,14 @@ public class LifecycleServiceClientImpl implements LifecycleService {
 
     public LifecycleServiceClientImpl(HazelcastClient hazelcastClient) {
         this.hazelcastClient = hazelcastClient;
+
+        final List<LifecycleListener> listeners = new LinkedList<LifecycleListener>();
+        for (Object listener : hazelcastClient.getClientConfig().getListeners()) {
+            if (listener instanceof LifecycleListener) {
+                listeners.add((LifecycleListener) listener);
+            }
+        }
+        lsLifecycleListeners.addAll(listeners);
     }
 
     public void addLifecycleListener(LifecycleListener lifecycleListener) {

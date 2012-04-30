@@ -36,25 +36,25 @@ import static com.hazelcast.client.IOUtil.toObject;
 import static com.hazelcast.impl.BaseManager.getInstanceType;
 
 public class ListenerManager extends ClientRunnable {
-    final private HazelcastClient client;
-    final BlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
 
+    final private ILogger logger = Logger.getLogger(this.getClass().getName());
+    final private HazelcastClient client;
+    final private BlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
     final private InstanceListenerManager instanceListenerManager;
     final private MembershipListenerManager membershipListenerManager;
     final private MessageListenerManager messageListenerManager;
     final private EntryListenerManager entryListenerManager;
     final private ItemListenerManager itemListenerManager;
     final private QueueItemListenerManager queueItemListenerManager;
-    final ILogger logger = Logger.getLogger(this.getClass().getName());
 
     public ListenerManager(HazelcastClient hazelcastClient) {
         this.client = hazelcastClient;
-        instanceListenerManager = new InstanceListenerManager(this.client);
-        membershipListenerManager = new MembershipListenerManager(this.client);
+        instanceListenerManager = new InstanceListenerManager(client);
+        membershipListenerManager = new MembershipListenerManager(client);
         messageListenerManager = new MessageListenerManager();
         entryListenerManager = new EntryListenerManager();
         itemListenerManager = new ItemListenerManager(entryListenerManager);
-        queueItemListenerManager = new QueueItemListenerManager(this.client);
+        queueItemListenerManager = new QueueItemListenerManager();
     }
 
     public void enqueue(Object object) {

@@ -314,7 +314,6 @@ public abstract class BaseManager {
             targetAwareOp.setResult(request.response);
         } else {
             Packet packet = obtainPacket();
-//            request.setPacket(packet);
             packet.setFromRequest(request);
             packet.operation = ClusterOperation.RESPONSE;
             packet.responseType = RESPONSE_SUCCESS;
@@ -701,7 +700,6 @@ public abstract class BaseManager {
         protected void invoke() {
             addRemoteCall(ConnectionAwareOp.this);
             final Packet packet = obtainPacket();
-//            request.setPacket(packet);
             packet.setFromRequest(request);
             packet.callId = getCallId();
             request.callId = getCallId();
@@ -822,7 +820,6 @@ public abstract class BaseManager {
             } else {
                 addRemoteCall(TargetAwareOp.this);
                 final Packet packet = doObtainPacket();
-//                request.setPacket(packet);
                 packet.setFromRequest(request);
                 packet.callId = getCallId();
                 request.callId = getCallId();

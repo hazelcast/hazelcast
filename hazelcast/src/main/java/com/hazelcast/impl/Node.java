@@ -147,11 +147,6 @@ public class Node {
         ServerSocketChannel serverSocketChannel = null;
         Address localAddress = null;
         try {
-//            final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
-//            final String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
-//            if (preferIPv6Address == null && preferIPv4Stack == null) {
-//                System.setProperty("java.net.preferIPv4Stack", "true");
-//            }
             serverSocketChannel = ServerSocketChannel.open();
             AddressPicker addressPicker = new AddressPicker(this, serverSocketChannel);
             localAddress = addressPicker.pickAddress();

@@ -33,11 +33,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.hazelcast.client.IOUtil.toObject;
 
 public class InstanceListenerManager {
+
     final private List<InstanceListener> instanceListeners = new CopyOnWriteArrayList<InstanceListener>();
     final private HazelcastClient client;
 
     public InstanceListenerManager(HazelcastClient client) {
         this.client = client;
+        for (Object listener : client.getClientConfig().getListeners()) {
+            if (listener instanceof InstanceListener) {
+                registerListener((InstanceListener) listener);
+            }
+        }
     }
 
     public void registerListener(InstanceListener listener) {
@@ -55,7 +61,8 @@ public class InstanceListenerManager {
     public void notifyListeners(Packet packet) {
         String id = (String) toObject(packet.getKey());
         int i = (Integer) toObject(packet.getValue());
-        InstanceEvent.InstanceEventType instanceEventType = (i == 0) ? InstanceEvent.InstanceEventType.CREATED : InstanceEvent.InstanceEventType.DESTROYED;
+        InstanceEvent.InstanceEventType instanceEventType = (i == 0) ? InstanceEvent.InstanceEventType.CREATED
+                                                                     : InstanceEvent.InstanceEventType.DESTROYED;
         InstanceEvent event = new InstanceEvent(instanceEventType, (Instance) client.getClientProxy(id));
         for (final InstanceListener listener : instanceListeners) {
             switch (instanceEventType) {
@@ -77,8 +84,9 @@ public class InstanceListenerManager {
     }
 
     public Collection<Call> calls(final HazelcastClient client) {
-        if (instanceListeners.isEmpty())
+        if (instanceListeners.isEmpty()) {
             return Collections.emptyList();
+        }
         return Collections.singletonList(createNewAddListenerCall(new ProxyHelper("", client)));
     }
 }

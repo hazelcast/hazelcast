@@ -61,10 +61,6 @@ public class SimpleRecord extends AbstractSimpleRecord implements Record {
         return 1;
     }
 
-//    public boolean containsValue(Data value) {
-//        return false;
-//    }
-
     public void invalidate() {
         value = null;
     }

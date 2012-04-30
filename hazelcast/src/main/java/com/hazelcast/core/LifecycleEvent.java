@@ -44,6 +44,23 @@ public final class LifecycleEvent {
     }
 
     @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (!(o instanceof LifecycleEvent)) return false;
+
+        final LifecycleEvent that = (LifecycleEvent) o;
+
+        if (state != that.state) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return state != null ? state.hashCode() : 0;
+    }
+
+    @Override
     public String toString() {
         return "LifecycleEvent [state=" + state + "]";
     }

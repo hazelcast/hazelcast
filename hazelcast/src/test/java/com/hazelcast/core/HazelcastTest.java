@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
@@ -1187,10 +1188,9 @@ public class HazelcastTest {
     @Test
     public void testMapPutOverCapacity() throws InterruptedException {
         final int capacity = 100;
-        Config config = new Config();
-        config.getMapConfig("test").getMaxSizeConfig().setSize(capacity);
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-        final IMap map = hz.getMap("test");
+        Config config = Hazelcast.getDefaultInstance().getConfig();
+        config.getMapConfig("testMapPutOverCapacity").getMaxSizeConfig().setSize(capacity);
+        final IMap map = Hazelcast.getMap("testMapPutOverCapacity");
         for (int i = 0; i < capacity; i++) {
             map.put(i, i);
         }
@@ -1244,6 +1244,36 @@ public class HazelcastTest {
         assertEquals("a", map.replace("a", "x"));
         assertTrue(map.replace("b", "b", "z"));
         assertEquals(capacity, map.size());
+    }
+
+    @Test
+    public void testMapGetAfterPutWhenCacheValueEnabled() throws InterruptedException {
+        Config config = Hazelcast.getDefaultInstance().getConfig();
+        config.getMapConfig("testMapGetAfterPutWhenCacheValueEnabled").setCacheValue(true);
+        final IMap map = Hazelcast.getMap("testMapGetAfterPutWhenCacheValueEnabled");
+        final AtomicBoolean running = new AtomicBoolean(true);
+        final String key = "key";
+        ExecutorService ex = Executors.newSingleThreadExecutor();
+        ex.execute(new Runnable() {
+            public void run() {
+                while (running.get()) {
+                    // continuously get to trigger value caching
+                    map.get(key);
+                }
+            }
+        });
+
+        try {
+            for (int i = 0; i < 50000; i++) {
+                map.put(key, Integer.valueOf(i));
+                final Integer value = (Integer) map.get(key);
+                assertEquals(i, value.intValue());
+            }
+        } finally {
+            running.set(false);
+            ex.shutdown();
+            ex.awaitTermination(2, TimeUnit.SECONDS);
+        }
     }
 
     @Test(expected = IllegalStateException.class)
