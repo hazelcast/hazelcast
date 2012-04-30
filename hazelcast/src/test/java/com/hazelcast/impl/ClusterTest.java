@@ -855,7 +855,9 @@ public class ClusterTest {
         Config c = new Config();
         MapConfig mapConfig = c.getMapConfig("default");
         mapConfig.setEvictionPolicy("LRU");
-        mapConfig.setMaxSize(maxSize);
+        mapConfig.setMaxSizeConfig(new MaxSizeConfig()
+                                           .setMaxSizePolicy(MaxSizeConfig.POLICY_CLUSTER_WIDE_MAP_SIZE)
+                                           .setSize(maxSize));
         mapConfig.setEvictionPercentage(25);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
@@ -871,6 +873,28 @@ public class ClusterTest {
             int mapSize = map2.size();
             assertTrue("CurrentMapSize : " + mapSize, mapSize <= maxSize);
         }
+    }
+
+    @Test(timeout = 120000)
+    public void testMapMaxHeap() throws Exception {
+        int maxSize = 1; // MB
+        Config c = new Config();
+        c.setProperty(GroupProperties.PROP_CLEANUP_DELAY_SECONDS, "1");
+        MapConfig mapConfig = c.getMapConfig("default");
+        mapConfig.setMaxSizeConfig(new MaxSizeConfig()
+                                           .setMaxSizePolicy(MaxSizeConfig.POLICY_USED_HEAP_SIZE)
+                                           .setSize(maxSize));
+        final byte[] data = new byte[700]; // cost = value + overhead(312) = 1012
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(c);
+        IMap map = hz.getMap("default");
+        for (int i = 0; i < 1024; i++) {  // cost = key(+overhead)(12) + value(700) + overhead(312) = 1024
+            map.put(i, data);
+        }
+        Thread.sleep(1500); // wait for cleanup
+        assertFalse(map.tryPut(1024, data, 0, TimeUnit.SECONDS));
+        map.remove(0);
+        Thread.sleep(1500); // wait for cleanup
+        assertTrue(map.tryPut(1024, data, 0, TimeUnit.SECONDS));
     }
 
     /**

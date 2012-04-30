@@ -425,13 +425,13 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-//    public void executeCleanup(final CMap cmap, final boolean force) {
-//        node.executorManager.executeNow(new Runnable() {
-//            public void run() {
-//                cmap.startCleanup(force);
-//            }
-//        });
-//    }
+    public void executeCleanup(final CMap cmap, final boolean force) {
+        node.executorManager.executeNow(new Runnable() {
+            public void run() {
+                cmap.startCleanup(force);
+            }
+        });
+    }
 
     class MLock extends MBackupAndMigrationAwareOp {
         volatile Data oldValue = null;

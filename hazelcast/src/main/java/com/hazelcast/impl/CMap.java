@@ -120,6 +120,8 @@ public class CMap {
 
     private final AtomicBoolean cleanupActive = new AtomicBoolean(false);
 
+    private volatile long totalCostOfRecords = 0L;
+
     private MapStoreWrapper mapStoreWrapper;
 
     final MapLoader loader;
@@ -153,8 +155,6 @@ public class CMap {
     final MergePolicy wanMergePolicy;
 
     final ConcurrentMap<Data, LocalLock> mapLocalLocks = new ConcurrentHashMap<Data, LocalLock>(10000);
-
-    private volatile long totalCostOfRecords = 0L;
 
     CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
@@ -397,7 +397,11 @@ public class CMap {
     }
 
     final boolean overCapacity() {
-        return maxSizePolicy != null && maxSizePolicy.overCapacity();
+        if (maxSizePolicy != null && maxSizePolicy.overCapacity()) {
+            concurrentMapManager.executeCleanup(this, true);
+            return true;
+        }
+        return false;
     }
 
     public void lockMap(Request request) {
@@ -663,8 +667,9 @@ public class CMap {
 
     public Data get(Request req) {
         Record record = getRecord(req);
-        if (record == null)
+        if (record == null) {
             return null;
+        }
         if (!record.isActive()) return null;
         if (!record.isValid()) {
             if (record.isEvictable()) {
@@ -1220,7 +1225,7 @@ public class CMap {
 
         public boolean overCapacity() {
 //            boolean over = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) > memoryLimit;
-            return totalCostOfRecords > memoryLimit;
+            return totalCostOfRecords >= memoryLimit;
         }
     }
 
