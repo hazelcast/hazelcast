@@ -24,7 +24,6 @@ public class GroupProperties {
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
     public static final String PROP_CONNECT_ALL_WAIT_SECONDS = "hazelcast.connect.all.wait.seconds";
     public static final String PROP_TOPIC_FLOW_CONTROL_ENABLED = "hazelcast.topic.flow.control.enabled";
-    public static final String PROP_MANCENTER_ENABLED = "hazelcast.mancenter.enabled";
     public static final String PROP_MEMCACHE_ENABLED = "hazelcast.memcache.enabled";
     public static final String PROP_REST_ENABLED = "hazelcast.rest.enabled";
     public static final String PROP_MAP_LOAD_CHUNK_SIZE = "hazelcast.map.load.chunk.size";
@@ -99,8 +98,6 @@ public class GroupProperties {
     public final GroupProperty CONNECT_ALL_WAIT_SECONDS;
 
     public final GroupProperty VERSION_CHECK_ENABLED;
-
-    public final GroupProperty MANCENTER_ENABLED;
 
     public final GroupProperty MEMCACHE_ENABLED;
 
@@ -221,7 +218,6 @@ public class GroupProperties {
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
         TOPIC_FLOW_CONTROL_ENABLED = new GroupProperty(config, PROP_TOPIC_FLOW_CONTROL_ENABLED, "true");
         CONNECT_ALL_WAIT_SECONDS = new GroupProperty(config, PROP_CONNECT_ALL_WAIT_SECONDS, "120");
-        MANCENTER_ENABLED = new GroupProperty(config, PROP_MANCENTER_ENABLED, "true");
         MEMCACHE_ENABLED = new GroupProperty(config, PROP_MEMCACHE_ENABLED, "true");
         REST_ENABLED = new GroupProperty(config, PROP_REST_ENABLED, "true");
         MAP_LOAD_CHUNK_SIZE = new GroupProperty(config, PROP_MAP_LOAD_CHUNK_SIZE, "1000");

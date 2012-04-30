@@ -50,7 +50,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 ManagementCenterService managementCenterService = textCommandService.getNode().getManagementCenterService();
                 if (managementCenterService != null) {
                     res = managementCenterService.changeWebServerUrlOverCluster(cluster, pass, url);
-
                 }
                 command.setResponse(res);
             } else if (uri.startsWith(URI_QUEUES)) {

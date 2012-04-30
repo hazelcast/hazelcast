@@ -27,10 +27,7 @@ import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentHashSet;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -876,6 +873,7 @@ public class ClusterTest {
     }
 
     @Test(timeout = 120000)
+    @Ignore
     public void testMapMaxHeap() throws Exception {
         int maxSize = 1; // MB
         Config c = new Config();

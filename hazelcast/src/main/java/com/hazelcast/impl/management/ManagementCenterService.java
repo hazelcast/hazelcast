@@ -20,6 +20,7 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.ascii.rest.HttpCommand;
 import com.hazelcast.impl.management.DetectDeadlockRequest.Edge;
@@ -41,16 +42,15 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
-public class ManagementCenterService  {
+public class ManagementCenterService implements LifecycleListener {
 
     private final FactoryImpl factory;
+    private volatile boolean running = false;
     private final TaskPoller taskPoller;
     private final StateSender stateSender;
     private final ILogger logger;
@@ -62,18 +62,18 @@ public class ManagementCenterService  {
     private final StatsInstanceFilter instanceFilterCountDownLatch;
     private final StatsInstanceFilter instanceFilterSemaphore;
     private final int maxVisibleInstanceCount;
-    private final AtomicBoolean started = new AtomicBoolean(false);
     private volatile String webServerUrl;
     private final int updateIntervalMs;
+    private final ManagementCenterConfig managementCenterConfig;
 
-    @SuppressWarnings("CallToThreadStartDuringObjectConstruction")
-    public ManagementCenterService(FactoryImpl factoryImpl) throws Exception {
+    public ManagementCenterService(FactoryImpl factoryImpl) {
         this.factory = factoryImpl;
         logger = factory.node.getLogger(ManagementCenterService.class.getName());
-        final ManagementCenterConfig config = factory.node.config.getManagementCenterConfig();
-        if (config == null) {
+        managementCenterConfig = factory.node.config.getManagementCenterConfig();
+        if (managementCenterConfig == null) {
             throw new IllegalStateException("ManagementCenterConfig should not be null!");
         }
+        factory.getLifecycleService().addLifecycleListener(this);
         this.instanceFilterMap = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_MAP_EXCLUDES.getString());
         this.instanceFilterQueue = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_QUEUE_EXCLUDES.getString());
         this.instanceFilterTopic = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_TOPIC_EXCLUDES.getString());
@@ -83,39 +83,50 @@ public class ManagementCenterService  {
         maxVisibleInstanceCount = factory.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         commandHandler = new ConsoleCommandHandler(factory);
 
-        String tmpWebServerUrl = config != null ? config.getUrl() : null;
+        String tmpWebServerUrl = managementCenterConfig != null ? managementCenterConfig.getUrl() : null;
         webServerUrl = tmpWebServerUrl != null ?
                 (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
-        updateIntervalMs = (config != null && config.getUpdateInterval() > 0) ? config.getUpdateInterval() * 1000 : 5000;
+        updateIntervalMs = (managementCenterConfig != null && managementCenterConfig.getUpdateInterval() > 0)
+                           ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
 
         taskPoller = new TaskPoller();
         stateSender = new StateSender();
     }
 
     public void start() {
-        if (started.get()) return;
-
-        started.set(true); // volatile-write
-
-        final ManagementCenterConfig config = factory.node.config.getManagementCenterConfig();
-
+        if (running) {
+            return;
+        }
+        running = true; // volatile-write
         if (webServerUrl != null) {
             taskPoller.start();
             stateSender.start();
-            logger.log(Level.INFO, "Hazelcast Management Center is listening from " + config.getUrl());
+            logger.log(Level.INFO, "Hazelcast Management Center is listening from " + webServerUrl);
         } else {
             logger.log(Level.WARNING, "Hazelcast Management Center Web server url is null!");
         }
     }
 
     public void shutdown() {
-        if (!started.get()) return;
+        if (!running) {
+            return;
+        }
+        running = false;
         logger.log(Level.INFO, "Shutting down Hazelcast Management Center");
-        started.set(false);
         try {
             interruptThread(stateSender);
             interruptThread(taskPoller);
         } catch (Throwable ignored) {
+        }
+    }
+
+    public void stateChanged(final LifecycleEvent event) {
+        if (event.getState() == LifecycleState.STARTED && managementCenterConfig.isEnabled()) {
+            try {
+                start();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "ManagementCenterService could not be started!", e);
+            }
         }
     }
 
@@ -141,8 +152,9 @@ public class ManagementCenterService  {
         if (newUrl == null)
             return;
         this.webServerUrl = newUrl.endsWith("/") ? newUrl : newUrl + "/";
-        if(!started.get())
+        if(!running) {
             start();
+        }
         logger.log(Level.INFO, "Web server url has been changed. Management Center is now listening from " + webServerUrl);
     }
 
@@ -206,7 +218,7 @@ public class ManagementCenterService  {
                 return;
             }
             try {
-                while (started.get()) {
+                while (running) {
                         try {
                             URL url = new URL(webServerUrl + "collector.do");
                             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -275,7 +287,7 @@ public class ManagementCenterService  {
                 Random rand = new Random();
                 Address address = ((MemberImpl) factory.node.getClusterImpl().getLocalMember()).getAddress();
                 GroupConfig groupConfig = factory.getConfig().getGroupConfig();
-                while (started.get()) {
+                while (running) {
                     try {
                         URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost() + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -522,7 +534,7 @@ public class ManagementCenterService  {
                 return null;
             }
         } catch (Throwable e) {
-            if ( factory.node.isActive()) {
+            if (running && factory.node.isActive()) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
             return null;
@@ -530,7 +542,7 @@ public class ManagementCenterService  {
     }
 
     public TimedMemberState getTimedMemberState() {
-        if (started.get()) {
+        if (running) {
             final MemberStateImpl memberState = new MemberStateImpl();
             createMemberState(memberState);
             GroupConfig groupConfig = factory.getConfig().getGroupConfig();
@@ -560,7 +572,6 @@ public class ManagementCenterService  {
     ConsoleCommandHandler getCommandHandler() {
         return commandHandler;
     }
-
 
     class StatsInstanceFilter {
         final Set<Pattern> setExcludes;
