@@ -224,9 +224,20 @@ public class Node {
         joiner = createJoiner();
     }
 
+    public ManagementCenterService getManagementCenterService() {
+        return managementCenterService;
+    }
+
+    public void setManagementCenterService(ManagementCenterService managementCenterService) {
+        this.managementCenterService = managementCenterService;
+    }
+
     public SystemLogService getSystemLogService() {
         return systemLogService;
     }
+
+
+
 
     private void initializeListeners(Config config) {
         for (final ListenerConfig listenerCfg : config.getListenerConfigs()) {
@@ -445,10 +456,18 @@ public class Node {
             sb.append(". Some of the ports seem occupied!");
             logger.log(Level.WARNING, sb.toString());
         }
+
+
+        try {
+            managementCenterService = new ManagementCenterService(factory);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "ManagementCenterService could not be constructed!", e);
+        }
+
         if (groupProperties.MANCENTER_ENABLED.getBoolean() &&
                 config.getManagementCenterConfig() != null && config.getManagementCenterConfig().isEnabled()) {
             try {
-                managementCenterService = new ManagementCenterService(factory);
+                managementCenterService.start();
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "ManagementCenterService could not be started!", e);
             }

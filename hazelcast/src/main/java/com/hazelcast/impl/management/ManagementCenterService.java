@@ -21,6 +21,7 @@ import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.*;
+import com.hazelcast.impl.ascii.rest.HttpCommand;
 import com.hazelcast.impl.management.DetectDeadlockRequest.Edge;
 import com.hazelcast.impl.management.DetectDeadlockRequest.Vertex;
 import com.hazelcast.impl.management.LockInformationCallable.MapLockState;
@@ -40,15 +41,16 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
-public class ManagementCenterService implements LifecycleListener {
+public class ManagementCenterService  {
 
     private final FactoryImpl factory;
-    private volatile boolean running = true;
     private final TaskPoller taskPoller;
     private final StateSender stateSender;
     private final ILogger logger;
@@ -61,7 +63,7 @@ public class ManagementCenterService implements LifecycleListener {
     private final StatsInstanceFilter instanceFilterSemaphore;
     private final int maxVisibleInstanceCount;
     private final AtomicBoolean started = new AtomicBoolean(false);
-    private final String webServerUrl;
+    private volatile String webServerUrl;
     private final int updateIntervalMs;
 
     @SuppressWarnings("CallToThreadStartDuringObjectConstruction")
@@ -84,30 +86,64 @@ public class ManagementCenterService implements LifecycleListener {
         String tmpWebServerUrl = config != null ? config.getUrl() : null;
         webServerUrl = tmpWebServerUrl != null ?
                 (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
-        updateIntervalMs = (config != null && config.getUpdateInterval() > 0) ? config.getUpdateInterval() * 1000 : 4000;
+        updateIntervalMs = (config != null && config.getUpdateInterval() > 0) ? config.getUpdateInterval() * 1000 : 5000;
 
-        factory.getLifecycleService().addLifecycleListener(this);
         taskPoller = new TaskPoller();
         stateSender = new StateSender();
-        if (config.getUrl() != null) {
+    }
+
+    public void start() {
+        if (started.get()) return;
+
+        started.set(true); // volatile-write
+
+        final ManagementCenterConfig config = factory.node.config.getManagementCenterConfig();
+
+        if (webServerUrl != null) {
             taskPoller.start();
             stateSender.start();
             logger.log(Level.INFO, "Hazelcast Management Center is listening from " + config.getUrl());
         } else {
             logger.log(Level.WARNING, "Hazelcast Management Center Web server url is null!");
         }
-        running = true; // volatile-write
     }
 
     public void shutdown() {
-        if (!running) return;
+        if (!started.get()) return;
         logger.log(Level.INFO, "Shutting down Hazelcast Management Center");
-        running = false;
+        started.set(false);
         try {
             interruptThread(stateSender);
             interruptThread(taskPoller);
         } catch (Throwable ignored) {
         }
+    }
+
+    public byte[] changeWebServerUrlOverCluster(String groupName, String groupPass, String newUrl) {
+        try {
+            GroupConfig groupConfig = factory.getConfig().getGroupConfig();
+            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass)))
+                return HttpCommand.RES_403;
+            ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(newUrl);
+            callable.setHazelcastInstance(factory);
+            Set<Member> members = factory.getCluster().getMembers();
+            MultiTask<Void> task = new MultiTask<Void>(callable, members);
+            ExecutorService executorService = factory.getExecutorService();
+            executorService.execute(task);
+        } catch (Throwable throwable) {
+            logger.log(Level.WARNING, "New web server url cannot be assigned.", throwable);
+            return HttpCommand.RES_500;
+        }
+        return HttpCommand.RES_204;
+    }
+
+    public void changeWebServerUrl(String newUrl) {
+        if (newUrl == null)
+            return;
+        this.webServerUrl = newUrl.endsWith("/") ? newUrl : newUrl + "/";
+        if(!started.get())
+            start();
+        logger.log(Level.INFO, "Web server url has been changed. Management Center is now listening from " + webServerUrl);
     }
 
     private void interruptThread(Thread t) {
@@ -160,23 +196,19 @@ public class ManagementCenterService implements LifecycleListener {
 
 
     class StateSender extends Thread {
-        final String host;
-
         StateSender() {
             super(factory.node.threadGroup, factory.node.getThreadNamePrefix("MC.State.Sender"));
-            this.host = webServerUrl;
         }
 
         public void run() {
-            if (host == null) {
+            if (webServerUrl == null) {
                 logger.log(Level.WARNING, "Web server url is null!");
                 return;
             }
             try {
-                while (running) {
-                    if (started.get()) {
+                while (started.get()) {
                         try {
-                            URL url = new URL(host + "collector.do");
+                            URL url = new URL(webServerUrl + "collector.do");
                             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                             connection.setDoOutput(true);
                             connection.setRequestMethod("POST");
@@ -190,7 +222,6 @@ public class ManagementCenterService implements LifecycleListener {
                         } catch (Exception e) {
                             logger.log(Level.FINEST, e.getMessage(), e);
                         }
-                    }
                     Thread.sleep(updateIntervalMs);
                 }
             } catch (Throwable throwable) {
@@ -202,11 +233,9 @@ public class ManagementCenterService implements LifecycleListener {
 
     class TaskPoller extends Thread {
         final ConsoleRequest[] consoleRequests = new ConsoleRequest[10];
-        final String host;
 
         TaskPoller() {
             super(factory.node.threadGroup, factory.node.getThreadNamePrefix("MC.Task.Poller"));
-            this.host = webServerUrl;
             register(new ThreadDumpRequest());
             register(new ExecuteScriptRequest());
             register(new EvictLocalMapRequest());
@@ -220,7 +249,7 @@ public class ManagementCenterService implements LifecycleListener {
 
         public void sendResponse(int taskId, ConsoleRequest request) {
             try {
-                URL url = new URL(host + "putResponse.do");
+                URL url = new URL(webServerUrl + "putResponse.do");
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setDoOutput(true);
                 connection.setRequestMethod("POST");
@@ -238,7 +267,7 @@ public class ManagementCenterService implements LifecycleListener {
         }
 
         public void run() {
-            if (host == null) {
+            if (webServerUrl == null) {
                 logger.log(Level.WARNING, "Web server url is null!");
                 return;
             }
@@ -246,9 +275,9 @@ public class ManagementCenterService implements LifecycleListener {
                 Random rand = new Random();
                 Address address = ((MemberImpl) factory.node.getClusterImpl().getLocalMember()).getAddress();
                 GroupConfig groupConfig = factory.getConfig().getGroupConfig();
-                while (running) {
+                while (started.get()) {
                     try {
-                        URL url = new URL(host + "getTask.do?member=" + address.getHost() + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
+                        URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost() + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setRequestProperty("Connection", "keep-alive");
                         InputStream inputStream = connection.getInputStream();
@@ -267,7 +296,7 @@ public class ManagementCenterService implements LifecycleListener {
                     Thread.sleep(700 + rand.nextInt(300));
                 }
             } catch (Throwable throwable) {
-                logger.log(Level.FINEST, "Web Management Center will be closed due to exception.", throwable);
+                logger.log(Level.FINEST, "Problem on management center while polling task.", throwable);
             }
         }
     }
@@ -493,7 +522,7 @@ public class ManagementCenterService implements LifecycleListener {
                 return null;
             }
         } catch (Throwable e) {
-            if (running && factory.node.isActive()) {
+            if ( factory.node.isActive()) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
             return null;
@@ -532,10 +561,6 @@ public class ManagementCenterService implements LifecycleListener {
         return commandHandler;
     }
 
-    public void stateChanged(final LifecycleEvent event) {
-        started.set(event.getState() == LifecycleEvent.LifecycleState.STARTED);
-        logger.log(Level.FINEST, "Hazelcast Management Center enabled: " + started.get());
-    }
 
     class StatsInstanceFilter {
         final Set<Pattern> setExcludes;
