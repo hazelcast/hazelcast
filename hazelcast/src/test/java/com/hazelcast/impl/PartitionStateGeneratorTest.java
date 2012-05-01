@@ -43,7 +43,6 @@ public class PartitionStateGeneratorTest {
     public static void init() throws Exception {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-        System.setProperty(GroupProperties.PROP_MANCENTER_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
@@ -352,7 +351,7 @@ public class PartitionStateGeneratorTest {
         if (average <= 1) {
             return;
         }
-        final float r = 2f;
+        final float r = 2.5f;
         Assert.assertTrue("Too low partition count! Owned: " + count + ", Avg: " + average
                 + ", Replica: " + replica, count >= average / r);
         Assert.assertTrue("Too high partition count! Owned: " + count + ", Avg: " + average

@@ -132,7 +132,7 @@ public class Node {
 
     public final NodeInitializer initializer;
 
-    private ManagementCenterService managementCenterService = null;
+    private ManagementCenterService managementCenterService ;
 
     public final SecurityContext securityContext;
 
@@ -219,21 +219,6 @@ public class Node {
         joiner = createJoiner();
     }
 
-    public ManagementCenterService getManagementCenterService() {
-        return managementCenterService;
-    }
-
-    public void setManagementCenterService(ManagementCenterService managementCenterService) {
-        this.managementCenterService = managementCenterService;
-    }
-
-    public SystemLogService getSystemLogService() {
-        return systemLogService;
-    }
-
-
-
-
     private void initializeListeners(Config config) {
         for (final ListenerConfig listenerCfg : config.getListenerConfigs()) {
             Object listener = listenerCfg.getImplementation();
@@ -258,6 +243,14 @@ public class Node {
                 logger.log(Level.WARNING, error, t);
             }
         }
+    }
+
+    public ManagementCenterService getManagementCenterService() {
+        return managementCenterService;
+    }
+
+    public SystemLogService getSystemLogService() {
+        return systemLogService;
     }
 
     public void failedConnection(Address address) {
@@ -451,21 +444,10 @@ public class Node {
             sb.append(". Some of the ports seem occupied!");
             logger.log(Level.WARNING, sb.toString());
         }
-
-
         try {
             managementCenterService = new ManagementCenterService(factory);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "ManagementCenterService could not be constructed!", e);
-        }
-
-        if (groupProperties.MANCENTER_ENABLED.getBoolean() &&
-                config.getManagementCenterConfig() != null && config.getManagementCenterConfig().isEnabled()) {
-            try {
-                managementCenterService.start();
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, "ManagementCenterService could not be started!", e);
-            }
+            logger.log(Level.WARNING, "ManagementCenterService could not be constructed!", e);
         }
         initializer.afterInitialize(this);
     }

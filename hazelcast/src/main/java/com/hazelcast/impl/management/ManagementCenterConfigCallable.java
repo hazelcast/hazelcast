@@ -16,18 +16,13 @@
 
 package com.hazelcast.impl.management;
 
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.impl.CMap;
 import com.hazelcast.impl.FactoryImpl;
-import com.hazelcast.impl.Processable;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class ManagementCenterConfigCallable extends ClusterServiceCallable implements Callable<Void>, DataSerializable {
 
