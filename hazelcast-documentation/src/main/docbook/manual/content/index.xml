@@ -133,6 +133,8 @@
         <xi:include href="spring/SpringContext.xml"/>
         <xi:include href="spring/SpringCache.xml"/>
         <xi:include href="spring/SpringHibernate.xml"/>
+        <xi:include href="spring/SpringJPA.xml"/>
+        <xi:include href="spring/SpringMongoDB.xml"/>
     </chapter>
     <chapter xml:id="Clients">
         <title>Clients</title>
