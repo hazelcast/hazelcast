@@ -110,6 +110,10 @@
         -->
         <backup-count>1</backup-count>
         <!--
+            Number of async backups. 0 means no backup.
+        -->
+        <async-backup-count>0</async-backup-count>
+        <!--
 			Maximum number of seconds for each entry to stay in the map. Entries that are
 			older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
 			will get automatically evicted from the map.
