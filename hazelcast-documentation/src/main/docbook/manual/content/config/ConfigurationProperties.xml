@@ -487,6 +487,14 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
+                    <db:literal>hazelcast.mc.url.change.enabled</db:literal>
+                </td>
+                <td>Management Center changing server url is enabled</td>
+                <td>boolean</td>
+                <td>true</td>
+            </tr>
+            <tr>
+                <td>
                     <db:literal>hazelcast.elastic.memory.enabled</db:literal>
                 </td>
                 <td>Enable
