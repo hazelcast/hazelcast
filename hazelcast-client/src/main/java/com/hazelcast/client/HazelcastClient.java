@@ -28,6 +28,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -299,6 +300,10 @@ public class HazelcastClient implements HazelcastInstance {
             }
         }
         lsClients.clear();
+    }
+
+    public static Collection<HazelcastClient> getAllHazelcastClients() {
+        return Collections.unmodifiableCollection(lsClients);
     }
 
     public void shutdown() {

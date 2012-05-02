@@ -46,7 +46,7 @@ public class SortedHashMapTest {
     @Test
     public void testTouch() {
         map.put("hello", "world");
-        long updateTime = System.currentTimeMillis();
+        long updateTime = Clock.currentTimeMillis();
         SortedHashMap.touch(map, "hello", SortedHashMap.OrderingType.LFU);
         long lastAccess = map.getEntry("hello").lastAccess;
         assertTrue(Math.abs(updateTime - lastAccess) < 100);

@@ -17,6 +17,9 @@
 package com.hazelcast.impl.ascii.rest;
 
 import com.hazelcast.impl.ascii.TextCommandService;
+import com.hazelcast.impl.management.ManagementCenterService;
+
+import java.net.URLDecoder;
 
 public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostCommand> {
 
@@ -36,6 +39,24 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 byte[] data = command.getData();
                 textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), 0);
                 command.setResponse(HttpCommand.RES_204);
+            } else if (uri.startsWith(URI_MANCENTER_CHANGE_URL)) {
+                if (textCommandService.getNode().getGroupProperties().MC_URL_CHANGE_ENABLED.getBoolean()) {
+                    byte[] res = null;
+                    byte[] data = command.getData();
+                    String[] strList = new String(data).split("&");
+                    String cluster = URLDecoder.decode(strList[0], "UTF-8");
+                    String pass = URLDecoder.decode(strList[1], "UTF-8");
+                    String url = URLDecoder.decode(strList[2], "UTF-8");
+
+                    ManagementCenterService managementCenterService = textCommandService.getNode().getManagementCenterService();
+                    if (managementCenterService != null) {
+                        res = managementCenterService.changeWebServerUrlOverCluster(cluster, pass, url);
+                    }
+                    command.setResponse(res);
+                }
+                else {
+                    command.setResponse(HttpCommand.RES_503);
+                }
             } else if (uri.startsWith(URI_QUEUES)) {
                 String queueName = null;
                 String simpleValue = null;
@@ -71,7 +92,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 command.setResponse(HttpCommand.RES_400);
             }
         } catch (Exception e) {
-            command.setResponse(HttpCommand.RES_505);
+            command.setResponse(HttpCommand.RES_500);
         }
         textCommandService.sendResponse(command);
     }

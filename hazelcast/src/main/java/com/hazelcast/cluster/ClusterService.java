@@ -21,6 +21,7 @@ import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ThreadWatcher;
 
 import java.util.Queue;
@@ -262,8 +263,8 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void start() {
-        lastPeriodicCheck = System.currentTimeMillis();
-        lastCheck = System.currentTimeMillis();
+        lastPeriodicCheck = Clock.currentTimeMillis();
+        lastCheck = Clock.currentTimeMillis();
         running = true;
     }
 
@@ -292,7 +293,7 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     private void checkPeriodics() {
-        final long now = System.currentTimeMillis();
+        final long now = Clock.currentTimeMillis();
         if (RESTART_ON_MAX_IDLE && (now - lastCheck) > MAX_IDLE_MILLIS) {
             if (logger.isLoggable(Level.INFO)) {
                 final StringBuilder sb = new StringBuilder("Hazelcast ServiceThread is blocked for ");

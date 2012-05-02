@@ -63,9 +63,6 @@ public interface Record extends MapEntry {
 
     long getCost();
 
-    // TODO: clean if safe!
-//    boolean containsValue(Data value);
-
     boolean unlock(int threadId, Address address);
 
     boolean testLock(int threadId, Address address);
@@ -96,7 +93,9 @@ public interface Record extends MapEntry {
 
     void setMaxIdle(long idle);
 
-    void setExpirationTime(long ttl);
+    void setExpirationTime(long expirationTime);
+
+    void setTTL(long ttl);
 
     void setInvalid();
 

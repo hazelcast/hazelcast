@@ -22,6 +22,7 @@ import com.hazelcast.impl.base.CallState;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.Data;
+import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -188,7 +189,7 @@ public class CMapTest extends TestUtil {
         assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size() + cmap2.getMapIndexService().getOwnedRecords().size());
         Record record1 = cmap1.getRecord(dKey);
         Record record2 = cmap2.getRecord(dKey);
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         long millisLeft1 = record1.getExpirationTime() - now;
         long millisLeft2 = record2.getExpirationTime() - now;
         assertTrue(millisLeft1 <= 5000 && millisLeft1 > 0);
@@ -205,7 +206,7 @@ public class CMapTest extends TestUtil {
         Thread.sleep(6000);
         assertNull(imap1.get("2"));
         assertNull(imap2.get("2"));
-        now = System.currentTimeMillis();
+        now = Clock.currentTimeMillis();
         assertFalse(record1.isValid(now));
         assertFalse(record2.isValid(now));
         Thread.sleep(23000);
@@ -221,7 +222,7 @@ public class CMapTest extends TestUtil {
         assertEquals(1, cmap1.getMapIndexService().getOwnedRecords().size() + cmap2.getMapIndexService().getOwnedRecords().size());
         record1 = cmap1.getRecord(dKey);
         record2 = cmap2.getRecord(dKey);
-        now = System.currentTimeMillis();
+        now = Clock.currentTimeMillis();
         millisLeft1 = record1.getExpirationTime() - now;
         millisLeft2 = record2.getExpirationTime() - now;
         assertTrue(millisLeft1 <= 11000 && millisLeft1 > 0);
@@ -243,7 +244,7 @@ public class CMapTest extends TestUtil {
         assertEquals(1, cmap2.mapRecords.size());
         assertEquals(1, cmap2.getMapIndexService().getOwnedRecords().size());
         assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
-        now = System.currentTimeMillis();
+        now = Clock.currentTimeMillis();
         millisLeft1 = record1.getExpirationTime() - now;
         millisLeft2 = record2.getExpirationTime() - now;
         assertTrue(millisLeft1 <= 10000 && millisLeft1 > 0);
@@ -255,7 +256,7 @@ public class CMapTest extends TestUtil {
         assertEquals(1, record1.valueCount());
         assertEquals(1, record2.valueCount());
         Thread.sleep(11000);
-        now = System.currentTimeMillis();
+        now = Clock.currentTimeMillis();
         assertFalse(record1.isValid(now));
         assertFalse(record2.isValid(now));
         Thread.sleep(20000);
@@ -270,7 +271,7 @@ public class CMapTest extends TestUtil {
         assertEquals(1, cmap2.mapRecords.size());
         assertEquals(0, cmap1.getMapIndexService().getOwnedRecords().size());
         assertEquals(1, cmap2.getMapIndexService().getOwnedRecords().size());
-        now = System.currentTimeMillis();
+        now = Clock.currentTimeMillis();
         assertEquals(Long.MAX_VALUE, record1.getExpirationTime());
         assertEquals(Long.MAX_VALUE, record2.getExpirationTime());
         assertTrue(record1.isActive());
@@ -333,7 +334,7 @@ public class CMapTest extends TestUtil {
         Thread.sleep(5000);
         assertEquals(0, cmap.size());
         assertTrue(cmap.evict(newEvictRequest(dKey)));
-        assertTrue(cmap.shouldPurgeRecord(record, System.currentTimeMillis() + 10000));
+        assertTrue(cmap.shouldPurgeRecord(record, Clock.currentTimeMillis() + 10000));
         cmap.removeAndPurgeRecord(record);
         assertEquals(0, cmap.mapRecords.size());
         assertEquals(0, cmap.size());
@@ -354,6 +355,7 @@ public class CMapTest extends TestUtil {
         Object key = "1";
         Object value = "istanbul";
         Data dKey = toData(key);
+        Data dKey2 = toData("2");
         Data dValue = toData(value);
         cmap.put(newPutRequest(dKey, dValue));
         assertTrue(cmap.mapRecords.containsKey(toData(key)));
@@ -366,7 +368,7 @@ public class CMapTest extends TestUtil {
         assertTrue(record.isValid());
         assertEquals(1, cmap.size());
         cmap.remove(newRemoveRequest(dKey));
-        assertTrue(System.currentTimeMillis() - record.getRemoveTime() < 100);
+        assertTrue(Clock.currentTimeMillis() - record.getRemoveTime() < 100);
         assertEquals(1, cmap.mapRecords.size());
         record = cmap.getRecord(dKey);
         assertNotNull(record);
@@ -374,11 +376,14 @@ public class CMapTest extends TestUtil {
         assertFalse(record.isValid());
         assertEquals(0, cmap.size());
         cmap.put(newPutRequest(dKey, dValue, 1000));
+        cmap.put(newPutIfAbsentRequest(dKey2, dValue, 1000));
         assertEquals(0, record.getRemoveTime());
         assertTrue(cmap.mapRecords.containsKey(toData(key)));
+        assertTrue(cmap.mapRecords.containsKey(toData("2")));
         Thread.sleep(1500);
         assertEquals(0, cmap.size());
         assertFalse(cmap.containsKey(newContainsRequest(dKey, null)));
+        assertFalse(cmap.containsKey(newContainsRequest(dKey2, null)));
         node.connectionManager.shutdown();
     }
 }

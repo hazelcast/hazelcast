@@ -31,10 +31,31 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class SystemLogService {
 
     public enum Level {
-        CS_NONE,
-        CS_EMPTY,
-        CS_INFO,
-        CS_TRACE
+        CS_NONE("none"),
+        CS_EMPTY("empty"),
+        CS_INFO("info"),
+        CS_TRACE("trace");
+
+        private String value;
+
+        public String getValue() {
+            return value;
+        }
+
+        Level(String value) {
+            this.value = value;
+        }
+
+        public static Level toLevel(String level) {
+            if(level.equals("trace"))
+                return Level.CS_TRACE;
+            else if(level.equals("empty"))
+                return Level.CS_EMPTY;
+            else if(level.equals("info"))
+                return Level.CS_INFO;
+
+                return Level.CS_NONE;
+        }
     }
 
     private final ConcurrentMap<CallKey, CallState> mapCallStates = new ConcurrentHashMap<CallKey, CallState>(100, 0.75f, 32);
@@ -55,15 +76,12 @@ public class SystemLogService {
         this.node = node;
     }
 
+    public String getCurrentLevel() {
+        return currentLevel.getValue();
+    }
+
     public void setCurrentLevel(String level) {
-        if(level.equals("trace"))
-            this.currentLevel = Level.CS_TRACE;
-        else if(level.equals("empty"))
-            this.currentLevel = Level.CS_EMPTY;
-        else if(level.equals("info"))
-            this.currentLevel = Level.CS_INFO;
-        else if(level.equals("none"))
-            this.currentLevel = Level.CS_NONE;
+        this.currentLevel = Level.toLevel(level);
     }
 
     public List<SystemLogRecord> getLogBundle() {

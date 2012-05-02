@@ -67,6 +67,8 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setGroupConfig(new GroupConfig(group, pass)).addAddress(address);
         clientConfig.setUpdateAutomatic(true);
+        clientConfig.setInitialConnectionAttemptLimit(3);
+        clientConfig.setReconnectionAttemptLimit(5);
         return (client = HazelcastClient.newHazelcastClient(clientConfig));
     }
 

@@ -40,7 +40,6 @@ import static com.hazelcast.impl.TestUtil.OrderKey;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.fail;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClientClusterTest {
@@ -242,16 +241,16 @@ public class HazelcastClientClusterTest {
         h1.getLifecycleService().shutdown();
         assertEquals(LifecycleState.CLIENT_CONNECTION_LOST, states.poll(500L, TimeUnit.MILLISECONDS));
         Thread.sleep(50L);
-        try {
-            map.put("smth", "nothing2");
-            fail("nothing2");
-        } catch (NoMemberAvailableException e) {
-        }
-        try {
-            map.put("smth", "nothing3");
-            fail("nothing3");
-        } catch (NoMemberAvailableException e) {
-        }
+//        try {
+//            map.put("smth", "nothing2");
+//            fail("nothing2");
+//        } catch (NoMemberAvailableException e) {
+//        }
+//        try {
+//            map.put("smth", "nothing3");
+//            fail("nothing3");
+//        } catch (NoMemberAvailableException e) {
+//        }
         h1 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(LifecycleState.CLIENT_CONNECTION_OPENING, states.poll(500L, TimeUnit.MILLISECONDS));
         assertEquals(LifecycleState.CLIENT_CONNECTION_OPENED, states.poll(30000L, TimeUnit.MILLISECONDS));
@@ -293,17 +292,17 @@ public class HazelcastClientClusterTest {
         for (int i = 0; i < 2; i++) {
             h1.getLifecycleService().shutdown();
             assertEquals(LifecycleState.CLIENT_CONNECTION_LOST, states.poll(500L, TimeUnit.MILLISECONDS));
-            try {
-                map.put("smth", "nothing-" + i);
-                fail();
-            } catch (NoMemberAvailableException e) {
-            }
-            Thread.sleep(50L);
-            try {
-                map.put("smth", "nothing_" + i);
-                fail();
-            } catch (NoMemberAvailableException e) {
-            }
+//            try {
+//                map.put("smth", "nothing-" + i);
+//                fail();
+//            } catch (NoMemberAvailableException e) {
+//            }
+//            Thread.sleep(50L);
+//            try {
+//                map.put("smth", "nothing_" + i);
+//                fail();
+//            } catch (NoMemberAvailableException e) {
+//            }
             Thread.sleep(50L);
             h1 = Hazelcast.newHazelcastInstance(new Config());
             assertEquals(LifecycleState.CLIENT_CONNECTION_OPENING, states.poll(500L, TimeUnit.MILLISECONDS));

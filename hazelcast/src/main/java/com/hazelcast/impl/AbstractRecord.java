@@ -21,6 +21,7 @@ import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.util.Clock;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,27 +49,26 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
 
     public AbstractRecord(CMap cmap, int blockId, Data key, long ttl, long maxIdleMillis, long id) {
         super(blockId, cmap, id, key);
-        this.setCreationTime(System.currentTimeMillis());
-        this.setExpirationTime(ttl);
+        this.setCreationTime(Clock.currentTimeMillis());
+        this.setTTL(ttl);
         this.maxIdleMillis = (maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis;
         this.setVersion(0);
     }
 
     public void runBackupOps() {
-        if (getBackupOps() != null) {
-            if (getBackupOps().size() > 0) {
-                Iterator<VersionedBackupOp> it = getBackupOps().iterator();
-                while (it.hasNext()) {
-                    VersionedBackupOp bo = it.next();
-                    if (bo.getVersion() < getVersion() + 1) {
-                        it.remove();
-                    } else if (bo.getVersion() == getVersion() + 1) {
-                        bo.run();
-                        setVersion(bo.getVersion());
-                        it.remove();
-                    } else {
-                        return;
-                    }
+        final Set<VersionedBackupOp> backupOps = getBackupOps();
+        if (backupOps != null && !backupOps.isEmpty()) {
+            Iterator<VersionedBackupOp> it = backupOps.iterator();
+            while (it.hasNext()) {
+                VersionedBackupOp bo = it.next();
+                if (bo.getVersion() < getVersion() + 1) {
+                    it.remove();
+                } else if (bo.getVersion() == getVersion() + 1) {
+                    bo.run();
+                    setVersion(bo.getVersion());
+                    it.remove();
+                } else {
+                    return;
                 }
             }
         }
@@ -116,19 +116,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         }
     }
 
-    // TODO: clean if safe!
-//    public boolean containsValue(Data value) {
-//        if (hasValueData()) {
-//            return this.getValueData().equals(value);
-//        } else if (getMultiValues() != null) {
-//            int count = getMultiValues().size();
-//            if (count > 0) {
-//                return getMultiValues().contains(value);
-//            }
-//        }
-//        return false;
-//    }
-
     public boolean unlock(int threadId, Address address) {
         invalidateValueCache();
         return lock == null || lock.unlock(address, threadId);
@@ -159,7 +146,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
 
     public boolean isRemovable() {
         return !isActive() && valueCount() <= 0 && getLockCount() <= 0 && !hasListener()
-                && (getScheduledActionCount() == 0) && getBackupOpCount() == 0;
+               && (getScheduledActionCount() == 0) && getBackupOpCount() == 0;
     }
 
     public boolean isEvictable() {
@@ -171,27 +158,29 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public void addListener(Address address, boolean returnValue) {
-        if (getListeners() == null)
+        if (getListeners() == null) {
             setMapListeners(new ConcurrentHashMap<Address, Boolean>(1));
+        }
         getListeners().put(address, returnValue);
     }
 
     public void removeListener(Address address) {
-        if (getListeners() == null)
+        if (getListeners() == null) {
             return;
+        }
         getListeners().remove(address);
     }
 
     public void setLastUpdated() {
         if (expirationTime != Long.MAX_VALUE && expirationTime > 0) {
             long ttl = expirationTime - (lastUpdateTime > 0L ? lastUpdateTime : creationTime);
-            setExpirationTime(ttl);
+            setTTL(ttl);
         }
-        setLastUpdateTime(System.currentTimeMillis());
+        setLastUpdateTime(Clock.currentTimeMillis());
     }
 
     public void setLastAccessed() {
-        setLastAccessTime(System.currentTimeMillis());
+        setLastAccessTime(Clock.currentTimeMillis());
         incrementHits();
     }
 
@@ -203,7 +192,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         if (expirationTime == Long.MAX_VALUE) {
             return Long.MAX_VALUE;
         } else {
-            long ttl = expirationTime - System.currentTimeMillis();
+            long ttl = expirationTime - Clock.currentTimeMillis();
             return (ttl < 0) ? 1 : ttl;
         }
     }
@@ -213,7 +202,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
             return Long.MAX_VALUE;
         } else {
             long lastTouch = Math.max(lastAccessTime, creationTime);
-            long idle = System.currentTimeMillis() - lastTouch;
+            long idle = Clock.currentTimeMillis() - lastTouch;
             return maxIdleMillis - idle;
         }
     }
@@ -226,16 +215,24 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         }
     }
 
-    public void setExpirationTime(long ttl) {
-        if (ttl <= 0 || ttl == Long.MAX_VALUE) {
-            expirationTime = Long.MAX_VALUE;
+    public void setExpirationTime(final long expTime) {
+        if (expTime <= 0) {
+            this.expirationTime = Long.MAX_VALUE;
         } else {
-            expirationTime = System.currentTimeMillis() + ttl;
+            this.expirationTime = expTime;
+        }
+    }
+
+    public void setTTL(long ttl) {
+        if (ttl <= 0 || ttl == Long.MAX_VALUE) {
+            setExpirationTime(Long.MAX_VALUE);
+        } else {
+            setExpirationTime(Clock.currentTimeMillis() + ttl);
         }
     }
 
     public void setInvalid() {
-        expirationTime = (System.currentTimeMillis() - 10);
+        expirationTime = (Clock.currentTimeMillis() - 10);
     }
 
     public boolean isValid(long now) {
@@ -248,12 +245,12 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public boolean isValid() {
-        return active && isValid(System.currentTimeMillis());
+        return active && isValid(Clock.currentTimeMillis());
     }
 
     public void markRemoved() {
         setActive(false);
-        setRemoveTime(System.currentTimeMillis());
+        setRemoveTime(Clock.currentTimeMillis());
     }
 
     public void setActive() {
@@ -270,7 +267,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
 
     public String toString() {
         return "Record key=" + getKeyData() + ", active=" + isActive()
-                + ", version=" + getVersion() + ", removable=" + isRemovable();
+               + ", version=" + getVersion() + ", removable=" + isRemovable();
     }
 
     public long getVersion() {
@@ -381,7 +378,8 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public boolean hasScheduledAction() {
-        return optionalInfo != null && optionalInfo.lsScheduledActions != null && optionalInfo.lsScheduledActions.size() > 0;
+        return optionalInfo != null && optionalInfo.lsScheduledActions != null &&
+               optionalInfo.lsScheduledActions.size() > 0;
     }
 
     public List<ScheduledAction> getScheduledActions() {
@@ -455,6 +453,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     class OptionalInfo {
+
         volatile Collection<ValueHolder> lsMultiValues = null; // multimap values
         Long[] indexes; // indexes of the current value;
         byte[] indexTypes; // index types of the current value;

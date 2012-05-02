@@ -20,6 +20,7 @@ import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Prefix;
+import com.hazelcast.core.RuntimeInterruptedException;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.MapSystemLogFactory;
 import com.hazelcast.logging.ILogger;
@@ -27,6 +28,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
@@ -186,7 +188,7 @@ public abstract class BaseManager {
 
         public void onEnqueue() {
             if (firstEnqueueTime == -1) {
-                firstEnqueueTime = System.currentTimeMillis();
+                firstEnqueueTime = Clock.currentTimeMillis();
             }
             enqueueCount++;
         }
@@ -211,7 +213,7 @@ public abstract class BaseManager {
         }
 
         protected int getDurationSeconds() {
-            return (int) (System.currentTimeMillis() - firstEnqueueTime) / 1000;
+            return (int) (Clock.currentTimeMillis() - firstEnqueueTime) / 1000;
         }
 
         @Override
@@ -312,7 +314,6 @@ public abstract class BaseManager {
             targetAwareOp.setResult(request.response);
         } else {
             Packet packet = obtainPacket();
-//            request.setPacket(packet);
             packet.setFromRequest(request);
             packet.operation = ClusterOperation.RESPONSE;
             packet.responseType = RESPONSE_SUCCESS;
@@ -699,7 +700,6 @@ public abstract class BaseManager {
         protected void invoke() {
             addRemoteCall(ConnectionAwareOp.this);
             final Packet packet = obtainPacket();
-//            request.setPacket(packet);
             packet.setFromRequest(request);
             packet.callId = getCallId();
             request.callId = getCallId();
@@ -719,7 +719,7 @@ public abstract class BaseManager {
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], firstEnqueue=" + (System.currentTimeMillis() - firstEnqueueTime) / 1000 +
+                    "], firstEnqueue=" + (Clock.currentTimeMillis() - firstEnqueueTime) / 1000 +
                     "sn., enqueueCount=" + enqueueCount +
                     ", " + request +
                     ", target=" + getTarget() +
@@ -820,7 +820,6 @@ public abstract class BaseManager {
             } else {
                 addRemoteCall(TargetAwareOp.this);
                 final Packet packet = doObtainPacket();
-//                request.setPacket(packet);
                 packet.setFromRequest(request);
                 packet.callId = getCallId();
                 request.callId = getCallId();
@@ -864,7 +863,7 @@ public abstract class BaseManager {
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], firstEnqueue=" + (System.currentTimeMillis() - firstEnqueueTime) / 1000 +
+                    "], firstEnqueue=" + (Clock.currentTimeMillis() - firstEnqueueTime) / 1000 +
                     "sn., enqueueCount=" + enqueueCount +
                     ", " + request +
                     ", target=" + getTarget() +
@@ -1243,8 +1242,8 @@ public abstract class BaseManager {
     }
 
     protected void throwCME(final Object key) {
-        throw new ConcurrentModificationException("Another thread holds a lock for the key : "
-                + key);
+        throw new ConcurrentModificationException("Could not acquire resource under transaction! " +
+                                                  "Another thread holds a lock for the key : " + key);
     }
 
     void enqueueEvent(int eventType, String name, Data key, Data value, Address from, boolean localEvent) {

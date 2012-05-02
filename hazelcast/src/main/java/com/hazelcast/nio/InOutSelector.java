@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.util.Clock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ThreadWatcher;
 
@@ -107,7 +108,7 @@ public final class InOutSelector implements Runnable {
             //noinspection WhileLoopSpinsOnField
             while (live) {
                 threadWatcher.incrementRunCount();
-                long currentMillis = System.currentTimeMillis();
+                long currentMillis = Clock.currentTimeMillis();
                 if ((currentMillis - lastPublish) > TEN_SECOND_MILLIS) {
                     publishUtilization();
                     lastPublish = currentMillis;

@@ -4,12 +4,12 @@
        xmlns:p="http://www.springframework.org/schema/p"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 		http://www.hazelcast.com/schema/spring
 		http://www.hazelcast.com/schema/spring/hazelcast-spring-2.1.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
-          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE" >
         <property name="locations">
             <list>
                 <value>classpath:/hazelcast-default.properties</value>
@@ -142,6 +142,7 @@
                     <hz:entry-listener implementation="dummyEntryListener" local="true"/>
                 </hz:entry-listeners>
             </hz:map>
+
             <hz:map name="testMap3"
                     backup-count="2"
                     max-size="0"
@@ -219,6 +220,7 @@
     <hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
+    <hz:lock id="lock" instance-ref="instance" name="lock"/>
 
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>

@@ -190,6 +190,10 @@ public class TestUtil {
         return newRequest(ClusterOperation.CONCURRENT_MAP_PUT, key, value, ttl);
     }
 
+    public static Request newPutIfAbsentRequest(Data key, Data value, long ttl) {
+        return newRequest(ClusterOperation.CONCURRENT_MAP_PUT_IF_ABSENT, key, value, ttl);
+    }
+
     public static Request newRequest(ClusterOperation operation, Data key, Data value, long ttl) {
         Request request = new Request();
         request.setLocal(operation, null, key, value, -1, -1, ttl, null);

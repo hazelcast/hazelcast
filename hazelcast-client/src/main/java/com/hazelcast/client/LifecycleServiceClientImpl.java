@@ -22,8 +22,14 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.util.Clock;
 
-import java.util.concurrent.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -40,6 +46,14 @@ public class LifecycleServiceClientImpl implements LifecycleService {
 
     public LifecycleServiceClientImpl(HazelcastClient hazelcastClient) {
         this.hazelcastClient = hazelcastClient;
+
+        final List<LifecycleListener> listeners = new LinkedList<LifecycleListener>();
+        for (Object listener : hazelcastClient.getClientConfig().getListeners()) {
+            if (listener instanceof LifecycleListener) {
+                listeners.add((LifecycleListener) listener);
+            }
+        }
+        lsLifecycleListeners.addAll(listeners);
     }
 
     public void addLifecycleListener(LifecycleListener lifecycleListener) {
@@ -110,11 +124,11 @@ public class LifecycleServiceClientImpl implements LifecycleService {
         Callable<Boolean> callable = new Callable<Boolean>() {
             public Boolean call() {
                 synchronized (lifecycleLock) {
-                    long begin = System.currentTimeMillis();
+                    long begin = Clock.currentTimeMillis();
                     fireLifecycleEvent(SHUTTING_DOWN);
                     hazelcastClient.doShutdown();
                     running.set(false);
-                    long time = System.currentTimeMillis() - begin;
+                    long time = Clock.currentTimeMillis() - begin;
                     logger.log(Level.FINE, "HazelcastClient shutdown completed in " + time + " ms.");
                     fireLifecycleEvent(SHUTDOWN);
                     return true;

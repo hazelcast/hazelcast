@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.GroupProperties;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -25,6 +26,7 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
@@ -545,17 +547,17 @@ public class HazelcastTest {
         assertEquals(false, map.containsKey(1));
         map.put(1, "value1", 10, TimeUnit.SECONDS);
         assertEquals(true, map.containsKey(1));
-        long ttl = map.getMapEntry(1).getExpirationTime() - System.currentTimeMillis();
+        long ttl = map.getMapEntry(1).getExpirationTime() - Clock.currentTimeMillis();
         assertTrue("TTL is now " + ttl, ttl > 6000 && ttl < 11000);
         Thread.sleep(5000);
         assertEquals(true, map.containsKey(1));
         map.put(1, "value2", 10, TimeUnit.SECONDS);
-        ttl = map.getMapEntry(1).getExpirationTime() - System.currentTimeMillis();
+        ttl = map.getMapEntry(1).getExpirationTime() - Clock.currentTimeMillis();
         assertTrue("TTL is now " + ttl, ttl > 6000 && ttl < 11000);
         Thread.sleep(5000);
         assertEquals(true, map.containsKey(1));
         map.put(1, "value3", 10, TimeUnit.SECONDS);
-        ttl = map.getMapEntry(1).getExpirationTime() - System.currentTimeMillis();
+        ttl = map.getMapEntry(1).getExpirationTime() - Clock.currentTimeMillis();
         assertTrue("TTL is now " + ttl, ttl > 6000 && ttl < 11000);
         assertEquals(true, map.containsKey(1));
     }
@@ -929,7 +931,7 @@ public class HazelcastTest {
 
 
     static class CustomSerializable implements Serializable {
-        private long dummy1 = System.currentTimeMillis();
+        private long dummy1 = Clock.currentTimeMillis();
         private String dummy2 = String.valueOf(dummy1);
     }
 
@@ -1186,10 +1188,9 @@ public class HazelcastTest {
     @Test
     public void testMapPutOverCapacity() throws InterruptedException {
         final int capacity = 100;
-        Config config = new Config();
-        config.getMapConfig("test").getMaxSizeConfig().setSize(capacity);
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-        final IMap map = hz.getMap("test");
+        Config config = Hazelcast.getDefaultInstance().getConfig();
+        config.getMapConfig("testMapPutOverCapacity").getMaxSizeConfig().setSize(capacity);
+        final IMap map = Hazelcast.getMap("testMapPutOverCapacity");
         for (int i = 0; i < capacity; i++) {
             map.put(i, i);
         }
@@ -1215,6 +1216,7 @@ public class HazelcastTest {
         ex.execute(new Runnable() {
             public void run() {
                 latch.countDown();
+                map.lock("c");
                 map.putAndUnlock("c", "c");
                 latch.countDown();
             }
@@ -1242,5 +1244,54 @@ public class HazelcastTest {
         assertEquals("a", map.replace("a", "x"));
         assertTrue(map.replace("b", "b", "z"));
         assertEquals(capacity, map.size());
+    }
+
+    @Test
+    public void testMapGetAfterPutWhenCacheValueEnabled() throws InterruptedException {
+        Config config = Hazelcast.getDefaultInstance().getConfig();
+        config.getMapConfig("testMapGetAfterPutWhenCacheValueEnabled").setCacheValue(true);
+        final IMap map = Hazelcast.getMap("testMapGetAfterPutWhenCacheValueEnabled");
+        final AtomicBoolean running = new AtomicBoolean(true);
+        final String key = "key";
+        ExecutorService ex = Executors.newSingleThreadExecutor();
+        ex.execute(new Runnable() {
+            public void run() {
+                while (running.get()) {
+                    // continuously get to trigger value caching
+                    map.get(key);
+                }
+            }
+        });
+
+        try {
+            for (int i = 0; i < 50000; i++) {
+                map.put(key, Integer.valueOf(i));
+                final Integer value = (Integer) map.get(key);
+                assertEquals(i, value.intValue());
+            }
+        } finally {
+            running.set(false);
+            ex.shutdown();
+            ex.awaitTermination(2, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testPutAndUnlockWhenOwnerOfLockIsDifferent() throws InterruptedException {
+        final IMap map = Hazelcast.getMap("testPutAndUnlockWhenOwnerOfLockIsDifferent");
+        Thread t1 = new Thread() {
+            public void run() {
+                map.lock(1L);
+                try {
+                    sleep(2000);
+                } catch (InterruptedException e) {
+                }
+                map.unlock(1L);
+            }
+        };
+        t1.start();
+        Thread.sleep(500);
+        map.putAndUnlock(1L, 1);
+        fail("Should not succeed putAndUnlock!");
     }
 }

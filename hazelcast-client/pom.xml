@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>2.1-SNAPSHOT</version>
+        <version>2.2.SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,6 +18,20 @@
 
     <build>
         <plugins>
+            <!--  this create jar file of code from src/test/java so modules with tests can share code -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -28,15 +42,24 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
-            <!--  this create jar file of code from src/test/java so modules with tests can share code -->
+
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <version>1.7</version>
+                <configuration>
+                    <signature>
+                        <groupId>org.codehaus.mojo.signature</groupId>
+                        <artifactId>java15</artifactId>
+                        <version>1.0</version>
+                    </signature>
+                </configuration>
                 <executions>
                     <execution>
+                        <id>source-java5-check</id>
+                        <phase>compile</phase>
                         <goals>
-                            <goal>test-jar</goal>
+                            <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -54,7 +77,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
@@ -68,7 +90,6 @@
                         </goals>
                         <configuration>
                             <instructions>
-                                <_include>src/main/resources/META-INF/MANIFEST.MF</_include>
                                 <Import-Package>
                                     !junit.framework,
                                     !org.junit,
@@ -78,6 +99,7 @@
                                     org.slf4j;resolution:=optional,
                                     *
                                 </Import-Package>
+                                <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
                             </instructions>
                         </configuration>
                     </execution>
@@ -92,11 +114,13 @@
                     <archive>
                         <index>true</index>
                         <compress>true</compress>
-                        <manifestFile>${basedir}/target/classes/META-INF/MANIFEST.MF</manifestFile>
-                        <!--<manifest>-->
-                        <!--<mainClass>com.hazelcast.client.examples.TestClientApp</mainClass>-->
-                        <!--<addClasspath>true</addClasspath>-->
-                        <!--</manifest>-->
+                        <manifest>
+                            <mainClass>com.hazelcast.client.examples.TestClientApp</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
             </plugin>
@@ -123,7 +147,7 @@
             <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <dependency> <!-- reuse src/test/java code from moduleA! -->
+        <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <scope>test</scope>

@@ -22,6 +22,7 @@ import com.hazelcast.config.Join;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.InstanceListener;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
@@ -34,6 +35,7 @@ import com.hazelcast.nio.*;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.SimpleBoundedQueue;
 
@@ -130,7 +132,7 @@ public class Node {
 
     public final NodeInitializer initializer;
 
-    private ManagementCenterService managementCenterService = null;
+    private ManagementCenterService managementCenterService ;
 
     public final SecurityContext securityContext;
 
@@ -145,11 +147,6 @@ public class Node {
         ServerSocketChannel serverSocketChannel = null;
         Address localAddress = null;
         try {
-//            final String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
-//            final String preferIPv6Address = System.getProperty("java.net.preferIPv6Addresses");
-//            if (preferIPv6Address == null && preferIPv4Stack == null) {
-//                System.setProperty("java.net.preferIPv4Stack", "true");
-//            }
             serverSocketChannel = ServerSocketChannel.open();
             AddressPicker addressPicker = new AddressPicker(this, serverSocketChannel);
             localAddress = addressPicker.pickAddress();
@@ -222,10 +219,6 @@ public class Node {
         joiner = createJoiner();
     }
 
-    public SystemLogService getSystemLogService() {
-        return systemLogService;
-    }
-
     private void initializeListeners(Config config) {
         for (final ListenerConfig listenerCfg : config.getListenerConfigs()) {
             Object listener = listenerCfg.getImplementation();
@@ -242,12 +235,22 @@ public class Node {
                 clusterImpl.addMembershipListener((MembershipListener) listener);
             } else if (listener instanceof MigrationListener) {
                 concurrentMapManager.partitionServiceImpl.addMigrationListener((MigrationListener) listener);
+            } else if (listener instanceof LifecycleListener) {
+                factory.lifecycleService.addLifecycleListener((LifecycleListener) listener);
             } else if (listener != null) {
                 final String error = "Unknown listener type: " + listener.getClass();
                 Throwable t = new IllegalArgumentException(error);
                 logger.log(Level.WARNING, error, t);
             }
         }
+    }
+
+    public ManagementCenterService getManagementCenterService() {
+        return managementCenterService;
+    }
+
+    public SystemLogService getSystemLogService() {
+        return systemLogService;
     }
 
     public void failedConnection(Address address) {
@@ -339,7 +342,7 @@ public class Node {
     }
 
     private void doShutdown(boolean force) {
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         logger.log(Level.FINE, "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!force && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
@@ -409,7 +412,7 @@ public class Node {
             serviceThreadPacketQueue.clear();
             systemLogService.shutdown();
             ThreadContext.get().shutdown(this.factory);
-            logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (System.currentTimeMillis() - start) + " ms.");
+            logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
     }
 
@@ -441,13 +444,10 @@ public class Node {
             sb.append(". Some of the ports seem occupied!");
             logger.log(Level.WARNING, sb.toString());
         }
-        if (groupProperties.MANCENTER_ENABLED.getBoolean() &&
-                config.getManagementCenterConfig() != null && config.getManagementCenterConfig().isEnabled()) {
-            try {
-                managementCenterService = new ManagementCenterService(factory);
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, "ManagementCenterService could not be started!", e);
-            }
+        try {
+            managementCenterService = new ManagementCenterService(factory);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "ManagementCenterService could not be constructed!", e);
         }
         initializer.afterInitialize(this);
     }
@@ -562,7 +562,7 @@ public class Node {
     }
 
     void join() {
-        long joinStartTime = System.currentTimeMillis();
+        long joinStartTime = Clock.currentTimeMillis();
         long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
         try {
             if (joiner == null) {
@@ -573,7 +573,7 @@ public class Node {
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage());
-            if (System.currentTimeMillis() - joinStartTime < maxJoinMillis) {
+            if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
                 factory.lifecycleService.restart();
             } else {
                 setActive(false);

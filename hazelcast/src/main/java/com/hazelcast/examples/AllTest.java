@@ -17,6 +17,7 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.*;
+import com.hazelcast.util.Clock;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.monitor.LocalQueueOperationStats;
 import com.hazelcast.query.SqlPredicate;
@@ -467,13 +468,13 @@ public class AllTest {
         }, 4);
         addOperation(operations, new Runnable() {
             public void run() {
-                long begin = System.currentTimeMillis();
+                long begin = Clock.currentTimeMillis();
                 IMap map = Hazelcast.getMap("myMap");
                 Iterator it = map.entrySet(new SqlPredicate("year=" + random.nextInt(100))).iterator();
                 while (it.hasNext()) {
                     it.next();
                 }
-//                System.out.println("Took: " + (System.currentTimeMillis() - begin));
+//                System.out.println("Took: " + (Clock.currentTimeMillis() - begin));
             }
         }, 1);
         addOperation(operations, new Runnable() {

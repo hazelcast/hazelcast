@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -24,8 +25,8 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+@Ignore
 public class IPv6SocketTest {
-
 
     @Test
     public void test() throws Exception {

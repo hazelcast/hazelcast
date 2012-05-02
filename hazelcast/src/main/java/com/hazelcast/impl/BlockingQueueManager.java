@@ -21,13 +21,13 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.PacketProcessor;
-import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.monitor.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -208,14 +208,6 @@ public class BlockingQueueManager extends BaseManager {
                 txn.attachPutOp(name, key, dataItem, timeout, true);
             } else {
                 storeQueueItem(name, key, dataItem, index);
-                final BQ bq = getBQ(name);
-                if (bq != null && bq.mapListeners.size() > 0) {
-                    enqueueAndReturn(new Processable() {
-                        public void process() {
-                            fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_ADDED, dataItem, thisAddress);
-                        }
-                    });
-                }
             }
             return true;
         }
@@ -254,8 +246,8 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    public void offerCommit(String name, Object key, Object obj) {
-        storeQueueItem(name, key, obj, Integer.MAX_VALUE);
+    public void offerCommit(String name, Object key, Data item) {
+        storeQueueItem(name, key, item, Integer.MAX_VALUE);
     }
 
     public void rollbackPoll(String name, Object key, Object obj) {
@@ -267,14 +259,22 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    private void storeQueueItem(String name, Object key, Object obj, int index) {
+    private void storeQueueItem(final String name, final Object key, final Data item, int index) {
         IMap imap = getStorageMap(name);
         final Data dataKey = toData(key);
-        imap.put(dataKey, obj);
+        imap.put(dataKey, item);
         if (addKeyAsync) {
             sendKeyToMaster(name, dataKey, index);
         } else {
             addKey(name, dataKey, index);
+        }
+        final BQ bq = getBQ(name);
+        if (bq != null && bq.mapListeners.size() > 0) {
+            enqueueAndReturn(new Processable() {
+                public void process() {
+                    fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_ADDED, item, thisAddress);
+                }
+            });
         }
     }
 
@@ -283,7 +283,7 @@ public class BlockingQueueManager extends BaseManager {
             timeout = Long.MAX_VALUE;
         }
         Object removedItem = null;
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         while (removedItem == null && timeout >= 0) {
             Data key = takeKey(name, timeout);
             if (key == null) {
@@ -310,7 +310,7 @@ public class BlockingQueueManager extends BaseManager {
                 }
             } catch (TimeoutException e) {
             }
-            long now = System.currentTimeMillis();
+            long now = Clock.currentTimeMillis();
             timeout -= (now - start);
             start = now;
         }
@@ -646,7 +646,7 @@ public class BlockingQueueManager extends BaseManager {
 
         Lease(Address address) {
             this.address = address;
-            timeout = System.currentTimeMillis() + 10000;
+            timeout = Clock.currentTimeMillis() + 10000;
         }
     }
 
@@ -865,7 +865,7 @@ public class BlockingQueueManager extends BaseManager {
                 added = true;
             } else {
                 QData old = queue.set(index, new QData(key));
-                if (isValid(old, System.currentTimeMillis())) {
+                if (isValid(old, Clock.currentTimeMillis())) {
                     oldKey = old.data;
                 } else {
                     added = true;
@@ -939,7 +939,7 @@ public class BlockingQueueManager extends BaseManager {
             if (qdata == null) {
                 return null;
             }
-            long now = System.currentTimeMillis();
+            long now = Clock.currentTimeMillis();
             if (isValid(qdata, now)) {
                 return qdata;
             }
@@ -1006,7 +1006,7 @@ public class BlockingQueueManager extends BaseManager {
 
         void doGetKeyByIndex(Request req) {
             int index = (int) req.longValue;
-            long now = System.currentTimeMillis();
+            long now = Clock.currentTimeMillis();
             int i = 0;
             QData key = null;
             for (QData qdata : queue) {
@@ -1070,7 +1070,7 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         public LocalQueueStatsImpl getQueueStats() {
-            long now = System.currentTimeMillis();
+            long now = Clock.currentTimeMillis();
             CMap cmap = getStorageCMap(name);
             IMap storageMap = getStorageMap(name);
             Set<Object> localKeys = storageMap.localKeySet();
@@ -1160,7 +1160,7 @@ public class BlockingQueueManager extends BaseManager {
 
         QData(Data data) {
             this.data = data;
-            this.createDate = System.currentTimeMillis();
+            this.createDate = Clock.currentTimeMillis();
         }
     }
 }

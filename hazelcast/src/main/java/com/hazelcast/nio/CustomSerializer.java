@@ -20,10 +20,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public interface CustomSerializer {
+
     void write(OutputStream os, Object object) throws Exception;
 
     Object read(InputStream is) throws Exception;
-//    byte[] write(Object object) throws Exception;
-//
-//    Object read(byte[] bytes) throws Exception;
 }

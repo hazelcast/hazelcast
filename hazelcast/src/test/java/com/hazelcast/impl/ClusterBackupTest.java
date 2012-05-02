@@ -50,7 +50,6 @@ public class ClusterBackupTest {
     public static void init() throws Exception {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-//        System.setProperty(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
         Hazelcast.shutdownAll();
     }
 
@@ -514,7 +513,7 @@ public class ClusterBackupTest {
             }
             Collection<HazelcastInstance> set = Hazelcast.getAllHazelcastInstances();
             final int replicaMax = set.size();
-            int wait = replicaMax * 3;
+            int wait = replicaMax * 5;
             System.out.println("Waiting " + wait + " seconds for partition arrangement...");
             Thread.sleep(1000 * wait);
             int[] partitionCounts = new int[PartitionInfo.MAX_REPLICA_COUNT];

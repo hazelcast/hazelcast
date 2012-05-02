@@ -28,11 +28,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.hazelcast.client.IOUtil.toObject;
 
 public class MembershipListenerManager {
+
     final private List<MembershipListener> memberShipListeners = new CopyOnWriteArrayList<MembershipListener>();
     final private HazelcastClient client;
 
     public MembershipListenerManager(HazelcastClient client) {
         this.client = client;
+        for (Object listener : client.getClientConfig().getListeners()) {
+            if (listener instanceof MembershipListener) {
+                registerListener((MembershipListener) listener);
+            }
+        }
     }
 
     public void registerListener(MembershipListener listener) {

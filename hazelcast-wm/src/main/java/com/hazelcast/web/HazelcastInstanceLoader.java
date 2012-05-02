@@ -16,9 +16,7 @@
 
 package com.hazelcast.web;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.UrlXmlConfig;
-import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.*;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -26,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 class HazelcastInstanceLoader {
@@ -41,7 +40,13 @@ class HazelcastInstanceLoader {
 
         URL configUrl = null;
         if (!isEmpty(configLocation)) {
-            configUrl = ConfigLoader.locateConfig(filterConfig.getServletContext(), configLocation);
+            try {
+                configUrl = filterConfig.getServletContext().getResource(configLocation);
+            } catch (MalformedURLException e) {
+            }
+            if (configUrl == null) {
+                configUrl = ConfigLoader.locateConfig(configLocation);
+            }
         }
         if (configUrl != null) {
             try {

@@ -52,6 +52,8 @@
                 <xs:element ref="max-size" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="eviction-percentage" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="merge-policy" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="cache-value" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="read-backup-data" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="map-store" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="near-cache" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
@@ -368,7 +370,7 @@
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="map-merge-policy"/>
+                <xs:element ref="map-merge-policy" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -945,6 +947,8 @@
             </xs:simpleContent>
         </xs:complexType>
     </xs:element>
+    <xs:element name="cache-value" type="xs:boolean" />
+    <xs:element name="read-backup-data" type="xs:boolean" />
     <xs:element name="security">
         <xs:complexType>
             <xs:sequence>

@@ -24,16 +24,16 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
 
     public void init() {
         registerBeanDefinitionParser("config", new HazelcastConfigBeanDefinitionParser());
-        registerBeanDefinitionParser("hazelcast", new HazelcastBeanDefinitionParser());
+        registerBeanDefinitionParser("hazelcast", new HazelcastInstanceDefinitionParser());
         registerBeanDefinitionParser("client", new HazelcastClientBeanDefinitionParser());
         registerBeanDefinitionParser("hibernate-cache-provider", new CacheProviderBeanDefinitionParser());
         registerBeanDefinitionParser("hibernate-region-factory", new RegionFactoryBeanDefinitionParser());
         final String[] types = {"map", "multiMap",
-                "queue", "topic", "set", "list",
-                "executorService", "idGenerator", "atomicNumber",
-                "countDownLatch", "semaphore"};
+                                "queue", "topic", "set", "list",
+                                "executorService", "idGenerator", "atomicNumber",
+                                "countDownLatch", "semaphore", "lock"};
         for (final String type : types) {
-            registerBeanDefinitionParser(type, new HazelcastInstanceBeanDefinitionParser(type));
+            registerBeanDefinitionParser(type, new HazelcastTypeBeanDefinitionParser(type));
         }
     }
 }

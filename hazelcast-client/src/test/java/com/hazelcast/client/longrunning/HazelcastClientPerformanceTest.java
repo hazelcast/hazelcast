@@ -20,6 +20,7 @@ import com.hazelcast.client.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -48,17 +49,17 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
     }
 
     private void putAndGet(Map<String, String> map, int counter) {
-        long beginTime = System.currentTimeMillis();
+        long beginTime = Clock.currentTimeMillis();
         for (int i = 1; i <= counter; i++) {
             if (i % (counter / 10) == 0) {
-                System.out.println(i + ": " + (System.currentTimeMillis() - beginTime) + " ms");
+                System.out.println(i + ": " + (Clock.currentTimeMillis() - beginTime) + " ms");
             }
             map.put("key_" + i, String.valueOf(i));
         }
-        beginTime = System.currentTimeMillis();
+        beginTime = Clock.currentTimeMillis();
         for (int i = 1; i <= counter; i++) {
             if (i % (counter / 10) == 0) {
-                System.out.println(i + ": " + (System.currentTimeMillis() - beginTime) + " ms");
+                System.out.println(i + ": " + (Clock.currentTimeMillis() - beginTime) + " ms");
             }
             assertEquals(String.valueOf(i), map.get("key_" + i));
         }
@@ -73,7 +74,7 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
         final AtomicInteger getCounter = new AtomicInteger(count);
         final AtomicInteger putCounter = new AtomicInteger(count);
         ExecutorService executorService = Executors.newFixedThreadPool(threads);
-        final long beginTime = System.currentTimeMillis();
+        final long beginTime = Clock.currentTimeMillis();
         final CountDownLatch latch = new CountDownLatch(threads);
         for (int i = 0; i < threads; i++) {
             executorService.execute(new Runnable() {
@@ -91,7 +92,7 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
         }
         latch.await();
         System.out.println(threads + " Threads made in total " + count +
-                " puts and gets in " + (System.currentTimeMillis() - beginTime) + " ms");
+                " puts and gets in " + (Clock.currentTimeMillis() - beginTime) + " ms");
     }
 
     @Test
@@ -175,7 +176,7 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
         final OutRunnable outRunnable = new OutRunnable(client, new HashMap<Long, Call>(), packetWriter);
         new Thread(outRunnable).start();
         final AtomicLong callCounter = new AtomicLong();
-        final long start = System.currentTimeMillis();
+        final long start = Clock.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(20);
         final BlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
         final Object object = new Object();
@@ -208,7 +209,7 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
                         }
 //                        numberOfTasks = numberOfTasks + numberOfTasks/10;
                         Thread.sleep(1 * 1000);
-                        System.out.println("Operations per millisecond : " + callCounter.get() / (System.currentTimeMillis() - start));
+                        System.out.println("Operations per millisecond : " + callCounter.get() / (Clock.currentTimeMillis() - start));
                         System.out.println("out runnable Queue size: " + outRunnable.getQueueSize());
                     } catch (Exception e) {
                         e.printStackTrace();

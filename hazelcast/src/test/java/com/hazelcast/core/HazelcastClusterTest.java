@@ -17,8 +17,11 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.nio.Address;
 import junit.framework.Assert;
@@ -123,7 +126,7 @@ public class HazelcastClusterTest {
         System.setProperty("hazelcast.mancenter.enabled", "false");
         final CountDownLatch latch = new CountDownLatch(count);
         final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        final Random random = new Random(System.currentTimeMillis());
+        final Random random = new Random(Clock.currentTimeMillis());
         for (int i = 0; i < count; i++) {
             final int seed = i;
             new Thread(new Runnable() {
@@ -163,7 +166,7 @@ public class HazelcastClusterTest {
         System.setProperty("hazelcast.mancenter.enabled", "false");
         final CountDownLatch latch = new CountDownLatch(count);
         final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        final Random random = new Random(System.currentTimeMillis());
+        final Random random = new Random(Clock.currentTimeMillis());
         final Map<String, AtomicInteger> groups = new ConcurrentHashMap<String, AtomicInteger>();
         for (int i = 0; i < groupCount; i++) {
             groups.put("group" + i, new AtomicInteger(0));
@@ -211,7 +214,7 @@ public class HazelcastClusterTest {
         System.setProperty("hazelcast.mancenter.enabled", "false");
         final CountDownLatch latch = new CountDownLatch(count);
         final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        final Random random = new Random(System.currentTimeMillis());
+        final Random random = new Random(Clock.currentTimeMillis());
         for (int i = 0; i < count; i++) {
             final int seed = i;
             new Thread(new Runnable() {
@@ -442,5 +445,36 @@ public class HazelcastClusterTest {
             assertEquals(i + ": " + members1.get(i) + " vs " + members2.get(i),
                     members1.get(i).getUuid(), members2.get(i).getUuid());
         }
+    }
+
+    @Test
+    public void testMulticastJoinDuringSplitBrainHandlerRunning() throws InterruptedException {
+        Properties props = new Properties();
+        props.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "5");
+        props.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "0");
+        props.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "0");
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Config config1 = new Config();
+        config1.setPort(5901) ; // bigger port to make sure address.hashCode() check pass during merge!
+        config1.setProperties(props);
+        config1.addListenerConfig(new ListenerConfig(new LifecycleListener() {
+            public void stateChanged(final LifecycleEvent event) {
+                System.out.println(event);
+                if (event.getState() == LifecycleState.RESTARTING
+                        || event.getState() == LifecycleState.RESTARTED) {
+                    latch.countDown();
+                }
+            }
+        }));
+        Hazelcast.newHazelcastInstance(config1);
+        Thread.sleep(5000);
+
+        Config config2 = new Config();
+        config2.setPort(5701) ;
+        config2.setProperties(props);
+        Hazelcast.newHazelcastInstance(config2);
+
+        assertFalse("Latch should not be countdown!", latch.await(3, TimeUnit.SECONDS));
     }
 }

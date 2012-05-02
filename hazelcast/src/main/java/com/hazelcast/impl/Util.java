@@ -61,7 +61,6 @@ public class Util {
             hash = (hash ^ data[i]) * prime;
         }
         return hash;
-//	    return Arrays.hashCode(data);
     }
 
     /**

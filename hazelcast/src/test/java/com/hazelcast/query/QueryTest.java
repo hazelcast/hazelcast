@@ -23,6 +23,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.CMap;
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.TestUtil;
 import org.junit.After;
@@ -284,8 +285,8 @@ public class QueryTest extends TestUtil {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(cfg);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(cfg);
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(cfg);
-        long startNow = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startNow) < 50000) {
+        long startNow = Clock.currentTimeMillis();
+        while ((Clock.currentTimeMillis() - startNow) < 50000) {
             Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
             for (Employee employee : values) {
                 assertTrue(employee.isActive());
@@ -306,8 +307,8 @@ public class QueryTest extends TestUtil {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(cfg);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(cfg);
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(cfg);
-        long startNow = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startNow) < 50000) {
+        long startNow = Clock.currentTimeMillis();
+        while ((Clock.currentTimeMillis() - startNow) < 50000) {
             Collection<Employee> values = imap.values();
             assertEquals(count, values.size());
         }
@@ -461,9 +462,9 @@ public class QueryTest extends TestUtil {
         for (int i = 0; i < 5000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age=23"));
-        long tookWithout = (System.currentTimeMillis() - start);
+        long tookWithout = (Clock.currentTimeMillis() - start);
         assertEquals(83, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -478,9 +479,9 @@ public class QueryTest extends TestUtil {
         for (int i = 0; i < 5000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
-        start = System.currentTimeMillis();
+        start = Clock.currentTimeMillis();
         entries = imap.entrySet(new SqlPredicate("active and age=23"));
-        long tookWithIndex = (System.currentTimeMillis() - start);
+        long tookWithIndex = (Clock.currentTimeMillis() - start);
         assertEquals(83, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -497,9 +498,9 @@ public class QueryTest extends TestUtil {
         for (int i = 0; i < 50000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and salary between 4010.99 and 4032.01"));
-        long tookWithout = (System.currentTimeMillis() - start);
+        long tookWithout = (Clock.currentTimeMillis() - start);
         assertEquals(11, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -516,9 +517,9 @@ public class QueryTest extends TestUtil {
         }
         imap.put(String.valueOf(10), new Employee("name" + 10, 10, true, 44010.99D));
         imap.put(String.valueOf(11), new Employee("name" + 11, 11, true, 44032.01D));
-        start = System.currentTimeMillis();
+        start = Clock.currentTimeMillis();
         entries = imap.entrySet(new SqlPredicate("active and salary between 44010.99 and 44032.01"));
-        long tookWithIndex = (System.currentTimeMillis() - start);
+        long tookWithIndex = (Clock.currentTimeMillis() - start);
         assertEquals(13, entries.size());
         boolean foundFirst = false;
         boolean foundLast = false;
@@ -556,9 +557,9 @@ public class QueryTest extends TestUtil {
         }
         EntryObject e = new PredicateBuilder().getEntryObject();
         Predicate predicate = e.is("active").and(e.get("age").equal(23));
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         Set<Map.Entry> entries = imap.entrySet(predicate);
-        long tookWithout = (System.currentTimeMillis() - start);
+        long tookWithout = (Clock.currentTimeMillis() - start);
         assertEquals(83, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -575,9 +576,9 @@ public class QueryTest extends TestUtil {
         }
         e = new PredicateBuilder().getEntryObject();
         predicate = e.is("active").and(e.get("age").equal(23));
-        start = System.currentTimeMillis();
+        start = Clock.currentTimeMillis();
         entries = imap.entrySet(predicate);
-        long tookWithIndex = (System.currentTimeMillis() - start);
+        long tookWithIndex = (Clock.currentTimeMillis() - start);
         assertEquals(83, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -598,9 +599,9 @@ public class QueryTest extends TestUtil {
         }
         EntryObject e = new PredicateBuilder().getEntryObject();
         Predicate predicate = e.is("active").and(e.get("name").equal(null));
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         Set<Map.Entry> entries = imap2.entrySet(predicate);
-        long tookWithout = (System.currentTimeMillis() - start);
+        long tookWithout = (Clock.currentTimeMillis() - start);
         assertEquals(2500, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -617,9 +618,9 @@ public class QueryTest extends TestUtil {
         }
         e = new PredicateBuilder().getEntryObject();
         predicate = e.is("active").and(e.get("name").equal(null));
-        start = System.currentTimeMillis();
+        start = Clock.currentTimeMillis();
         entries = imap2.entrySet(predicate);
-        long tookWithIndex = (System.currentTimeMillis() - start);
+        long tookWithIndex = (Clock.currentTimeMillis() - start);
         assertEquals(2500, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -637,9 +638,9 @@ public class QueryTest extends TestUtil {
         }
         EntryObject e = new PredicateBuilder().getEntryObject();
         Predicate predicate = e.is("active").and(e.get("age").equal(23));
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         Set<Map.Entry> entries = imap.entrySet(predicate);
-        long tookWithout = (System.currentTimeMillis() - start);
+        long tookWithout = (Clock.currentTimeMillis() - start);
         assertEquals(83, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -656,9 +657,9 @@ public class QueryTest extends TestUtil {
         }
         e = new PredicateBuilder().getEntryObject();
         predicate = e.is("active").and(e.get("age").equal(23));
-        start = System.currentTimeMillis();
+        start = Clock.currentTimeMillis();
         entries = imap.entrySet(predicate);
-        long tookWithIndex = (System.currentTimeMillis() - start);
+        long tookWithIndex = (Clock.currentTimeMillis() - start);
         assertEquals(83, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -783,7 +784,7 @@ public class QueryTest extends TestUtil {
 
     @Test
     public void queryWithThis() {
-        IMap<String, String> map = Hazelcast.getMap("map");
+        IMap<String, String> map = Hazelcast.getMap("queryWithThis");
         map.addIndex("this", false);
         for (int i = 0; i < 1000; i++) {
             map.put("" + i, "" + i);
@@ -799,7 +800,7 @@ public class QueryTest extends TestUtil {
      */
     @Test
     public void testPredicateWithEntryKeyObject() {
-        IMap map = Hazelcast.getMap("test");
+        IMap map = Hazelcast.getMap("testPredicateWithEntryKeyObject");
         map.put("1", 11);
         map.put("2", 22);
         map.put("3", 33);
@@ -807,7 +808,89 @@ public class QueryTest extends TestUtil {
         assertEquals(1, map.values(predicate).size());
         predicate = new PredicateBuilder().getEntryObject().key().in("2", "3");
         assertEquals(2, map.keySet(predicate).size());
-        Hazelcast.shutdownAll();
+    }
+
+    /**
+     *  Github issues 98 and 131
+     */
+    @Test
+    public void testPredicateStringAttribute() {
+        IMap map = Hazelcast.getMap("testPredicateStringWithString");
+        testPredicateStringAttribute(map);
+    }
+
+    /**
+     *  Github issues 98 and 131
+     */
+    @Test
+    public void testPredicateStringAttributesWithIndex() {
+        IMap map = Hazelcast.getMap("testPredicateStringWithStringIndex");
+        map.addIndex("name", false);
+        testPredicateStringAttribute(map);
+    }
+
+    private void testPredicateStringAttribute(IMap map) {
+        map.put(1, new Value("abc"));
+        map.put(2, new Value("xyz"));
+        map.put(3, new Value("aaa"));
+        map.put(4, new Value("zzz"));
+        map.put(5, new Value("klm"));
+        map.put(6, new Value("prs"));
+        map.put(7, new Value("prs"));
+        map.put(8, new Value("def"));
+        map.put(9, new Value("qwx"));
+
+        assertEquals(8, map.values(new SqlPredicate("name > 'aac'")).size());
+        assertEquals(9, map.values(new SqlPredicate("name between 'aaa' and 'zzz'")).size());
+        assertEquals(7, map.values(new SqlPredicate("name < 't'")).size());
+        assertEquals(6, map.values(new SqlPredicate("name >= 'gh'")).size());
+
+        assertEquals(8, map.values(new PredicateBuilder().getEntryObject().get("name").greaterThan("aac")).size());
+        assertEquals(9, map.values(new PredicateBuilder().getEntryObject().get("name").between("aaa", "zzz")).size());
+        assertEquals(7, map.values(new PredicateBuilder().getEntryObject().get("name").lessThan("t")).size());
+        assertEquals(6, map.values(new PredicateBuilder().getEntryObject().get("name").greaterEqual("gh")).size());
+    }
+
+    @Test
+    public void testPredicateDateAttribute() {
+        IMap map = Hazelcast.getMap("testPredicateDateAttribute");
+        testPredicateDateAttribute(map);
+    }
+
+    @Test
+    public void testPredicateDateAttributeWithIndex() {
+        IMap map = Hazelcast.getMap("testPredicateDateAttribute");
+        map.addIndex("this", true);
+        testPredicateDateAttribute(map);
+    }
+
+    private void testPredicateDateAttribute(IMap map) {
+        Calendar cal = Calendar.getInstance();
+        cal.set(2012, 5, 5);
+        map.put(1, cal.getTime());
+        cal.set(2011, 10, 10);
+        map.put(2, cal.getTime());
+        cal.set(2011, 1, 1);
+        map.put(3, cal.getTime());
+        cal.set(2010, 8, 5);
+        map.put(4, cal.getTime());
+        cal.set(2000, 5, 5);
+        map.put(5, cal.getTime());
+
+        cal.set(2011, 0, 1);
+        assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").greaterThan(cal.getTime())).size());
+        assertEquals(3, map.values(new SqlPredicate("this > 'Sat Jan 01 11:43:05 EET 2011'")).size());
+
+        assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("this").lessThan(cal.getTime())).size());
+        assertEquals(2, map.values(new SqlPredicate("this < 'Sat Jan 01 11:43:05 EET 2011'")).size());
+
+        cal.set(2003, 10, 10);
+        Date d1 = cal.getTime();
+        cal.set(2012, 1, 10);
+        Date d2 = cal.getTime();
+        assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").between(d1, d2)).size());
+        assertEquals(3, map.values(new SqlPredicate("this between 'Mon Nov 10 11:43:05 EET 2003'" +
+                                                    " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
     }
 
     public void doFunctionalSQLQueryTest(IMap imap) {

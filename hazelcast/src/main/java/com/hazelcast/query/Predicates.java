@@ -27,18 +27,11 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class Predicates {
-
-    private static final String timestampFormat = "yyyy-MM-dd hh:mm:ss.SSS";
-    private static final String dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
-    private static final String sqlDateFormat = "yyyy-mm-dd";
 
     public static class GreaterLessPredicate extends EqualPredicate {
         boolean equal = false;
@@ -60,9 +53,8 @@ public final class Predicates {
         }
 
         protected boolean doApply(Object first, Object second) {
-            int expectedResult = (less) ? -1 : 1;
-            int result = ((Comparable) first).compareTo(second);
-            return equal && result == 0 || (expectedResult == result);
+            final int result = ((Comparable) first).compareTo(second);
+            return equal && result == 0 || (less ? (result < 0) : (result > 0));
         }
 
         public Set<MapEntry> filter(QueryContext queryContext) {
@@ -578,31 +570,19 @@ public final class Predicates {
                 if (value instanceof Date) { // one of java.util.Date or java.sql.Date
                     result = value;
                 } else {
-                    try {
-                        result = new Timestamp(getTimestampFormat().parse(valueString).getTime());
-                    } catch (ParseException e) {
-                        Util.throwUncheckedException(e);
-                    }
+                    result = DateHelper.parseTimeStamp(valueString);
                 }
             } else if (type instanceof java.sql.Date) {
                 if (value instanceof Date) { // one of java.util.Date or java.sql.Timestamp
                     result = value;
                 } else {
-                    try {
-                        result = getSqlDateFormat().parse(valueString);
-                    } catch (ParseException e) {
-                        Util.throwUncheckedException(e);
-                    }
+                    result = DateHelper.parseSqlDate(valueString);
                 }
             } else if (type instanceof Date) {
                 if (value instanceof Date) { // one of java.sql.Date or java.sql.Timestamp
                     result = value;
                 } else {
-                    try {
-                        result = getUtilDateFormat().parse(valueString);
-                    } catch (ParseException e) {
-                        Util.throwUncheckedException(e);
-                    }
+                    result = DateHelper.parseDate(valueString);
                 }
             } else if (type.getClass().isEnum()) {
                 try {
@@ -1076,18 +1056,5 @@ public final class Predicates {
         public String toString() {
             return input;
         }
-    }
-
-    private static DateFormat getTimestampFormat() {
-        return new SimpleDateFormat(timestampFormat);
-    }
-
-    private static DateFormat getSqlDateFormat() {
-        return new SimpleDateFormat(sqlDateFormat);
-    }
-
-    private static DateFormat getUtilDateFormat() {
-        //PredicatesTest.testEqual throws exceptions if not US locale
-        return new SimpleDateFormat(dateFormat, Locale.US);
     }
 }

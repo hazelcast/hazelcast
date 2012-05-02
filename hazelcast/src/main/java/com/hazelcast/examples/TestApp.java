@@ -17,6 +17,7 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.*;
+import com.hazelcast.util.Clock;
 import com.hazelcast.partition.Partition;
 
 import java.io.*;
@@ -198,11 +199,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleHelp(command);
         } else if (first.startsWith("#") && first.length() > 1) {
             int repeat = Integer.parseInt(first.substring(1));
-            long t0 = System.currentTimeMillis();
+            long t0 = Clock.currentTimeMillis();
             for (int i = 0; i < repeat; i++) {
                 handleCommand(command.substring(first.length()).replaceAll("\\$i", "" + i));
             }
-            println("ops/s = " + repeat * 1000 / (System.currentTimeMillis() - t0));
+            println("ops/s = " + repeat * 1000 / (Clock.currentTimeMillis() - t0));
             return;
         } else if (first.startsWith("&") && first.length() > 1) {
             final int fork = Integer.parseInt(first.substring(1));
@@ -576,9 +577,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         for (int i = 0; i < count; i++) {
             theMap.put("key" + (start + i), value);
         }
-        long t0 = System.currentTimeMillis();
+        long t0 = Clock.currentTimeMillis();
         getMap().putAll(theMap);
-        long t1 = System.currentTimeMillis();
+        long t1 = Clock.currentTimeMillis();
         if (t1 - t0 > 1) {
             println("size = " + getMap().size() + ", " + count * 1000 / (t1 - t0)
                     + " evt/s, " + (count * 1000 / (t1 - t0)) * (b * 8) / 1024 + " Kbit/s, "
@@ -613,11 +614,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         int start = 0;
         if (args.length > 2)
             start = Integer.parseInt(args[2]);
-        long t0 = System.currentTimeMillis();
+        long t0 = Clock.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             getMap().remove("key" + (start + i));
         }
-        long t1 = System.currentTimeMillis();
+        long t1 = Clock.currentTimeMillis();
         println("size = " + getMap().size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
     }
 
@@ -732,7 +733,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         Set set = getMap().entrySet();
         Iterator it = set.iterator();
         int count = 0;
-        long time = System.currentTimeMillis();
+        long time = Clock.currentTimeMillis();
         while (it.hasNext()) {
             count++;
             Map.Entry entry = (Entry) it.next();
@@ -765,13 +766,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
         int successCount = 0;
-        long t0 = System.currentTimeMillis();
+        long t0 = Clock.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getSet().add("obj" + i);
             if (success)
                 successCount++;
         }
-        long t1 = System.currentTimeMillis();
+        long t1 = Clock.currentTimeMillis();
         println("Added " + successCount + " objects.");
         println("size = " + getSet().size() + ", " + successCount * 1000 / (t1 - t0)
                 + " evt/s");
@@ -782,13 +783,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
         int successCount = 0;
-        long t0 = System.currentTimeMillis();
+        long t0 = Clock.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getList().add("obj" + i);
             if (success)
                 successCount++;
         }
-        long t1 = System.currentTimeMillis();
+        long t1 = Clock.currentTimeMillis();
         println("Added " + successCount + " objects.");
         println("size = " + list.size() + ", " + successCount * 1000 / (t1 - t0)
                 + " evt/s");
@@ -799,13 +800,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (args.length > 1)
             count = Integer.parseInt(args[1]);
         int successCount = 0;
-        long t0 = System.currentTimeMillis();
+        long t0 = Clock.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getSet().remove("obj" + i);
             if (success)
                 successCount++;
         }
-        long t1 = System.currentTimeMillis();
+        long t1 = Clock.currentTimeMillis();
         println("Removed " + successCount + " objects.");
         println("size = " + getSet().size() + ", " + successCount * 1000 / (t1 - t0)
                 + " evt/s");
@@ -951,14 +952,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         Object value = null;
         if (args.length > 2)
             value = new byte[Integer.parseInt(args[2])];
-        long t0 = System.currentTimeMillis();
+        long t0 = Clock.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             if (value == null)
                 getQueue().offer("obj");
             else
                 getQueue().offer(value);
         }
-        long t1 = System.currentTimeMillis();
+        long t1 = Clock.currentTimeMillis();
         print("size = " + getQueue().size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
         if (value == null) {
             println("");

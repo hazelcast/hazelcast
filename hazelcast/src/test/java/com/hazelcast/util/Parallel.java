@@ -25,10 +25,11 @@ import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Parallel {
+
     static final SimpleDateFormat format = new SimpleDateFormat("dd HH:mm:ss");
 
     public static void main(String[] args) {
-        final String concurrencyLevelStr = (args == null || args.length <= 0) ? "0" : args[0];
+        final String concurrencyLevelStr = (args == null || args.length <= 0) ? "1" : args[0];
         final String profile = (args == null || args.length <= 1) ? "all" : args[1];
         final int concurrencyLevel = Integer.parseInt(concurrencyLevelStr);
         final Thread[] threads = new Thread[concurrencyLevel];
@@ -57,8 +58,9 @@ public class Parallel {
                         while ((str = br.readLine()) != null) {
                             if (str.contains("Started") || str.contains("Finished") || str.startsWith("PLOG:")) {
                                 System.out.println("[" + index + "] " + str);
+                            } else if (str.startsWith("[ERROR]") || str.startsWith("[WARNING]")) {
+                                System.err.println("[" + index + "] " + str);
                             }
-//                            System.out.println(str);
                         }
                         try {
                             proc.waitFor();

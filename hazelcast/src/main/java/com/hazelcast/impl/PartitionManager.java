@@ -32,6 +32,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -123,12 +124,12 @@ public class PartitionManager {
 
     // for testing purposes only
     public boolean activateMigration() {
-        return migrationActive.getAndSet(true);
+        return migrationActive.compareAndSet(false, true);
     }
 
     // for testing purposes only
     public boolean inactivateMigration() {
-        migrationActive.getAndSet(false);
+        migrationActive.compareAndSet(true, false);
         while (migratingPartition != null) {
             try {
                 Thread.sleep(250);
@@ -142,6 +143,10 @@ public class PartitionManager {
     private void sendClusterRuntimeState() {
         if (!concurrentMapManager.isMaster() || !concurrentMapManager.isActive()
                 || !concurrentMapManager.node.joined()) {
+            return;
+        }
+        if (!migrationActive.get()) {
+            // migration is disabled because of a member leave, wait till enabled!
             return;
         }
         // do not send partition state until initialized!
@@ -158,22 +163,22 @@ public class PartitionManager {
     }
 
     // for testing purposes only
-    private void printPartitionOwnerDuplicates() {
-        for (PartitionInfo partition : partitions) {
-            L:
-            for (int index = 0; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
-                Address address = partition.getReplicaAddress(index);
-                if (address != null) {
-                    for (int k = 0; k < PartitionInfo.MAX_REPLICA_COUNT; k++) {
-                        if (k != index && address.equals(partition.getReplicaAddress(k))) {
-                            logger.log(Level.WARNING, "DUPLICATE ==> " + partition);
-                            break L;
-                        }
-                    }
-                }
-            }
-        }
-    }
+//    private void printPartitionOwnerDuplicates() {
+//        for (PartitionInfo partition : partitions) {
+//            L:
+//            for (int index = 0; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
+//                Address address = partition.getReplicaAddress(index);
+//                if (address != null) {
+//                    for (int k = 0; k < PartitionInfo.MAX_REPLICA_COUNT; k++) {
+//                        if (k != index && address.equals(partition.getReplicaAddress(k))) {
+//                            logger.log(Level.WARNING, "DUPLICATE ==> " + partition);
+//                            break L;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     public MigratingPartition getMigratingPartition() {
         return migratingPartition;
@@ -230,7 +235,7 @@ public class PartitionManager {
                 addActiveMigration(partitionId, replicaIndex, thisAddress, newAddress);
             }
         });
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         final Collection<CMap> cmaps = concurrentMapManager.maps.values();
         CostAwareRecordList lsResultSet = new CostAwareRecordList(1000);
         for (final CMap cmap : cmaps) {
@@ -375,6 +380,11 @@ public class PartitionManager {
         if (!hasStorageMember()) {
             reset();
         }
+        // inactivate migration and sending of ClusterRuntimeState (@see #sendClusterRuntimeState)
+        // let all members notice the dead and fix their own records and indexes.
+        // otherwise new master may take action fast and send new partition state
+        // before other members realize the dead one and fix their records.
+        final boolean migrationStatus = migrationActive.getAndSet(false);
         concurrentMapManager.partitionServiceImpl.reset();
         checkMigratingPartitionForDead(deadAddress);
         // list of partitions those have dead member in their replicas
@@ -397,6 +407,17 @@ public class PartitionManager {
         }
         fixCMapsForDead(deadAddress, indexesOfDead);
         fixReplicasAndPartitionsForDead(deadMember, indexesOfDead);
+
+        final Node node = concurrentMapManager.node;
+        // activate migration back after connectionDropTime x 10 milliseconds,
+        // thinking optimistically that all nodes notice the dead one in this period.
+        final long waitBeforeMigrationActivate = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
+                * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 10;
+        node.executorManager.getScheduledExecutorService().schedule(new Runnable() {
+            public void run() {
+                migrationActive.compareAndSet(false, migrationStatus);
+            }
+        }, waitBeforeMigrationActivate, TimeUnit.MILLISECONDS);
     }
 
     private void fixReplicasAndPartitionsForDead(final MemberImpl deadMember, final int[] indexesOfDead) {
@@ -644,7 +665,7 @@ public class PartitionManager {
 
     private boolean shouldCheckRepartitioning() {
         return immediateTasksQueue.isEmpty() && scheduledTasksQueue.isEmpty()
-                && lastRepartitionTime.get() < (System.currentTimeMillis() - REPARTITIONING_CHECK_INTERVAL)
+                && lastRepartitionTime.get() < (Clock.currentTimeMillis() - REPARTITIONING_CHECK_INTERVAL)
                 && migratingPartition == null;
     }
 
@@ -712,7 +733,7 @@ public class PartitionManager {
             if (!concurrentMapManager.isMaster()) {
                 final MigratingPartition currentMigratingPartition = migratingPartition;
                 if (currentMigratingPartition != null
-                        && (System.currentTimeMillis() - currentMigratingPartition.getCreationTime())
+                        && (Clock.currentTimeMillis() - currentMigratingPartition.getCreationTime())
                         > MIGRATING_PARTITION_CHECK_INTERVAL) {
                     try {
                         final Node node = concurrentMapManager.node;
@@ -773,7 +794,7 @@ public class PartitionManager {
         }
 
         void fillMigrationQueues() {
-            lastRepartitionTime.set(System.currentTimeMillis());
+            lastRepartitionTime.set(Clock.currentTimeMillis());
             if (!lostQ.isEmpty()) {
                 concurrentMapManager.enqueueAndReturn(new LostPartitionsAssignmentProcess(lostQ));
                 logger.log(Level.WARNING, "Assigning new owners for " + lostQ.size() +
@@ -992,10 +1013,10 @@ public class PartitionManager {
                     // and poll immediate tasks occasionally during wait time.
                     long totalWait = 0L;
                     while (isActive() && (r != null || totalWait < partitionMigrationInterval)) {
-                        long start = System.currentTimeMillis();
+                        long start = Clock.currentTimeMillis();
                         r = immediateTasksQueue.poll(1, TimeUnit.SECONDS);
                         safeRunImmediate(r);
-                        totalWait += (System.currentTimeMillis() - start);
+                        totalWait += (Clock.currentTimeMillis() - start);
                     }
                     if (isActive()) {
                         r = scheduledTasksQueue.poll();

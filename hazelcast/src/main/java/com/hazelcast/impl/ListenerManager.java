@@ -73,7 +73,15 @@ public class ListenerManager extends BaseManager {
     }
 
     public void syncForDead(Address deadAddress) {
-        syncForAdd();
+        //syncForAdd();
+        for (List<ListenerItem> listeners : namedListeners.values()) {
+            for (ListenerItem listenerItem : listeners) {
+                if (!listenerItem.localListener) {
+                    registerListener(false, listenerItem.name,
+                                     toData(listenerItem.key), deadAddress, listenerItem.includeValue);
+                }
+            }
+        }
     }
 
     public void syncForAdd() {

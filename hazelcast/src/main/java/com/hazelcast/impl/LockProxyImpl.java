@@ -17,8 +17,8 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.RuntimeInterruptedException;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
-import com.hazelcast.impl.base.RuntimeInterruptedException;
 import com.hazelcast.impl.monitor.LocalLockStatsImpl;
 import com.hazelcast.impl.monitor.LockOperationsCounter;
 import com.hazelcast.monitor.LocalLockStats;

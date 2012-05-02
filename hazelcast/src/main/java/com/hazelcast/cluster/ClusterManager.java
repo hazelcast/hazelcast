@@ -24,6 +24,7 @@ import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.Prioritized;
 
 import javax.security.auth.login.LoginContext;
@@ -74,7 +75,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         node.clusterService.registerPeriodicRunnable(new SplitBrainHandler(node));
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
-                long now = System.currentTimeMillis();
+                long now = Clock.currentTimeMillis();
                 if (now - lastHeartbeat >= HEARTBEAT_INTERVAL_MILLIS) {
                     heartBeater();
                     lastHeartbeat = now;
@@ -243,7 +244,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     public final void heartBeater() {
         if (!node.joined() || !node.isActive()) return;
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         if (isMaster()) {
             List<Address> lsDeadAddresses = null;
             for (MemberImpl memberImpl : lsMembers) {
@@ -261,8 +262,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 lsDeadAddresses.add(address);
                             } else if ((now - memberImpl.getLastRead()) >= 5000 && (now - memberImpl.getLastPing()) >= 5000) {
                                 ping(memberImpl);
-//                            } else if ((now - memberImpl.getLastRead()) >= 10000) {
-//                                node.connectionManager.destroyConnection(conn);
                             }
                             if ((now - memberImpl.getLastWrite()) > 500) {
                                 sendHeartbeat(conn);
@@ -296,8 +295,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                         removed = true;
                     } else if ((now - masterMember.getLastRead()) >= 5000 && (now - masterMember.getLastPing()) >= 5000) {
                         ping(masterMember);
-//                    } else if ((now - masterMember.getLastRead()) >= 10000) {
-//                        node.connectionManager.destroyConnection(connMaster);
                     }
                 }
                 if (!removed) {
@@ -450,9 +447,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     void handleJoinRequest(JoinRequest joinRequest) {
-        final long now = System.currentTimeMillis();
-        String msg = joinInProgress + " Handling join from " + joinRequest.address + " timeToStart: "
-                + (timeToStartJoin - now);
+        final long now = Clock.currentTimeMillis();
+        String msg = "Handling join from " + joinRequest.address + ", inProgress: " + joinInProgress
+                     + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
         logger.log(Level.FINEST, msg);
         final MemberImpl member = getMember(joinRequest.address);
         final Connection conn = joinRequest.getConnection();
@@ -563,7 +560,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     void joinReset() {
         joinInProgress = false;
         setJoins.clear();
-        timeToStartJoin = System.currentTimeMillis() + WAIT_MILLIS_BEFORE_JOIN;
+        timeToStartJoin = Clock.currentTimeMillis() + WAIT_MILLIS_BEFORE_JOIN;
         firstJoinRequest = 0;
     }
 

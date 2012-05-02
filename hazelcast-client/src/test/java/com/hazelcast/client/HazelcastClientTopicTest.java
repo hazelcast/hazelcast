@@ -19,6 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
 import org.junit.Test;
 
@@ -135,7 +136,7 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
     @Test
     public void testPerformance() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-        long begin = System.currentTimeMillis();
+        long begin = Clock.currentTimeMillis();
         int count = 10000;
         final ITopic topic = hClient.getTopic("perf");
         ExecutorService ex = Executors.newFixedThreadPool(10);
@@ -149,7 +150,7 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
             });
         }
         assertTrue(l.await(20, TimeUnit.SECONDS));
-        long time = System.currentTimeMillis() - begin;
+        long time = Clock.currentTimeMillis() - begin;
         System.out.println("per second: " + count * 1000 / time);
     }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl.base;
 
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ThreadStats;
 
 public class CpuUtilization {
@@ -26,7 +27,7 @@ public class CpuUtilization {
 
     @Override
     public String toString() {
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         return "CpuUtilization {" +
                 "\n\tserviceThread =" + serviceThread + " lastExe:" + serviceThread.getSecondsBetween(now) +
                 "\n\tinThread      =" + inThread + " lastExe:" + inThread.getSecondsBetween(now) +

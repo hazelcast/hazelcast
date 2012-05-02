@@ -19,6 +19,7 @@ package com.hazelcast.query;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
 
+import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -42,8 +43,9 @@ public class Index {
     private static final int TYPE_DOUBLE = 105;
     private static final int TYPE_FLOAT = 106;
     private static final int TYPE_BYTE = 107;
-    private static final int TYPE_CLASS = 108;
-    private static final int TYPE_UNKNOWN = 109;
+    private static final int TYPE_CHAR = 108;
+    private static final int TYPE_DATE = 109;
+    private static final int TYPE_UNKNOWN = Byte.MAX_VALUE;
 
     Index(Expression expression, boolean ordered, int attributeIndex) {
         this.expression = expression;
@@ -171,7 +173,9 @@ public class Index {
         } else if (klass == byte.class || klass == Byte.class) {
             return TYPE_BYTE;
         } else if (klass == char.class || klass == Character.class) {
-            return TYPE_CLASS;
+            return TYPE_CHAR;
+        } else if (Date.class.isAssignableFrom(klass)) { // util.Date, sql.Timestamp, sql.Date
+            return TYPE_DATE;
         } else {
             return TYPE_UNKNOWN;
         }
@@ -188,7 +192,9 @@ public class Index {
         } else if (value instanceof Boolean) {
             return (Boolean.TRUE.equals(value)) ? 1 : -1;
         } else if (value instanceof String) {
-            return value.hashCode();
+            return getLongValueForString((String) value);
+        } else if (value instanceof Date) {
+            return ((Date) value).getTime();
         } else {
             return value.hashCode();
         }
@@ -212,12 +218,27 @@ public class Index {
                     value = Float.valueOf(str);
                 } else if (returnType == TYPE_BYTE) {
                     value = Byte.valueOf(str);
-                } else if (returnType == TYPE_CLASS) {
+                } else if (returnType == TYPE_CHAR) {
                     value = str.hashCode();
+                } else if (returnType == TYPE_DATE) {
+                    value = DateHelper.tryParse(str);
                 }
             }
         }
         return getLongValueByType(value);
+    }
+
+    /**
+     * @see String#compareTo(String)
+     */
+    private static long getLongValueForString(String s) {
+        final int maxCharsToIndex = 5;  // just index first 5 chars
+        final char[] chars = s.toCharArray();
+        long result = 0L;
+        for (int i = 0; i < Math.min(maxCharsToIndex, chars.length); i++) {
+            result += Math.pow(127, (maxCharsToIndex - i)) * chars[i];
+        }
+        return result;
     }
 
     public int getAttributeIndex() {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.util.Clock;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -29,6 +30,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static junit.framework.Assert.assertEquals;
@@ -41,6 +43,7 @@ import static org.junit.Assert.fail;
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class TransactionTest {
 
+    @AfterClass
     @BeforeClass
     public static void init() throws Exception {
         Hazelcast.shutdownAll();
@@ -407,9 +410,9 @@ public class TransactionTest {
         TransactionalMap txnMap = newTransactionalMapProxy("testTryLock");
         TransactionalMap txnMap2 = newTransactionalMapProxy("testTryLock");
         txnMap.lock("1");
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         assertFalse(txnMap2.tryLock("1", 2, TimeUnit.SECONDS));
-        long end = System.currentTimeMillis();
+        long end = Clock.currentTimeMillis();
         long took = (end - start);
         assertTrue((took > 1000) ? (took < 4000) : false);
         assertFalse(txnMap2.tryLock("1"));
@@ -488,9 +491,9 @@ public class TransactionTest {
         TransactionalMap txnMap = newTransactionalMapProxy("testTryPut");
         TransactionalMap txnMap2 = newTransactionalMapProxy("testTryPut");
         txnMap.lock("1");
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         assertFalse(txnMap2.tryPut("1", "value2", 2, TimeUnit.SECONDS));
-        long end = System.currentTimeMillis();
+        long end = Clock.currentTimeMillis();
         long took = (end - start);
         assertTrue((took > 1000) ? (took < 4000) : false);
         assertEquals("value", map.get("1"));
@@ -543,19 +546,19 @@ public class TransactionTest {
         txnMap.lock("1");
         assertEquals("value1", txnMap.get("1"));
         assertEquals("value1", txnMap2.get("1"));
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         try {
             assertNull(txnMap2.tryRemove("1", 0, TimeUnit.SECONDS));
             fail("Shouldn't be able to remove");
         } catch (TimeoutException e) {
-            assertTrue(System.currentTimeMillis() - start < 1000);
+            assertTrue(Clock.currentTimeMillis() - start < 1000);
         }
-        start = System.currentTimeMillis();
+        start = Clock.currentTimeMillis();
         try {
             assertNull(txnMap2.tryRemove("1", 3, TimeUnit.SECONDS));
             fail("Shouldn't be able to remove");
         } catch (TimeoutException e) {
-            long took = (System.currentTimeMillis() - start);
+            long took = (Clock.currentTimeMillis() - start);
             assertTrue(took >= 3000 && took < 5000);
         }
         txnMap.unlock("1");
@@ -582,19 +585,19 @@ public class TransactionTest {
         }
         assertEquals("value1", txnMap.get("1"));
         assertEquals("value1", txnMap2.get("1"));
-        long start = System.currentTimeMillis();
+        long start = Clock.currentTimeMillis();
         try {
             txnMap2.tryLockAndGet("1", 0, TimeUnit.SECONDS);
             fail("Shouldn't be able to lock");
         } catch (TimeoutException e) {
-            assertTrue(System.currentTimeMillis() - start < 1000);
+            assertTrue(Clock.currentTimeMillis() - start < 1000);
         }
-        start = System.currentTimeMillis();
+        start = Clock.currentTimeMillis();
         try {
             assertNull(txnMap2.tryLockAndGet("1", 3, TimeUnit.SECONDS));
             fail("Shouldn't be able to lock");
         } catch (TimeoutException e) {
-            long took = (System.currentTimeMillis() - start);
+            long took = (Clock.currentTimeMillis() - start);
             assertTrue(took >= 3000 && took < 5000);
         }
         txnMap.putAndUnlock("1", "value2");
@@ -980,7 +983,7 @@ public class TransactionTest {
 
     @Test
     public void issue581testRemoveInTwoTransactionOneShouldReturnNull() throws InterruptedException {
-        final IMap m = Hazelcast.getMap("test");
+        final IMap m = Hazelcast.getMap("issue581testRemoveInTwoTransactionOneShouldReturnNull");
         final AtomicReference<Object> t1Return = new AtomicReference<Object>();
         final AtomicReference<Object> t2Return = new AtomicReference<Object>();
 //        final CountDownLatch latch = new CountDownLatch(1);
@@ -1017,7 +1020,6 @@ public class TransactionTest {
         t2.join();
         Assert.assertEquals("b", t1Return.get());
         Assert.assertNull("The remove in the second thread should return null", t2Return.get());
-        Hazelcast.shutdownAll();
     }
 
     @Test
@@ -1025,11 +1027,140 @@ public class TransactionTest {
         final HazelcastInstance hz = Hazelcast.getDefaultInstance();
         Transaction tx = hz.getTransaction();
         tx.begin();
-        IMap<Object, Object> map = hz.getMap("test");
+        IMap<Object, Object> map = hz.getMap("issue770TestIMapTryPutUnderTransaction");
         Assert.assertTrue(map.tryPut("key", "value", 100, TimeUnit.MILLISECONDS));
         Assert.assertTrue(map.tryPut("key", "value2", 100, TimeUnit.MILLISECONDS));
         tx.commit();
-        Hazelcast.shutdownAll();
+    }
+
+    /**
+     * Github issue #99
+     */
+    @Test
+    public void issue99TestQueueTakeAndDuringRollback() throws InterruptedException {
+        final HazelcastInstance hz = Hazelcast.getDefaultInstance();
+        final IQueue q = hz.getQueue("issue99TestQueueTakeAndDuringRollback");
+        q.offer(1L);
+
+        Thread t1 = new Thread() {
+            public void run() {
+                Transaction tx = Hazelcast.getTransaction();
+                try {
+                    tx.begin();
+                    q.take();
+                    sleep(1000);
+                    throw new RuntimeException();
+                } catch (InterruptedException e) {
+                    fail(e.getMessage());
+                } catch (Exception e) {
+                    tx.rollback();
+                }
+            }
+        };
+        final AtomicBoolean fail = new AtomicBoolean(false);
+        Thread t2 = new Thread() {
+            public void run() {
+                Transaction tx = Hazelcast.getTransaction();
+                try {
+                    tx.begin();
+                    q.take();
+                    tx.commit();
+                    fail.set(false);
+                } catch (Exception e) {
+                    tx.rollback();
+                    e.printStackTrace();
+                    fail.set(true);
+                }
+            }
+        };
+
+        t1.start();
+        t2.start();
+        t2.join();
+        assertFalse("Queue take failed after rollback!", fail.get());
+    }
+
+    /**
+     * Github issue #108
+     */
+    @Test
+    public void issue108TestNpeDuringCommit() throws InterruptedException {
+        final HazelcastInstance hz = Hazelcast.getDefaultInstance();
+        final IMap map = hz.getMap("issue108TestNpeDuringCommit");
+
+        final AtomicBoolean test1 = new AtomicBoolean(false);
+        Thread t1 = new Thread() {
+            public void run() {
+                Transaction tx = Hazelcast.getTransaction();
+                try {
+                    tx.begin();
+                    map.put(1, 1);
+                    sleep(1000);
+                    tx.commit();
+                    test1.set(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    tx.rollback();
+                    test1.set(false);
+                }
+            }
+        };
+        final AtomicBoolean test2 = new AtomicBoolean(false);
+        Thread t2 = new Thread() {
+            public void run() {
+                Transaction tx = Hazelcast.getTransaction();
+                try {
+                    tx.begin();
+                    map.put(1, 2);
+                    tx.commit();
+                    test2.set(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    tx.rollback();
+                    test2.set(true);
+                }
+            }
+        };
+
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        assertTrue("Map1 put should be successful!", test1.get());
+        assertTrue("Map2 put should be successful!", test2.get());
+    }
+
+    /**
+     * Github issue #114
+     */
+    @Test
+    public void issue114TestQueueListenersUnderTransaction() throws InterruptedException {
+        final CountDownLatch offerLatch = new CountDownLatch(2);
+        final CountDownLatch pollLatch = new CountDownLatch(2);
+        final IQueue<String> testQueue = Hazelcast.getQueue("issue114TestQueueListenersUnderTransaction");
+        testQueue.addItemListener(new ItemListener<String>() {
+            public void itemAdded(ItemEvent<String> item) {
+                offerLatch.countDown();
+            }
+            public void itemRemoved(ItemEvent<String> item) {
+                pollLatch.countDown();
+            }
+        }, true);
+
+        Transaction tx = Hazelcast.getTransaction();
+        tx.begin();
+        testQueue.put("tx Hello");
+        testQueue.put("tx World");
+        tx.commit();
+
+        tx = Hazelcast.getTransaction();
+        tx.begin();
+        Assert.assertEquals("tx Hello", testQueue.poll());
+        Assert.assertEquals("tx World", testQueue.poll());
+        tx.commit();
+
+        Assert.assertTrue("Remaining offer listener count: " + offerLatch.getCount(), offerLatch.await(2, TimeUnit.SECONDS));
+        Assert.assertTrue("Remaining poll listener count: " + pollLatch.getCount(), pollLatch.await(2, TimeUnit.SECONDS));
     }
 
     final List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();

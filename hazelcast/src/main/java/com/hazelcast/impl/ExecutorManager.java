@@ -25,6 +25,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.security.SecureCallable;
+import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,7 +72,7 @@ public class ExecutorManager extends BaseManager {
         GroupProperties gp = node.groupProperties;
         ClassLoader classLoader = node.getConfig().getClassLoader();
         threadPoolExecutor = new ThreadPoolExecutor(
-                0, Integer.MAX_VALUE,
+                5, Integer.MAX_VALUE,
                 60L,
                 TimeUnit.SECONDS,
                 new SynchronousQueue(),
@@ -81,7 +82,7 @@ public class ExecutorManager extends BaseManager {
                 threadPoolBeforeExecute(t, r);
             }
         };
-        esScheduled = new ScheduledThreadPoolExecutor(5, new ExecutorThreadFactory(node.threadGroup,
+        esScheduled = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(node.threadGroup,
                 node.getThreadPoolNamePrefix("scheduled"), classLoader), new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 threadPoolBeforeExecute(t, r);
@@ -437,7 +438,7 @@ public class ExecutorManager extends BaseManager {
             long remainingMillis = timeoutMillis;
             try {
                 for (MemberCall memberCall : lsMemberCalls) {
-                    long now = System.currentTimeMillis();
+                    long now = Clock.currentTimeMillis();
                     if (timeoutMillis == -1) {
                         memberCall.get();
                     } else {
@@ -448,7 +449,7 @@ public class ExecutorManager extends BaseManager {
                         }
                         memberCall.get(remainingMillis, TimeUnit.MILLISECONDS);
                     }
-                    remainingMillis -= (System.currentTimeMillis() - now);
+                    remainingMillis -= (Clock.currentTimeMillis() - now);
                 }
             } catch (Exception e) {
                 innerFutureTask.innerSetException(e, done);

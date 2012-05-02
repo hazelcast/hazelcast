@@ -72,6 +72,7 @@ public class ConnectionManagerTest {
         verify(binder).bind(connection, credentials);
         assertEquals(connection, connectionManager.getConnection());
         assertEquals(1, latch.getCount());
+        Thread.sleep(100); // wait a little events to be fired
         assertArrayEquals(new Object[]{LifecycleState.CLIENT_CONNECTION_OPENING}, lifecycleEvents.toArray());
     }
 
@@ -118,6 +119,7 @@ public class ConnectionManagerTest {
         connectionManager.destroyConnection(connection);
         connectionManager.getConnection();
         assertTrue(latch.await(1, TimeUnit.SECONDS));
+        Thread.sleep(100); // wait a little events to be fired
         assertArrayEquals(new Object[]{LifecycleState.CLIENT_CONNECTION_OPENING,
                 LifecycleState.CLIENT_CONNECTION_LOST,
                 LifecycleState.CLIENT_CONNECTION_OPENING},

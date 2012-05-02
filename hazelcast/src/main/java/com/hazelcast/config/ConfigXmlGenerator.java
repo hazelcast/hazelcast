@@ -49,11 +49,24 @@ public class ConfigXmlGenerator {
 
     public String generate(Config config) {
         final StringBuilder xml = new StringBuilder();
-        xml.append("<hazelcast>");
+        xml.append("<hazelcast ")
+                .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
+                .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
+                .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-2.1.xsd\">");
         xml.append("<group>");
         xml.append("<name>").append(config.getGroupConfig().getName()).append("</name>");
         xml.append("<password>").append(config.getGroupConfig().getPassword()).append("</password>");
         xml.append("</group>");
+        if (config.getLicenseKey() != null) {
+            xml.append("<license-key>").append(config.getLicenseKey()).append("</license-key>");
+        }
+        if (config.getManagementCenterConfig() != null) {
+            ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
+            xml.append("<management-center enabled=\"").append(mcConfig.isEnabled())
+                    .append("\" update-interval=\"").append(mcConfig.getUpdateInterval()).append("\">")
+                    .append(mcConfig.getUrl()).append("</management-center>");
+        }
         appendProperties(xml, config.getProperties());
         final Collection<WanReplicationConfig> wanRepConfigs = config.getWanReplicationConfigs().values();
         for (WanReplicationConfig wan : wanRepConfigs) {
@@ -83,6 +96,7 @@ public class ConfigXmlGenerator {
         xml.append("<multicast-group>").append(mcast.getMulticastGroup()).append("</multicast-group>");
         xml.append("<multicast-port>").append(mcast.getMulticastPort()).append("</multicast-port>");
         xml.append("<multicast-timeout-seconds>").append(mcast.getMulticastTimeoutSeconds()).append("</multicast-timeout-seconds>");
+        xml.append("<multicast-time-to-live-seconds>").append(mcast.getMulticastTimeToLive()).append("</multicast-time-to-live-seconds>");
         if (!mcast.getTrustedInterfaces().isEmpty()) {
             xml.append("<trusted-interfaces>");
             for (String trustedInterface : mcast.getTrustedInterfaces()) {
@@ -122,6 +136,25 @@ public class ConfigXmlGenerator {
             xml.append("<interface>").append(i).append("</interface>");
         }
         xml.append("</interfaces>");
+        final SSLConfig ssl = netCfg.getSSLConfig();
+        xml.append("<ssl enabled=\"").append(ssl != null && ssl.isEnabled()).append("\">");
+        if (ssl != null) {
+            String className = ssl.getFactoryImplementation() != null
+                               ? ssl.getFactoryImplementation().getClass().getName()
+                               : ssl.getFactoryClassName();
+            xml.append("<factory-class-name>").append(className).append("</factory-class-name>");
+            appendProperties(xml, ssl.getProperties());
+        }
+        xml.append("</ssl>");
+        final SocketInterceptorConfig socket = netCfg.getSocketInterceptorConfig();
+        xml.append("<socket-interceptor enabled=\"").append(socket != null && socket.isEnabled()).append("\">");
+        if (socket != null) {
+            String className = socket.getImplementation() != null
+                               ? socket.getImplementation().getClass().getName() : socket.getClassName();
+            xml.append("<class-name>").append(className).append("</class-name>");
+            appendProperties(xml, socket.getProperties());
+        }
+        xml.append("</socket-interceptor>");
         final SymmetricEncryptionConfig sec = netCfg.getSymmetricEncryptionConfig();
         xml.append("<symmetric-encryption enabled=\"").append(sec != null && sec.isEnabled()).append("\">");
         if (sec != null) {
@@ -142,13 +175,6 @@ public class ConfigXmlGenerator {
             xml.append("<storePath>").append(asec.getStorePath()).append("</storePath>");
         }
         xml.append("</asymmetric-encryption>");
-        final SSLConfig ssl = netCfg.getSSLConfig();
-        xml.append("<ssl enabled=\"").append(ssl != null && ssl.isEnabled()).append("\">");
-        if (ssl != null) {
-            xml.append("<factory-class-name>").append(ssl.getFactoryClassName()).append("</factory-class-name>");
-            appendProperties(xml, ssl.getProperties());
-        }
-        xml.append("</ssl>");
         xml.append("</network>");
         final Collection<ExecutorConfig> exCfgs = config.getExecutorConfigs();
         for (ExecutorConfig ex : exCfgs) {
@@ -178,19 +204,26 @@ public class ConfigXmlGenerator {
         for (MapConfig m : mCfgs) {
             xml.append("<map name=\"").append(m.getName()).append("\">");
             xml.append("<backup-count>").append(m.getBackupCount()).append("</backup-count>");
-            xml.append("<eviction-policy>").append(m.getEvictionPolicy()).append("</eviction-policy>");
-            xml.append("<eviction-percentage>").append(m.getEvictionPercentage()).append("</eviction-percentage>");
-//            xml.append("<eviction-delay-seconds>").append(m.getEvictionDelaySeconds()).append("</eviction-delay-seconds>");
-            xml.append("<max-size policy=\"").append(m.getMaxSizeConfig().getMaxSizePolicy()).append("\">").append(m.getMaxSizeConfig().getSize()).append("</max-size>");
+            xml.append("<async-backup-count>").append(m.getAsyncBackupCount()).append("</async-backup-count>");
             xml.append("<time-to-live-seconds>").append(m.getTimeToLiveSeconds()).append("</time-to-live-seconds>");
             xml.append("<max-idle-seconds>").append(m.getMaxIdleSeconds()).append("</max-idle-seconds>");
+            xml.append("<eviction-policy>").append(m.getEvictionPolicy()).append("</eviction-policy>");
+            xml.append("<max-size policy=\"").append(m.getMaxSizeConfig().getMaxSizePolicy()).append("\">").append(m.getMaxSizeConfig().getSize()).append("</max-size>");
+            xml.append("<eviction-percentage>").append(m.getEvictionPercentage()).append("</eviction-percentage>");
+            xml.append("<merge-policy>").append(m.getMergePolicy()).append("</merge-policy>");
             xml.append("<cache-value>").append(m.isCacheValue()).append("</cache-value>");
             xml.append("<read-backup-data>").append(m.isReadBackupData()).append("</read-backup-data>");
-            xml.append("<merge-policy>").append(m.getMergePolicy()).append("</merge-policy>");
             if (m.getMapStoreConfig() != null) {
                 final MapStoreConfig s = m.getMapStoreConfig();
                 xml.append("<map-store enabled=\"").append(s.isEnabled()).append("\">");
-                xml.append("<class-name>").append(s.getClassName()).append("</class-name>");
+                final String clazz = s.getImplementation() != null ? s.getImplementation().getClass().getName() : s.getClassName();
+                xml.append("<class-name>").append(clazz).append("</class-name>");
+                final String factoryClass = s.getFactoryImplementation() != null
+                                            ? s.getFactoryImplementation().getClass().getName()
+                                            : s.getFactoryClassName();
+                if (factoryClass != null) {
+                    xml.append("<factory-class-name>").append(factoryClass).append("</factory-class-name>");
+                }
                 xml.append("<write-delay-seconds>").append(s.getWriteDelaySeconds()).append("</write-delay-seconds>");
                 appendProperties(xml, s.getProperties());
                 xml.append("</map-store>");
@@ -198,9 +231,9 @@ public class ConfigXmlGenerator {
             if (m.getNearCacheConfig() != null) {
                 final NearCacheConfig n = m.getNearCacheConfig();
                 xml.append("<near-cache>");
+                xml.append("<max-size>").append(n.getMaxSize()).append("</max-size>");
                 xml.append("<time-to-live-seconds>").append(n.getTimeToLiveSeconds()).append("</time-to-live-seconds>");
                 xml.append("<max-idle-seconds>").append(n.getMaxIdleSeconds()).append("</max-idle-seconds>");
-                xml.append("<max-size>").append(n.getMaxSize()).append("</max-size>");
                 xml.append("<eviction-policy>").append(n.getEvictionPolicy()).append("</eviction-policy>");
                 xml.append("<invalidate-on-change>").append(n.isInvalidateOnChange()).append("</invalidate-on-change>");
                 xml.append("</near-cache>");
@@ -224,7 +257,8 @@ public class ConfigXmlGenerator {
                 xml.append("<entry-listeners>");
                 for (EntryListenerConfig lc : m.getEntryListenerConfigs()) {
                     xml.append("<entry-listener include-value=\"").append(lc.isIncludeValue()).append("\" local=\"").append(lc.isLocal()).append("\">");
-                    xml.append(lc.getClassName());
+                    final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    xml.append(clazz);
                     xml.append("</entry-listener>");
                 }
                 xml.append("</entry-listeners>");
@@ -242,7 +276,8 @@ public class ConfigXmlGenerator {
                 xml.append("<entry-listeners>");
                 for (EntryListenerConfig lc : mm.getEntryListenerConfigs()) {
                     xml.append("<entry-listener include-value=\"").append(lc.isIncludeValue()).append("\" local=\"").append(lc.isLocal()).append("\">");
-                    xml.append(lc.getClassName());
+                    final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    xml.append(clazz);
                     xml.append("</entry-listener>");
                 }
                 xml.append("</entry-listeners>");
@@ -252,12 +287,13 @@ public class ConfigXmlGenerator {
         final Collection<TopicConfig> tCfgs = config.getTopicConfigs().values();
         for (TopicConfig t : tCfgs) {
             xml.append("<topic name=\"").append(t.getName()).append("\">");
-            xml.append("<global-ordering-enabled>").append(t.isGlobalOrderingEnabled()).append("</global-ordering-enabled>");
+//            xml.append("<global-ordering-enabled>").append(t.isGlobalOrderingEnabled()).append("</global-ordering-enabled>");
             if (!t.getMessageListenerConfigs().isEmpty()) {
                 xml.append("<message-listeners>");
                 for (ListenerConfig lc : t.getMessageListenerConfigs()) {
                     xml.append("<message-listener>");
-                    xml.append(lc.getClassName());
+                    final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    xml.append(clazz);
                     xml.append("</message-listener>");
                 }
                 xml.append("</message-listeners>");
@@ -286,7 +322,8 @@ public class ConfigXmlGenerator {
             xml.append("<listeners>");
             for (ListenerConfig lc : config.getListenerConfigs()) {
                 xml.append("<listener>");
-                xml.append(lc.getClassName());
+                final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                xml.append(clazz);
                 xml.append("</listener>");
             }
             xml.append("</listeners>");

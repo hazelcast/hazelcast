@@ -27,6 +27,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
+import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -70,9 +71,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                 //noinspection BusyWait
                 Thread.sleep(2000L);
             }
-            long joinStartTime = System.currentTimeMillis();
+            long joinStartTime = Clock.currentTimeMillis();
             long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
-            while (node.isActive() && !joined.get() && (System.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+            while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 final Connection connection = node.connectionManager.getOrConnect(requiredAddress);
                 if (connection == null) {
                     joinViaRequiredMember(joined);
@@ -394,10 +395,10 @@ public class TcpIpJoiner extends AbstractJoiner {
             } catch (InterruptedException e) {
                 return;
             }
-            final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
+            final Connection conn = node.connectionManager.getConnection(possibleAddress);
             if (conn != null) {
-                JoinInfo response = node.clusterManager.checkJoin(conn);
-                if (shouldMerge(response)) {
+                final JoinInfo response = node.clusterManager.checkJoin(conn);
+                if (response != null && shouldMerge(response)) {
                     // we will join so delay the merge checks.
                     logger.log(Level.WARNING, node.address + " is merging [tcp/ip] to " + possibleAddress);
                     splitBrainHandler.restart();

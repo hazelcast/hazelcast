@@ -16,9 +16,9 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.core.ManagedContext;
 
 import java.io.IOException;
 
@@ -69,8 +69,9 @@ public final class Serializer extends AbstractSerializer {
         }
         byte[] byteArray = data.buffer;
         final Object obj = toObject(byteArray);
-        if (obj instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) obj).setHazelcastInstance(ThreadContext.get().getCurrentFactory());
+        final ManagedContext managedContext = ThreadContext.get().getCurrentManagedContext();
+        if (managedContext != null) {
+            managedContext.initialize(obj);
         }
         return obj;
     }

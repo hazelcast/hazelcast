@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>2.1-SNAPSHOT</version>
+        <version>2.2.SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -35,6 +35,27 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <version>1.7</version>
+                <configuration>
+                    <signature>
+                        <groupId>org.codehaus.mojo.signature</groupId>
+                        <artifactId>java15</artifactId>
+                        <version>1.0</version>
+                    </signature>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>source-java5-check</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>${maven.source.plugin.version}</version>
@@ -60,7 +81,6 @@
                         </goals>
                         <configuration>
                             <instructions>
-                                <_include>src/main/resources/META-INF/MANIFEST.MF</_include>
                                 <Import-Package>
                                     !junit.framework,
                                     !org.junit,
@@ -73,6 +93,7 @@
                                     org.slf4j;resolution:=optional,
                                     *
                                 </Import-Package>
+                                <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
                             </instructions>
                         </configuration>
                     </execution>
@@ -87,7 +108,12 @@
                     <archive>
                         <index>true</index>
                         <compress>true</compress>
-                        <manifestFile>${basedir}/target/classes/META-INF/MANIFEST.MF</manifestFile>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
             </plugin>

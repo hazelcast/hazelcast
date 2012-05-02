@@ -19,6 +19,7 @@ package com.hazelcast.query;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.CMap;
+import com.hazelcast.util.Clock;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.TestUtil;
 import org.junit.After;
@@ -81,10 +82,10 @@ public class MapIndexServiceTest extends TestUtil {
         long free = Runtime.getRuntime().freeMemory();
         System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
         for (int i = 0; i < 10000; i++) {
-            long start = System.currentTimeMillis();
+            long start = Clock.currentTimeMillis();
             QueryContext queryContext = new QueryContext("default", predicate, mapIndexService);
             Set<MapEntry> results = mapIndexService.doQuery(queryContext);
-//            System.out.println("result size " + results.size() + " took " + (System.currentTimeMillis() - start));
+//            System.out.println("result size " + results.size() + " took " + (Clock.currentTimeMillis() - start));
             assertEquals(1, results.size());
         }
         cmap.getNode().connectionManager.shutdown();
@@ -117,13 +118,13 @@ public class MapIndexServiceTest extends TestUtil {
         long free = Runtime.getRuntime().freeMemory();
         System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
         for (int i = 0; i < 10000; i++) {
-            long start = System.currentTimeMillis();
+            long start = Clock.currentTimeMillis();
             QueryContext queryContext = new QueryContext("default", new SqlPredicate("salary=161 and age >20 and age <23"), mapIndexService);
             Set<MapEntry> results = mapIndexService.doQuery(queryContext);
 //            for (MapEntry result : results) {
 //                System.out.println(((Record)result).getRecordEntry().getValue());
 //            }
-//            System.out.println("result size " + results.size() + " took " + (System.currentTimeMillis() - start));
+//            System.out.println("result size " + results.size() + " took " + (Clock.currentTimeMillis() - start));
             assertEquals(10, results.size());
         }
         cmap.getNode().connectionManager.shutdown();

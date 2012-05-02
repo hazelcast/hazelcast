@@ -59,9 +59,9 @@ public class ResponseQueueFactory {
             lock.lock();
             try {
                 while (response == null && remaining > 0) {
-                    long start = System.currentTimeMillis();
+                    long start = Clock.currentTimeMillis();
                     noValue.await(remaining, TimeUnit.MILLISECONDS);
-                    remaining -= (System.currentTimeMillis() - start);
+                    remaining -= (Clock.currentTimeMillis() - start);
                 }
                 return getAndRemoveResponse();
             } finally {
