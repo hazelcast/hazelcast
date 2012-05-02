@@ -44,13 +44,14 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 public class ManagementCenterService implements LifecycleListener {
 
     private final FactoryImpl factory;
-    private volatile boolean running = false;
+    private AtomicBoolean running = new AtomicBoolean(false);
     private final TaskPoller taskPoller;
     private final StateSender stateSender;
     private final ILogger logger;
@@ -94,29 +95,25 @@ public class ManagementCenterService implements LifecycleListener {
     }
 
     public void start() {
-        if (running) {
-            return;
-        }
-        running = true; // volatile-write
-        if (webServerUrl != null) {
-            taskPoller.start();
-            stateSender.start();
-            logger.log(Level.INFO, "Hazelcast Management Center is listening from " + webServerUrl);
-        } else {
-            logger.log(Level.WARNING, "Hazelcast Management Center Web server url is null!");
+        if (running.compareAndSet(false, true)) {
+            if (webServerUrl != null) {
+                taskPoller.start();
+                stateSender.start();
+                logger.log(Level.INFO, "Hazelcast Management Center is listening from " + webServerUrl);
+            } else {
+                logger.log(Level.WARNING, "Hazelcast Management Center Web server url is null!");
+            }
         }
     }
 
     public void shutdown() {
-        if (!running) {
-            return;
-        }
-        running = false;
-        logger.log(Level.INFO, "Shutting down Hazelcast Management Center");
-        try {
-            interruptThread(stateSender);
-            interruptThread(taskPoller);
-        } catch (Throwable ignored) {
+        if (running.compareAndSet(true, false)) {
+            logger.log(Level.INFO, "Shutting down Hazelcast Management Center");
+            try {
+                interruptThread(stateSender);
+                interruptThread(taskPoller);
+            } catch (Throwable ignored) {
+            }
         }
     }
 
@@ -152,7 +149,7 @@ public class ManagementCenterService implements LifecycleListener {
         if (newUrl == null)
             return;
         this.webServerUrl = newUrl.endsWith("/") ? newUrl : newUrl + "/";
-        if(!running) {
+        if(!running.get()) {
             start();
         }
         logger.log(Level.INFO, "Web server url has been changed. Management Center is now listening from " + webServerUrl);
@@ -218,7 +215,7 @@ public class ManagementCenterService implements LifecycleListener {
                 return;
             }
             try {
-                while (running) {
+                while (running.get()) {
                         try {
                             URL url = new URL(webServerUrl + "collector.do");
                             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -287,7 +284,7 @@ public class ManagementCenterService implements LifecycleListener {
                 Random rand = new Random();
                 Address address = ((MemberImpl) factory.node.getClusterImpl().getLocalMember()).getAddress();
                 GroupConfig groupConfig = factory.getConfig().getGroupConfig();
-                while (running) {
+                while (running.get()) {
                     try {
                         URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost() + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -534,7 +531,7 @@ public class ManagementCenterService implements LifecycleListener {
                 return null;
             }
         } catch (Throwable e) {
-            if (running && factory.node.isActive()) {
+            if (running.get() && factory.node.isActive()) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
             return null;
@@ -542,7 +539,7 @@ public class ManagementCenterService implements LifecycleListener {
     }
 
     public TimedMemberState getTimedMemberState() {
-        if (running) {
+        if (running.get()) {
             final MemberStateImpl memberState = new MemberStateImpl();
             createMemberState(memberState);
             GroupConfig groupConfig = factory.getConfig().getGroupConfig();
