@@ -40,18 +40,23 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), 0);
                 command.setResponse(HttpCommand.RES_204);
             } else if (uri.startsWith(URI_MANCENTER_CHANGE_URL)) {
-                byte[] res = null;
-                byte[] data = command.getData();
-                String[] strList = new String(data).split("&");
-                String cluster = URLDecoder.decode(strList[0], "UTF-8");
-                String pass = URLDecoder.decode(strList[1], "UTF-8");
-                String url = URLDecoder.decode(strList[2], "UTF-8");
+                if (textCommandService.getNode().getGroupProperties().MC_URL_CHANGE_ENABLED.getBoolean()) {
+                    byte[] res = null;
+                    byte[] data = command.getData();
+                    String[] strList = new String(data).split("&");
+                    String cluster = URLDecoder.decode(strList[0], "UTF-8");
+                    String pass = URLDecoder.decode(strList[1], "UTF-8");
+                    String url = URLDecoder.decode(strList[2], "UTF-8");
 
-                ManagementCenterService managementCenterService = textCommandService.getNode().getManagementCenterService();
-                if (managementCenterService != null) {
-                    res = managementCenterService.changeWebServerUrlOverCluster(cluster, pass, url);
+                    ManagementCenterService managementCenterService = textCommandService.getNode().getManagementCenterService();
+                    if (managementCenterService != null) {
+                        res = managementCenterService.changeWebServerUrlOverCluster(cluster, pass, url);
+                    }
+                    command.setResponse(res);
                 }
-                command.setResponse(res);
+                else {
+                    command.setResponse(HttpCommand.RES_503);
+                }
             } else if (uri.startsWith(URI_QUEUES)) {
                 String queueName = null;
                 String simpleValue = null;
