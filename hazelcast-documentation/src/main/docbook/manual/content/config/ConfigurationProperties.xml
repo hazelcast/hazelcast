@@ -95,19 +95,6 @@ cfg.setProperty("hazelcast.property.foo", "value");
         <tbody>
             <tr>
                 <td>
-                    <literal>hazelcast.mancenter.enabled</literal>
-                </td>
-                <td>Enable
-                    <link xlink:href="http://www.hazelcast.com/mancenter.jsp">Hazelcast Management
-                        Center
-                    </link>
-                    service
-                </td>
-                <td>boolean</td>
-                <td>true</td>
-            </tr>
-            <tr>
-                <td>
                     <literal>hazelcast.memcache.enabled</literal>
                 </td>
                 <td>Enable

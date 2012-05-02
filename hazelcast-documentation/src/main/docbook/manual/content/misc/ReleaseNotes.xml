@@ -28,7 +28,7 @@
         <emphasis role="bold">2.1</emphasis>
         <itemizedlist>
             <listitem>
-                <para><link xlink:href="#IPv6">IPv6 Support.</link>
+                <para><link xlink:href="#IPv6">IPv6 Support</link>: Hazelcast now supports IPv6 addresses seamlessly.
                 </para>
             </listitem>
 
@@ -38,12 +38,25 @@
             </listitem>
 
             <listitem>
-                <para><link xlink:href="#SpringCache">Spring Cache support.</link>
+                <para><link xlink:href="#SpringCache">Spring Cache</link> support: Hazelcast can be used as
+                    <link xlink:href="http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/cache.html">
+                        Spring Cache
+                    </link> provider.
                 </para>
             </listitem>
 
             <listitem>
-                <para><link xlink:href="#SpringContext">Spring Dependency Injection support.</link>
+                <para><link xlink:href="#SpringContext">Spring Dependency Injection</link> support: Hazelcast can apply bean properties
+                    or to apply factory callbacks such as <code>ApplicationContextAware</code>, <code>BeanNameAware</code>
+                    or to apply bean post-processing such as <code>InitializingBean</code>, <code>@PostConstruct</code> like annotations
+                    while using Hazelcast distributed <code>ExecutorService</code> or <code>DistributedTask</code>s or more
+                    generally any Hazelcast managed object.
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>Persistence support with Spring-Data <link xlink:href="#SpringMongoDB">MongoDB</link>
+                    and <link xlink:href="#SpringJPA">JPA</link> integration.
                 </para>
             </listitem>
 
@@ -59,8 +72,19 @@
             </listitem>
 
             <listitem>
-                <para>Fixed issues: 809, 811, 816, 818 (http://code.google.com/p/hazelcast/issues/list)
-                      6, 92, 99, 101, 102, 103, 104, 108, 114, 116, 118 (https://github.com/hazelcast/hazelcast/issues)
+                <para>Fixed issues:
+
+                    <itemizedlist>
+                        <listitem>
+                            <para> <link xlink:href="http://code.google.com/p/hazelcast/issues/list">Google Code</link></para>
+                            <para>809, 811, 816, 818</para>
+                        </listitem>
+                        <listitem>
+                            <para> <link xlink:href="https://github.com/hazelcast/hazelcast/issues">Github</link></para>
+                            <para>6, 7, 92, 98, 99, 101, 102, 103, 104, 108, 109, 110, 114, 116, 117, 118, 119, 120, 126, 127, 128,
+                                130, 131, 132, 134, 135</para>
+                        </listitem>
+                    </itemizedlist>
                 </para>
             </listitem>
         </itemizedlist>
