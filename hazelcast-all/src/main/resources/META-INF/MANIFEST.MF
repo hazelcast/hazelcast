@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Main-Class: com.hazelcast.examples.SimpleMapTest
 Implementation-Vendor: Hazel Bilisim Ltd.
 Implementation-Title: Hazelcast In-Memory DataGrid
-Implementation-Version: 2.1
+Implementation-Version: 2.2.SNAPSHOT
 Bundle-ManifestVersion: 2
 Bundle-Name: hazelcast-all
 Bundle-SymbolicName: hazelcast-all
-Bundle-Version: 2.1
+Bundle-Version: 2.2.SNAPSHOT
 Import-Package: javax.xml.parsers, javax.xml.transform, org.w3c.dom, javax.xml.transform.dom, javax.xml.transform.stream, javax.crypto, javax.crypto.spec, javax.crypto.interfaces
 Bundle-ClassPath: .
 Bundle-Vendor: Hazel Ltd.
