@@ -21,6 +21,7 @@ import com.hazelcast.monitor.LocalLockStats;
 import java.util.concurrent.locks.Lock;
 
 public interface ILock extends Lock, Instance {
+
     /**
      * Returns the lock object, the key for this lock instance.
      *
@@ -30,5 +31,9 @@ public interface ILock extends Lock, Instance {
 
     LocalLockStats getLocalLockStats();
 
+    /**
+     * Releases the lock regardless of the lock owner.
+     * It always successfully unlocks, never blocks  and returns immediately.
+     */
     void forceUnlock();
 }

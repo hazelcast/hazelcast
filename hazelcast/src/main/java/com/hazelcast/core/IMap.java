@@ -561,6 +561,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     /**
      * Releases the lock for the specified key. It never blocks and
      * returns immediately.
+     *
+     * <p>If the current thread is the holder of this lock then the hold
+     * count is decremented.  If the hold count is now zero then the lock
+     * is released.  If the current thread is not the holder of this
+     * lock then {@link IllegalMonitorStateException} is thrown.
+     *
      * <p/>
      * <p><b>Warning:</b></p>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
@@ -568,6 +574,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * defined in <tt>key</tt>'s class.
      *
      * @param key key to lock.
+     * @throws IllegalMonitorStateException if the current thread does not hold this lock
      */
     void unlock(K key);
 

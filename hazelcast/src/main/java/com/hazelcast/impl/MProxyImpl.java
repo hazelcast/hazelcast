@@ -711,7 +711,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(key);
             mapOperationCounter.incrementOtherOperations();
             MLock mlock = concurrentMapManager.new MLock();
-            mlock.unlock(name, key, 0);
+            if (!mlock.unlock(name, key, 0)) {
+                throw new IllegalMonitorStateException("Current thread is not owner of the lock!") ;
+            }
         }
 
         public void forceUnlock(Object key) {
