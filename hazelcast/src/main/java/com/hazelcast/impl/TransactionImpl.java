@@ -48,7 +48,7 @@ public class TransactionImpl implements Transaction {
     }
 
     public Data attachPutOp(String name, Object key, Data value, boolean newRecord) {
-        return attachPutOp(name, key, value, 0, -1, newRecord, null);
+        return attachPutOp(name, key, value, 0, -1, newRecord, -1);
     }
 
     public void attachPutMultiOp(String name, Object key, Data value) {
@@ -56,14 +56,14 @@ public class TransactionImpl implements Transaction {
     }
 
     public Data attachPutOp(String name, Object key, Data value, int timeout, long ttl, boolean newRecord) {
-        return attachPutOp(name, key, value, timeout, ttl, newRecord,  null);
+        return attachPutOp(name, key, value, timeout, ttl, newRecord,  -1);
     }
 
-    public Data attachPutOp(String name, Object key, Data value, long timeout, boolean newRecord, Integer index) {
+    public Data attachPutOp(String name, Object key, Data value, long timeout, boolean newRecord, int index) {
         return attachPutOp(name, key, value, timeout, -1, newRecord, index);
     }
 
-    public Data attachPutOp(String name, Object key, Data value, long timeout, long ttl, boolean newRecord, Integer index) {
+    public Data attachPutOp(String name, Object key, Data value, long timeout, long ttl, boolean newRecord, int index) {
         Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
         Object matchValue = (instanceType.isMultiMap()) ? toObject(value) : null;
         TransactionRecord rec = findTransactionRecord(name, key, matchValue);
@@ -386,7 +386,7 @@ public class TransactionImpl implements Transaction {
 
         public long ttl = -1;
         
-        public Integer index = null;
+        public int index = -1;
 
         public TransactionRecord(String name, Object key, Data value, boolean newRecord) {
             this.name = name;
@@ -396,7 +396,7 @@ public class TransactionImpl implements Transaction {
             instanceType = ConcurrentMapManager.getInstanceType(name);
         }
 
-        public TransactionRecord(String name, Object key, Data value, Integer index, boolean newRecord) {
+        public TransactionRecord(String name, Object key, Data value, int index, boolean newRecord) {
             this.name = name;
             this.key = key;
             this.value = value;

@@ -246,8 +246,8 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    public void offerCommit(String name, Object key, Data item, Integer index) {
-        if (index == null)
+    public void offerCommit(String name, Object key, Data item, int index) {
+        if (index < 0)
             storeQueueItem(name, key, item, Integer.MAX_VALUE);
         else
             storeQueueItem(name, key, item, index);
