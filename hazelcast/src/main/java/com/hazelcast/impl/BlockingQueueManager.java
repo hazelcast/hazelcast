@@ -205,7 +205,7 @@ public class BlockingQueueManager extends BaseManager {
         if (key != -1) {
             final Data dataItem = toData(obj);
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                txn.attachPutOp(name, key, dataItem, timeout, true);
+                txn.attachPutOp(name, key, dataItem, timeout, true, index);
             } else {
                 storeQueueItem(name, key, dataItem, index);
             }
@@ -246,8 +246,11 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    public void offerCommit(String name, Object key, Data item) {
-        storeQueueItem(name, key, item, Integer.MAX_VALUE);
+    public void offerCommit(String name, Object key, Data item, Integer index) {
+        if (index == null)
+            storeQueueItem(name, key, item, Integer.MAX_VALUE);
+        else
+            storeQueueItem(name, key, item, index);
     }
 
     public void rollbackPoll(String name, Object key, Object obj) {
