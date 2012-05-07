@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * Methods, including but not limited to <tt>get</tt>, <tt>containsKey</tt>,
  * <tt>containsValue</tt>, <tt>remove</tt>, <tt>put</tt>,
  * <tt>lock</tt>, <tt>unlock</tt>, do not use <tt>hashCode</tt> and <tt>equals</tt>
- * implementations of keys (or values),
+ * implementations of keys,
  * instead they use <tt>hashCode</tt> and <tt>equals</tt> of binary (serialized) forms of the objects.
  * </li>
  * <li>
@@ -95,9 +95,9 @@ public interface MultiMap<K, V> extends Instance {
      * Removes the given key value pair from the multimap.
      * <p/>
      * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary forms of
-     * the <tt>key</tt> and <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s and <tt>value</tt>'s classes.
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
      *
      * @param key   the key of the entry to remove
      * @param value the value of the entry to remove
@@ -197,12 +197,6 @@ public interface MultiMap<K, V> extends Instance {
     /**
      * Returns whether the multimap contains an entry with the value.
      * <p/>
-     * <p><b>Warning:</b></p>
-     * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
-     * the <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>value</tt>'s class.
-     * </p>
      *
      * @param value the value whose existence is checked.
      * @return true if the multimap contains an entry with the value, false otherwise.
@@ -212,10 +206,9 @@ public interface MultiMap<K, V> extends Instance {
     /**
      * Returns whether the multimap contains the given key-value pair.
      * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary forms of
-     * the <tt>key</tt> and <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s and <tt>value</tt>'s classes.
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
      *
      * @param key   the key whose existence is checked.
      * @param value the value whose existence is checked.
