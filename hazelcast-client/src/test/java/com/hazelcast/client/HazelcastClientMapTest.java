@@ -296,7 +296,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     @Test
     public void tryPutWithTTL() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
-        IMap<String, String> map = hClient.getMap("tryPut");
+        IMap<String, String> map = hClient.getMap("tryPutWithTTL");
         assertEquals(0, map.size());
         Boolean result = map.tryPut("1", "CBDEF", 100, TimeUnit.MILLISECONDS, 1, TimeUnit.SECONDS);
         assertTrue(result);
