@@ -16,11 +16,13 @@
 
 package com.hazelcast.config;
 
+import java.util.EventListener;
+
 public class ListenerConfig {
 
     protected String className = null;
 
-    protected Object implementation = null;
+    protected EventListener implementation = null;
 
     public ListenerConfig() {
         super();
@@ -31,7 +33,7 @@ public class ListenerConfig {
         this.className = className;
     }
 
-    public ListenerConfig(Object implementation) {
+    public ListenerConfig(EventListener implementation) {
         super();
         this.implementation = implementation;
     }
@@ -49,7 +51,7 @@ public class ListenerConfig {
         return implementation;
     }
 
-    public ListenerConfig setImplementation(Object implementation) {
+    public ListenerConfig setImplementation(EventListener implementation) {
         this.implementation = implementation;
         return this;
     }

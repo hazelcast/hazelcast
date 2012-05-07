@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
-public interface LifecycleListener {
+import java.util.EventListener;
+
+public interface LifecycleListener extends EventListener {
     void stateChanged(LifecycleEvent event);
 }
