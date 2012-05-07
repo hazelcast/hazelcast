@@ -75,10 +75,6 @@
     <programlisting language="xml"><![CDATA[<hz:hazelcast id="instance">
     <hz:config>
         <hz:group name="dev" password="password"/>
-        <hz:properties>
-            <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
-            <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
-        </hz:properties>
         <hz:network port="5701" port-auto-increment="false">
             <hz:join>
                 <hz:multicast enabled="false"
