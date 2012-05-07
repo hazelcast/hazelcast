@@ -43,7 +43,7 @@ import java.util.concurrent.TimeoutException;
  * Methods, including but not limited to <tt>get</tt>, <tt>containsKey</tt>,
  * <tt>containsValue</tt>, <tt>evict</tt>, <tt>remove</tt>, <tt>put</tt>,
  * <tt>putIfAbsent</tt>, <tt>replace</tt>, <tt>lock</tt>,
- * <tt>unlock</tt>, do not use <tt>hashCode</tt> and <tt>equals</tt> implementations of keys (or values),
+ * <tt>unlock</tt>, do not use <tt>hashCode</tt> and <tt>equals</tt> implementations of keys,
  * instead they use <tt>hashCode</tt> and <tt>equals</tt> of binary (serialized) forms of the objects.
  * </li>
  * <li>
@@ -81,13 +81,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
 
     /**
      * {@inheritDoc}
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
-     * the <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>value</tt>'s class.
-     * </p>
      */
     boolean containsValue(Object value);
 
@@ -159,9 +152,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * {@inheritDoc}
      * <p/>
      * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary forms of
-     * the <tt>key</tt> and <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s and <tt>value</tt>'s classes.
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
      */
     boolean remove(Object key, Object value);
 
@@ -367,9 +360,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * {@inheritDoc}
      * <p/>
      * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary forms of
-     * the <tt>key</tt> and <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s and <tt>value</tt>'s classes.
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
      * <p/>
      * <p><b>Warning-2:</b></p>
      * <p>
@@ -385,9 +378,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * Entry will expire and get evicted after the ttl.
      * <p/>
      * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary forms of
-     * the <tt>key</tt> and <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s and <tt>value</tt>'s classes.
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
      * <p/>
      * <p><b>Warning-2:</b></p>
      * <p>
@@ -407,9 +400,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * {@inheritDoc}
      * <p/>
      * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary forms of
-     * the <tt>key</tt> and <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s and <tt>value</tt>'s classes.
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
      */
     boolean replace(K key, V oldValue, V newValue);
 
@@ -417,9 +410,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * {@inheritDoc}
      * <p/>
      * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary forms of
-     * the <tt>key</tt> and <tt>value</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s and <tt>value</tt>'s classes.
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
      * <p/>
      * <p><b>Warning-2:</b></p>
      * <p>
