@@ -70,7 +70,7 @@ map.put(key, value);
                     <code>IMap.entrySet</code>, <code>MultiMap.get</code>, <code>MultiMap.remove</code>,
                     <code>IMap.keySet</code>, <code>IMap.values</code>, contain cloned values. These collections are NOT
                     backup by related Hazelcast objects.
-                    So changes to the these are <b>NOT</b> reflected in the originals, and vice-versa.
+                    So changes to the these are <emphasis role="bold">NOT</emphasis> reflected in the originals, and vice-versa.
                 </para>
             </listitem>
             <listitem>
