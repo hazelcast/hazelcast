@@ -1050,7 +1050,7 @@ public class CMap {
         final long now = Clock.currentTimeMillis();
         for (Record record : records) {
             if (record.isActive() && record.isValid(now) &&
-                record.isLocked() && acquiredAtLeastFor < (Clock.currentTimeMillis() - record.getLockAcquireTime())) {
+                record.isLocked() && acquiredAtLeastFor < (now - record.getLockAcquireTime())) {
                 result.add(record);
             }
         }
