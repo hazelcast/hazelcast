@@ -16,30 +16,35 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.cluster.MemberInfo;
-import com.hazelcast.util.Clock;
-import com.hazelcast.impl.PartitionManager;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-public class ClusterRuntimeState extends AbstractRemotelyProcessable {
-    private ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
-    private ArrayList<ShortPartitionInfo> partitionInfos = new ArrayList<ShortPartitionInfo>(271);
+/**
+ * @mdogan 5/7/12
+ */
+public class PartitionRuntimeState implements DataSerializable {
+
+    protected ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
+    protected Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
     private long masterTime = Clock.currentTimeMillis();
     private int version;
+    private Connection connection;
 
-    public ClusterRuntimeState(final Collection<MemberInfo> memberInfos,
-                               final PartitionInfo[] partitions,
-                               final long masterTime, int version) {
+    public PartitionRuntimeState() {
+        super();
+    }
+
+    public PartitionRuntimeState(final Collection<MemberInfo> memberInfos,
+                                 final PartitionInfo[] partitions,
+                                 final long masterTime, int version) {
         this.masterTime = masterTime;
         this.version = version;
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(memberInfos.size());
@@ -51,15 +56,12 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
         setPartitions(partitions, addressIndexes);
     }
 
-    public ClusterRuntimeState() {
-    }
-
-    private void addMemberInfo(MemberInfo memberInfo, Map<Address, Integer> addressIndexes, int memberIndex) {
+    protected void addMemberInfo(MemberInfo memberInfo, Map<Address, Integer> addressIndexes, int memberIndex) {
         members.add(memberIndex, memberInfo);
         addressIndexes.put(memberInfo.getAddress(), memberIndex);
     }
 
-    private void setPartitions(PartitionInfo[] partitions, Map<Address, Integer> addressIndexes) {
+    protected void setPartitions(PartitionInfo[] partitions, Map<Address, Integer> addressIndexes) {
         for (PartitionInfo partition : partitions) {
             ShortPartitionInfo spi = new ShortPartitionInfo(partition.getPartitionId());
             for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
@@ -75,16 +77,10 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
         }
     }
 
-    public void process() {
-        PartitionManager partitionManager = node.concurrentMapManager.getPartitionManager();
-        partitionManager.setClusterRuntimeState(this);
-    }
-
     public PartitionInfo[] getPartitions() {
         int size = partitionInfos.size();
         PartitionInfo[] partitions = new PartitionInfo[size];
-        for (int i = 0; i < size; i++) {
-            ShortPartitionInfo spi = partitionInfos.get(i);
+        for (ShortPartitionInfo spi : partitionInfos) {
             PartitionInfo partition = new PartitionInfo(spi.partitionId, null);
             int[] addressIndexes = spi.addressIndexes;
             for (int c = 0; c < addressIndexes.length; c++) {
@@ -98,7 +94,14 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
         return partitions;
     }
 
-    @Override
+    public Connection getConnection() {
+        return connection;
+    }
+
+    void setConnection(final Connection connection) {
+        this.connection = connection;
+    }
+
     public void readData(DataInput in) throws IOException {
         masterTime = in.readLong();
         version = in.readInt();
@@ -119,7 +122,6 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
         }
     }
 
-    @Override
     public void writeData(DataOutput out) throws IOException {
         out.writeLong(masterTime);
         out.writeInt(version);
@@ -137,7 +139,7 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("ClusterRuntimeState [" + version + "]{\n");
+        StringBuilder sb = new StringBuilder("PartitionRuntimeState [" + version + "]{\n");
         for (MemberInfo address : members) {
             sb.append(address).append('\n');
         }
@@ -150,6 +152,7 @@ public class ClusterRuntimeState extends AbstractRemotelyProcessable {
     }
 
     class ShortPartitionInfo implements DataSerializable {
+
         int partitionId;
         int[] addressIndexes = new int[PartitionInfo.MAX_REPLICA_COUNT];
 

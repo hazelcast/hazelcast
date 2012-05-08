@@ -143,6 +143,14 @@ public final class Connection {
         return live;
     }
 
+    public long lastWriteTime() {
+        return writeHandler.lastHandle;
+    }
+
+    public long lastReadTime() {
+        return readHandler.lastHandle;
+    }
+
     public Address getEndPoint() {
         return endPoint;
     }

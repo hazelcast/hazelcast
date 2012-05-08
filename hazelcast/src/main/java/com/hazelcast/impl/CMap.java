@@ -1039,6 +1039,32 @@ public class CMap {
         return size;
     }
 
+    /**
+     * Thread-safe
+     *
+     * @param acquiredAtLeastFor min acquire period of lock in ms
+     */
+    public Collection<Record> getLockedRecordsFor(long acquiredAtLeastFor) {
+        final Collection<Record> records = mapRecords.values();
+        final Collection<Record> result = new LinkedList<Record>();
+        final long now = Clock.currentTimeMillis();
+        for (Record record : records) {
+            if (record.isActive() && record.isValid(now) &&
+                record.isLocked() && acquiredAtLeastFor < (Clock.currentTimeMillis() - record.getLockAcquireTime())) {
+                result.add(record);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * for dead-lock detection
+     *
+     * TODO: Warning => DistributedLock is not thread-safe !!!
+     *
+     * @param lockOwners
+     * @param lockRequested
+     */
     public void collectScheduledLocks(Map<Object, DistributedLock> lockOwners, Map<Object, DistributedLock> lockRequested) {
         Collection<Record> records = mapRecords.values();
         for (Record record : records) {
@@ -1050,7 +1076,8 @@ public class CMap {
                     for (ScheduledAction scheduledAction : scheduledActions) {
                         Request request = scheduledAction.getRequest();
                         if (ClusterOperation.CONCURRENT_MAP_LOCK.equals(request.operation)) {
-                            lockRequested.put(record.getKey(), new DistributedLock(request.lockAddress, request.lockThreadId));
+                            lockRequested.put(record.getKey(),
+                                              new DistributedLock(request.lockAddress, request.lockThreadId));
                         }
                     }
                 }

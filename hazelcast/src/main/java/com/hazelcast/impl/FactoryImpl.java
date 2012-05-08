@@ -378,7 +378,7 @@ public class FactoryImpl implements HazelcastInstance {
         proxyFactory = node.initializer.getProxyFactory();
         logger = node.getLogger(FactoryImpl.class.getName());
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
-        locksMapProxy = proxyFactory.createMapProxy(Prefix.MAP_HAZELCAST + "Locks");
+        locksMapProxy = proxyFactory.createMapProxy(Prefix.LOCKS_MAP_HAZELCAST);
         node.start();
         if (!node.isActive()) {
             throw new IllegalStateException("Node failed to start!");

@@ -290,6 +290,10 @@ public abstract class AbstractSimpleRecord implements Record {
         return null;
     }
 
+    public long getLockAcquireTime() {
+        return -1L;
+    }
+
     public AbstractRecord.OptionalInfo getOptionalInfo() {
         return null;
     }

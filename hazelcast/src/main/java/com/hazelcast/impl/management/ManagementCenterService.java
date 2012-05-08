@@ -245,11 +245,13 @@ public class ManagementCenterService implements LifecycleListener {
 
         TaskPoller() {
             super(factory.node.threadGroup, factory.node.getThreadNamePrefix("MC.Task.Poller"));
+            register(new RuntimeStateRequest());
             register(new ThreadDumpRequest());
             register(new ExecuteScriptRequest());
             register(new EvictLocalMapRequest());
             register(new ConsoleCommandRequest());
             register(new MapConfigRequest());
+            register(new DetectDeadlockRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {
@@ -291,13 +293,14 @@ public class ManagementCenterService implements LifecycleListener {
                         connection.setRequestProperty("Connection", "keep-alive");
                         InputStream inputStream = connection.getInputStream();
                         DataInputStream input = new DataInputStream(inputStream);
-
-                        int taskId = input.readInt();
-                        if (taskId > 0) {
-                            int requestType = input.readInt();
-                            ConsoleRequest request = consoleRequests[requestType];
-                            request.readData(input);
-                            sendResponse(taskId, request);
+                        final int taskId = input.readInt();
+                        if (taskId > 0 && taskId < consoleRequests.length) {
+                            final int requestType = input.readInt();
+                            final ConsoleRequest request = consoleRequests[requestType];
+                            if (request != null) {
+                                request.readData(input);
+                                sendResponse(taskId, request);
+                            }
                         }
                     } catch (Exception e) {
                         logger.log(Level.FINEST, e.getMessage(), e);
@@ -538,7 +541,7 @@ public class ManagementCenterService implements LifecycleListener {
         }
     }
 
-    public TimedMemberState getTimedMemberState() {
+    private TimedMemberState getTimedMemberState() {
         if (running.get()) {
             final MemberStateImpl memberState = new MemberStateImpl();
             createMemberState(memberState);
@@ -562,7 +565,7 @@ public class ManagementCenterService implements LifecycleListener {
         return null;
     }
 
-    HazelcastInstance getHazelcastInstance() {
+    FactoryImpl getHazelcastInstance() {
         return factory;
     }
 

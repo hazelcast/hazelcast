@@ -191,6 +191,8 @@ public interface Record extends MapEntry {
 
     Address getLockAddress();
 
+    long getLockAcquireTime();
+
     AbstractRecord.OptionalInfo getOptionalInfo();
 
     void setLastStoredTime(long lastStoredTime);
