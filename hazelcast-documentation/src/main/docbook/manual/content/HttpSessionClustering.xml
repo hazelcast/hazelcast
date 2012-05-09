@@ -52,7 +52,9 @@
                 <literal>hazelcast-wm</literal>
                 jars in your
                 <literal>WEB-INF/lib</literal>
-                directory.
+                directory. Optionally if you wish to connect to a cluster as a client add
+                <literal>hazelcast-client</literal>
+                as well.
             </para>
         </listitem>
         <listitem>
@@ -103,7 +105,7 @@
         <param-value>true</param-value>
     </init-param>
     <!--
-        If you are connecting to an existing cluster
+        (Optional - If you want to connect as a Client to an existing cluster)
         specify comma separated cluster member addresses here
     -->
     <init-param>
@@ -111,7 +113,7 @@
         <param-value>localhost:5701,192.168.0.1:5701</param-value>
     </init-param>
     <!--
-        If you are connecting to an existing cluster
+        (Optional - If you want to connect as a Client to an existing cluster)
         specify the group name
     -->
     <init-param>
@@ -119,7 +121,7 @@
         <param-value>default</param-value>
     </init-param>
     <!--
-        If you are connecting to an existing cluster
+        (Optional - If you want to connect as a Client to an existing cluster)
         specify the group password
     -->
     <init-param>
