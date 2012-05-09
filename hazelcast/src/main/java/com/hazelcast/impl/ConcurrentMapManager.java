@@ -1200,7 +1200,9 @@ public class ConcurrentMapManager extends BaseManager {
                     txn.attachRemoveOp(name, key, toData(value), (oldObject == null), removedValueCount);
                     return oldObject;
                 } else {
-                    return txn.attachRemoveOp(name, key, toData(value), false);
+                    Data oldValue = txn.attachRemoveOp(name, key, toData(value), false);
+                    Object oldObject = threadContext.isClient() ? oldValue : threadContext.toObject(oldValue);
+                    return oldObject;
                 }
             } else {
                 setLocal(operation, name, key, value, timeout, -1);
