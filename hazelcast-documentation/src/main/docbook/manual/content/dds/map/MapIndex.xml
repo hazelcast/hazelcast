@@ -16,15 +16,24 @@
   -->
 
 
-<sect2 xml:id="MapIndex" version="5.0" xmlns="http://docbook.org/ns/docbook">
+<sect2 xml:id="MapIndex" version="5.0" xmlns="http://docbook.org/ns/docbook"
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Indexing</title>
     <para>
         Map entries can be indexed to be able to query faster. These indexes can be created using IMap API.
         But this usage has a limitation; all indexes must be created before any value is put into map.
         Sometimes by design adding an index to map may be impossible before any value is added.
-        For example if a map has <code>MapLoader</code> that loads entries during map creation,
+        For example if a map has
+        <code>MapLoader</code>
+        that loads entries during map creation,
         then adding indexes to map becomes meaningless.
-        To solve this problem, Hazelcast introduces defining <code>IMap</code> indexes in configuration.
+        To solve this problem, Hazelcast introduces defining
+        <code>IMap</code>
+        indexes in configuration.
     </para>
     <para>
         <itemizedlist>
@@ -39,21 +48,23 @@
         <index ordered="true">age</index>
     </indexes>
 </map>]]></programlisting>
-                    </para>
-                </listitem>
+                </para>
+            </listitem>
 
-                <listitem>
-                    <para><emphasis role="italic">Config API</emphasis>
-                        <programlisting language="java">
-mapConfig.addMapIndexConfig(new MapIndexConfig("name", false));
-mapConfig.addMapIndexConfig(new MapIndexConfig("age", true));</programlisting>
-                    </para>
-                </listitem>
+            <listitem>
+                <para>
+                    <emphasis role="italic">Config API</emphasis>
+                    <programlisting language="java">
+                        mapConfig.addMapIndexConfig(new MapIndexConfig("name", false));
+                        mapConfig.addMapIndexConfig(new MapIndexConfig("age", true));
+                    </programlisting>
+                </para>
+            </listitem>
 
-                <listitem>
-                    <para>
-                        <emphasis role="italic">Spring XML configuration</emphasis>
-                        <programlisting language="xml"><![CDATA[
+            <listitem>
+                <para>
+                    <emphasis role="italic">Spring XML configuration</emphasis>
+                    <programlisting language="xml"><![CDATA[
 <hz:map name="default">
     <hz:indexes>
         <hz:index attribute="name"/>
