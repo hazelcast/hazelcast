@@ -15,7 +15,12 @@
   ~ limitations under the License.
   -->
 
-<para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+<simplesect version="5.0" xmlns="http://docbook.org/ns/docbook"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+      http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
 
     <para>
         By default, Hazelcast stores your distributed data (map entries, queue items) into Java heap
@@ -102,4 +107,4 @@ mapConfig.setStorageType(StorageType.OFFHEAP);]]></programlisting>
         <emphasis role="italic">Also see how to <link xlink:href="#EnterpriseConfig">configure license key</link>.</emphasis>
     </para>
 
-</para>
+</simplesect>

@@ -16,12 +16,11 @@
   -->
 
 <sect1 xml:id="JEEIntegration" version='5.0' xmlns='http://docbook.org/ns/docbook'
-       xmlns:xlink='http://www.w3.org/1999/xlink'
-       xmlns:xi='http://www.w3.org/2001/XInclude'
-       xmlns:ns5='http://www.w3.org/2000/svg'
-       xmlns:ns4='http://www.w3.org/1998/Math/MathML'
-       xmlns:ns3='http://www.w3.org/1999/xhtml'
-       xmlns:db='http://docbook.org/ns/docbook'>
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>J2EE Integration</title>
     <para>Hazelcast can be integrated into J2EE containers via Hazelcast Resource Adapter (
         hazelcast-ra.rar ). After proper configuration, Hazelcast can participate in standard J2EE

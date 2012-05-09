@@ -16,8 +16,11 @@
   -->
 
 <sect1 xml:id="ConfigurationProperties" version="5.0"
-       xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
-       xmlns:db="http://docbook.org/ns/docbook">
+       xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Advanced Configuration Properties</title>
     <para>
         There are some advanced configuration properties to tune some aspects
@@ -117,7 +120,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.logging.type</db:literal>
+                    <literal>hazelcast.logging.type</literal>
                 </td>
                 <td>Name of
                     <link xlink:href="#Logging">logging</link>
@@ -260,7 +263,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.max.wait.seconds.before.join</db:literal>
+                    <literal>hazelcast.max.wait.seconds.before.join</literal>
                 </td>
                 <td>Maximum wait time before join operation</td>
                 <td>integer</td>
@@ -326,7 +329,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.map.max.backup.count</db:literal>
+                    <literal>hazelcast.map.max.backup.count</literal>
                 </td>
                 <td>Maximum map backup node count</td>
                 <td>integer</td>
@@ -450,7 +453,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.version.check.enabled</db:literal>
+                    <literal>hazelcast.version.check.enabled</literal>
                 </td>
                 <td>Enable Hazelcast new version check on startup</td>
                 <td>boolean</td>
@@ -458,7 +461,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.topic.flow.control.enabled</db:literal>
+                    <literal>hazelcast.topic.flow.control.enabled</literal>
                 </td>
                 <td>Enable waiting for the topic publish until messages are written through the sockets</td>
                 <td>boolean</td>
@@ -466,7 +469,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.mc.max.visible.instance.count</db:literal>
+                    <literal>hazelcast.mc.max.visible.instance.count</literal>
                 </td>
                 <td>Management Center maximum visible instance count</td>
                 <td>integer</td>
@@ -474,7 +477,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.mc.url.change.enabled</db:literal>
+                    <literal>hazelcast.mc.url.change.enabled</literal>
                 </td>
                 <td>Management Center changing server url is enabled</td>
                 <td>boolean</td>
@@ -482,7 +485,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.elastic.memory.enabled</db:literal>
+                    <literal>hazelcast.elastic.memory.enabled</literal>
                 </td>
                 <td>Enable
                     <link xlink:href="#ElasticMemory">Hazelcast Elastic Memory</link>
@@ -493,7 +496,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.elastic.memory.total.size</db:literal>
+                    <literal>hazelcast.elastic.memory.total.size</literal>
                 </td>
                 <td>
                     <link xlink:href="#ElasticMemory">Hazelcast Elastic Memory</link>
@@ -504,7 +507,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.elastic.memory.chunk.size</db:literal>
+                    <literal>hazelcast.elastic.memory.chunk.size</literal>
                 </td>
                 <td>
                     <link xlink:href="#ElasticMemory">Hazelcast Elastic Memory</link>
@@ -515,7 +518,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.elastic.memory.shared.storage</db:literal>
+                    <literal>hazelcast.elastic.memory.shared.storage</literal>
                 </td>
                 <td>
                     <link xlink:href="#ElasticMemory">Enable Hazelcast Elastic Memory</link>
@@ -526,7 +529,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <db:literal>hazelcast.enterprise.license.key</db:literal>
+                    <literal>hazelcast.enterprise.license.key</literal>
                 </td>
                 <td>
                     <link xlink:href="http://www.hazelcast.com/products.jsp">Hazelcast Enterprise</link>

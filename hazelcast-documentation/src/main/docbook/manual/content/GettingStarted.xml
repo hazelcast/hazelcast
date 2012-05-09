@@ -16,8 +16,11 @@
   -->
 
 <sect1 xml:id="GettingStarted" version='5.0' xmlns='http://docbook.org/ns/docbook'
-       xmlns:xlink='http://www.w3.org/1999/xlink'
-        >
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+      http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Getting Started (Tutorial)</title>
     <para>
         In this short tutorial, we will create simple Java application using Hazelcast distributed map and queue.
@@ -86,25 +89,25 @@ Members [2] {
                 </para>
             </listitem>
         </itemizedlist>
+    </para>
 
-
-        <para>
-            <emphasis role="bold">Connecting Hazelcast Cluster with Java Client API</emphasis>
-            <itemizedlist>
-                <listitem>
-                    <para>Besides
-                        <literal>hazelcast.jar</literal>
-                        you should also add
-                        <literal>hazelcast-client.jar</literal>
-                        to your classpath.
-                    </para>
-                </listitem>
-                <listitem>
-                    <para>Following code will start a Hazelcast Client, connect to our two node cluster
-                        and print the size of our
-                        <literal>customers</literal>
-                        map.
-                        <programlisting language="java"><![CDATA[
+    <para>
+        <emphasis role="bold">Connecting Hazelcast Cluster with Java Client API</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para>Besides
+                    <literal>hazelcast.jar</literal>
+                    you should also add
+                    <literal>hazelcast-client.jar</literal>
+                    to your classpath.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Following code will start a Hazelcast Client, connect to our two node cluster
+                    and print the size of our
+                    <literal>customers</literal>
+                    map.
+                    <programlisting language="java"><![CDATA[
 package com.hazelcast.test;
 
 import com.hazelcast.client.ClientConfig;
@@ -123,36 +126,35 @@ public class GettingStartedClient {
     }
 }
 ]]></programlisting>
-                    </para>
-                </listitem>
-                <listitem>
-                    <para>When you run it, you will see the client properly connects to the cluster and print the map
-                        size as 3.
-                    </para>
-                </listitem>
-            </itemizedlist>
-        </para>
-        <para>
-            <emphasis role="bold">What is Next?</emphasis>
-            <itemizedlist>
-                <listitem>
-                    <para>You can browse
-                        <link xlink:href="http://www.hazelcast.com/docs.jsp">documentation</link>
-                        and resources for detailed features and examples.
-                    </para>
-                </listitem>
-                <listitem>
-                    <para>You can email your questions to Hazelcast
-                        <link xlink:href="http://groups.google.com/group/hazelcast">mail group</link>.
-                    </para>
-                </listitem>
-                <listitem>
-                    <para>You can browse Hazelcast
-                        <link xlink:href="http://code.google.com/p/hazelcast/source/browse/#svn/trunk">source
-                            code</link>.
-                    </para>
-                </listitem>
-            </itemizedlist>
-        </para>
+                </para>
+            </listitem>
+            <listitem>
+                <para>When you run it, you will see the client properly connects to the cluster and print the map
+                    size as 3.
+                </para>
+            </listitem>
+        </itemizedlist>
+    </para>
+    <para>
+        <emphasis role="bold">What is Next?</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para>You can browse
+                    <link xlink:href="http://www.hazelcast.com/docs.jsp">documentation</link>
+                    and resources for detailed features and examples.
+                </para>
+            </listitem>
+            <listitem>
+                <para>You can email your questions to Hazelcast
+                    <link xlink:href="http://groups.google.com/group/hazelcast">mail group</link>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>You can browse Hazelcast
+                    <link xlink:href="http://code.google.com/p/hazelcast/source/browse/#svn/trunk">source
+                        code</link>.
+                </para>
+            </listitem>
+        </itemizedlist>
     </para>
 </sect1>
