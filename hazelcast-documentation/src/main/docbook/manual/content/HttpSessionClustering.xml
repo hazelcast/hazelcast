@@ -103,6 +103,30 @@
         <param-value>true</param-value>
     </init-param>
     <!--
+        If you are connecting to an existing cluster
+        specify comma separated cluster member addresses here
+    -->
+    <init-param>
+        <param-name>client-addresses</param-name>
+        <param-value>localhost:5701,192.168.0.1:5701</param-value>
+    </init-param>
+    <!--
+        If you are connecting to an existing cluster
+        specify the group name
+    -->
+    <init-param>
+        <param-name>client-group</param-name>
+        <param-value>default</param-value>
+    </init-param>
+    <!--
+        If you are connecting to an existing cluster
+        specify the group password
+    -->
+    <init-param>
+        <param-name>client-password</param-name>
+        <param-value>default</param-value>
+    </init-param>
+    <!--
         Configuration xml location;
             * as servlet resource OR
             * as classpath resource OR
