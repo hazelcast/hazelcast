@@ -33,12 +33,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class TransactionTest {
@@ -65,28 +60,52 @@ public class TransactionTest {
     @Test
     public void testMapPutSimple() {
         TransactionalMap txnMap = newTransactionalMapProxy("testMapPutSimple");
-        txnMap.begin();
         txnMap.put("1", "value");
         assertEquals(1, txnMap.size());
-        txnMap.commit();
+        txnMap.begin();
         assertEquals(1, txnMap.size());
+        assertNull(txnMap.put("2", "value"));
+        assertEquals(2, txnMap.size());
+        txnMap.commit();
+        assertEquals(2, txnMap.size());
     }
 
     @Test
-    public void testMapPutAndGetSimple() {
-        TransactionalMap txnMap = newTransactionalMapProxy("testMapPutAndGetSimple");
+    public void testMapRemoveSimple() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapRemoveSimple");
         txnMap.put("1", "value");
         txnMap.begin();
+        txnMap.put("2", "value");
+        assertEquals("value", txnMap.remove("1"));
+        assertEquals("value", txnMap.remove("2"));
+        Assert.assertEquals(0, txnMap.size());
+        txnMap.commit();
+        Assert.assertTrue(txnMap.isEmpty());
+    }
+
+    @Test
+    public void testMapPutAndGetAndRemoveSimple() {
+        TransactionalMap txnMap = newTransactionalMapProxy("testMapPutAndGetAndRemoveSimple");
+        txnMap.put("1", "value");
+        txnMap.put("2", "value");
+        txnMap.begin();
+        txnMap.put("3", "value");
         assertEquals("value", txnMap.get("1"));
         assertEquals("value", txnMap.get("1"));
         assertEquals("value", txnMap.put("1", "value2"));
         assertEquals("value2", txnMap.put("1", "value3"));
         assertEquals("value3", txnMap.get("1"));
+        assertEquals(3, txnMap.size());
+        assertEquals("value", txnMap.get("2"));
+        assertEquals(3, txnMap.size());
+        assertEquals("value", txnMap.remove("2"));
+        assertEquals("value", txnMap.remove("3"));
+        assertNull(txnMap.remove("2"));
+        assertNull(txnMap.remove("3"));
         assertEquals(1, txnMap.size());
         txnMap.commit();
         assertEquals(1, txnMap.size());
     }
-
 
     @Test
     public void testMapContainsKey() {
