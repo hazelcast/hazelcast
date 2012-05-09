@@ -16,7 +16,13 @@
   ~ limitations under the License.
   -->
 
-<para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">Hazelcast has an extensible, JAAS based security feature
+<para version="5.0" xmlns="http://docbook.org/ns/docbook"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+      http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+    Hazelcast has an extensible, JAAS based security feature
     which can be used to authenticate both cluster members and clients and to do access control checks
     on client operations. Access control can be done according to endpoint principal and/or endpoint address.
     Security can be enabled and configured either in configuration xml or using Config api.

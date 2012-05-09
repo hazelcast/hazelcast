@@ -16,7 +16,11 @@
   -->
 
 <sect1 xml:id="Logging" version="5.0" xmlns="http://docbook.org/ns/docbook"
-       xmlns:db="http://docbook.org/ns/docbook">
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Logging Configuration</title>
     <para>Hazelcast has a flexible logging configuration and doesn't depend on any logging framework except JDK logging.
         It has in-built adaptors for a number of logging frameworks
@@ -26,24 +30,24 @@
         <code>hazelcast.logging.type</code>
         property to one of
         predefined types below.
-        <db:itemizedlist>
-            <db:listitem>
-                <db:para><emphasis role="bold">jdk:</emphasis>JDK logging (default)
-                </db:para>
-            </db:listitem>
-            <db:listitem>
-                <db:para><emphasis role="bold">log4j:</emphasis>Log4j
-                </db:para>
-            </db:listitem>
-            <db:listitem>
-                <db:para><emphasis role="bold">slf4j:</emphasis>Slf4j
-                </db:para>
-            </db:listitem>
-            <db:listitem>
-                <db:para><emphasis role="bold">none:</emphasis>disable logging
-                </db:para>
-            </db:listitem>
-        </db:itemizedlist>
+        <itemizedlist>
+            <listitem>
+                <para><emphasis role="bold">jdk:</emphasis>JDK logging (default)
+                </para>
+            </listitem>
+            <listitem>
+                <para><emphasis role="bold">log4j:</emphasis>Log4j
+                </para>
+            </listitem>
+            <listitem>
+                <para><emphasis role="bold">slf4j:</emphasis>Slf4j
+                </para>
+            </listitem>
+            <listitem>
+                <para><emphasis role="bold">none:</emphasis>disable logging
+                </para>
+            </listitem>
+        </itemizedlist>
 
         You can set
         <code>hazelcast.logging.type</code>

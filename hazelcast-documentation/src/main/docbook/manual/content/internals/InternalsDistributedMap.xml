@@ -16,7 +16,11 @@
   -->
 
 <sect1 xml:id="InternalsDistributedMap" version="5.0" xmlns="http://docbook.org/ns/docbook"
-        >
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Internals 4: Distributed Map</title>
     <para>Hazelcast distributed map is a peer to peer, partitioned implementation so entries put
         into the map will be almost evenly partitioned onto the existing members. Entries are

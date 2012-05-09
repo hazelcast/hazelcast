@@ -14,10 +14,12 @@
   ~ limitations under the License.
   -->
 
-<para
-version='5.0' xmlns='http://docbook.org/ns/docbook'
-xmlns:xlink='http://www.w3.org/1999/xlink'
-xmlns:xi="http://www.w3.org/2001/XInclude">
+<para version='5.0' xmlns='http://docbook.org/ns/docbook'
+    xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+          http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     Hazelcast is a clustering and highly scalable data distribution platform for Java. Hazelcast helps architects and
     developers to easily design and develop faster, highly scalable and reliable applications for their businesses.
     <itemizedlist>

@@ -16,9 +16,14 @@
   ~ limitations under the License.
   -->
 
-<sect2 xml:id="SSL" version='5.0' xmlns='http://docbook.org/ns/docbook' xmlns:xlink="http://www.w3.org/1999/xlink">
-<title>SSL</title>
-<para>
+<sect2 xml:id="SSL" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+    <title>SSL</title>
+    <para>
     Hazelcast allows you to use SSL socket communication among all Hazelcast
     members. You need to implement <code>com.hazelcast.nio.ssl.SSLContextFactory</code>
     and configure SSL section in network configuration.
@@ -78,6 +83,5 @@ public class MySSLContextFactory implements SSLContextFactory {
     <literal>javax.net.ssl.keyStore</literal> and <literal>javax.net.ssl.keyStorePassword</literal> system properties.
 
     <emphasis role="italic">Note that, you can not use SSL when <link xlink:href="#Encryption">Hazelcast Encryption</link> is enabled.</emphasis>
-
-</para>
+    </para>
 </sect2>
