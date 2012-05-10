@@ -16,23 +16,50 @@
 
 package com.hazelcast.web;
 
+import com.hazelcast.client.ClientConfig;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.*;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.logging.Level;
 
 class HazelcastInstanceLoader {
+
+    private final static ILogger logger = Logger.getLogger(HazelcastInstanceLoader.class.getName());
 
     public static HazelcastInstance createInstance(FilterConfig filterConfig) throws ServletException {
         final String instanceName = filterConfig.getInitParameter("instance-name");
         final String configLocation = filterConfig.getInitParameter("config-location");
+
+        final String clientAddresses = filterConfig.getInitParameter("client-addresses");
+        final String clientGroup = filterConfig.getInitParameter("client-group");
+        final String clientPass = filterConfig.getInitParameter("client-password");
+
         Config config = null;
+
+                // Join a cluster if we have sufficient configuration info
+        if(!isEmpty(clientAddresses) && !isEmpty(clientGroup) && !isEmpty(clientPass)) {
+            logger.log(Level.WARNING,
+                    "Creating Hazelcast node as Lite-Member. "
+                            + "Be sure this node has access to an already running cluster...");
+            ClientConfig clientConfig = new ClientConfig();
+            clientConfig.setAddresses(Arrays.asList(clientAddresses.split(",")));
+            GroupConfig groupConfig = new GroupConfig();
+            groupConfig.setName(clientGroup);
+            groupConfig.setPassword(clientPass);
+            clientConfig.setGroupConfig(groupConfig);
+            return HazelcastClient.newHazelcastClient(clientConfig);
+        }
 
         if (isEmpty(configLocation) && isEmpty(instanceName)) {
             return Hazelcast.getDefaultInstance();
@@ -58,6 +85,7 @@ class HazelcastInstanceLoader {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
+
         if (instanceName != null) {
             config.setInstanceName(instanceName);
             HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(instanceName);
