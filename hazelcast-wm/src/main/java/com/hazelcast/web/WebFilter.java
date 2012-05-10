@@ -92,13 +92,15 @@ public class WebFilter implements Filter {
                 }
 
                 public void entryRemoved(EntryEvent entryEvent) {
-                    if (!entryEvent.getMember().localMember()) {
+                    if (entryEvent.getMember() == null ||
+                        !entryEvent.getMember().localMember()) {
                         removeSessionLocally((String) entryEvent.getKey());
                     }
                 }
 
                 public void entryUpdated(EntryEvent entryEvent) {
-                    if (!entryEvent.getMember().localMember()) {
+                    if (entryEvent.getMember() == null ||
+                        !entryEvent.getMember().localMember()) {
                         markSessionDirty((String) entryEvent.getKey());
                     }
                 }
