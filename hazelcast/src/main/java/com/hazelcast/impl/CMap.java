@@ -789,17 +789,21 @@ public class CMap {
 
     public void onDisconnect(Record record, Address deadAddress) {
         if (record == null || deadAddress == null) return;
+
+        if (record.isLocked() && isMapForQueue()) {
+            if (deadAddress.equals(record.getLock().getLockAddress())) {
+                sendKeyToMaster(record.getKeyData());
+            }
+        }
         List<ScheduledAction> lsScheduledActions = record.getScheduledActions();
-        if (lsScheduledActions != null) {
-            if (lsScheduledActions.size() > 0) {
-                Iterator<ScheduledAction> it = lsScheduledActions.iterator();
-                while (it.hasNext()) {
-                    ScheduledAction sa = it.next();
-                    if (deadAddress.equals(sa.getRequest().caller)) {
-                        node.clusterManager.deregisterScheduledAction(sa);
-                        sa.setValid(false);
-                        it.remove();
-                    }
+        if (lsScheduledActions != null && lsScheduledActions.size() > 0) {
+            Iterator<ScheduledAction> it = lsScheduledActions.iterator();
+            while (it.hasNext()) {
+                ScheduledAction sa = it.next();
+                if (deadAddress.equals(sa.getRequest().caller)) {
+                    node.clusterManager.deregisterScheduledAction(sa);
+                    sa.setValid(false);
+                    it.remove();
                 }
             }
         }

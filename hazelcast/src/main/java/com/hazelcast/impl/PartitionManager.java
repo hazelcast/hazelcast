@@ -491,11 +491,6 @@ public class PartitionManager {
             for (Object recordObject : records) {
                 if (recordObject != null) {
                     Record record = (Record) recordObject;
-                    if (record.isLocked() && cmap.isMapForQueue()) {
-                        if (deadAddress.equals(record.getLock().getLockAddress())) {
-                            cmap.sendKeyToMaster(record.getKeyData());
-                        }
-                    }
                     cmap.onDisconnect(record, deadAddress);
                     final int partitionId = record.getBlockId();
                     // owner of the partition is dead
