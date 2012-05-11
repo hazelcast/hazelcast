@@ -92,14 +92,14 @@ public class WebFilter implements Filter {
                 }
 
                 public void entryRemoved(EntryEvent entryEvent) {
-                    if (entryEvent.getMember() == null ||
+                    if (entryEvent.getMember() == null || // client events has no owner member
                         !entryEvent.getMember().localMember()) {
                         removeSessionLocally((String) entryEvent.getKey());
                     }
                 }
 
                 public void entryUpdated(EntryEvent entryEvent) {
-                    if (entryEvent.getMember() == null ||
+                    if (entryEvent.getMember() == null || // client events has no owner member
                         !entryEvent.getMember().localMember()) {
                         markSessionDirty((String) entryEvent.getKey());
                     }
@@ -287,7 +287,7 @@ public class WebFilter implements Filter {
             if (requestedSessionId != null) {
                 hazelcastSession = getSessionWithId(requestedSessionId);
                 if (hazelcastSession == null) {
-                    final Map mapSession = (Map) ThreadContext.get().toObject((Data)getClusterMap().get(requestedSessionId));
+                    final Map mapSession = (Map) getClusterMap().get(requestedSessionId);
                     if (mapSession != null) {
                         // we already have the session in the cluster
                         // loading it...
@@ -300,7 +300,7 @@ public class WebFilter implements Filter {
                 hazelcastSession = createNewSession(RequestWrapper.this, null);
             } else if (hazelcastSession != null && !stickySession && requestedSessionId != null && hazelcastSession.isDirty()) {
                 log(requestedSessionId + " is dirty reloading.");
-                final Map mapSession = (Map) ThreadContext.get().toObject((Data)getClusterMap().get(requestedSessionId));
+                final Map mapSession = (Map) getClusterMap().get(requestedSessionId);
                 overrideSession(hazelcastSession, mapSession);
             }
             return hazelcastSession;

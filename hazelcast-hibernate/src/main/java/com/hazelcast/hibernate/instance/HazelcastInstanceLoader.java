@@ -67,7 +67,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
         if (useLiteMember) {
             logger.log(Level.WARNING,
                     "Creating Hazelcast node as Lite-Member. "
-                            + "Be sure this node has access to an already running cluster...");
+                            + "Make sure this node has access to an already running cluster...");
         }
         if (isEmpty(configResourcePath)) {
             // If both useLiteMember and instanceName is not set

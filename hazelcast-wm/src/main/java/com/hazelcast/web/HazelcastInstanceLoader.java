@@ -17,8 +17,12 @@
 package com.hazelcast.web;
 
 import com.hazelcast.client.ClientConfig;
+import com.hazelcast.client.ClientConfigBuilder;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.config.*;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.config.UrlXmlConfig;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -30,7 +34,6 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.logging.Level;
 
 class HazelcastInstanceLoader {
@@ -40,24 +43,26 @@ class HazelcastInstanceLoader {
     public static HazelcastInstance createInstance(FilterConfig filterConfig) throws ServletException {
         final String instanceName = filterConfig.getInitParameter("instance-name");
         final String configLocation = filterConfig.getInitParameter("config-location");
+        final String useClientProp = filterConfig.getInitParameter("use-client");
+        final String clientConfigLocation = filterConfig.getInitParameter("client-config-location");
 
-        final String clientAddresses = filterConfig.getInitParameter("client-addresses");
-        final String clientGroup = filterConfig.getInitParameter("client-group");
-        final String clientPass = filterConfig.getInitParameter("client-password");
-
-        Config config = null;
-
-                // Join a cluster if we have sufficient configuration info
-        if(!isEmpty(clientAddresses) && !isEmpty(clientGroup) && !isEmpty(clientPass)) {
+        if(!isEmpty(useClientProp) && Boolean.parseBoolean(useClientProp)) {
             logger.log(Level.WARNING,
-                    "Creating Hazelcast node as Lite-Member. "
-                            + "Be sure this node has access to an already running cluster...");
-            ClientConfig clientConfig = new ClientConfig();
-            clientConfig.setAddresses(Arrays.asList(clientAddresses.split(",")));
-            GroupConfig groupConfig = new GroupConfig();
-            groupConfig.setName(clientGroup);
-            groupConfig.setPassword(clientPass);
-            clientConfig.setGroupConfig(groupConfig);
+                    "Creating HazelcastClient, make sure this node has access to an already running cluster...");
+            ClientConfig clientConfig ;
+            if (isEmpty(clientConfigLocation)) {
+                clientConfig = new ClientConfig();
+                clientConfig.setUpdateAutomatic(true);
+                clientConfig.setInitialConnectionAttemptLimit(3);
+                clientConfig.setReconnectionAttemptLimit(5);
+            } else {
+                final URL configUrl = getConfigURL(filterConfig, clientConfigLocation);
+                try {
+                    clientConfig = new ClientConfigBuilder(configUrl).build();
+                } catch (IOException e) {
+                    throw new ServletException(e);
+                }
+            }
             return HazelcastClient.newHazelcastClient(clientConfig);
         }
 
@@ -65,25 +70,16 @@ class HazelcastInstanceLoader {
             return Hazelcast.getDefaultInstance();
         }
 
-        URL configUrl = null;
-        if (!isEmpty(configLocation)) {
-            try {
-                configUrl = filterConfig.getServletContext().getResource(configLocation);
-            } catch (MalformedURLException e) {
-            }
-            if (configUrl == null) {
-                configUrl = ConfigLoader.locateConfig(configLocation);
-            }
-        }
-        if (configUrl != null) {
+        Config config ;
+        if (isEmpty(configLocation)) {
+            config = new XmlConfigBuilder().build();
+        } else {
+            final URL configUrl = getConfigURL(filterConfig, configLocation);
             try {
                 config = new UrlXmlConfig(configUrl);
             } catch (IOException e) {
                 throw new ServletException(e);
             }
-        }
-        if (config == null) {
-            config = new XmlConfigBuilder().build();
         }
 
         if (instanceName != null) {
@@ -100,6 +96,18 @@ class HazelcastInstanceLoader {
         } else {
             return Hazelcast.newHazelcastInstance(config);
         }
+    }
+
+    private static URL getConfigURL(final FilterConfig filterConfig, final String configLocation) {
+        URL configUrl = null;
+        try {
+            configUrl = filterConfig.getServletContext().getResource(configLocation);
+        } catch (MalformedURLException e) {
+        }
+        if (configUrl == null) {
+            configUrl = ConfigLoader.locateConfig(configLocation);
+        }
+        return configUrl;
     }
 
     private static boolean isEmpty(String s) {

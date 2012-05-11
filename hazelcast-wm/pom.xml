@@ -16,9 +16,8 @@
     <packaging>jar</packaging>
 
     <properties>
-        <catalina.version>6.0.16</catalina.version>
-        <jsp.api.version>2.0</jsp.api.version>
-        <servlet.api.version>2.5</servlet.api.version>
+        <jsp.api.version>2.2.1</jsp.api.version>
+        <servlet.api.version>3.0.1</servlet.api.version>
         <jetty.maven.plugin.version>8.1.2.v20120308</jetty.maven.plugin.version>
     </properties>
 
@@ -139,20 +138,14 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.tomcat</groupId>
-            <artifactId>catalina</artifactId>
-            <version>${catalina.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>javax.servlet.jsp</groupId>
-            <artifactId>jsp-api</artifactId>
+            <artifactId>javax.servlet.jsp-api</artifactId>
             <version>${jsp.api.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
+            <artifactId>javax.servlet-api</artifactId>
             <version>${servlet.api.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -165,6 +158,18 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-client</artifactId>
             <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-webapp</artifactId>
+            <version>${jetty.maven.plugin.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-jsp</artifactId>
+            <version>${jetty.maven.plugin.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

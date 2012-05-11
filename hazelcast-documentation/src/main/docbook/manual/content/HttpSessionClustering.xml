@@ -105,30 +105,6 @@
         <param-value>true</param-value>
     </init-param>
     <!--
-        (Optional - If you want to connect as a Client to an existing cluster)
-        specify comma separated cluster member addresses here
-    -->
-    <init-param>
-        <param-name>client-addresses</param-name>
-        <param-value>localhost:5701,192.168.0.1:5701</param-value>
-    </init-param>
-    <!--
-        (Optional - If you want to connect as a Client to an existing cluster)
-        specify the group name
-    -->
-    <init-param>
-        <param-name>client-group</param-name>
-        <param-value>default</param-value>
-    </init-param>
-    <!--
-        (Optional - If you want to connect as a Client to an existing cluster)
-        specify the group password
-    -->
-    <init-param>
-        <param-name>client-password</param-name>
-        <param-value>default</param-value>
-    </init-param>
-    <!--
         Configuration xml location;
             * as servlet resource OR
             * as classpath resource OR
@@ -148,6 +124,28 @@
         <param-name>instance-name</param-name>
         <param-value>default</param-value>
     </init-param>
+]]></programlisting>
+ <!-- Splitting xml here, otherwise it won't into pdf page. -->
+<programlisting language="xml"><![CDATA[
+    <!--
+        Do you want to connect as a client to an existing cluster?
+        Default is false.
+    -->
+    <init-param>
+        <param-name>use-client</param-name>
+        <param-value>false</param-value>
+    </init-param>
+    <!--
+        Client configuration location;
+            * as servlet resource OR
+            * as classpath resource OR
+            * as URL
+        Default is null.
+    -->
+    <init-param>
+        <param-name>client-config-location</param-name>
+        <param-value>/WEB-INF/hazelcast-client.properties</param-value>
+    </init-param>
     <!--
         Do you want to shutdown HazelcastInstance during
         web application undeploy process?
@@ -158,9 +156,6 @@
         <param-value>true</param-value>
     </init-param>
 </filter>
-]]></programlisting>
-
-<programlisting language="xml"><![CDATA[
 <filter-mapping>
     <filter-name>hazelcast-filter</filter-name>
     <url-pattern>/*</url-pattern>

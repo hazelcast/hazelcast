@@ -16,13 +16,25 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.nio.Data;
+
 public final class IOUtil {
 
     public static byte[] toByte(final Object object) {
+        if (object == null) {
+            return null;
+        }
+        if (object instanceof Data) {
+            return ((Data) object).buffer;
+        }
         return ClientThreadContext.get().toByte(object);
     }
 
     public static Object toObject(final byte[] bytes) {
         return ClientThreadContext.get().toObject(bytes);
+    }
+
+    public static Object toObject(final Data data) {
+        return ClientThreadContext.get().toObject(data.buffer);
     }
 }
