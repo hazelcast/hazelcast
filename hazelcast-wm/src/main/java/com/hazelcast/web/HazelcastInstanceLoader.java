@@ -34,11 +34,29 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Properties;
 import java.util.logging.Level;
 
 class HazelcastInstanceLoader {
 
     private final static ILogger logger = Logger.getLogger(HazelcastInstanceLoader.class.getName());
+
+    public static HazelcastInstance createInstance(Properties properties) throws ServletException {
+        final String instanceName = properties.getProperty("instance-name");
+        final String configLocation = properties.getProperty("config-location");
+        final String useClientProp = properties.getProperty("use-client");
+        final String clientConfigLocation = properties.getProperty("client-config-location");
+
+        URL configUrl = null;
+
+        if (!isEmpty(clientConfigLocation)) {
+            configUrl = getConfigURL(clientConfigLocation);
+        } else if(!isEmpty(configLocation)) {
+            configUrl = getConfigURL(configLocation);
+        }
+
+        return getInstance(configUrl, instanceName, useClientProp);
+    }
 
     public static HazelcastInstance createInstance(FilterConfig filterConfig) throws ServletException {
         final String instanceName = filterConfig.getInitParameter("instance-name");
@@ -46,17 +64,29 @@ class HazelcastInstanceLoader {
         final String useClientProp = filterConfig.getInitParameter("use-client");
         final String clientConfigLocation = filterConfig.getInitParameter("client-config-location");
 
+        URL configUrl = null;
+
+        if(!isEmpty(clientConfigLocation)) {
+            configUrl = getConfigURL(filterConfig, clientConfigLocation);
+        } else if(!isEmpty(configLocation)) {
+            configUrl = getConfigURL(filterConfig, configLocation);
+        }
+
+        return getInstance(configUrl, instanceName, useClientProp);
+    }
+
+    private static HazelcastInstance getInstance(URL configUrl, String instanceName, String useClientProp)
+            throws ServletException {
         if(!isEmpty(useClientProp) && Boolean.parseBoolean(useClientProp)) {
             logger.log(Level.WARNING,
                     "Creating HazelcastClient, make sure this node has access to an already running cluster...");
             ClientConfig clientConfig ;
-            if (isEmpty(clientConfigLocation)) {
+            if (configUrl == null) {
                 clientConfig = new ClientConfig();
                 clientConfig.setUpdateAutomatic(true);
                 clientConfig.setInitialConnectionAttemptLimit(3);
                 clientConfig.setReconnectionAttemptLimit(5);
             } else {
-                final URL configUrl = getConfigURL(filterConfig, clientConfigLocation);
                 try {
                     clientConfig = new ClientConfigBuilder(configUrl).build();
                 } catch (IOException e) {
@@ -66,15 +96,15 @@ class HazelcastInstanceLoader {
             return HazelcastClient.newHazelcastClient(clientConfig);
         }
 
-        if (isEmpty(configLocation) && isEmpty(instanceName)) {
+        if (configUrl == null && isEmpty(instanceName)) {
             return Hazelcast.getDefaultInstance();
         }
 
-        Config config ;
-        if (isEmpty(configLocation)) {
+        Config config;
+
+        if (configUrl == null) {
             config = new XmlConfigBuilder().build();
         } else {
-            final URL configUrl = getConfigURL(filterConfig, configLocation);
             try {
                 config = new UrlXmlConfig(configUrl);
             } catch (IOException e) {
@@ -107,6 +137,17 @@ class HazelcastInstanceLoader {
         if (configUrl == null) {
             configUrl = ConfigLoader.locateConfig(configLocation);
         }
+        return configUrl;
+    }
+
+    private static URL getConfigURL(final String configLocation) {
+        URL configUrl;
+        configUrl = HazelcastInstanceLoader.class.getResource(configLocation);
+
+        if (configUrl == null) {
+            configUrl = ConfigLoader.locateConfig(configLocation);
+        }
+
         return configUrl;
     }
 
