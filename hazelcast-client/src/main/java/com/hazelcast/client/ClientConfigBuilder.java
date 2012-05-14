@@ -20,7 +20,10 @@ import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -84,16 +87,8 @@ public class ClientConfigBuilder {
         props.load(in);
     }
 
-    public ClientConfigBuilder(Reader reader) throws IOException {
-        super();
-        if (reader == null) {
-            throw new NullPointerException("Reader is null!");
-        }
-        props.load(reader);
-    }
-
     public ClientConfig build() {
-        logger.log(Level.INFO, "Building ClientConfig " + (resource != null ? " using " + resource : "" ) + ".");
+        logger.log(Level.INFO, "Building ClientConfig " + (resource != null ? " using " + resource : "") + ".");
         if (props.containsKey(GROUP_NAME)) {
             config.getGroupConfig().setName(props.getProperty(GROUP_NAME));
         }
