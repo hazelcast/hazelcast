@@ -294,8 +294,8 @@ public class ManagementCenterService implements LifecycleListener {
                         InputStream inputStream = connection.getInputStream();
                         DataInputStream input = new DataInputStream(inputStream);
                         final int taskId = input.readInt();
-                        if (taskId > 0 && taskId < consoleRequests.length) {
-                            final int requestType = input.readInt();
+                        final int requestType = input.readInt();
+                        if (taskId > 0 && requestType < consoleRequests.length) {
                             final ConsoleRequest request = consoleRequests[requestType];
                             if (request != null) {
                                 request.readData(input);
