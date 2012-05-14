@@ -938,9 +938,6 @@ public class PartitionManager {
                 MemberImpl ownerMember = concurrentMapManager.getMember(newOwner);
                 if (ownerMember == null) return;
                 partition.setReplicaAddress(replicaIndex, newOwner);
-                if (replicaIndex == 0) {
-                    concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
-                }
                 // if this partition should be copied back,
                 // just set partition's replica address
                 // before data is cleaned up.
@@ -950,6 +947,9 @@ public class PartitionManager {
                 }
                 sendPartitionRuntimeState();
                 compareAndSetActiveMigratingPartition(migrationRequestTask, null);
+                if (replicaIndex == 0) {
+                    concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
+                }
             }
         }
     }
