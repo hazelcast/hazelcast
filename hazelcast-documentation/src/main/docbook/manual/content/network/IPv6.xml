@@ -24,7 +24,9 @@
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>IPv6 Support</title>
     <para>
-    Hazelcast supports IPv6 addresses seamlessly. All you need is to define IPv6 addresses or interfaces in
+    Hazelcast supports IPv6 addresses seamlessly. [<emphasis>IPv6 support has been switched off by default.
+        <link xlink:href="#IPv6-Note">See note below</link></emphasis>]
+        All you need is to define IPv6 addresses or interfaces in
     <link xlink:href="#NetworkConfig">network configuration</link>. Only limitation at the moment is you can not define
     wildcard IPv6 addresses in <link xlink:href="#ConfigTcpIp">TCP-IP</link> join configuration.
     <link xlink:href="#ConfigSpecifyInterfaces">Interfaces</link> section does not have this limitation, you can
@@ -68,5 +70,15 @@
     Also see additional <link xlink:href="http://docs.oracle.com/javase/1.5.0/docs/guide/net/ipv6_guide/index.html#details">
         details on IPv6 support in Java
     </link>.
+    </para>
+
+    <para xml:id="IPv6-Note">
+    <emphasis role="bold">Note:</emphasis>
+    </para>
+    <para>
+        IPv6 support has been switched off by default, since some platforms have issues in use of IPv6 stack. And some other
+        platforms such as Amazon AWS have no support at all. To enable IPv6 support, just set configuration property
+        <code>hazelcast.prefer.ipv4.stack</code> to false.
+        See <link xlink:href="#ConfigurationProperties">Configuration Properties.</link>
     </para>
 </sect2>

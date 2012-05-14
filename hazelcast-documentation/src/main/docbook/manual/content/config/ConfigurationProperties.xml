@@ -295,6 +295,14 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
+                    <literal>hazelcast.prefer.ipv4.stack</literal>
+                </td>
+                <td>Prefer IPv4 Stack, don't use IPv6. See <link xlink:href="#IPv6">IPv6 doc.</link></td>
+                <td>boolean</td>
+                <td>true</td>
+            </tr>
+            <tr>
+                <td>
                     <literal>hazelcast.initial.min.cluster.size</literal>
                 </td>
                 <td>Initial expected cluster size to wait before node to start completely</td>
