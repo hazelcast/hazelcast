@@ -19,6 +19,7 @@ package com.hazelcast.hibernate.instance;
 import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.ClientConfigBuilder;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.logging.ILogger;
@@ -27,6 +28,7 @@ import org.hibernate.cache.CacheException;
 import org.hibernate.util.PropertiesHelper;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Properties;
 import java.util.logging.Level;
 
@@ -65,7 +67,8 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
         ClientConfig clientConfig = null;
         if (configResourcePath != null) {
             try {
-                clientConfig = new ClientConfigBuilder(configResourcePath).build();
+                URL configLocation = ConfigLoader.locateConfig(configResourcePath);
+                clientConfig = new ClientConfigBuilder(configLocation).build();
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Could not load client configuration: " + configResourcePath, e);
             }
