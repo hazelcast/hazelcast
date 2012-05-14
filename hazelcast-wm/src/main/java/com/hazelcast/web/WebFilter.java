@@ -58,31 +58,41 @@ public class WebFilter implements Filter {
 
     private boolean shutdownOnDestroy = true;
 
-    public WebFilter() {
+    private Properties props;
+
+    private FilterConfig config;
+
+    public WebFilter() {}
+
+    public WebFilter(Properties props) {
+        this();
+        this.props = props;
     }
 
     public final void init(final FilterConfig config) throws ServletException {
-        String debugParam = config.getInitParameter("debug");
+        this.config = config;
+
+        String debugParam = getParam("debug");
         if (debugParam != null) {
             debug = Boolean.valueOf(debugParam);
         }
         servletContext = config.getServletContext();
-        hazelcastInstance = getInstance(config);
-        String mapName = config.getInitParameter("map-name");
+        hazelcastInstance = props == null ? getInstance(config) : getInstance(props);
+        String mapName = getParam("map-name");
         if (mapName != null) {
             clusterMapName = mapName;
         } else {
             clusterMapName = "_web_" + servletContext.getServletContextName();
         }
-        String cookieName = config.getInitParameter("cookie-name");
+        String cookieName = getParam("cookie-name");
         if (cookieName != null) {
             sessionCookieName = cookieName;
         }
-        String stickySessionParam = config.getInitParameter("sticky-session");
+        String stickySessionParam = getParam("sticky-session");
         if (stickySessionParam != null) {
             stickySession = Boolean.valueOf(stickySessionParam);
         }
-        String shutdownOnDestroyParam = config.getInitParameter("shutdown-on-destroy");
+        String shutdownOnDestroyParam = getParam("shutdown-on-destroy");
         if (shutdownOnDestroyParam != null) {
             shutdownOnDestroy = Boolean.valueOf(shutdownOnDestroyParam);
         }
@@ -582,9 +592,21 @@ public class WebFilter implements Filter {
         return HazelcastInstanceLoader.createInstance(filterConfig);
     }
 
+    protected HazelcastInstance getInstance(Properties properties) throws ServletException {
+        return HazelcastInstanceLoader.createInstance(properties);
+    }
+
     protected void shutdownInstance() {
         if (shutdownOnDestroy && hazelcastInstance != null) {
             hazelcastInstance.getLifecycleService().shutdown();
+        }
+    }
+
+    private String getParam(String name) {
+        if(props != null && props.containsKey(name)) {
+            return props.get(name).toString();
+        } else {
+            return config.getInitParameter(name);
         }
     }
 }// END of WebFilter
