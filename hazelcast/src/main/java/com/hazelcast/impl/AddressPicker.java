@@ -151,17 +151,15 @@ public class AddressPicker {
 
     private InetAddress pickInetAddress(final Collection<String> interfaces) throws SocketException {
         final Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-        final boolean isAwsEnabled = isAwsEnabled();
+        final boolean preferIPv4Stack = preferIPv4Stack();
         while (networkInterfaces.hasMoreElements()) {
             final NetworkInterface ni = networkInterfaces.nextElement();
             final Enumeration<InetAddress> e = ni.getInetAddresses();
             while (e.hasMoreElements()) {
                 final InetAddress inetAddress = e.nextElement();
-                if (isAwsEnabled && inetAddress instanceof Inet6Address) {
-                    // AWS does not support IPv6.
+                if (preferIPv4Stack && inetAddress instanceof Inet6Address) {
                     continue;
                 }
-
                 if (interfaces != null && !interfaces.isEmpty()) {
                     final String address = inetAddress.getHostAddress();
                     if (matchAddress(address, interfaces)) {
@@ -175,9 +173,12 @@ public class AddressPicker {
         return null;
     }
 
-    private boolean isAwsEnabled() {
+    private boolean preferIPv4Stack() {
+        boolean preferIPv4Stack = node.groupProperties.PREFER_IPv4_STACK.getBoolean();
+        // AWS does not support IPv6.
         Join join = node.getConfig().getNetworkConfig().getJoin();
         AwsConfig awsConfig = join.getAwsConfig();
-        return awsConfig != null && awsConfig.isEnabled();
+        boolean awsEnabled = awsConfig != null && awsConfig.isEnabled();
+        return preferIPv4Stack || awsEnabled;
     }
 }
