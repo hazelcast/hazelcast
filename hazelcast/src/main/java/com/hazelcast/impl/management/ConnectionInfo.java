@@ -62,11 +62,13 @@ public class ConnectionInfo implements DataSerializable {
         out.writeInt(memberIndex);
         out.writeLong(lastRead);
         out.writeLong(lastWrite);
+        out.writeBoolean(live);
     }
 
     public void readData(DataInput in) throws IOException {
         memberIndex = in.readInt();
         lastRead = in.readLong();
         lastWrite = in.readLong();
+        live = in.readBoolean();
     }
 }
