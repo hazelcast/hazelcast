@@ -619,27 +619,8 @@ public class Config implements DataSerializable {
         return this;
     }
 
-    /**
-     * @see #isLiteMember()
-     * @deprecated as of 2.0
-     */
-    @Deprecated
-    public boolean isSuperClient() {
-        return liteMember;
-    }
-
     public boolean isLiteMember() {
         return liteMember;
-    }
-
-    /**
-     * @see #setLiteMember(boolean)
-     * @deprecated as of 2.0
-     */
-    @Deprecated
-    public Config setSuperClient(boolean liteMember) {
-        this.liteMember = liteMember;
-        return this;
     }
 
     public Config setLiteMember(boolean liteMember) {
