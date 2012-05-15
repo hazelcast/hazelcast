@@ -47,7 +47,7 @@ public class ListenerConfig {
         return this;
     }
 
-    public Object getImplementation() {
+    public EventListener getImplementation() {
         return implementation;
     }
 
