@@ -109,8 +109,9 @@ public class Config implements DataSerializable {
         addMergePolicyConfig(new MergePolicyConfig(PassThroughMergePolicy.NAME, new PassThroughMergePolicy()));
     }
 
-    public void addMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+    public Config addMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         mapMergePolicyConfigs.put(mergePolicyConfig.getName(), mergePolicyConfig);
+        return this;
     }
 
     public MergePolicyConfig getMergePolicyConfig(String name) {
@@ -121,16 +122,18 @@ public class Config implements DataSerializable {
         return mapMergePolicyConfigs;
     }
 
-    public void setMergePolicyConfigs(Map<String, MergePolicyConfig> mapMergePolicyConfigs) {
+    public Config setMergePolicyConfigs(Map<String, MergePolicyConfig> mapMergePolicyConfigs) {
         this.mapMergePolicyConfigs = mapMergePolicyConfigs;
+        return this;
     }
 
     public WanReplicationConfig getWanReplicationConfig(String name) {
         return mapWanReplicationConfigs.get(name);
     }
 
-    public void addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
+    public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
         mapWanReplicationConfigs.put(wanReplicationConfig.getName(), wanReplicationConfig);
+        return this;
     }
 
     public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
@@ -428,15 +431,17 @@ public class Config implements DataSerializable {
         return Collections.unmodifiableMap(mapExecutors);
     }
 
-    public void setExecutorConfigMap(Map<String, ExecutorConfig> mapExecutors) {
+    public Config setExecutorConfigMap(Map<String, ExecutorConfig> mapExecutors) {
         this.mapExecutors = mapExecutors;
         for (final Entry<String, ExecutorConfig> entry : this.mapExecutors.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
+        return this;
     }
 
-    public void addTopicConfig(TopicConfig topicConfig) {
+    public Config addTopicConfig(TopicConfig topicConfig) {
         mapTopicConfigs.put(topicConfig.getName(), topicConfig);
+        return this;
     }
 
     /**
@@ -464,18 +469,20 @@ public class Config implements DataSerializable {
         return Collections.unmodifiableMap(mapQueueConfigs);
     }
 
-    public void addQueueConfig(QueueConfig queueConfig) {
+    public Config addQueueConfig(QueueConfig queueConfig) {
         mapQueueConfigs.put(queueConfig.getName(), queueConfig);
+        return this;
     }
 
     /**
      * @param mapQConfigs the mapQConfigs to set
      */
-    public void setQConfigs(Map<String, QueueConfig> mapQConfigs) {
+    public Config setQConfigs(Map<String, QueueConfig> mapQConfigs) {
         this.mapQueueConfigs = mapQConfigs;
         for (final Entry<String, QueueConfig> entry : this.mapQueueConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
+        return this;
     }
 
     /**
@@ -489,12 +496,14 @@ public class Config implements DataSerializable {
         return this;
     }
 
-    public void addMapConfig(MapConfig mapConfig) {
+    public Config addMapConfig(MapConfig mapConfig) {
         mapConfigs.put(mapConfig.getName(), mapConfig);
+        return this;
     }
 
-    public void addMultiMapConfig(MultiMapConfig multiMapConfig) {
+    public Config addMultiMapConfig(MultiMapConfig multiMapConfig) {
         multiMapConfigs.put(multiMapConfig.getName(), multiMapConfig);
+        return this;
     }
 
     /**
@@ -572,11 +581,12 @@ public class Config implements DataSerializable {
         return Collections.unmodifiableMap(mapSemaphoreConfigs);
     }
 
-    public void setSemaphoreConfigMap(Map<String, SemaphoreConfig> mapSemaphores) {
+    public Config setSemaphoreConfigMap(Map<String, SemaphoreConfig> mapSemaphores) {
         this.mapSemaphoreConfigs = mapSemaphores;
         for (final Entry<String, SemaphoreConfig> entry : this.mapSemaphoreConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
+        return this;
     }
 
     /**
@@ -676,8 +686,9 @@ public class Config implements DataSerializable {
         return managedContext;
     }
 
-    public void setManagedContext(final ManagedContext managedContext) {
+    public Config setManagedContext(final ManagedContext managedContext) {
         this.managedContext = managedContext;
+        return this;
     }
 
     /**
