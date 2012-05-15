@@ -97,10 +97,7 @@ public class Config implements DataSerializable {
 
 
     public Config() {
-        String liteMemberProp = System.getProperty("hazelcast.super.client");
-        if (liteMemberProp == null) {
-            liteMemberProp = System.getProperty("hazelcast.lite.member");
-        }
+        final String liteMemberProp = System.getProperty("hazelcast.lite.member");
         if ("true".equalsIgnoreCase(liteMemberProp)) {
             liteMember = true;
         }
