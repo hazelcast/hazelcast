@@ -2213,18 +2213,11 @@ public class ConcurrentMapManager extends BaseManager {
         return newRecordId++;
     }
 
-    void evict(final String name, final Data key) {
-        MEvict mEvict = new MEvict();
-        mEvict.evict(name, key);
-    }
-
     void evictAsync(final String name, final Data key) {
         evictionExecutor.execute(new FallThroughRunnable() {
             public void doRun() {
-                try {
-                    evict(name, key);
-                } catch (Exception ignored) {
-                }
+                MEvict mEvict = new MEvict();
+                mEvict.evict(name, key);
             }
         });
     }

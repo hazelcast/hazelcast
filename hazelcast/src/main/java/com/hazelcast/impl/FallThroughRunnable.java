@@ -17,7 +17,7 @@
 package com.hazelcast.impl;
 
 public abstract class FallThroughRunnable implements Runnable {
-    public void run() {
+    public final void run() {
         try {
             doRun();
         } catch (Throwable ignored) {

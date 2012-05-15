@@ -149,8 +149,9 @@ public class MapConfig implements DataSerializable {
      *
      * @param valueIndexed
      */
-    public void setValueIndexed(boolean valueIndexed) {
+    public MapConfig setValueIndexed(boolean valueIndexed) {
         this.valueIndexed = valueIndexed;
+        return this;
     }
 
     /**
@@ -365,8 +366,9 @@ public class MapConfig implements DataSerializable {
         return maxSizeConfig;
     }
 
-    public void setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
+    public MapConfig setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
         this.maxSizeConfig = maxSizeConfig;
+        return this;
     }
 
     /**
@@ -460,8 +462,9 @@ public class MapConfig implements DataSerializable {
         return listenerConfigs;
     }
 
-    public void setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
+    public MapConfig setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+        return this;
     }
 
     public MapConfig addMapIndexConfig(MapIndexConfig mapIndexConfig) {
@@ -476,8 +479,9 @@ public class MapConfig implements DataSerializable {
         return mapIndexConfigs;
     }
 
-    public void setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
+    public MapConfig setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
         this.mapIndexConfigs = mapIndexConfigs;
+        return this;
     }
 
     public boolean isCompatible(MapConfig other) {
