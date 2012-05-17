@@ -32,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
+import static com.hazelcast.web.HazelcastInstanceLoader.*;
+
 public class WebFilter implements Filter {
 
     private static final ILogger logger = Logger.getLogger(WebFilter.class.getName());
@@ -43,8 +45,6 @@ public class WebFilter implements Filter {
     private static final ConcurrentMap<String, String> mapOriginalSessions = new ConcurrentHashMap<String, String>(1000);
 
     private static final ConcurrentMap<String, HazelcastHttpSession> mapSessions = new ConcurrentHashMap<String, HazelcastHttpSession>(1000);
-
-    private ServletContext servletContext = null;
 
     private HazelcastInstance hazelcastInstance;
 
@@ -58,26 +58,28 @@ public class WebFilter implements Filter {
 
     private boolean shutdownOnDestroy = true;
 
-    private Properties props;
+    private Properties properties;
 
-    private FilterConfig config;
+    protected ServletContext servletContext;
+
+    protected FilterConfig filterConfig;
 
     public WebFilter() {}
 
-    public WebFilter(Properties props) {
+    public WebFilter(Properties properties) {
         this();
-        this.props = props;
+        this.properties = properties;
     }
 
     public final void init(final FilterConfig config) throws ServletException {
-        this.config = config;
+        filterConfig = config;
+        servletContext = config.getServletContext();
+        initInstance();
 
         String debugParam = getParam("debug");
         if (debugParam != null) {
             debug = Boolean.valueOf(debugParam);
         }
-        servletContext = config.getServletContext();
-        hazelcastInstance = props == null ? getInstance(config) : getInstance(props);
         String mapName = getParam("map-name");
         if (mapName != null) {
             clusterMapName = mapName;
@@ -121,6 +123,18 @@ public class WebFilter implements Filter {
         }
         log("sticky:" + stickySession + ", debug: " + debug + ", shutdown-on-destroy: " + shutdownOnDestroy
                 + ", map-name: " + clusterMapName);
+    }
+
+    private void initInstance() throws ServletException {
+        if (properties == null) {
+            properties = new Properties();
+        }
+        properties.setProperty(CONFIG_LOCATION, getParam(CONFIG_LOCATION));
+        properties.setProperty(INSTANCE_NAME, getParam(INSTANCE_NAME));
+        properties.setProperty(USE_CLIENT, getParam(USE_CLIENT));
+        properties.setProperty(CLIENT_CONFIG_LOCATION, getParam(CLIENT_CONFIG_LOCATION));
+
+        hazelcastInstance = getInstance(properties);
     }
 
     private void removeSessionLocally(String sessionId) {
@@ -588,12 +602,8 @@ public class WebFilter implements Filter {
         shutdownInstance();
     }
 
-    protected HazelcastInstance getInstance(FilterConfig filterConfig) throws ServletException {
-        return HazelcastInstanceLoader.createInstance(filterConfig);
-    }
-
     protected HazelcastInstance getInstance(Properties properties) throws ServletException {
-        return HazelcastInstanceLoader.createInstance(properties);
+        return HazelcastInstanceLoader.createInstance(filterConfig, properties);
     }
 
     protected void shutdownInstance() {
@@ -603,10 +613,10 @@ public class WebFilter implements Filter {
     }
 
     private String getParam(String name) {
-        if(props != null && props.containsKey(name)) {
-            return props.get(name).toString();
+        if (properties != null && properties.containsKey(name)) {
+            return properties.getProperty(name);
         } else {
-            return config.getInitParameter(name);
+            return filterConfig.getInitParameter(name);
         }
     }
 }// END of WebFilter
