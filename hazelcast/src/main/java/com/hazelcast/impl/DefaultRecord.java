@@ -39,8 +39,9 @@ public final class DefaultRecord extends AbstractRecord {
             recordCopy.setIndexes(getOptionalInfo().indexes, getOptionalInfo().indexTypes);
             recordCopy.setMultiValues(getOptionalInfo().lsMultiValues);
         }
-        if (lock != null) {
-            recordCopy.setLock(new DistributedLock(lock));
+        final DistributedLock dl = lock;
+        if (dl != null) {
+            recordCopy.setLock(new DistributedLock(dl));
         }
         recordCopy.setVersion(getVersion());
         return recordCopy;

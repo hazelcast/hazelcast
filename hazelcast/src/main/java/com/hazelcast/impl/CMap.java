@@ -608,7 +608,7 @@ public class CMap {
                 //UNLOCK operation
                 Record record = getRecord(req);
                 if (record != null) {
-                    record.setLock(null);
+                    record.clearLock();
                     if (record.valueCount() == 0) {
                         markAsEvicted(record);
                     }
