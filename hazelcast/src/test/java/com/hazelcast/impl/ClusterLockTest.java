@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.base.DistributedLock;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import junit.framework.Assert;
 import org.junit.After;
@@ -35,6 +36,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.impl.TestUtil.getCMap;
 import static com.hazelcast.impl.TestUtil.migrateKey;
@@ -297,6 +301,85 @@ public class ClusterLockTest {
         assertEquals(null, m1.get(1));
         m1.put(1, 1);
         assertEquals(1, m1.get(1));
+    }
+
+    /**
+     * Test for issue #166.
+     */
+    @Test
+    public void testAbstractRecordLockConcurrentAccess() throws InterruptedException {
+        final Record record = new AbstractRecord(null, 0, null, 0, 0, 1) {
+            public Record copy() {
+                return null;
+            }
+            public Object getValue() {
+                return null;
+            }
+            public Data getValueData() {
+                return null;
+            }
+            public Object setValue(final Object value) {
+                return null;
+            }
+            public void setValueData(final Data value) {
+            }
+            public int valueCount() {
+                return 0;
+            }
+            public long getCost() {
+                return 0;
+            }
+            public boolean hasValueData() {
+                return false;
+            }
+            public void invalidate() {
+            }
+            protected void invalidateValueCache() {
+            }
+        };
+
+        final AtomicBoolean run = new AtomicBoolean(true);
+        final Thread serviceThread = new Thread() {
+            public void run() {
+                try {
+                    final Address address = new Address("localhost", 5000);
+                    while (run.get()) {
+                        record.lock(1, address);
+                        record.unlock(1, address);
+                        record.clearLock();
+                    }
+                } catch (Exception e) {
+                    run.set(false);
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        final int loop = 100000;
+        final AtomicInteger count = new AtomicInteger(0);
+        final AtomicReference<Exception> error = new AtomicReference<Exception>();
+        final Thread executorThread = new Thread() {
+            public void run() {
+                for (int i = 0; i < loop && run.get(); i++) {
+                    try {
+                        record.isEvictable();
+                        record.isLocked();
+                        record.isRemovable();
+                        count.incrementAndGet();
+                    } catch (Exception e) {
+                        error.set(e);
+                        break;
+                    }
+                }
+            }
+        };
+        serviceThread.start();
+        executorThread.start();
+        executorThread.join();
+        run.set(false);
+        serviceThread.join();
+
+        Assert.assertEquals("Error: " + error.get(), loop, count.get());
     }
 }
 
