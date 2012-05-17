@@ -154,6 +154,9 @@ public final class IOUtil {
     }
 
     public static Object toObject(Data data) {
+        if (data == null) {
+            return null;
+        }
         return ThreadContext.get().toObject(data);
     }
 

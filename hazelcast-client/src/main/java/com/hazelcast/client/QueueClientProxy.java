@@ -183,9 +183,9 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         check(listener);
         synchronized (lock) {
             boolean shouldCall = listenerManager().noListenerRegistered(name);
-            listenerManager().registerListener(name, listener);
+            listenerManager().registerListener(name, listener, includeValue);
             if (shouldCall) {
-                Call c = listenerManager().createNewAddItemListenerCall(proxyHelper);
+                Call c = listenerManager().createNewAddItemListenerCall(proxyHelper, includeValue);
                 proxyHelper.doCall(c);
             }
         }
