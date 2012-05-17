@@ -1432,7 +1432,7 @@ public class ClientHandlerService implements ConnectionListener {
             } else if (getInstanceType(packet.name).equals(InstanceType.LIST)) {
                 ListProxyImpl listProxy = (ListProxyImpl) factory.getOrCreateProxyByName(packet.name);
                 IMap map = (IMap) factory.getOrCreateProxyByName(Prefix.MAP + (String) listProxy.getId());
-                clientEndpoint.addThisAsListener(map, null, true);
+                clientEndpoint.addThisAsListener(map, null, includeValue);
             } else if (getInstanceType(packet.name).equals(InstanceType.SET)) {
                 SetProxy collectionProxy = (SetProxy) factory.getOrCreateProxyByName(packet.name);
                 IMap map = collectionProxy.getMProxy();
