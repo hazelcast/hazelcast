@@ -31,10 +31,7 @@ import com.hazelcast.util.Clock;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @mdogan 5/8/12
@@ -43,8 +40,10 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
 
     private int localMemberIndex;
     private Collection<ConnectionInfo> connectionInfos = new LinkedList<ConnectionInfo>();
-    private Collection<LockInfo> lockInfos = new LinkedList<LockInfo>();
+    private List<LockInfo> lockInfos = new ArrayList<LockInfo>();
+    private int lockTotalNum = 0;
     private MigratingPartition migratingPartition;
+    private final int LOCK_MAX_SIZE = 100;
 
     public ClusterRuntimeState() {
     }
@@ -84,6 +83,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
 
     private void setLocks(final Collection<Record> lockedRecords, final Map<Address, Integer> addressIndexes) {
         final long now = Clock.currentTimeMillis();
+        long min = Long.MAX_VALUE;
         for (Record record : lockedRecords) {
             if (record.isActive() && record.isValid(now) && record.isLocked()) {
                 Address owner = record.getLockAddress();
@@ -95,6 +95,13 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
                                            record.getLockAcquireTime(), index, record.getScheduledActionCount()));
             }
         }
+        lockTotalNum = lockInfos.size();
+        Collections.sort(lockInfos, new Comparator<LockInfo>() {
+            public int compare(LockInfo o1, LockInfo o2) {
+                return Long.valueOf(o1.getAcquireTime()).compareTo(Long.valueOf(o2.getAcquireTime()));
+            }
+        });
+        lockInfos = lockInfos.subList(0,Math.min(LOCK_MAX_SIZE,lockInfos.size()));
     }
 
     public MemberInfo getMember(int index) {
@@ -113,6 +120,10 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         return lockInfos;
     }
 
+    public int getLockTotalNum() {
+        return lockTotalNum;
+    }
+
     public MigratingPartition getMigratingPartition() {
         return migratingPartition;
     }
@@ -120,6 +131,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     @Override
     public void readData(final DataInput in) throws IOException {
         localMemberIndex = in.readInt();
+        lockTotalNum = in.readInt();
         boolean hasMigratingPartition = in.readBoolean();
         if (hasMigratingPartition) {
             migratingPartition = new MigratingPartition();
@@ -143,6 +155,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     @Override
     public void writeData(final DataOutput out) throws IOException {
         out.writeInt(localMemberIndex);
+        out.writeInt(lockTotalNum);
         boolean hasMigratingPartition = migratingPartition != null;
         out.writeBoolean(hasMigratingPartition);
         if (hasMigratingPartition) {
