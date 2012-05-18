@@ -434,7 +434,8 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public long getLockAcquireTime() {
-        return (lock != null ? lock.getAcquireTime() : -1L);
+        final DistributedLock dl = lock;
+        return (dl != null ? dl.getAcquireTime() : -1L);
     }
 
     public OptionalInfo getOptionalInfo() {
