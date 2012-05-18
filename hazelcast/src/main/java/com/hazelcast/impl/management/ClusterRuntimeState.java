@@ -61,13 +61,13 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         for (Member member : members) {
             MemberImpl memberImpl = (MemberImpl) member;
             addMemberInfo(new MemberInfo(memberImpl.getAddress(), memberImpl.getNodeType(), member.getUuid()),
-                          addressIndexes, memberIndex);
+                    addressIndexes, memberIndex);
             if (!member.localMember()) {
                 final Connection conn = connections.get(memberImpl.getAddress());
                 ConnectionInfo connectionInfo;
                 if (conn != null) {
                     connectionInfo = new ConnectionInfo(memberIndex, conn.live(),
-                                                             conn.lastReadTime(), conn.lastWriteTime());
+                            conn.lastReadTime(), conn.lastWriteTime());
                 } else {
                     connectionInfo = new ConnectionInfo(memberIndex, false, 0L, 0L);
                 }
@@ -92,16 +92,19 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
                     index = -1;
                 }
                 lockInfos.add(new LockInfo(record.getName(), String.valueOf(record.getKey()),
-                                           record.getLockAcquireTime(), index, record.getScheduledActionCount()));
+                        record.getLockAcquireTime(), index, record.getScheduledActionCount()));
             }
         }
         lockTotalNum = lockInfos.size();
         Collections.sort(lockInfos, new Comparator<LockInfo>() {
             public int compare(LockInfo o1, LockInfo o2) {
-                return Long.valueOf(o1.getAcquireTime()).compareTo(Long.valueOf(o2.getAcquireTime()));
+                int comp1 = Integer.valueOf(o2.getWaitingThreadCount()).compareTo(Integer.valueOf(o1.getWaitingThreadCount()));
+                if (comp1 == 0)
+                    return Long.valueOf(o1.getAcquireTime()).compareTo(Long.valueOf(o2.getAcquireTime()));
+                else return comp1;
             }
         });
-        lockInfos = lockInfos.subList(0,Math.min(LOCK_MAX_SIZE,lockInfos.size()));
+        lockInfos = lockInfos.subList(0, Math.min(LOCK_MAX_SIZE, lockInfos.size()));
     }
 
     public MemberInfo getMember(int index) {
