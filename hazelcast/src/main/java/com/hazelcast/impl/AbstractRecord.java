@@ -116,15 +116,19 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         }
     }
 
+    // called from ServiceThread
     public boolean unlock(int threadId, Address address) {
         invalidateValueCache();
-        return lock == null || lock.unlock(address, threadId);
+        final DistributedLock dl = lock;
+        return dl == null || dl.unlock(address, threadId);
     }
 
     public boolean testLock(int threadId, Address address) {
-        return lock == null || lock.testLock(threadId, address);
+        final DistributedLock dl = lock;
+        return dl == null || dl.testLock(threadId, address);
     }
 
+    // called from ServiceThread
     public boolean lock(int threadId, Address address) {
         invalidateValueCache();
         if (lock == null) {
@@ -405,7 +409,8 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public boolean isLocked() {
-        return lock != null && lock.isLocked();
+        final DistributedLock dl = lock;
+        return dl != null && dl.isLocked();
     }
 
     public int getScheduledActionCount() {
@@ -414,19 +419,23 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public int getLockCount() {
-        return (lock == null) ? 0 : lock.getLockCount();
+        final DistributedLock dl = lock;
+        return (dl == null) ? 0 : dl.getLockCount();
     }
 
+    // called from ServiceThread
     public void clearLock() {
         lock = null;
     }
 
     public Address getLockAddress() {
-        return (lock == null) ? null : lock.getLockAddress();
+        final DistributedLock dl = lock;
+        return (dl == null) ? null : dl.getLockAddress();
     }
 
     public long getLockAcquireTime() {
-        return (lock != null ? lock.getAcquireTime() : -1L);
+        final DistributedLock dl = lock;
+        return (dl != null ? dl.getAcquireTime() : -1L);
     }
 
     public OptionalInfo getOptionalInfo() {

@@ -40,44 +40,27 @@ import java.util.logging.Level;
 class HazelcastInstanceLoader {
 
     private final static ILogger logger = Logger.getLogger(HazelcastInstanceLoader.class.getName());
+    public static final String INSTANCE_NAME = "instance-name";
+    public static final String CONFIG_LOCATION = "config-location";
+    public static final String USE_CLIENT = "use-client";
+    public static final String CLIENT_CONFIG_LOCATION = "client-config-location";
 
-    public static HazelcastInstance createInstance(Properties properties) throws ServletException {
-        final String instanceName = properties.getProperty("instance-name");
-        final String configLocation = properties.getProperty("config-location");
-        final String useClientProp = properties.getProperty("use-client");
-        final String clientConfigLocation = properties.getProperty("client-config-location");
-
-        URL configUrl = null;
-
-        if (!isEmpty(clientConfigLocation)) {
-            configUrl = getConfigURL(clientConfigLocation);
-        } else if(!isEmpty(configLocation)) {
-            configUrl = getConfigURL(configLocation);
-        }
-
-        return getInstance(configUrl, instanceName, useClientProp);
-    }
-
-    public static HazelcastInstance createInstance(FilterConfig filterConfig) throws ServletException {
-        final String instanceName = filterConfig.getInitParameter("instance-name");
-        final String configLocation = filterConfig.getInitParameter("config-location");
-        final String useClientProp = filterConfig.getInitParameter("use-client");
-        final String clientConfigLocation = filterConfig.getInitParameter("client-config-location");
+    public static HazelcastInstance createInstance(final FilterConfig filterConfig, final Properties properties)
+            throws ServletException {
+        final String instanceName = properties.getProperty(INSTANCE_NAME);
+        final String configLocation = properties.getProperty(CONFIG_LOCATION);
+        final String useClientProp = properties.getProperty(USE_CLIENT);
+        final String clientConfigLocation = properties.getProperty(CLIENT_CONFIG_LOCATION);
+        final boolean useClient = !isEmpty(useClientProp) && Boolean.parseBoolean(useClientProp);
 
         URL configUrl = null;
-
-        if(!isEmpty(clientConfigLocation)) {
+        if (useClient && !isEmpty(clientConfigLocation)) {
             configUrl = getConfigURL(filterConfig, clientConfigLocation);
         } else if(!isEmpty(configLocation)) {
             configUrl = getConfigURL(filterConfig, configLocation);
         }
 
-        return getInstance(configUrl, instanceName, useClientProp);
-    }
-
-    private static HazelcastInstance getInstance(URL configUrl, String instanceName, String useClientProp)
-            throws ServletException {
-        if(!isEmpty(useClientProp) && Boolean.parseBoolean(useClientProp)) {
+        if(useClient) {
             logger.log(Level.WARNING,
                     "Creating HazelcastClient, make sure this node has access to an already running cluster...");
             ClientConfig clientConfig ;
@@ -101,7 +84,6 @@ class HazelcastInstanceLoader {
         }
 
         Config config;
-
         if (configUrl == null) {
             config = new XmlConfigBuilder().build();
         } else {
@@ -112,7 +94,7 @@ class HazelcastInstanceLoader {
             }
         }
 
-        if (instanceName != null) {
+        if (!isEmpty(instanceName)) {
             config.setInstanceName(instanceName);
             HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(instanceName);
             if (instance == null) {
@@ -128,7 +110,7 @@ class HazelcastInstanceLoader {
         }
     }
 
-    private static URL getConfigURL(final FilterConfig filterConfig, final String configLocation) {
+    private static URL getConfigURL(final FilterConfig filterConfig, final String configLocation) throws ServletException {
         URL configUrl = null;
         try {
             configUrl = filterConfig.getServletContext().getResource(configLocation);
@@ -137,17 +119,10 @@ class HazelcastInstanceLoader {
         if (configUrl == null) {
             configUrl = ConfigLoader.locateConfig(configLocation);
         }
-        return configUrl;
-    }
-
-    private static URL getConfigURL(final String configLocation) {
-        URL configUrl;
-        configUrl = HazelcastInstanceLoader.class.getResource(configLocation);
 
         if (configUrl == null) {
-            configUrl = ConfigLoader.locateConfig(configLocation);
+            throw new ServletException("Could not load configuration '" + configLocation + "'");
         }
-
         return configUrl;
     }
 

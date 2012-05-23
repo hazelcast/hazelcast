@@ -608,7 +608,7 @@ public class CMap {
                 //UNLOCK operation
                 Record record = getRecord(req);
                 if (record != null) {
-                    record.setLock(null);
+                    record.clearLock();
                     if (record.valueCount() == 0) {
                         markAsEvicted(record);
                     }
@@ -1049,7 +1049,7 @@ public class CMap {
      * @param acquiredAtLeastFor min acquire period of lock in ms
      */
     public Collection<Record> getLockedRecordsFor(long acquiredAtLeastFor) {
-        final Collection<Record> records = mapRecords.values();
+        final Collection<Record> records = mapIndexService.getOwnedRecords();
         final Collection<Record> result = new LinkedList<Record>();
         final long now = Clock.currentTimeMillis();
         for (Record record : records) {

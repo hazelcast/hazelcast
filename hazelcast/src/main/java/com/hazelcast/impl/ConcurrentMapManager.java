@@ -388,7 +388,7 @@ public class ConcurrentMapManager extends BaseManager {
                 DistributedLock lock = record.getLock();
                 if (lock != null && lock.isLocked()) {
                     if (endpoint.equals(record.getLockAddress()) && threadIds.contains(record.getLock().getLockThreadId())) {
-                        record.setLock(null);
+                        record.clearLock();
                         cmap.fireScheduledActions(record);
                     }
                 }
@@ -2213,18 +2213,11 @@ public class ConcurrentMapManager extends BaseManager {
         return newRecordId++;
     }
 
-    void evict(final String name, final Data key) {
-        MEvict mEvict = new MEvict();
-        mEvict.evict(name, key);
-    }
-
     void evictAsync(final String name, final Data key) {
         evictionExecutor.execute(new FallThroughRunnable() {
             public void doRun() {
-                try {
-                    evict(name, key);
-                } catch (Exception ignored) {
-                }
+                MEvict mEvict = new MEvict();
+                mEvict.evict(name, key);
             }
         });
     }
@@ -3617,7 +3610,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (record != null) {
                 DistributedLock lock = record.getLock();
                 if (lock != null && lock.getLockCount() > 0) {
-                    record.setLock(null);
+                    record.clearLock();
                     unlocked = true;
                     record.incrementVersion();
                     request.version = record.getVersion();

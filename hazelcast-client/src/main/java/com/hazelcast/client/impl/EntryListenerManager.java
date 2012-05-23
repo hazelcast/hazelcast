@@ -20,7 +20,6 @@ import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
 import com.hazelcast.client.ProxyHelper;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareEntryEvent;
@@ -124,7 +123,7 @@ public class EntryListenerManager {
                 new Data(packet.getKey()),
                 newValue,
                 oldValue,
-                true);
+                false);
         String name = packet.getName();
         Object key = toKey(keyObj);
         if (entryListeners.get(name) != null) {
@@ -135,12 +134,13 @@ public class EntryListenerManager {
         }
     }
 
-    private void notifyListeners(EntryEvent event, Collection<EntryListenerHolder> collection) {
+    private void notifyListeners(DataAwareEntryEvent event, Collection<EntryListenerHolder> collection) {
         if (collection == null) {
             return;
         }
-        EntryEvent eventNoValue = event.getValue() != null ?
-                new EntryEvent(event.getSource(), event.getMember(), event.getEventType().getType(), event.getKey(), null, null) :
+        DataAwareEntryEvent eventNoValue = event.getValue() != null ?
+                new DataAwareEntryEvent(event.getMember(), event.getEventType().getType(), event.getName(),
+                                        event.getKeyData(), null, null, false) :
                 event;
         switch (event.getEventType()) {
             case ADDED:

@@ -42,6 +42,10 @@ public class PartitionRuntimeState implements DataSerializable {
         super();
     }
 
+    public long getMasterTime() {
+        return masterTime;
+    }
+
     public PartitionRuntimeState(final Collection<MemberInfo> memberInfos,
                                  final PartitionInfo[] partitions,
                                  final long masterTime, int version) {
@@ -54,6 +58,10 @@ public class PartitionRuntimeState implements DataSerializable {
             memberIndex++;
         }
         setPartitions(partitions, addressIndexes);
+    }
+
+    public ArrayList<MemberInfo> getMembers() {
+        return members;
     }
 
     protected void addMemberInfo(MemberInfo memberInfo, Map<Address, Integer> addressIndexes, int memberIndex) {

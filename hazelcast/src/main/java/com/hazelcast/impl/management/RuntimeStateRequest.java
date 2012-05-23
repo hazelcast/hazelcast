@@ -34,6 +34,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRuntimeState>, HazelcastInstanceAware {
 
+    private static final long LOCK_TIME_THRESHOLD = TimeUnit.SECONDS.toMillis(300);
+
     private transient HazelcastInstance hazelcastInstance;
 
     public int getType() {
@@ -49,10 +51,8 @@ public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRunt
         final ClusterImpl cluster = factory.getCluster();
         final PartitionManager pm = factory.node.concurrentMapManager.getPartitionManager();
         final Collection<Record> lockedRecords = collectLockState(factory);
-        ClusterRuntimeState clusterRuntimeState
-                = new ClusterRuntimeState(cluster.getMembers(), pm.getPartitions(), pm.getMigratingPartition(),
-                                          factory.node.connectionManager.getReadonlyConnectionMap(), lockedRecords);
-        return clusterRuntimeState;
+        return new ClusterRuntimeState(cluster.getMembers(), pm.getPartitions(), pm.getMigratingPartition(),
+                                  factory.node.connectionManager.getReadonlyConnectionMap(), lockedRecords);
     }
 
     private Collection<Record> collectLockState(final FactoryImpl factory) {
@@ -69,7 +69,7 @@ public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRunt
         for (final String mapName : mapNames) {
             final CMap cmap = node.concurrentMapManager.getMap(mapName);
             if (cmap != null) {
-                Collection<Record> records = cmap.getLockedRecordsFor(TimeUnit.SECONDS.toMillis(5));
+                Collection<Record> records = cmap.getLockedRecordsFor(LOCK_TIME_THRESHOLD);
                 lockedRecords.addAll(records);
             }
         }

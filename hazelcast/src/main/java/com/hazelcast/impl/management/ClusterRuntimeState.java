@@ -31,19 +31,19 @@ import com.hazelcast.util.Clock;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @mdogan 5/8/12
  */
 public class ClusterRuntimeState extends PartitionRuntimeState implements DataSerializable {
 
+    private static final int LOCK_MAX_SIZE = 100;
+
     private int localMemberIndex;
     private Collection<ConnectionInfo> connectionInfos = new LinkedList<ConnectionInfo>();
-    private Collection<LockInfo> lockInfos = new LinkedList<LockInfo>();
+    private List<LockInfo> lockInfos = new ArrayList<LockInfo>();
+    private int lockTotalNum = 0;
     private MigratingPartition migratingPartition;
 
     public ClusterRuntimeState() {
@@ -61,13 +61,13 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         for (Member member : members) {
             MemberImpl memberImpl = (MemberImpl) member;
             addMemberInfo(new MemberInfo(memberImpl.getAddress(), memberImpl.getNodeType(), member.getUuid()),
-                          addressIndexes, memberIndex);
+                    addressIndexes, memberIndex);
             if (!member.localMember()) {
                 final Connection conn = connections.get(memberImpl.getAddress());
                 ConnectionInfo connectionInfo;
                 if (conn != null) {
                     connectionInfo = new ConnectionInfo(memberIndex, conn.live(),
-                                                             conn.lastReadTime(), conn.lastWriteTime());
+                            conn.lastReadTime(), conn.lastWriteTime());
                 } else {
                     connectionInfo = new ConnectionInfo(memberIndex, false, 0L, 0L);
                 }
@@ -92,9 +92,19 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
                     index = -1;
                 }
                 lockInfos.add(new LockInfo(record.getName(), String.valueOf(record.getKey()),
-                                           record.getLockAcquireTime(), index, record.getScheduledActionCount()));
+                        record.getLockAcquireTime(), index, record.getScheduledActionCount()));
             }
         }
+        lockTotalNum = lockInfos.size();
+        Collections.sort(lockInfos, new Comparator<LockInfo>() {
+            public int compare(LockInfo o1, LockInfo o2) {
+                int comp1 = Integer.valueOf(o2.getWaitingThreadCount()).compareTo(Integer.valueOf(o1.getWaitingThreadCount()));
+                if (comp1 == 0)
+                    return Long.valueOf(o1.getAcquireTime()).compareTo(Long.valueOf(o2.getAcquireTime()));
+                else return comp1;
+            }
+        });
+        lockInfos = lockInfos.subList(0, Math.min(LOCK_MAX_SIZE, lockInfos.size()));
     }
 
     public MemberInfo getMember(int index) {
@@ -113,6 +123,10 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         return lockInfos;
     }
 
+    public int getLockTotalNum() {
+        return lockTotalNum;
+    }
+
     public MigratingPartition getMigratingPartition() {
         return migratingPartition;
     }
@@ -120,6 +134,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     @Override
     public void readData(final DataInput in) throws IOException {
         localMemberIndex = in.readInt();
+        lockTotalNum = in.readInt();
         boolean hasMigratingPartition = in.readBoolean();
         if (hasMigratingPartition) {
             migratingPartition = new MigratingPartition();
@@ -143,6 +158,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     @Override
     public void writeData(final DataOutput out) throws IOException {
         out.writeInt(localMemberIndex);
+        out.writeInt(lockTotalNum);
         boolean hasMigratingPartition = migratingPartition != null;
         out.writeBoolean(hasMigratingPartition);
         if (hasMigratingPartition) {
