@@ -28,10 +28,12 @@ public class SocketConnector implements Runnable {
     private final ConnectionManager connectionManager;
     private final Address address;
     private final ILogger logger;
+    private final boolean silent;
 
-    public SocketConnector(ConnectionManager connectionManager, Address address) {
+    public SocketConnector(ConnectionManager connectionManager, Address address, boolean silent) {
         this.connectionManager = connectionManager;
         this.address = address;
+        this.silent = silent;
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
     }
 
@@ -63,7 +65,7 @@ public class SocketConnector implements Runnable {
                 } catch (final IOException ignored) {
                 }
             }
-            connectionManager.failedConnection(address, e);
+            connectionManager.failedConnection(address, e, silent);
         }
     }
 }
