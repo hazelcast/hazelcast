@@ -129,12 +129,21 @@ public class WebFilter implements Filter {
         if (properties == null) {
             properties = new Properties();
         }
-        properties.setProperty(CONFIG_LOCATION, getParam(CONFIG_LOCATION));
-        properties.setProperty(INSTANCE_NAME, getParam(INSTANCE_NAME));
-        properties.setProperty(USE_CLIENT, getParam(USE_CLIENT));
-        properties.setProperty(CLIENT_CONFIG_LOCATION, getParam(CLIENT_CONFIG_LOCATION));
+
+        setProperty(CONFIG_LOCATION);
+        setProperty(INSTANCE_NAME);
+        setProperty(USE_CLIENT);
+        setProperty(CLIENT_CONFIG_LOCATION);
 
         hazelcastInstance = getInstance(properties);
+    }
+
+    private void setProperty(String propertyName) {
+        String value = getParam(propertyName);
+
+        if(value != null) {
+            properties.setProperty(propertyName, value);
+        }
     }
 
     private void removeSessionLocally(String sessionId) {
