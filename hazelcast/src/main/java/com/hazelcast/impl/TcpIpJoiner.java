@@ -386,7 +386,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
         for (final Address possibleAddress : colPossibleAddresses) {
             logger.log(Level.FINEST, node.getThisAddress() + " is connecting to " + possibleAddress);
-            node.connectionManager.getOrConnect(possibleAddress);
+            node.connectionManager.getOrConnect(possibleAddress, true);
         }
         for (Address possibleAddress : colPossibleAddresses) {
             try {

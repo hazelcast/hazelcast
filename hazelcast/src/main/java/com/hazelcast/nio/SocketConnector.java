@@ -31,11 +31,13 @@ public class SocketConnector implements Runnable {
     private final ConnectionManager connectionManager;
     private final Address address;
     private final ILogger logger;
+    private final boolean silent;
 
-    public SocketConnector(ConnectionManager connectionManager, Address address) {
+    public SocketConnector(ConnectionManager connectionManager, Address address, boolean silent) {
         this.connectionManager = connectionManager;
         this.address = address;
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
+        this.silent = silent;
     }
 
     public void run() {
@@ -80,7 +82,7 @@ public class SocketConnector implements Runnable {
             }
         } catch (Throwable e) {
             logger.log(Level.FINEST, e.getMessage(), e);
-            connectionManager.failedConnection(address, e);
+            connectionManager.failedConnection(address, e, silent);
         }
     }
 
@@ -114,7 +116,8 @@ public class SocketConnector implements Runnable {
             connectionManager.bind(address, connection, false);
         } catch (Exception e) {
             closeSocket(socketChannel);
-            logger.log(Level.INFO, "Could not connect to: "
+            final Level level = silent ? Level.FINEST : Level.INFO;
+            logger.log(level, "Could not connect to: "
                                       + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                                       + "[" + e.getMessage() + "]");
             throw e;

@@ -249,10 +249,12 @@ public class ConnectionManager {
         return socketChannelWrapperFactory.wrapSocketChannel(socketChannel, client);
     }
 
-    void failedConnection(Address address, Throwable t) {
+    void failedConnection(Address address, Throwable t, boolean silent) {
         setConnectionInProgress.remove(address);
         ioService.onFailedConnection(address);
-        getConnectionMonitor(address, false).onError(t);
+        if (!silent) {
+            getConnectionMonitor(address, false).onError(t);
+        }
     }
 
     public Connection getConnection(Address address) {
@@ -260,11 +262,15 @@ public class ConnectionManager {
     }
 
     public Connection getOrConnect(Address address) {
+        return getOrConnect(address, false);
+    }
+
+    public Connection getOrConnect(Address address, boolean silent) {
         Connection connection = mapConnections.get(address);
         if (connection == null) {
             if (setConnectionInProgress.add(address)) {
                 ioService.shouldConnectTo(address);
-                executeAsync(new SocketConnector(this, address));
+                executeAsync(new SocketConnector(this, address, silent));
             }
         }
         return connection;
