@@ -90,8 +90,7 @@ public class MultiMapProxyImpl extends FactoryAwareNamedProxy implements MultiMa
     }
 
     public String getName() {
-        ensure();
-        return base.getName();
+        return name.substring(Prefix.MULTIMAP.length());
     }
 
     public boolean put(Object key, Object value) {
@@ -231,7 +230,7 @@ public class MultiMapProxyImpl extends FactoryAwareNamedProxy implements MultiMa
         }
 
         public String getName() {
-            return name.substring(Prefix.MULTIMAP.length());
+            return MultiMapProxyImpl.this.getName();
         }
 
         public void clear() {
