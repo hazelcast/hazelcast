@@ -2396,14 +2396,24 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void process() {
+                Record record = cmap.getRecord(request);
                 if (valueData != null) {
-                    Record record = cmap.getRecord(request);
                     if (record == null) {
                         record = cmap.createAndAddNewRecord(request.key, valueData);
                     } else {
                         record.setValueData(valueData);
                     }
                     record.setActive();
+                }
+
+                if (record != null) {
+                    if (record.isActive() && !record.isValid()) {
+                        // record is not valid, it is waiting for eviction.
+                        // we should cancel eviction by making record valid
+                        // and proceed to standard remove operation.
+                        record.setExpirationTime(Long.MAX_VALUE);
+                        record.setMaxIdle(Long.MAX_VALUE);
+                    }
                     storeProceed(cmap, request);
                 } else {
                     returnResponse(request);
