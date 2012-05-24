@@ -110,8 +110,7 @@ public class TopicProxyImpl extends FactoryAwareNamedProxy implements TopicProxy
     }
 
     public String getName() {
-        ensure();
-        return base.getName();
+        return name.substring(Prefix.TOPIC.length());
     }
 
     public LocalTopicStats getLocalTopicStats() {
@@ -150,7 +149,7 @@ public class TopicProxyImpl extends FactoryAwareNamedProxy implements TopicProxy
         }
 
         public String getName() {
-            return name.substring(Prefix.TOPIC.length());
+            return TopicProxyImpl.this.getName();
         }
 
         public String getLongName() {
