@@ -1356,7 +1356,8 @@ public class CMap {
                     boolean ownedOrBackup = partition.isOwnerOrBackup(thisAddress, getTotalBackupCount());
                     if (owner != null && !partitionManager.isPartitionMigrating(partition.getPartitionId())) {
                         if (owned) {
-                            if (store != null && writeDelayMillis > 0 && record.isDirty()) {
+                            if (store != null && mapStoreWrapper.isEnabled()
+                                    && writeDelayMillis > 0 && record.isDirty()) {
                                 if (now > record.getWriteTime()) {
                                     recordsDirty.add(record);
                                     record.setDirty(false);   // set dirty to false, we will store these soon

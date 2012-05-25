@@ -133,8 +133,7 @@ public class QProxyImpl extends AbstractQueue implements QProxy, HazelcastInstan
     }
 
     public String getName() {
-        ensure();
-        return qproxyReal.getName();
+        return name.substring(Prefix.QUEUE.length());
     }
 
     public int drainTo(Collection c) {
@@ -324,7 +323,7 @@ public class QProxyImpl extends AbstractQueue implements QProxy, HazelcastInstan
         }
 
         public String getName() {
-            return name.substring(Prefix.QUEUE.length());
+            return QProxyImpl.this.getName();
         }
 
         @Override

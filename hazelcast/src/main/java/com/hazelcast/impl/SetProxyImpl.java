@@ -61,7 +61,6 @@ public class SetProxyImpl extends AbstractCollection implements SetProxy, DataSe
 
     @Override
     public String toString() {
-        ensure();
         return "Set [" + getName() + "]";
     }
 
@@ -134,8 +133,7 @@ public class SetProxyImpl extends AbstractCollection implements SetProxy, DataSe
     }
 
     public String getName() {
-        ensure();
-        return base.getName();
+        return name.substring(Prefix.SET.length());
     }
 
     public void addItemListener(ItemListener itemListener, boolean includeValue) {
@@ -189,7 +187,7 @@ public class SetProxyImpl extends AbstractCollection implements SetProxy, DataSe
         }
 
         public String getName() {
-            return name.substring(Prefix.SET.length());
+            return SetProxyImpl.this.getName();
         }
 
         @Override

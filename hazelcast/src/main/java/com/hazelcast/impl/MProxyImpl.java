@@ -274,7 +274,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
     @Override
     public String toString() {
-        return "Map [" + getName() + "] " + factory;
+        return "Map [" + getName() + "] ";
     }
 
     @Override
@@ -480,7 +480,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
         @Override
         public String toString() {
-            return "Map [" + getName() + "]";
+            return MProxyImpl.this.toString();
         }
 
         public InstanceType getInstanceType() {
@@ -506,7 +506,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public String getName() {
-            return name.substring(Prefix.MAP.length());
+            return MProxyImpl.this.getName();
         }
 
         public void addIndex(final String attribute, final boolean ordered) {

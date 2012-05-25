@@ -33,17 +33,17 @@ import java.util.Set;
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class ListProxyImpl extends AbstractList implements ListProxy, DataSerializable {
-    String actualName;
     String name;
+    String queueName;
+    String mapName;
     FactoryImpl factory;
 
     public ListProxyImpl() {
     }
 
     public ListProxyImpl(String name, FactoryImpl factory) {
-        this.actualName = name;
-        this.name = Prefix.QUEUE + actualName;
         this.factory = factory;
+        setName(name);
     }
 
     public Instance.InstanceType getInstanceType() {
@@ -51,34 +51,34 @@ public class ListProxyImpl extends AbstractList implements ListProxy, DataSerial
     }
 
     public void destroy() {
-        factory.destroyInstanceClusterWide(actualName, null);
         factory.destroyInstanceClusterWide(name, null);
-        factory.destroyInstanceClusterWide(Prefix.MAP + name, null);
+        factory.destroyInstanceClusterWide(queueName, null);
+        factory.destroyInstanceClusterWide(mapName, null);
     }
 
     public Object getId() {
-        return name;
+        return queueName;
     }
 
     public int size() {
-        return factory.node.blockingQueueManager.size(name);
+        return factory.node.blockingQueueManager.size(queueName);
     }
 
     public boolean contains(Object o) {
-        Set keys = factory.node.blockingQueueManager.getValueKeys(name, toData(o));
+        Set keys = factory.node.blockingQueueManager.getValueKeys(queueName, toData(o));
         return keys != null && keys.size() > 0;
     }
 
     public Iterator iterator() {
-        return factory.node.blockingQueueManager.iterate(name);
+        return factory.node.blockingQueueManager.iterate(queueName);
     }
 
     public boolean add(Object o) {
-        return factory.node.blockingQueueManager.add(name, o, Integer.MAX_VALUE);
+        return factory.node.blockingQueueManager.add(queueName, o, Integer.MAX_VALUE);
     }
 
     public boolean remove(Object o) {
-        return factory.node.blockingQueueManager.remove(name, o);
+        return factory.node.blockingQueueManager.remove(queueName, o);
     }
 
     public boolean addAll(Collection c) {
@@ -89,34 +89,35 @@ public class ListProxyImpl extends AbstractList implements ListProxy, DataSerial
     }
 
     public Object get(int index) {
-        return factory.node.blockingQueueManager.getItemByIndex(name, index);
+        return factory.node.blockingQueueManager.getItemByIndex(queueName, index);
     }
 
     public Object set(int index, Object element) {
-        return factory.node.blockingQueueManager.set(name, element, index);
+        return factory.node.blockingQueueManager.set(queueName, element, index);
     }
 
     public void add(int index, Object element) {
         try {
-            factory.node.blockingQueueManager.offer(name, element, index, 0);
+            factory.node.blockingQueueManager.offer(queueName, element, index, 0);
         } catch (InterruptedException e) {
         }
     }
 
     public Object remove(int index) {
-        return factory.node.blockingQueueManager.remove(name, index);
+        return factory.node.blockingQueueManager.remove(queueName, index);
     }
 
     public int indexOf(Object o) {
-        return factory.node.blockingQueueManager.getIndexOf(name, o, true);
+        return factory.node.blockingQueueManager.getIndexOf(queueName, o, true);
     }
 
     public int lastIndexOf(Object o) {
-        return factory.node.blockingQueueManager.getIndexOf(name, o, false);
+        return factory.node.blockingQueueManager.getIndexOf(queueName, o, false);
     }
 
     public void readData(DataInput in) throws IOException {
         name = in.readUTF();
+        setName(name);
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -128,15 +129,21 @@ public class ListProxyImpl extends AbstractList implements ListProxy, DataSerial
     }
 
     public String getName() {
-        return name.substring(4);
+        return name.substring(Prefix.AS_LIST.length());
+    }
+
+    private void setName(String n) {
+        name = n;
+        queueName = Prefix.QUEUE + name;
+        mapName = Prefix.MAP + queueName;
     }
 
     public void addItemListener(ItemListener itemListener, boolean includeValue) {
-        factory.node.blockingQueueManager.addItemListener(name, itemListener, includeValue);
+        factory.node.blockingQueueManager.addItemListener(queueName, itemListener, includeValue);
     }
 
     public void removeItemListener(ItemListener itemListener) {
-        factory.node.blockingQueueManager.removeItemListener(name, itemListener);
+        factory.node.blockingQueueManager.removeItemListener(queueName, itemListener);
     }
 
     @Override
