@@ -118,6 +118,7 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_IF_SAME, new RemoveIfSameOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_ITEM, new RemoveItemOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_PUT, new BackupPacketProcessor());
+        registerPacketProcessor(CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK, new BackupPacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_ADD, new BackupPacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_REMOVE_MULTI, new BackupPacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_REMOVE, new BackupPacketProcessor());
@@ -1753,7 +1754,11 @@ public class ConcurrentMapManager extends BaseManager {
                     Boolean successful = getResultAsBoolean();
                     if (successful) {
                         request.value = valueData;
-                        backup(CONCURRENT_MAP_BACKUP_PUT);
+                        if (operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
+                            backup(CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK);
+                        } else {
+                            backup(CONCURRENT_MAP_BACKUP_PUT);
+                        }
                     }
                     return successful;
                 } else {
@@ -1957,10 +1962,6 @@ public class ConcurrentMapManager extends BaseManager {
             final int localAsyncBackupCount = asyncBackupCount;
             final int totalBackupCount = localBackupCount + localAsyncBackupCount;
             if (localBackupCount <= 0 && localAsyncBackupCount <= 0) {
-                return;
-            }
-            if (thisAddress.equals(target) &&
-                    (operation == CONCURRENT_MAP_LOCK || operation == CONCURRENT_MAP_UNLOCK)) {
                 return;
             }
             if (totalBackupCount > MAX_BACKUP_COUNT) {
