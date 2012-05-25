@@ -107,6 +107,7 @@ public enum ClusterOperation {
     CONCURRENT_MAP_INVALIDATE(98),
     CONCURRENT_MAP_EVICT(99),
     CONCURRENT_MAP_FLUSH(100),
+    CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK(101),
     //TOPIC
     TOPIC_PUBLISH(111),
     //ATOMIC NUMBER
@@ -157,13 +158,14 @@ public enum ClusterOperation {
     public static final int LENGTH = 500;
 
     private static final ClusterOperation[] operations = new ClusterOperation[LENGTH];
-    private final short value;
 
     static {
         for (ClusterOperation cop : ClusterOperation.values()) {
             operations[cop.getValue()] = cop;
         }
     }
+
+    private final short value;
 
     ClusterOperation(int value) {
         this.value = (short) value;

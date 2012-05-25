@@ -1711,7 +1711,11 @@ public class ConcurrentMapManager extends BaseManager {
                     Boolean successful = getResultAsBoolean();
                     if (successful) {
                         request.value = valueData;
-                        backup(CONCURRENT_MAP_BACKUP_PUT);
+                        if (operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
+                            backup(CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK);
+                        } else {
+                            backup(CONCURRENT_MAP_BACKUP_PUT);
+                        }
                     }
                     return successful;
                 } else {
@@ -1889,14 +1893,17 @@ public class ConcurrentMapManager extends BaseManager {
 
         protected void backup(ClusterOperation operation) {
             if (backupCount <= 0) return;
-            if (thisAddress.equals(target) &&
-                    (operation == CONCURRENT_MAP_LOCK || operation == CONCURRENT_MAP_UNLOCK)) {
-                return;
-            }
+//            if (thisAddress.equals(target) &&
+//                    (operation == CONCURRENT_MAP_LOCK || operation == CONCURRENT_MAP_UNLOCK)) {
+//                return;
+//            }
             if (backupCount > backupOps.length) {
                 String msg = "Max backup is " + backupOps.length + " but backupCount is " + backupCount;
                 logger.log(Level.SEVERE, msg);
                 throw new RuntimeException(msg);
+            }
+            if (request.key == null || request.key.size() == 0) {
+                throw new RuntimeException("Key is null! " + request.key);
             }
             for (int i = 0; i < backupCount; i++) {
                 int distance = i + 1;
@@ -1904,9 +1911,6 @@ public class ConcurrentMapManager extends BaseManager {
                 if (backupOp == null) {
                     backupOp = new MBackup();
                     backupOps[i] = backupOp;
-                }
-                if (request.key == null || request.key.size() == 0) {
-                    throw new RuntimeException("Key is null! " + request.key);
                 }
                 backupOp.sendBackup(operation, target, distance, request);
             }

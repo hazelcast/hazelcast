@@ -562,8 +562,12 @@ public class CMap {
         if (req.key == null || req.key.size() == 0) {
             throw new RuntimeException("Backup key size cannot be zero! " + req.key);
         }
-        if (req.operation == CONCURRENT_MAP_BACKUP_PUT) {
+        if (req.operation == CONCURRENT_MAP_BACKUP_PUT
+                || req.operation == CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK) {
             Record record = toRecord(req);
+            if (req.operation == CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK) {
+                unlock(record, req);
+            }
             markAsActive(record);
             record.setVersion(req.version);
             if (req.indexes != null) {
@@ -580,12 +584,6 @@ public class CMap {
                 ttlPerRecord = true;
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
-//            Record record = getRecord(req);
-//            if (record != null) {
-//                if (record.isActive()) {
-//                    markAsEvicted(record);
-//                }
-//            }
             Record record = toRecord(req);
             if (record.isActive()) {
                 markAsEvicted(record);
