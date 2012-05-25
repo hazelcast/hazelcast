@@ -576,6 +576,10 @@ public class CMap {
         }
         if (req.operation == CONCURRENT_MAP_BACKUP_PUT) {
             Record record = toRecord(req);
+            if (req.txnId != -1) {
+                unlock(record, req);
+                record.clearLock();
+            }
             markAsActive(record);
             record.setVersion(req.version);
             if (req.indexes != null) {
@@ -599,6 +603,9 @@ public class CMap {
 //                }
 //            }
             Record record = toRecord(req);
+            if (req.txnId != -1) {
+                unlock(record, req);
+            }
             if (record.isActive()) {
                 markAsEvicted(record);
             }
