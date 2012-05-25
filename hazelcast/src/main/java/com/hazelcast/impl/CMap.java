@@ -565,7 +565,8 @@ public class CMap {
         if (req.operation == CONCURRENT_MAP_BACKUP_PUT
                 || req.operation == CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK) {
             Record record = toRecord(req);
-            if (req.operation == CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK) {
+            if (req.operation == CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK
+                    || req.txnId != -1) {
                 unlock(record, req);
             }
             markAsActive(record);
@@ -587,6 +588,9 @@ public class CMap {
             Record record = toRecord(req);
             if (record.isActive()) {
                 markAsEvicted(record);
+            }
+            if (req.txnId != -1) {
+                unlock(record, req);
             }
             record.setVersion(req.version);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {

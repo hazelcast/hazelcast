@@ -1546,7 +1546,7 @@ public class ConcurrentMapManager extends BaseManager {
                         && localLock.getThreadId() == tc.getThreadId()
                         && localLock.getCount() == 1;
                 if (shouldUnlock) {
-                    result = txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, timeout, ttl, -1);
+                    result = txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, timeout, ttl, txnId);
                     cmap.mapLocalLocks.remove(dataKey);
                 } else {
                     result = txnalPut(CONCURRENT_MAP_PUT, name, key, value, timeout, ttl, -1);
