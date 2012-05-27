@@ -9,6 +9,26 @@
     </para>
 
     <para>
+        <emphasis role="bold">2.0.4</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=3&amp;state=closed">Fixed issues:</link></para>
+                <para>96, 98, 131, 132, 135, 140, 166</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        <emphasis role="bold">2.0.3</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=1&amp;state=closed">Fixed issues:</link></para>
+                <para>99, 102, 103, 104, 109, 114, 117, 119, 127, 128</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
         <emphasis role="bold">2.0</emphasis>
         <itemizedlist>
             <listitem>
@@ -115,10 +135,10 @@
                 </para>
             </listitem>
             <listitem>
-                <para>Fixed issues: 430, 459, 471, 567, 574, 582, 629, 632, 646, 666, 686, 669, 690, 692, 693, 695, 698,
-                    705, 708,
-                    710, 711, 712, 713, 714, 715, 719 , 721, 722, 724, 727, 728, 729, 730, 731, 732, 733, 735, 738, 739,
-                    740, 741, 742, 747,
+                <para>Fixed issues: (on http://code.google.com/p/hazelcast/issues/list)
+                    430, 459, 471, 567, 574, 582, 629, 632, 646, 666, 686, 669, 690, 692, 693, 695, 698,
+                    705, 708, 710, 711, 712, 713, 714, 715, 719 , 721, 722, 724, 727, 728, 729, 730, 731, 732,
+                    733, 735, 738, 739, 740, 741, 742, 747,
                     751, 752, 754, 756, 758, 759, 760, 761, 765, 767, 770, 773, 779, 781, 782, 783, 787, 790, 795, 796
                 </para>
             </listitem>
