@@ -36,6 +36,7 @@ import java.util.logging.Level;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
 public class LifecycleServiceClientImpl implements LifecycleService {
+
     final static ILogger logger = Logger.getLogger(LifecycleServiceClientImpl.class.getName());
     final AtomicBoolean paused = new AtomicBoolean(false);
     final AtomicBoolean running = new AtomicBoolean(true);
@@ -47,13 +48,15 @@ public class LifecycleServiceClientImpl implements LifecycleService {
     public LifecycleServiceClientImpl(HazelcastClient hazelcastClient) {
         this.hazelcastClient = hazelcastClient;
 
-        final List<LifecycleListener> listeners = new LinkedList<LifecycleListener>();
-        for (Object listener : hazelcastClient.getClientConfig().getListeners()) {
-            if (listener instanceof LifecycleListener) {
-                listeners.add((LifecycleListener) listener);
+        if (hazelcastClient.getClientConfig() != null) {
+            final List<LifecycleListener> listeners = new LinkedList<LifecycleListener>();
+            for (Object listener : hazelcastClient.getClientConfig().getListeners()) {
+                if (listener instanceof LifecycleListener) {
+                    listeners.add((LifecycleListener) listener);
+                }
             }
+            lsLifecycleListeners.addAll(listeners);
         }
-        lsLifecycleListeners.addAll(listeners);
     }
 
     public void addLifecycleListener(LifecycleListener lifecycleListener) {
@@ -74,7 +77,7 @@ public class LifecycleServiceClientImpl implements LifecycleService {
     }
 
     private void callAsync(final Callable callable) {
-            es.submit(callable);
+        es.submit(callable);
     }
 
     public void fireLifecycleEvent(final LifecycleEvent event) {

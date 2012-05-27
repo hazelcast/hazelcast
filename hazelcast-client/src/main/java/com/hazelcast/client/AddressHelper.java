@@ -46,6 +46,9 @@ public final class AddressHelper {
     }
 
     public static Collection<InetSocketAddress> getPossibleSocketAddresses(InetAddress inetAddress, int port) {
+        if (inetAddress == null) {
+            return Collections.EMPTY_SET;
+        }
         if (inetAddress instanceof Inet4Address) {
             return Collections.singleton(new InetSocketAddress(inetAddress, port));
         }
