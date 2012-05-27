@@ -28,6 +28,27 @@
     </para>
 
     <para>
+        <emphasis role="bold">2.2</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=5&amp;state=closed">
+                    Fixed issues:</link></para>
+                <para>93</para>
+            </listitem>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=4&amp;state=closed">
+                    Fixed issues from 2.1 branch:</link></para>
+                <para>73, 142, 146, 148, 149, 153, 158, 162, 163, 164</para>
+            </listitem>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=3&amp;state=closed">
+                    Fixed issues from 2.0 branch:</link></para>
+                <para>96, 98, 131, 132, 135, 140, 166</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
         <emphasis role="bold">2.1</emphasis>
         <itemizedlist>
             <listitem>
