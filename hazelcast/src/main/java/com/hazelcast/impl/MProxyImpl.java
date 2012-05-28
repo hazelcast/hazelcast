@@ -398,6 +398,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         dynamicProxy.lock(key);
     }
 
+    public boolean isLocked(Object key) {
+        return dynamicProxy.isLocked(key);
+    }
+
     public boolean tryLock(Object key) {
         return dynamicProxy.tryLock(key);
     }
@@ -690,6 +694,13 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(key);
             mapOperationCounter.incrementOtherOperations();
             concurrentMapManager.lock(name, key, -1);
+        }
+
+        public boolean isLocked(Object key) {
+            check(key);
+            mapOperationCounter.incrementOtherOperations();
+            MLock mlock = concurrentMapManager.new MLock();
+            return mlock.isLocked(name, key);
         }
 
         public boolean tryLock(Object key) {

@@ -88,4 +88,36 @@ public class HazelcastClientLockTest extends HazelcastClientTestBase {
         lock.unlock();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
+
+    /**
+     * Test for issue #39
+     */
+    @Test
+    public void testIsLocked() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        final ILock lock = hClient.getLock("testIsLocked");
+        assertFalse(lock.isLocked());
+        lock.lock();
+        assertTrue(lock.isLocked());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread thread = new Thread(new Runnable() {
+            public void run() {
+                assertTrue(lock.isLocked());
+                try {
+                    while (lock.isLocked()) {
+                        Thread.sleep(100);
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                latch.countDown();
+            }
+        });
+        thread.start();
+        Thread.sleep(100);
+        lock.unlock();
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+    }
+
 }

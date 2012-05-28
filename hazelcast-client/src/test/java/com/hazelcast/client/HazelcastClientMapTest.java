@@ -532,6 +532,37 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
+    /**
+     * Test for issue #39
+     */
+    @Test
+    public void testIsMapKeyLocked() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        final IMap map = hClient.getMap("testIsMapKeyLocked");
+        assertFalse(map.isLocked("key"));
+        map.lock("key");
+        assertTrue(map.isLocked("key"));
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread thread = new Thread(new Runnable() {
+            public void run() {
+                assertTrue(map.isLocked("key"));
+                try {
+                    while (map.isLocked("key")) {
+                        Thread.sleep(100);
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                latch.countDown();
+            }
+        });
+        thread.start();
+        Thread.sleep(100);
+        map.unlock("key");
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+    }
+
     @Test
     public void addListener() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();

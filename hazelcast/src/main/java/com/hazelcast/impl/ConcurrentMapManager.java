@@ -84,7 +84,7 @@ public class ConcurrentMapManager extends BaseManager {
         int removeDelaySeconds = node.groupProperties.REMOVE_DELAY_SECONDS.getInteger();
         if (removeDelaySeconds <= 0) {
             logger.log(Level.WARNING, GroupProperties.PROP_REMOVE_DELAY_SECONDS
-                                      + " must be greater than zero. Setting to 1.");
+                    + " must be greater than zero. Setting to 1.");
             removeDelaySeconds = 1;
         }
         GLOBAL_REMOVE_DELAY_MILLIS = removeDelaySeconds * 1000L;
@@ -124,6 +124,7 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_REMOVE, new BackupPacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_BACKUP_LOCK, new BackupPacketProcessor());
         registerPacketProcessor(CONCURRENT_MAP_LOCK, new LockOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_IS_KEY_LOCKED, new IsKeyLockedOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_TRY_LOCK_AND_GET, new LockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_UNLOCK, new UnlockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_FORCE_UNLOCK, new ForceUnlockOperationHandler());
@@ -375,7 +376,7 @@ public class ConcurrentMapManager extends BaseManager {
         } else {
             mput.clearRequest();
             final String error = "Current thread is not owner of lock. putAndUnlock could not be completed! " +
-                                 "Thread-Id: " + tc.getThreadId() + ", LocalLock: " + localLock;
+                    "Thread-Id: " + tc.getThreadId() + ", LocalLock: " + localLock;
             logger.log(Level.WARNING, error);
             throw new IllegalStateException(error);
         }
@@ -471,6 +472,10 @@ public class ConcurrentMapManager extends BaseManager {
             return lock(CONCURRENT_MAP_LOCK, name, key, null, timeout);
         }
 
+        public boolean isLocked(String name, Object key) {
+            return isLocked(CONCURRENT_MAP_IS_KEY_LOCKED, name, key);
+        }
+
         public boolean lockAndGetValue(String name, Object key, long timeout) {
             return lock(CONCURRENT_MAP_TRY_LOCK_AND_GET, name, key, null, timeout);
         }
@@ -502,6 +507,14 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
             return true;
+        }
+
+        public boolean isLocked(ClusterOperation op, String name, Object key) {
+            Data dataKey = toData(key);
+            setLocal(op, name, dataKey, null, -1, -1);
+            request.setBooleanRequest();
+            doOp();
+            return (Boolean) getResultAsObject();
         }
 
         @Override
@@ -1580,7 +1593,7 @@ public class ConcurrentMapManager extends BaseManager {
                 CMap cmap = getMap(name);
                 final LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
                 final boolean shouldUnlock = localLock != null
-                                             && localLock.getThreadId() == tc.getThreadId();
+                        && localLock.getThreadId() == tc.getThreadId();
                 final boolean shouldRemove = shouldUnlock && localLock.getCount() == 1;
                 if (shouldRemove) {
                     result = txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, timeout, ttl, txnId);
@@ -1591,7 +1604,7 @@ public class ConcurrentMapManager extends BaseManager {
                     localLock.decrementAndGet();
                 } else {
                     final String error = "Could not commit put operation! Current thread is not owner of " +
-                                         "transaction lock! Thread-Id: " + tc.getThreadId() + ", LocalLock: " + localLock;
+                            "transaction lock! Thread-Id: " + tc.getThreadId() + ", LocalLock: " + localLock;
                     logger.log(Level.WARNING, error);
                     throw new IllegalStateException(error);
                 }
@@ -3758,6 +3771,21 @@ public class ConcurrentMapManager extends BaseManager {
         };
         record.addScheduledAction(scheduledAction);
         node.clusterManager.registerScheduledAction(scheduledAction);
+    }
+
+    class IsKeyLockedOperationHandler extends ResponsiveOperationHandler {
+
+        public void handle(Request request) {
+            final CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request)) {
+                Record record = cmap.getRecord(request.key);
+                request.response = record != null && record.isLocked();
+                returnResponse(request);
+            } else {
+                returnRedoResponse(request);
+            }
+        }
+
     }
 
     final DistributedTimeoutException distributedTimeoutException = new DistributedTimeoutException();

@@ -305,37 +305,28 @@ public class ClusterLockTest {
             public Record copy() {
                 return null;
             }
-
             public Object getValue() {
                 return null;
             }
-
             public Data getValueData() {
                 return null;
             }
-
             public Object setValue(final Object value) {
                 return null;
             }
-
             public void setValueData(final Data value) {
             }
-
             public int valueCount() {
                 return 0;
             }
-
             public long getCost() {
                 return 0;
             }
-
             public boolean hasValueData() {
                 return false;
             }
-
             public void invalidate() {
             }
-
             protected void invalidateValueCache() {
             }
         };
@@ -518,5 +509,86 @@ public class ClusterLockTest {
         }
         return id;
     }
+
+    /**
+     * Test for issue #39
+     */
+    @Test
+    public void testIsMapKeyLocked() throws InterruptedException {
+        Config config = new Config();
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        final IMap map = h1.getMap("testIsMapKeyLocked");
+        final IMap map2 = h2.getMap("testIsMapKeyLocked");
+
+        assertFalse(map.isLocked("key"));
+        assertFalse(map2.isLocked("key"));
+        map.lock("key");
+        assertTrue(map.isLocked("key"));
+        assertTrue(map2.isLocked("key"));
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread thread = new Thread(new Runnable() {
+            public void run() {
+                IMap map3 = h3.getMap("testIsMapKeyLocked");
+
+                assertTrue(map3.isLocked("key"));
+                try {
+                    while (map3.isLocked("key")) {
+                        Thread.sleep(100);
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                latch.countDown();
+            }
+        });
+        thread.start();
+        Thread.sleep(100);
+        map.unlock("key");
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+    }
+
+    /**
+     * Test for issue #39
+     */
+    @Test
+    public void testLockIsLocked() throws InterruptedException {
+        Config config = new Config();
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        final ILock lock = h1.getLock("testLockIsLocked");
+        final ILock lock2 = h2.getLock("testLockIsLocked");
+
+        assertFalse(lock.isLocked());
+        assertFalse(lock2.isLocked());
+        lock.lock();
+        assertTrue(lock.isLocked());
+        assertTrue(lock2.isLocked());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread thread = new Thread(new Runnable() {
+            public void run() {
+                ILock lock3 = h3.getLock("testLockIsLocked");
+
+                assertTrue(lock3.isLocked());
+                try {
+                    while (lock3.isLocked()) {
+                        Thread.sleep(100);
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                latch.countDown();
+            }
+        });
+        thread.start();
+        Thread.sleep(100);
+        lock.unlock();
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+    }
+
 }
 
