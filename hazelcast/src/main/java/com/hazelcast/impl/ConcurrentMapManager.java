@@ -472,10 +472,6 @@ public class ConcurrentMapManager extends BaseManager {
             return lock(CONCURRENT_MAP_LOCK, name, key, null, timeout);
         }
 
-        public boolean isLocked(String name, Object key) {
-            return isLocked(CONCURRENT_MAP_IS_KEY_LOCKED, name, key);
-        }
-
         public boolean lockAndGetValue(String name, Object key, long timeout) {
             return lock(CONCURRENT_MAP_TRY_LOCK_AND_GET, name, key, null, timeout);
         }
@@ -509,9 +505,17 @@ public class ConcurrentMapManager extends BaseManager {
             return true;
         }
 
-        public boolean isLocked(ClusterOperation op, String name, Object key) {
+        public boolean isLocked(String name, Object key) {
             Data dataKey = toData(key);
-            setLocal(op, name, dataKey, null, -1, -1);
+            CMap cmap = getMap(name);
+            if(cmap != null) {
+                LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
+                if(localLock != null && localLock.getCount() > 0) {
+                    return true;
+                }
+            }
+
+            setLocal(CONCURRENT_MAP_IS_KEY_LOCKED, name, dataKey, null, -1, -1);
             request.setBooleanRequest();
             doOp();
             return (Boolean) getResultAsObject();
@@ -3773,9 +3777,10 @@ public class ConcurrentMapManager extends BaseManager {
         node.clusterManager.registerScheduledAction(scheduledAction);
     }
 
-    class IsKeyLockedOperationHandler extends ResponsiveOperationHandler {
+    class IsKeyLockedOperationHandler extends MTargetAwareOperationHandler {
 
-        public void handle(Request request) {
+        @Override
+        void doOperation(Request request) {
             final CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {
                 Record record = cmap.getRecord(request.key);
