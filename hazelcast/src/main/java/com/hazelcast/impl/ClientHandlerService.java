@@ -84,6 +84,7 @@ public class ClientHandlerService implements ConnectionListener {
         registerHandler(CONCURRENT_MAP_GET_MAP_ENTRY.getValue(), new GetMapEntryHandler());
         registerHandler(CONCURRENT_MAP_TRY_LOCK_AND_GET.getValue(), new MapTryLockAndGetHandler());
         registerHandler(CONCURRENT_MAP_LOCK.getValue(), new MapLockHandler());
+        registerHandler(CONCURRENT_MAP_IS_KEY_LOCKED.getValue(), new MapIsKeyLockedHandler());
         registerHandler(CONCURRENT_MAP_UNLOCK.getValue(), new MapUnlockHandler());
         registerHandler(CONCURRENT_MAP_FORCE_UNLOCK.getValue(), new MapForceUnlockHandler());
         registerHandler(CONCURRENT_MAP_LOCK_MAP.getValue(), new MapLockMapHandler());
@@ -142,6 +143,7 @@ public class ClientHandlerService implements ConnectionListener {
         registerHandler(LOCK_LOCK.getValue(), new LockOperationHandler());
         registerHandler(LOCK_UNLOCK.getValue(), new UnlockOperationHandler());
         registerHandler(LOCK_FORCE_UNLOCK.getValue(), new UnlockOperationHandler());
+        registerHandler(LOCK_IS_LOCKED.getValue(), new IsLockedOperationHandler());
         node.connectionManager.addConnectionListener(this);
         this.THREAD_COUNT = node.getGroupProperties().EXECUTOR_CLIENT_THREAD_COUNT.getInteger();
         workers = new Worker[THREAD_COUNT];
@@ -1203,6 +1205,19 @@ public class ClientHandlerService implements ConnectionListener {
         }
     }
 
+    private class MapIsKeyLockedHandler extends ClientMapOperationHandler {
+        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
+            throw new RuntimeException("Shouldn't invoke this method");
+        }
+
+        @Override
+        public void processCall(Node node, Packet packet) {
+            IMap<Object, Object> map = null;
+            map = (IMap) factory.getOrCreateProxyByName(packet.name);
+            packet.setValue(toData(map.isLocked(packet.getKeyData())));
+        }
+    }
+
     private class MapForceUnlockHandler extends MapUnlockHandler {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
             map.forceUnlock(key);
@@ -1282,6 +1297,17 @@ public class ClientHandlerService implements ConnectionListener {
                     value = toData(Boolean.FALSE);
                 }
             }
+            packet.clearForResponse();
+            packet.setValue(value);
+        }
+    }
+
+    private class IsLockedOperationHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+            final Object key = toObject(packet.getKeyData());
+            final ILock lock = factory.getLock(key);
+            Data value = null;
+            value = toData(lock.isLocked());
             packet.clearForResponse();
             packet.setValue(value);
         }

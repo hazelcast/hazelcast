@@ -31,6 +31,8 @@ public interface ILock extends Lock, Instance {
 
     LocalLockStats getLocalLockStats();
 
+    boolean isLocked();
+
     /**
      * Releases the lock regardless of the lock owner.
      * It always successfully unlocks, never blocks  and returns immediately.

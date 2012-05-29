@@ -130,6 +130,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, -1, null);
     }
 
+    public boolean isLocked(K key) {
+        return (Boolean)doLock(ClusterOperation.CONCURRENT_MAP_IS_KEY_LOCKED, key, -1, null);
+    }
+
     public boolean tryLock(K key) {
         check(key);
         return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, 0, null);

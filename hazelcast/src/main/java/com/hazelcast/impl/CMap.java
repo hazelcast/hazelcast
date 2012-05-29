@@ -1323,7 +1323,7 @@ public class CMap {
         final long now = Clock.currentTimeMillis();
         long dirtyAge = (now - lastCleanup);
         boolean shouldRun = forced
-                || (store != null && dirty && dirtyAge >= writeDelayMillis)
+                || (store != null && mapStoreWrapper.isEnabled() && dirty && dirtyAge >= writeDelayMillis)
                 || (dirtyAge > cleanupDelayMillis);
         if (shouldRun && cleanupActive.compareAndSet(false, true)) {
             lastCleanup = now;
