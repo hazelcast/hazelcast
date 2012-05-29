@@ -1182,6 +1182,23 @@ public class TransactionTest {
         Assert.assertTrue("Remaining poll listener count: " + pollLatch.getCount(), pollLatch.await(2, TimeUnit.SECONDS));
     }
 
+    /**
+     * Github issue #161
+     */
+    @Test
+    public void issue161TestMapSizeAfterGet() throws InterruptedException {
+        IMap<String, String> map = Hazelcast.getMap("issue161TestMapSizeAfterGet");
+
+        Transaction txn = Hazelcast.getTransaction();
+        txn.begin();
+        map.get("key");
+        txn.commit();
+
+        assertFalse(map.isLocked("key"));
+        assertEquals(map.size(), 0);
+        assertNull(map.get("key"));
+    }
+
     final List<Instance> mapsUsed = new CopyOnWriteArrayList<Instance>();
 
     TransactionalMap newTransactionalMapProxy(String name) {
