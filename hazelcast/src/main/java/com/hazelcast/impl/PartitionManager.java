@@ -45,6 +45,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class PartitionManager {
+    public static final String MIGRATION_EXECUTOR_NAME = "hz.migration";
+
     private static final long MIGRATING_PARTITION_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(300); // 5 MINUTES
     private static final long REPARTITIONING_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(300); // 5 MINUTES
     private static final int REPARTITIONING_TASK_COUNT_THRESHOLD = 20;
@@ -884,7 +886,8 @@ public class PartitionManager {
                                 addActiveMigration(migrationRequestTask);
                             }
                         });
-                        Future future = concurrentMapManager.node.factory.getExecutorService().submit(task);
+                        Future future = concurrentMapManager.node.factory
+                                .getExecutorService(MIGRATION_EXECUTOR_NAME).submit(task);
                         try {
                             result = future.get(600, TimeUnit.SECONDS);
                         } catch (Throwable e) {
