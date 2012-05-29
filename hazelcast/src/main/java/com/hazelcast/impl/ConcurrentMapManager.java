@@ -556,8 +556,6 @@ public class ConcurrentMapManager extends BaseManager {
             if (nearCache != null) {
                 if (nearCache.containsKey(key)) {
                     return true;
-                } else if (nearCache.getMaxSize() == Integer.MAX_VALUE) {
-                    return false;
                 }
             }
             final CMap cMap = maps.get(name);
