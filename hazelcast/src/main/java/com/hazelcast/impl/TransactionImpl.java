@@ -56,7 +56,7 @@ public class TransactionImpl implements Transaction {
     }
 
     public Data attachPutOp(String name, Object key, Data value, int timeout, long ttl, boolean newRecord) {
-        return attachPutOp(name, key, value, timeout, ttl, newRecord,  -1);
+        return attachPutOp(name, key, value, timeout, ttl, newRecord, -1);
     }
 
     public Data attachPutOp(String name, Object key, Data value, long timeout, boolean newRecord, int index) {
@@ -133,9 +133,9 @@ public class TransactionImpl implements Transaction {
 
     public void rollback() throws IllegalStateException {
         if (status == TXN_STATUS_NO_TXN || status == TXN_STATUS_UNKNOWN
-            || status == TXN_STATUS_COMMITTED || status == TXN_STATUS_ROLLED_BACK) {
+                || status == TXN_STATUS_COMMITTED || status == TXN_STATUS_ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not ready to rollback. Status= "
-                                            + status);
+                    + status);
         }
         status = TXN_STATUS_ROLLING_BACK;
         try {
@@ -167,11 +167,10 @@ public class TransactionImpl implements Transaction {
             TransactionRecord prevRecord = iter.previous();
             if (prevRecord.instanceType != InstanceType.MAP) {
                 logger.log(Level.WARNING, "Map#TransactionRecord is expected before a " +
-                                          "Queue#TransactionRecord, but got " + prevRecord.instanceType);
-            }
-            else if (!prevRecord.name.equals(Prefix.MAP + queueTxRecord.name)) {
+                        "Queue#TransactionRecord, but got " + prevRecord.instanceType);
+            } else if (!prevRecord.name.equals(Prefix.MAP + queueTxRecord.name)) {
                 logger.log(Level.WARNING, "Expecting a record of " + Prefix.MAP + queueTxRecord.name
-                          + " but got " + prevRecord.name);
+                        + " but got " + prevRecord.name);
             }
             // Rollback previous transaction record, even if it is not expected record.
             prevRecord.rollback();
@@ -385,7 +384,7 @@ public class TransactionImpl implements Transaction {
         public long timeout = 0; // for commit
 
         public long ttl = -1;
-        
+
         public int index = -1;
 
         public TransactionRecord(String name, Object key, Data value, boolean newRecord) {
@@ -435,7 +434,11 @@ public class TransactionImpl implements Transaction {
                 if (instanceType.isMultiMap()) {
                     factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
                 } else {
-                    factory.node.concurrentMapManager.new MPut().putAfterCommit(name, key, value, -1, ttl, id);
+                    if (value != null) {
+                        factory.node.concurrentMapManager.new MPut().putAfterCommit(name, key, value, -1, ttl, id);
+                    } else {
+                        factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
+                    }
                 }
             }
         }
