@@ -57,6 +57,8 @@ import static com.hazelcast.nio.IOUtil.toObject;
 import static java.lang.System.currentTimeMillis;
 
 public class ConcurrentMapManager extends BaseManager {
+    private static final String BATCH_OPS_EXECUTOR_NAME = "hz.batch";
+
     final int PARTITION_COUNT;
     final int MAX_BACKUP_COUNT;
     final long GLOBAL_REMOVE_DELAY_MILLIS;
@@ -69,7 +71,6 @@ public class ConcurrentMapManager extends BaseManager {
     long newRecordId = 0;
     final ParallelExecutor storeExecutor;
     final ParallelExecutor evictionExecutor;
-    private static final String BATCH_OPS_EXECUTOR_NAME = "hz_batch";
     final RecordFactory recordFactory;
     final Collection<WanMergeListener> colWanMergeListeners = new CopyOnWriteArrayList<WanMergeListener>();
 
