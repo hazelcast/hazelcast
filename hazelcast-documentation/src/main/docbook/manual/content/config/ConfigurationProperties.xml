@@ -247,6 +247,14 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
+                    <literal>hazelcast.prefer.ipv4.stack</literal>
+                </td>
+                <td>Prefer Ipv4 network interface when picking a local address.</td>
+                <td>boolean</td>
+                <td>true</td>
+            </tr>
+            <tr>
+                <td>
                     <literal>hazelcast.shutdownhook.enabled</literal>
                 </td>
                 <td>Enable Hazelcast shutdownhook thread</td>
@@ -482,6 +490,55 @@ cfg.setProperty("hazelcast.property.foo", "value");
                 <td>Management Center maximum visible instance count</td>
                 <td>integer</td>
                 <td>100</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.connection.monitor.interval</literal>
+                </td>
+                <td>Minimum interval to consider a connection error as critical in milliseconds.</td>
+                <td>integer</td>
+                <td>100</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.connection.monitor.max.faults</literal>
+                </td>
+                <td>Maximum IO error count before disconnecting from a node.</td>
+                <td>integer</td>
+                <td>3</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.partition.migration.interval</literal>
+                </td>
+                <td>Interval to run partition migration tasks in seconds.</td>
+                <td>integer</td>
+                <td>10</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.immediate.backup.interval</literal>
+                </td>
+                <td>Interval to run immediate backup tasks in seconds.</td>
+                <td>integer</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.graceful.shutdown.max.wait</literal>
+                </td>
+                <td>Maximum wait seconds during graceful shutdown.</td>
+                <td>integer</td>
+                <td>600</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.force.throw.interrupted.exception</literal>
+                </td>
+                <td>Force throw of RuntimeInterruptedException when a thread is interrupted, otherwise a
+                    warning log will be printed.</td>
+                <td>boolean</td>
+                <td>false</td>
             </tr>
             <tr>
                 <td>

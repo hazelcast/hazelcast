@@ -325,7 +325,7 @@ public class BlockingQueueManager extends BaseManager {
                 op.request.longValue = index;
                 op.request.txnId = ThreadContext.get().getThreadId();
                 op.initOp();
-                throw new InterruptedException();
+                throw new InterruptedException(e.getMessage());
             }
         }
         return null;
@@ -594,7 +594,7 @@ public class BlockingQueueManager extends BaseManager {
             return (Long) op.getResultAsObject();
         } catch (Exception e) {
             if (e instanceof RuntimeInterruptedException) {
-                throw new InterruptedException();
+                throw new InterruptedException(e.getMessage());
             }
         }
         return -1;
@@ -632,6 +632,11 @@ public class BlockingQueueManager extends BaseManager {
             request.name = name;
             request.timeout = timeout;
             doOp();
+        }
+
+        @Override
+        protected void handleInterruption() {
+            handleInterruptedException(true, op);
         }
     }
 

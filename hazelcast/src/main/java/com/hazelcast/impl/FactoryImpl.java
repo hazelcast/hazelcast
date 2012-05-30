@@ -80,8 +80,6 @@ public class FactoryImpl implements HazelcastInstance {
 
     public final Node node;
 
-    volatile boolean restarted = false;
-
     public static Set<HazelcastInstance> getAllHazelcastInstanceProxies() {
         final Collection<FactoryImpl> factoryColl = factories.values();
         final Set<HazelcastInstance> instanceSet = new HashSet<HazelcastInstance>(factoryColl.size());
@@ -340,15 +338,15 @@ public class FactoryImpl implements HazelcastInstance {
     public static void kill(HazelcastInstanceProxy hazelcastInstanceProxy) {
         FactoryImpl factory = hazelcastInstanceProxy.getFactory();
         factory.managementService.unregister();
+        factories.remove(factory.getName());
+        if (factories.size() == 0) {
+            shutdownManagementService();
+        }
         factory.proxies.clear();
         for (ExecutorService esp : factory.executorServiceProxies.values()) {
             esp.shutdown();
         }
         factory.node.shutdown(true, true);
-        factories.remove(factory.getName());
-        if (factories.size() == 0) {
-            shutdownManagementService();
-        }
     }
 
     public static void shutdown(HazelcastInstanceProxy hazelcastInstanceProxy) {
