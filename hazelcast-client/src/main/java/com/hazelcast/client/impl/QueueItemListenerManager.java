@@ -35,7 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.hazelcast.client.IOUtil.toObject;
 
 public class QueueItemListenerManager {
-    final private ConcurrentHashMap<String, List<ItemListener>> queueItemListeners = new ConcurrentHashMap<String, List<ItemListener>>();
+    final private ConcurrentHashMap<String, List<ItemListenerHolder>> queueItemListeners = new ConcurrentHashMap<String, List<ItemListenerHolder>>();
 
     public QueueItemListenerManager() {
     }
@@ -44,26 +44,29 @@ public class QueueItemListenerManager {
         final List<Call> calls = new ArrayList<Call>();
         for (final String name : queueItemListeners.keySet()) {
             final ProxyHelper proxyHelper = new ProxyHelper(name, client);
-            calls.add(createNewAddItemListenerCall(proxyHelper));
+            calls.add(createNewAddItemListenerCall(proxyHelper, true));
         }
         return calls;
     }
 
-    public Call createNewAddItemListenerCall(ProxyHelper proxyHelper) {
+    public Call createNewAddItemListenerCall(ProxyHelper proxyHelper, boolean includeValue) {
         Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
-        request.setLongValue(1);
+        request.setLongValue(includeValue ? 1 : 0);
         return proxyHelper.createCall(request);
     }
 
     public void notifyListeners(Packet packet) {
-        List<ItemListener> list = queueItemListeners.get(packet.getName());
+        List<ItemListenerHolder> list = queueItemListeners.get(packet.getName());
         if (list != null) {
-            for (ItemListener<Object> listener : list) {
+            for (ItemListenerHolder listenerHolder : list) {
+                ItemListener<Object> listener = listenerHolder.listener;
                 Boolean added = (Boolean) toObject(packet.getValue());
                 if (added) {
-                    listener.itemAdded(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED, new Data(packet.getKey())));
+                    listener.itemAdded(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED,
+                                                                listenerHolder.includeValue ? new Data(packet.getKey()) : null));
                 } else {
-                    listener.itemRemoved(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED, new Data(packet.getKey())));
+                    listener.itemRemoved(new DataAwareItemEvent(packet.getName(), ItemEventType.REMOVED,
+                                                                listenerHolder.includeValue ? new Data(packet.getKey()) : null));
                 }
             }
         }
@@ -79,13 +82,13 @@ public class QueueItemListenerManager {
         }
     }
 
-    public <E> void registerListener(String name, ItemListener<E> listener) {
-        List<ItemListener> newListenersList = new CopyOnWriteArrayList<ItemListener>();
-        List<ItemListener> listeners = queueItemListeners.putIfAbsent(name, newListenersList);
+    public <E> void registerListener(String name, ItemListener<E> listener, boolean includeValue) {
+        List<ItemListenerHolder> newListenersList = new CopyOnWriteArrayList<ItemListenerHolder>();
+        List<ItemListenerHolder> listeners = queueItemListeners.putIfAbsent(name, newListenersList);
         if (listeners == null) {
             listeners = newListenersList;
         }
-        listeners.add(listener);
+        listeners.add(new ItemListenerHolder(listener, includeValue));
     }
 
     public boolean noListenerRegistered(String name) {
@@ -93,5 +96,15 @@ public class QueueItemListenerManager {
             return true;
         }
         return queueItemListeners.get(name).isEmpty();
+    }
+
+    private static class ItemListenerHolder {
+        private final ItemListener listener;
+        private boolean includeValue;
+
+        public ItemListenerHolder(ItemListener listener, boolean includeValue) {
+            this.listener = listener;
+            this.includeValue = includeValue;
+        }
     }
 }

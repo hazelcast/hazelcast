@@ -16,8 +16,15 @@
   ~ limitations under the License.
   -->
 
-<para version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
-        >Hazelcast provides distributed second level cache for
+<simplesect version="5.0" xmlns="http://docbook.org/ns/docbook"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+      http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+
+    <para>
+    Hazelcast provides distributed second level cache for
     your Hibernate entities, collections and queries. Hazelcast has two implementations of Hibernate
     2nd level cache, one for hibernate-pre-3.3 and one for hibernate-3.3.x versions. In your
     Hibernate configuration file (ex: hibernate.cfg.xml), add these properties;
@@ -279,4 +286,5 @@ HazelcastInstance hazelcastInstance = HazelcastAccessor.getHazelcastInstance(ses
             </para>
         </listitem>
     </itemizedlist>
-</para>
+    </para>
+</simplesect>

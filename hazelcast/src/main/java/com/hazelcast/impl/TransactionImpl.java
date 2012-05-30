@@ -48,18 +48,22 @@ public class TransactionImpl implements Transaction {
     }
 
     public Data attachPutOp(String name, Object key, Data value, boolean newRecord) {
-        return attachPutOp(name, key, value, 0, -1, newRecord);
+        return attachPutOp(name, key, value, 0, -1, newRecord, -1);
     }
 
     public void attachPutMultiOp(String name, Object key, Data value) {
         transactionRecords.add(new TransactionRecord(name, key, value, true));
     }
 
-    public Data attachPutOp(String name, Object key, Data value, long timeout, boolean newRecord) {
-        return attachPutOp(name, key, value, timeout, -1, newRecord);
+    public Data attachPutOp(String name, Object key, Data value, int timeout, long ttl, boolean newRecord) {
+        return attachPutOp(name, key, value, timeout, ttl, newRecord, -1);
     }
 
-    public Data attachPutOp(String name, Object key, Data value, long timeout, long ttl, boolean newRecord) {
+    public Data attachPutOp(String name, Object key, Data value, long timeout, boolean newRecord, int index) {
+        return attachPutOp(name, key, value, timeout, -1, newRecord, index);
+    }
+
+    public Data attachPutOp(String name, Object key, Data value, long timeout, long ttl, boolean newRecord, int index) {
         Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
         Object matchValue = (instanceType.isMultiMap()) ? toObject(value) : null;
         TransactionRecord rec = findTransactionRecord(name, key, matchValue);
@@ -67,12 +71,14 @@ public class TransactionImpl implements Transaction {
             rec = new TransactionRecord(name, key, value, newRecord);
             rec.timeout = timeout;
             rec.ttl = ttl;
+            rec.index = index;
             transactionRecords.add(rec);
             return null;
         } else {
             Data old = rec.value;
             rec.value = value;
             rec.removed = false;
+            rec.index = index;
             return old;
         }
     }
@@ -127,9 +133,9 @@ public class TransactionImpl implements Transaction {
 
     public void rollback() throws IllegalStateException {
         if (status == TXN_STATUS_NO_TXN || status == TXN_STATUS_UNKNOWN
-            || status == TXN_STATUS_COMMITTED || status == TXN_STATUS_ROLLED_BACK) {
+                || status == TXN_STATUS_COMMITTED || status == TXN_STATUS_ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not ready to rollback. Status= "
-                                            + status);
+                    + status);
         }
         status = TXN_STATUS_ROLLING_BACK;
         try {
@@ -161,11 +167,10 @@ public class TransactionImpl implements Transaction {
             TransactionRecord prevRecord = iter.previous();
             if (prevRecord.instanceType != InstanceType.MAP) {
                 logger.log(Level.WARNING, "Map#TransactionRecord is expected before a " +
-                                          "Queue#TransactionRecord, but got " + prevRecord.instanceType);
-            }
-            else if (!prevRecord.name.equals(Prefix.MAP + queueTxRecord.name)) {
+                        "Queue#TransactionRecord, but got " + prevRecord.instanceType);
+            } else if (!prevRecord.name.equals(Prefix.MAP + queueTxRecord.name)) {
                 logger.log(Level.WARNING, "Expecting a record of " + Prefix.MAP + queueTxRecord.name
-                          + " but got " + prevRecord.name);
+                        + " but got " + prevRecord.name);
             }
             // Rollback previous transaction record, even if it is not expected record.
             prevRecord.rollback();
@@ -380,11 +385,22 @@ public class TransactionImpl implements Transaction {
 
         public long ttl = -1;
 
+        public int index = -1;
+
         public TransactionRecord(String name, Object key, Data value, boolean newRecord) {
             this.name = name;
             this.key = key;
             this.value = value;
             this.newRecord = newRecord;
+            instanceType = ConcurrentMapManager.getInstanceType(name);
+        }
+
+        public TransactionRecord(String name, Object key, Data value, int index, boolean newRecord) {
+            this.name = name;
+            this.key = key;
+            this.value = value;
+            this.newRecord = newRecord;
+            this.index = index;
             instanceType = ConcurrentMapManager.getInstanceType(name);
         }
 
@@ -418,14 +434,18 @@ public class TransactionImpl implements Transaction {
                 if (instanceType.isMultiMap()) {
                     factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
                 } else {
-                    factory.node.concurrentMapManager.new MPut().putAfterCommit(name, key, value, -1, ttl, id);
+                    if (value != null) {
+                        factory.node.concurrentMapManager.new MPut().putAfterCommit(name, key, value, -1, ttl, id);
+                    } else {
+                        factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
+                    }
                 }
             }
         }
 
         public void commitQueue() {
             if (!removed) {
-                factory.node.blockingQueueManager.offerCommit(name, key, value);
+                factory.node.blockingQueueManager.offerCommit(name, key, value, index);
             }
         }
 

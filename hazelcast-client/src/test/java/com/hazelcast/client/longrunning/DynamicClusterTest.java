@@ -1048,6 +1048,17 @@ public class DynamicClusterTest {
         Thread.sleep(10000);
     }
 
+
+    @Test(timeout = 60000, expected = NoMemberAvailableException.class)
+    public void shouldNotBlockForever(){
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastClient client = HazelcastClient.newHazelcastClient(new ClientConfig());
+        Map map = client.getMap("shouldNotBlockForever");
+        map.put("1", "a");
+        h.getLifecycleService().shutdown();
+        map.put("1", "b");
+    }
+
     @Test
     public void testUpdateEventOrder() throws InterruptedException {
         Config config = new Config();

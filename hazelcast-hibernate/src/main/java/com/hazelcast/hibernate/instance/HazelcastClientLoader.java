@@ -17,8 +17,8 @@
 package com.hazelcast.hibernate.instance;
 
 import com.hazelcast.client.ClientConfig;
+import com.hazelcast.client.ClientConfigBuilder;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.logging.ILogger;
@@ -26,6 +26,7 @@ import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheException;
 import org.hibernate.util.PropertiesHelper;
 
+import java.io.IOException;
 import java.util.Properties;
 import java.util.logging.Level;
 
@@ -59,16 +60,31 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
         }
         String group = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_GROUP, props, null);
         String pass = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_PASSWORD, props, null);
-        if (address == null || group == null || pass == null) {
-            throw new CacheException("Configuration properties " + CacheEnvironment.NATIVE_CLIENT_ADDRESS + ", "
-                    + CacheEnvironment.NATIVE_CLIENT_GROUP + " and " + CacheEnvironment.NATIVE_CLIENT_PASSWORD
-                    + " are mandatory to use native client!");
+        String configResourcePath = CacheEnvironment.getConfigFilePath(props);
+
+        ClientConfig clientConfig = null;
+        if (configResourcePath != null) {
+            try {
+                clientConfig = new ClientConfigBuilder(configResourcePath).build();
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Could not load client configuration: " + configResourcePath, e);
+            }
         }
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setGroupConfig(new GroupConfig(group, pass)).addAddress(address);
-        clientConfig.setUpdateAutomatic(true);
-        clientConfig.setInitialConnectionAttemptLimit(3);
-        clientConfig.setReconnectionAttemptLimit(5);
+        if (clientConfig == null) {
+            clientConfig = new ClientConfig();
+            clientConfig.setUpdateAutomatic(true);
+            clientConfig.setInitialConnectionAttemptLimit(3);
+            clientConfig.setReconnectionAttemptLimit(5);
+        }
+        if (group != null) {
+            clientConfig.getGroupConfig().setName(group);
+        }
+        if (pass != null) {
+            clientConfig.getGroupConfig().setPassword(pass);
+        }
+        if (address != null) {
+            clientConfig.addAddress(address);
+        }
         return (client = HazelcastClient.newHazelcastClient(clientConfig));
     }
 

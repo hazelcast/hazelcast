@@ -16,9 +16,14 @@
   ~ limitations under the License.
   -->
 
-<sect2 xml:id="Encryption" version='5.0' xmlns='http://docbook.org/ns/docbook' xmlns:xlink="http://www.w3.org/1999/xlink">
-<title>Encryption</title>
-<para>
+<sect2 xml:id="Encryption" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+    <title>Encryption</title>
+    <para>
     Hazelcast allows you to encrypt entire socket level communication among all Hazelcast
     members. Encryption is based on
     <link xlink:href="http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html">Java

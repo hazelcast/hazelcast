@@ -16,8 +16,11 @@
   -->
 
 <sect1 xml:id="ClusterTestHowTo" version='5.0' xmlns='http://docbook.org/ns/docbook'
-       xmlns:xlink='http://www.w3.org/1999/xlink'
-        >
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Testing Cluster</title>
     <para>Hazelcast allows you to create more than one member on the same JVM. Each member is called
         <literal>HazelcastInstance</literal>
@@ -126,7 +129,7 @@ public void cleanup() throws Exception {
     Hazelcast.shutdownAll();
 }
 ]]></programlisting>Need more info?
-        <link xlink:href="http://code.google.com/p/hazelcast/source/browse/trunk/hazelcast/src/test/java/com/hazelcast/impl/ClusterTest.java">
+        <link xlink:href="https://github.com/hazelcast/hazelcast/blob/master/hazelcast/src/test/java/com/hazelcast/impl/ClusterTest.java">
             Check out existing tests.
         </link>
     </para>

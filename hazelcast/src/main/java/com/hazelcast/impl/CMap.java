@@ -574,8 +574,13 @@ public class CMap {
         if (req.key == null || req.key.size() == 0) {
             throw new RuntimeException("Backup key size cannot be zero! " + req.key);
         }
-        if (req.operation == CONCURRENT_MAP_BACKUP_PUT) {
+        if (req.operation == CONCURRENT_MAP_BACKUP_PUT
+                || req.operation == CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK) {
             Record record = toRecord(req);
+            if (req.operation == CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK
+                    || req.txnId != -1) {
+                unlock(record, req);
+            }
             markAsActive(record);
             record.setVersion(req.version);
             if (req.indexes != null) {
@@ -592,15 +597,12 @@ public class CMap {
                 ttlPerRecord = true;
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
-//            Record record = getRecord(req);
-//            if (record != null) {
-//                if (record.isActive()) {
-//                    markAsEvicted(record);
-//                }
-//            }
             Record record = toRecord(req);
             if (record.isActive()) {
                 markAsEvicted(record);
+            }
+            if (req.txnId != -1) {
+                unlock(record, req);
             }
             record.setVersion(req.version);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
@@ -608,7 +610,7 @@ public class CMap {
                 //UNLOCK operation
                 Record record = getRecord(req);
                 if (record != null) {
-                    record.setLock(null);
+                    record.clearLock();
                     if (record.valueCount() == 0) {
                         markAsEvicted(record);
                     }
@@ -789,17 +791,21 @@ public class CMap {
 
     public void onDisconnect(Record record, Address deadAddress) {
         if (record == null || deadAddress == null) return;
+
+        if (record.isLocked() && isMapForQueue()) {
+            if (deadAddress.equals(record.getLock().getLockAddress())) {
+                sendKeyToMaster(record.getKeyData());
+            }
+        }
         List<ScheduledAction> lsScheduledActions = record.getScheduledActions();
-        if (lsScheduledActions != null) {
-            if (lsScheduledActions.size() > 0) {
-                Iterator<ScheduledAction> it = lsScheduledActions.iterator();
-                while (it.hasNext()) {
-                    ScheduledAction sa = it.next();
-                    if (deadAddress.equals(sa.getRequest().caller)) {
-                        node.clusterManager.deregisterScheduledAction(sa);
-                        sa.setValid(false);
-                        it.remove();
-                    }
+        if (lsScheduledActions != null && lsScheduledActions.size() > 0) {
+            Iterator<ScheduledAction> it = lsScheduledActions.iterator();
+            while (it.hasNext()) {
+                ScheduledAction sa = it.next();
+                if (deadAddress.equals(sa.getRequest().caller)) {
+                    node.clusterManager.deregisterScheduledAction(sa);
+                    sa.setValid(false);
+                    it.remove();
                 }
             }
         }
@@ -1039,6 +1045,32 @@ public class CMap {
         return size;
     }
 
+    /**
+     * Thread-safe
+     *
+     * @param acquiredAtLeastFor min acquire period of lock in ms
+     */
+    public Collection<Record> getLockedRecordsFor(long acquiredAtLeastFor) {
+        final Collection<Record> records = mapIndexService.getOwnedRecords();
+        final Collection<Record> result = new LinkedList<Record>();
+        final long now = Clock.currentTimeMillis();
+        for (Record record : records) {
+            if (record.isActive() && record.isValid(now) &&
+                record.isLocked() && acquiredAtLeastFor < (now - record.getLockAcquireTime())) {
+                result.add(record);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * for dead-lock detection
+     *
+     * TODO: Warning => DistributedLock is not thread-safe !!!
+     *
+     * @param lockOwners
+     * @param lockRequested
+     */
     public void collectScheduledLocks(Map<Object, DistributedLock> lockOwners, Map<Object, DistributedLock> lockRequested) {
         Collection<Record> records = mapRecords.values();
         for (Record record : records) {
@@ -1050,7 +1082,8 @@ public class CMap {
                     for (ScheduledAction scheduledAction : scheduledActions) {
                         Request request = scheduledAction.getRequest();
                         if (ClusterOperation.CONCURRENT_MAP_LOCK.equals(request.operation)) {
-                            lockRequested.put(record.getKey(), new DistributedLock(request.lockAddress, request.lockThreadId));
+                            lockRequested.put(record.getKey(),
+                                              new DistributedLock(request.lockAddress, request.lockThreadId));
                         }
                     }
                 }
@@ -1290,7 +1323,7 @@ public class CMap {
         final long now = Clock.currentTimeMillis();
         long dirtyAge = (now - lastCleanup);
         boolean shouldRun = forced
-                || (store != null && dirty && dirtyAge >= writeDelayMillis)
+                || (store != null && mapStoreWrapper.isEnabled() && dirty && dirtyAge >= writeDelayMillis)
                 || (dirtyAge > cleanupDelayMillis);
         if (shouldRun && cleanupActive.compareAndSet(false, true)) {
             lastCleanup = now;
@@ -1318,7 +1351,8 @@ public class CMap {
                     boolean ownedOrBackup = partition.isOwnerOrBackup(thisAddress, getTotalBackupCount());
                     if (owner != null && !partitionManager.isPartitionMigrating(partition.getPartitionId())) {
                         if (owned) {
-                            if (store != null && writeDelayMillis > 0 && record.isDirty()) {
+                            if (store != null && mapStoreWrapper.isEnabled()
+                                    && writeDelayMillis > 0 && record.isDirty()) {
                                 if (now > record.getWriteTime()) {
                                     recordsDirty.add(record);
                                     record.setDirty(false);   // set dirty to false, we will store these soon

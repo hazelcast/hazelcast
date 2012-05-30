@@ -91,6 +91,11 @@ public class LockProxyImpl extends SerializationHelper implements HazelcastInsta
         base.lock();
     }
 
+    public boolean isLocked() {
+        ensure();
+        return base.isLocked();
+    }
+
     public void lockInterruptibly() throws InterruptedException {
         ensure();
         base.lockInterruptibly();
@@ -160,6 +165,10 @@ public class LockProxyImpl extends SerializationHelper implements HazelcastInsta
 
         public void lockInterruptibly() throws InterruptedException {
             throw new UnsupportedOperationException("lockInterruptibly is not implemented!");
+        }
+
+        public boolean isLocked() {
+            return factory.locksMapProxy.isLocked(key);
         }
 
         public Condition newCondition() {

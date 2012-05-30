@@ -16,7 +16,11 @@
   -->
 
 <sect1 xml:id="MC_Intro" version="5.0" xmlns="http://docbook.org/ns/docbook"
-       xmlns:xlink="http://www.w3.org/1999/xlink">
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Introduction</title>
     <para>
         Hazelcast Management Center enables you to monitor and manage your servers running hazelcast.
@@ -86,9 +90,11 @@
                 </para>
             </listitem>
         </itemizedlist>
+        <para>
         <emphasis>Management Center creates a directory with name "mancenter" under your "user/home" directory to save data files.
                 You can change the data directory setting "hazelcast.mancenter.home" system property.
         </emphasis>
+        </para>
     </sect2>
 
     <sect2 xml:id="MC_UserAdministration" version="5.0" xmlns="http://docbook.org/ns/docbook"
@@ -110,8 +116,7 @@
     </sect2>
 
 
-    <sect2 xml:id="MC_ToolOverview" version="5.0" xmlns="http://docbook.org/ns/docbook"
-            >
+    <sect2 xml:id="MC_ToolOverview" version="5.0" xmlns="http://docbook.org/ns/docbook">
         <title>Tool Overview</title>
         <para>The starter page of the tool is<literal>Cluster Home</literal>. Here you can see cluster's main properties
             such as uptime,

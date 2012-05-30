@@ -32,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
+import static com.hazelcast.web.HazelcastInstanceLoader.*;
+
 public class WebFilter implements Filter {
 
     private static final ILogger logger = Logger.getLogger(WebFilter.class.getName());
@@ -43,8 +45,6 @@ public class WebFilter implements Filter {
     private static final ConcurrentMap<String, String> mapOriginalSessions = new ConcurrentHashMap<String, String>(1000);
 
     private static final ConcurrentMap<String, HazelcastHttpSession> mapSessions = new ConcurrentHashMap<String, HazelcastHttpSession>(1000);
-
-    private ServletContext servletContext = null;
 
     private HazelcastInstance hazelcastInstance;
 
@@ -58,31 +58,43 @@ public class WebFilter implements Filter {
 
     private boolean shutdownOnDestroy = true;
 
-    public WebFilter() {
+    private Properties properties;
+
+    protected ServletContext servletContext;
+
+    protected FilterConfig filterConfig;
+
+    public WebFilter() {}
+
+    public WebFilter(Properties properties) {
+        this();
+        this.properties = properties;
     }
 
     public final void init(final FilterConfig config) throws ServletException {
-        String debugParam = config.getInitParameter("debug");
+        filterConfig = config;
+        servletContext = config.getServletContext();
+        initInstance();
+
+        String debugParam = getParam("debug");
         if (debugParam != null) {
             debug = Boolean.valueOf(debugParam);
         }
-        servletContext = config.getServletContext();
-        hazelcastInstance = getInstance(config);
-        String mapName = config.getInitParameter("map-name");
+        String mapName = getParam("map-name");
         if (mapName != null) {
             clusterMapName = mapName;
         } else {
             clusterMapName = "_web_" + servletContext.getServletContextName();
         }
-        String cookieName = config.getInitParameter("cookie-name");
+        String cookieName = getParam("cookie-name");
         if (cookieName != null) {
             sessionCookieName = cookieName;
         }
-        String stickySessionParam = config.getInitParameter("sticky-session");
+        String stickySessionParam = getParam("sticky-session");
         if (stickySessionParam != null) {
             stickySession = Boolean.valueOf(stickySessionParam);
         }
-        String shutdownOnDestroyParam = config.getInitParameter("shutdown-on-destroy");
+        String shutdownOnDestroyParam = getParam("shutdown-on-destroy");
         if (shutdownOnDestroyParam != null) {
             shutdownOnDestroy = Boolean.valueOf(shutdownOnDestroyParam);
         }
@@ -92,13 +104,15 @@ public class WebFilter implements Filter {
                 }
 
                 public void entryRemoved(EntryEvent entryEvent) {
-                    if (!entryEvent.getMember().localMember()) {
+                    if (entryEvent.getMember() == null || // client events has no owner member
+                        !entryEvent.getMember().localMember()) {
                         removeSessionLocally((String) entryEvent.getKey());
                     }
                 }
 
                 public void entryUpdated(EntryEvent entryEvent) {
-                    if (!entryEvent.getMember().localMember()) {
+                    if (entryEvent.getMember() == null || // client events has no owner member
+                        !entryEvent.getMember().localMember()) {
                         markSessionDirty((String) entryEvent.getKey());
                     }
                 }
@@ -109,6 +123,27 @@ public class WebFilter implements Filter {
         }
         log("sticky:" + stickySession + ", debug: " + debug + ", shutdown-on-destroy: " + shutdownOnDestroy
                 + ", map-name: " + clusterMapName);
+    }
+
+    private void initInstance() throws ServletException {
+        if (properties == null) {
+            properties = new Properties();
+        }
+
+        setProperty(CONFIG_LOCATION);
+        setProperty(INSTANCE_NAME);
+        setProperty(USE_CLIENT);
+        setProperty(CLIENT_CONFIG_LOCATION);
+
+        hazelcastInstance = getInstance(properties);
+    }
+
+    private void setProperty(String propertyName) {
+        String value = getParam(propertyName);
+
+        if(value != null) {
+            properties.setProperty(propertyName, value);
+        }
     }
 
     private void removeSessionLocally(String sessionId) {
@@ -576,13 +611,21 @@ public class WebFilter implements Filter {
         shutdownInstance();
     }
 
-    protected HazelcastInstance getInstance(FilterConfig filterConfig) throws ServletException {
-        return HazelcastInstanceLoader.createInstance(filterConfig);
+    protected HazelcastInstance getInstance(Properties properties) throws ServletException {
+        return HazelcastInstanceLoader.createInstance(filterConfig, properties);
     }
 
     protected void shutdownInstance() {
         if (shutdownOnDestroy && hazelcastInstance != null) {
             hazelcastInstance.getLifecycleService().shutdown();
+        }
+    }
+
+    private String getParam(String name) {
+        if (properties != null && properties.containsKey(name)) {
+            return properties.getProperty(name);
+        } else {
+            return filterConfig.getInitParameter(name);
         }
     }
 }// END of WebFilter

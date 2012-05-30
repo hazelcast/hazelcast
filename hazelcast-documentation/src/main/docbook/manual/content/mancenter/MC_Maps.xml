@@ -16,8 +16,11 @@
   -->
 
 <sect1 xml:id="MC_Maps" version="5.0" xmlns="http://docbook.org/ns/docbook"
+       xmlns:xi="http://www.w3.org/2001/XInclude"
        xmlns:xlink="http://www.w3.org/1999/xlink"
-        >
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Maps</title>
     <para>
         Map instances are listed on the left panel. When you click on a map, a new tab for monitoring this map instance

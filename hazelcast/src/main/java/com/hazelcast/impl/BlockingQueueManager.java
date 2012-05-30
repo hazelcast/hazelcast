@@ -171,14 +171,7 @@ public class BlockingQueueManager extends BaseManager {
                         getStorageMap(name).tryRemove(keyData, 0, TimeUnit.SECONDS);
                     } catch (TimeoutException ignored) {
                     }
-                    final BQ bq = getBQ(name);
-                    if (bq != null && bq.mapListeners.size() > 0) {
-                        enqueueAndReturn(new Processable() {
-                            public void process() {
-                                fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_REMOVED, dataValue, thisAddress);
-                            }
-                        });
-                    }
+                    fireQueueEvent(name, EntryEventType.REMOVED, dataValue);
                     return true;
                 }
             }
@@ -205,7 +198,7 @@ public class BlockingQueueManager extends BaseManager {
         if (key != -1) {
             final Data dataItem = toData(obj);
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                txn.attachPutOp(name, key, dataItem, timeout, true);
+                txn.attachPutOp(name, key, dataItem, timeout, true, index);
             } else {
                 storeQueueItem(name, key, dataItem, index);
             }
@@ -246,8 +239,11 @@ public class BlockingQueueManager extends BaseManager {
         }
     }
 
-    public void offerCommit(String name, Object key, Data item) {
-        storeQueueItem(name, key, item, Integer.MAX_VALUE);
+    public void offerCommit(String name, Object key, Data item, int index) {
+        if (index < 0)
+            storeQueueItem(name, key, item, Integer.MAX_VALUE);
+        else
+            storeQueueItem(name, key, item, index);
     }
 
     public void rollbackPoll(String name, Object key, Object obj) {
@@ -268,14 +264,7 @@ public class BlockingQueueManager extends BaseManager {
         } else {
             addKey(name, dataKey, index);
         }
-        final BQ bq = getBQ(name);
-        if (bq != null && bq.mapListeners.size() > 0) {
-            enqueueAndReturn(new Processable() {
-                public void process() {
-                    fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_ADDED, item, thisAddress);
-                }
-            });
-        }
+        fireQueueEvent(name, EntryEventType.ADDED, item);
     }
 
     public Object poll(final String name, long timeout) throws InterruptedException {
@@ -299,14 +288,7 @@ public class BlockingQueueManager extends BaseManager {
                     if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                         txn.attachRemoveOp(name, key, removedItemData, true);
                     }
-                    final BQ bq = getBQ(name);
-                    if (bq != null && bq.mapListeners.size() > 0) {
-                        enqueueAndReturn(new Processable() {
-                            public void process() {
-                                fireMapEvent(bq.mapListeners, name, EntryEvent.TYPE_REMOVED, removedItemData, thisAddress);
-                            }
-                        });
-                    }
+                    fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
                 }
             } catch (TimeoutException e) {
             }
@@ -533,9 +515,11 @@ public class BlockingQueueManager extends BaseManager {
             public void remove() {
                 if (key != null) {
                     try {
-                        Data dataKey = toData(key);
-                        imap.tryRemove(dataKey, 0, TimeUnit.MILLISECONDS);
+                        final Data dataKey = toData(key);
+                        final Object removedItem = imap.tryRemove(dataKey, 0, TimeUnit.MILLISECONDS);
                         removeKey(name, dataKey);
+                        final Data removedItemData = toData(removedItem);
+                        fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
                     } catch (TimeoutException ignored) {
                     }
                 }
@@ -562,6 +546,17 @@ public class BlockingQueueManager extends BaseManager {
                 }
             }
         };
+    }
+
+    private void fireQueueEvent(final String name, final EntryEventType type,  final Data itemData) {
+        final BQ bq = getBQ(name);
+        if (bq != null && bq.mapListeners.size() > 0) {
+            enqueueAndReturn(new Processable() {
+                public void process() {
+                    fireMapEvent(bq.mapListeners, name, type.getType(), itemData, thisAddress);
+                }
+            });
+        }
     }
 
     public boolean addKey(String name, Data key, int index) {

@@ -274,7 +274,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
     @Override
     public String toString() {
-        return "Map [" + getName() + "] " + factory;
+        return "Map [" + getName() + "] ";
     }
 
     @Override
@@ -398,6 +398,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         dynamicProxy.lock(key);
     }
 
+    public boolean isLocked(Object key) {
+        return dynamicProxy.isLocked(key);
+    }
+
     public boolean tryLock(Object key) {
         return dynamicProxy.tryLock(key);
     }
@@ -480,7 +484,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
         @Override
         public String toString() {
-            return "Map [" + getName() + "]";
+            return MProxyImpl.this.toString();
         }
 
         public InstanceType getInstanceType() {
@@ -506,7 +510,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public String getName() {
-            return name.substring(Prefix.MAP.length());
+            return MProxyImpl.this.getName();
         }
 
         public void addIndex(final String attribute, final boolean ordered) {
@@ -692,6 +696,13 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             concurrentMapManager.lock(name, key, -1);
         }
 
+        public boolean isLocked(Object key) {
+            check(key);
+            mapOperationCounter.incrementOtherOperations();
+            MLock mlock = concurrentMapManager.new MLock();
+            return mlock.isLocked(name, key);
+        }
+
         public boolean tryLock(Object key) {
             check(key);
             mapOperationCounter.incrementOtherOperations();
@@ -711,7 +722,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(key);
             mapOperationCounter.incrementOtherOperations();
             MLock mlock = concurrentMapManager.new MLock();
-            mlock.unlock(name, key, 0);
+            if (!mlock.unlock(name, key, 0)) {
+                throw new IllegalMonitorStateException("Current thread is not owner of the lock!") ;
+            }
         }
 
         public void forceUnlock(Object key) {

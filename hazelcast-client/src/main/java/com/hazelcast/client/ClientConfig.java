@@ -21,10 +21,7 @@ import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.Credentials;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class ClientConfig {
 
@@ -38,7 +35,7 @@ public class ClientConfig {
     private boolean shuffle = false;
     private boolean updateAutomatic = true;
     private SocketInterceptor socketInterceptor = null;
-    private final Collection listeners = new HashSet();
+    private final Collection<EventListener> listeners = new HashSet<EventListener>();
 
     public SocketInterceptor getSocketInterceptor() {
         return socketInterceptor;
@@ -149,7 +146,7 @@ public class ClientConfig {
         this.updateAutomatic = updateAutomatic;
     }
 
-    public Collection getListeners() {
+    public Collection<EventListener> getListeners() {
         return listeners;
     }
 
@@ -159,7 +156,7 @@ public class ClientConfig {
      *                 or {@link com.hazelcast.core.MembershipListener}
      * @return
      */
-    public ClientConfig addListener(Object listener) {
+    public ClientConfig addListener(EventListener listener) {
         listeners.add(listener);
         return this;
     }

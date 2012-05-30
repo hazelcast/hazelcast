@@ -84,7 +84,7 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
     public synchronized void addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
         Call c = itemListenerManager().createNewAddListenerCall(proxyHelper, includeValue);
-        itemListenerManager().registerListener(name, listener);
+        itemListenerManager().registerListener(name, listener, includeValue);
         proxyHelper.doCall(c);
     }
 

@@ -48,6 +48,13 @@ public class LockClientProxy implements ILock {
         doLock(-1, null);
     }
 
+    public boolean isLocked() {
+        ClusterOperation operation = ClusterOperation.LOCK_IS_LOCKED;
+        Packet request = proxyHelper.prepareRequest(operation, lockObject, null);
+        Packet response = proxyHelper.callAndGetResult(request);
+        return (Boolean)proxyHelper.getValue(response);
+    }
+
     public boolean tryLock() {
         return (Boolean) doLock(0, null);
     }

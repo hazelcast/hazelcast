@@ -82,6 +82,7 @@ public enum ClusterOperation {
     CONCURRENT_MAP_ITERATE_KEYS_ALL(73),
     CONCURRENT_MAP_ITERATE_VALUES(74),
     CONCURRENT_MAP_LOCK(75),
+    CONCURRENT_MAP_IS_KEY_LOCKED(173),
     CONCURRENT_MAP_LOCK_MAP(76),
     CONCURRENT_MAP_UNLOCK(77),
     CONCURRENT_MAP_FORCE_UNLOCK(78),
@@ -107,6 +108,7 @@ public enum ClusterOperation {
     CONCURRENT_MAP_INVALIDATE(98),
     CONCURRENT_MAP_EVICT(99),
     CONCURRENT_MAP_FLUSH(100),
+    CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK(101),
     //TOPIC
     TOPIC_PUBLISH(111),
     //ATOMIC NUMBER
@@ -152,18 +154,22 @@ public enum ClusterOperation {
     //LOCK
     LOCK_LOCK(170),
     LOCK_UNLOCK(171),
-    LOCK_FORCE_UNLOCK(172);
+    LOCK_FORCE_UNLOCK(172),
+    /* CONCURRENT_MAP_IS_KEY_LOCKED(173), see above */
+    LOCK_IS_LOCKED(174);
+
 
     public static final int LENGTH = 500;
 
     private static final ClusterOperation[] operations = new ClusterOperation[LENGTH];
-    private final short value;
 
     static {
         for (ClusterOperation cop : ClusterOperation.values()) {
             operations[cop.getValue()] = cop;
         }
     }
+
+    private final short value;
 
     ClusterOperation(int value) {
         this.value = (short) value;

@@ -736,7 +736,6 @@ public class MapStoreTest extends TestUtil {
                                            //.setWriteDelaySeconds(1)
                                            .setImplementation(myMapStore));
         HazelcastInstance hc = Hazelcast.newHazelcastInstance(config);
-        try {
             store.put("one", 1l);
             store.put("two", 2l);
             assertEquals(0, loadCount.get());
@@ -761,10 +760,7 @@ public class MapStoreTest extends TestUtil {
             assertEquals(2, storeCount.get());
             assertEquals(1, deleteCount.get());
             assertEquals(5, loadCount.get());
-        } finally {
-            Hazelcast.shutdownAll();
         }
-    }
 
     @Test
     public void storedQueueWithDelaySecondsActionPollAndTake() throws InterruptedException {
@@ -777,8 +773,7 @@ public class MapStoreTest extends TestUtil {
         STORE.put(5l, "Event5");
         STORE.put(6l, "Event6");
         Config config = new Config();
-        config
-                .getMapConfig("queue-map")
+        config.getMapConfig("queue-map")
                 .setMapStoreConfig(new MapStoreConfig()
                                            .setWriteDelaySeconds(1)
                                            .setImplementation(new MapStore<Long, String>() {
@@ -1071,13 +1066,13 @@ public class MapStoreTest extends TestUtil {
             return properties;
         }
 
-        public void assertAwait(int seconds) throws Exception {
-            assertTrue(latchStore.await(seconds, TimeUnit.SECONDS));
-            assertTrue(latchStoreAll.await(seconds, TimeUnit.SECONDS));
-            assertTrue(latchDelete.await(seconds, TimeUnit.SECONDS));
-            assertTrue(latchDeleteAll.await(seconds, TimeUnit.SECONDS));
-            assertTrue(latchLoad.await(seconds, TimeUnit.SECONDS));
-            assertTrue(latchLoadAll.await(seconds, TimeUnit.SECONDS));
+        public void assertAwait(int seconds) throws InterruptedException {
+            assertTrue("Store remaining: " + latchStore.getCount(), latchStore.await(seconds, TimeUnit.SECONDS));
+            assertTrue("Store-all remaining: " + latchStoreAll.getCount(), latchStoreAll.await(seconds, TimeUnit.SECONDS));
+            assertTrue("Delete remaining: " + latchDelete.getCount(), latchDelete.await(seconds, TimeUnit.SECONDS));
+            assertTrue("Delete-all remaining: " + latchDeleteAll.getCount(), latchDeleteAll.await(seconds, TimeUnit.SECONDS));
+            assertTrue("Load remaining: " + latchLoad.getCount(), latchLoad.await(seconds, TimeUnit.SECONDS));
+            assertTrue("Load-al remaining: " + latchLoadAll.getCount(), latchLoadAll.await(seconds, TimeUnit.SECONDS));
         }
 
         Map getStore() {
@@ -1510,7 +1505,7 @@ public class MapStoreTest extends TestUtil {
         TestMapStore mapStore = new TestMapStore();
         Config c = new Config();
         c.getMapConfig("test").setMapStoreConfig(new MapStoreConfig().setEnabled(true)
-                                                         .setWriteDelaySeconds(delay).setImplementation(mapStore));
+                .setWriteDelaySeconds(delay).setImplementation(mapStore));
         mapStore.setLoadAllKeys(false);
         for (int i = 1; i < 6; i++) {
             mapStore.store(i, "value" + i);
@@ -1538,5 +1533,46 @@ public class MapStoreTest extends TestUtil {
         assertEquals("value5", map.get(5));
         assertTrue("Evict 5", map.evict(5));
         assertEquals("value5", map.putIfAbsent(5, "valuex"));
+    }
+
+    /**
+     * test for issue #96
+     */
+    @Test
+    public void testRemoveExpiredEntryWithWriteBehindMapStore() throws InterruptedException {
+        TestMapStore mapStore = new TestMapStore(1, 1, 0);
+        Config c = new Config();
+        c.setProperty(GroupProperties.PROP_CLEANUP_DELAY_SECONDS, "1");
+        c.getMapConfig("test").setMapStoreConfig(new MapStoreConfig().setEnabled(true)
+                .setWriteDelaySeconds(5).setImplementation(mapStore));
+        mapStore.setLoadAllKeys(false);
+        c.getMapConfig("test").setTimeToLiveSeconds(1);
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        IMap map = Hazelcast.newHazelcastInstance(c).getMap("test");
+        map.addEntryListener(new EntryAdapter() {
+            public void entryEvicted(final EntryEvent entryEvent) {
+                if (entryEvent.getKey().equals(2)) {
+                    latch.countDown();
+                } else {
+                    fail("Should not evict: " + entryEvent);
+                }
+            }
+
+            public void entryRemoved(final EntryEvent entryEvent) {
+                if (entryEvent.getKey().equals(1)) {
+                    latch.countDown();
+                } else {
+                    fail("Should not remove: " + entryEvent);
+                }
+            }
+        }, true);
+
+        map.put(1, "value");
+        map.put(2, "value");
+        Thread.sleep(1500);
+        assertEquals("value", map.remove(1));
+        assertTrue("EntryListener failed!", latch.await(10, TimeUnit.SECONDS));
+        mapStore.assertAwait(10);
     }
 }

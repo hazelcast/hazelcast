@@ -89,7 +89,8 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
             final CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to, diffOnly);
             DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList,
                     replicaIndex, from), target);
-            Future future = node.factory.getExecutorService().submit(task);
+
+            Future future = node.factory.getExecutorService(PartitionManager.MIGRATION_EXECUTOR_NAME).submit(task);
             return (Boolean) future.get(400, TimeUnit.SECONDS);
         } catch (Throwable e) {
             Level level = Level.WARNING;

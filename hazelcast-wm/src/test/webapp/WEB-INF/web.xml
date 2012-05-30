@@ -12,7 +12,7 @@
         </init-param>
         <init-param>
             <param-name>sticky-session</param-name>
-            <param-value>true</param-value>
+            <param-value>false</param-value>
         </init-param>
         <init-param>
             <param-name>debug</param-name>
@@ -29,6 +29,14 @@
         <init-param>
             <param-name>shutdown-on-destroy</param-name>
             <param-value>false</param-value>
+        </init-param>
+        <init-param>
+            <param-name>use-client</param-name>
+            <param-value>false</param-value>
+        </init-param>
+        <init-param>
+            <param-name>client-config-location</param-name>
+            <param-value>/WEB-INF/hazelcast-client.properties</param-value>
         </init-param>
     </filter>
     <filter-mapping>

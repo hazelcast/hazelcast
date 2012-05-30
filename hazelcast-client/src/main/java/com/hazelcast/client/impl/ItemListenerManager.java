@@ -39,7 +39,7 @@ public class ItemListenerManager {
         this.entryListenerManager = entryListenerManager;
     }
 
-    public synchronized <E, V> void registerListener(final String name, final ItemListener<V> itemListener) {
+    public synchronized <E, V> void registerListener(final String name, final ItemListener<V> itemListener, boolean includeValue) {
         EntryListener<E, V> e = new EntryAdapter<E, V>() {
             public void entryAdded(EntryEvent<E, V> event) {
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
@@ -51,7 +51,7 @@ public class ItemListenerManager {
                 itemListener.itemRemoved(new DataAwareItemEvent(name, ItemEventType.REMOVED, dataAwareEntryEvent.getNewValueData()));
             }
         };
-        entryListenerManager.registerListener(name, null, true, e);
+        entryListenerManager.registerListener(name, null, includeValue, e);
         itemListener2EntryListener.put(itemListener, e);
     }
 
@@ -62,9 +62,7 @@ public class ItemListenerManager {
 
     public Call createNewAddListenerCall(final ProxyHelper proxyHelper, boolean includeValue) {
         Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
-        // request.setLongValue(includeValue ? 1 : 0);
-        // no make sense to have value for collection
-        request.setLongValue(0);
+        request.setLongValue(includeValue ? 1 : 0);
         return proxyHelper.createCall(request);
     }
 

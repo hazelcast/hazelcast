@@ -127,6 +127,11 @@ public final class Prefix {
     public static final String ATOMIC_NUMBER_HAZELCAST = ATOMIC_NUMBER + HAZELCAST;
 
     /**
+     * The Constant LOCKS_MAP_HAZELCAST: "c:__hz_Locks"
+     */
+    public static final String LOCKS_MAP_HAZELCAST = MAP_HAZELCAST + "Locks";
+
+    /**
      * Private constructor to avoid instances of the class.
      */
     private Prefix() {

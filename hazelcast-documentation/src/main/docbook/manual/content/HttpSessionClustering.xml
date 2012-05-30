@@ -16,7 +16,14 @@
   ~ limitations under the License.
   -->
 
-<para version='5.0' xmlns='http://docbook.org/ns/docbook'>
+<simplesect version='5.0' xmlns='http://docbook.org/ns/docbook'
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+      http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+
+    <para>
     Say you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down
     then your users on that server will be directed to one of the live servers (B or C) but their sessions will be lost!
     So we have to have all these sessions backed up somewhere if we don't want to lose the sessions upon server crashes.
@@ -45,7 +52,9 @@
                 <literal>hazelcast-wm</literal>
                 jars in your
                 <literal>WEB-INF/lib</literal>
-                directory.
+                directory. Optionally if you wish to connect to a cluster as a client add
+                <literal>hazelcast-client</literal>
+                as well.
             </para>
         </listitem>
         <listitem>
@@ -115,6 +124,28 @@
         <param-name>instance-name</param-name>
         <param-value>default</param-value>
     </init-param>
+]]></programlisting>
+ <!-- Splitting xml here, otherwise it won't into pdf page. -->
+<programlisting language="xml"><![CDATA[
+    <!--
+        Do you want to connect as a client to an existing cluster?
+        Default is false.
+    -->
+    <init-param>
+        <param-name>use-client</param-name>
+        <param-value>false</param-value>
+    </init-param>
+    <!--
+        Client configuration location;
+            * as servlet resource OR
+            * as classpath resource OR
+            * as URL
+        Default is null.
+    -->
+    <init-param>
+        <param-name>client-config-location</param-name>
+        <param-value>/WEB-INF/hazelcast-client.properties</param-value>
+    </init-param>
     <!--
         Do you want to shutdown HazelcastInstance during
         web application undeploy process?
@@ -125,9 +156,6 @@
         <param-value>true</param-value>
     </init-param>
 </filter>
-]]></programlisting>
-
-<programlisting language="xml"><![CDATA[
 <filter-mapping>
     <filter-name>hazelcast-filter</filter-name>
     <url-pattern>/*</url-pattern>
@@ -147,13 +175,17 @@
             </para>
         </listitem>
     </orderedlist>
+
     It is that easy! All http requests will go through Hazelcast
     <literal>WebFilter</literal>
     and it will put the
     session objects into Hazelcast distributed map if needed.
+    </para>
 
     <para>
         <emphasis role="bold">Info about sticky-sessions:</emphasis>
+    </para>
+    <para>
         Hazelcast holds whole session attributes in a distributed map and in local http session. Local session is required
         for fast access to data and distributed map is needed for fail-safety.
         <itemizedlist>
@@ -181,4 +213,4 @@
         </itemizedlist>
     </para>
 
-</para>
+</simplesect>

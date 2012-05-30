@@ -19,19 +19,20 @@ package com.hazelcast.nio;
 import com.hazelcast.cluster.Bind;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.util.Clock;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -54,7 +55,7 @@ public class ConnectionManager {
 
     final boolean SOCKET_NO_DELAY;
 
-    private final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
+    private final ConcurrentMap<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
 
     private final ConcurrentMap<Address, ConnectionMonitor> mapMonitors = new ConcurrentHashMap<Address, ConnectionMonitor>(100);
 
@@ -248,10 +249,12 @@ public class ConnectionManager {
         return socketChannelWrapperFactory.wrapSocketChannel(socketChannel, client);
     }
 
-    void failedConnection(Address address, Throwable t) {
+    void failedConnection(Address address, Throwable t, boolean silent) {
         setConnectionInProgress.remove(address);
         ioService.onFailedConnection(address);
-        getConnectionMonitor(address, false).onError(t);
+        if (!silent) {
+            getConnectionMonitor(address, false).onError(t);
+        }
     }
 
     public Connection getConnection(Address address) {
@@ -259,11 +262,15 @@ public class ConnectionManager {
     }
 
     public Connection getOrConnect(Address address) {
+        return getOrConnect(address, false);
+    }
+
+    public Connection getOrConnect(Address address, boolean silent) {
         Connection connection = mapConnections.get(address);
         if (connection == null) {
             if (setConnectionInProgress.add(address)) {
                 ioService.shouldConnectTo(address);
-                executeAsync(new SocketConnector(this, address));
+                executeAsync(new SocketConnector(this, address, silent));
             }
         }
         return connection;
@@ -435,6 +442,10 @@ public class ConnectionManager {
 
     public boolean isLive() {
         return live;
+    }
+
+    public Map<Address, Connection> getReadonlyConnectionMap() {
+        return Collections.unmodifiableMap(mapConnections);
     }
 
     public void appendState(StringBuffer sbState) {

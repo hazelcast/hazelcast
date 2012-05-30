@@ -17,6 +17,7 @@
 package com.hazelcast.impl.base;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.Clock;
 
 import java.io.Serializable;
 
@@ -24,26 +25,29 @@ public class DistributedLock implements Serializable {
     Address lockAddress = null;
     int lockThreadId = -1;
     int lockCount;
+    long lockAcquireTime = -1L;
 
     public DistributedLock() {
     }
 
     public DistributedLock(DistributedLock copy) {
-        this.lockAddress = copy.lockAddress;
-        this.lockCount = copy.lockCount;
-        this.lockThreadId = copy.lockThreadId;
+        this(copy.lockAddress, copy.lockThreadId, copy.lockCount, copy.lockAcquireTime);
     }
 
     public DistributedLock(Address address, int threadId) {
-        this.lockAddress = address;
-        this.lockThreadId = threadId;
-        this.lockCount = 1;
+        this(address, threadId, 1);
     }
 
     public DistributedLock(Address lockAddress, int lockThreadId, int lockCount) {
+        this(lockAddress, lockThreadId, lockCount, Clock.currentTimeMillis());
+    }
+
+    private DistributedLock(final Address lockAddress, final int lockThreadId,
+                            final int lockCount, final long lockAcquireTime) {
+        this.lockAcquireTime = lockAcquireTime;
         this.lockAddress = lockAddress;
-        this.lockThreadId = lockThreadId;
         this.lockCount = lockCount;
+        this.lockThreadId = lockThreadId;
     }
 
     public boolean isLocked() {
@@ -51,17 +55,18 @@ public class DistributedLock implements Serializable {
     }
 
     public boolean isLockedBy(Address address, int threadId) {
-        return (this.lockThreadId == threadId && address != null && address.equals(this.lockAddress));
+        return (lockThreadId == threadId && address != null && address.equals(lockAddress));
     }
 
     public boolean lock(Address address, int threadId) {
-        if (this.lockCount == 0) {
-            this.lockAddress = address;
-            this.lockThreadId = threadId;
-            this.lockCount = 1;
+        if (lockCount == 0) {
+            lockAddress = address;
+            lockThreadId = threadId;
+            lockCount = 1;
+            lockAcquireTime = Clock.currentTimeMillis();
             return true;
         } else if (isLockedBy(address, threadId)) {
-            this.lockCount = 1;
+            lockCount = 1;
             return true;
         }
         return false;
@@ -72,10 +77,11 @@ public class DistributedLock implements Serializable {
             return false;
         } else {
             if (isLockedBy(address, threadId)) {
-                this.lockCount--;
+                lockCount--;
                 if (lockCount == 0) {
-                    this.lockAddress = null;
-                    this.lockThreadId = -1;
+                    lockAddress = null;
+                    lockThreadId = -1;
+                    lockAcquireTime = -1L;
                 }
                 return true;
             }
@@ -103,6 +109,10 @@ public class DistributedLock implements Serializable {
 
     public int getLockCount() {
         return lockCount;
+    }
+
+    public long getAcquireTime() {
+        return lockAcquireTime;
     }
 
     @Override

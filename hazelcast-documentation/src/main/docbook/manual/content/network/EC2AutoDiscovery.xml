@@ -15,7 +15,12 @@
   ~ limitations under the License.
   -->
 
-<sect2 xml:id="EC2AutoDiscovery" version='5.0' xmlns='http://docbook.org/ns/docbook'>
+<sect2 xml:id="EC2AutoDiscovery" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>EC2 Auto Discovery</title>
     <para>Hazelcast supports EC2 Auto Discovery as of 1.9.4. It is useful when you don't want or
         can't provide the list of possible IP addresses. Here is a sample configuration:

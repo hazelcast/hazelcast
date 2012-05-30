@@ -32,16 +32,22 @@ public abstract class ClusterServiceCallable implements HazelcastInstanceAware {
         this.hazelcastInstance = hazelcastInstance;
     }
 
-    ConcurrentMapManager getConcurrentMapManager() {
-        FactoryImpl factory = (FactoryImpl) hazelcastInstance;
+    protected ConcurrentMapManager getConcurrentMapManager() {
+        FactoryImpl factory = getFactory();
         return factory.node.concurrentMapManager;
     }
 
-    ClusterService getClusterService() {
-        FactoryImpl factory = (FactoryImpl) hazelcastInstance;
+    protected ClusterService getClusterService() {
+        FactoryImpl factory = getFactory();
         return factory.node.clusterService;
     }
 
+    protected FactoryImpl getFactory() {return (FactoryImpl) hazelcastInstance;}
+
+    /**
+     * ServiceThread-only!
+     * Otherwise will throw an Error!
+     */
     CMap getCMap(String mapName) {
         return getConcurrentMapManager().getOrCreateMap(Prefix.MAP + mapName);
     }

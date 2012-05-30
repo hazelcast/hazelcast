@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.util.Clock;
 import com.hazelcast.impl.GroupProperties;
 import org.junit.*;
@@ -639,26 +640,32 @@ public class HazelcastTest {
     }
 
     @Test
-    public void testQueueItemListener() {
-        final CountDownLatch latch = new CountDownLatch(2);
-        IQueue<String> queue = Hazelcast.getQueue("testQueueListener");
+    public void testQueueItemListener() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(8);
+        final String value = "hello";
+        IQueue<String> queue = Hazelcast.getQueue("testQueueItemListener");
         queue.addItemListener(new ItemListener<String>() {
             public void itemAdded(ItemEvent<String> itemEvent) {
-                assertEquals("hello", itemEvent.getItem());
+                assertEquals(value, itemEvent.getItem());
                 latch.countDown();
             }
-
             public void itemRemoved(ItemEvent<String> itemEvent) {
-                assertEquals("hello", itemEvent.getItem());
+                assertEquals(value, itemEvent.getItem());
                 latch.countDown();
             }
         }, true);
-        queue.offer("hello");
-        assertEquals("hello", queue.poll());
-        try {
-            assertTrue(latch.await(5, TimeUnit.SECONDS));
-        } catch (InterruptedException ignored) {
-        }
+
+        queue.offer(value);
+        assertEquals(value, queue.poll());
+        queue.offer(value);
+        assertTrue(queue.remove(value));
+        queue.add(value);
+        assertEquals(value, queue.remove());
+        queue.put(value);
+        assertEquals(value, queue.take());
+
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertTrue(queue.isEmpty());
     }
 
     @Test
@@ -1293,5 +1300,18 @@ public class HazelcastTest {
         Thread.sleep(500);
         map.putAndUnlock(1L, 1);
         fail("Should not succeed putAndUnlock!");
+    }
+
+    @Test
+    public void testIssue174NearCacheContainsKeySingleNode() {
+        Config config = new Config();
+        config.getGroupConfig().setName("testIssue174NearCacheContainsKeySingleNode");
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        IMap<String,String> map = h.getMap("testIssue174NearCacheContainsKeySingleNode");
+        map.put("key","value");
+        assertTrue(map.containsKey("key"));
+        h.getLifecycleService().shutdown();
     }
 }

@@ -45,7 +45,7 @@ public class ItemEvent<E> extends EventObject {
     public String toString() {
         return "ItemEvent{" +
                 "event=" + eventType +
-                ", item=" + item +
+                ", item=" + getItem() +
                 "} ";
     }
 }

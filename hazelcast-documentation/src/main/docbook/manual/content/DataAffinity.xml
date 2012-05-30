@@ -15,8 +15,12 @@
   ~ limitations under the License.
   -->
 
-<para version="5.0" xmlns="http://docbook.org/ns/docbook"
-        >
+<simplesect version="5.0" xmlns="http://docbook.org/ns/docbook"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+      http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <para>
         <emphasis>Co-location of related data and computation!</emphasis>
     </para>
@@ -83,17 +87,12 @@ public class OrderKey implements Serializable, PartitionAware {
     }
 }
         ]]></programlisting>
-    Notice that OrderKey implements
-    <literal>PartitionAware</literal>
-    and
-    <literal>getPartitionKey()</literal>
-    returns the
-    <literal>customerId</literal>. This will make sure that
-    <literal>Customer</literal>
-    entry and its
-    <literal>Order</literal>s
-    are going to be stored on the same node.
-
+    <para>
+    Notice that OrderKey implements <literal>PartitionAware</literal> and
+    <literal>getPartitionKey()</literal> returns the
+    <literal>customerId</literal>. This will make sure that <literal>Customer</literal>
+    entry and its <literal>Order</literal>s are going to be stored on the same node.
+    </para>
     <programlisting language="java"><![CDATA[
 Map mapCustomers = Hazelcast.getMap("customers")
 Map mapOrders = Hazelcast.getMap("orders")
@@ -125,6 +124,7 @@ public static int removeOrder(long customerId, long orderId) throws Exception {
     return customer.getOrderCount();
 }
 ]]></programlisting>
+    <para>
     There are couple of things we should consider:
     <orderedlist>
         <listitem>
@@ -142,6 +142,7 @@ public static int removeOrder(long customerId, long orderId) throws Exception {
         </listitem>
 
     </orderedlist>
+    </para>
     <para>So instead, why not moving the computation over to the member
         (JVM) where your customer data actually is.
         Here is how you can do this with distributed executor service:
@@ -163,6 +164,7 @@ public static int removeOrder(long customerId, long orderId) throws Exception {
             </para>
         </listitem>
         <listitem>
+            <para>
             Upon completion of the
             <literal>Callable</literal>
             task, return the
@@ -170,8 +172,10 @@ public static int removeOrder(long customerId, long orderId) throws Exception {
             have to wait until the the task complete; since
             distributed executions are asynchronous, you can
             do other things in the meantime.
+            </para>
         </listitem>
     </orderedlist>
+    <para>
     Here is a sample code:
     <programlisting language="java"><![CDATA[
 public static int removeOrder(long customerId, long orderId) throws Exception {
@@ -209,6 +213,8 @@ public static class OrderDeletionTask implements Callable<Integer>, PartitionAwa
    }
 }
         ]]></programlisting>
+    </para>
+    <para>
     Benefits of doing the same operation with
     distributed
     <literal>ExecutorService</literal>
@@ -232,4 +238,5 @@ public static class OrderDeletionTask implements Callable<Integer>, PartitionAwa
             </para>
         </listitem>
     </itemizedlist>
-</para>
+    </para>
+</simplesect>

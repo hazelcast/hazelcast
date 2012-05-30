@@ -20,8 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+@Deprecated
 public final class ClientProperties {
 
+    @Deprecated
     public static enum ClientPropertyName {
         GROUP_NAME("hazelcast.client.group.name", null),
         GROUP_PASSWORD("hazelcast.client.group.password", null),

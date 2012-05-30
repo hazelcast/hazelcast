@@ -16,7 +16,9 @@
 
 package com.hazelcast.core;
 
-public interface ClientListener {
+import java.util.EventListener;
+
+public interface ClientListener extends EventListener {
 
     public void clientConnected(Client client);
 

@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,6 +26,7 @@ import org.junit.runner.RunWith;
 import java.io.*;
 import java.util.Date;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static org.junit.Assert.*;
 
@@ -56,6 +58,14 @@ public class SerializationTest {
         final Date date = new Date();
         final byte[] data = IOUtil.toByte(date);
         assertEquals(date, IOUtil.toObject(data));
+    }
+
+    @Test
+    public void newDataSerializer() {
+        final Object value = "dummy-value";
+        byte[] data = IOUtil.toByte(value);
+        assertArrayEquals(data, IOUtil.toByte(new Data(data)));
+        assertEquals(value, IOUtil.toObject(new Data(data)));
     }
 
     @Test

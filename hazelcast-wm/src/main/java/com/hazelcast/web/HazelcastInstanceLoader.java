@@ -16,49 +16,85 @@
 
 package com.hazelcast.web;
 
-import com.hazelcast.config.*;
+import com.hazelcast.client.ClientConfig;
+import com.hazelcast.client.ClientConfigBuilder;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.config.UrlXmlConfig;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Properties;
+import java.util.logging.Level;
 
 class HazelcastInstanceLoader {
 
-    public static HazelcastInstance createInstance(FilterConfig filterConfig) throws ServletException {
-        final String instanceName = filterConfig.getInitParameter("instance-name");
-        final String configLocation = filterConfig.getInitParameter("config-location");
-        Config config = null;
+    private final static ILogger logger = Logger.getLogger(HazelcastInstanceLoader.class.getName());
+    public static final String INSTANCE_NAME = "instance-name";
+    public static final String CONFIG_LOCATION = "config-location";
+    public static final String USE_CLIENT = "use-client";
+    public static final String CLIENT_CONFIG_LOCATION = "client-config-location";
 
-        if (isEmpty(configLocation) && isEmpty(instanceName)) {
+    public static HazelcastInstance createInstance(final FilterConfig filterConfig, final Properties properties)
+            throws ServletException {
+        final String instanceName = properties.getProperty(INSTANCE_NAME);
+        final String configLocation = properties.getProperty(CONFIG_LOCATION);
+        final String useClientProp = properties.getProperty(USE_CLIENT);
+        final String clientConfigLocation = properties.getProperty(CLIENT_CONFIG_LOCATION);
+        final boolean useClient = !isEmpty(useClientProp) && Boolean.parseBoolean(useClientProp);
+
+        URL configUrl = null;
+        if (useClient && !isEmpty(clientConfigLocation)) {
+            configUrl = getConfigURL(filterConfig, clientConfigLocation);
+        } else if(!isEmpty(configLocation)) {
+            configUrl = getConfigURL(filterConfig, configLocation);
+        }
+
+        if(useClient) {
+            logger.log(Level.WARNING,
+                    "Creating HazelcastClient, make sure this node has access to an already running cluster...");
+            ClientConfig clientConfig ;
+            if (configUrl == null) {
+                clientConfig = new ClientConfig();
+                clientConfig.setUpdateAutomatic(true);
+                clientConfig.setInitialConnectionAttemptLimit(3);
+                clientConfig.setReconnectionAttemptLimit(5);
+            } else {
+                try {
+                    clientConfig = new ClientConfigBuilder(configUrl).build();
+                } catch (IOException e) {
+                    throw new ServletException(e);
+                }
+            }
+            return HazelcastClient.newHazelcastClient(clientConfig);
+        }
+
+        if (configUrl == null && isEmpty(instanceName)) {
             return Hazelcast.getDefaultInstance();
         }
 
-        URL configUrl = null;
-        if (!isEmpty(configLocation)) {
-            try {
-                configUrl = filterConfig.getServletContext().getResource(configLocation);
-            } catch (MalformedURLException e) {
-            }
-            if (configUrl == null) {
-                configUrl = ConfigLoader.locateConfig(configLocation);
-            }
-        }
-        if (configUrl != null) {
+        Config config;
+        if (configUrl == null) {
+            config = new XmlConfigBuilder().build();
+        } else {
             try {
                 config = new UrlXmlConfig(configUrl);
             } catch (IOException e) {
                 throw new ServletException(e);
             }
         }
-        if (config == null) {
-            config = new XmlConfigBuilder().build();
-        }
-        if (instanceName != null) {
+
+        if (!isEmpty(instanceName)) {
             config.setInstanceName(instanceName);
             HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(instanceName);
             if (instance == null) {
@@ -72,6 +108,22 @@ class HazelcastInstanceLoader {
         } else {
             return Hazelcast.newHazelcastInstance(config);
         }
+    }
+
+    private static URL getConfigURL(final FilterConfig filterConfig, final String configLocation) throws ServletException {
+        URL configUrl = null;
+        try {
+            configUrl = filterConfig.getServletContext().getResource(configLocation);
+        } catch (MalformedURLException e) {
+        }
+        if (configUrl == null) {
+            configUrl = ConfigLoader.locateConfig(configLocation);
+        }
+
+        if (configUrl == null) {
+            throw new ServletException("Could not load configuration '" + configLocation + "'");
+        }
+        return configUrl;
     }
 
     private static boolean isEmpty(String s) {

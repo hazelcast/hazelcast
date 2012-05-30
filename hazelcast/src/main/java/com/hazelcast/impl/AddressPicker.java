@@ -16,7 +16,9 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.Join;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -24,7 +26,9 @@ import com.hazelcast.util.AddressUtil;
 
 import java.net.*;
 import java.nio.channels.ServerSocketChannel;
-import java.util.*;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.logging.Level;
 
 public class AddressPicker {
@@ -149,11 +153,15 @@ public class AddressPicker {
 
     private InetAddress pickInetAddress(final Collection<String> interfaces) throws SocketException {
         final Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+        final boolean preferIPv4Stack = preferIPv4Stack();
         while (networkInterfaces.hasMoreElements()) {
             final NetworkInterface ni = networkInterfaces.nextElement();
             final Enumeration<InetAddress> e = ni.getInetAddresses();
             while (e.hasMoreElements()) {
                 final InetAddress inetAddress = e.nextElement();
+                if (preferIPv4Stack && inetAddress instanceof Inet6Address) {
+                    continue;
+                }
                 if (interfaces != null && !interfaces.isEmpty()) {
                     final String address = inetAddress.getHostAddress();
                     if (matchAddress(address, interfaces)) {
@@ -165,5 +173,14 @@ public class AddressPicker {
             }
         }
         return null;
+    }
+
+    private boolean preferIPv4Stack() {
+        boolean preferIPv4Stack = node.groupProperties.PREFER_IPv4_STACK.getBoolean();
+        // AWS does not support IPv6.
+        Join join = node.getConfig().getNetworkConfig().getJoin();
+        AwsConfig awsConfig = join.getAwsConfig();
+        boolean awsEnabled = awsConfig != null && awsConfig.isEnabled();
+        return preferIPv4Stack || awsEnabled;
     }
 }

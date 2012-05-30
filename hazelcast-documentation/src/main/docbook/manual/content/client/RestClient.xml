@@ -16,7 +16,11 @@
   -->
 
 <sect1 xml:id="RestClient" version='5.0' xmlns='http://docbook.org/ns/docbook'
-        >
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Rest Client</title>
     <para>Let's say your cluster's members are:<programlisting language="java"><![CDATA[Members [5] {
     Member [10.20.17.1:5701]
