@@ -412,14 +412,14 @@ public abstract class BaseManager {
             return getResultAsObject(true);
         }
 
-        public Object getResultAsObject(boolean force) {
+        public Object getResultAsObject(boolean forceDataResult) {
             Object result = getResult();
             if (result == OBJECT_NULL || result == null) {
                 result = null;
             } else {
                 if (result instanceof Data) {
                     final Data data = (Data) result;
-                    if (ThreadContext.get().isClient() && force) {
+                    if (ThreadContext.get().isClient() && forceDataResult) {
                         result = data;
                     } else {
                         if (data.size() == 0) {
@@ -492,11 +492,13 @@ public abstract class BaseManager {
         }
     }
 
-    protected void handleInterruptedException() {
-        if (node.factory.restarted) {
-            throw new RuntimeException();
+    protected void handleInterruptedException(final boolean safeToThrowException, ClusterOperation op) {
+        final boolean forceToThrowException = node.groupProperties.FORCE_THROW_INTERRUPTED_EXCEPTION.getBoolean();
+        final String error = Thread.currentThread().getName() + " is interrupted! Operation: " + op;
+        if (safeToThrowException || forceToThrowException) {
+            throw new RuntimeInterruptedException(error);
         } else {
-            throw new RuntimeInterruptedException(Thread.currentThread().toString() + " is interrupted.");
+            logger.log(Level.WARNING, error);
         }
     }
 
@@ -527,7 +529,7 @@ public abstract class BaseManager {
             try {
                 resultObj = getResult(timeoutSeconds, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                handleInterruptedException();
+                handleInterruption();
             }
             boolean result = Boolean.TRUE.equals(resultObj);
             afterGettingResult(request);
@@ -553,11 +555,11 @@ public abstract class BaseManager {
                     }
                     node.checkNodeState();
                     if (Thread.interrupted()) {
-                        handleInterruptedException();
+                        handleInterruption();
                     }
                     onStillWaiting();
                 } catch (InterruptedException e) {
-                    handleInterruptedException();
+                    handleInterruption();
                 }
             }
         }
@@ -571,7 +573,7 @@ public abstract class BaseManager {
             for (; ; ) {
                 Object result = waitAndGetResult();
                 if (Thread.interrupted()) {
-                    handleInterruptedException();
+                    handleInterruption();
                 }
                 if (result == OBJECT_REDO) {
                     request.redoCount++;
@@ -586,7 +588,7 @@ public abstract class BaseManager {
                         //noinspection BusyWait
                         Thread.sleep(redoWaitMillis);
                     } catch (InterruptedException e) {
-                        handleInterruptedException();
+                        handleInterruption();
                     }
                     beforeRedo();
                     doOp();
@@ -665,6 +667,10 @@ public abstract class BaseManager {
                 }
             }
             responses.offer(obj == null ? OBJECT_NULL : obj);
+        }
+
+        protected void handleInterruption() {
+            handleInterruptedException(false, request.operation);
         }
     }
 

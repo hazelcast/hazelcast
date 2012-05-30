@@ -523,6 +523,13 @@ public class ConcurrentMapManager extends BaseManager {
             }
             super.handleNoneRedoResponse(packet);
         }
+
+        @Override
+        protected void handleInterruption() {
+            logger.log(Level.WARNING, Thread.currentThread().getName() + " is interrupted! " +
+                                      "Hazelcast intentionally suppresses interruption during lock operations " +
+                                      "to avoid dead-lock conditions. Operation: " + request.operation);
+        }
     }
 
     class MContainsKey extends MTargetAwareOp {
@@ -760,10 +767,10 @@ public class ConcurrentMapManager extends BaseManager {
                     try {
                         Thread.sleep(redoWaitMillis);
                     } catch (InterruptedException e1) {
-                        handleInterruptedException();
+                        handleInterruptedException(true, CONCURRENT_MAP_GET_ALL);
                     }
                 } else if (e instanceof InterruptedException) {
-                    handleInterruptedException();
+                    handleInterruptedException(true, CONCURRENT_MAP_GET_ALL);
                 } else if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 } else {
@@ -822,10 +829,10 @@ public class ConcurrentMapManager extends BaseManager {
                     try {
                         Thread.sleep(redoWaitMillis);
                     } catch (InterruptedException e1) {
-                        handleInterruptedException();
+                        handleInterruptedException(true, CONCURRENT_MAP_SIZE);
                     }
                 } else if (e instanceof InterruptedException) {
-                    handleInterruptedException();
+                    handleInterruptedException(true, CONCURRENT_MAP_SIZE);
                 } else if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 } else {
@@ -872,10 +879,10 @@ public class ConcurrentMapManager extends BaseManager {
                     try {
                         Thread.sleep(redoWaitMillis);
                     } catch (InterruptedException e1) {
-                        handleInterruptedException();
+                        handleInterruptedException(true, operation);
                     }
                 } else if (e instanceof InterruptedException) {
-                    handleInterruptedException();
+                    handleInterruptedException(true, operation);
                 } else if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 } else if (e instanceof ExecutionException) {
@@ -945,10 +952,10 @@ public class ConcurrentMapManager extends BaseManager {
                     try {
                         Thread.sleep(redoWaitMillis);
                     } catch (InterruptedException e1) {
-                        handleInterruptedException();
+                        handleInterruptedException(true, CONCURRENT_MAP_PUT_ALL);
                     }
                 } else if (e instanceof InterruptedException) {
-                    handleInterruptedException();
+                    handleInterruptedException(true, CONCURRENT_MAP_PUT_ALL);
                 } else if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 } else {
@@ -1923,6 +1930,13 @@ public class ConcurrentMapManager extends BaseManager {
                     invoke();
                 }
             }
+        }
+
+        @Override
+        protected void handleInterruption() {
+            logger.log(Level.WARNING, Thread.currentThread().getName() + " is interrupted! " +
+                                      "Hazelcast intentionally suppresses interruption during backup operations. " +
+                                      "Operation: " + request.operation);
         }
     }
 
@@ -3598,6 +3612,20 @@ public class ConcurrentMapManager extends BaseManager {
                         cmap.markAsEvicted(record);
                     }
                     cmap.fireScheduledActions(record);
+                } else {
+                    // check if there are any scheduled lock actions from the same caller.
+                    if (record.hasScheduledAction()) {
+                        final Iterator<ScheduledAction> actions = record.getScheduledActions().iterator();
+                        while (actions.hasNext()) {
+                            final ScheduledAction action = actions.next();
+                            final Request actionReq = action.getRequest();
+                            if ((actionReq.operation == CONCURRENT_MAP_LOCK || actionReq.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET)
+                                    && actionReq.lockThreadId == request.lockThreadId
+                                    && request.lockAddress.equals(actionReq.lockAddress)) {
+                                actions.remove();
+                            }
+                        }
+                    }
                 }
             }
             if (unlocked) {

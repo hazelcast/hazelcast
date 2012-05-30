@@ -24,12 +24,13 @@ import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.PartitionService;
-import org.junit.Assert;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.impl.TestUtil.getCMap;
 import static com.hazelcast.impl.TestUtil.migrateKey;
@@ -370,6 +372,7 @@ public class ClusterLockTest {
                         count.incrementAndGet();
                     } catch (Exception e) {
                         error.set(e);
+                        e.printStackTrace();
                         break;
                     }
                 }
@@ -524,6 +527,42 @@ public class ClusterLockTest {
             id++;
         }
         return id;
+    }
+
+    @Test
+    public void testLockInterruption() throws InterruptedException {
+        Config config = new Config() ;
+        config.setProperty(GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "true");
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+
+        final Lock lock = hz.getLock("test");
+        Random rand = new Random();
+        for (int i = 0; i < 30; i++) {
+            Thread t = new Thread() {
+                public void run() {
+                    try {
+                        lock.lock();
+                        sleep(1);
+                    } catch (InterruptedException e) {
+                        System.err.println(e.getMessage());
+                    } finally {
+                        lock.unlock();
+                    }
+                }
+            };
+
+            t.start();
+            Thread.sleep(rand.nextInt(3));
+            t.interrupt();
+            t.join();
+
+            if (!lock.tryLock(3, TimeUnit.SECONDS)) {
+                fail("Could not acquire lock!");
+            } else {
+                lock.unlock();
+            }
+            Thread.sleep(100);
+        }
     }
 }
 

@@ -28,6 +28,23 @@
     </para>
 
     <para>
+        <emphasis role="bold">2.1.2</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para>Fixed interruption handling to avoid dead-locks and inconsistency.
+                    See configuration property <code>hazelcast.force.throw.interrupted.exception</code>
+                    in <link xlink:href="#ConfigurationProperties">ConfigurationProperties</link> page.</para>
+            </listitem>
+            <listitem>
+                <para>Replaced ExecutorService used by migration process with a custom one.</para>
+            </listitem>
+            <listitem>
+                <para>Fixed ExecutorService a memory leak during executor thread termination.</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
         <emphasis role="bold">2.1.1</emphasis>
         <itemizedlist>
             <listitem>

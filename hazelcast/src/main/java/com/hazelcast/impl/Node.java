@@ -295,9 +295,7 @@ public class Node {
     }
 
     public void checkNodeState() {
-        if (factory.restarted) {
-            throw new IllegalStateException("Hazelcast Instance is restarted!");
-        } else if (!isActive()) {
+        if (!isActive()) {
             throw new IllegalStateException("Hazelcast Instance is not active!");
         }
     }
