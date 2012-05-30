@@ -549,6 +549,34 @@ public class ClusterLockTest {
         }
     }
 
+    @Test
+    public void testLockInterruption2() throws InterruptedException {
+        Config config = new Config() ;
+        config.setProperty(GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "true");
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+
+        final Lock lock = hz.getLock("test");
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    lock.tryLock(60, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    System.err.println(e);
+                } finally {
+                    lock.unlock();
+                }
+            }
+        });
+        lock.lock();
+        t.start();
+        Thread.sleep(250);
+        t.interrupt();
+        Thread.sleep(1000);
+        lock.unlock();
+        Thread.sleep(500);
+        assertTrue("Could not acquire lock!", lock.tryLock());
+    }
+
     /**
      * Test for issue #39
      */
