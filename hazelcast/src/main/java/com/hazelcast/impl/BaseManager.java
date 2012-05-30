@@ -515,11 +515,17 @@ public abstract class BaseManager {
             }
         }
 
-        private void handleInterruptedException() {
+        protected void handleInterruptedException() {
             if (node.factory.restarted) {
                 throw new RuntimeException();
             } else {
-                throw new RuntimeInterruptedException(Thread.currentThread().toString() + " is interrupted.");
+                final boolean forceToThrowException = node.groupProperties.FORCE_THROW_INTERRUPTED_EXCEPTION.getBoolean();
+                final String error = Thread.currentThread().getName() + " is interrupted! Operation: " + request.operation;
+                if (forceToThrowException) {
+                    throw new RuntimeInterruptedException(error);
+                } else {
+                    logger.log(Level.WARNING, error);
+                }
             }
         }
 

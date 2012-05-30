@@ -348,7 +348,7 @@ public class ClusterTest {
             public void run() {
                 try {
                     sleep(1000);
-                    h.restart();
+                    h.getLifecycleService().restart();
                     latch.countDown();
                 } catch (Throwable e) {
                     e.printStackTrace();
@@ -356,7 +356,7 @@ public class ClusterTest {
             }
         });
         interrupter.start();
-        map.put("1", "value");
+        map.put("1", "value2");
         latch.await();
     }
 
@@ -367,10 +367,10 @@ public class ClusterTest {
         IMap map = h2.getMap("default");
         map.put("1", "value1");
         assertEquals(2, h.getCluster().getMembers().size());
-        h2.restart();
+        h2.getLifecycleService().restart();
         sleep(400);
         assertEquals("value1", map.get("1"));
-        map.put("1", "value2");
+        assertEquals("value1", map.put("1", "value2"));
         assertEquals("value2", map.get("1"));
         assertEquals("value2", h.getMap("default").get("1"));
     }
@@ -739,6 +739,7 @@ public class ClusterTest {
             }
         }).start();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertEquals("value2", map.get("1"));
     }
 
     @Test(timeout = 60000)
@@ -1005,7 +1006,7 @@ public class ClusterTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         assertEquals(1, h1.getCluster().getMembers().size());
         assertEquals(1, h2.getCluster().getMembers().size());
-        System.setProperty("hazelcast.build", "t");
+        System.clearProperty("hazelcast.build");
     }
 
     @Test(timeout = 60000)

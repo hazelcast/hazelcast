@@ -28,9 +28,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.impl.TestUtil.getCMap;
 import static junit.framework.Assert.*;
@@ -249,4 +251,69 @@ public class ClusterLockTest {
         Assert.assertFalse("should not acquire lock", locked.get());
         tx.commit();
     }
+
+    @Test
+    public void testLockInterruption() throws InterruptedException {
+        Config config = new Config() ;
+        config.setProperty(GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "true");
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+
+        final Lock lock = hz.getLock("test");
+        Random rand = new Random();
+        for (int i = 0; i < 30; i++) {
+            Thread t = new Thread() {
+                public void run() {
+                    try {
+                        lock.lock();
+                        sleep(1);
+                    } catch (InterruptedException e) {
+                        System.err.println(e.getMessage());
+                    } finally {
+                        lock.unlock();
+                    }
+                }
+            };
+
+            t.start();
+            Thread.sleep(rand.nextInt(3));
+            t.interrupt();
+            t.join();
+
+            if (!lock.tryLock(3, TimeUnit.SECONDS)) {
+                fail("Could not acquire lock!");
+            } else {
+                lock.unlock();
+            }
+            Thread.sleep(100);
+        }
+    }
+
+    @Test
+    public void testLockInterruption2() throws InterruptedException {
+        Config config = new Config() ;
+        config.setProperty(GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "true");
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+
+        final Lock lock = hz.getLock("test");
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    lock.tryLock(60, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    System.err.println(e);
+                } finally {
+                    lock.unlock();
+                }
+            }
+        });
+        lock.lock();
+        t.start();
+        Thread.sleep(250);
+        t.interrupt();
+        Thread.sleep(1000);
+        lock.unlock();
+        Thread.sleep(500);
+        assertTrue("Could not acquire lock!", lock.tryLock());
+    }
+
 }

@@ -482,6 +482,13 @@ public class ConcurrentMapManager extends BaseManager {
             }
             super.handleNoneRedoResponse(packet);
         }
+
+        @Override
+        protected void handleInterruptedException() {
+            logger.log(Level.WARNING, Thread.currentThread().getName() + " is interrupted! " +
+                                      "Hazelcast intentionally suppresses interruption during lock operations " +
+                                      "to avoid dead-lock conditions. Operation: " + request.operation);
+        }
     }
 
     class MContainsKey extends MTargetAwareOp {

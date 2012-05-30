@@ -17,17 +17,16 @@
 
 package com.hazelcast.hibernate.access;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
-
+import com.hazelcast.hibernate.CacheEnvironment;
+import com.hazelcast.hibernate.region.HazelcastRegion;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 import org.hibernate.cache.entry.CacheEntry;
 import org.hibernate.util.PropertiesHelper;
 
-import com.hazelcast.hibernate.CacheEnvironment;
-import com.hazelcast.hibernate.region.HazelcastRegion;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 
 /**
  * Makes <b>READ COMMITTED</b> consistency guarantees even in a clustered environment.
@@ -41,7 +40,7 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
     
 	public ReadWriteAccessDelegate(T hazelcastRegion) {
 		super(hazelcastRegion);
-        lockTimeout = PropertiesHelper.getInt(CacheEnvironment.LOCK_TIMEOUT, hazelcastRegion.getProperties(), 300);
+        lockTimeout = PropertiesHelper.getInt(CacheEnvironment.LOCK_TIMEOUT, hazelcastRegion.getProperties(), 60);
 		explicitVersionCheckEnabled = PropertiesHelper.getBoolean(CacheEnvironment.EXPLICIT_VERSION_CHECK, 
 		        hazelcastRegion.getProperties(), false);
 	}
