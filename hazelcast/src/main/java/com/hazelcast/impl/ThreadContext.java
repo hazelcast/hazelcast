@@ -16,8 +16,8 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.ConcurrentMapManager.MEvict;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.impl.ConcurrentMapManager.MEvict;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Data;
@@ -74,6 +74,18 @@ public final class ThreadContext {
         mapContexts.clear();
     }
 
+    public static synchronized void shutdown(Thread thread) {
+        ThreadContext threadContext = mapContexts.remove(thread);
+        if (threadContext != null) {
+            threadContext.shutdown();
+        }
+    }
+
+    public void shutdown() {
+        currentFactory = null;
+        mapHazelcastInstanceContexts.clear();
+    }
+
     public void finalizeTxn() {
         getCallContext().finalizeTransaction();
     }
@@ -91,7 +103,7 @@ public final class ThreadContext {
     }
 
     public ManagedContext getCurrentManagedContext() {
-        return currentFactory != null ? currentFactory.managedContext : null ;
+        return currentFactory != null ? currentFactory.managedContext : null;
     }
 
     public void setCurrentFactory(FactoryImpl currentFactory) {
