@@ -35,6 +35,8 @@ public final class ThreadContext {
 
     private final static AtomicInteger newThreadId = new AtomicInteger();
 
+    private static final ConcurrentMap<Thread, ThreadContext> mapContexts = new ConcurrentHashMap<Thread, ThreadContext>(1000);
+
     private final Thread thread;
 
     private final Serializer serializer = new Serializer();
@@ -42,8 +44,6 @@ public final class ThreadContext {
     private final Map<FactoryImpl, HazelcastInstanceThreadContext> mapHazelcastInstanceContexts = new HashMap<FactoryImpl, HazelcastInstanceThreadContext>(2);
 
     private volatile FactoryImpl currentFactory = null;
-
-    private static final ConcurrentMap<Thread, ThreadContext> mapContexts = new ConcurrentHashMap<Thread, ThreadContext>(1000);
 
     private ThreadContext(Thread thread) {
         this.thread = thread;
@@ -84,6 +84,10 @@ public final class ThreadContext {
     public void shutdown() {
         currentFactory = null;
         mapHazelcastInstanceContexts.clear();
+    }
+
+    public void shutdown(FactoryImpl factory) {
+        mapHazelcastInstanceContexts.remove(factory);
     }
 
     public void finalizeTxn() {
@@ -136,10 +140,6 @@ public final class ThreadContext {
         hic = new HazelcastInstanceThreadContext(factory);
         mapHazelcastInstanceContexts.put(factory, hic);
         return hic;
-    }
-
-    public void shutdown(FactoryImpl factory) {
-        mapHazelcastInstanceContexts.remove(factory);
     }
 
     public CallCache getCallCache(FactoryImpl factory) {
