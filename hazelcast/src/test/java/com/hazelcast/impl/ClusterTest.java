@@ -739,7 +739,6 @@ public class ClusterTest {
             }
         }).start();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-        assertEquals("value2", map.get("1"));
     }
 
     @Test(timeout = 60000)
