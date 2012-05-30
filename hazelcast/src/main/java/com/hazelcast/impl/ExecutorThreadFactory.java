@@ -32,7 +32,20 @@ public class ExecutorThreadFactory implements ThreadFactory {
     }
 
     public Thread newThread(Runnable r) {
-        Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
+        Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0) {
+            @Override
+            public void run() {
+                try {
+                    super.run();
+                } finally {
+                    try {
+                        ThreadContext.get().shutdown(this);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
         t.setContextClassLoader(classLoader);
         if (t.isDaemon()) {
             t.setDaemon(false);
