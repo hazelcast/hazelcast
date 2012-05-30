@@ -73,7 +73,7 @@ public class ExecutorManager extends BaseManager {
         ClassLoader classLoader = node.getConfig().getClassLoader();
         threadPoolExecutor = new ThreadPoolExecutor(
                 5, Integer.MAX_VALUE,
-                6L,
+                60L,
                 TimeUnit.SECONDS,
                 new SynchronousQueue(),
                 new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"), classLoader),
