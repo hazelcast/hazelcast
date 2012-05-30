@@ -430,13 +430,6 @@ public class ClusterLockTest {
                 hz2.getCluster().getLocalMember());
         final IMap map = hz.getMap("testLockWhenMemberDiesAfterTxPut");
 
-//        hh.getMap("test").put(key, "value");
-//        Transaction tx = hh.getTransaction();
-//        tx.begin();
-//        hh.getMap("test").remove(key);
-//        hh.getMap("test").put(key, "value2");
-//        tx.commit();
-
         Transaction tx = hz.getTransaction();
         tx.begin();
         map.put(key, "value");
@@ -563,6 +556,34 @@ public class ClusterLockTest {
             }
             Thread.sleep(100);
         }
+    }
+
+    @Test
+    public void testLockInterruption2() throws InterruptedException {
+        Config config = new Config() ;
+        config.setProperty(GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "true");
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+
+        final Lock lock = hz.getLock("test");
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    lock.tryLock(60, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    System.err.println(e);
+                } finally {
+                    lock.unlock();
+                }
+            }
+        });
+        lock.lock();
+        t.start();
+        Thread.sleep(250);
+        t.interrupt();
+        Thread.sleep(1000);
+        lock.unlock();
+        Thread.sleep(500);
+        assertTrue("Could not acquire lock!", lock.tryLock());
     }
 }
 
