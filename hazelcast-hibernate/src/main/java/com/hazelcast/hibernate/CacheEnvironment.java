@@ -50,7 +50,7 @@ public final class CacheEnvironment {
 
     public static final String HAZELCAST_INSTANCE_NAME = "hibernate.cache.hazelcast.instance_name";
 
-    private static final int MAXIMUM_LOCK_TIMEOUT = 300; // seconds
+    private static final int MAXIMUM_LOCK_TIMEOUT = 60; // seconds
 
     private final static int DEFAULT_CACHE_TIMEOUT = (3600 * 1000); // one hour in milliseconds
 
