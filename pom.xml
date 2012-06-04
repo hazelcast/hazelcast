@@ -223,12 +223,14 @@
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
             <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
             <version>${mockito.all.version}</version>
             <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
 
     </dependencies>

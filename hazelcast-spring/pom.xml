@@ -143,7 +143,7 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
             <version>${org.springframework.version}</version>
-            <scope>provided</scope>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>javax.annotation</groupId>
@@ -160,24 +160,29 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-client</artifactId>
             <version>${project.parent.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-hibernate</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
             <version>${org.mongodb.version}</version>
             <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-mongodb</artifactId>
             <version>${org.springframework.data.mongodb}</version>
             <scope>provided</scope>
+            <optional>true</optional>
             <exclusions>
                 <exclusion>
                     <artifactId>spring-tx</artifactId>
@@ -194,6 +199,7 @@
             <artifactId>hibernate-core</artifactId>
             <version>${hibernate.core.version}</version>
             <scope>test</scope>
+            <optional>true</optional>
         </dependency>
         <!-- Spring 2.5.x is not compatible with junit versions after 4.4 -->
         <!--<dependency>-->

@@ -255,12 +255,14 @@
             <artifactId>log4j</artifactId>
             <version>${log4j.version}</version>
             <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.api.version}</version>
             <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 </project>
