@@ -52,6 +52,8 @@ public interface IOService {
 
     void handleClientPacket(Packet p);
 
+    void handleClientCommand(Protocol protocol);
+
     void handleMemberPacket(Packet p);
 
     TextCommandService getTextCommandService();
@@ -99,4 +101,5 @@ public interface IOService {
     boolean isClient();
 
     void onShutdown();
+
 }

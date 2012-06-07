@@ -93,6 +93,7 @@ public final class Connection {
         NONE(false, false),
         MEMBER(true, true),
         CLIENT(false, true),
+        PROTOCOL_CLIENT(false, true),
         REST_CLIENT(false, false),
         MEMCACHE_CLIENT(false, false);
 

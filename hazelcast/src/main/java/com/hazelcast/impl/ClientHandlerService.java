@@ -23,6 +23,7 @@ import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
@@ -36,6 +37,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -50,6 +52,7 @@ public class ClientHandlerService implements ConnectionListener {
     private final Node node;
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
     private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[ClusterOperation.LENGTH];
+    private final Map<String, CommandHandler> mapCommandHandlers = new HashMap<String, CommandHandler>();
     private final ClientOperationHandler unknownOperationHandler = new UnknownClientOperationHandler();
     private final ILogger logger;
     private final int THREAD_COUNT;
@@ -61,6 +64,13 @@ public class ClientHandlerService implements ConnectionListener {
         this.node = node;
         this.logger = node.getLogger(this.getClass().getName());
         node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
+        mapCommandHandlers.put(Command.AUTH.value, new ClientAuthenticateHandler());
+        mapCommandHandlers.put(Command.MGET.value, new MapGetHandler());
+        mapCommandHandlers.put(Command.MPUT.value, new MapPutHandler());
+        mapCommandHandlers.put(Command.ADDLSTNR.value, new AddListenerHandler());
+        mapCommandHandlers.put(Command.RMVLSTNR.value, new RemoveListenerHandler());
+//        mapCommandHandlers.put(Command.ENTRYSET.value, ());
+
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
         registerHandler(CONCURRENT_MAP_PUT_AND_UNLOCK.getValue(), new MapPutAndUnlockHandler());
@@ -157,8 +167,58 @@ public class ClientHandlerService implements ConnectionListener {
         clientOperationHandlers[operation] = handler;
     }
 
+    public void handle(Protocol protocol) {
+        checkFirstCall();
+        ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
+        CallContext callContext = clientEndpoint.getCallContext(0);
+        CommandHandler handler = mapCommandHandlers.get(protocol.getCommand());
+        if (handler == null) {
+            handler = unknownOperationHandler;
+        }
+        System.out.println(protocol.getCommand() + "::: Handler is :" + handler);
+        if (!clientEndpoint.isAuthenticated() && !Command.AUTH.value.equals(protocol.getCommand())) {
+            checkAuth(protocol.getConnection());
+            return;
+        }
+        ClientRequestHandler clientRequestHandler = new ClientProtocolRequestHandler(node, protocol, callContext,
+                handler, clientEndpoint.getSubject(), protocol.getConnection());
+        int hash = hash(callContext.getThreadId(), THREAD_COUNT);
+        workers[hash].addWork(clientRequestHandler);
+    }
+
     // always called by InThread
     public void handle(Packet packet) {
+        checkFirstCall();
+        ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
+        CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
+        ClientOperationHandler handler = clientOperationHandlers[packet.operation.getValue()];
+        if (handler == null) {
+            handler = unknownOperationHandler;
+        }
+        if (!clientEndpoint.isAuthenticated() && packet.operation != CLIENT_AUTHENTICATE) {
+            checkAuth(packet.conn);
+            return;
+        }
+        ClientRequestHandler clientRequestHandler = new ClientPacketRequestHandler(node, packet, callContext,
+                handler, clientEndpoint.getSubject(), packet.conn);
+        clientEndpoint.addRequest(clientRequestHandler);
+        if (packet.operation == CONCURRENT_MAP_UNLOCK) {
+            node.executorManager.executeNow(clientRequestHandler);
+        } else {
+            int hash = hash(callContext.getThreadId(), THREAD_COUNT);
+            workers[hash].addWork(clientRequestHandler);
+        }
+    }
+
+    private void checkAuth(Connection conn) {
+        logger.log(Level.SEVERE, "A Client " + conn + " must authenticate before any operation.");
+        node.clientHandlerService.removeClientEndpoint(conn);
+        if (conn != null)
+            conn.close();
+        return;
+    }
+
+    private void checkFirstCall() {
         if (firstCall) {
             String threadNamePrefix = node.getThreadPoolNamePrefix("client.service");
             for (int i = 0; i < THREAD_COUNT; i++) {
@@ -166,28 +226,6 @@ public class ClientHandlerService implements ConnectionListener {
                 new Thread(node.threadGroup, worker, threadNamePrefix + i).start();
             }
             firstCall = false;
-        }
-        ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
-        CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
-        ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
-        if (clientOperationHandler == null) {
-            clientOperationHandler = unknownOperationHandler;
-        }
-        if (packet.operation != CLIENT_AUTHENTICATE && !clientEndpoint.isAuthenticated()) {
-            logger.log(Level.SEVERE, "A Client " + packet.conn + " must authenticate before any operation.");
-            node.clientHandlerService.removeClientEndpoint(packet.conn);
-            if (packet.conn != null)
-                packet.conn.close();
-            return;
-        }
-        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext,
-                clientOperationHandler, clientEndpoint.getSubject());
-        clientEndpoint.addRequest(clientRequestHandler);
-        if (packet.operation == CONCURRENT_MAP_UNLOCK) {
-            node.executorManager.executeNow(clientRequestHandler);
-        } else {
-            int hash = hash(callContext.getThreadId(), THREAD_COUNT);
-            workers[hash].addWork(clientRequestHandler);
         }
     }
 
@@ -347,7 +385,7 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         @Override
-        protected void sendResponse(Packet request) {
+        protected void sendResponse(SocketWritable request, Connection conn) {
         }
     }
 
@@ -374,7 +412,7 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         @Override
-        protected void sendResponse(Packet request) {
+        protected void sendResponse(SocketWritable request, Connection conn) {
         }
     }
 
@@ -484,7 +522,10 @@ public class ClientHandlerService implements ConnectionListener {
                         } catch (ExecutionException e) {
                             packet.setValue(toData(e));
                         }
-                        sendResponse(packet);
+                        packet.lockAddress = null;
+                        packet.responseType = RESPONSE_SUCCESS;
+                        packet.operation = RESPONSE;
+                        sendResponse(packet, packet.conn);
                     }
                 });
                 executorService.execute(task);
@@ -493,7 +534,10 @@ public class ClientHandlerService implements ConnectionListener {
                         "exception during handling " + packet.operation + ": " + e.getMessage(), e);
                 packet.clearForResponse();
                 packet.setValue(toData(e));
-                sendResponse(packet);
+                packet.lockAddress = null;
+                packet.responseType = RESPONSE_SUCCESS;
+                packet.operation = RESPONSE;
+                sendResponse(packet, packet.conn);
             }
         }
     }
@@ -838,18 +882,40 @@ public class ClientHandlerService implements ConnectionListener {
     class ClientAuthenticateHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             final Credentials credentials = (Credentials) toObject(packet.getValueData());
-            boolean authenticated = false;
+            boolean authenticated = doAuthenticate(node, credentials, packet.conn);
+            packet.clearForResponse();
+            packet.setValue(toData(authenticated));
+        }
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            Credentials credentials;
+            String[] args = protocol.getArgs();
+            if (node.securityContext == null) {
+                if(args.length <3){
+
+                }
+                credentials = new UsernamePasswordCredentials(args[1], args[2]);
+            } else {
+                credentials = (Credentials) toObject(new Data(protocol.getBuffers()[0].array()));
+            }
+            boolean authenticated = doAuthenticate(node, credentials, protocol.getConnection());
+            return authenticated ? protocol.success((ByteBuffer)null) : protocol.error(null);
+        }
+
+        private boolean doAuthenticate(Node node, Credentials credentials, Connection conn) {
+            boolean authenticated;
             if (credentials == null) {
                 authenticated = false;
                 logger.log(Level.SEVERE, "Could not retrieve Credentials object!");
             } else if (node.securityContext != null) {
-                final Socket endpointSocket = packet.conn.getSocketChannelWrapper().socket();
+                final Socket endpointSocket = conn.getSocketChannelWrapper().socket();
                 // TODO: check!!!
                 credentials.setEndpoint(endpointSocket.getInetAddress().getHostAddress());
                 try {
                     LoginContext lc = node.securityContext.createClientLoginContext(credentials);
                     lc.login();
-                    getClientEndpoint(packet.conn).setLoginContext(lc);
+                    getClientEndpoint(conn).setLoginContext(lc);
                     authenticated = true;
                 } catch (LoginException e) {
                     logger.log(Level.WARNING, e.getMessage(), e);
@@ -869,17 +935,16 @@ public class ClientHandlerService implements ConnectionListener {
                             "Current credentials type is: " + credentials.getClass().getName());
                 }
             }
-            logger.log((authenticated ? Level.INFO : Level.WARNING), "received auth from " + packet.conn
+            logger.log((authenticated ? Level.INFO : Level.WARNING), "received auth from " + conn
                     + ", " + (authenticated ?
                     "successfully authenticated" : "authentication failed"));
-            packet.clearForResponse();
-            packet.setValue(toData(authenticated));
             if (!authenticated) {
-                node.clientHandlerService.removeClientEndpoint(packet.conn);
+                node.clientHandlerService.removeClientEndpoint(conn);
             } else {
-                ClientEndpoint clientEndpoint = node.clientHandlerService.getClientEndpoint(packet.conn);
+                ClientEndpoint clientEndpoint = node.clientHandlerService.getClientEndpoint(conn);
                 clientEndpoint.authenticated();
             }
+            return authenticated;
         }
     }
 
@@ -1047,6 +1112,13 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     private class MapGetHandler extends ClientOperationHandler {
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[1];
+            byte[] key = protocol.getBuffers()[0].array();
+            Data value = (Data) node.factory.getMap(name).get(new Data(key));
+            return protocol.success(value == null ? null : ByteBuffer.wrap(value.buffer));
+        }
 
         public void processCall(Node node, Packet packet) {
             InstanceType instanceType = getInstanceType(packet.name);
@@ -1415,37 +1487,61 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         @Override
-        public void doListOp(Node node, Packet packet) {
+        public Data doListOp(Node node, Packet packet) {
             IMap mapProxy = (IMap) factory.getOrCreateProxyByName(Prefix.MAP + Prefix.QUEUE + packet.name);
-            packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new ArrayList<Data>()));
+            return getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new ArrayList<Data>());
         }
 
         @Override
-        public void doMapOp(Node node, Packet packet) {
-            packet.setValue(getMapKeys((IMap) factory.getOrCreateProxyByName(packet.name), packet.getKeyData(), packet.getValueData(), new HashSet<Data>()));
+        public Data doMapOp(Node node, String name, Data key, Data value) {
+            return getMapKeys((IMap) factory.getOrCreateProxyByName(name), key, value, new HashSet<Data>());
         }
 
         @Override
-        public void doSetOp(Node node, Packet packet) {
+        public Data doSetOp(Node node, Packet packet) {
             SetProxy collectionProxy = (SetProxy) factory.getOrCreateProxyByName(packet.name);
             MProxy mapProxy = collectionProxy.getMProxy();
-            packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>()));
+            return getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>());
         }
 
-        public void doMultiMapOp(Node node, Packet packet) {
+        public Data doMultiMapOp(Node node, Packet packet) {
             MultiMapProxy multiMap = (MultiMapProxy) factory.getOrCreateProxyByName(packet.name);
             MProxy mapProxy = multiMap.getMProxy();
             Data value = getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>());
             packet.clearForResponse();
-            packet.setValue(value);
+            return value;
         }
 
-        public void doQueueOp(Node node, Packet packet) {
+        public Data doQueueOp(Node node, Packet packet) {
             IQueue queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
+            return null;
         }
     }
 
     private class AddListenerHandler extends ClientOperationHandler {
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
+            String[] args = protocol.getArgs();
+            if(args.length < 4){
+
+            }
+            String type = args[1];
+            String name = args[2];
+            boolean includeValue = Boolean.valueOf(args[3]);
+            IMap<Object, Object> map = (IMap) factory.getMap(name);
+            Data key = null;
+            if("map".equals(type)){
+                if(protocol.getBuffers()!=null && protocol.getBuffers().length > 0){
+                    key = new Data(protocol.getBuffers()[0].array());
+                }
+                System.out.println(includeValue + " Key is " + key);
+                clientEndpoint.addThisAsListener(map, key, includeValue);
+            }
+            return protocol.success();
+        }
+        
         public void processCall(Node node, final Packet packet) {
             final ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
             boolean includeValue = (int) packet.longValue == 1;
@@ -1526,6 +1622,32 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     private class RemoveListenerHandler extends ClientOperationHandler {
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            String type = protocol.getArgs()[1];
+            String name = protocol.getArgs()[2];
+            Data key = null;
+            if(protocol.getBuffers()!=null && protocol.getBuffers().length > 0){
+                key = new Data(protocol.getBuffers()[0].array());
+            }
+            ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
+            if ("map".equals(type)) {
+                IMap map = factory.getMap(name);
+                clientEndpoint.removeThisListener(map, key);
+            }
+            if ("multimap".equals(type)) {
+                MultiMap multiMap = factory.getMultiMap(name);
+                clientEndpoint.removeThisListener(multiMap, key);
+            } else if ("topic".equals(type)) {
+                ITopic topic = factory.getTopic(name);
+                topic.removeMessageListener(clientEndpoint.messageListeners.remove(topic));
+            } else if ("queue".equals(type)) {
+                IQueue queue = factory.getQueue(name);
+                queue.removeItemListener(clientEndpoint.queueItemListeners.remove(queue));
+            }
+            return protocol.success();
+        }
+        
         public void processCall(Node node, Packet packet) {
             ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
             if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
@@ -1574,8 +1696,12 @@ public class ClientHandlerService implements ConnectionListener {
         }
     }
 
-    public abstract class ClientOperationHandler {
+    public abstract class ClientOperationHandler implements CommandHandler {
         public abstract void processCall(Node node, Packet packet);
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            return protocol;
+        }
 
         public void handle(Node node, Packet packet) {
             try {
@@ -1586,15 +1712,27 @@ public class ClientHandlerService implements ConnectionListener {
                 packet.clearForResponse();
                 packet.setValue(toData(new ClientServiceException(e)));
             }
-            sendResponse(packet);
+            packet.lockAddress = null;
+            packet.responseType = RESPONSE_SUCCESS;
+            packet.operation = RESPONSE;
+            sendResponse(packet, packet.conn);
         }
 
-        protected void sendResponse(Packet request) {
-            request.lockAddress = null;
-            request.operation = RESPONSE;
-            request.responseType = RESPONSE_SUCCESS;
-            if (request.conn != null && request.conn.live()) {
-                request.conn.getWriteHandler().enqueueSocketWritable(request);
+        public void handle(Node node, Protocol protocol) {
+            Protocol response;
+            try {
+                response = processCall(node, protocol);
+            } catch (RuntimeException e) {
+                logger.log(Level.WARNING,
+                        "exception during handling " + protocol.getCommand() + ": " + e.getMessage(), e);
+                response = new Protocol(protocol.getConnection(), "ERROR", new String[]{e.getMessage()});
+            }
+            sendResponse(response, protocol.getConnection());
+        }
+
+        protected void sendResponse(SocketWritable request, Connection conn) {
+            if (conn != null && conn.live()) {
+                conn.getWriteHandler().enqueueSocketWritable(request);
             } else {
                 logger.log(Level.WARNING, "unable to send response " + request);
             }
@@ -1609,6 +1747,10 @@ public class ClientHandlerService implements ConnectionListener {
             } else {
                 logger.log(Level.WARNING, error);
             }
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            return protocol.error(null, "unknown_command", protocol.getCommand());
         }
     }
 
@@ -1632,6 +1774,14 @@ public class ClientHandlerService implements ConnectionListener {
             packet.setValue(value);
         }
 
+        public Protocol processCall(Node node, Protocol protocol) {
+            String[] args = protocol.getArgs();
+            final IMap<Object, Object> map = (IMap) factory.getMap(args[1]);
+            final long ttl = (args.length > 2+ (protocol.isNoReply()?1:0))? Long.valueOf(args[2]):0;
+            Data value = processMapOp(map, new Data(protocol.getBuffers()[0].array()), new Data(protocol.getBuffers()[1].array()), ttl);
+            return protocol.success((value==null)?null: ByteBuffer.wrap(value.buffer));
+        }
+
         protected abstract Data processMapOp(IMap<Object, Object> map, Data keyData, Data valueData, long ttl);
     }
 
@@ -1647,30 +1797,35 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     private abstract class ClientCollectionOperationHandler extends ClientOperationHandler {
-        public abstract void doMapOp(Node node, Packet packet);
+        public abstract Data doMapOp(Node node, String name, Data key, Data value);
 
-        public abstract void doListOp(Node node, Packet packet);
+        public abstract Data doListOp(Node node, Packet packet);
 
-        public abstract void doSetOp(Node node, Packet packet);
+        public abstract Data doSetOp(Node node, Packet packet);
 
-        public abstract void doMultiMapOp(Node node, Packet packet);
+        public abstract Data doMultiMapOp(Node node, Packet packet);
 
-        public abstract void doQueueOp(Node node, Packet packet);
+        public abstract Data doQueueOp(Node node, Packet packet);
 
         @Override
         public void processCall(Node node, Packet packet) {
             InstanceType instanceType = getInstanceType(packet.name);
             if (instanceType.equals(InstanceType.LIST)) {
-                doListOp(node, packet);
+                packet.setValue(doListOp(node, packet));
             } else if (instanceType.equals(InstanceType.SET)) {
-                doSetOp(node, packet);
+                packet.setValue(doSetOp(node, packet));
             } else if (instanceType.equals(InstanceType.MAP)) {
-                doMapOp(node, packet);
+                packet.setValue(doMapOp(node, packet.getKeyData(), packet.getValueData()));
             } else if (instanceType.equals(InstanceType.MULTIMAP)) {
-                doMultiMapOp(node, packet);
+                packet.setValue(doMultiMapOp(node, packet));
             } else if (instanceType.equals(InstanceType.QUEUE)) {
-                doQueueOp(node, packet);
+                packet.setValue(doQueueOp(node, packet));
             }
+        }
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            return protocol;
         }
     }
 

@@ -50,7 +50,7 @@ public final class Address implements DataSerializable {
     public Address(InetAddress inetAddress, int port) {
         this.port = port;
         this.type = (inetAddress instanceof Inet4Address) ? IPv4 : IPv6;
-        String[] host = inetAddress.getHostAddress().split("\\%");
+        String[] host = inetAddress.getHostAddress().split(" ");
         this.host = host[0];
         if (host.length == 2) {
             scopeId = host[1];

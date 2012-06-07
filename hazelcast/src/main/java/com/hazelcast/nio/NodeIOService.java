@@ -89,6 +89,10 @@ public class NodeIOService implements IOService {
         node.clientHandlerService.handle(p);
     }
 
+    public void handleClientCommand(Protocol p) {
+        node.clientHandlerService.handle(p);
+    }
+
     public void handleMemberPacket(Packet p) {
         node.clusterService.enqueuePacket(p);
     }

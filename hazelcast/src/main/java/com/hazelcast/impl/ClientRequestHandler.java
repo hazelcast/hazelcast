@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,37 +12,40 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.ClientHandlerService.ClientOperationHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.Packet;
 
 import javax.security.auth.Subject;
 import java.security.PrivilegedExceptionAction;
 import java.util.logging.Level;
 
-public class ClientRequestHandler extends FallThroughRunnable {
-    private final Packet packet;
-    private final CallContext callContext;
-    private final Node node;
-    private final ClientHandlerService.ClientOperationHandler clientOperationHandler;
+public abstract class ClientRequestHandler extends FallThroughRunnable{
+    protected final CallContext callContext;
+    protected final Node node;
+    protected final ILogger logger;
+    protected final Subject subject;
+    protected final Connection connection;
     private volatile Thread runningThread = null;
     private volatile boolean valid = true;
-    private final ILogger logger;
-    private final Subject subject;
 
-    public ClientRequestHandler(Node node, Packet packet, CallContext callContext,
-                                ClientOperationHandler clientOperationHandler, Subject subject) {
-        this.packet = packet;
+    public ClientRequestHandler(CallContext callContext, Subject subject, Node node, Connection connection) {
         this.callContext = callContext;
-        this.node = node;
-        this.clientOperationHandler = clientOperationHandler;
-        this.logger = node.getLogger(this.getClass().getName());
         this.subject = subject;
+        this.logger = node.getLogger(this.getClass().getName());
+        this.node = node;
+        this.connection = connection;
+    }
+
+    public void cancel() {
+        valid = false;
+        if (runningThread != null) {
+            runningThread.interrupt();
+        }
     }
 
     @Override
@@ -51,14 +54,7 @@ public class ClientRequestHandler extends FallThroughRunnable {
         ThreadContext.get().setCallContext(callContext);
         try {
             if (!valid) return;
-            final PrivilegedExceptionAction<Void> action = new PrivilegedExceptionAction<Void>() {
-                public Void run() {
-                    Connection connection = packet.conn;
-                    clientOperationHandler.handle(node, packet);
-                    node.clientHandlerService.getClientEndpoint(connection).removeRequest(ClientRequestHandler.this);
-                    return null;
-                }
-            };
+            final PrivilegedExceptionAction<Void> action = createAction();
             if (node.securityContext == null) {
                 action.run();
             } else {
@@ -74,10 +70,5 @@ public class ClientRequestHandler extends FallThroughRunnable {
         }
     }
 
-    public void cancel() {
-        valid = false;
-        if (runningThread != null) {
-            runningThread.interrupt();
-        }
-    }
+    protected abstract PrivilegedExceptionAction<Void> createAction();
 }

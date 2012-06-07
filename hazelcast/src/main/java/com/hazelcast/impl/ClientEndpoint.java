@@ -17,15 +17,14 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.*;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -198,17 +197,61 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
      * @param event
      */
     private void processEvent(EntryEvent event) {
-        Packet packet = createEntryEventPacket(event);
-        sendPacket(packet);
+        SocketWritable writable;
+        if (conn.getType().equals(Connection.Type.CLIENT))
+            writable = createEntryEventPacket(event);
+        else {
+            writable = createEntryEventCommandResponse(event);
+        }
+        sendPacket(writable);
     }
 
-    void sendPacket(Packet packet) {
+    void sendPacket(SocketWritable writable) {
         if (conn != null && conn.live()) {
-            conn.getWriteHandler().enqueueSocketWritable(packet);
+            conn.getWriteHandler().enqueueSocketWritable(writable);
         }
     }
 
-    Packet createEntryEventPacket(EntryEvent event) {
+    private Protocol createEntryEventCommandResponse(EntryEvent event) {
+        final DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+        Data key = dataAwareEntryEvent.getKeyData();
+        Data newValue =null;
+        Data oldValue = null;
+        Data value = null;
+        String name = dataAwareEntryEvent.getLongName();
+        String type = null;
+        Protocol protocol = null;
+        int eventType = event.getEventType().getType();
+        
+        if (dataAwareEntryEvent.getNewValueData() != null) {
+            newValue = dataAwareEntryEvent.getNewValueData();
+            oldValue = dataAwareEntryEvent.getOldValueData();
+            type = "map";
+        }
+        if (name.startsWith(Prefix.MAP_OF_LIST)) {
+            name = name.substring(Prefix.MAP_FOR_QUEUE.length());
+            value = ((DataAwareEntryEvent) event).getNewValueData();
+            type = "list";
+        } else if (name.startsWith(Prefix.SET)) {
+            value = ((DataAwareEntryEvent) event).getKeyData();
+            type = "set";
+            key = null;
+        }
+
+        List<ByteBuffer> list = new ArrayList<ByteBuffer>();
+        list.add(ByteBuffer.wrap(key.buffer));
+        System.out.println("Key length is " + key.buffer.length);
+        System.out.println("Value length is " + newValue.buffer.length);
+        if(newValue!=null) list.add(ByteBuffer.wrap(newValue.buffer));
+        if(oldValue!=null) list.add(ByteBuffer.wrap(oldValue.buffer));
+        if(value!=null) list.add(ByteBuffer.wrap(value.buffer));
+        
+        protocol = new Protocol(this.conn, Command.EVENT.value, new String[]{"0", type, name, String.valueOf(eventType)}, list.toArray(new ByteBuffer[0]));
+        System.out.println("Sending the event back to client");
+        return protocol;
+    }
+
+    private Packet createEntryEventPacket(EntryEvent event) {
         Packet packet = new Packet();
         final DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
         Data key = dataAwareEntryEvent.getKeyData();
@@ -273,8 +316,8 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     }
 
     private void cancelRunningOperations() {
-        for (ClientRequestHandler clientRequestHandler : currentRequests) {
-            clientRequestHandler.cancel();
+        for (ClientRequestHandler requestHandler : currentRequests) {
+            requestHandler.cancel();
         }
         currentRequests.clear();
     }
