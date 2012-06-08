@@ -34,6 +34,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
@@ -74,18 +76,64 @@ public class Main {
     }
 
     @Test
-    public void entrySet() throws IOException {
-        doOp("ENTRYSET 0 default", "#0");
-        InputStreamReader reader = new InputStreamReader(socket.getInputStream(), "UTF-8");
-        BufferedReader buf = new BufferedReader(reader);
-        String commandLine = buf.readLine();
-        String sizeLine = buf.readLine();
-        System.out.println(commandLine);
-        System.out.println(sizeLine);
-        assertTrue(commandLine.startsWith("SUCCESS"));
+    public void lockNunlockKey() throws IOException, InterruptedException {
+        OutputStream out = doOp("MLOCK 0 default 0", "#1 "+"1".getBytes().length);
+        out.write("1".getBytes());
+        assertTrue(read(socket).contains("SUCCESS"));
+        boolean shouldFail = false;
+        try{
+            putFromAnotherThread("1", "b", 1000);
+            assertFalse(true);
+        }catch (RuntimeException e){
+            shouldFail = true;
+        }
+
+        assertTrue(shouldFail);
+
+        out = doOp("MUNLOCK 0 default", "#1 "+"1".getBytes().length);
+        out.write("1".getBytes());
+        assertTrue(read(socket).contains("SUCCESS"));
+        try{
+            putFromAnotherThread("1", "b", 1000);
+            assertTrue(true);
+        }catch (RuntimeException e){
+            assertFalse(true);
+        }
+    }
+
+    @Test
+    public void getMapEntry() throws IOException {
+        put(socket, "1".getBytes(), "a".getBytes(), 0);
+        OutputStream out = doOp("MGETENTRY 0 default", "#1 "+"1".getBytes().length);
+        out.write("1".getBytes());
+        List<String> entry = read(socket);
+        assertTrue(entry.contains("a"));
 
     }
 
+    @Test
+    public void keySet() throws IOException, InterruptedException {
+        put(socket, "1".getBytes(), "a".getBytes(), 0);
+        put(socket, "2".getBytes(), "b".getBytes(), 0);
+        doOp("KEYSET 0 map default", "#0");
+        List<String> keys = read(socket);
+        assertEquals(2, keys.size());
+        assertTrue(keys.contains("1"));
+        assertTrue(keys.contains("2"));
+    }
+
+    @Test
+    public void entrySet() throws IOException, InterruptedException {
+        put(socket, "1".getBytes(), "a".getBytes(), 0);
+        put(socket, "2".getBytes(), "b".getBytes(), 0);
+        doOp("ENTRYSET 0 map default", "#0");
+        List<String> keys = read(socket);
+        assertEquals(4, keys.size());
+        assertTrue(keys.contains("1"));
+        assertTrue(keys.contains("2"));
+        assertTrue(keys.contains("a"));
+        assertTrue(keys.contains("b"));
+    }
     @Test
     public void addListener() throws IOException, InterruptedException {
         doOp("ADDLSTNR 3 map default true", "#0");
@@ -114,6 +162,10 @@ public class Main {
     }
 
     private void putFromAnotherThread(final String key, final String value) throws InterruptedException {
+        putFromAnotherThread(key, value, 0);
+    }
+
+    private void putFromAnotherThread(final String key, final String value, int timeout) throws InterruptedException {
         Thread t = new Thread(new Runnable() {
             public void run() {
                 try {
@@ -121,12 +173,17 @@ public class Main {
                     put(socket, key.getBytes(), value.getBytes(), 0);
                     socket.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
                 }
             }
         });
         t.start();
-        t.join();
+        long start = System.currentTimeMillis();
+        t.join(timeout);
+        long interval = System.currentTimeMillis() - start;
+        System.out.println(interval + ":: " + timeout);
+        if(timeout != 0 && interval > timeout-100){
+            throw new RuntimeException("Timeouted");
+        }
     }
 
     @Test
@@ -170,7 +227,7 @@ public class Main {
     }
 
     private List<String> put(Socket socket, byte[] key, byte[] value, long ttl) throws IOException {
-        OutputStream out = doOp("MPUT 1 default " + ttl, "#2 " + key.length + " " + value.length);
+        OutputStream out = doOp("MPUT 1 default " + ttl, "#2 " + key.length + " " + value.length, socket);
         out.write(key);
         out.write(value);
         out.flush();

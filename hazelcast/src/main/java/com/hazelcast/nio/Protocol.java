@@ -20,6 +20,7 @@ package com.hazelcast.nio;
 import com.hazelcast.nio.protocol.Command;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class Protocol implements SocketWritable {
     private static final String NOREPLY = "noreply";
@@ -103,8 +104,8 @@ public class Protocol implements SocketWritable {
         return totalWritten >= totalSize;
     }
 
-    public Protocol success() {
-        return success((ByteBuffer)null);
+    public Protocol success(String... args) {
+        return success((ByteBuffer)null, args);
     }
 
     public Protocol success(ByteBuffer buffer, String... args) {

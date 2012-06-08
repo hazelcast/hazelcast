@@ -20,7 +20,7 @@ package com.hazelcast.nio.protocol;
 public enum Command {
 
     
-    AUTH, SUCCESS, ERROR, MGET, MPUT, ADDLSTNR, EVENT, RMVLSTNR, ENTRYSET;
+    AUTH, SUCCESS, ERROR, MGET, MPUT, ADDLSTNR, EVENT, RMVLSTNR, KEYSET, ENTRYSET, MGETENTRY, MLOCK, MUNLOCK;
     public final String value;
 
     private Command() {
