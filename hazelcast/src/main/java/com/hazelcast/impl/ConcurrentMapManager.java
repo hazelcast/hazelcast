@@ -2719,7 +2719,8 @@ public class ConcurrentMapManager extends BaseManager {
         protected void onNoTimeToSchedule(Request request) {
             request.response = null;
             if (request.operation == CONCURRENT_MAP_TRY_PUT
-                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
+                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK
+                    || request.operation == CONCURRENT_MAP_SET) {
                 request.response = Boolean.FALSE;
             }
             returnResponse(request);
@@ -2733,10 +2734,6 @@ public class ConcurrentMapManager extends BaseManager {
                 css.logObject(request, CS_TRACE, "Calling cmap.put");
             }
             cmap.put(request);
-            if (request.operation == CONCURRENT_MAP_TRY_PUT
-                    || request.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
-                request.response = Boolean.TRUE;
-            }
             if (css.shouldLog(CS_INFO)) {
                 css.info(request, "req.response", request.response);
             }
@@ -2778,7 +2775,7 @@ public class ConcurrentMapManager extends BaseManager {
                         css.trace(request, "Record is", record);
                     }
                     if ((record == null || record.isLoadable()) && cmap.loader != null
-                            && request.operation != ClusterOperation.CONCURRENT_MAP_PUT_TRANSIENT) {
+                            && request.operation != ClusterOperation.CONCURRENT_MAP_SET) {
                         if (css.shouldLog(CS_TRACE)) {
                             css.trace(request, "Will Load");
                         }
