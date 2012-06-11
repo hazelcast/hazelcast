@@ -2619,6 +2619,12 @@ public class ConcurrentMapManager extends BaseManager {
                 Object expectedValue = toObject(multiData.getData(0));
                 request.value = multiData.getData(1); // new value
                 request.response = expectedValue.equals(record.getValue());
+
+                if (request.response == Boolean.TRUE) {
+                    // to prevent possible race condition!
+                    // See testMapReplaceIfSame# tests in ClusterTest
+                    record.setValueData(request.value);
+                }
                 if (cmap.store != null && cmap.writeDelayMillis == 0) {
                     cmap.store.store(toObject(request.key), toObject(request.value));
                     afterMapStore();
@@ -2680,9 +2686,13 @@ public class ConcurrentMapManager extends BaseManager {
 
             public void process() {
                 request.value = null;
-                if (request.response == Boolean.TRUE) {
+                if (request.response == Boolean.TRUE && record.isActive()) {
+                    // return true only if record is actually removed
+                    // (see testMapRemoveIfSame test)
                     cmap.remove(request);
                     request.response = Boolean.TRUE;
+                } else {
+                    request.response = Boolean.FALSE;
                 }
                 returnResponse(request);
             }

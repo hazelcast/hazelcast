@@ -356,6 +356,142 @@ public class ClusterTest {
     }
 
     @Test
+    public void testMapReplaceIfSame2() throws Exception {
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(new Config());
+        final IMap<String, String> map = hz.getMap("default");
+        final int loop = 50000;
+        final String key = "key";
+        final String value = "value";
+        map.put(key, value);
+
+        final int threads = 10;
+        final CountDownLatch latch = new CountDownLatch(loop);
+        ExecutorService ex = Executors.newFixedThreadPool(threads);
+        try {
+            for (int i = 0; i < loop; i++) {
+                ex.execute(new Runnable() {
+                    public void run() {
+                        if (map.replace(key, value, value)) {
+                            latch.countDown();
+                        }
+                    }
+                });
+            }
+        } finally {
+            ex.shutdown();
+            ex.awaitTermination(5, TimeUnit.SECONDS);
+        }
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testMapReplaceIfSame3() throws Exception {
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(new Config());
+        final IMap<String, Counter> map = hz.getMap("default");
+        final int loop = 10000;
+        final String id = "key";
+        map.put(id, new Counter(id, 0L));
+
+        Thread[] threads = new Thread[2];
+        for (int k = 0; k < threads.length; k++) {
+            threads[k] = new Thread(new Runnable() {
+                public void run() {
+                    for (int i = 0; i < loop; i++) {
+                        increment();
+                    }
+                }
+                void increment() {
+                    for (; ; ) {
+                        Counter oldCounter = map.get(id);
+                        if (oldCounter == null) throw new IllegalArgumentException();
+                        Counter newCounter = new Counter(id, oldCounter.value);
+                        newCounter.inc();
+                        if (map.replace(id, oldCounter, newCounter)) {
+                            return;
+                        }
+                    }
+                }
+            });
+        }
+
+        for (Thread thread : threads) thread.start();
+
+        for (Thread thread : threads) thread.join();
+
+        long actualCount = map.get(id).value;
+        long expectedCount = loop * threads.length;
+        assertEquals(expectedCount, actualCount);
+    }
+
+    @Test
+    public void testMapRemoveIfSame() throws Exception {
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(new Config());
+        final IMap<String, Counter> map = hz.getMap("default");
+        final int loop = 10000;
+        final String key = "key";
+
+        final int t = 3;
+        final ExecutorService ex = Executors.newFixedThreadPool(t);
+        try {
+            final AtomicInteger k = new AtomicInteger();
+            for (int i = 0; i < loop; i++) {
+                final Counter c = new Counter(key, i);
+                map.put(key, c) ;
+                final CountDownLatch latch = new CountDownLatch(t);
+                for (int j = 0; j < t; j++) {
+                    ex.submit(new Runnable() {
+                        public void run() {
+                            if (map.remove(key, c)) {
+                                k.incrementAndGet();
+                            }
+                            latch.countDown();
+                        }
+                    });
+                }
+                assertTrue(latch.await(3, TimeUnit.SECONDS));
+                assertEquals("Remove if same should be successful only once! ["
+                         + i + "]", 1, k.getAndSet(0));
+            }
+        } finally {
+            ex.shutdownNow();
+        }
+    }
+
+    static class Counter implements Serializable {
+
+        private String id;
+        private long value;
+
+        public Counter() {
+        }
+
+        public Counter(String id, long value) {
+            this.value = value;
+            this.id = id;
+        }
+
+        public void inc() {
+            value++;
+        }
+
+        public boolean equals(Object thatObject) {
+            if (thatObject == this) return true;
+            if (!(thatObject instanceof Counter)) return false;
+            Counter that = (Counter) thatObject;
+            if (!(that.id.equals(this.id))) return false;
+            if (that.value != this.value) return false;
+            return true;
+        }
+
+        public int hashCode() {
+            int hash = id.hashCode();
+            hash = 31 * hash + ((int) (value ^ (value >>> 32)));
+            return hash;
+        }
+    }
+
+
+    @Test
     public void testLockInstance() {
         ILock lock = Hazelcast.getLock("testLock");
         lock.lock();
