@@ -924,7 +924,11 @@ public class CMap {
         if (localUpdateListener != null && req.txnId != Long.MIN_VALUE) {
             localUpdateListener.recordUpdated(record);
         }
-        if (req.operation == CONCURRENT_MAP_REPLACE_IF_SAME || req.operation == CONCURRENT_MAP_SET) {
+        if (req.operation == CONCURRENT_MAP_SET
+            || req.operation == CONCURRENT_MAP_TRY_PUT
+            || req.operation == CONCURRENT_MAP_PUT_TRANSIENT
+            || req.operation == CONCURRENT_MAP_REPLACE_IF_SAME
+            || req.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
             req.response = Boolean.TRUE;
         } else {
             req.response = oldValue;
