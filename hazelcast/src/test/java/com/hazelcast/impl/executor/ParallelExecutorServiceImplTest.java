@@ -23,10 +23,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -62,5 +65,27 @@ public class ParallelExecutorServiceImplTest {
             fail();
         } catch (NullPointerException expected) {
         }
+    }
+
+    @Test
+    public void testHashBasedExecution() throws InterruptedException {
+        ParallelExecutor executor = parallelExecutorService.newParallelExecutor(100);
+        class Counter {
+            /*volatile*/ int count = 0;
+        }
+        final Counter counter = new Counter() ;
+        final int total = 100000;
+        final CountDownLatch latch = new CountDownLatch(total);
+        final AtomicBoolean b = new AtomicBoolean(false);
+        for (int i = 0; i < total; i++) {
+            executor.execute(new Runnable() {
+                public void run() {
+                    counter.count++;
+                    latch.countDown();
+                }
+            }, 0);
+        }
+        latch.await();
+        assertEquals(total, counter.count);
     }
 }
