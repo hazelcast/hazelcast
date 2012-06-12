@@ -20,6 +20,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Instance.InstanceType;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.monitor.LocalTopicStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -118,6 +119,7 @@ public class TopicManager extends BaseManager {
 
         private final TopicManager topicManager;
         private final String name;
+        private final TopicConfig topicConfig;
         private final Map<Address, Boolean> mapListeners = new HashMap<Address, Boolean>();
 
         public TopicInstance(final TopicManager topicManager, final String name) {
@@ -129,11 +131,12 @@ public class TopicManager extends BaseManager {
             }
             this.topicManager = topicManager;
             this.name = name;
+            String shortName = name.substring(Prefix.TOPIC.length());
+            topicConfig = node.config.findMatchingTopicConfig(shortName);
             initializeListeners();
         }
 
         private void initializeListeners() {
-            final TopicConfig topicConfig = node.config.findMatchingTopicConfig(name);
             for (ListenerConfig lc : topicConfig.getMessageListenerConfigs()) {
                 try {
                     node.listenerManager.createAndAddListenerItem(name, lc, InstanceType.TOPIC);

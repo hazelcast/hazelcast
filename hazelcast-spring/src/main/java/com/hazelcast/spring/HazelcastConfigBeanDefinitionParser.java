@@ -171,7 +171,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("instance-name".equals(nodeName)) {
                     configBuilder.addPropertyValue(xmlToJavaName(nodeName), getValue(node));
                 } else if ("listeners".equals(nodeName)) {
-                    final List listeners = parseListeners(node, "listenerConfig", ListenerConfig.class);
+                    final List listeners = parseListeners(node, ListenerConfig.class);
                     configBuilder.addPropertyValue("listenerConfigs", listeners);
                 } else if ("lite-member".equals(nodeName)) {
                     configBuilder.addPropertyValue(xmlToJavaName(nodeName), getValue(node));
@@ -353,7 +353,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, queueConfigBuilder);
             for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 if ("item-listeners".equals(cleanNodeName(childNode))) {
-                    ManagedList listeners = parseListeners(childNode, "itemListenerConfig", ItemListenerConfig.class);
+                    ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
                     queueConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
                 }
             }
@@ -400,7 +400,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     mapConfigBuilder.addPropertyValue("mapIndexConfigs", indexes);
                 } else if ("entry-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, "entryListenerConfig", EntryListenerConfig.class);
+                    ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
                     mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 }
             }
@@ -530,7 +530,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, multiMapConfigBuilder);
             for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 if ("entry-listeners".equals(cleanNodeName(childNode))) {
-                    ManagedList listeners = parseListeners(childNode, "entryListenerConfig", EntryListenerConfig.class);
+                    ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
                     multiMapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 }
             }
@@ -544,7 +544,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, topicConfigBuilder);
             for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 if ("message-listeners".equals(cleanNodeName(childNode))) {
-                    ManagedList listeners = parseListeners(childNode, "messageListenerConfig", ListenerConfig.class);
+                    ManagedList listeners = parseListeners(childNode, ListenerConfig.class);
                     topicConfigBuilder.addPropertyValue("messageListenerConfigs", listeners);
                 }
             }
@@ -754,7 +754,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
         }
 
-        private ManagedList parseListeners(Node node, String listenerBeanName, Class listenerConfigClass) {
+        private ManagedList parseListeners(Node node, Class listenerConfigClass) {
             ManagedList listeners = new ManagedList();
             final String implementationAttr = "implementation";
             for (Node listenerNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
