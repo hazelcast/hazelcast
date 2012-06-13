@@ -389,13 +389,6 @@ public class ClusterLockTest {
         map.lock(key);
         map.putAndUnlock(key, "value");
 
-//        hh.getMap("test").put(key, "value");
-//        Transaction tx = hh.getTransaction();
-//        tx.begin();
-//        hh.getMap("test").remove(key);
-//        hh.getMap("test").put(key, "value2");
-//        tx.commit();
-
         hz2.getLifecycleService().shutdown();
         Thread.sleep(1000);
 

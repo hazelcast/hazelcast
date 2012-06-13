@@ -534,6 +534,43 @@ public class HazelcastTest {
     }
 
     /**
+     * Test for issue #181
+     */
+    @Test
+    public void testMapKeyListenerWithRemoveAndUnlock() throws InterruptedException {
+        IMap<String, String> map = Hazelcast.getMap("testMapKeyListenerWithRemoveAndUnlock");
+        final String key = "key";
+        final int count = 20;
+        final CountDownLatch latch = new CountDownLatch(count * 2);
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryAdded(final EntryEvent<String, String> e) {
+                testEvent(e);
+            }
+
+            public void entryRemoved(final EntryEvent<String, String> e) {
+                testEvent(e);
+            }
+
+            private void testEvent(final EntryEvent<String, String> e) {
+                if (key.equals(e.getKey())) {
+                    latch.countDown();
+                } else {
+                    fail("Invalid event: " + e);
+                }
+            }
+        }, key, true);
+
+        for (int i = 0; i < count; i++) {
+            map.lock(key);
+            map.put(key, "value");
+            map.remove(key);
+            map.unlock(key);
+        }
+        assertTrue("Listener events are missing! Remaining: " + latch.getCount(),
+                latch.await(5, TimeUnit.SECONDS));
+    }
+
+    /**
      * Test for the issue 477.
      * Updates should also update the TTL
      *

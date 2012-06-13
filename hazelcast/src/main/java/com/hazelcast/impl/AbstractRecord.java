@@ -150,15 +150,15 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
 
     public boolean isRemovable() {
         return !isActive() && valueCount() <= 0 && getLockCount() <= 0 && !hasListener()
-               && (getScheduledActionCount() == 0) && getBackupOpCount() == 0;
+               && getScheduledActionCount() == 0 && getBackupOpCount() == 0;
     }
 
     public boolean isEvictable() {
-        return (getLockCount() <= 0 && !hasListener() && (getScheduledActionCount() == 0));
+        return getLockCount() <= 0 && !hasListener() && getScheduledActionCount() == 0;
     }
 
     public boolean hasListener() {
-        return (getListeners() != null && getListeners().size() > 0);
+        return getListeners() != null && getListeners().size() > 0;
     }
 
     public void addListener(Address address, boolean returnValue) {
