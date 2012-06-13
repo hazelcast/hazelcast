@@ -23,9 +23,10 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.CMap;
-import com.hazelcast.util.Clock;
 import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.impl.NodeType;
 import com.hazelcast.impl.TestUtil;
+import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -891,6 +892,36 @@ public class QueryTest extends TestUtil {
         assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").between(d1, d2)).size());
         assertEquals(3, map.values(new SqlPredicate("this between 'Mon Nov 10 11:43:05 EET 2003'" +
                                                     " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
+    }
+
+    @Test
+    public void testPredicateEnumAttribute() {
+        IMap map = Hazelcast.getMap("testPredicateEnumAttribute");
+        testPredicateEnumAttribute(map);
+    }
+
+    @Test
+    public void testPredicateEnumAttributeWithIndex() {
+        IMap map = Hazelcast.getMap("testPredicateEnumAttribute");
+        map.addIndex("this", true);
+        testPredicateDateAttribute(map);
+    }
+
+    private void testPredicateEnumAttribute(IMap map) {
+        map.put(1, NodeType.MEMBER);
+        map.put(2, NodeType.LITE_MEMBER);
+        map.put(3, NodeType.JAVA_CLIENT);
+
+        assertEquals(NodeType.MEMBER, map.values(new SqlPredicate("this=MEMBER")).iterator().next());
+        assertEquals(2, map.values(new SqlPredicate("this in (MEMBER, LITE_MEMBER)")).size());
+        assertEquals(NodeType.JAVA_CLIENT,
+                map.values(new PredicateBuilder().getEntryObject()
+                        .get("this").equal(NodeType.JAVA_CLIENT)).iterator().next());
+        assertEquals(0, map.values(new PredicateBuilder().getEntryObject()
+                .get("this").equal(NodeType.CSHARP_CLIENT)).size());
+        assertEquals(2, map.values(new PredicateBuilder().getEntryObject()
+                .get("this").in(NodeType.LITE_MEMBER, NodeType.MEMBER)).size());
+
     }
 
     public void doFunctionalSQLQueryTest(IMap imap) {
