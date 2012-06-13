@@ -176,6 +176,8 @@ public class Index {
             return TYPE_CHAR;
         } else if (Date.class.isAssignableFrom(klass)) { // util.Date, sql.Timestamp, sql.Date
             return TYPE_DATE;
+        } else if (klass.isEnum()) {
+            return TYPE_STRING;
         } else {
             return TYPE_UNKNOWN;
         }
@@ -193,6 +195,8 @@ public class Index {
             return (Boolean.TRUE.equals(value)) ? 1 : -1;
         } else if (value instanceof String) {
             return getLongValueForString((String) value);
+        } else if (value.getClass().isEnum()) {
+            return getLongValueForString(value.toString());
         } else if (value instanceof Date) {
             return ((Date) value).getTime();
         } else {

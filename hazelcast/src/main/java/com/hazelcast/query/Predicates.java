@@ -586,13 +586,13 @@ public final class Predicates {
                 }
             } else if (type.getClass().isEnum()) {
                 try {
-                    Enum enumType = (Enum) type;
                     String lastEnum = valueString;
-                    if (valueString.indexOf(".") != -1) {
+                    if (valueString.contains(".")) {
                         // there is a dot  in the value specifier, keep part after last dot
                         lastEnum = valueString.substring(1 + valueString.lastIndexOf("."));
                     }
-                    result = enumType.valueOf(enumType.getClass(), lastEnum);
+                    Enum enumType = (Enum) type;
+                    result = Enum.valueOf(enumType.getClass(), lastEnum);
                 } catch (IllegalArgumentException iae) {
                     // illegal enum value specification
                     throw new IllegalArgumentException("Illegal enum value specification: " + iae.getMessage());
