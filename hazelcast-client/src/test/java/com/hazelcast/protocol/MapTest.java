@@ -61,7 +61,7 @@ public class MapTest extends ProtocolTest{
             out.write(k.getBytes());
             out.write(map.get(k).getBytes());
         }
-        assertTrue(read(socket).contains("SUCCESS"));
+        assertTrue(read(socket).contains("OK"));
         doOp("ENTRYSET 0 map default", "#0");
         List<String> keys = read(socket);
         System.out.println("keys = " + keys);
@@ -71,7 +71,7 @@ public class MapTest extends ProtocolTest{
     public void lockNunlockKey() throws IOException, InterruptedException {
         OutputStream out = doOp("MLOCK 0 default 0", "#1 "+"1".getBytes().length);
         out.write("1".getBytes());
-        assertTrue(read(socket).contains("SUCCESS"));
+        assertTrue(read(socket).contains("OK"));
         boolean shouldFail = false;
         try{
             putFromAnotherThread("1", "b", 1000);
@@ -84,7 +84,7 @@ public class MapTest extends ProtocolTest{
 
         out = doOp("MUNLOCK 0 default", "#1 "+"1".getBytes().length);
         out.write("1".getBytes());
-        assertTrue(read(socket).contains("SUCCESS"));
+        assertTrue(read(socket).contains("OK"));
         try{
             putFromAnotherThread("1", "b", 1000);
             assertTrue(true);
@@ -130,7 +130,7 @@ public class MapTest extends ProtocolTest{
     @Test
     public void addListener() throws IOException, InterruptedException {
         doOp("ADDLSTNR 3 map default true", "#0");
-        assertTrue(read(socket).contains("SUCCESS"));
+        assertTrue(read(socket).contains("OK"));
         final String value = "a";
         putFromAnotherThread("1", value);
         List<String> values = read(socket);
@@ -167,7 +167,7 @@ public class MapTest extends ProtocolTest{
     public void removeListener() throws IOException, InterruptedException {
         addListener();
         doOp("RMVLSTNR 5 map default", "#0");
-        assertTrue(read(socket).contains("SUCCESS"));
+        assertTrue(read(socket).contains("OK"));
         putFromAnotherThread("1", "b");
         Thread.sleep(1000);
         assertTrue(socket.getInputStream().available() <= 0);

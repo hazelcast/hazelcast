@@ -34,6 +34,6 @@ public class QueueTest extends ProtocolTest{
         OutputStream out = doOp("QOFFER 2 default 0", "#1 " + item.getBytes().length);
         out.write(item.getBytes());
         out.flush();
-        assertTrue(read(socket).contains("SUCCESS"));
+        assertTrue(read(socket).contains("OK"));
     }
 }
