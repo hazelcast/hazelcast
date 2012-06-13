@@ -3613,9 +3613,7 @@ public class ConcurrentMapManager extends BaseManager {
                     record.incrementVersion();
                     request.version = record.getVersion();
                     request.lockCount = record.getLockCount();
-                    if (record.getLockCount() == 0 &&
-                            record.valueCount() == 0 &&
-                            !record.hasScheduledAction()) {
+                    if (record.valueCount() == 0 && record.isEvictable()) {
                         cmap.markAsEvicted(record);
                     }
                     cmap.fireScheduledActions(record);
@@ -4021,7 +4019,9 @@ public class ConcurrentMapManager extends BaseManager {
         CMap cmap = getOrCreateMap(req.name);
         Record record = cmap.getRecord(req);
         if (record == null || !record.isActive() || !record.isValid()) {
+            final Map<Address, Boolean> listeners = record != null ? record.getListeners() : null;
             record = cmap.createAndAddNewRecord(req.key, defaultValue);
+            record.setMapListeners(listeners);
         }
         return record;
     }
