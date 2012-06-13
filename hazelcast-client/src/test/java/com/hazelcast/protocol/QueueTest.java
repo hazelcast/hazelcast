@@ -15,17 +15,25 @@
  *
  */
 
-package com.hazelcast.nio.protocol;
+package com.hazelcast.protocol;
 
-public enum Command {
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-    
-    AUTH, SUCCESS, ERROR, MGET, MPUT, ADDLSTNR, EVENT, RMVLSTNR, KEYSET, ENTRYSET, MGETENTRY, MLOCK, MUNLOCK, MPUTALL,
-    QOFFER;
-    public final String value;
+import java.io.IOException;
+import java.io.OutputStream;
 
-    private Command() {
-        this.value = this.toString();
+import static org.junit.Assert.assertTrue;
+
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+public class QueueTest extends ProtocolTest{
+
+    @Test
+    public void offer() throws IOException {
+        String item = "1";
+        OutputStream out = doOp("QOFFER 2 default 0", "#1 " + item.getBytes().length);
+        out.write(item.getBytes());
+        out.flush();
+        assertTrue(read(socket).contains("SUCCESS"));
     }
-
 }
