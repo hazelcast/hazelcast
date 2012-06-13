@@ -43,12 +43,13 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
-public class ManagementCenterService implements LifecycleListener {
+public class ManagementCenterService implements LifecycleListener, MembershipListener {
 
     private final FactoryImpl factory;
     private AtomicBoolean running = new AtomicBoolean(false);
@@ -64,6 +65,7 @@ public class ManagementCenterService implements LifecycleListener {
     private final StatsInstanceFilter instanceFilterSemaphore;
     private final int maxVisibleInstanceCount;
     private volatile String webServerUrl;
+    private volatile boolean urlChanged = false;
     private final int updateIntervalMs;
     private final ManagementCenterConfig managementCenterConfig;
 
@@ -75,6 +77,7 @@ public class ManagementCenterService implements LifecycleListener {
             throw new IllegalStateException("ManagementCenterConfig should not be null!");
         }
         factory.getLifecycleService().addLifecycleListener(this);
+        factory.getCluster().addMembershipListener(this);
         this.instanceFilterMap = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_MAP_EXCLUDES.getString());
         this.instanceFilterQueue = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_QUEUE_EXCLUDES.getString());
         this.instanceFilterTopic = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_TOPIC_EXCLUDES.getString());
@@ -145,6 +148,25 @@ public class ManagementCenterService implements LifecycleListener {
         return HttpCommand.RES_204;
     }
 
+    public void memberAdded(MembershipEvent membershipEvent) {
+        try {
+            Member member = membershipEvent.getMember();
+            if(member != null && factory.node.isMaster() && urlChanged) {
+                ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(webServerUrl);
+                FutureTask<Void> task = new DistributedTask<Void>(callable, member);
+                ExecutorService executorService = factory.getExecutorService();
+                executorService.execute(task);
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Web server url cannot be assigned to the newly joined member", e);
+        }
+    }
+
+    public void memberRemoved(MembershipEvent membershipEvent) {
+
+    }
+
+
     public void changeWebServerUrl(String newUrl) {
         if (newUrl == null)
             return;
@@ -152,6 +174,7 @@ public class ManagementCenterService implements LifecycleListener {
         if(!running.get()) {
             start();
         }
+        urlChanged = true;
         logger.log(Level.INFO, "Web server url has been changed. Management Center is now listening from " + webServerUrl);
     }
 
@@ -202,7 +225,6 @@ public class ManagementCenterService implements LifecycleListener {
         }
         return list;
     }
-
 
     class StateSender extends Thread {
         StateSender() {
@@ -330,10 +352,16 @@ public class ManagementCenterService implements LifecycleListener {
             }
         }
         Collection<HazelcastInstanceAwareInstance> proxyObjects = new ArrayList<HazelcastInstanceAwareInstance>(factory.getProxies());
+
+        ExecutorManager executorManager = factory.node.executorManager;
+        memberState.setInternalThroughputStats(executorManager.getInternalThroughputMap());
+        memberState.setThroughputStats(executorManager.getThroughputMap());
+
         createMemState(memberState, proxyObjects.iterator(), InstanceType.MAP);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.QUEUE);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.TOPIC);
         createRuntimeProps(memberState);
+
         // uncomment when client changes are made
         //createMemState(memberState, proxyObjects.iterator(), InstanceType.ATOMIC_LONG);
         //createMemState(memberState, proxyObjects.iterator(), InstanceType.COUNT_DOWN_LATCH);
@@ -421,6 +449,14 @@ public class ManagementCenterService implements LifecycleListener {
                 it.remove();
             }
         }
+    }
+
+
+    private List<String> getExecutorNames() {
+        ExecutorManager executorManager = factory.node.executorManager;
+        List<String> executorNames = new ArrayList<String>(executorManager.getExecutorNames());
+        Collections.sort(executorNames);
+        return executorNames;
     }
 
     private Set<String> getLongInstanceNames() {
@@ -557,6 +593,7 @@ public class ManagementCenterService implements LifecycleListener {
                     timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
                 }
             }
+            timedMemberState.setExecutorList(getExecutorNames());
             timedMemberState.setMemberState(memberState);
             timedMemberState.setClusterName(groupConfig.getName());
             timedMemberState.setInstanceNames(getLongInstanceNames());

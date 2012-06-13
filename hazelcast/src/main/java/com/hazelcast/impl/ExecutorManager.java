@@ -21,16 +21,16 @@ import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.impl.executor.ParallelExecutorService;
+import com.hazelcast.impl.monitor.ExecutorOperationsCounter;
+import com.hazelcast.impl.monitor.LocalExecutorOperationStatsImpl;
+import com.hazelcast.monitor.LocalExecutorOperationStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.security.SecureCallable;
 import com.hazelcast.util.Clock;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -64,7 +64,12 @@ public class ExecutorManager extends BaseManager {
     private final ConcurrentMap<ExecutionKey, RequestExecutor> executions = new ConcurrentHashMap<ExecutionKey, RequestExecutor>(100);
     private final ScheduledThreadPoolExecutor esScheduled;
 
+    private final ConcurrentMap<String, ExecutorOperationsCounter> internalThroughputMap = new ConcurrentHashMap<String, ExecutorOperationsCounter>();
+    private final ConcurrentMap<String, ExecutorOperationsCounter> throughputMap = new ConcurrentHashMap<String, ExecutorOperationsCounter>();
+
+
     final AtomicLong executionIdGen = new AtomicLong();
+    private final int interval = 60000;
 
     ExecutorManager(final Node node) {
         super(node);
@@ -204,16 +209,23 @@ public class ExecutorManager extends BaseManager {
         volatile boolean cancelled = false;
         volatile boolean running = false;
         volatile Thread runningThread = null;
+        volatile long startTime;
+        volatile long creationTime;
 
         RequestExecutor(Request request, ExecutionKey executionKey) {
             this.request = request;
             this.executionKey = executionKey;
+            this.creationTime = System.currentTimeMillis();
+            internalThroughputMap.putIfAbsent(request.name, new ExecutorOperationsCounter(interval, request.name));
+            internalThroughputMap.get(request.name).startPending();
         }
 
         public void run() {
             Object result = null;
             try {
                 runningThread = Thread.currentThread();
+                startTime = System.currentTimeMillis();
+                internalThroughputMap.get(request.name).startExecution(startTime - creationTime);
                 running = true;
                 if (!cancelled) {
                     Callable callable = (Callable) toObject(request.value);
@@ -230,6 +242,7 @@ public class ExecutorManager extends BaseManager {
                 if (cancelled) {
                     result = toData(new CancellationException());
                 }
+                internalThroughputMap.get(request.name).finishExecution(System.currentTimeMillis() - startTime);
                 running = false;
                 done = true;
                 executions.remove(executionKey);
@@ -253,6 +266,19 @@ public class ExecutorManager extends BaseManager {
 
     public void appendState(StringBuffer sbState) {
         Set<String> names = mapExecutors.keySet();
+        for (String name : names) {
+            NamedExecutorService namedExecutorService = mapExecutors.get(name);
+            namedExecutorService.appendState(sbState);
+        }
+    }
+
+    public Set<String> getExecutorNames() {
+        return mapExecutors.keySet();
+    }
+
+    public void appendFullState(StringBuffer sbState) {
+        Set<String> names = mapExecutors.keySet();
+
         for (String name : names) {
             NamedExecutorService namedExecutorService = mapExecutors.get(name);
             namedExecutorService.appendState(sbState);
@@ -377,6 +403,7 @@ public class ExecutorManager extends BaseManager {
         final InnerFutureTask innerFutureTask;
         final List<MemberCall> lsMemberCalls = new ArrayList<MemberCall>();
         int responseCount = 0;
+        long startTime;
 
         MembersCall(String name, Set<Member> members, Data callable, DistributedTask dtask) {
             this.name = name;
@@ -387,6 +414,9 @@ public class ExecutorManager extends BaseManager {
         }
 
         void call() {
+            throughputMap.putIfAbsent(name, new ExecutorOperationsCounter(interval, name));
+            throughputMap.get(name).startExecution(0);
+            startTime = System.currentTimeMillis();
             for (Member member : members) {
                 MemberCall memberCall = new MemberCall(name, (MemberImpl) member, callable, dtask, false, this);
                 lsMemberCalls.add(memberCall);
@@ -395,6 +425,7 @@ public class ExecutorManager extends BaseManager {
         }
 
         public void onResponse(Object result) {
+            throughputMap.get(name).finishExecution(System.currentTimeMillis() - startTime);
             responseCount++;
             if (result == OBJECT_MEMBER_LEFT || responseCount >= lsMemberCalls.size()) {
                 notifyCompletion(dtask);
@@ -402,6 +433,7 @@ public class ExecutorManager extends BaseManager {
         }
 
         public boolean cancel(final boolean mayInterruptIfRunning) {
+            throughputMap.get(name).finishExecution(System.currentTimeMillis() - startTime);
             List<AsyncCall> lsCancellationCalls = new ArrayList<AsyncCall>(lsMemberCalls.size());
             for (final MemberCall memberCall : lsMemberCalls) {
                 AsyncCall asyncCall = new AsyncCall() {
@@ -502,6 +534,7 @@ public class ExecutorManager extends BaseManager {
         final ExecutionListener executionListener;
         @SuppressWarnings("VolatileLongOrDoubleField")
         volatile long executionId;
+        long startTime;
 
         MemberCall(String name, MemberImpl member, Data callable, DistributedTask dtask) {
             this(name, member, callable, dtask, true, null);
@@ -519,6 +552,9 @@ public class ExecutorManager extends BaseManager {
         }
 
         public void call() {
+            throughputMap.putIfAbsent(name, new ExecutorOperationsCounter(interval, name));
+            throughputMap.get(name).startExecution(0);
+            startTime = System.currentTimeMillis();
             executionId = executionIdGen.incrementAndGet();
             request.setLocal(EXECUTE, name, null, callable, -1, -1, -1, thisAddress);
             request.longValue = executionId;
@@ -543,6 +579,7 @@ public class ExecutorManager extends BaseManager {
         }
 
         public boolean cancel(boolean mayInterruptIfRunning) {
+            throughputMap.get(name).finishExecution(System.currentTimeMillis() - startTime);
             TaskCancellationCall call = new TaskCancellationCall(name, member, executionId, mayInterruptIfRunning);
             return call.cancel();
         }
@@ -616,6 +653,7 @@ public class ExecutorManager extends BaseManager {
         }
 
         public void onResponse(Object response) {
+            throughputMap.get(name).finishExecution(System.currentTimeMillis() - startTime);
             if (singleTask) {
                 notifyCompletion(dtask);
             }
@@ -644,5 +682,21 @@ public class ExecutorManager extends BaseManager {
         } finally {
             Thread.currentThread().setContextClassLoader(actualContextClassLoader);
         }
+    }
+
+    public Map<String, LocalExecutorOperationStatsImpl> getThroughputMap() {
+        Map<String, LocalExecutorOperationStatsImpl> map = new ConcurrentHashMap<String, LocalExecutorOperationStatsImpl>();
+        for (String s : throughputMap.keySet()) {
+            map.put(s, (LocalExecutorOperationStatsImpl) throughputMap.get(s).getPublishedStats());
+        }
+        return map;
+    }
+
+    public Map<String, LocalExecutorOperationStatsImpl> getInternalThroughputMap() {
+        Map<String, LocalExecutorOperationStatsImpl> map = new ConcurrentHashMap<String, LocalExecutorOperationStatsImpl>();
+        for (String s : internalThroughputMap.keySet()) {
+            map.put(s, (LocalExecutorOperationStatsImpl) internalThroughputMap.get(s).getPublishedStats());
+        }
+        return map;
     }
 }

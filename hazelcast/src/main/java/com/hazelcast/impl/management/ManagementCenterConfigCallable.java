@@ -27,6 +27,7 @@ import java.util.concurrent.Callable;
 public class ManagementCenterConfigCallable extends ClusterServiceCallable implements Callable<Void>, DataSerializable {
 
     private String newUrl;
+    private int redoCount = 10;
 
     public ManagementCenterConfigCallable() {
     }
@@ -39,7 +40,13 @@ public class ManagementCenterConfigCallable extends ClusterServiceCallable imple
     public Void call() throws Exception {
         FactoryImpl factory = (FactoryImpl) hazelcastInstance;
         ManagementCenterService service = factory.node.getManagementCenterService();
-        if (service != null)
+        int count = 0;
+        while (service == null && count < redoCount) {
+            Thread.sleep(1000);
+            count++;
+            service = factory.node.getManagementCenterService();
+        }
+        if(service != null)
             service.changeWebServerUrl(newUrl);
         return null;
     }

@@ -32,6 +32,7 @@ public class TimedMemberState implements DataSerializable, Cloneable {
     MemberState memberState = null;
     Set<String> instanceNames = null;
     List<String> memberList;
+    List<String> executorList;
     Boolean master;
     String clusterName;
 
@@ -65,6 +66,13 @@ public class TimedMemberState implements DataSerializable, Cloneable {
                 out.writeUTF(address);
             }
         }
+        int execCount = (executorList == null) ? 0 : executorList.size();
+        out.writeInt(execCount);
+        if (executorList != null) {
+            for (String exec : executorList) {
+                out.writeUTF(exec);
+            }
+        }
     }
 
     public void readData(DataInput in) throws IOException {
@@ -82,6 +90,11 @@ public class TimedMemberState implements DataSerializable, Cloneable {
         memberList = new ArrayList<String>();
         for (int i = 0; i < memberCount; i++) {
             memberList.add(in.readUTF());
+        }
+        int execCount = in.readInt();
+        executorList = new ArrayList<String>();
+        for (int i = 0; i < execCount; i++) {
+            executorList.add(in.readUTF());
         }
     }
 
@@ -144,5 +157,13 @@ public class TimedMemberState implements DataSerializable, Cloneable {
 
     public void setMemberState(MemberState memberState) {
         this.memberState = memberState;
+    }
+
+    public List<String> getExecutorList() {
+        return executorList;
+    }
+
+    public void setExecutorList(List<String> executorList) {
+        this.executorList = executorList;
     }
 }

@@ -1339,6 +1339,9 @@ public class HazelcastTest {
         fail("Should not succeed putAndUnlock!");
     }
 
+    /*
+        github issue 174
+     */
     @Test
     public void testIssue174NearCacheContainsKeySingleNode() {
         Config config = new Config();
