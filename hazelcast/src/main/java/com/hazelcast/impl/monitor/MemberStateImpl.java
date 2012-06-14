@@ -257,12 +257,12 @@ public class MemberStateImpl implements MemberState {
         topicStats.put(name, localTopicStats);
     }
 
-    public void setInternalThroughputStats(Map<String, LocalExecutorOperationStatsImpl> internalThroughputStats) {
-        this.internalThroughputStats = internalThroughputStats;
+    public void putInternalThroughputStats(Map<String, LocalExecutorOperationStatsImpl> internalThroughputStats) {
+        this.internalThroughputStats.putAll(internalThroughputStats);
     }
 
-    public void setThroughputStats(Map<String, LocalExecutorOperationStatsImpl> throughputStats) {
-        this.throughputStats = throughputStats;
+    public void putThroughputStats(Map<String, LocalExecutorOperationStatsImpl> throughputStats) {
+        this.throughputStats.putAll(throughputStats);
     }
 
     @Override

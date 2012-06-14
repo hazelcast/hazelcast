@@ -354,8 +354,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         Collection<HazelcastInstanceAwareInstance> proxyObjects = new ArrayList<HazelcastInstanceAwareInstance>(factory.getProxies());
 
         ExecutorManager executorManager = factory.node.executorManager;
-        memberState.setInternalThroughputStats(executorManager.getInternalThroughputMap());
-        memberState.setThroughputStats(executorManager.getThroughputMap());
+        memberState.putInternalThroughputStats(executorManager.getInternalThroughputMap());
+        memberState.putThroughputStats(executorManager.getThroughputMap());
 
         createMemState(memberState, proxyObjects.iterator(), InstanceType.MAP);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.QUEUE);
