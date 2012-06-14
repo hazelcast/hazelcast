@@ -143,7 +143,8 @@
     <chapter xml:id="Protocol">
         <title>Client Protocol</title>
         <xi:include href="client/ClientProtocol.xml"/>
-        <xi:include href="client/Commands.xml"/>
+        <!--xi:include href="client/GeneralCommands.xml"/-->
+        <!--xi:include href="client/MapCommands.xml"/-->
     </chapter>
     <chapter xml:id="Clients">
         <title>Clients</title>

@@ -927,7 +927,7 @@ public class ClientHandlerService implements ConnectionListener {
                 credentials = (Credentials) toObject(new Data(protocol.getBuffers()[0].array()));
             }
             boolean authenticated = doAuthenticate(node, credentials, protocol.getConnection());
-            return authenticated ? protocol.success((ByteBuffer) null) : protocol.error(null);
+            return authenticated ? protocol.success() : protocol.error(null);
         }
 
         private boolean doAuthenticate(Node node, Credentials credentials, Connection conn) {
