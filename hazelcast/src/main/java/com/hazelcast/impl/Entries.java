@@ -30,18 +30,16 @@ import java.util.*;
 import static com.hazelcast.impl.ClusterOperation.*;
 
 public class Entries extends AbstractSet {
-    final Collection<Map.Entry> colKeyValues;
-    final String name;
-    final ClusterOperation operation;
-    final boolean checkValue;
-    final Predicate predicate;
-    private ConcurrentMapManager concurrentMapManager;
+    private final Collection<Map.Entry> colKeyValues;
+    private final String name;
+    private final ClusterOperation operation;
+    private final boolean checkValue;
+    private final ConcurrentMapManager concurrentMapManager;
 
     public Entries(ConcurrentMapManager concurrentMapManager, String name, ClusterOperation operation, Predicate predicate) {
         this.concurrentMapManager = concurrentMapManager;
         this.name = name;
         this.operation = operation;
-        this.predicate = predicate;
         if (name.startsWith(Prefix.MULTIMAP)) {
             colKeyValues = new LinkedList<Map.Entry>();
         } else {

@@ -18,7 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.ISet;
 
-public interface SetProxy<E> extends ISet<E>, HazelcastInstanceAwareInstance {
+public interface SetProxy<E> extends ISet<E>, IRemoveAwareProxy, HazelcastInstanceAwareInstance {
 
     MProxy getMProxy();
 }
