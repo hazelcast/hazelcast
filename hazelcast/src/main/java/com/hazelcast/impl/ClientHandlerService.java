@@ -72,19 +72,34 @@ public class ClientHandlerService implements ConnectionListener {
         mapCommandHandlers.put(Command.MSET.value, new MapSetHandler());
         mapCommandHandlers.put(Command.MPUTTRANSIENT.value, new MapPutTransientHandler());
         mapCommandHandlers.put(Command.MPUTANDUNLOCK.value, new MapPutAndUnlockHandler());
+        mapCommandHandlers.put(Command.MTRYLOCKANDGET.value, new MapTryLockAndGetHandler());
         mapCommandHandlers.put(Command.ADDLSTNR.value, new AddListenerHandler());
         mapCommandHandlers.put(Command.RMVLSTNR.value, new RemoveListenerHandler());
         mapCommandHandlers.put(Command.KEYSET.value, new MapIterateKeysHandler());
         mapCommandHandlers.put(Command.ENTRYSET.value, new MapIterateEntriesHandler());
         mapCommandHandlers.put(Command.MGETENTRY.value, new GetMapEntryHandler());
         mapCommandHandlers.put(Command.MLOCK.value, new MapLockHandler());
+        mapCommandHandlers.put(Command.MLOCKMAP.value, new MapLockMapHandler());
+        mapCommandHandlers.put(Command.MUNLOCKMAP.value, new MapUnlockMapHandler());
+        mapCommandHandlers.put(Command.MFORCEUNLOCK.value, new MapForceUnlockHandler());
+        mapCommandHandlers.put(Command.MISKEYLOCKED.value, new MapIsKeyLockedHandler());
         mapCommandHandlers.put(Command.MUNLOCK.value, new MapUnlockHandler());
         mapCommandHandlers.put(Command.MPUTALL.value, new MapPutAllHandler());
         mapCommandHandlers.put(Command.QOFFER.value, new QueueOfferHandler());
         mapCommandHandlers.put(Command.MREMOVE.value, new MapRemoveHandler());
         mapCommandHandlers.put(Command.MREMOVEITEM.value, new MapItemRemoveHandler());
         mapCommandHandlers.put(Command.MCONTAINSKEY.value, new MapContainsHandler());
-
+        mapCommandHandlers.put(Command.MCONTAINSVALUE.value, new MapContainsValueHandler());
+        mapCommandHandlers.put(Command.MPUTIFABSENT.value, new MapPutIfAbsentHandler());
+        mapCommandHandlers.put(Command.MREMOVEIFSAME.value, new MapRemoveIfSameHandler());
+        mapCommandHandlers.put(Command.MREPLACEIFNOTNULL.value, new MapReplaceIfNotNullHandler());
+        mapCommandHandlers.put(Command.MREPLACEIFSAME.value, new MapReplaceIfSameHandler());
+        mapCommandHandlers.put(Command.MFLUSH.value, new MapFlushHandler());
+        mapCommandHandlers.put(Command.SADD.value, new SetAddHandler());
+        mapCommandHandlers.put(Command.LADD.value, new ListAddHandler());
+        mapCommandHandlers.put(Command.MMPUT.value, new MapPutMultiHandler());
+        mapCommandHandlers.put(Command.MMREMOVE.value, new MapRemoveMultiHandler());
+        mapCommandHandlers.put(Command.MMVALUECOUNT.value, new MapValueCountHandler());
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
         registerHandler(CONCURRENT_MAP_PUT_AND_UNLOCK.getValue(), new MapPutAndUnlockHandler());
         registerHandler(CONCURRENT_MAP_PUT_ALL.getValue(), new MapPutAllHandler());
@@ -367,9 +382,7 @@ public class ClientHandlerService implements ConnectionListener {
                 } else {
                     result = queue.offer(item, timeout, TimeUnit.MILLISECONDS);
                 }
-
                 return protocol.success(String.valueOf(result));
-
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -472,12 +485,25 @@ public class ClientHandlerService implements ConnectionListener {
             MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
             packet.setValue(toData(multiMap.put(packet.getKeyData(), packet.getValueData())));
         }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            Data key = new Data(protocol.getBuffers()[0].array());
+            Data value = new Data(protocol.getBuffers()[1].array());
+            return protocol.success(String.valueOf(node.factory.getMultiMap(name).put(key, value)));
+        }
     }
 
     private class MapValueCountHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
             packet.setValue(toData(multiMap.valueCount(packet.getKeyData())));
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            Data key = new Data(protocol.getBuffers()[0].array());
+            return protocol.success(String.valueOf(node.factory.getMultiMap(name).valueCount(key)));
         }
     }
 
@@ -491,6 +517,17 @@ public class ClientHandlerService implements ConnectionListener {
             } else {
                 packet.setValue(toData(multiMap.remove(packet.getKeyData(), packet.getValueData())));
             }
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            Data key = new Data(protocol.getBuffers()[0].array());
+            Data value = null;
+            if (protocol.getBuffers().length > 1) {
+                value = new Data(protocol.getBuffers()[1].array());
+                return protocol.success(String.valueOf(node.factory.getMap(name).remove(key, value)));
+            }
+            return protocol.success(String.valueOf(node.factory.getMap(name).remove(key)));
         }
     }
 
@@ -1093,7 +1130,7 @@ public class ClientHandlerService implements ConnectionListener {
             final IMap<Object, Object> map = (IMap) factory.getMap(args[0]);
             final long ttl = (args.length > 1) ? Long.valueOf(args[1]) : 0;
             Data value = processMapOp(map, new Data(protocol.getBuffers()[0].array()), new Data(protocol.getBuffers()[1].array()), ttl);
-            Boolean bValue = (Boolean)toObject(value);
+            Boolean bValue = (Boolean) toObject(value);
             return protocol.success(String.valueOf(bValue));
         }
     }
@@ -1128,7 +1165,7 @@ public class ClientHandlerService implements ConnectionListener {
             final long ttl = (args.length > 2 + (protocol.isNoReply() ? 1 : 0)) ? Long.valueOf(args[2]) : 0;
             Data value;
             try {
-                value = (Data)map.tryRemove(new Data(protocol.getBuffers()[0].array()), ttl, TimeUnit.MILLISECONDS);
+                value = (Data) map.tryRemove(new Data(protocol.getBuffers()[0].array()), ttl, TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
                 return protocol.success("timeout");
             }
@@ -1161,6 +1198,15 @@ public class ClientHandlerService implements ConnectionListener {
             }
         }
 
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            long ttl = protocol.getArgs().length > 1 ? Long.valueOf(protocol.getArgs()[1]) : 0;
+            Data key = new Data(protocol.getBuffers()[0].array());
+            Data value = new Data(protocol.getBuffers()[1].array());
+            Data oldValue = processMapOp(node.factory.getMap(name), key, value, ttl);
+            return protocol.success(ByteBuffer.wrap(oldValue.buffer));
+        }
+
         public void processCall(Node node, Packet packet) {
             IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
             long ttl = packet.timeout;
@@ -1180,7 +1226,6 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-
             String name = protocol.getArgs()[0];
             int size = protocol.getBuffers() != null && protocol.getBuffers().length > 0 ? protocol.getBuffers().length : 0;
             Set<Object> set = new TreeSet<Object>();
@@ -1188,17 +1233,14 @@ public class ClientHandlerService implements ConnectionListener {
                 set.add(new Data(protocol.getBuffers()[i].array()));
             }
             Map<Object, Object> map = node.factory.getMap(name).getAll(set);
-
             ByteBuffer[] buffers = new ByteBuffer[size];
-            int i=0;
-            for(Object k : set){
+            int i = 0;
+            for (Object k : set) {
                 Object v = map.get(k);
-                
-                if(v == null){
+                if (v == null) {
                     buffers[i++] = ByteBuffer.wrap(new byte[0]);
-                }
-                else{
-                    buffers[i++] = ByteBuffer.wrap(((Data)v).buffer);
+                } else {
+                    buffers[i++] = ByteBuffer.wrap(((Data) v).buffer);
                 }
             }
             return protocol.success(buffers);
@@ -1214,14 +1256,14 @@ public class ClientHandlerService implements ConnectionListener {
         public Protocol processMapOp(Protocol protocol, IMap<Object, Object> map, Data key, Data value) {
             MapEntry<Object, Object> mapEntry = map.getMapEntry(key);
             System.out.println("mapEntry = " + mapEntry);
-            if(mapEntry == null)
+            if (mapEntry == null)
                 return protocol.success();
             else
                 return protocol.success(ByteBuffer.wrap(((Data) mapEntry.getValue()).buffer),
-                    String.valueOf(mapEntry.getCost()), String.valueOf(mapEntry.getCreationTime()),
-                    String.valueOf(mapEntry.getExpirationTime()), String.valueOf(mapEntry.getHits()),
-                    String.valueOf(mapEntry.getLastAccessTime()), String.valueOf(mapEntry.getLastStoredTime()),
-                    String.valueOf(mapEntry.getLastUpdateTime()), String.valueOf(mapEntry.getVersion()), String.valueOf(mapEntry.isValid()));
+                        String.valueOf(mapEntry.getCost()), String.valueOf(mapEntry.getCreationTime()),
+                        String.valueOf(mapEntry.getExpirationTime()), String.valueOf(mapEntry.getHits()),
+                        String.valueOf(mapEntry.getLastAccessTime()), String.valueOf(mapEntry.getLastStoredTime()),
+                        String.valueOf(mapEntry.getLastUpdateTime()), String.valueOf(mapEntry.getVersion()), String.valueOf(mapEntry.isValid()));
         }
     }
 
@@ -1307,14 +1349,35 @@ public class ClientHandlerService implements ConnectionListener {
             }
         }
 
+        @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            return protocol;
+            String name = protocol.getArgs()[0];
+            String type = protocol.getArgs()[1];
+            Data key = new Data(protocol.getBuffers()[0].array());
+            if ("map".equals(type)) {
+                IMap<Object, Object> map = (IMap) factory.getMap(name);
+                boolean contains = map.containsKey(key);
+                return protocol.success(String.valueOf(contains));
+            }
+            return protocol.error(null);
         }
     }
 
     private class MapContainsValueHandler extends ClientOperationHandler {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
             return toData(map.containsValue(value));
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            String type = protocol.getArgs()[1];
+            Data value = new Data(protocol.getBuffers()[0].array());
+            if ("map".equals(type)) {
+                IMap<Object, Object> map = (IMap) factory.getMap(name);
+                boolean contains = map.containsValue(value);
+                return protocol.success(String.valueOf(contains));
+            }
+            return protocol.error(null);
         }
 
         public void processCall(Node node, Packet packet) {
@@ -1426,6 +1489,19 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            Data key = null;
+            if (protocol.getBuffers().length > 0) {
+                key = new Data(protocol.getBuffers()[0].array());
+            } else {
+                protocol.error(null, "key", "is", "missing");
+            }
+            IMap<Object, Object> map = (IMap) factory.getMap(name);
+            return protocol.success(String.valueOf(map.isLocked(key)));
+        }
+
+        @Override
         public void processCall(Node node, Packet packet) {
             IMap<Object, Object> map = null;
             map = (IMap) factory.getOrCreateProxyByName(packet.name);
@@ -1468,6 +1544,15 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            long timeout = Long.valueOf(protocol.getArgs()[1]);
+            IMap<Object, Object> map = (IMap) factory.getMap(name);
+            boolean islocked = map.lockMap(timeout, TimeUnit.MILLISECONDS);
+            return protocol.success(String.valueOf(islocked));
+        }
+
+        @Override
         public void processCall(Node node, Packet packet) {
             IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
             long timeout = packet.timeout;
@@ -1482,6 +1567,14 @@ public class ClientHandlerService implements ConnectionListener {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
             map.unlockMap();
             return null;
+        }
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            IMap<Object, Object> map = (IMap) factory.getMap(name);
+            processMapOp(map, null, null);
+            return protocol.success();
         }
 
         @Override
@@ -1855,6 +1948,11 @@ public class ClientHandlerService implements ConnectionListener {
             packet.clearForResponse();
             packet.setValue(toData(value));
         }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            boolean added = node.factory.getList(protocol.getArgs()[0]).add(new Data(protocol.getBuffers()[0].array()));
+            return protocol.success(String.valueOf(added));
+        }
     }
 
     private class SetAddHandler extends ClientOperationHandler {
@@ -1864,6 +1962,11 @@ public class ClientHandlerService implements ConnectionListener {
             boolean value = list.add(packet.getKeyData());
             packet.clearForResponse();
             packet.setValue(toData(value));
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            boolean added = node.factory.getSet(protocol.getArgs()[0]).add(new Data(protocol.getBuffers()[0].array()));
+            return protocol.success(String.valueOf(added));
         }
     }
 
@@ -1881,7 +1984,6 @@ public class ClientHandlerService implements ConnectionListener {
             }
             String type = args[0];
             String name = args[1];
-
             boolean result = false;
             if ("set".equals(type)) {
                 ISet set = node.factory.getSet(name);
@@ -1995,8 +2097,8 @@ public class ClientHandlerService implements ConnectionListener {
         public Protocol processCall(Node node, Protocol protocol) {
             String[] args = protocol.getArgs();
             final IMap<Object, Object> map = (IMap) factory.getMap(args[0]);
-            final long ttl = (args.length > 2 + (protocol.isNoReply() ? 1 : 0)) ? Long.valueOf(args[1]) : 0;
-            Data value = processMapOp(map, new Data(protocol.getBuffers()[0].array()), new Data(protocol.getBuffers()[1].array()), ttl);
+            final long ttl = (args.length > 1) ? Long.valueOf(args[1]) : 0;
+            Data value = processMapOp(map, new Data(protocol.getBuffers()[0].array()), protocol.getBuffers().length > 1 ? new Data(protocol.getBuffers()[1].array()) : null, ttl);
             return protocol.success((value == null) ? null : ByteBuffer.wrap(value.buffer));
         }
 
