@@ -44,8 +44,6 @@ public class ListenerTest {
         HazelcastClient.shutdownAll();
     }
 
-
-
     /* github issue #183 */
     @Test
     public void testKeyBasedListeners() throws InterruptedException {
@@ -55,6 +53,7 @@ public class ListenerTest {
             IMap<String, String> map = instance.getMap("map");
             map.put("key1", "value1");
             map.put("key2", "value2");
+            map.put("key3", "value3");
 
             ClientConfig clientConfig = new ClientConfig();
             HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);

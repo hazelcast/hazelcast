@@ -67,7 +67,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
 
     public synchronized void addThisAsListener(IMap map, Data key, boolean includeValue) {
         if (!listeningMaps.contains(map) && !(listeningKeyExist(map, key))) {
-            if (key == null) {
+            if (key == null){
                 map.addEntryListener(this, includeValue);
             } else {
                 map.addEntryListener(this, toObject(key), includeValue);
