@@ -16,15 +16,13 @@
   -->
 
 <sect1 xml:id="ClientProtocol" version='5.0' xmlns='http://docbook.org/ns/docbook'
-       xmlns:xi="http://www.w3.org/2001/XInclude"
-       xmlns:xlink="http://www.w3.org/1999/xlink"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
-       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
     <title>Client Protocol Specification</title>
-    <para> Hazelcast Client Protocol is a TCP protocol that is designed to be simple and yet powerful.
+    <para>Hazelcast Client Protocol is a TCP protocol that is designed to be simple and yet powerful.
         A client opens a connection to Hazelcast server (default port is 5701) and send the request command.
-        Upon receiving the command, server will execute it and send the response back to the client. Each connection needs to
+        Upon receiving the command, server will execute it and send the response back to the client. Each connection
+        needs to
         authenticate first using AUTH command.
     </para>
 
@@ -34,69 +32,82 @@
     <para>
         General structure of protocol is as follows:
         <programlisting language="java"><![CDATA[
-        COMMAND <arg1>…<argN> \r\n
-        #M  <s1>…<sM> \r\n
+        COMMAND <arg1>…<argN> #M\r\n
+        <s1>…<sM> \r\n
         B1B2…. BM]]></programlisting>
 
-        Notice that the protocol consists of 3 lines. The first two lines are interpreted as text and there is a new line
-        after each. The first line is called "command line", second is "size line" and the rest is binary data.
+        Notice that the protocol consists of 3 lines. The first two lines are interpreted as text and there is a new
+        line character after each. The first line is called "command line", second is "size line" and the rest is binary data.
     </para>
-    
+
     <para>
-        Command line specifies the command and some arguments for that command that can be defined as string. 
-        These are in general arguments like strings, booleans, integers and longs. 
+        Command line specifies the command and some arguments for that command that can be defined as string.
+        These are in general arguments like strings, booleans, integers and longs. The last argument defines the
+        number of binary arguments. If there is no argument then it is ok to not provide it or one can simply provide #0.
     </para>
     <para>
-        Size line defines the size of the binary arguments. It first states the number of binary arguments. Then size of each argument.
+        Size line defines the size of the binary arguments with space in between.
         This way server is able to parse the binary data.
     </para>
-    
-    <para> Here is a sample put command
-    <programlisting language="java"><![CDATA[
-        MPUT 0 myMap 0
-        #2 5 7
+
+    <para>Here is a sample put command
+        <programlisting language="java"><![CDATA[
+        MPUT 0 myMap 0 #2
+        5 7
         myKeymyValue]]></programlisting>
 
     </para>
 
     <para>
         <emphasis role="bold">Protocol common arguments</emphasis>
-    </para>
 
-    In order to make life easier there are several common arguments. These are:
+        In order to make life easier there are several common arguments. These are:
 
-    <para>
         <orderedlist>
             <listitem>
                 <para>flag:
                     <literal>Flag is a long value that will be returned by server on answer.
                         Server doesn't care about the value that is set here. It will return it back on response object.
                         This argument can be used as call_id to match the responses to calls.
-                        All commands have <emphasis role="bold">flag</emphasis> as the very first argument.</literal>
+                        All commands have
+                        <emphasis role="bold">flag</emphasis>
+                        as the very first argument.
+                    </literal>
                 </para>
             </listitem>
             <listitem>
                 <para>noreply:
-                    <literal>Is an optianal argument and is provied as it is ("noreply"). If provided, server will not send the
+                    <literal>Is an optianal argument and is provied as it is ("noreply"). If provided, server will not
+                        send the
                         response back to client. Commands that retreive data from server do not have
-                        <emphasis role="bold">noreply</emphasis> as option.
-                        Must be the last argument before <emphasis role="bold">end</emphasis>
-                        (see the next argument for <emphasis role="bold">end</emphasis>) </literal>
+                        <emphasis role="bold">noreply</emphasis>
+                        as option.
+                        Must be the last argument before
+                        <emphasis role="bold">end</emphasis>
+                        (see the next argument for<emphasis role="bold">end</emphasis>)
+                    </literal>
                 </para>
             </listitem>
             <listitem>
                 <para>end:
-                    <literal> Is an optional argument and is provided as it is ("end").
+                    <literal>Is an optional argument and is provided as it is ("end").
                         If provided server will understand that there is no any binary argument thus,
-                        there is no need to send size line. <emphasis role="bold">end</emphasis> argument can be used only if
-                    there is 0 binary arguments. But note that it is not mandatory. One can skip it and send size line as follows:
-                    "#0\r\n". Obviously there want be any binary data proceeding this line. If provided must be the last argument </literal>
+                        there is no need to send size line.
+                        <emphasis role="bold">end</emphasis>
+                        argument can be used only if
+                        there is 0 binary arguments. But note that it is not mandatory. One can skip it and send size
+                        line as follows:
+                        "#0\r\n". Obviously there want be any binary data proceeding this line. If provided must be the
+                        last argument
+                    </literal>
                 </para>
             </listitem>
             <listitem>
                 <para>name:
-                    <literal> Is the name of the data structure. Distributed objects that require name must set this argument accordingly.
-                        Note that almost all commands do require it</literal>
+                    <literal>Is the name of the data structure. Distributed objects that require name must set this
+                        argument accordingly.
+                        Note that almost all commands do require it
+                    </literal>
                 </para>
             </listitem>
         </orderedlist>
@@ -108,23 +119,29 @@
     </para>
 
     <para>
-        Responses from server will use the same protocol. The command on response will either be <emphasis role="bold">OK</emphasis>
-        <emphasis role="bold">ERROR</emphasis> followed by <emphasis role="bold">flag</emphasis>. 
-        
+        Responses from server will use the same protocol. The command on response will either be
+        <emphasis role="bold">OK</emphasis> or
+        <emphasis role="bold">ERROR</emphasis>
+        followed by <emphasis role="bold">flag</emphasis>.
     </para>
 
-    <emphasis role="bold">A status reply </emphasis> without any value will be as follows:
+    <para>
+        <emphasis role="bold">A status reply</emphasis>
+    </para>
 
-    <programlisting language="java"><![CDATA[
-        OK <flag>
-        #0]]></programlisting>
+    <para>
+        without any value will be
 
+        <programlisting language="java"><![CDATA[
+        OK \r\n
+        ]]></programlisting>
 
-    <emphasis role="bold">An error reply </emphasis> will be as follows:
+       An error reply will be as follows:
 
-    <programlisting language="java"><![CDATA[
-        ERROR <flag> <error message>
-        #0]]></programlisting>
+        <programlisting language="java"><![CDATA[
+        ERROR <flag> <error reason> \r\n
+        ]]></programlisting>
 
-    Error's will happen only if the request doesn't contain the proper arguments.
+        Error's will happen only if the request doesn't contain the proper arguments.
+    </para>
 </sect1>

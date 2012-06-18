@@ -22,23 +22,22 @@ import com.hazelcast.nio.protocol.Command;
 import java.nio.ByteBuffer;
 
 public class Protocol implements SocketWritable {
-    private static final String NOREPLY = "noreply";
     private final String command;
     private final String[] args;
     private final ByteBuffer[] buffers;
     private final Connection connection;
     private final boolean noReply;
-    private long flag;
+    private String flag;
 
     ByteBuffer response = null;
     int totalSize = 0;
     int totalWritten = 0;
 
     public Protocol(Connection connection, String command, String[] args, ByteBuffer... buffers) {
-        this(connection, command, Long.valueOf(args[0]), (args != null && args.length > 0 && NOREPLY.equals(args[args.length - 1])), args, buffers);
+        this(connection, command, args[0], false, args, buffers);
     }
 
-    public Protocol(Connection connection, String command, Long flag, boolean noReply, String[] args, ByteBuffer... buffers) {
+    public Protocol(Connection connection, String command, String flag, boolean noReply, String[] args, ByteBuffer... buffers) {
         this.buffers = buffers;
         this.args = args;
         this.command = command;
@@ -63,7 +62,7 @@ public class Protocol implements SocketWritable {
         return connection;
     }
 
-    public long getFlag() {
+    public String getFlag() {
         return flag;
     }
 
@@ -76,11 +75,16 @@ public class Protocol implements SocketWritable {
         for (String arg : args) {
             builder.append(" ").append(arg);
         }
-        builder.append("\r\n");
-        builder.append("#").append(buffers == null ? 0 : buffers.length);
-        if (buffers != null){
+        int bSize = buffers == null ? 0 : buffers.length;
+        if (bSize > 0) {
+            builder.append(" #").append(buffers == null ? 0 : buffers.length);
+            builder.append("\r\n");
+            int i = buffers.length;
             for (ByteBuffer buffer : buffers) {
-                builder.append(" ").append(buffer == null ? 0 : buffer.capacity());
+                builder.append(buffer == null ? 0 : buffer.capacity());
+                if (--i != 0) {
+                    builder.append(" ");
+                }
             }
         }
         builder.append("\r\n");
@@ -104,7 +108,7 @@ public class Protocol implements SocketWritable {
     }
 
     public Protocol success(String... args) {
-        return success((ByteBuffer)null, args);
+        return success((ByteBuffer) null, args);
     }
 
     public Protocol success(ByteBuffer buffer, String... args) {

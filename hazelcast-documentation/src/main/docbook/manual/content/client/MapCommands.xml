@@ -22,23 +22,393 @@
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Map Commands</title>
-    <para>
-        <emphasis role="bold"><![CDATA[MPUT key value ]]></emphasis>
-        Associates the specified value with the specified key in the map.
-        If the map previously contained a mapping for this key, the old value is replaced by the specified value.
-    </para>
 
-    <programlisting language="java"><![CDATA[
+
+    <sect2 xml:id="MPUT" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MPUT</title>
+
+        <para>
+            Associates the specified value with the specified key in the map.
+            If the map previously contained a mapping for this key, the old value is replaced by the specified value.
+            The operation will return the old value.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
         MPUT <flag> <name> [ttl] [noreply] #2
         <size of key in bytes> <size of value in bytes>
         <key in bytes><value in bytes>
         ]]></programlisting>
-    <para>
-        ttl is optional parameter in milliseconds. If set, the entry will be evicted after ttl milliseconds.
-    </para>
+        <para>
+            ttl is optional parameter in milliseconds. If set, the entry will be evicted after ttl milliseconds.
+        </para>
 
-    <para>
-        <emphasis role="bold"> Return value</emphasis>
-        If noreply is provided, server will not return a response. Otherwise it will return OK.
-    </para>
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+                OK <flag> #1
+                <size of old_value in bytes>
+                <old_value in bytes>
+            ]]></programlisting>
+
+
+        <para>
+            If noreply is provided, server will not return a response. If no old value exists it will return OK.
+            Note that if the key is locked by another thread then the operation will be blocked until the key is
+            unlocked.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MPUTTRANSIENT" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MPUTTRANSIENT</title>
+
+        <para>
+            Associates the specified value with the specified key in the map.
+            If the map previously contained a mapping for this key, the old value is replaced by the specified value.
+            This command is exactly the same as MPUT, the only difference is that it want trigger Map Store
+            if defined and will not return the old value.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MPUTTRANSIENT <flag> <name> <ttl> [noreply] #2
+            <size of key in bytes> <size of value in bytes>
+            <key in bytes><value in bytes>
+        ]]></programlisting>
+        <para>
+            ttl is in milliseconds. If set, the entry will be evicted after ttl milliseconds. If 0, it will leave
+            forever.
+        </para>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <para>
+            If noreply is provided, server will not return a response. Otherwise it will return OK.
+            Note that if the key is locked by another thread then the operation will be blocked until the key is
+            unlocked.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MSET" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MSET</title>
+
+        <para>
+            Puts an entry into this map with a given ttl (time to live) value.
+            Entry will expire and get evicted after the ttl. If ttl is 0, then
+            the entry lives forever. Similar to MPUT command except that set
+            doesn't return the old value which is more efficient.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MSET <flag> <name> <ttl> [noreply] #2
+            <size of key in bytes> <size of value in bytes>
+            <key in bytes><value in bytes>
+        ]]></programlisting>
+        <para>
+            ttl is in milliseconds. If set, the entry will be evicted after ttl milliseconds.
+        </para>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <para>
+            If noreply is provided, server will not return a response. Otherwise it will return OK.
+            Note that if the key is locked by another thread then the operation will be blocked until the key is
+            unlocked.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MTRYPUT" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MTRYPUT</title>
+
+        <para>
+            Tries to put the given key, value into this map within specified
+            timeout value. If this method returns false, it means that
+            the caller thread couldn't acquire the lock for the key within
+            timeout duration, thus put operation is not successful.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MTRYPUT <flag> <name> <timeout> #2
+            <size of key in bytes> <size of value in bytes>
+            <key in bytes><value in bytes>
+        ]]></programlisting>
+        <para>
+            timeout is in milliseconds.
+        </para>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+                OK <flag> <true or false>
+            ]]></programlisting>
+
+    </sect2>
+
+
+    <sect2 xml:id="MPUTALL" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MPUTALL</title>
+
+        <para>
+            Copies all of the mappings from the specified map to this map. The effect of this call is equivalent
+            to that of calling MPUT k v on this map once for each mapping from key k to value v in the specified map
+            but MPUTALL will be much faster as it combines all the keys that belong to certain member and performs
+            bulk operation per member.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MPUTALL <flag> <name> [noreply] #2N
+            <size of key1> <size of value1> … <size of keyN> <size of valueN>
+            <key1 in bytes> <value1 in bytes> … <keyN in bytes> <valueN in bytes>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <para>
+            Will return OK. Note that if one of the keys is locked by another thread then the operation will be blocked
+            until all the keys are unlocked.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MPUTANDUNLOCK" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MPUTANDUNLOCK</title>
+
+        <para>
+            Puts the key and value into this map and unlocks the key
+            if the calling thread owns the lock.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MPUTANDUNLOCK <flag> <name> [noreply] #2
+            <size of key in bytes> <size of value in bytes>
+            <key in bytes><value in bytes>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <para>
+            If noreply is provided, server will not return a response. Otherwise it will return OK.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MGET" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MGET</title>
+
+        <para>
+            Returns the value to which this map maps the specified key. Returns null if the map contains no mapping for
+            this key.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MGET <flag> <name> #1
+            <size of key in bytes>
+            <key in bytes>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+            OK <flag> #1
+            <size of value in bytes>
+            <value in bytes>
+        ]]></programlisting>
+
+        <para>
+            if value is null then OK will return. Meaning that there is no value to return.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MGETALL" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MGETALL</title>
+
+        <para>
+            Returns the entries for the given keys.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MGETALL <flag> <name> #N
+            <size of key1 in bytes> ... <size of keyN in bytes>
+            <key1 in bytes> ... <keyN in bytes>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+            OK <flag> #N
+            <size of value1 in bytes> ... <size of valueN in bytes>
+            <value1 in bytes> ... <valueN in bytes>
+        ]]></programlisting>
+
+        <para>
+            Note that if the particular value for particular key is null, then the size for that value will return as zero.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MREMOVE" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MREMOVE</title>
+
+        <para>
+            Removes the mapping for this key from this map if it is present
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MREMOVE <flag> <name> [noreply] #1
+            <size of key in bytes>
+            <key in bytes>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        If noreply is provided, server will not return a response. Otherwise
+
+        <programlisting language="java"><![CDATA[
+            OK <flag> #1
+            <size of value in bytes>
+            <value in bytes>
+        ]]></programlisting>
+
+        <para>
+            if value is null then OK will return. Meaning that there is no value to return.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MTRYREMOVE" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MTRYREMOVE</title>
+
+        <para>
+            Tries to remove the entry with the given key from this map
+            within specified timeout value. If the key is already locked by another
+            thread and/or member, then this operation will wait timeout
+            amount for acquiring the lock.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MTRYREMOVE <flag> <name> <timeout> #1
+            <size of key in bytes>
+            <key in bytes>
+        ]]></programlisting>
+        <para>
+            timeout is in milliseconds.
+        </para>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+            OK <flag> #1
+            <size of value in bytes>
+            <value in bytes>
+        ]]></programlisting>
+
+        <para>
+            if the remove is not successful within specified timeout the following response will be returned
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            OK <flag> timeout
+        ]]></programlisting>
+        
+    </sect2>
+
+    <sect2 xml:id="MGETENTRY" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MGETENTRY</title>
+
+        <para>
+            Returns the entry statistics and value for a given key.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MGETENTRY <flag> <name> #1
+            <size of key in bytes>
+            <key in bytes>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+            OK <flag> <costinbytes> <creationtime> <expirationtime> <hits> <lastaccesstime> <laststoredtime> <lastupdatetime> <version> <isvalid>  #1
+            <size of value in bytes>
+            <value in bytes>
+        ]]></programlisting>
+        <para>
+            if value is null then just OK will be returned. The time values are long representation of java Date values.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MCONTAINS" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MCONTAINS</title>
+
+        <para>
+            Returns true if the value for key is not null.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MGET <flag> <type> <name> #1
+            <size of key in bytes>
+            <key in bytes>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+            OK <flag> <exist?>
+        ]]></programlisting>
+    </sect2>
+
 </sect1>

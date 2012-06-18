@@ -247,7 +247,6 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         if(value!=null) list.add(ByteBuffer.wrap(value.buffer));
         
         protocol = new Protocol(this.conn, Command.EVENT.value, new String[]{"0", type, name, String.valueOf(eventType)}, list.toArray(new ByteBuffer[0]));
-        System.out.println("Sending the event back to client");
         return protocol;
     }
 

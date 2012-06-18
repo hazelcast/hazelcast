@@ -22,7 +22,6 @@ import com.hazelcast.nio.*;
 import com.hazelcast.nio.ascii.SocketTextReader;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.logging.Level;
 //    COMMAND <arg1>É<argN> \r\n
 //    #M  <s1>É<sM> \r\n
@@ -38,13 +37,16 @@ public class SocketProtocolReader implements SocketReader {
     ByteBuffer sizeLine = ByteBuffer.allocate(500);
     MutableBoolean sizeLineRead = new MutableBoolean(false);
 
-    String command;
-    String[] args;
-    ByteBuffer[] buffers;
+    private String command;
+    private String[] args;
+    private ByteBuffer[] buffers;
+    private boolean noreply = false;
     int[] bufferSize;
 
     private final Connection connection;
     private final IOService ioService;
+    private static final String NOREPLY = "noreply";
+    private String flag = "0";
 
     public SocketProtocolReader(SocketChannelWrapper socketChannel, Connection connection) {
         this.connection = connection;
@@ -63,16 +65,21 @@ public class SocketProtocolReader implements SocketReader {
             readUntilTheEndOfLine(bb, commandLineRead, commandLine);
             if (commandLineRead.get()) {
                 parseCommandLine(SocketTextReader.toStringAndClear(commandLine));
-                readUntilTheEndOfLine(bb, sizeLineRead, sizeLine);
-                if (sizeLineRead.get()) {
-                    parseSizeLine(SocketTextReader.toStringAndClear(sizeLine));
-                    for (int i = 0; buffers != null && bb.hasRemaining() && i < buffers.length; i++) {
+                if (bufferSize.length > 0) {
+                    readUntilTheEndOfLine(bb, sizeLineRead, sizeLine);
+                }  else{sizeLineRead.set(true);}
+                if (bufferSize.length == 0 || sizeLineRead.get()) {
+                    //if (bufferSize.length > 0)
+                        parseSizeLine(SocketTextReader.toStringAndClear(sizeLine));
+                    for (int i = 0; bb.hasRemaining() && i < buffers.length; i++) {
                         if (buffers[i].hasRemaining()) {
                             copy(bb, buffers[i]);
                         }
                     }
-                    if (buffers != null && (buffers.length == 0 || !buffers[buffers.length - 1].hasRemaining())) {
-                        Protocol protocol = new Protocol(connection, command, args, buffers);
+                    if ((buffers.length == 0 || !buffers[buffers.length - 1].hasRemaining())) {
+                        if (args.length <= 0)
+                            throw new RuntimeException("No argument to the command, at least flag should be provided!");
+                        Protocol protocol = new Protocol(connection, command, flag, noreply, args, buffers);
                         connection.setType(Connection.Type.PROTOCOL_CLIENT);
                         ioService.handleClientCommand(protocol);
                         reset();
@@ -80,9 +87,9 @@ public class SocketProtocolReader implements SocketReader {
                 }
             }
         } catch (Exception e) {
-            connection.getWriteHandler().enqueueSocketWritable(new Protocol(connection, 
-                    Command.ERROR.value, new String[]{"0", "Malformed_request", e.toString()}));
-            logger.log(Level.SEVERE, e.toString());
+            connection.getWriteHandler().enqueueSocketWritable(new Protocol(connection,
+                    Command.ERROR.value, new String[]{flag, "Malformed_request", e.toString()}));
+            logger.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -105,6 +112,8 @@ public class SocketProtocolReader implements SocketReader {
         sizeLineRead.set(false);
         command = null;
         args = null;
+        flag = "0";
+        noreply = false;
         buffers = null;
         bufferSize = null;
     }
@@ -113,16 +122,15 @@ public class SocketProtocolReader implements SocketReader {
         if (buffers != null) return;
         System.out.println("Size line is : " + line);
         String[] split = line.split("\\s");
-        if (!split[0].startsWith("#")) {
-            throw new RuntimeException("Invalid Command, the size line should start with #");
+        if (line!="" && split.length != bufferSize.length) {
+            throw new RuntimeException("Size # tag and number of size entries do not match!" + split.length + ":: " + bufferSize.length);
         }
-        int bufferCount = Integer.parseInt(split[0].substring(1));
-        buffers = new ByteBuffer[bufferCount];
-        bufferSize = new int[bufferCount];
-        for (int i = 0; i < bufferCount; i++) {
-            bufferSize[i] = Integer.parseInt(split[i+1]);
+        for (int i = 0; i < bufferSize.length; i++) {
+            bufferSize[i] = Integer.parseInt(split[i]);
         }
-        for (int i = 0; i < bufferCount; i++) {
+        
+        buffers = new ByteBuffer[bufferSize.length];
+        for (int i = 0; i < buffers.length; i++) {
             buffers[i] = ByteBuffer.allocate(bufferSize[i]);
         }
     }
@@ -132,10 +140,23 @@ public class SocketProtocolReader implements SocketReader {
         System.out.println("Command line is : " + line);
         String[] split = line.split("\\s");
         command = split[0];
-        args = new String[split.length - 1];
-        for (int i = 1; i < split.length; i++) {
-            args[i - 1] = split[i];
+        int bufferCount = -1;
+        int argLength = split.length;
+        if (split.length > 0 && split[split.length - 1].startsWith("#")) {
+            bufferCount = Integer.parseInt(split[split.length - 1].substring(1));
+            noreply = split.length > 1 && NOREPLY.equals(split[split.length - 2]);
+        } else {
+            noreply = split.length > 1 && NOREPLY.equals(split[split.length - 2]);
         }
+        if (bufferCount >= 0) argLength--;
+        if (noreply) argLength--;
+        flag = split[1];
+        args = new String[argLength - 2];
+        for (int i = 2; i < argLength; i++) {
+            args[i - 2] = split[i];
+        }
+        if(bufferCount < 0) bufferCount = 0;
+        bufferSize = new int[bufferCount];
     }
 
     private void readUntilTheEndOfLine(ByteBuffer bb, MutableBoolean lineIsRead, ByteBuffer line) {

@@ -65,14 +65,16 @@ public class ProtocolTest {
         OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
         writer.write(commandLine);
         writer.write("\r\n");
-        writer.write(sizeLine);
-        writer.write("\r\n");
+        if (sizeLine != null) {
+            writer.write(sizeLine);
+            writer.write("\r\n");
+        }
         writer.flush();
         return out;
     }
 
     private void auth(Socket socket) throws IOException {
-        doOp("AUTH 0 dev dev-pass", "#0", socket);
+        doOp("AUTH 0 dev dev-pass #0", null, socket);
         read(socket);
     }
 
@@ -81,21 +83,24 @@ public class ProtocolTest {
         InputStreamReader reader = new InputStreamReader(socket.getInputStream(), "UTF-8");
         BufferedReader buf = new BufferedReader(reader);
         String commandLine = buf.readLine();
-        String sizeLine = buf.readLine();
         System.out.println(commandLine);
-        System.out.println(sizeLine);
-        String[] tokens = sizeLine.split(" ");
-        int count = Integer.valueOf(tokens[0].substring(1));
+        String[] split = commandLine.split(" ");
+        if (split[split.length - 1].startsWith("#")) {
+            String sizeLine = buf.readLine();
+            System.out.println(sizeLine);
+            String[] tokens = sizeLine.split(" ");
+            int count = Integer.valueOf(split[split.length - 1].substring(1));
 //        System.out.println("Count is " + count);
-        for (int i = 0; i < count; i++) {
-            int s = Integer.valueOf(tokens[i + 1]);
+            for (int i = 0; i < count; i++) {
+                int s = Integer.valueOf(tokens[i]);
 //            System.out.println("Size is " + s);
-            char[] value = new char[s];
-            buf.read(value);
-            System.out.println(String.valueOf(value));
-            values.add(String.valueOf(value));
+                char[] value = new char[s];
+                buf.read(value);
+                System.out.println(String.valueOf(value));
+                values.add(String.valueOf(value));
+            }
         }
-        if (count == 0) {
+        if (values.size()  == 0) {
             values.add(commandLine.split(" ")[0]);
         }
         return values;
