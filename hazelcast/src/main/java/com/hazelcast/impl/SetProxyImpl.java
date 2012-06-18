@@ -151,6 +151,11 @@ public class SetProxyImpl extends AbstractCollection implements SetProxy, DataSe
         return base.getMProxy();
     }
 
+    public boolean removeKey(final Object key) {
+        ensure();
+        return base.removeKey(key);
+    }
+
     class SetProxyReal extends AbstractCollection implements SetProxy {
 
         final MProxy mapProxy;
@@ -228,7 +233,12 @@ public class SetProxyImpl extends AbstractCollection implements SetProxy, DataSe
             return mapProxy;
         }
 
+        public boolean removeKey(final Object key) {
+            return mapProxy.removeKey(key);
+        }
+
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         }
+
     }
 }

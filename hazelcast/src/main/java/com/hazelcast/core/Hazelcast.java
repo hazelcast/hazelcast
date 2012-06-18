@@ -34,8 +34,11 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @SuppressWarnings("SynchronizationOnStaticField")
 public final class Hazelcast {
+    @Deprecated
     private static final AtomicReference<HazelcastInstance> defaultInstance = new AtomicReference<HazelcastInstance>();
+    @Deprecated
     private static final Object initLock = new Object();
+    @Deprecated
     private static Config defaultConfig = null;
 
     private Hazelcast() {
@@ -48,7 +51,13 @@ public final class Hazelcast {
      * @param config configuration for this Hazelcast instance.
      * @return the default instance
      * @throws IllegalStateException if this instance is already initialized
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see #getHazelcastInstanceByName(String)
+     * @see #getAllHazelcastInstances()
      */
+    @Deprecated
     public static HazelcastInstance init(Config config) {
         if (defaultInstance.get() != null) {
             throw new IllegalStateException("Default Hazelcast instance is already initialized.");
@@ -69,7 +78,13 @@ public final class Hazelcast {
      * configuration, if not already started.
      *
      * @return the default Hazelcast instance
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see #getHazelcastInstanceByName(String)
+     * @see #getAllHazelcastInstances()
      */
+    @Deprecated
     public static HazelcastInstance getDefaultInstance() {
         HazelcastInstance defaultInstanceObject = defaultInstance.get();
         if (defaultInstanceObject == null
@@ -95,7 +110,12 @@ public final class Hazelcast {
      *
      * @param name name of the distributed queue
      * @return distributed queue instance with the specified name
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getQueue(String)
      */
+    @Deprecated
     public static <E> IQueue<E> getQueue(String name) {
         return getDefaultInstance().getQueue(name);
     }
@@ -105,7 +125,12 @@ public final class Hazelcast {
      *
      * @param name name of the distributed topic
      * @return distributed topic instance with the specified name
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getTopic(String)
      */
+    @Deprecated
     public static <E> ITopic<E> getTopic(String name) {
         return getDefaultInstance().getTopic(name);
     }
@@ -115,7 +140,12 @@ public final class Hazelcast {
      *
      * @param name name of the distributed set
      * @return distributed set instance with the specified name
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getSet(String)
      */
+    @Deprecated
     public static <E> ISet<E> getSet(String name) {
         return getDefaultInstance().getSet(name);
     }
@@ -125,7 +155,12 @@ public final class Hazelcast {
      *
      * @param name name of the distributed list
      * @return distributed list instance with the specified name
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getList(String)
      */
+    @Deprecated
     public static <E> IList<E> getList(String name) {
         return getDefaultInstance().getList(name);
     }
@@ -135,7 +170,12 @@ public final class Hazelcast {
      *
      * @param name name of the distributed map
      * @return distributed map instance with the specified name
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getMap(String)
      */
+    @Deprecated
     public static <K, V> IMap<K, V> getMap(String name) {
         return getDefaultInstance().getMap(name);
     }
@@ -145,7 +185,12 @@ public final class Hazelcast {
      *
      * @param name name of the distributed multimap
      * @return distributed multimap instance with the specified name
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getMultiMap(String)
      */
+    @Deprecated
     public static <K, V> MultiMap<K, V> getMultiMap(String name) {
         return getDefaultInstance().getMultiMap(name);
     }
@@ -174,7 +219,13 @@ public final class Hazelcast {
      *
      * @param key key of the lock instance
      * @return distributed lock instance for the specified key.
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getLock(Object)
      */
+
+    @Deprecated
     public static ILock getLock(Object key) {
         return getDefaultInstance().getLock(key);
     }
@@ -186,7 +237,12 @@ public final class Hazelcast {
      * instance is part of.
      *
      * @return cluster that this Hazelcast instance is part of
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getCluster()
      */
+    @Deprecated
     public static Cluster getCluster() {
         return getDefaultInstance().getCluster();
     }
@@ -199,7 +255,12 @@ public final class Hazelcast {
      * Note that it don't support invokeAll/Any and don't have standard shutdown behavior
      *
      * @return distributed executor service of this Hazelcast instance
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getExecutorService()
      */
+    @Deprecated
     public static ExecutorService getExecutorService() {
         return getDefaultInstance().getExecutorService();
     }
@@ -210,7 +271,12 @@ public final class Hazelcast {
      *
      * @param name name of the executor service
      * @return executor service for the given name
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getExecutorService(String)
      */
+    @Deprecated
     public static ExecutorService getExecutorService(String name) {
         return getDefaultInstance().getExecutorService(name);
     }
@@ -250,7 +316,12 @@ public final class Hazelcast {
      * from the thread holding it.
      *
      * @return transaction for the current thread
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getTransaction()
      */
+    @Deprecated
     public static Transaction getTransaction() {
         return getDefaultInstance().getTransaction();
     }
@@ -261,7 +332,12 @@ public final class Hazelcast {
      *
      * @param name of the AtomicNumber proxy
      * @return AtomicNumber proxy instance
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getAtomicNumber(String)
      */
+    @Deprecated
     public static AtomicNumber getAtomicNumber(String name) {
         return getDefaultInstance().getAtomicNumber(name);
     }
@@ -272,7 +348,12 @@ public final class Hazelcast {
      *
      * @param name of the distributed CountDownLatch
      * @return ICountDownLatch proxy instance
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getCountDownLatch(String)
      */
+    @Deprecated
     public static ICountDownLatch getCountDownLatch(String name) {
         return getDefaultInstance().getCountDownLatch(name);
     }
@@ -283,7 +364,12 @@ public final class Hazelcast {
      *
      * @param name of the distributed Semaphore
      * @return ISemaphore proxy instance
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getSemaphore(String)
      */
+    @Deprecated
     public static ISemaphore getSemaphore(String name) {
         return getDefaultInstance().getSemaphore(name);
     }
@@ -296,7 +382,12 @@ public final class Hazelcast {
      *
      * @param name
      * @return IdGenerator proxy instance
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getIdGenerator(String)
      */
+    @Deprecated
     public static IdGenerator getIdGenerator(String name) {
         return getDefaultInstance().getIdGenerator(name);
     }
@@ -306,9 +397,11 @@ public final class Hazelcast {
      * It doesn't shutdown the entire cluster, it shuts down
      * this local member only.
      *
-     * @see #getLifecycleService()
+     * @see HazelcastInstance#getLifecycleService()
+     * @see LifecycleService#shutdown()
      * @deprecated as of version 1.9
      */
+    @Deprecated
     public static void shutdown() {
         synchronized (initLock) {
             if (defaultInstance.get() != null) {
@@ -336,9 +429,11 @@ public final class Hazelcast {
      * Detaches this member from the cluster first and then restarts it
      * as a new member.
      *
-     * @see #getLifecycleService()
+     * @see HazelcastInstance##getLifecycleService()
+     * @see LifecycleService#restart()
      * @deprecated as of version 1.9
      */
+    @Deprecated
     public static void restart() {
         synchronized (initLock) {
             if (defaultInstance.get() != null) {
@@ -354,7 +449,12 @@ public final class Hazelcast {
      * instances created by Hazelcast.
      *
      * @return the collection of instances created by Hazelcast.
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getInstances()
      */
+    @Deprecated
     public static Collection<Instance> getInstances() {
         return getDefaultInstance().getInstances();
     }
@@ -365,7 +465,12 @@ public final class Hazelcast {
      * added or removed.
      *
      * @param instanceListener instance listener
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#addInstanceListener(InstanceListener)
      */
+    @Deprecated
     public static void addInstanceListener(InstanceListener instanceListener) {
         getDefaultInstance().addInstanceListener(instanceListener);
     }
@@ -375,7 +480,12 @@ public final class Hazelcast {
      * if specified instance listener doesn't exist.
      *
      * @param instanceListener instance listener to remove
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#removeInstanceListener(InstanceListener)
      */
+    @Deprecated
     public static void removeInstanceListener(InstanceListener instanceListener) {
         getDefaultInstance().removeInstanceListener(instanceListener);
     }
@@ -391,6 +501,7 @@ public final class Hazelcast {
      * @param config Configuration for the new HazelcastInstance (member)
      * @return new HazelcastInstance
      * @see #shutdownAll()
+     * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
@@ -430,7 +541,12 @@ public final class Hazelcast {
      * Returns the configuration of this Hazelcast instance.
      *
      * @return configuration of this Hazelcast instance
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getConfig()
      */
+    @Deprecated
     public static Config getConfig() {
         return getDefaultInstance().getConfig();
     }
@@ -441,7 +557,12 @@ public final class Hazelcast {
      * cluster, partition owner members and listen for partition migration events.
      *
      * @return partition service
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getPartitionService()
      */
+    @Deprecated
     public static PartitionService getPartitionService() {
         return getDefaultInstance().getPartitionService();
     }
@@ -453,7 +574,12 @@ public final class Hazelcast {
      * or take action base on the message.
      *
      * @return logging service
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getLoggingService()
      */
+    @Deprecated
     public static LoggingService getLoggingService() {
         return getDefaultInstance().getLoggingService();
     }
@@ -464,7 +590,12 @@ public final class Hazelcast {
      * the lifecycle events.
      *
      * @return lifecycle service
+     *
+     * @deprecated as of version 2.2
+     * @see #newHazelcastInstance(com.hazelcast.config.Config)
+     * @see HazelcastInstance#getLifecycleService()
      */
+    @Deprecated
     public static LifecycleService getLifecycleService() {
         return getDefaultInstance().getLifecycleService();
     }

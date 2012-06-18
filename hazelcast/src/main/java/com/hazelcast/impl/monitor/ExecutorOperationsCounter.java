@@ -29,11 +29,7 @@ public class ExecutorOperationsCounter extends OperationsCounterSupport<LocalExe
     private final AtomicLong pending = new AtomicLong(0);
     private final AtomicLong maxCompletionTime = new AtomicLong(Long.MIN_VALUE);
     private final AtomicLong minCompletionTime = new AtomicLong(Long.MAX_VALUE);
-    private volatile String executorName = null;
-
-    public ExecutorOperationsCounter() {
-        super();
-    }
+    private final String executorName;
 
     public ExecutorOperationsCounter(long interval, String name) {
         super(interval);
@@ -47,7 +43,7 @@ public class ExecutorOperationsCounter extends OperationsCounterSupport<LocalExe
         long maxCompletion = maxCompletionTime.getAndSet(Long.MIN_VALUE);
         long minCompletion = minCompletionTime.getAndSet(Long.MAX_VALUE);
 
-        ExecutorOperationsCounter newOne = new ExecutorOperationsCounter();
+        ExecutorOperationsCounter newOne = new ExecutorOperationsCounter(interval, executorName);
         newOne.executionStarts.set(executionNow);
         newOne.executionEnds.set(waitNow);
         newOne.pending.set(pendingNow);
