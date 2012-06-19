@@ -1,0 +1,138 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<sect1 xml:id="AtomicNumberCommands" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+    <title>AtomicNumber Commands</title>
+
+    ADDANDGET, GETANDSET, COMPAREANDSET, GETANDADD
+
+    <sect2 xml:id="ADDANDGET" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>ADDANDGET</title>
+
+        <para>
+            Atomically adds the given value to the current value.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+        ADDANDGET <flag> <name> <delta>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+                OK <flag> <updatedvalue>
+            ]]></programlisting>
+
+        <para>
+            Returns the updated value.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="GETANDSET" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>GETANDSET</title>
+
+        <para>
+            Atomically sets the given value and returns the old value.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+        GETANDSET <flag> <name> <newvalue>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+                OK <flag> <oldvalue>
+            ]]></programlisting>
+
+        <para>
+            Returns the old value.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="COMPAREANDSET" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>COMPAREANDSET</title>
+
+        <para>
+            Atomically sets the value to the given updated value
+            only if the current value equals to the expected value.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+        COMPAREANDSET <flag> <name> <update> <expect>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+                OK <flag> <updated?>
+            ]]></programlisting>
+
+        <para>
+            true if successful; or false if the actual value
+            was not equal to the expected value
+        </para>
+    </sect2>
+
+    <sect2 xml:id="GETANDADD" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>GETANDADD</title>
+
+        <para>
+            Atomically adds the given value to the current value.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+        GETANDADD <flag> <name> <delta>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+                OK <flag> <oldvalue>
+            ]]></programlisting>
+
+        <para>
+            Returns the old value.
+        </para>
+    </sect2>
+
+</sect1>

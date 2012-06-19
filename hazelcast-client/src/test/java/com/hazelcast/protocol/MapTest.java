@@ -136,7 +136,7 @@ public class MapTest extends ProtocolTest{
     }
     @Test
     public void addListener() throws IOException, InterruptedException {
-        doOp("ADDLSTNR 3 map default true", null);
+        doOp("ADDLISTENER 3 map default true", null);
         assertTrue(read(socket).contains("OK"));
         final String value = "a";
         putFromAnotherThread("1", value);
@@ -173,7 +173,7 @@ public class MapTest extends ProtocolTest{
     @Test
     public void removeListener() throws IOException, InterruptedException {
         addListener();
-        doOp("RMVLSTNR 5 map default", null);
+        doOp("REMOVELISTENER 5 map default", null);
         assertTrue(read(socket).contains("OK"));
         putFromAnotherThread("1", "b");
         Thread.sleep(1000);

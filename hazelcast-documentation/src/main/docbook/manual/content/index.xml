@@ -148,6 +148,8 @@
         <xi:include href="client/SetCommands.xml"/>
         <xi:include href="client/ListCommands.xml"/>
         <xi:include href="client/MultiMapCommands.xml"/>
+        <xi:include href="client/TopicCommands.xml"/>
+        <xi:include href="client/AtomicNumberCommands.xml"/>
     </chapter>
     <chapter xml:id="Clients">
         <title>Clients</title>

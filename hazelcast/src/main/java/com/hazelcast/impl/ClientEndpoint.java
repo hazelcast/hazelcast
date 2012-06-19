@@ -218,10 +218,10 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         Data newValue =null;
         Data oldValue = null;
         Data value = null;
-        String name = dataAwareEntryEvent.getLongName();
+        String name = dataAwareEntryEvent.getName();
         String type = null;
         Protocol protocol = null;
-        int eventType = event.getEventType().getType();
+        String eventType = event.getEventType().toString();
         
         if (dataAwareEntryEvent.getNewValueData() != null) {
             newValue = dataAwareEntryEvent.getNewValueData();
@@ -240,13 +240,11 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
 
         List<ByteBuffer> list = new ArrayList<ByteBuffer>();
         list.add(ByteBuffer.wrap(key.buffer));
-        System.out.println("Key length is " + key.buffer.length);
-        System.out.println("Value length is " + newValue.buffer.length);
         if(newValue!=null) list.add(ByteBuffer.wrap(newValue.buffer));
         if(oldValue!=null) list.add(ByteBuffer.wrap(oldValue.buffer));
         if(value!=null) list.add(ByteBuffer.wrap(value.buffer));
         
-        protocol = new Protocol(this.conn, Command.EVENT.value, new String[]{"0", type, name, String.valueOf(eventType)}, list.toArray(new ByteBuffer[0]));
+        protocol = new Protocol(this.conn, Command.EVENT.value, new String[]{"0", type, name, eventType}, list.toArray(new ByteBuffer[0]));
         return protocol;
     }
 

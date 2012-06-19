@@ -73,8 +73,10 @@ public class ClientHandlerService implements ConnectionListener {
         mapCommandHandlers.put(Command.MPUTTRANSIENT.value, new MapPutTransientHandler());
         mapCommandHandlers.put(Command.MPUTANDUNLOCK.value, new MapPutAndUnlockHandler());
         mapCommandHandlers.put(Command.MTRYLOCKANDGET.value, new MapTryLockAndGetHandler());
-        mapCommandHandlers.put(Command.ADDLSTNR.value, new AddListenerHandler());
-        mapCommandHandlers.put(Command.RMVLSTNR.value, new RemoveListenerHandler());
+        mapCommandHandlers.put(Command.MADDLISTENER.value, new MapAddListenerHandler());
+        mapCommandHandlers.put(Command.MREMOVELISTENER.value, new MapRemoveListenerHandler());
+        mapCommandHandlers.put(Command.ADDLISTENER.value, new AddListenerHandler());
+        mapCommandHandlers.put(Command.REMOVELISTENER.value, new RemoveListenerHandler());
         mapCommandHandlers.put(Command.KEYSET.value, new MapIterateKeysHandler());
         mapCommandHandlers.put(Command.ENTRYSET.value, new MapIterateEntriesHandler());
         mapCommandHandlers.put(Command.MGETENTRY.value, new GetMapEntryHandler());
@@ -100,6 +102,12 @@ public class ClientHandlerService implements ConnectionListener {
         mapCommandHandlers.put(Command.MMPUT.value, new MapPutMultiHandler());
         mapCommandHandlers.put(Command.MMREMOVE.value, new MapRemoveMultiHandler());
         mapCommandHandlers.put(Command.MMVALUECOUNT.value, new MapValueCountHandler());
+        mapCommandHandlers.put(Command.MEVICT.value, new MapEvictHandler());
+        mapCommandHandlers.put(Command.MFLUSH.value, new MapFlushHandler());
+        mapCommandHandlers.put(Command.ADDANDGET.value, new AtomicLongAddAndGetHandler());
+        mapCommandHandlers.put(Command.COMPAREANDSET.value, new AtomicLongCompareAndSetHandler());
+        mapCommandHandlers.put(Command.GETANDSET.value, new AtomicLongGetAndSetHandler());
+        mapCommandHandlers.put(Command.GETANDADD.value, new AtomicLongGetAndAddHandler());
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
         registerHandler(CONCURRENT_MAP_PUT_AND_UNLOCK.getValue(), new MapPutAndUnlockHandler());
         registerHandler(CONCURRENT_MAP_PUT_ALL.getValue(), new MapPutAllHandler());
@@ -434,6 +442,13 @@ public class ClientHandlerService implements ConnectionListener {
             topic.publish(packet.getKeyData());
         }
 
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            Data data = new Data(protocol.getBuffers()[0].array());
+            node.factory.getTopic(name).publish(data);
+            return protocol.success();
+        }
+
         @Override
         protected void sendResponse(SocketWritable request, Connection conn) {
         }
@@ -681,6 +696,17 @@ public class ClientHandlerService implements ConnectionListener {
             final Long value = (Long) toObject(packet.getValueData());
             final Long expectedValue = (Long) toObject(packet.getKeyData());
             packet.setValue(toData(processCall(atomicLong, value, expectedValue)));
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            long value = Long.valueOf(protocol.getArgs()[1]);
+            long expectedValue = 0;
+            if (protocol.getArgs().length > 2) {
+                expectedValue = Long.valueOf(protocol.getArgs()[2]);
+            }
+            Object response = processCall((AtomicNumberProxy) node.factory.getAtomicNumber(name), value, expectedValue);
+            return protocol.success(response.toString());
         }
     }
 
@@ -1308,6 +1334,13 @@ public class ClientHandlerService implements ConnectionListener {
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
             return toData(map.evict(key));
         }
+
+        @Override
+        public Protocol processMapOp(Protocol protocol, IMap<Object, Object> map, Data key, Data value) {
+            Data result = processMapOp(map, key, value);
+            boolean evicted = (Boolean) toObject(result);
+            return protocol.success(String.valueOf(evicted));
+        }
     }
 
     private class MapFlushHandler extends ClientMapOperationHandler {
@@ -1791,6 +1824,45 @@ public class ClientHandlerService implements ConnectionListener {
 
         public void doQueueOp(Node node, Packet packet) {
             IQueue queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
+        }
+    }
+
+    private class MapAddListenerHandler extends ClientOperationHandler {
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
+            String[] args = protocol.getArgs();
+            String name = args[0];
+            boolean includeValue = Boolean.valueOf(args[1]);
+            IMap<Object, Object> map = (IMap) factory.getMap(name);
+            Data key = null;
+            if (protocol.getBuffers().length > 0) {
+                key = new Data(protocol.getBuffers()[0].array());
+            }
+            clientEndpoint.addThisAsListener(map, key, includeValue);
+            return protocol.success();
+        }
+
+        public void processCall(Node node, Packet packet) {
+        }
+    }
+
+    private class MapRemoveListenerHandler extends ClientOperationHandler {
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            Data key = null;
+            if (protocol.getBuffers().length > 0) {
+                key = new Data(protocol.getBuffers()[0].array());
+            }
+            ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
+            IMap map = factory.getMap(name);
+            clientEndpoint.removeThisListener(map, key);
+            return protocol.success();
+        }
+
+        public void processCall(Node node, Packet packet) {
         }
     }
 

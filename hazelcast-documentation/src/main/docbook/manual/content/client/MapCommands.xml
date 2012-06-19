@@ -308,7 +308,8 @@
         ]]></programlisting>
 
         <para>
-            Note that if the particular value for particular key is null, then the size for that value will return as zero.
+            Note that if the particular value for particular key is null, then the size for that value will return as
+            zero.
         </para>
     </sect2>
 
@@ -384,7 +385,7 @@
         <programlisting language="java"><![CDATA[
             OK <flag> timeout
         ]]></programlisting>
-        
+
     </sect2>
 
     <sect2 xml:id="MGETENTRY" version="5.0" xmlns="http://docbook.org/ns/docbook">
@@ -450,7 +451,7 @@
             If the lock is not available then
             the call is scheduled and waits until the lock has been acquired.
             Scope of the lock is this map only.
-            Acquired lock is only for the key in this map.  Locks are re-entrant so if the key is locked N times then
+            Acquired lock is only for the key in this map. Locks are re-entrant so if the key is locked N times then
             it should be unlocked N times before another thread can acquire it.
         </para>
 
@@ -483,8 +484,8 @@
             Releases the lock for the specified key. It never blocks and returns immediately.
 
             If the current thread is the holder of this lock then the hold
-            count is decremented.  If the hold count is now zero then the lock
-            is released.  If the current thread is not the holder of this
+            count is decremented. If the hold count is now zero then the lock
+            is released. If the current thread is not the holder of this
             lock then {@link IllegalMonitorStateException} is thrown.
         </para>
 
@@ -518,8 +519,10 @@
             If the lock is not available then
             the current thread becomes disabled for thread scheduling
             purposes and lies dormant until one of two things happens:
-            <p/> The lock is acquired by the current thread; or
-            <p/> The specified waiting time elapses
+            <itemizedlist>
+                <listitem>The lock is acquired by the current thread; or</listitem>
+                <listitem>The specified waiting time elapses</listitem>
+            </itemizedlist>
         </para>
 
         <para>
@@ -578,13 +581,13 @@
             Tries to acquire the lock for the entire map.
             The thread that locks the map can do all the operations
             but other threads in the cluster cannot operate on the map.
-            <p/> If the lock is not available then
-            the current thread becomes disabled for thread scheduling
-            purposes and lies dormant until one of two things happens:
-            <ul>
-            <li/>The lock is acquired by the current thread; or
-            <li/>The specified waiting time elapses
-            </ul>
+
+            If the lock is not available then the operation waits until one of two things happens:
+            <itemizedlist>
+                <listitem>The lock is acquired by the current thread; or</listitem>
+                <listitem>The specified waiting time elapses</listitem>
+            </itemizedlist>
+
         </para>
 
         <para>
@@ -769,7 +772,8 @@
             ]]></programlisting>
 
         <para>
-            If noreply is provided, server will not return a response. Otherwise it will return true if entry is removed.
+            If noreply is provided, server will not return a response. Otherwise it will return true if entry is
+            removed.
         </para>
     </sect2>
 
@@ -812,7 +816,7 @@
         <para>
             Replaces the entry for a key only if currently mapped to a given value. This is equivalent to
 
-        <programlisting language="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
             if (map.containsKey(key) && map.get(key).equals(oldValue)) {
             map.put(key, newValue);
             return true;
@@ -870,6 +874,123 @@
 
         <para>
             If noreply is provided, server will not return a response. Otherwise it will return OK.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MEVICT" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MEVICT</title>
+
+        <para>
+            Evicts the specified key from this map. If
+            MapStore defined for this map, then the entry is not
+            deleted from the underlying MapStore, evict only removes
+            the entry from the memory.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MEVICT <flag> <name> [noreply] #1
+            <size of value in bytes>
+            <value in bytes>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+                OK <flag> <evicted?>
+            ]]></programlisting>
+
+        <para>
+            If noreply is provided, server will not return a response. Otherwise it will return true if evicted..
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MADDLISTENER" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MADDLISTENER</title>
+
+        <para>
+            Adds an entry listener for this map. Listener will get notified
+            for all map add/remove/update/evict events.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MADDLISTENER <flag> <name> <includevalue> [noreply] #1
+            <size of key in bytes>
+            <key in bytes>
+        ]]></programlisting>
+        <para>
+            providing key is optional. If provided the listener will be notified only for the key, otherwise it will be
+            notified for all entries in the map.
+        </para>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <para>
+            OK will return.
+        </para>
+
+        <sect3 xml:id="EVENT" version="5.0" xmlns="http://docbook.org/ns/docbook">
+            <title>EVENT</title>
+
+            <para>
+                After adding the listener. The following events will be received from the server.
+            </para>
+
+            <para>
+                <emphasis role="bold">EVENT:</emphasis>
+            </para>
+
+            <programlisting language="java"><![CDATA[
+                EVENT <0> <type> <name> <eventType> #2
+                <size of newvalue in bytes> <size of oldValue in bytes>
+                <newvalue in bytes><oldvalue in bytes>
+            ]]></programlisting>
+            <para>
+                eventype is one of the following: ADDED, REMOVED, UPDATED, EVICTED. Depending on the event type, only one
+                value may be returned from the server. Two values will be returned only in the UPDATED case.
+            </para>
+
+        </sect3>
+
+
+    </sect2>
+
+    <sect2 xml:id="MREMOVELISTENER" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MREMOVELISTENER</title>
+
+        <para>
+            Adds an entry listener for this map. Listener will get notified
+            for all map add/remove/update/evict events.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            MREMOVELISTENER <flag> <name> [noreply] #1
+            <size of key in bytes>
+            <key in bytes>
+        ]]></programlisting>
+        <para>
+            providing key is optional. If provided the listener will be stopped to receive events only for the key,
+            otherwise it will stop to receive for all entries in the map.
+        </para>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <para>
+            OK will return.
         </para>
     </sect2>
 
