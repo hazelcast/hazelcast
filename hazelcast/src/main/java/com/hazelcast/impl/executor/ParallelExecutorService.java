@@ -17,12 +17,14 @@
 package com.hazelcast.impl.executor;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -53,6 +55,14 @@ public class ParallelExecutorService {
         lsParallelExecutors.add(p);
         return p;
     }
+
+    public ParallelExecutor newOrderedBlockingParallelExecutor(int concurrencyLevel, int capacity) {
+        ParallelExecutor p = new QueuedExecutorImpl(concurrencyLevel, capacity);
+        lsParallelExecutors.add(p);
+        return p;
+    }
+
+
 
     public ParallelExecutor newParallelExecutor(int concurrencyLevel) {
         ParallelExecutor parallelExecutor;
@@ -229,6 +239,171 @@ public class ParallelExecutorService {
 
             private int getPoolSize() {
                 return active.get() ? 1 : 0;
+            }
+        }
+    }
+
+
+    /**
+     * This is a simplified form of ThreadPoolExecutor. It does not implement parts of the Executor
+     * interface that ParallelExecutor does not such as shutdownNow and core vs pool size.
+     *
+     * It makes a reasonable effort to ensure that commands are kicked-off in the order they are
+     * received by using a single work queue shared by the worker threads. The workers run in threads
+     * pulled from the primary hazelcast cached executor.
+     */
+    private class QueuedExecutorImpl implements ParallelExecutor {
+
+        private final ConcurrentHashSet<Worker> workers;
+        private final AtomicInteger workerCount = new AtomicInteger();
+        private final AtomicInteger activeCount = new AtomicInteger();
+        private LinkedBlockingQueue<Runnable> workQueue;
+        private int concurrencyLevel;
+        private long keepAliveTime = 5000;
+
+        /**
+         * Creates a new ParallelExecutorImpl
+         *
+         * @param concurrencyLevel the concurrency level
+         * @param queueCapacity  the segment capacity. If the segment capacity is Integer.MAX_VALUE, there is
+         *                         no bound on the number of tasks that can be stored in the segment. Otherwise
+         *                         offering a task to be executed can block until there is capacity to store the
+         *                         task.
+         */
+        private QueuedExecutorImpl(int concurrencyLevel, int queueCapacity) {
+            this.concurrencyLevel = concurrencyLevel;
+            workQueue = new LinkedBlockingQueue<Runnable>(queueCapacity);
+
+            this.workers = new ConcurrentHashSet<Worker>();
+        }
+
+        public void execute(Runnable command) {
+            if (command == null) {
+                throw new NullPointerException("Runnable is not allowed to be null");
+            }
+            startThreadIfNeeded();
+            offer(command);
+            startThreadIfNeeded();
+
+        }
+
+        public void execute(Runnable command, int hash) {
+            execute(command);
+        }
+
+
+        private void offer(Runnable command) {
+            //put the item on the queue uninterruptibly.
+            boolean interrupted = false;
+            try {
+                for (; ; ) {
+                    try {
+                        if (workQueue.offer(command, 1 ,TimeUnit.SECONDS))
+                            break;
+                    } catch (InterruptedException ie) {
+                        interrupted = true;
+                    }
+                }
+            } finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
+        public void startThreadIfNeeded() {
+            int active;
+            if ((active = workerCount.get()) < concurrencyLevel) {
+
+                if (workerCount.compareAndSet(active, active + 1)) {
+                    Worker worker = new Worker();
+                    workers.add(worker);
+                    executorService.submit(worker);
+                }
+            }
+        }
+
+
+        public void shutdown() {
+            for (Worker worker : workers) {
+                // check completion
+            }
+        }
+
+        public int getPoolSize() {
+            return workQueue.size();
+        }
+
+        public int getActiveCount() {
+            return activeCount.get();
+        }
+
+
+        @SuppressWarnings("SynchronizedMethod")
+        private class Worker implements Runnable {
+
+            /**
+             * Per thread completed task counter; accumulated
+             * into completedTaskCount upon termination.
+             */
+            volatile long completedTasks;
+
+            /**
+             * Thread this worker is running in.  Acts as a final field,
+             * but cannot be set until thread is created.
+             */
+            Thread thread;
+
+
+            private Worker() {
+            }
+
+            /**
+             * Runs a single task between before/after methods.
+             */
+            private void runCommand(Runnable command) {
+                try {
+                    activeCount.incrementAndGet();
+                    command.run();
+                    completedTasks++;
+                } catch (Throwable e) {
+                    logger.log(Level.WARNING, e.getMessage(), e);
+                } finally {
+                    activeCount.decrementAndGet();
+                }
+            }
+
+            /**
+             * Main run loop
+             */
+            public void run() {
+                try {
+                    thread = Thread.currentThread();
+                    Runnable command = null;
+                    while ((command = getTask()) != null) {
+                        runCommand(command);
+                    }
+                } finally {
+                    workers.remove(this);
+                    workerCount.decrementAndGet();
+                }
+            }
+
+
+            Runnable getTask() {
+                for (;;) {
+                    try {
+                        Runnable r;
+
+                        r = workQueue.poll(keepAliveTime, TimeUnit.MILLISECONDS);
+
+                        if (r != null)
+                            return r;
+
+                    } catch (InterruptedException ie) {
+                        // On interruption, re-check runState
+                    }
+                }
             }
         }
     }

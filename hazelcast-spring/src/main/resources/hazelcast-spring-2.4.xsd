@@ -42,6 +42,16 @@
                                 <xs:attribute name="core-pool-size" use="optional" type="xs:string"/>
                                 <xs:attribute name="max-pool-size" use="optional" type="xs:string"/>
                                 <xs:attribute name="keep-alive-seconds" use="optional" type="xs:string"/>
+                                <xs:attribute name="capacity" use="optional" type="xs:integer"/>
+                                <xs:attribute name="executor-type" use="optional">
+                                    <xs:simpleType>
+                                        <xs:restriction base="xs:string">
+                                            <xs:enumeration value="BlockingParallel"/>
+                                            <xs:enumeration value="Parallel"/>
+                                            <xs:enumeration value="Queued"/>
+                                        </xs:restriction>
+                                    </xs:simpleType>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="queue" minOccurs="0" maxOccurs="unbounded">

@@ -135,9 +135,21 @@ public class ExecutorManager extends BaseManager {
     }
 
     private NamedExecutorService newNamedExecutorService(String name, ExecutorConfig executorConfig) {
-        logger.log(Level.FINEST, "creating new named executor service " + name);
+        logger.log(Level.SEVERE, "creating new named executor service " + name);
         int concurrencyLevel = executorConfig.getMaxPoolSize();
-        ParallelExecutor parallelExecutor = parallelExecutorService.newParallelExecutor(concurrencyLevel);
+        int capacity = executorConfig.getCapacity();
+        ParallelExecutor parallelExecutor = null;
+        switch (executorConfig.getExecutorType()) {
+            case BlockingParallel:
+                parallelExecutor = parallelExecutorService.newBlockingParallelExecutor(concurrencyLevel, capacity);
+                break;
+            case Parallel:
+                parallelExecutor = parallelExecutorService.newParallelExecutor(concurrencyLevel);
+                break;
+            case Queued:
+                parallelExecutor = parallelExecutorService.newOrderedBlockingParallelExecutor(concurrencyLevel, capacity);
+                break;
+        }
         NamedExecutorService es = new NamedExecutorService(name, parallelExecutor);
         mapExecutors.put(name, es);
         return es;
