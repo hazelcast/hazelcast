@@ -87,7 +87,6 @@ public class ClientHandlerService implements ConnectionListener {
         mapCommandHandlers.put(Command.MISKEYLOCKED.value, new MapIsKeyLockedHandler());
         mapCommandHandlers.put(Command.MUNLOCK.value, new MapUnlockHandler());
         mapCommandHandlers.put(Command.MPUTALL.value, new MapPutAllHandler());
-        mapCommandHandlers.put(Command.QOFFER.value, new QueueOfferHandler());
         mapCommandHandlers.put(Command.MREMOVE.value, new MapRemoveHandler());
         mapCommandHandlers.put(Command.MREMOVEITEM.value, new MapItemRemoveHandler());
         mapCommandHandlers.put(Command.MCONTAINSKEY.value, new MapContainsHandler());
@@ -108,6 +107,23 @@ public class ClientHandlerService implements ConnectionListener {
         mapCommandHandlers.put(Command.COMPAREANDSET.value, new AtomicLongCompareAndSetHandler());
         mapCommandHandlers.put(Command.GETANDSET.value, new AtomicLongGetAndSetHandler());
         mapCommandHandlers.put(Command.GETANDADD.value, new AtomicLongGetAndAddHandler());
+        mapCommandHandlers.put(Command.QOFFER.value, new QueueOfferHandler());
+        mapCommandHandlers.put(Command.QPOLL.value, new QueuePollHandler());
+        mapCommandHandlers.put(Command.QSIZE.value, new QueueSizeHandler());
+        mapCommandHandlers.put(Command.QPEEK.value, new QueuePeekHandler());
+        mapCommandHandlers.put(Command.QREMOVE.value, new QueueRemoveHandler());
+        mapCommandHandlers.put(Command.QREMCAPACITY.value, new QueueRemainingCapacityHandler());
+        mapCommandHandlers.put(Command.QENTRIES.value, new QueueEntriesHandler());
+        mapCommandHandlers.put(Command.QADDLISTENER.value, new QueueAddListenerHandler());
+        mapCommandHandlers.put(Command.QREMOVELISTENER.value, new QueueRemoveListenerHandler());
+        mapCommandHandlers.put(Command.TRXBEGIN.value, new TransactionBeginHandler());
+        mapCommandHandlers.put(Command.TRXCOMMIT.value, new TransactionCommitHandler());
+        mapCommandHandlers.put(Command.TRXROLLBACK.value, new TransactionRollbackHandler());
+        mapCommandHandlers.put(Command.NEWID.value, new NewIdHandler());
+        mapCommandHandlers.put(Command.INSTANCES.value, new GetInstancesHandler());
+        mapCommandHandlers.put(Command.MEMBERS.value, new GetMembersHandler());
+        mapCommandHandlers.put(Command.CLUSTERTIME.value, new GetClusterTimeHandler());
+
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
         registerHandler(CONCURRENT_MAP_PUT_AND_UNLOCK.getValue(), new MapPutAndUnlockHandler());
         registerHandler(CONCURRENT_MAP_PUT_ALL.getValue(), new MapPutAllHandler());
@@ -412,6 +428,27 @@ public class ClientHandlerService implements ConnectionListener {
                 throw new RuntimeException(e);
             }
         }
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            long timeout = Long.valueOf(protocol.getArgs()[1]);
+            Data item = new Data(protocol.getBuffers()[0].array());
+            IQueue<Data> queue = node.factory.getQueue(name);
+            Data result = null;
+            try {
+                if (timeout == -1) {
+                    result = queue.take();
+                } else if (timeout == 0) {
+                    result = queue.poll();
+                } else {
+                    result = queue.poll(timeout, TimeUnit.MILLISECONDS);
+                }
+                return protocol.success(result == null ? null : ByteBuffer.wrap(result.buffer));
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private class QueueRemoveHandler extends ClientQueueOperationHandler {
@@ -422,17 +459,38 @@ public class ClientHandlerService implements ConnectionListener {
                 return (Data) queue.remove();
             }
         }
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            Data item = new Data(protocol.getBuffers()[0].array());
+            IQueue<Data> queue = node.factory.getQueue(name);
+            boolean removed = queue.remove(item);
+            return protocol.success(String.valueOf(removed));
+        }
     }
 
     private class QueuePeekHandler extends ClientQueueOperationHandler {
         public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
             return (Data) queue.peek();
         }
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            Data entry = (Data) node.factory.getQueue(name).peek();
+            return protocol.success(ByteBuffer.wrap(entry.buffer));
+        }
     }
 
     private class QueueSizeHandler extends ClientQueueOperationHandler {
         public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
             return toData(queue.size());
+        }
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            return protocol.success(String.valueOf(node.factory.getQueue(name).size()));
         }
     }
 
@@ -458,6 +516,12 @@ public class ClientHandlerService implements ConnectionListener {
         public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
             return toData(queue.remainingCapacity());
         }
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            return protocol.success(String.valueOf(node.factory.getQueue(name).remainingCapacity()));
+        }
     }
 
     private class QueueEntriesHandler extends ClientQueueOperationHandler {
@@ -468,6 +532,17 @@ public class ClientHandlerService implements ConnectionListener {
                 keys.add(toData(o));
             }
             return toData(keys);
+        }
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            Data[] entries = node.factory.getQueue(name).toArray(new Data[0]);
+            ByteBuffer[] buffers = new ByteBuffer[entries.length];
+            for (int i = 0; i <entries.length; i++) {
+                buffers[i] = ByteBuffer.wrap(entries[i].buffer);
+            }
+            return protocol.success(buffers);
         }
     }
 
@@ -486,6 +561,37 @@ public class ClientHandlerService implements ConnectionListener {
             Instance instance = (Instance) factory.getOrCreateProxyByName(packet.name);
             instance.destroy();
         }
+        
+        public Protocol processCall(Node node, Protocol protocol) {
+            String type = protocol.getArgs()[0];
+            String name = protocol.getArgs()[1];
+            if(InstanceType.MAP.toString().equalsIgnoreCase(name)){
+                node.factory.getMap(name).destroy();
+            }else if(InstanceType.QUEUE.toString().equalsIgnoreCase(name)){
+                node.factory.getQueue(name).destroy();
+            }else if(InstanceType.SET.toString().equalsIgnoreCase(name)){
+                node.factory.getSet(name).destroy();
+            }else if(InstanceType.LIST.toString().equalsIgnoreCase(name)){
+                node.factory.getList(name).destroy();
+            }else if(InstanceType.MULTIMAP.toString().equalsIgnoreCase(name)){
+                node.factory.getMultiMap(name).destroy();
+            }else if(InstanceType.TOPIC.toString().equalsIgnoreCase(name)){
+                node.factory.getTopic(name).destroy();
+            }else if(InstanceType.ATOMIC_NUMBER.toString().equalsIgnoreCase(name)){
+                node.factory.getAtomicNumber(name).destroy();
+            }else if(InstanceType.ID_GENERATOR.toString().equalsIgnoreCase(name)){
+                 node.factory.getIdGenerator(name).destroy();
+            }else if(InstanceType.LOCK.toString().equalsIgnoreCase(name)){
+                 node.factory.getLock(name).destroy();
+            }else if(InstanceType.SEMAPHORE.toString().equalsIgnoreCase(name)){
+                 node.factory.getSemaphore(name).destroy();
+            }else if(InstanceType.COUNT_DOWN_LATCH.toString().equalsIgnoreCase(name)){
+                 node.factory.getCountDownLatch(name).destroy();
+            } else{
+                return protocol.error(null, "unkonwn", "type");
+            }
+            return protocol.success();
+        }
     }
 
     private class NewIdHandler extends ClientOperationHandler {
@@ -493,6 +599,11 @@ public class ClientHandlerService implements ConnectionListener {
             IdGenerator idGen = (IdGenerator) factory.getOrCreateProxyByName(packet.name);
             packet.setValue(toData(idGen.newId()));
         }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            return protocol.success(String.valueOf(node.factory.getIdGenerator(protocol.getArgs()[0]).newId()));
+        }
+        
     }
 
     private class MapPutMultiHandler extends ClientOperationHandler {
@@ -649,6 +760,17 @@ public class ClientHandlerService implements ConnectionListener {
             }
             packet.setValue(toData(keys));
         }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            Collection<Instance> collection = factory.getInstances();
+            String[] args = new String[2*collection.size()];
+            int i=0;
+            for(Instance instance: collection){
+                args[i++] = instance.getInstanceType().toString();
+                args[i++] = instance.getId().toString();
+            }
+            return protocol.success(args);
+        }
     }
 
     private class GetMembersHandler extends ClientOperationHandler {
@@ -664,6 +786,16 @@ public class ClientHandlerService implements ConnectionListener {
                 Keys keys = new Keys(setData);
                 packet.setValue(toData(keys));
             }
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            Collection<Member> collection = factory.getCluster().getMembers();
+            String[] args = new String[collection.size()];
+            int i=0;
+            for(Member member: collection){
+                args[i++] = member.getInetSocketAddress().toString();
+            }
+            return protocol.success(args);
         }
     }
 
@@ -976,6 +1108,10 @@ public class ClientHandlerService implements ConnectionListener {
             Cluster cluster = factory.getCluster();
             long clusterTime = cluster.getClusterTime();
             packet.setValue(toData(clusterTime));
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            return protocol.success(String.valueOf(node.factory.getCluster().getClusterTime()));
         }
     }
 
@@ -1866,6 +2002,41 @@ public class ClientHandlerService implements ConnectionListener {
         }
     }
 
+
+    private class QueueAddListenerHandler extends ClientOperationHandler {
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
+            String name = protocol.getArgs()[0];
+            boolean includeValue = Boolean.valueOf(protocol.getArgs()[1]);
+            IQueue<Object> queue = (IQueue) factory.getQueue(name);
+            ItemListener itemListener = new ClientItemListener(clientEndpoint, name);
+            queue.addItemListener(itemListener, includeValue);
+            clientEndpoint.queueItemListeners.put(queue, itemListener);
+            return protocol.success();
+        }
+
+        public void processCall(Node node, Packet packet) {
+        }
+    }
+
+    private class QueueRemoveListenerHandler extends ClientOperationHandler {
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
+            String name = protocol.getArgs()[0];
+            IQueue<Object> queue = (IQueue) factory.getQueue(name);
+            ItemListener itemListener = clientEndpoint.queueItemListeners.remove(name);
+            queue.removeItemListener(itemListener);
+            return protocol.success();
+        }
+
+        public void processCall(Node node, Packet packet) {
+        }
+    }
+
     private class AddListenerHandler extends ClientOperationHandler {
 
         @Override
@@ -2222,6 +2393,11 @@ public class ClientHandlerService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             Transaction transaction = factory.getTransaction();
             processTransactionOp(transaction);
+        }
+        public Protocol processCall(Node node, Protocol protocol) {
+            Transaction transaction = factory.getTransaction();
+            processTransactionOp(transaction);
+            return protocol.success();
         }
     }
 

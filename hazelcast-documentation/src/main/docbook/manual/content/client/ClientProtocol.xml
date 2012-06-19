@@ -89,7 +89,7 @@
                 </para>
             </listitem>
             <listitem>
-                <para>end:
+                <para>type:
                     <literal>Is an optional argument and is provided as it is ("end").
                         If provided server will understand that there is no any binary argument thus,
                         there is no need to send size line.
