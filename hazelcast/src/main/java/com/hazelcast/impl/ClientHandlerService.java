@@ -123,6 +123,23 @@ public class ClientHandlerService implements ConnectionListener {
         mapCommandHandlers.put(Command.INSTANCES.value, new GetInstancesHandler());
         mapCommandHandlers.put(Command.MEMBERS.value, new GetMembersHandler());
         mapCommandHandlers.put(Command.CLUSTERTIME.value, new GetClusterTimeHandler());
+        mapCommandHandlers.put(Command.PARTITIONS.value, new GetPartitionsHandler());
+        mapCommandHandlers.put(Command.CDLAWAIT.value, new CountDownLatchAwaitHandler());
+        mapCommandHandlers.put(Command.CDLCOUNTDOWN.value, new CountDownLatchCountDownHandler());
+        mapCommandHandlers.put(Command.CDLGETCOUNT.value, new CountDownLatchGetCountHandler());
+        mapCommandHandlers.put(Command.CDLGETOWNER.value, new CountDownLatchGetOwnerHandler());
+        mapCommandHandlers.put(Command.CDLSETCOUNT.value, new CountDownLatchSetCountHandler());
+        mapCommandHandlers.put(Command.LOCK_LOCK.value, new LockOperationHandler());
+        mapCommandHandlers.put(Command.LOCK_TRYLOCK.value, new LockOperationHandler());
+        mapCommandHandlers.put(Command.LOCK_UNLOCK.value, new UnlockOperationHandler());
+        mapCommandHandlers.put(Command.LOCK_FORCE_UNLOCK.value, new UnlockOperationHandler());
+        mapCommandHandlers.put(Command.LOCK_IS_LOCKED.value, new IsLockedOperationHandler());
+
+//        SEMATTACHDETACHPERMITS, SEMCANCELACQUIRE, SEMDESTROY, SEM_DRAIN_PERMITS, SEMGETATTACHEDPERMITS,
+//                SEMGETAVAILPERMITS, SEMREDUCEPERMITS, SEMRELEASE, SEMTRYACQUIRE,
+
+
+
 
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
         registerHandler(CONCURRENT_MAP_PUT_AND_UNLOCK.getValue(), new MapPutAndUnlockHandler());
@@ -459,6 +476,7 @@ public class ClientHandlerService implements ConnectionListener {
                 return (Data) queue.remove();
             }
         }
+
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
             String name = protocol.getArgs()[0];
@@ -539,7 +557,7 @@ public class ClientHandlerService implements ConnectionListener {
             String name = protocol.getArgs()[0];
             Data[] entries = node.factory.getQueue(name).toArray(new Data[0]);
             ByteBuffer[] buffers = new ByteBuffer[entries.length];
-            for (int i = 0; i <entries.length; i++) {
+            for (int i = 0; i < entries.length; i++) {
                 buffers[i] = ByteBuffer.wrap(entries[i].buffer);
             }
             return protocol.success(buffers);
@@ -561,33 +579,33 @@ public class ClientHandlerService implements ConnectionListener {
             Instance instance = (Instance) factory.getOrCreateProxyByName(packet.name);
             instance.destroy();
         }
-        
+
         public Protocol processCall(Node node, Protocol protocol) {
             String type = protocol.getArgs()[0];
             String name = protocol.getArgs()[1];
-            if(InstanceType.MAP.toString().equalsIgnoreCase(name)){
+            if (InstanceType.MAP.toString().equalsIgnoreCase(name)) {
                 node.factory.getMap(name).destroy();
-            }else if(InstanceType.QUEUE.toString().equalsIgnoreCase(name)){
+            } else if (InstanceType.QUEUE.toString().equalsIgnoreCase(name)) {
                 node.factory.getQueue(name).destroy();
-            }else if(InstanceType.SET.toString().equalsIgnoreCase(name)){
+            } else if (InstanceType.SET.toString().equalsIgnoreCase(name)) {
                 node.factory.getSet(name).destroy();
-            }else if(InstanceType.LIST.toString().equalsIgnoreCase(name)){
+            } else if (InstanceType.LIST.toString().equalsIgnoreCase(name)) {
                 node.factory.getList(name).destroy();
-            }else if(InstanceType.MULTIMAP.toString().equalsIgnoreCase(name)){
+            } else if (InstanceType.MULTIMAP.toString().equalsIgnoreCase(name)) {
                 node.factory.getMultiMap(name).destroy();
-            }else if(InstanceType.TOPIC.toString().equalsIgnoreCase(name)){
+            } else if (InstanceType.TOPIC.toString().equalsIgnoreCase(name)) {
                 node.factory.getTopic(name).destroy();
-            }else if(InstanceType.ATOMIC_NUMBER.toString().equalsIgnoreCase(name)){
+            } else if (InstanceType.ATOMIC_NUMBER.toString().equalsIgnoreCase(name)) {
                 node.factory.getAtomicNumber(name).destroy();
-            }else if(InstanceType.ID_GENERATOR.toString().equalsIgnoreCase(name)){
-                 node.factory.getIdGenerator(name).destroy();
-            }else if(InstanceType.LOCK.toString().equalsIgnoreCase(name)){
-                 node.factory.getLock(name).destroy();
-            }else if(InstanceType.SEMAPHORE.toString().equalsIgnoreCase(name)){
-                 node.factory.getSemaphore(name).destroy();
-            }else if(InstanceType.COUNT_DOWN_LATCH.toString().equalsIgnoreCase(name)){
-                 node.factory.getCountDownLatch(name).destroy();
-            } else{
+            } else if (InstanceType.ID_GENERATOR.toString().equalsIgnoreCase(name)) {
+                node.factory.getIdGenerator(name).destroy();
+            } else if (InstanceType.LOCK.toString().equalsIgnoreCase(name)) {
+                node.factory.getLock(name).destroy();
+            } else if (InstanceType.SEMAPHORE.toString().equalsIgnoreCase(name)) {
+                node.factory.getSemaphore(name).destroy();
+            } else if (InstanceType.COUNT_DOWN_LATCH.toString().equalsIgnoreCase(name)) {
+                node.factory.getCountDownLatch(name).destroy();
+            } else {
                 return protocol.error(null, "unkonwn", "type");
             }
             return protocol.success();
@@ -603,7 +621,6 @@ public class ClientHandlerService implements ConnectionListener {
         public Protocol processCall(Node node, Protocol protocol) {
             return protocol.success(String.valueOf(node.factory.getIdGenerator(protocol.getArgs()[0]).newId()));
         }
-        
     }
 
     private class MapPutMultiHandler extends ClientOperationHandler {
@@ -763,9 +780,9 @@ public class ClientHandlerService implements ConnectionListener {
 
         public Protocol processCall(Node node, Protocol protocol) {
             Collection<Instance> collection = factory.getInstances();
-            String[] args = new String[2*collection.size()];
-            int i=0;
-            for(Instance instance: collection){
+            String[] args = new String[2 * collection.size()];
+            int i = 0;
+            for (Instance instance : collection) {
                 args[i++] = instance.getInstanceType().toString();
                 args[i++] = instance.getId().toString();
             }
@@ -791,8 +808,8 @@ public class ClientHandlerService implements ConnectionListener {
         public Protocol processCall(Node node, Protocol protocol) {
             Collection<Member> collection = factory.getCluster().getMembers();
             String[] args = new String[collection.size()];
-            int i=0;
-            for(Member member: collection){
+            int i = 0;
+            for (Member member : collection) {
                 args[i++] = member.getInetSocketAddress().toString();
             }
             return protocol.success(args);
@@ -817,6 +834,23 @@ public class ClientHandlerService implements ConnectionListener {
                 Keys keys = new Keys(setData);
                 packet.setValue(toData(keys));
             }
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            PartitionService partitionService = factory.getPartitionService();
+            List<String> args = new ArrayList<String>();
+            if (protocol.getBuffers().length > 0) {
+                Partition partition = partitionService.getPartition(new Data(protocol.getBuffers()[0].array()));
+                args.add(String.valueOf(partition.getPartitionId()));
+                args.add(partition.getOwner().getInetSocketAddress().toString());
+            } else {
+                Set<Partition> set = partitionService.getPartitions();
+                for (Partition partition : set) {
+                    args.add(String.valueOf(partition.getPartitionId()));
+                    args.add(partition.getOwner().getInetSocketAddress().toString());
+                }
+            }
+            return protocol.success(args.toArray(new String[0]));
         }
     }
 
@@ -867,18 +901,45 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     abstract private class CountDownLatchClientHandler extends ClientOperationHandler {
-        abstract void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value);
+        abstract Object processCall(CountDownLatchProxy cdlProxy, Integer value) throws Exception;
 
         public void processCall(Node node, Packet packet) {
             final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
             final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) factory.getCountDownLatch(name);
             final Integer value = (Integer) toObject(packet.getValueData());
-            processCall(packet, cdlProxy, value);
+            Object result = null;
+            try {
+                result = processCall(cdlProxy, value);
+                if (result != null) packet.setValue(toData(result));
+            } catch (Exception e) {
+                packet.setValue(toData(new ClientServiceException(e)));
+            }
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            Integer value = protocol.getArgs().length > 1 ? Integer.valueOf(protocol.getArgs()[1]) : 0;
+            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) node.factory.getCountDownLatch(name);
+            Object response = null;
+            try {
+                response = processCall(cdlProxy, value);
+            } catch (Exception e) {
+                return protocol.error(null, e.getMessage());
+            }
+            if (response == null) return protocol.success();
+            else return protocol.success(response.toString());
         }
     }
 
     private class CountDownLatchAwaitHandler extends CountDownLatchClientHandler {
-        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
+        Object processCall(CountDownLatchProxy cdlProxy, Integer value) throws Exception{
+            return cdlProxy.await(value, TimeUnit.MILLISECONDS);
+        }
+
+        public void processCall(Node node, Packet packet) {
+            final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
+            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) factory.getCountDownLatch(name);
+            final Integer value = (Integer) toObject(packet.getValueData());
             try {
                 packet.setValue(toData(cdlProxy.await(packet.timeout, TimeUnit.MILLISECONDS)));
             } catch (Throwable e) {
@@ -888,27 +949,48 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     private class CountDownLatchCountDownHandler extends CountDownLatchClientHandler {
-        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
+        Object processCall(CountDownLatchProxy cdlProxy, Integer value) {
             cdlProxy.countDown();
+            return null;
         }
     }
 
     private class CountDownLatchGetCountHandler extends CountDownLatchClientHandler {
-        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
-            packet.setValue(toData(cdlProxy.getCount()));
+        Object processCall(CountDownLatchProxy cdlProxy, Integer value) {
+            return cdlProxy.getCount();
         }
     }
 
     private class CountDownLatchGetOwnerHandler extends CountDownLatchClientHandler {
-        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
-            packet.setValue(toData(cdlProxy.getOwner()));
+        Object processCall(CountDownLatchProxy cdlProxy, Integer value) {
+            return cdlProxy.getOwner();
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            Integer value = protocol.getArgs().length > 1 ? Integer.valueOf(protocol.getArgs()[1]) : 0;
+            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) node.factory.getCountDownLatch(name);
+            Member m = cdlProxy.getOwner();
+            return protocol.success(m.getInetSocketAddress().toString());
         }
     }
 
     private class CountDownLatchSetCountHandler extends CountDownLatchClientHandler {
-        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer count) {
-            Address ownerAddress = packet.conn.getEndPoint();
-            packet.setValue(toData(cdlProxy.setCount(count, ownerAddress)));
+        Object processCall(CountDownLatchProxy cdlProxy, Integer count) {
+            return null;
+        }
+
+        @Override
+        public void processCall(Node node, Packet packet) {
+            final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
+            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) factory.getCountDownLatch(name);
+            final Integer value = (Integer) toObject(packet.getValueData());
+            try {
+                Address ownerAddress = packet.conn.getEndPoint();
+                packet.setValue(toData(cdlProxy.setCount(value, ownerAddress)));
+            } catch (Throwable e) {
+                packet.setValue(toData(new ClientServiceException(e)));
+            }
         }
     }
 
@@ -1777,6 +1859,27 @@ public class ClientHandlerService implements ConnectionListener {
             packet.clearForResponse();
             packet.setValue(value);
         }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            ILock lock = node.factory.getLock(name);
+            try{
+                if(protocol.getCommand().equals(Command.LOCK_TRYLOCK.value)){
+                    if(protocol.getArgs().length > 1){
+                        return protocol.success(String.valueOf(lock.tryLock(Long.valueOf(protocol.getArgs()[1]),
+                                TimeUnit.MILLISECONDS)));
+                    } else{
+                        return protocol.success(String.valueOf(lock.tryLock()));
+                    }
+                } else{
+                    lock.unlock();
+                    return protocol.success();
+                }
+            }catch (InterruptedException e){
+                logger.log(Level.FINEST, "Lock interrupted!");
+                return protocol.success("interrupted");
+            }
+        }
     }
 
     private class IsLockedOperationHandler extends ClientOperationHandler {
@@ -1787,6 +1890,12 @@ public class ClientHandlerService implements ConnectionListener {
             value = toData(lock.isLocked());
             packet.clearForResponse();
             packet.setValue(value);
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            ILock lock = node.factory.getLock(name);
+            return protocol.success(String.valueOf(lock.isLocked()));
         }
     }
 
@@ -1801,6 +1910,17 @@ public class ClientHandlerService implements ConnectionListener {
             }
             packet.clearForResponse();
             packet.setValue(null);
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.getArgs()[0];
+            ILock lock = node.factory.getLock(name);
+            if(protocol.getCommand().equals(Command.LOCK_UNLOCK.value)){
+                lock.unlock();
+            } else if (protocol.getCommand().equals(Command.LOCK_FORCE_UNLOCK.value)){
+                lock.forceUnlock();
+            }
+            return protocol.success();
         }
     }
 
@@ -2001,7 +2121,6 @@ public class ClientHandlerService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
         }
     }
-
 
     private class QueueAddListenerHandler extends ClientOperationHandler {
 
@@ -2394,6 +2513,7 @@ public class ClientHandlerService implements ConnectionListener {
             Transaction transaction = factory.getTransaction();
             processTransactionOp(transaction);
         }
+
         public Protocol processCall(Node node, Protocol protocol) {
             Transaction transaction = factory.getTransaction();
             processTransactionOp(transaction);

@@ -233,5 +233,49 @@
             ]]></programlisting>
     </sect2>
 
+    <sect2 xml:id="PARTITIONS" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>PARTITIONS</title>
+
+        <para>
+            Returns the partition information.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+            PARTITONS <flag> #1
+            <size of key in bytes>
+            <key in bytes>
+        ]]></programlisting>
+        
+        <para>
+            The key is optional. If if it provided server will return only the partition that the key falls. 
+            Otherwise it will return all partitions as a pair of partition id and member address that owns the partition. 
+        </para>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <para> If key is provided: </para>
+        <programlisting language="java"><![CDATA[
+                OK <flag> <pid> <address>
+            ]]></programlisting>
+
+        
+        <para>If key is not provided to command:</para>
+        <programlisting language="java"><![CDATA[
+                OK <flag> <pid1> <address1> ... <pid271> <address271>
+            ]]></programlisting>
+
+    <para>
+        Note that 271 is the default partition count which can be changed on server configuration.
+    </para>
+
+    </sect2>
+    
+    
+
 
 </sect1>
