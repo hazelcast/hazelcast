@@ -34,6 +34,8 @@ public class SocketProtocolReader implements SocketReader {
     ByteBuffer commandLine = ByteBuffer.allocate(500);
     MutableBoolean commandLineRead = new MutableBoolean(false);
 
+    boolean commandLineIsParsed = false;
+
     ByteBuffer sizeLine = ByteBuffer.allocate(500);
     MutableBoolean sizeLineRead = new MutableBoolean(false);
 
@@ -43,10 +45,15 @@ public class SocketProtocolReader implements SocketReader {
     private boolean noreply = false;
     int[] bufferSize;
 
+    final ByteBuffer endOfTheCommand = ByteBuffer.allocate(2);
+
     private final Connection connection;
     private final IOService ioService;
     private static final String NOREPLY = "noreply";
+
+
     private String flag = "0";
+    final ByteBuffer firstNewLineRead = ByteBuffer.allocate(2);
 
     public SocketProtocolReader(SocketChannelWrapper socketChannel, Connection connection) {
         this.connection = connection;
@@ -62,23 +69,41 @@ public class SocketProtocolReader implements SocketReader {
 
     private void doRead(ByteBuffer bb) {
         try {
-            readUntilTheEndOfLine(bb, commandLineRead, commandLine);
+            while(firstNewLineRead.hasRemaining()){
+                firstNewLineRead.put(bb.get());
+            }
+            System.out.println("Very first new line is read!");
+
+            readLine(bb, commandLineRead, commandLine);
+            Thread.sleep(1000);
             if (commandLineRead.get()) {
                 parseCommandLine(SocketTextReader.toStringAndClear(commandLine));
-                if (bufferSize.length > 0) {
-                    readUntilTheEndOfLine(bb, sizeLineRead, sizeLine);
-                }  else{sizeLineRead.set(true);}
-                if (bufferSize.length == 0 || sizeLineRead.get()) {
+                if (commandLineIsParsed && bufferSize.length > 0) {
+                    System.out.println("BUF SIZE LENGTH " + bufferSize.length);
+                    readLine(bb, sizeLineRead, sizeLine);
+                    System.out.println("Sizeline is read is it true:" + sizeLine);
+                }
+                else if(commandLineIsParsed){
+                    sizeLineRead.set(true);
+                }
+
+                if (commandLineIsParsed && bufferSize.length == 0 || sizeLineRead.get()) {
                     //if (bufferSize.length > 0)
                         parseSizeLine(SocketTextReader.toStringAndClear(sizeLine));
                     for (int i = 0; bb.hasRemaining() && i < buffers.length; i++) {
                         if (buffers[i].hasRemaining()) {
                             copy(bb, buffers[i]);
                         }
+                        if(i==buffers.length-1) {
+                            while(endOfTheCommand.hasRemaining()){
+                                endOfTheCommand.put(bb.get());
+                            }
+                        }
                     }
                     if ((buffers.length == 0 || !buffers[buffers.length - 1].hasRemaining())) {
                         if (args.length <= 0)
                             throw new RuntimeException("No argument to the command, at least flag should be provided!");
+
                         Protocol protocol = new Protocol(connection, command, flag, noreply, args, buffers);
                         connection.setType(Connection.Type.PROTOCOL_CLIENT);
                         ioService.handleClientCommand(protocol);
@@ -116,6 +141,8 @@ public class SocketProtocolReader implements SocketReader {
         noreply = false;
         buffers = null;
         bufferSize = null;
+        commandLineIsParsed = false;
+        endOfTheCommand.position(0);
     }
 
     private void parseSizeLine(String line) {
@@ -135,8 +162,13 @@ public class SocketProtocolReader implements SocketReader {
         }
     }
 
-    private void parseCommandLine(String line) {
-        if (sizeLineRead.get()) return;
+    private boolean parseCommandLine(String line) {
+        if (commandLineIsParsed || sizeLineRead.get()) return true;
+        if(line.equals("")){
+            commandLineIsParsed = false;
+            commandLineRead.set(false);
+            return false;
+        }
         System.out.println("Command line is : " + line);
         String[] split = line.split("\\s");
         command = split[0];
@@ -157,9 +189,11 @@ public class SocketProtocolReader implements SocketReader {
         }
         if(bufferCount < 0) bufferCount = 0;
         bufferSize = new int[bufferCount];
+        commandLineIsParsed = true;
+        return true;
     }
 
-    private void readUntilTheEndOfLine(ByteBuffer bb, MutableBoolean lineIsRead, ByteBuffer line) {
+    private void readLine(ByteBuffer bb, MutableBoolean lineIsRead, ByteBuffer line) {
         while (!lineIsRead.get() && bb.hasRemaining()) {
             byte b = bb.get();
             char c = (char) b;

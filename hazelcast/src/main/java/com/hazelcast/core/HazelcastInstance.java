@@ -246,7 +246,7 @@ public interface HazelcastInstance {
      *
      * @return the collection of instances created by Hazelcast.
      */
-    Collection<Instance> tances();
+    Collection<Instance> getInstances();
 
     /**
      * Add a instance listener which will be notified when a
