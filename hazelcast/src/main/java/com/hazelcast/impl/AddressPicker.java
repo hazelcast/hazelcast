@@ -31,74 +31,28 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.logging.Level;
 
-public class AddressPicker {
+class AddressPicker {
 
-    final Node node;
-    final ServerSocketChannel serverSocketChannel;
-    final ILogger logger;
+    private final Node node;
+    private final ILogger logger;
+    private ServerSocketChannel serverSocketChannel;
+    private Address address;
 
-    public AddressPicker(Node node, ServerSocketChannel serverSocketChannel) {
+    public AddressPicker(Node node) {
         this.node = node;
         this.logger = Logger.getLogger(AddressPicker.class.getName());
-        this.serverSocketChannel = serverSocketChannel;
     }
 
-    public static boolean matchAddress(final String address, final Collection<String> interfaces) {
-        return AddressUtil.matchAnyInterface(address, interfaces);
-    }
-
-    public Address pickAddress() throws Exception {
-        InetAddress currentInetAddress = null;
+    public void pickAddress() throws Exception {
+        if (address != null) {
+            return;
+        }
         try {
             final Config config = node.getConfig();
-            final String localAddress = System.getProperty("hazelcast.local.localAddress");
-            if (localAddress != null) {
-                currentInetAddress = InetAddress.getByName(localAddress.trim());
-            }
-            if (currentInetAddress == null) {
-                final Collection<String> interfaces = new HashSet<String>();
-                if (config.getNetworkConfig().getInterfaces().isEnabled()) {
-                    interfaces.addAll(config.getNetworkConfig().getInterfaces().getInterfaces());
-                    logger.log(Level.INFO, "Interfaces is enabled, trying to pick one address matching " +
-                                             "to one of: " + interfaces);
-                }
-                else if (config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled()) {
-                    final Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
-                    for (String possibleAddress : possibleAddresses) {
-                        interfaces.add(AddressUtil.getAddressHolder(possibleAddress).address);
-                    }
-                    logger.log(Level.FINEST, "Interfaces is disabled, trying to pick one address from TCP-IP config " +
-                                             "addresses: " + interfaces);
-                }
-
-                if (interfaces.contains("127.0.0.1") || interfaces.contains("localhost")) {
-                    currentInetAddress = InetAddress.getByName("127.0.0.1");
-                } else {
-                    if (interfaces.size() > 0) {
-                        currentInetAddress = pickInetAddress(interfaces);
-                    }
-                    if (currentInetAddress == null) {
-                        if (config.getNetworkConfig().getInterfaces().isEnabled()) {
-                            String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
-                            msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
-                            logger.log(Level.SEVERE, msg);
-                            throw new RuntimeException(msg);
-                        } else {
-                            currentInetAddress = pickInetAddress(null);
-                        }
-                    }
-                }
-            }
-            if (currentInetAddress != null) {
-                // check if scope id correctly set
-                currentInetAddress = AddressUtil.fixAndGetInetAddress(currentInetAddress);
-            }
-            if (currentInetAddress == null) {
-                currentInetAddress = InetAddress.getByName("127.0.0.1");
-            }
-            final InetAddress inetAddress = currentInetAddress;
+            final InetAddress inetAddress = pickInetAddress(config);
             final boolean reuseAddress = config.isReuseAddress();
-            ServerSocket serverSocket = serverSocketChannel.socket();
+            serverSocketChannel = ServerSocketChannel.open();
+            final ServerSocket serverSocket = serverSocketChannel.socket();
             /**
              * why setReuseAddress(true)?
              * when the member is shutdown,
@@ -132,8 +86,6 @@ public class AddressPicker {
                     break;
                 } catch (final Exception e) {
                     if (config.isPortAutoIncrement()) {
-                        serverSocket = serverSocketChannel.socket();
-                        serverSocket.setReuseAddress(reuseAddress);
                         port++;
                     } else {
                         String msg = "Port [" + port + "] is already in use and auto-increment is " +
@@ -144,11 +96,83 @@ public class AddressPicker {
                 }
             }
             serverSocketChannel.configureBlocking(false);
-            return new Address(inetAddress, port);
+            address = new Address(inetAddress, port);
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw e;
         }
+    }
+
+    private InetAddress pickInetAddress(final Config config) throws UnknownHostException, SocketException {
+        InetAddress currentInetAddress = getSystemConfiguredAddress();
+        if (currentInetAddress == null) {
+            final Collection<String> interfaces = getInterfaces(config);
+            if (interfaces.contains("127.0.0.1") || interfaces.contains("localhost")) {
+                currentInetAddress = pickLoopbackAddress();
+            } else {
+                if (interfaces.size() > 0) {
+                    currentInetAddress = pickInetAddress(interfaces);
+                }
+                if (currentInetAddress == null) {
+                    if (config.getNetworkConfig().getInterfaces().isEnabled()) {
+                        String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
+                        msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
+                        logger.log(Level.SEVERE, msg);
+                        throw new RuntimeException(msg);
+                    } else {
+                        currentInetAddress = pickInetAddress((Collection<String>) null);
+                    }
+                }
+            }
+        }
+        if (currentInetAddress != null) {
+            // check if scope id correctly set
+            currentInetAddress = AddressUtil.fixAndGetInetAddress(currentInetAddress);
+        }
+        if (currentInetAddress == null) {
+            currentInetAddress = pickLoopbackAddress();
+        }
+        return currentInetAddress;
+    }
+
+    private Collection<String> getInterfaces(final Config config) {
+        final Collection<String> interfaces = new HashSet<String>();
+        if (config.getNetworkConfig().getInterfaces().isEnabled()) {
+            interfaces.addAll(config.getNetworkConfig().getInterfaces().getInterfaces());
+            logger.log(Level.INFO, "Interfaces is enabled, trying to pick one address matching " +
+                                     "to one of: " + interfaces);
+        }
+        else if (config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled()) {
+            final Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
+            for (String possibleAddress : possibleAddresses) {
+                interfaces.add(AddressUtil.getAddressHolder(possibleAddress).address);
+            }
+            logger.log(Level.FINEST, "Interfaces is disabled, trying to pick one address from TCP-IP config " +
+                                     "addresses: " + interfaces);
+        }
+        return interfaces;
+    }
+
+    private InetAddress getSystemConfiguredAddress() throws UnknownHostException {
+        final String localAddress = System.getProperty("hazelcast.local.localAddress");
+        if (localAddress != null) {
+            if ("127.0.0.1".equals(localAddress.trim()) || "localhost".equals(localAddress.trim())) {
+                return pickLoopbackAddress();
+            } else {
+                return InetAddress.getByName(localAddress.trim());
+            }
+        }
+        return null;
+    }
+
+    private InetAddress pickLoopbackAddress() throws UnknownHostException {
+        if (System.getProperty("java.net.preferIPv6Addresses") == null
+                && System.getProperty("java.net.preferIPv4Stack") == null) {
+            // When using loopback address and multicast join, leaving IPv6 enabled causes join issues.
+            logger.log(Level.WARNING, "Picking loopback address [127.0.0.1]; setting 'java.net.preferIPv4Stack' to true.");
+            System.setProperty("java.net.preferIPv4Stack", "true");
+        }
+        return InetAddress.getByName("127.0.0.1");
     }
 
     private InetAddress pickInetAddress(final Collection<String> interfaces) throws SocketException {
@@ -164,7 +188,7 @@ public class AddressPicker {
                 }
                 if (interfaces != null && !interfaces.isEmpty()) {
                     final String address = inetAddress.getHostAddress();
-                    if (matchAddress(address, interfaces)) {
+                    if (AddressUtil.matchAnyInterface(address, interfaces)) {
                         return inetAddress;
                     }
                 } else if (!inetAddress.isLoopbackAddress()) {
@@ -182,5 +206,13 @@ public class AddressPicker {
         AwsConfig awsConfig = join.getAwsConfig();
         boolean awsEnabled = awsConfig != null && awsConfig.isEnabled();
         return preferIPv4Stack || awsEnabled;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public ServerSocketChannel getServerSocketChannel() {
+        return serverSocketChannel;
     }
 }

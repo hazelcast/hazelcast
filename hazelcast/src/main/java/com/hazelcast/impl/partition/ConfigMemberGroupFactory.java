@@ -17,8 +17,8 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.config.MemberGroupConfig;
-import com.hazelcast.impl.AddressPicker;
 import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.util.AddressUtil;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,7 +46,7 @@ public class ConfigMemberGroupFactory implements MemberGroupFactory {
                 continue;
             }
             for (Entry<Integer, MemberGroupConfig> groupConfigEntry : memberGroupConfigMap.entrySet()) {
-                if (AddressPicker.matchAddress(member.getAddress().getHost(), groupConfigEntry.getValue().getInterfaces())) {
+                if (AddressUtil.matchAnyInterface(member.getAddress().getHost(), groupConfigEntry.getValue().getInterfaces())) {
                     MemberGroup group = memberGroups.get(groupConfigEntry.getKey());
                     if (group == null) {
                         group = new DefaultMemberGroup();

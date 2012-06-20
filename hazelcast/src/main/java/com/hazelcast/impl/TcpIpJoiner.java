@@ -272,7 +272,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 for (final InetAddress inetAddress : allAddresses) {
                     boolean matchingAddress = true;
                     if (interfaces.isEnabled()) {
-                        matchingAddress = AddressPicker.matchAddress(inetAddress.getHostAddress(), interfaces.getInterfaces());
+                        matchingAddress = AddressUtil.matchAnyInterface(inetAddress.getHostAddress(), interfaces.getInterfaces());
                     }
                     if (matchingAddress) {
                         return new Address(inetAddress, addressHolder.port);
@@ -330,7 +330,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                         boolean matchingAddress = true;
                         Interfaces interfaces = config.getNetworkConfig().getInterfaces();
                         if (interfaces.isEnabled()) {
-                            matchingAddress = AddressPicker.matchAddress(inetAddress.getHostAddress(),
+                            matchingAddress = AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
                                     interfaces.getInterfaces());
                         }
                         if (matchingAddress) {
