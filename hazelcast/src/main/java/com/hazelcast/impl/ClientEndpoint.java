@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener, ConnectionListener, ClientHandlerService.ClientListener, Client {
     final Connection conn;
@@ -66,7 +67,11 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
 
     public synchronized void addThisAsListener(IMap map, Data key, boolean includeValue) {
         if (!listeningMaps.contains(map) && !(listeningKeyExist(map, key))) {
-            map.addEntryListener(this, includeValue);
+            if (key == null){
+                map.addEntryListener(this, includeValue);
+            } else {
+                map.addEntryListener(this, toObject(key), includeValue);
+            }
         }
         if (key == null) {
             listeningMaps.add(map);
