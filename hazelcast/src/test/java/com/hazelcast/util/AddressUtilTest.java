@@ -23,7 +23,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+
 import static com.hazelcast.util.AddressUtil.AddressHolder;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for AddressUtil class.
@@ -99,6 +103,16 @@ public class AddressUtilTest {
     public void testAddressMatching() {
         Assert.assertTrue(AddressUtil.matchInterface("fe80::62c5:0:fe05:480a%en0", "fe80::62c5:*:fe05:480a%en0"));
         Assert.assertTrue(AddressUtil.matchInterface("fe80::62c5:aefb:fe05:480a%en1", "fe80::62c5:0-ffff:fe05:480a"));
+    }
+
+    @Test
+    public void matchAddress() {
+        assertTrue(AddressUtil.matchAnyInterface("10.235.194.23", Arrays.asList("10.235.194.23", "10.235.193.121")));
+    }
+
+    @Test
+    public void doNotMatchAddress() {
+        assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", Arrays.asList("10.235.193.*")));
     }
 
 }

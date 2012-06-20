@@ -1516,8 +1516,6 @@ public class CMap {
         return true;
     }
 
-    int count = 0;
-
     boolean evict(Request req) {
         Record record = getRecord(req.key);
         long now = Clock.currentTimeMillis();
