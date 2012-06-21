@@ -94,6 +94,7 @@ public class Protocol implements SocketWritable {
             for (ByteBuffer buffer : buffers) {
                 totalSize += buffer.capacity();
             }
+            totalSize += 2;
         }
     }
 
@@ -103,6 +104,7 @@ public class Protocol implements SocketWritable {
             for (ByteBuffer buffer : buffers) {
                 totalWritten += IOUtil.copyToHeapBuffer(buffer, destination);
             }
+            totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap("\r\n".getBytes()), destination);
         }
         return totalWritten >= totalSize;
     }

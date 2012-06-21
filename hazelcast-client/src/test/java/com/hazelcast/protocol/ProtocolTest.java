@@ -55,6 +55,7 @@ public class ProtocolTest {
         socket.connect(isa, 3000);
         OutputStream out = socket.getOutputStream();
         out.write("P01".getBytes());
+        out.write("\r\n".getBytes());
         out.flush();
         auth(socket);
         return socket;
@@ -74,7 +75,7 @@ public class ProtocolTest {
     }
 
     private void auth(Socket socket) throws IOException {
-        doOp("AUTH 0 dev dev-pass #0", null, socket);
+        doOp("AUTH 0 dev dev-pass", null, socket);
         read(socket);
     }
 

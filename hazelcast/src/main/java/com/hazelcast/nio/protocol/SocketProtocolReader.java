@@ -66,27 +66,21 @@ public class SocketProtocolReader implements SocketReader {
             doRead(bb);
         }
     }
-
     private void doRead(ByteBuffer bb) {
         try {
             while(firstNewLineRead.hasRemaining()){
                 firstNewLineRead.put(bb.get());
             }
-            System.out.println("Very first new line is read!");
 
             readLine(bb, commandLineRead, commandLine);
-            Thread.sleep(1000);
             if (commandLineRead.get()) {
                 parseCommandLine(SocketTextReader.toStringAndClear(commandLine));
                 if (commandLineIsParsed && bufferSize.length > 0) {
-                    System.out.println("BUF SIZE LENGTH " + bufferSize.length);
                     readLine(bb, sizeLineRead, sizeLine);
-                    System.out.println("Sizeline is read is it true:" + sizeLine);
                 }
                 else if(commandLineIsParsed){
                     sizeLineRead.set(true);
                 }
-
                 if (commandLineIsParsed && bufferSize.length == 0 || sizeLineRead.get()) {
                     //if (bufferSize.length > 0)
                         parseSizeLine(SocketTextReader.toStringAndClear(sizeLine));
