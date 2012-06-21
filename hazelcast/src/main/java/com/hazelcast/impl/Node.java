@@ -40,12 +40,13 @@ import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.lang.reflect.Constructor;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class Node {
@@ -116,15 +117,11 @@ public class Node {
 
     public final ClientServiceImpl clientService;
 
-    private final static AtomicInteger counter = new AtomicInteger();
-
     private final CpuUtilization cpuUtilization = new CpuUtilization();
 
     private final SystemLogService systemLogService;
 
     final SimpleBoundedQueue<Packet> serviceThreadPacketQueue = new SimpleBoundedQueue<Packet>(1000);
-
-    final int id;
 
     final WanReplicationService wanReplicationService;
 
@@ -137,7 +134,6 @@ public class Node {
     public final SecurityContext securityContext;
 
     public Node(FactoryImpl factory, Config config) {
-        this.id = counter.incrementAndGet();
         this.threadGroup = new ThreadGroup(factory.getName());
         this.factory = factory;
         this.config = config;
@@ -577,7 +573,7 @@ public class Node {
             } else {
                 setActive(false);
                 joined.set(false);
-                throw (RuntimeException) e;
+                Util.throwUncheckedException(e);
             }
         }
     }
