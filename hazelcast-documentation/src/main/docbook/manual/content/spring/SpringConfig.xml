@@ -212,4 +212,58 @@
 <hz:atomicNumber id="lock" instance-ref="client" name="lock"/>
 ]]></programlisting>
     </para>
+    <anchor xml:id="SpringInjectingTypedBean"/>
+    <para><link xlink:href="#SpringInjectingTypedBean">
+        <emphasis role="bold">Injecting Typed Collections/Maps</emphasis></link></para>
+    <para>
+        Spring tries to create a new <code>Map</code>/<code>Collection</code> instance and fill the new instance
+        by iterating and converting values of the original <code>Map</code>/<code>Collection</code>
+        (<literal>IMap</literal>, <literal>IQueue</literal> etc.) to required types when generic type parameters
+        of the original <code>Map</code>/<code>Collection</code> and the target property/attribute do not match.
+    </para>
+    <para>
+        Since Hazelcast <code>Map</code>s/<code>Collection</code>s are designed to hold very large data
+        which a single machine can not carry, iterating through whole values can cause out of memory errors.
+    </para>
+    <para>
+        To avoid this issue either target property/attribute can be declared as
+        un-typed <code>Map</code>/<code>Collection</code>
+        <programlisting language="java"><![CDATA[
+public class SomeBean {
+    @Autowired
+    IMap map; // instead of IMap<K, V> map
+
+    @Autowired
+    IQueue queue; // instead of IQueue<E> queue
+
+    ...
+}
+]]></programlisting>
+
+        or parameters of injection methods (constructor, setter) can be un-typed.
+
+        <programlisting language="java"><![CDATA[
+public class SomeBean {
+
+    IMap<K, V> map;
+
+    IQueue<E> queue;
+
+    public SomeBean(IMap map) { // instead of IMap<K, V> map
+        this.map = map;
+    }
+
+    ...
+
+    public void setQueue(IQueue queue) { // instead of IQueue<E> queue
+        this.queue = queue;
+    }
+    ...
+}
+]]></programlisting>
+        <emphasis role="italic">For more info see
+            <link xlink:href="https://jira.springsource.org/browse/SPR-3407">
+                Spring issue-3407
+            </link>.</emphasis>
+    </para>
 </sect1>
