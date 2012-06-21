@@ -19,17 +19,22 @@ package com.hazelcast.impl.wan;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.impl.Node;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Serializer;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 public class WanReplicationService {
     final Node node;
     final Map<String, WanReplication> mapWanReplications = new ConcurrentHashMap<String, WanReplication>(2);
+    private final ILogger logger;
 
     public WanReplicationService(Node node) {
         this.node = node;
+        this.logger = node.getLogger(WanReplicationService.class.getName());
     }
 
     @SuppressWarnings("SynchronizeOnThis")
@@ -45,7 +50,17 @@ public class WanReplicationService {
             WanReplicationEndpoint[] targetClusters = new WanReplicationEndpoint[targets.size()];
             int count = 0;
             for (WanTargetClusterConfig targetClusterConfig : targets) {
-                WanReplicationEndpoint target = new WanNoDelayReplication();
+                WanReplicationEndpoint target = null;
+                if( targetClusterConfig.getReplicationImpl() != null) {
+                    try {
+                        target = (WanReplicationEndpoint) Serializer.loadClass(targetClusterConfig.getReplicationImpl()).newInstance();
+                    } catch (Exception e) {
+                        logger.log(Level.SEVERE, e.getMessage(), e);
+                    }
+                }
+                else {
+                    target = new WanNoDelayReplication();
+                }
                 String groupName = targetClusterConfig.getGroupName();
                 String password = targetClusterConfig.getGroupPassword();
                 String[] addresses = new String[targetClusterConfig.getEndpoints().size()];
