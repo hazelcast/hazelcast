@@ -61,23 +61,28 @@ public class ListProxyImpl extends AbstractList implements ListProxy, DataSerial
     }
 
     public int size() {
+        factory.initialChecks();
         return factory.node.blockingQueueManager.size(queueName);
     }
 
     public boolean contains(Object o) {
+        factory.initialChecks();
         Set keys = factory.node.blockingQueueManager.getValueKeys(queueName, toData(o));
         return keys != null && keys.size() > 0;
     }
 
     public Iterator iterator() {
+        factory.initialChecks();
         return factory.node.blockingQueueManager.iterate(queueName);
     }
 
     public boolean add(Object o) {
+        factory.initialChecks();
         return factory.node.blockingQueueManager.add(queueName, o, Integer.MAX_VALUE);
     }
 
     public boolean remove(Object o) {
+        factory.initialChecks();
         return factory.node.blockingQueueManager.remove(queueName, o);
     }
 
@@ -89,14 +94,17 @@ public class ListProxyImpl extends AbstractList implements ListProxy, DataSerial
     }
 
     public Object get(int index) {
+        factory.initialChecks();
         return factory.node.blockingQueueManager.getItemByIndex(queueName, index);
     }
 
     public Object set(int index, Object element) {
+        factory.initialChecks();
         return factory.node.blockingQueueManager.set(queueName, element, index);
     }
 
     public void add(int index, Object element) {
+        factory.initialChecks();
         try {
             factory.node.blockingQueueManager.offer(queueName, element, index, 0);
         } catch (InterruptedException e) {
@@ -104,14 +112,17 @@ public class ListProxyImpl extends AbstractList implements ListProxy, DataSerial
     }
 
     public Object remove(int index) {
+        factory.initialChecks();
         return factory.node.blockingQueueManager.remove(queueName, index);
     }
 
     public int indexOf(Object o) {
+        factory.initialChecks();
         return factory.node.blockingQueueManager.getIndexOf(queueName, o, true);
     }
 
     public int lastIndexOf(Object o) {
+        factory.initialChecks();
         return factory.node.blockingQueueManager.getIndexOf(queueName, o, false);
     }
 
@@ -139,10 +150,12 @@ public class ListProxyImpl extends AbstractList implements ListProxy, DataSerial
     }
 
     public void addItemListener(ItemListener itemListener, boolean includeValue) {
+        factory.initialChecks();
         factory.node.blockingQueueManager.addItemListener(queueName, itemListener, includeValue);
     }
 
     public void removeItemListener(ItemListener itemListener) {
+        factory.initialChecks();
         factory.node.blockingQueueManager.removeItemListener(queueName, itemListener);
     }
 
