@@ -168,7 +168,7 @@ cfg.addMapConfig(mapCfg);]]></programlisting>
     </itemizedlist>
     <anchor xml:id="NamedHazelcastInstance"/>
     <itemizedlist>
-        <title>HazelcastInstance with a name:</title>
+        <title><link xlink:href="#NamedHazelcastInstance">HazelcastInstance with a name</link>:</title>
         <listitem>
             <para>To create a named
                 <literal>HazelcastInstance</literal>
