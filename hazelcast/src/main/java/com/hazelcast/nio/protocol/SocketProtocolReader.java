@@ -80,7 +80,6 @@ public class SocketProtocolReader implements SocketReader {
                     sizeLineRead.set(true);
                 }
                 if (commandLineIsParsed && bufferSize.length == 0 || sizeLineRead.get()) {
-                    //if (bufferSize.length > 0)
                     parseSizeLine(SocketTextReader.toStringAndClear(sizeLine));
                     for (int i = 0; bb.hasRemaining() && i < buffers.length; i++) {
                         if (buffers[i].hasRemaining()) {

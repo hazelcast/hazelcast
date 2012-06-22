@@ -20,10 +20,11 @@
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
     <title>Client Protocol Specification</title>
     <para>Hazelcast Client Protocol is a TCP protocol that is designed to be simple and yet powerful.
-        A client opens a connection to Hazelcast server (default port is 5701) and send the request command.
+        A client opens a connection to Hazelcast server (default port is 5701) and sends the request command.
         Upon receiving the command, server will execute it and send the response back to the client. Each connection
-        needs to
-        authenticate first using AUTH command.
+        needs to send the protocol type first and then authenticate using AUTH command before sending any other command.
+        After protocol is set and AUTH is done then the client can use the same connection to send infinite number of
+        other commands over the same connection.
     </para>
 
     <para>
@@ -33,8 +34,8 @@
         General structure of protocol is as follows:
         <programlisting language="java"><![CDATA[
         COMMAND <arg1>…<argN> #M\r\n
-        <s1>…<sM> \r\n
-        B1B2…. BM]]></programlisting>
+        <s1>…<sM>\r\n
+        B1B2…. BM\r\n]]></programlisting>
 
         Notice that the protocol consists of 3 lines. The first two lines are interpreted as text and there is a new
         line character after each. The first line is called "command line", second is "size line" and the rest is binary data.
@@ -42,8 +43,10 @@
 
     <para>
         Command line specifies the command and some arguments for that command that can be defined as string.
-        These are in general arguments like strings, booleans, integers and longs. The last argument defines the
+        These are in general arguments like strings, boolean, integers and longs. The last argument defines the
         number of binary arguments. If there is no argument then it is ok to not provide it or one can simply provide #0.
+        In case of #0 then next lines can be omitted. That is the client or server will only send the commandline as part
+        of the protocol
     </para>
     <para>
         Size line defines the size of the binary arguments with space in between.
@@ -66,7 +69,7 @@
         <orderedlist>
             <listitem>
                 <para>flag:
-                    <literal>Flag is a long value that will be returned by server on answer.
+                    <literal>Flag is any string value that will be returned by server on answer.
                         Server doesn't care about the value that is set here. It will return it back on response object.
                         This argument can be used as call_id to match the responses to calls.
                         All commands have
@@ -77,28 +80,14 @@
             </listitem>
             <listitem>
                 <para>noreply:
-                    <literal>Is an optianal argument and is provied as it is ("noreply"). If provided, server will not
+                    <literal>Is an optianal argument and is provied as it is, "noreply". If provided, server will not
                         send the
                         response back to client. Commands that retreive data from server do not have
                         <emphasis role="bold">noreply</emphasis>
                         as option.
                         Must be the last argument before
-                        <emphasis role="bold">end</emphasis>
-                        (see the next argument for<emphasis role="bold">end</emphasis>)
-                    </literal>
-                </para>
-            </listitem>
-            <listitem>
-                <para>type:
-                    <literal>Is an optional argument and is provided as it is ("end").
-                        If provided server will understand that there is no any binary argument thus,
-                        there is no need to send size line.
-                        <emphasis role="bold">end</emphasis>
-                        argument can be used only if
-                        there is 0 binary arguments. But note that it is not mandatory. One can skip it and send size
-                        line as follows:
-                        "#0\r\n". Obviously there want be any binary data proceeding this line. If provided must be the
-                        last argument
+                        <emphasis role="bold">#N</emphasis> argument.
+
                     </literal>
                 </para>
             </listitem>
@@ -133,7 +122,7 @@
         without any value will be
 
         <programlisting language="java"><![CDATA[
-        OK \r\n
+        OK <flag> \r\n
         ]]></programlisting>
 
        An error reply will be as follows:

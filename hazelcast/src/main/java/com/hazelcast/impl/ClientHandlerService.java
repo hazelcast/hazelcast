@@ -134,6 +134,7 @@ public class ClientHandlerService implements ConnectionListener {
         mapCommandHandlers.put(Command.LOCK_UNLOCK.value, new UnlockOperationHandler());
         mapCommandHandlers.put(Command.LOCK_FORCE_UNLOCK.value, new UnlockOperationHandler());
         mapCommandHandlers.put(Command.LOCK_IS_LOCKED.value, new IsLockedOperationHandler());
+        mapCommandHandlers.put(Command.TPUBLISH.value, new TopicPublishHandler());
 
 //        SEMATTACHDETACHPERMITS, SEMCANCELACQUIRE, SEMDESTROY, SEM_DRAIN_PERMITS, SEMGETATTACHEDPERMITS,
 //                SEMGETAVAILPERMITS, SEMREDUCEPERMITS, SEMRELEASE, SEMTRYACQUIRE,
