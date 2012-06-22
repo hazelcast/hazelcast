@@ -51,7 +51,6 @@ public class SocketProtocolReader implements SocketReader {
     private final IOService ioService;
     private static final String NOREPLY = "noreply";
 
-
     private String flag = "0";
     final ByteBuffer firstNewLineRead = ByteBuffer.allocate(2);
 
@@ -66,38 +65,35 @@ public class SocketProtocolReader implements SocketReader {
             doRead(bb);
         }
     }
+
     private void doRead(ByteBuffer bb) {
         try {
-            while(firstNewLineRead.hasRemaining()){
+            while (firstNewLineRead.hasRemaining()) {
                 firstNewLineRead.put(bb.get());
             }
-
             readLine(bb, commandLineRead, commandLine);
             if (commandLineRead.get()) {
                 parseCommandLine(SocketTextReader.toStringAndClear(commandLine));
                 if (commandLineIsParsed && bufferSize.length > 0) {
                     readLine(bb, sizeLineRead, sizeLine);
-                }
-                else if(commandLineIsParsed){
+                } else if (commandLineIsParsed) {
                     sizeLineRead.set(true);
                 }
                 if (commandLineIsParsed && bufferSize.length == 0 || sizeLineRead.get()) {
                     //if (bufferSize.length > 0)
-                        parseSizeLine(SocketTextReader.toStringAndClear(sizeLine));
+                    parseSizeLine(SocketTextReader.toStringAndClear(sizeLine));
                     for (int i = 0; bb.hasRemaining() && i < buffers.length; i++) {
                         if (buffers[i].hasRemaining()) {
                             copy(bb, buffers[i]);
                         }
-                        if(i==buffers.length-1) {
-                            while(endOfTheCommand.hasRemaining()){
-                                endOfTheCommand.put(bb.get());
-                            }
+                        if (i == buffers.length - 1) {
+                            if (endOfTheCommand.hasRemaining())
+                                copy(bb, endOfTheCommand);
                         }
                     }
                     if ((buffers.length == 0 || !buffers[buffers.length - 1].hasRemaining())) {
                         if (args.length <= 0)
                             throw new RuntimeException("No argument to the command, at least flag should be provided!");
-
                         Protocol protocol = new Protocol(connection, command, flag, noreply, args, buffers);
                         connection.setType(Connection.Type.PROTOCOL_CLIENT);
                         ioService.handleClientCommand(protocol);
@@ -143,13 +139,12 @@ public class SocketProtocolReader implements SocketReader {
         if (buffers != null) return;
         System.out.println("Size line is : " + line);
         String[] split = line.split("\\s");
-        if (line!="" && split.length != bufferSize.length) {
+        if (line != "" && split.length != bufferSize.length) {
             throw new RuntimeException("Size # tag and number of size entries do not match!" + split.length + ":: " + bufferSize.length);
         }
         for (int i = 0; i < bufferSize.length; i++) {
             bufferSize[i] = Integer.parseInt(split[i]);
         }
-        
         buffers = new ByteBuffer[bufferSize.length];
         for (int i = 0; i < buffers.length; i++) {
             buffers[i] = ByteBuffer.allocate(bufferSize[i]);
@@ -158,7 +153,7 @@ public class SocketProtocolReader implements SocketReader {
 
     private boolean parseCommandLine(String line) {
         if (commandLineIsParsed || sizeLineRead.get()) return true;
-        if(line.equals("")){
+        if (line.equals("")) {
             commandLineIsParsed = false;
             commandLineRead.set(false);
             return false;
@@ -181,7 +176,7 @@ public class SocketProtocolReader implements SocketReader {
         for (int i = 2; i < argLength; i++) {
             args[i - 2] = split[i];
         }
-        if(bufferCount < 0) bufferCount = 0;
+        if (bufferCount < 0) bufferCount = 0;
         bufferSize = new int[bufferCount];
         commandLineIsParsed = true;
         return true;
