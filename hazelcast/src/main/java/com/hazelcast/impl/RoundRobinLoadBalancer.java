@@ -19,11 +19,13 @@ package com.hazelcast.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class RoundRobinLoadBalancer implements ExecutionLoadBalancer {
-    long count = 0;
+    final AtomicLong count = new AtomicLong();
 
     public Member getTarget(HazelcastInstance hazelcastInstance) {
         Object[] memberObjects = hazelcastInstance.getCluster().getMembers().toArray();
-        return (MemberImpl) memberObjects[((int) (count++ % memberObjects.length))];
+        return (MemberImpl) memberObjects[((int) (Math.abs(count.incrementAndGet()) % memberObjects.length))];
     }
 }
