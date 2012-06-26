@@ -147,9 +147,10 @@ public class Node {
         ServerSocketChannel serverSocketChannel = null;
         Address localAddress = null;
         try {
-            serverSocketChannel = ServerSocketChannel.open();
-            AddressPicker addressPicker = new AddressPicker(this, serverSocketChannel);
-            localAddress = addressPicker.pickAddress();
+            AddressPicker addressPicker = new AddressPicker(this);
+            addressPicker.pickAddress();
+            localAddress = addressPicker.getAddress();
+            serverSocketChannel = addressPicker.getServerSocketChannel();
         } catch (Throwable e) {
             Util.throwUncheckedException(e);
         }

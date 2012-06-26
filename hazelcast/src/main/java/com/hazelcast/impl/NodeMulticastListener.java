@@ -18,6 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.AddressUtil;
 
 import java.util.Set;
 
@@ -52,7 +53,7 @@ public class NodeMulticastListener implements MulticastListener {
                             if (node.masterAddress == null) {
                                 final String masterHost = joinInfo.address.getHost();
                                 if (trustedInterfaces.isEmpty() ||
-                                        AddressPicker.matchAddress(masterHost, trustedInterfaces)) {
+                                        AddressUtil.matchAnyInterface(masterHost, trustedInterfaces)) {
                                     node.masterAddress = new Address(joinInfo.address);
                                 }
                             }
