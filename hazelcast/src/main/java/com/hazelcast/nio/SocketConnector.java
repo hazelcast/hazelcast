@@ -53,7 +53,7 @@ public class SocketConnector implements Runnable {
                 // remote is IPv4; connect...
                 tryToConnect(address.getInetSocketAddress(), 0);
             } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
-                // remote and this is IPv6; this is local address and scope id is known
+                // remote and this are IPv6; this is local address and scope id is known
                 // find correct inet6 address for remote and connect...
                 final Inet6Address inetAddress = AddressUtil
                         .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());

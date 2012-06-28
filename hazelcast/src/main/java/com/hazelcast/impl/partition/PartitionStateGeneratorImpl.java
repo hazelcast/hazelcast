@@ -89,7 +89,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             PartitionInfo currentPartition = currentState[partitionId];
             PartitionInfo newPartition = newState[partitionId];
-            boolean lost = false;
             for (int replicaIndex = 0; replicaIndex < PartitionInfo.MAX_REPLICA_COUNT; replicaIndex++) {
                 Address currentOwner = currentPartition.getReplicaAddress(replicaIndex);
                 Address newOwner = newPartition.getReplicaAddress(replicaIndex);
