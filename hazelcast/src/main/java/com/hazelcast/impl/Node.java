@@ -40,7 +40,9 @@ import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.lang.reflect.Constructor;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Set;
 import java.util.UUID;
@@ -132,7 +134,7 @@ public class Node {
 
     public final NodeInitializer initializer;
 
-    private ManagementCenterService managementCenterService ;
+    private ManagementCenterService managementCenterService;
 
     public final SecurityContext securityContext;
 
@@ -419,7 +421,7 @@ public class Node {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
         serviceThread = clusterService.getServiceThread();
-        serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
+//        serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
         serviceThread.start();
         connectionManager.start();

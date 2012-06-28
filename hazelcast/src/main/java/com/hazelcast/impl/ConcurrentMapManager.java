@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.core.*;
@@ -31,10 +32,7 @@ import com.hazelcast.impl.partition.MigrationRequestTask;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.wan.WanMergeListener;
 import com.hazelcast.merge.MergePolicy;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.Serializer;
+import com.hazelcast.nio.*;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.query.Index;
 import com.hazelcast.query.MapIndexService;
@@ -42,9 +40,15 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryContext;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.DistributedTimeoutException;
+import com.hazelcast.util.NoneStrictObjectPool;
+import com.hazelcast.util.ResponseQueueFactory;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.Instance.InstanceType;
@@ -73,6 +77,7 @@ public class ConcurrentMapManager extends BaseManager {
     final ParallelExecutor evictionExecutor;
     final RecordFactory recordFactory;
     final Collection<WanMergeListener> colWanMergeListeners = new CopyOnWriteArrayList<WanMergeListener>();
+    final PartitionContainers partitionContainers;
 
     ConcurrentMapManager(final Node node) {
         super(node);
@@ -158,6 +163,827 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(SEMAPHORE_REDUCE_PERMITS, new SemaphoreReduceOperationHandler());
         registerPacketProcessor(SEMAPHORE_RELEASE, new SemaphoreReleaseOperationHandler());
         registerPacketProcessor(SEMAPHORE_TRY_ACQUIRE, new SemaphoreTryAcquireOperationHandler());
+        partitionContainers = new PartitionContainers();
+    }
+
+    public class PartitionPacketQueue {
+        private final NoneStrictObjectPool<Packet> p = new NoneStrictObjectPool<Packet>(100) {
+            @Override
+            public Packet createNew() {
+                return new Packet();
+            }
+
+            @Override
+            public void onRelease(Packet packet) {
+            }
+
+            @Override
+            public void onObtain(Packet packet) {
+                packet.reset();
+            }
+        };
+
+        public void releasePacket(Packet packet) {
+            p.release(packet);
+        }
+
+        public Packet obtainPacket() {
+            return p.obtain();
+        }
+    }
+
+    final Workers workers = new Workers("hz.PrimaryWorker", 8);
+    final Workers workers2 = new Workers("hz.BackupWorker", 1);
+
+    class PartitionContainers {
+        final PartitionContainer[] partitionContainers;
+        private final PartitionPacketQueue[] queues;
+
+        PartitionContainers() {
+            int partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
+            partitionContainers = new PartitionContainer[partitionCount];
+            for (int i = 0; i < partitionCount; i++) {
+                partitionContainers[i] = new PartitionContainer(node, getPartitionInfo(i));
+            }
+            queues = new PartitionPacketQueue[partitionCount];
+            for (int i = 0; i < partitionCount; i++) {
+                queues[i] = new PartitionPacketQueue();
+            }
+        }
+
+        public PartitionContainer getPartitionContainer(int partitionId) {
+            return partitionContainers[partitionId];
+        }
+
+        public Packet obtainPacket(int partitionId) {
+            return queues[partitionId].obtainPacket();
+        }
+
+        public void releasePacket(int partitionId, Packet packet) {
+            queues[partitionId].releasePacket(packet);
+        }
+    }
+
+    static class Worker implements Runnable {
+        private final BlockingQueue<Runnable> q = new LinkedBlockingQueue<Runnable>();
+        private volatile boolean active = true;
+
+        public void run() {
+            while (active) {
+                Runnable r = null;
+                try {
+                    r = q.take();
+                } catch (InterruptedException e) {
+                    return;
+                }
+                try {
+                    r.run();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+            }
+        }
+
+        public void stop() {
+            active = false;
+            q.offer(new Runnable() {
+                public void run() {
+                }
+            });
+        }
+
+        public void addWork(Runnable runnable) {
+            q.offer(runnable);
+        }
+    }
+
+    static class Workers {
+        final int threadCount;
+        final Worker[] workers;
+        private final String threadNamePrefix;
+
+        Workers(String s, int threadCount) {
+            threadNamePrefix = s;
+            this.threadCount = threadCount;
+            workers = new Worker[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                workers[i] = new Worker();
+            }
+            for (int i = 0; i < threadCount; i++) {
+                Worker worker = workers[i];
+                Thread t = new Thread(worker, threadNamePrefix + "_" + (i + 1));
+                t.start();
+            }
+        }
+
+        void execute(int partitionId, Runnable runnable) {
+            workers[partitionId % threadCount].addWork(runnable);
+        }
+    }
+
+    public Object put(String name, Object k, Object v, long ttl) {
+        Data key = toData(k);
+        Address target = getOwner(key);
+        PutOperation putOperation = new PutOperation(name, toData(k), v, ttl);
+        try {
+            return callKeyBasedOperation(putOperation, target).take();
+        } catch (InterruptedException e) {
+            throw new RuntimeInterruptedException();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int getSize(String name) {
+        Set<Member> members = mapService.getClusterImpl().getMembers();
+        List<BlockingQueue> responses = new ArrayList<BlockingQueue>(members.size());
+        for (Member member : members) {
+        }
+        return -1;
+    }
+
+    public Object getOperation(String name, Object k) {
+        Data key = toData(k);
+        Address target = getOwner(key);
+        GetOperation operation = new GetOperation(name, toData(k));
+        try {
+            return callKeyBasedOperation(operation, target).take();
+        } catch (InterruptedException e) {
+            throw new RuntimeInterruptedException();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public BlockingQueue putBackup(PutBackupOperation putBackupOperation, Address target) {
+        try {
+            return callKeyBasedOperation(putBackupOperation, target);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    BlockingQueue callKeyBasedOperation(KeyBasedOperation keyBasedOperation, Address target) throws Exception {
+        if (target == null) {
+            throw new NullPointerException(keyBasedOperation + ": Target is null");
+        }
+        if (thisAddress.equals(target)) {
+            return doLocalOperation(keyBasedOperation);
+        } else {
+            return doRemoteOperation(target, keyBasedOperation);
+        }
+    }
+
+    private BlockingQueue doLocalOperation(final Operation op) {
+        final BlockingQueue responseQ = ResponseQueueFactory.newResponseQueue();
+        final int partitionId = (op instanceof KeyBasedOperation)
+                ? getPartitionId(((KeyBasedOperation) op).getKey())
+                : -1;
+        runRequest(partitionId, (op instanceof BackupOperation), new Runnable() {
+            public void run() {
+                setOperationContext(op, mapService.getThisAddress(), -1, partitionId)
+                        .setLocal(true);
+                if (op instanceof CallableOperation) {
+                    Object result = null;
+                    try {
+                        result = ((CallableOperation) op).call();
+                        responseQ.offer(result);
+                    } catch (Exception e) {
+                        responseQ.offer(e);
+                    }
+                } else {
+                    ((RunnableOperation) op).run();
+                }
+            }
+        });
+        return responseQ;
+    }
+
+    private void runRequest(final int partitionId, final boolean backup, final Runnable runnable) {
+        Workers workersTarget = (backup) ? workers2 : workers;
+        workersTarget.execute(partitionId, runnable);
+    }
+
+    private BlockingQueue doRemoteOperation(Address target, Operation op) throws Exception {
+        return doRemoteOperation(target, op, null);
+    }
+
+    private BlockingQueue doRemoteOperation(Address target, Operation op, Callback callback) throws Exception {
+        if (target == null) throw new NullPointerException("Target is null");
+        if (node.getClusterImpl().getMember(target) == null) {
+            throw new RuntimeException("TargetNotClusterMember[" + target + "]");
+        }
+        if (thisAddress.equals(target)) {
+            throw new RuntimeException("RemoteTarget cannot be local!");
+        }
+        final int partitionId = (op instanceof KeyBasedOperation)
+                ? getPartitionId(((KeyBasedOperation) op).getKey())
+                : -1;
+        final Packet packet = partitionContainers.obtainPacket(partitionId);
+        packet.operation = REMOTE_CALL;
+        packet.blockId = partitionId;
+        packet.longValue = (op instanceof BackupOperation) ? 1 : 0;
+        Data valueData = toData(op);
+        packet.setValue(valueData);
+        packet.callId = localIdGen.incrementAndGet();
+        TheCall call = new TheCall(target, op, callback);
+        mapCalls.put(packet.callId, call);
+        Connection targetConnection = node.connectionManager.getOrConnect(target);
+        boolean sent = send(packet, targetConnection);
+        if (!sent) {
+            throw new IOException();
+        }
+        return call.responseQ;
+    }
+
+    public void handleOperation(final Packet packet) {
+        final int partitionId = packet.blockId;
+        final boolean backup = packet.longValue == 1;
+        final Data data = packet.getValueData();
+        final long callId = packet.callId;
+        final Address caller = packet.conn.getEndPoint();
+        if (partitionId > -1) {
+            runRequest(partitionId, backup, new Runnable() {
+                public void run() {
+                    try {
+                        Object obj = toObject(data);
+                        Operation op = (Operation) obj;
+                        setOperationContext(op, caller, callId, partitionId);
+                        if (op instanceof Runnable) {
+                            ((Runnable) op).run();
+                            partitionContainers.releasePacket(partitionId, packet);
+                        } else {
+                            packet.clearForResponse();
+                            packet.blockId = partitionId;
+                            packet.callId = callId;
+                            Object response = ((Callable) op).call();
+                            packet.longValue = (response instanceof BackupOperation) ? 1 : 0;
+                            packet.setValue(toData(response));
+                            sendOrReleasePacket(packet, packet.conn);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private OperationContext setOperationContext(Operation op, Address caller, long callId, int partitionId) {
+        OperationContext context = op.getOperationContext();
+        context.setMapService(mapService)
+                .setCaller(caller)
+                .setCallId(callId);
+        if (op instanceof MapPartitionAware) {
+            String name = ((MapPartitionAware) op).getMapName();
+            MapPartition mapPartition = partitionContainers.getPartitionContainer(partitionId).getMapPartition(name);
+            op.getOperationContext().setMapPartition(mapPartition);
+        }
+        return context;
+    }
+
+    interface RunnableOperation extends Operation, Runnable {
+
+    }
+
+    interface CallableOperation extends Operation, Callable {
+
+    }
+
+    public static abstract class AbstractOperation implements Operation {
+        private final OperationContext context = new OperationContext();
+
+        public OperationContext getOperationContext() {
+            return context;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+        }
+
+        public void readData(DataInput in) throws IOException {
+        }
+    }
+
+    interface MapPartitionAware {
+        String getMapName();
+    }
+
+    public static class PutBackupAndResponse extends Response implements MapPartitionAware {
+        String name;
+        Data key;
+        Data value;
+
+        public PutBackupAndResponse(Object result, String name, Data key, Data value) {
+            super(result);
+            this.name = name;
+            this.key = key;
+            this.value = value;
+        }
+
+        public PutBackupAndResponse() {
+        }
+
+        public void run() {
+            MapPartition mapPartition = getOperationContext().getMapPartition();
+            Record record = mapPartition.records.get(key);
+            if (record == null) {
+                record = new DefaultRecord(null, mapPartition.partitionInfo.getPartitionId(), key, value, -1, -1, getOperationContext().getMapService().nextId());
+                mapPartition.records.put(key, record);
+            } else {
+                record.setValueData(value);
+            }
+            record.setActive();
+            record.setDirty(true);
+            super.run();
+        }
+
+        @Override
+        public void writeData(DataOutput out) throws IOException {
+            super.writeData(out);
+            key.writeData(out);
+            value.writeData(out);
+            out.writeUTF(name);
+        }
+
+        @Override
+        public void readData(DataInput in) throws IOException {
+            super.readData(in);
+            key = new Data();
+            key.readData(in);
+            value = new Data();
+            value.readData(in);
+            name = in.readUTF();
+        }
+
+        public String getMapName() {
+            return name;
+        }
+    }
+
+    public void notifyOperationResponse(final Packet packet) {
+        workers2.execute(packet.blockId, new Runnable() {
+            public void run() {
+                System.out.println("XXXXXXX");
+                notifyOperationResponse(packet.callId, (Response) toObject(packet.getValueData()));
+            }
+        });
+    }
+
+    public void notifyOperationResponse(long callId, Response response) {
+        TheCall call = (TheCall) removeRemoteCall(callId);
+        if (call != null) {
+            call.offerResponse(response);
+        }
+    }
+
+    public interface BackupOperation {
+
+    }
+
+    static class OperationContext {
+
+        MapPartition mapPartition = null;
+        MapService mapService = null;
+        Address caller = null;
+        long callId = -1;
+        boolean local = true;
+
+        public MapPartition getMapPartition() {
+            return mapPartition;
+        }
+
+        public OperationContext setMapPartition(MapPartition mapPartition) {
+            this.mapPartition = mapPartition;
+            return OperationContext.this;
+        }
+
+        public MapService getMapService() {
+            return mapService;
+        }
+
+        public OperationContext setMapService(MapService mapService) {
+            this.mapService = mapService;
+            return OperationContext.this;
+        }
+
+        public Address getCaller() {
+            return caller;
+        }
+
+        public OperationContext setCaller(Address caller) {
+            this.caller = caller;
+            return OperationContext.this;
+        }
+
+        public long getCallId() {
+            return callId;
+        }
+
+        public void setCallId(long callId) {
+            this.callId = callId;
+        }
+
+        public boolean isLocal() {
+            return local;
+        }
+
+        public OperationContext setLocal(boolean local) {
+            this.local = local;
+            return OperationContext.this;
+        }
+    }
+
+    public interface KeyBasedOperation extends CallableOperation, MapPartitionAware {
+
+        Data getKey();
+    }
+
+    public static abstract class AbstractKeyBasedOperation implements KeyBasedOperation {
+        protected String name;
+        protected Data dataKey;
+        protected OperationContext callContext = new OperationContext();
+
+        protected AbstractKeyBasedOperation(String name, Data dataKey) {
+            this.name = name;
+            this.dataKey = dataKey;
+        }
+
+        protected AbstractKeyBasedOperation() {
+        }
+
+        public OperationContext getOperationContext() {
+            return callContext;
+        }
+
+        public Data getKey() {
+            return dataKey;
+        }
+
+        public String getMapName() {
+            return name;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(name);
+            dataKey.writeData(out);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            name = in.readUTF();
+            dataKey = new Data();
+            dataKey.readData(in);
+        }
+    }
+
+    class MapService {
+
+        final AtomicLong counter = new AtomicLong();
+
+        private final ExecutorService executorService = Executors.newCachedThreadPool();
+
+        public long nextId() {
+            return counter.incrementAndGet();
+        }
+
+        public ClusterImpl getClusterImpl() {
+            return node.getClusterImpl();
+        }
+
+        public BlockingQueue backup(PutBackupOperation putBackupOperation, Address target) {
+            return putBackup(putBackupOperation, target);
+        }
+
+        public Address getThisAddress() {
+            return thisAddress;
+        }
+
+        public ExecutorService getExecutorService() {
+            return executorService;
+        }
+
+        public void notifyCall(long callId, Response response) {
+            notifyOperationResponse(callId, response);
+        }
+    }
+
+    final MapService mapService = new MapService();
+
+    public static class PutBackupOperation extends PutOperation implements BackupOperation {
+
+        public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
+            super(name, dataKey, dataValue, ttl);
+        }
+
+        public PutBackupOperation() {
+        }
+
+        public Object call() {
+            MapPartition mapPartition = getOperationContext().getMapPartition();
+            Record record = mapPartition.records.get(dataKey);
+            if (record == null) {
+                record = new DefaultRecord(null, mapPartition.partitionInfo.getPartitionId(), dataKey, dataValue, -1, -1, getOperationContext().getMapService().nextId());
+                mapPartition.records.put(dataKey, record);
+            } else {
+                record.setValueData(dataValue);
+            }
+            record.setActive();
+            record.setDirty(true);
+            return new Response();
+        }
+
+        @Override
+        public String toString() {
+            return "PutBackupOperation{}";
+        }
+    }
+
+    public static class GetOperation extends AbstractKeyBasedOperation {
+        boolean local = true;
+
+        public GetOperation(String name, Data dataKey) {
+            super(name, dataKey);
+        }
+
+        public GetOperation() {
+        }
+
+        public Object call() {
+            Record record = getOperationContext().getMapPartition().records.get(dataKey);
+            return new Response(record == null ? null : record.getValueData());
+        }
+
+        @Override
+        public String toString() {
+            return "PutBackupOperation{" +
+                    "local=" + local +
+                    '}';
+        }
+    }
+
+    public static class PutOperation extends AbstractKeyBasedOperation {
+        Object value;
+        Data dataValue;
+        long ttl;
+
+        public PutOperation(String name, Data dataKey, Object value, long ttl) {
+            super(name, dataKey);
+            this.dataValue = toData(value);
+            this.value = value;
+            this.ttl = ttl;
+        }
+
+        public PutOperation() {
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            super.writeData(out);
+            dataValue.writeData(out);
+            out.writeLong(ttl);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            super.readData(in);
+            dataValue = new Data();
+            dataValue.readData(in);
+            ttl = in.readLong();
+        }
+
+        public Object call() {
+            if (dataValue == null) {
+                dataValue = toData(value);
+            }
+            MapPartition mapPartition = getOperationContext().getMapPartition();
+            Record record = mapPartition.records.get(dataKey);
+            Object key = null;
+            Object oldValue = null;
+            Data oldValueData = null;
+            if (record == null) {
+                if (mapPartition.loader != null) {
+                    key = toObject(dataKey);
+                    oldValue = mapPartition.loader.load(key);
+                    oldValueData = toData(oldValue);
+                }
+                record = new DefaultRecord(null, mapPartition.partitionInfo.getPartitionId(), dataKey, dataValue, -1, -1, getOperationContext().getMapService().nextId());
+                mapPartition.records.put(dataKey, record);
+            } else {
+                oldValueData = record.getValueData();
+                record.setValueData(dataValue);
+            }
+            record.setActive();
+            record.setDirty(true);
+            if (mapPartition.store != null && mapPartition.writeDelayMillis == 0) {
+                if (key == null) {
+                    key = toObject(dataKey);
+                }
+                mapPartition.store.store(key, record.getValue());
+            }
+            boolean callerBackup = takeBackup();
+            return (callerBackup) ? new PutBackupAndResponse(oldValueData, name, dataKey, dataValue) : new Response(oldValueData);
+        }
+
+        private boolean takeBackup() {
+            boolean callerBackup = false;
+            MapPartition mapPartition = getOperationContext().getMapPartition();
+            MapService mapService = getOperationContext().getMapService();
+            int mapBackupCount = 1;
+            int backupCount = Math.min(mapService.getClusterImpl().getSize() - 1, mapBackupCount);
+            if (backupCount > 0) {
+                List<BlockingQueue> backupOps = new ArrayList<BlockingQueue>(backupCount);
+                PartitionInfo partitionInfo = mapPartition.partitionInfo;
+                for (int i = 0; i < backupCount; i++) {
+                    Address replicaTarget = partitionInfo.getReplicaAddress(i + 1);
+                    if (replicaTarget != null) {
+                        if (replicaTarget.equals(mapService.getThisAddress())) {
+//                            Normally shouldn't happen!!
+//                            PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
+//                            pbo.call();
+                        } else {
+                            if (replicaTarget.equals(getOperationContext().getCaller())) {
+                                callerBackup = true;
+//                                PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
+//                                backupOps.add(mapService.backup(pbo, replicaTarget));
+                            } else {
+                                PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
+                                backupOps.add(mapService.backup(pbo, replicaTarget));
+                            }
+                        }
+                    }
+                }
+                for (BlockingQueue backupOp : backupOps) {
+                    try {
+                        if (backupOp.poll(10, TimeUnit.SECONDS) == null) {
+                            System.out.println(Thread.currentThread() + " !!!! " + backupOps.size());
+                        }
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }
+            return callerBackup;
+        }
+
+        @Override
+        public String toString() {
+            return "PutOperation{}";
+        }
+    }
+
+    Address getOwner(Data key) {
+        int partitionId = getPartitionId(key);
+        MemberImpl member = (MemberImpl) partitionServiceImpl.getPartition(partitionId).getOwner();
+        if (member == null) {
+            return null;
+        }
+        return member.getAddress();
+    }
+
+    class PartitionContainer {
+        private final Node node;
+        final PartitionInfo partitionInfo;
+        final Map<String, MapPartition> maps = new HashMap<String, MapPartition>(100);
+
+        PartitionContainer(Node node, PartitionInfo partitionInfo) {
+            this.node = node;
+            this.partitionInfo = partitionInfo;
+        }
+
+        MapConfig getMapConfig(String name) {
+            return node.getConfig().findMatchingMapConfig(name.substring(2));
+        }
+
+        public MapPartition getMapPartition(String name) {
+            MapPartition mapPartition = maps.get(name);
+            if (mapPartition == null) {
+                mapPartition = new MapPartition(PartitionContainer.this);
+                maps.put(name, mapPartition);
+            }
+            return mapPartition;
+        }
+    }
+
+    class MapPartition {
+        final PartitionInfo partitionInfo;
+        final PartitionContainer partitionContainer;
+        final Map<Data, Record> records = new HashMap<Data, Record>(1000);
+        final MapLoader loader;
+        final MapStore store;
+        final long writeDelayMillis = 0;
+
+        MapPartition(PartitionContainer partitionContainer) {
+            this.partitionInfo = partitionContainer.partitionInfo;
+            this.partitionContainer = partitionContainer;
+            loader = null;
+            store = null;
+        }
+    }
+
+    interface Callback {
+        void notify(Operation op, Object result);
+    }
+
+    class TheCall implements Call {
+        long id;
+        final Address target;
+        private final Operation op;
+        private final Callback callback;
+        final BlockingQueue<Response> responseQ = ResponseQueueFactory.newResponseQueue();
+
+        TheCall(Address target, Operation op, Callback callback) {
+            this.target = target;
+            this.op = op;
+            this.callback = callback;
+        }
+
+        public long getCallId() {
+            return id;
+        }
+
+        public void setCallId(long id) {
+            this.id = id;
+        }
+
+        public void onEnqueue() {
+        }
+
+        public int getEnqueueCount() {
+            return 0;
+        }
+
+        public void handleResponse(Packet packet) {
+            offerResponse((Response) toObject(packet.getValueData()));
+        }
+
+        public void offerResponse(Response response) {
+            responseQ.offer(response);
+            if (callback != null) {
+                callback.notify(op, response);
+            }
+        }
+
+        public void process() {
+        }
+
+        public void onDisconnect(Address dead) {
+            if (dead.equals(target)) {
+                responseQ.offer(new Response(new IOException(), true));
+            }
+        }
+
+        public Response waitAndGetResponse() throws InterruptedException {
+            return responseQ.take();
+        }
+    }
+
+    public static class Response extends AbstractOperation implements RunnableOperation, BackupOperation {
+        Object result = null;
+        Data resultData = null;
+        boolean exception = false;
+
+        public Response() {
+        }
+
+        public Response(Object result) {
+            this(result, false);
+        }
+
+        public Response(Object result, boolean exception) {
+            this.result = result;
+            this.exception = exception;
+            this.resultData = toData(result);
+        }
+
+        public void run() {
+            long callId = getOperationContext().getCallId();
+            getOperationContext().getMapService().notifyCall(callId, Response.this);
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            boolean NULL = (result == null);
+            out.writeBoolean(NULL);
+            if (!NULL) {
+                resultData.writeData(out);
+            }
+            out.writeBoolean(exception);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            boolean NULL = in.readBoolean();
+            if (!NULL) {
+                resultData = new Data();
+                resultData.readData(in);
+            }
+            exception = in.readBoolean();
+        }
+
+        @Override
+        public String toString() {
+            return "Response{" +
+                    "result=" + result +
+                    ", exception=" + exception +
+                    '}';
+        }
     }
 
     public PartitionManager getPartitionManager() {
@@ -509,13 +1335,12 @@ public class ConcurrentMapManager extends BaseManager {
         public boolean isLocked(String name, Object key) {
             Data dataKey = toData(key);
             CMap cmap = getMap(name);
-            if(cmap != null) {
+            if (cmap != null) {
                 LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
-                if(localLock != null && localLock.getCount() > 0) {
+                if (localLock != null && localLock.getCount() > 0) {
                     return true;
                 }
             }
-
             setLocal(CONCURRENT_MAP_IS_KEY_LOCKED, name, dataKey, null, -1, -1);
             request.setBooleanRequest();
             doOp();
@@ -544,8 +1369,8 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         protected void handleInterruption() {
             logger.log(Level.WARNING, Thread.currentThread().getName() + " is interrupted! " +
-                                      "Hazelcast intentionally suppresses interruption during lock operations " +
-                                      "to avoid dead-lock conditions. Operation: " + request.operation);
+                    "Hazelcast intentionally suppresses interruption during lock operations " +
+                    "to avoid dead-lock conditions. Operation: " + request.operation);
         }
     }
 
@@ -680,7 +1505,6 @@ public class ConcurrentMapManager extends BaseManager {
         MPut mput = new MPut();
         mput.putTransient(name, key, value, timeout, ttl);
     }
-
     // TODO: remove when safe!
 //    void putTransientAsync(Request request) {
 //        final MPut mput = new MPut();
@@ -1952,8 +2776,8 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         protected void handleInterruption() {
             logger.log(Level.WARNING, Thread.currentThread().getName() + " is interrupted! " +
-                                      "Hazelcast intentionally suppresses interruption during backup operations. " +
-                                      "Operation: " + request.operation);
+                    "Hazelcast intentionally suppresses interruption during backup operations. " +
+                    "Operation: " + request.operation);
         }
     }
 
@@ -2436,7 +3260,6 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                     record.setActive();
                 }
-
                 if (record != null) {
                     if (record.isActive() && !record.isValid()) {
                         // record is not valid, it is waiting for eviction.
@@ -2636,7 +3459,6 @@ public class ConcurrentMapManager extends BaseManager {
                 Object expectedValue = toObject(multiData.getData(0));
                 request.value = multiData.getData(1); // new value
                 request.response = expectedValue.equals(record.getValue());
-
                 if (request.response == Boolean.TRUE) {
                     // to prevent possible race condition!
                     // See testMapReplaceIfSame# tests in ClusterTest
@@ -3808,7 +4630,6 @@ public class ConcurrentMapManager extends BaseManager {
                 returnRedoResponse(request);
             }
         }
-
     }
 
     final DistributedTimeoutException distributedTimeoutException = new DistributedTimeoutException();

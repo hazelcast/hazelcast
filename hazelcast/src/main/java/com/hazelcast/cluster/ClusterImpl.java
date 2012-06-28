@@ -20,10 +20,10 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.util.Clock;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.Clock;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -159,5 +159,9 @@ public class ClusterImpl implements Cluster {
         }
         sb.append("\n}\n");
         return sb.toString();
+    }
+
+    public int getSize() {
+        return members.get().size();
     }
 }

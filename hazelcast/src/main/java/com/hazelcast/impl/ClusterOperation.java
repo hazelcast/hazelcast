@@ -156,8 +156,12 @@ public enum ClusterOperation {
     LOCK_UNLOCK(171),
     LOCK_FORCE_UNLOCK(172),
     /* CONCURRENT_MAP_IS_KEY_LOCKED(173), see above */
-    LOCK_IS_LOCKED(174);
-
+    LOCK_IS_LOCKED(174),
+    // PARALLEL RESPONSE
+    MAP_PUT(201),
+    MAP_GET(202),
+    REMOTE_CALL(333),
+    C_RESPONSE(200);
 
     public static final int LENGTH = 500;
 

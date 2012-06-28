@@ -21,6 +21,7 @@ import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.Processable;
 import com.hazelcast.impl.ThreadContext;
@@ -89,8 +90,16 @@ public class NodeIOService implements IOService {
         node.clientHandlerService.handle(p);
     }
 
-    public void handleMemberPacket(Packet p) {
-        node.clusterService.enqueuePacket(p);
+    public void handleMemberPacket(final Packet p) {
+//        System.out.println("handle p " + p.operation.getValue());
+        if (p.operation == ClusterOperation.C_RESPONSE) {
+            System.out.println("!!!!!!!!!!!");
+            node.concurrentMapManager.notifyOperationResponse(p);
+        } else if (p.operation == ClusterOperation.REMOTE_CALL) {
+            node.concurrentMapManager.handleOperation(p);
+        } else {
+            node.clusterService.enqueuePacket(p);
+        }
     }
 
     public TextCommandService getTextCommandService() {

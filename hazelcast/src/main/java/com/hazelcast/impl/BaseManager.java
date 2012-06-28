@@ -762,9 +762,9 @@ public abstract class BaseManager {
         protected void onStillWaiting() {
             enqueueAndReturn(new Processable() {
                 public void process() {
-                if (targetConnection != null && !targetConnection.live()) {
-                    redo();
-                }
+                    if (targetConnection != null && !targetConnection.live()) {
+                        redo();
+                    }
                 }
             });
         }
@@ -1227,7 +1227,9 @@ public abstract class BaseManager {
     }
 
     protected boolean sendResponse(final Packet packet) {
-        packet.operation = ClusterOperation.RESPONSE;
+        if (packet.operation != ClusterOperation.C_RESPONSE) {
+            packet.operation = ClusterOperation.RESPONSE;
+        }
         if (packet.responseType == RESPONSE_NONE) {
             packet.responseType = RESPONSE_SUCCESS;
         } else if (packet.responseType == RESPONSE_REDO) {
@@ -1249,7 +1251,7 @@ public abstract class BaseManager {
 
     protected void throwCME(final Object key) {
         throw new ConcurrentModificationException("Could not acquire resource under transaction! " +
-                                                  "Another thread holds a lock for the key : " + key);
+                "Another thread holds a lock for the key : " + key);
     }
 
     void enqueueEvent(int eventType, String name, Data key, Data value, Address from, boolean localEvent) {

@@ -614,9 +614,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
-            MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
-            Object result = mput.put(name, key, value, timeout, ttl);
-            mput.clearRequest();
+//            MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
+//            Object result = mput.put(name, key, value, timeout, ttl);
+            Object result = concurrentMapManager.put(name, key, value, ttl);
+//            mput.clearRequest();
             mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return result;
         }
@@ -714,7 +715,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             mapOperationCounter.incrementOtherOperations();
             MLock mlock = concurrentMapManager.new MLock();
             if (!mlock.unlock(name, key, 0)) {
-                throw new IllegalMonitorStateException("Current thread is not owner of the lock!") ;
+                throw new IllegalMonitorStateException("Current thread is not owner of the lock!");
             }
         }
 
@@ -763,9 +764,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         public Object get(Object key) {
             check(key);
             long begin = Clock.currentTimeMillis();
-            MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
-            Object result = mget.get(name, key, -1);
-            mget.clearRequest();
+//            MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
+//            Object result = mget.get(name, key, -1);
+//            mget.clearRequest();
+            Object result = concurrentMapManager.getOperation(name, key);
             mapOperationCounter.incrementGets(Clock.currentTimeMillis() - begin);
             return result;
         }
