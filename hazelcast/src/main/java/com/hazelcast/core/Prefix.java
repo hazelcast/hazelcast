@@ -82,6 +82,10 @@ public final class Prefix {
     public static final String MAP_FOR_QUEUE = MAP + QUEUE;
 
     /**
+     * The Constant QUEUE_LIST: "q:l:"
+     */
+    public static final String QUEUE_LIST = QUEUE + AS_LIST;
+    /**
      * The Constant MAP_OF_LIST: "c:q:l:"
      */
     public static final String MAP_OF_LIST = MAP_FOR_QUEUE + AS_LIST;
