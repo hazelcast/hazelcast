@@ -501,8 +501,10 @@ public class MapStoreTest extends TestUtil {
         }
         assertEquals(100, map.size());
         assertEquals(0, testMapStore.getStore().size());
+        assertEquals(100, map.getLocalMapStats().getDirtyEntryCount());
         getConcurrentMapManager(h1).flush(Prefix.MAP + "default");
         assertEquals(100, testMapStore.getStore().size());
+        assertEquals(0, h1.getMap("default").getLocalMapStats().getDirtyEntryCount());
         assertEquals(100, map.size());
     }
 
