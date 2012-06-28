@@ -168,6 +168,7 @@ public class CMap {
         if (isMultiMap()
                 || mapConfigName.startsWith(HAZELCAST)
                 || mapConfigName.startsWith(AS_LIST)
+                || mapConfigName.startsWith(QUEUE_LIST)
                 || mapConfigName.startsWith(AS_SET)) {
             mapConfig = new MapConfig();
         } else if (mapForQueue) {
