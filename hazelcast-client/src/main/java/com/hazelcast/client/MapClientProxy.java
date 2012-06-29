@@ -230,7 +230,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public Map<K, V> getAll(Set<K> setKeys) {
-        check(setKeys);
         Keys keys = new Keys();
         for (K key : setKeys) {
             keys.add(toData(key));
