@@ -16,7 +16,6 @@
 
 package com.hazelcast.jmx;
 
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,14 +35,6 @@ public class ObjectNameSpec {
     private String type = null;
     private String cluster = null;
     private String name = null;
-
-    public static ObjectName getClusterNameFilter(String clusterName) throws MalformedObjectNameException {
-        return new ObjectName(NAME_DOMAIN + "Cluster=" + clusterName);
-    }
-
-    public static ObjectName getClustersFilter() throws MalformedObjectNameException {
-        return new ObjectName(NAME_DOMAIN + "type=Cluster,*");
-    }
 
     public ObjectNameSpec() {
     }
@@ -95,7 +86,7 @@ public class ObjectNameSpec {
     }
 
     public ObjectName buildObjectName() throws Exception {
-        StringBuffer sb = new StringBuffer(NAME_DOMAIN);
+        StringBuilder sb = new StringBuilder(NAME_DOMAIN);
         if (type != null) {
             sb.append("type=").append(type);
         }
@@ -118,7 +109,7 @@ public class ObjectNameSpec {
      * Builde the name, overwriting the defaults
      */
     public ObjectName buildObjectName(String type, String name) throws Exception {
-        StringBuffer sb = new StringBuffer(NAME_DOMAIN);
+        StringBuilder sb = new StringBuilder(NAME_DOMAIN);
         if (type != null) {
             sb.append("type=").append(clean(type));
         }

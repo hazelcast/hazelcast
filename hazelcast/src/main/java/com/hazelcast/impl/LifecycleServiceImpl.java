@@ -101,7 +101,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     public void shutdown() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            FactoryImpl.shutdown(factory.getHazelcastInstanceProxy());
+            FactoryImpl.shutdown(factory);
             fireLifecycleEvent(SHUTDOWN);
         }
     }
@@ -109,7 +109,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     public void kill() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            FactoryImpl.kill(factory.getHazelcastInstanceProxy());
+            FactoryImpl.kill(factory);
             fireLifecycleEvent(SHUTDOWN);
         }
     }
