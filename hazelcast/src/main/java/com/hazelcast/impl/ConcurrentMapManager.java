@@ -210,17 +210,23 @@ public class ConcurrentMapManager extends BaseManager {
         CMap cmap = getMap(name);
         if (cmap != null && cmap.store != null && cmap.writeDelayMillis > 0) {
             Map mapDirtyEntries = new HashMap();
+            Set<Record> toStore = new HashSet<Record>();
             for (Record record : cmap.mapRecords.values()) {
                 if (record.isDirty()) {
                     Object key = record.getKey();
                     Object value = record.getValue();
                     if (key != null && value != null) {
                         mapDirtyEntries.put(key, value);
+                        toStore.add(record);
                     }
                 }
             }
             if (mapDirtyEntries.size() > 0) {
                 cmap.store.storeAll(mapDirtyEntries);
+                for (Record stored : toStore) {
+                    stored.setDirty(false);
+                    stored.setLastStoredTime(Clock.currentTimeMillis());
+                }
             }
         }
     }
