@@ -210,19 +210,18 @@ public class ConcurrentMapManager extends BaseManager {
     public void flush(String name) {
         CMap cmap = getMap(name);
         if (cmap != null && cmap.store != null && cmap.writeDelayMillis > 0) {
-            Map mapDirtyEntries = new HashMap();
+            final Set<Record> dirtyRecords = new HashSet<Record>();
             for (Record record : cmap.mapRecords.values()) {
                 if (record.isDirty()) {
-                    Object key = record.getKey();
-                    Object value = record.getValue();
-                    if (key != null && value != null) {
-                        mapDirtyEntries.put(key, value);
+                    PartitionInfo partition = partitionManager.getPartition(record.getBlockId());
+                    Address owner = partition.getOwner();
+                    if (owner != null && thisAddress.equals(owner)) {
+                        dirtyRecords.add(record);
+                        record.setDirty(false);  // set dirty to false, we will store these soon
                     }
                 }
             }
-            if (mapDirtyEntries.size() > 0) {
-                cmap.store.storeAll(mapDirtyEntries);
-            }
+            cmap.runStoreUpdate(dirtyRecords);
         }
     }
 

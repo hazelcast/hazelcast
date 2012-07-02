@@ -500,9 +500,20 @@ public class MapStoreTest extends TestUtil {
         }
         assertEquals(100, map.size());
         assertEquals(0, testMapStore.getStore().size());
+        assertEquals(100, map.getLocalMapStats().getDirtyEntryCount());
         getConcurrentMapManager(h1).flush(Prefix.MAP + "default");
         assertEquals(100, testMapStore.getStore().size());
+        assertEquals(0, map.getLocalMapStats().getDirtyEntryCount());
         assertEquals(100, map.size());
+
+        for (int i = 0; i < 50; i++) {
+            map.remove(i);
+        }
+        assertEquals(50, map.size());
+        assertEquals(100, testMapStore.getStore().size());
+        getConcurrentMapManager(h1).flush(Prefix.MAP + "default");
+        assertEquals(50, testMapStore.getStore().size());
+        assertEquals(50, map.size());
     }
 
     @Test
