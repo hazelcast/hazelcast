@@ -23,7 +23,8 @@ import java.util.*;
 
 public class HostAwareMemberGroupFactory implements MemberGroupFactory {
 
-    public Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members) {
+    public Collection<MemberGroup> createMemberGroups(final Collection<MemberImpl> allMembers) {
+        final Collection<MemberImpl> members = removeLiteMembers(allMembers);
         final Collection<MemberGroup> groups = createHostAwareMemberGroups(members);
         if (groups.size() == 1 && members.size() >= 2) {
             // If there are multiple members and just one host
@@ -55,6 +56,16 @@ public class HostAwareMemberGroupFactory implements MemberGroupFactory {
                 group.addMember(member);
             }
         }
-        return new HashSet<MemberGroup> (groups.values());
+        return new HashSet<MemberGroup>(groups.values());
+    }
+
+    private Collection<MemberImpl> removeLiteMembers(Collection<MemberImpl> members) {
+        final Collection<MemberImpl> result = new LinkedList<MemberImpl>();
+        for (MemberImpl member : members) {
+            if (!member.isLiteMember()) {
+                result.add(member);
+            }
+        }
+        return result;
     }
 }
