@@ -27,9 +27,9 @@ public class AWSClient {
     private String endpoint;
     private final AwsConfig awsConfig;
 
-    public AWSClient(AwsConfig awsConfig, String endpoint) {
+    public AWSClient(AwsConfig awsConfig) {
         this.awsConfig = awsConfig;
-        this.endpoint =endpoint;
+        endpoint = awsConfig.getHostHeader();
     }
 
     public List<String> getPrivateIpAddresses(AwsConfig groupName) throws Exception {

@@ -25,6 +25,7 @@ public class AwsConfig {
     private String securityGroupName;
     private String tagKey;
     private String tagValue;
+    private String hostHeader = "ec2.amazonaws.com";
 
     public void setSecurityGroupName(String securityGroupName) {
         this.securityGroupName = securityGroupName;
@@ -60,6 +61,14 @@ public class AwsConfig {
         this.region = region;
     }
 
+    public String getHostHeader() {
+        return hostHeader;
+    }
+
+    public void setHostHeader(String hostHeader) {
+        this.hostHeader = hostHeader;
+    }
+
     @Override
     public String toString() {
         return "AwsConfig{" +
@@ -67,6 +76,7 @@ public class AwsConfig {
                 ", accessKey='" + accessKey + '\'' +
                 ", secretKey='" + secretKey + '\'' +
                 ", region='" + region + '\'' +
+                ", hostHeader='" + hostHeader + '\'' +
                 ", securityGroupName=" + securityGroupName +
                 '}';
     }
