@@ -35,7 +35,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
     public TcpIpJoinerOverAWS(Node node) {
         super(node);
         AwsConfig awsConfig = node.getConfig().getNetworkConfig().getJoin().getAwsConfig();
-        aws = new AWSClient(awsConfig);
+        aws = new AWSClient(awsConfig, node.getGroupProperties().CLEANUP_DELAY_SECONDS.getValue());
         if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
             aws.setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
         }
