@@ -24,11 +24,12 @@ import java.util.List;
 
 public class AWSClient {
 
-    private String endpoint = Constants.HOST_HEADER;
+    private String endpoint;
     private final AwsConfig awsConfig;
 
-    public AWSClient(AwsConfig awsConfig) {
+    public AWSClient(AwsConfig awsConfig, String endpoint) {
         this.awsConfig = awsConfig;
+        this.endpoint =endpoint;
     }
 
     public List<String> getPrivateIpAddresses(AwsConfig groupName) throws Exception {

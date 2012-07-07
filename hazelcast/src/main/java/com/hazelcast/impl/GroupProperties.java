@@ -86,6 +86,7 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_CHUNK_SIZE = "hazelcast.elastic.memory.chunk.size";
     public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = "hazelcast.elastic.memory.shared.storage";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
+    public static final String PROP_AWS_HOST_HEADER = "hazelcast.aws.host.header";
 
     public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
 
@@ -219,6 +220,8 @@ public class GroupProperties {
 
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
+    public final GroupProperty AWS_HOST_HEADER;
+
     public GroupProperties(Config config) {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
@@ -283,6 +286,7 @@ public class GroupProperties {
         ELASTIC_MEMORY_CHUNK_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_CHUNK_SIZE, "1K");
         ELASTIC_MEMORY_SHARED_STORAGE = new GroupProperty(config, PROP_ELASTIC_MEMORY_SHARED_STORAGE, "false");
         ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY, null);
+        AWS_HOST_HEADER = new GroupProperty(config, PROP_AWS_HOST_HEADER, "ec2.amazonaws.com");
     }
 
     public static class GroupProperty {
