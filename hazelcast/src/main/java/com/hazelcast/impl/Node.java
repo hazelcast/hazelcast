@@ -38,6 +38,7 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.SimpleBoundedQueue;
+import com.hazelcast.util.Util;
 
 import java.lang.reflect.Constructor;
 import java.net.*;
@@ -224,7 +225,7 @@ public class Node {
             Object listener = listenerCfg.getImplementation();
             if (listener == null) {
                 try {
-                    listener = Serializer.newInstance(Serializer.loadClass(listenerCfg.getClassName()));
+                    listener = ClassLoaderUtil.newInstance(listenerCfg.getClassName());
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                 }
@@ -411,7 +412,7 @@ public class Node {
             failedConnections.clear();
             serviceThreadPacketQueue.clear();
             systemLogService.shutdown();
-            ThreadContext.get().shutdown(this.factory);
+            ThreadContext.get().shutdown(factory);
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
     }

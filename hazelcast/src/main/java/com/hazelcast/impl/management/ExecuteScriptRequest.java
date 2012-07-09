@@ -17,13 +17,15 @@
 package com.hazelcast.impl.management;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.SerializationHelper;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
+
+import static com.hazelcast.nio.IOUtil.readObject;
+import static com.hazelcast.nio.IOUtil.writeObject;
 
 public class ExecuteScriptRequest implements ConsoleRequest {
 
@@ -86,7 +88,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
                 writeCollection(dos, (Collection) result);
             } else {
                 dos.writeByte(OTHER);
-                SerializationHelper.writeObject(dos, result);
+                writeObject(dos, result);
             }
         } else {
             dos.writeByte(NULL);
@@ -101,7 +103,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
             case COLLECTION:
                 return readCollection(in);
             case OTHER:
-                return SerializationHelper.readObject(in);
+                return readObject(in);
         }
         return null;
     }
@@ -112,8 +114,8 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         if (size > 0) {
             Set<Entry<Object, Object>> entries = result.entrySet();
             for (Entry<Object, Object> entry : entries) {
-                SerializationHelper.writeObject(dos, entry.getKey());
-                SerializationHelper.writeObject(dos, entry.getValue());
+                writeObject(dos, entry.getKey());
+                writeObject(dos, entry.getValue());
             }
         }
     }
@@ -123,8 +125,8 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         Map props = new HashMap(size);
         if (size > 0) {
             for (int i = 0; i < size; i++) {
-                Object key = SerializationHelper.readObject(in);
-                Object value = SerializationHelper.readObject(in);
+                Object key = readObject(in);
+                Object value = readObject(in);
                 props.put(key, value);
             }
         }
@@ -137,7 +139,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         if (size > 0) {
             Iterator iter = result.iterator();
             while (iter.hasNext()) {
-                SerializationHelper.writeObject(dos, iter.next());
+                writeObject(dos, iter.next());
             }
         }
     }
@@ -147,7 +149,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         Collection coll = new ArrayList(size);
         if (size > 0) {
             for (int i = 0; i < size; i++) {
-                Object value = SerializationHelper.readObject(in);
+                Object value = readObject(in);
                 coll.add(value);
             }
         }

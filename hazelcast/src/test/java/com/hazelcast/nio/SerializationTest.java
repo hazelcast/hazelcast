@@ -18,6 +18,11 @@ package com.hazelcast.nio;
 
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
+import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.nio.serialization.SerializationHelper;
+import com.hazelcast.nio.serialization.SerializerManager;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -31,6 +36,19 @@ import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class SerializationTest {
+
+    final private SerializerManager serializerManager = new SerializerManager();
+
+    @AfterClass
+    public static void after() {
+        ThreadContext.get().setCurrentSerializerManager(null);
+    }
+
+    @Before
+    public void init() {
+        ThreadContext.get().setCurrentSerializerManager(serializerManager);
+    }
+
     @Test
     public void testLongValueIncrement() {
         Data zero = toData(0L);
@@ -60,16 +78,16 @@ public class SerializationTest {
         return result;
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = HazelcastSerializationException.class)
     public void newNotSerializableException() {
-        final Serializer serializer = new Serializer();
+        final SerializationHelper serializer = new SerializationHelper(serializerManager);
         final Object o = new Object();
         serializer.writeObject(o);
     }
 
     @Test
     public void newNullSerializer() {
-        final Serializer serializer = new Serializer();
+        final SerializationHelper serializer = new SerializationHelper(serializerManager);
         final Object o = null;
         final Data data = serializer.writeObject(o);
         assertEquals(o, serializer.readObject(data));
@@ -77,7 +95,7 @@ public class SerializationTest {
 
     @Test
     public void newStringSerializer() {
-        final Serializer serializer = new Serializer();
+        final SerializationHelper serializer = new SerializationHelper(serializerManager);
         final String s = "newStringSerializer 2@Z";
         final Data data = serializer.writeObject(s);
         assertEquals(s, serializer.readObject(data));
@@ -85,7 +103,7 @@ public class SerializationTest {
 
     @Test
     public void newDateSerializer() {
-        final Serializer serializer = new Serializer();
+        final SerializationHelper serializer = new SerializationHelper(serializerManager);
         final Date date = new Date();
         final Data data = serializer.writeObject(date);
         assertEquals(date, serializer.readObject(data));
@@ -93,7 +111,7 @@ public class SerializationTest {
 
     @Test
     public void newSerializerExternalizable() {
-        final Serializer serializer = new Serializer();
+        final SerializationHelper serializer = new SerializationHelper(serializerManager);
         final ExternalizableImpl o = new ExternalizableImpl();
         o.s = "Gallaxy";
         o.v = 42;
@@ -112,7 +130,7 @@ public class SerializationTest {
 
     @Test
     public void newSerializerDataSerializable() {
-        final Serializer serializer = new Serializer();
+        final SerializationHelper serializer = new SerializationHelper(serializerManager);
         final DataSerializableImpl o = new DataSerializableImpl();
         o.s = "Gallaxy";
         o.v = 42;
@@ -131,7 +149,7 @@ public class SerializationTest {
 
     @Test
     public void newSerializerProxyKey() {
-        final Serializer serializer = new Serializer();
+        final SerializationHelper serializer = new SerializationHelper(serializerManager);
         final FactoryImpl.ProxyKey o = new ProxyKey("key", 15L);
         final Data data = serializer.writeObject(o);
         byte[] b = data.buffer;
@@ -144,7 +162,7 @@ public class SerializationTest {
 
     @Test
     public void testPrimitiveArray() {
-        Serializer serializer = new Serializer();
+        SerializationHelper serializer = new SerializationHelper(serializerManager);
         int[] value = new int[]{1, 2, 3};
         byte[] data = serializer.toByteArray(value);
         int[] value2 = (int[]) serializer.toObject(data);

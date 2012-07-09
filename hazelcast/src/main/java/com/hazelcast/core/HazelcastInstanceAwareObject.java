@@ -16,9 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.impl.ThreadContext;
-
-import java.io.*;
+import java.io.Serializable;
 
 public abstract class HazelcastInstanceAwareObject implements HazelcastInstanceAware, Serializable {
     protected transient HazelcastInstance hazelcastInstance = null;
@@ -31,18 +29,18 @@ public abstract class HazelcastInstanceAwareObject implements HazelcastInstanceA
         this.hazelcastInstance = hazelcastInstance;
     }
 
-    public void writeData(DataOutput out) throws IOException {
-    }
-
-    public void readData(DataInput in) throws IOException {
-        hazelcastInstance = ThreadContext.get().getCurrentFactory();
-    }
-
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        writeData(out);
-    }
-
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        readData(in);
-    }
+//    public void writeData(DataOutput out) throws IOException {
+//    }
+//
+//    public void readData(DataInput in) throws IOException {
+//        hazelcastInstance = ThreadContext.get().getCurrentFactory();
+//    }
+//
+//    private void writeObject(ObjectOutputStream out) throws IOException {
+//        writeData(out);
+//    }
+//
+//    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+//        readData(in);
+//    }
 }

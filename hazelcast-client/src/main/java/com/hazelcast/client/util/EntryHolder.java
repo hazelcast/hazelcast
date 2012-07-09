@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.util;
 
 public interface EntryHolder<K, V> {
 

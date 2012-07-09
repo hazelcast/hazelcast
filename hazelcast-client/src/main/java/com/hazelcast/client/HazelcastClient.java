@@ -17,12 +17,15 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.ListenerManager;
+import com.hazelcast.client.util.TransactionUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.serialization.SerializerManager;
+import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
@@ -48,28 +51,26 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
  */
 public class HazelcastClient implements HazelcastInstance {
 
+    private final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
+
     private final static AtomicInteger clientIdCounter = new AtomicInteger();
 
     private final static List<HazelcastClient> lsClients = new CopyOnWriteArrayList<HazelcastClient>();
 
-    final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>(100);
-
-    final ListenerManager listenerManager;
-    final OutRunnable out;
-    final InRunnable in;
-    final ConnectionManager connectionManager;
-    final Map<Object, Object> mapProxies = new ConcurrentHashMap<Object, Object>(100);
-    final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
-    final ClusterClientProxy clusterClientProxy;
-    final PartitionClientProxy partitionClientProxy;
-    final LifecycleServiceClientImpl lifecycleService;
-    final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
-
-    final int id;
-
+    private final int id;
     private final ClientConfig config;
-
     private final AtomicBoolean active = new AtomicBoolean(true);
+    private final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>(100);
+    private final ListenerManager listenerManager;
+    private final OutRunnable out;
+    private final InRunnable in;
+    private final Map<Object, Object> mapProxies = new ConcurrentHashMap<Object, Object>(100);
+    private final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
+    private final ClusterClientProxy clusterClientProxy;
+    private final PartitionClientProxy partitionClientProxy;
+    private final LifecycleServiceClientImpl lifecycleService;
+    private final ConnectionManager connectionManager;
+    private final SerializerManager serializerManager = new SerializerManager();
 
     private HazelcastClient(ClientConfig config) {
         if (config.getAddressList().size() == 0) {
@@ -88,7 +89,7 @@ public class HazelcastClient implements HazelcastInstance {
         connectionManager.setBinder(new DefaultClientBinder(this));
         out = new OutRunnable(this, calls, new PacketWriter());
         in = new InRunnable(this, out, calls, new PacketReader());
-        listenerManager = new ListenerManager(this);
+        listenerManager = new ListenerManager(this, serializerManager);
         try {
             final Connection c = connectionManager.getInitConnection();
             if (c == null) {
@@ -205,13 +206,15 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public com.hazelcast.core.Transaction getTransaction() {
-        ClientThreadContext trc = ClientThreadContext.get();
-        TransactionClientProxy proxy = (TransactionClientProxy) trc.getTransaction(this);
-        return proxy;
+        return TransactionUtil.getTransaction(this);
     }
 
     public ConnectionManager getConnectionManager() {
         return connectionManager;
+    }
+
+    SerializerManager getSerializerManager() {
+        return serializerManager;
     }
 
     public void addInstanceListener(InstanceListener instanceListener) {
@@ -317,8 +320,8 @@ public class HazelcastClient implements HazelcastInstance {
             out.shutdown();
             in.shutdown();
             listenerManager.shutdown();
-            ClientThreadContext.shutdown();
-            lsClients.remove(HazelcastClient.this);
+            lsClients.remove(this);
+            serializerManager.destroy();
         }
     }
 
@@ -364,5 +367,13 @@ public class HazelcastClient implements HazelcastInstance {
 
     public ClientConfig getClientConfig() {
         return config;
+    }
+
+    public void registerGlobalSerializer(final TypeSerializer serializer) {
+        serializerManager.registerGlobal(serializer);
+    }
+
+    public void registerSerializer(final TypeSerializer serializer, final Class type) {
+        serializerManager.register(serializer, type);
     }
 }

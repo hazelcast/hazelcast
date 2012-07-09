@@ -18,20 +18,26 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.Message;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.SerializerManager;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class DataMessage<E> extends Message {
 
     final Data data;
+    private final transient SerializerManager serializerManager;
 
-    public DataMessage(String topicName, Data data) {
+    public DataMessage(String topicName, Data data, SerializerManager serializerManager) {
         super(topicName, null);
         this.data = data;
+        this.serializerManager = serializerManager;
     }
 
     @Override
     public E getMessageObject() {
+        if (serializerManager != null) {
+            ThreadContext.get().setCurrentSerializerManager(serializerManager);
+        }
         return (E) toObject(data);
     }
 

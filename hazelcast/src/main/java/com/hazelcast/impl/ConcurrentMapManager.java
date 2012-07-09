@@ -32,9 +32,9 @@ import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.wan.WanMergeListener;
 import com.hazelcast.merge.MergePolicy;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.Serializer;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.query.Index;
 import com.hazelcast.query.MapIndexService;
@@ -3064,7 +3064,7 @@ public class ConcurrentMapManager extends BaseManager {
                     String factoryClassName = sc.getFactoryClassName();
                     if (factoryClassName != null && factoryClassName.length() != 0) {
                         ClassLoader cl = node.getConfig().getClassLoader();
-                        Class factoryClass = Serializer.loadClass(cl, factoryClassName);
+                        Class factoryClass = ClassLoaderUtil.loadClass(cl, factoryClassName);
                         factory = (SemaphoreFactory) factoryClass.newInstance();
                     }
                 }

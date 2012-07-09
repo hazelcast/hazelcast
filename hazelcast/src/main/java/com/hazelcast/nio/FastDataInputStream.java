@@ -18,18 +18,25 @@ package com.hazelcast.nio;
 
 import java.io.*;
 
-public class FastByteArrayInputStream extends ByteArrayInputStream implements DataInput {
+public final class FastDataInputStream extends InputStream implements DataInput {
+
+    private byte buf[];
+
+    private int pos;
+
+    private int mark = 0;
+
+    private int count;
 
     private final byte readBuffer[] = new byte[8];
 
     private char lineBuffer[];
 
-    public FastByteArrayInputStream(byte buf[]) {
-        super(buf);
-    }
-
-    public FastByteArrayInputStream(byte buf[], int offset, int length) {
-        super(buf, offset, length);
+    public FastDataInputStream(byte buf[]) {
+        super();
+        this.buf = buf;
+        this.pos = 0;
+        this.count = buf.length;
     }
 
     @Override
@@ -234,20 +241,7 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
      *             via the <code>BufferedReader.readLine()</code> method.
      *             Programs that use the <code>DataInputStream</code> class to
      *             read lines can be converted to use the
-     *             <code>BufferedReader</code> class by replacing code of the
-     *             form: <blockquote>
-     *             <p/>
-     *             <pre>
-     *                                                                                                                                                                                                                                                 DataInputStream d = new DataInputStream(in);
-     *                                                                                                                                                                                                                                                 </pre>
-     *
-     *             </blockquote> with: <blockquote>
-     *
-     *             <pre>
-     *                                                                                                                                                                                                                                                 BufferedReader d = new BufferedReader(new InputStreamReader(in));
-     *                                                                                                                                                                                                                                                 </pre>
-     *
-     *             </blockquote>
+     *             <code>BufferedReader</code> class.
      */
     @Deprecated
     public final String readLine() throws IOException {
@@ -388,7 +382,7 @@ public class FastByteArrayInputStream extends ByteArrayInputStream implements Da
         if (isNull) return null;
         int length = readInt();
         StringBuilder result = new StringBuilder(length);
-        int chunkSize = length / FastByteArrayOutputStream.STRING_CHUNK_SIZE + 1;
+        int chunkSize = length / FastDataOutputStream.STRING_CHUNK_SIZE + 1;
         while (chunkSize > 0) {
             result.append(readShortUTF());
             chunkSize--;

@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.impl.DistributedRunnableAdapter;
 import com.hazelcast.impl.ExecutionManagerCallback;
 import com.hazelcast.impl.InnerFutureTask;
+import com.hazelcast.util.Util;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -63,7 +64,7 @@ public class DistributedTask<V> extends FutureTask<V> {
             }
         }
         if (key != null) {
-            check(key);
+            Util.checkNotNull(key);
         }
         if (members != null) {
             if (members instanceof ISet) {
@@ -81,15 +82,6 @@ public class DistributedTask<V> extends FutureTask<V> {
             }
         }
         inner = new Inner(callable, member, members, key);
-    }
-
-    private void check(Object obj) {
-        if (obj == null) {
-            throw new NullPointerException("Cannot be null.");
-        }
-        if (!(obj instanceof Serializable)) {
-            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
-        }
     }
 
     public DistributedTask(Callable<V> callable) {
@@ -134,10 +126,12 @@ public class DistributedTask<V> extends FutureTask<V> {
             inner.get(timeout, unit);
             passed = true;
         }
-        if (cancelled)
+        if (cancelled) {
             throw new CancellationException();
-        if (memberLeftException != null)
+        }
+        if (memberLeftException != null) {
             throw memberLeftException;
+        }
         if (exception != null) {
             if (exception instanceof TimeoutException) {
                 throw (TimeoutException) exception;
@@ -175,8 +169,9 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        if (done || cancelled)
+        if (done || cancelled) {
             return false;
+        }
         cancelled = inner.cancel(mayInterruptIfRunning);
         return cancelled;
     }

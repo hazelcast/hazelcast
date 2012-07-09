@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.IOUtil.toByte;
+import static com.hazelcast.nio.IOUtil.toByteArray;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -109,8 +109,8 @@ public class MembershipListenerManagerTest {
                 Packet packet = new Packet();
                 Address address = new Address();
                 Member member = new MemberImpl(address, false);
-                packet.setKey(toByte(member));
-                packet.setValue(toByte(type));
+                packet.setKey(toByteArray(member));
+                packet.setValue(toByteArray(type));
                 membershipListenerManager.notifyListeners(packet);
             }
         }).start();

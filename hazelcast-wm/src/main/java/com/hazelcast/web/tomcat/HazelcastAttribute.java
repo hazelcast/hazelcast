@@ -17,7 +17,7 @@
 package com.hazelcast.web.tomcat;
 
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -82,13 +82,13 @@ public class HazelcastAttribute implements DataSerializable {
     public void writeData(DataOutput out) throws IOException {
         out.writeUTF(sessionId);
         out.writeUTF(name);
-        SerializationHelper.writeObject(out, value);
+        IOUtil.writeObject(out, value);
     }
 
     public void readData(DataInput in) throws IOException {
         sessionId = in.readUTF();
         name = in.readUTF();
-        value = SerializationHelper.readObject(in);
+        value = IOUtil.readObject(in);
     }
 
     @Override

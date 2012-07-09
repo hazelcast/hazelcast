@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.util;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Instance;
 
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 
-public class MapEntryIterator<K, V> implements Iterator<java.util.Map.Entry<K, V>> {
-    protected final Iterator<K> it;
+public class MapEntrySetIterator<K, V> implements Iterator<java.util.Map.Entry<K, V>> {
+    protected final Iterator it;
     protected final EntryHolder<K, V> proxy;
     protected final Instance.InstanceType instanceType;
     protected volatile Entry<K, V> lastEntry;
@@ -31,8 +32,8 @@ public class MapEntryIterator<K, V> implements Iterator<java.util.Map.Entry<K, V
     V currentIteratedValue;
     boolean hasNextCalled = false;
 
-    public MapEntryIterator(Iterator<K> it, EntryHolder<K, V> proxy, Instance.InstanceType instanceType) {
-        this.it = it;
+    public MapEntrySetIterator(Iterator iterator, EntryHolder<K, V> proxy, Instance.InstanceType instanceType) {
+        this.it = iterator;
         this.proxy = proxy;
         this.instanceType = instanceType;
     }
@@ -42,11 +43,9 @@ public class MapEntryIterator<K, V> implements Iterator<java.util.Map.Entry<K, V
         if (!it.hasNext()) {
             return false;
         }
-        currentIteratedKey = it.next();
-        currentIteratedValue = proxy.get(currentIteratedKey);
-        if (currentIteratedValue == null) {
-            return hasNext();
-        }
+        final Map.Entry<K, V> entry = (Entry<K, V>) it.next();
+        currentIteratedKey = entry.getKey();
+        currentIteratedValue = entry.getValue();
         return true;
     }
 

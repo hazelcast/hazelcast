@@ -24,6 +24,7 @@ import com.hazelcast.impl.monitor.LocalTopicStatsImpl;
 import com.hazelcast.impl.monitor.TopicOperationsCounter;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.util.Util;
 
 public class TopicProxyImpl extends FactoryAwareNamedProxy implements TopicProxy, DataSerializable {
     private transient TopicProxy base = null;
@@ -127,7 +128,7 @@ public class TopicProxyImpl extends FactoryAwareNamedProxy implements TopicProxy
         TopicOperationsCounter topicOperationsCounter = new TopicOperationsCounter();
 
         public void publish(Object msg) {
-            Util.checkSerializable(msg);
+            Util.checkNotNull(msg);
             topicOperationsCounter.incrementPublishes();
             topicManager.doPublish(name, msg);
         }

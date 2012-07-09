@@ -20,11 +20,89 @@ import com.hazelcast.impl.ThreadContext;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 public final class IOUtil {
+
+    public static void writeByteArray(DataOutput out, byte[] value) throws IOException {
+        int size = (value == null) ? 0 : value.length;
+        out.writeInt(size);
+        if (size > 0) {
+            out.write(value);
+        }
+    }
+
+    public static byte[] readByteArray(DataInput in) throws IOException {
+        int size = in.readInt();
+        if (size == 0) {
+            return null;
+        } else {
+            byte[] b = new byte[size];
+            in.readFully(b);
+            return b;
+        }
+    }
+
+    public static void writeObject(DataOutput out, Object obj) throws IOException {
+        Data data = toData(obj);
+        if(data != null) {
+            out.writeBoolean(true);
+            data.writeData(out);
+        } else {
+            // null
+            out.writeBoolean(false);
+        }
+    }
+
+    public static Object readObject(DataInput in) throws IOException {
+        final boolean isNotNull = in.readBoolean();
+        if (isNotNull) {
+            Data data = new Data();
+            data.readData(in);
+            return toObject(data);
+        } else {
+            return null;
+        }
+    }
+
+    public static Data toData(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        if (obj instanceof Data) {
+            return (Data) obj;
+        }
+        return ThreadContext.get().toData(obj);
+    }
+
+    public static byte[] toByteArray(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        if (obj instanceof byte[]) {
+            return (byte[]) obj;
+        }
+        return ThreadContext.get().toByteArray(obj);
+    }
+
+    public static Object toObject(Data data) {
+        return ThreadContext.get().toObject(data);
+    }
+
+    public static Object toObject(DataHolder dataHolder) {
+        return toObject(dataHolder.toData());
+    }
+
+    public static Object toObject(byte[] data) {
+        return ThreadContext.get().toObject(data);
+    }
+
+    public static ObjectInputStream newObjectInputStream(final InputStream in) throws IOException {
+        return new ObjectInputStream(in) {
+            protected Class<?> resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
+                return ClassLoaderUtil.loadClass(desc.getName());
+            }
+        };
+    }
 
     public static OutputStream newOutputStream(final ByteBuffer buf) {
         return new OutputStream() {
@@ -118,102 +196,9 @@ public final class IOUtil {
         return sb.toString();
     }
 
-    public static void putBoolean(ByteBuffer bb, boolean value) {
-        bb.put((byte) (value ? 1 : 0));
-    }
-
-    public static boolean getBoolean(ByteBuffer bb) {
-        return bb.get() == 1;
-    }
-
-    public static Data toData(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-        if (obj instanceof Data) {
-            return (Data) obj;
-        }
-        return ThreadContext.get().toData(obj);
-    }
-
-    public static long getLong(Data longData) {
-        byte[] b = longData.buffer;
-        ByteBuffer current = ByteBuffer.wrap(b);
-        current.get(); // type
-        return current.getLong();
-    }
-
     public static Data addDelta(Data longData, long delta) {
         long longValue = (Long) toObject(longData);
         return toData(longValue + delta);
-    }
-
-    public static Data addDelta(Data intData, int delta) {
-        int intValue = (Integer) toObject(intData);
-        return toData(intValue + delta);
-    }
-
-    public static Object toObject(Data data) {
-        return ThreadContext.get().toObject(data);
-    }
-
-    public static Object toObject(DataHolder dataHolder) {
-        return toObject(dataHolder.toData());
-    }
-
-    public static Object serializeToObject(byte[] bytes) throws Exception {
-        if (bytes == null) return null;
-        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes));
-        try {
-            Object obj = in.readObject();
-            return obj;
-        } finally {
-            closeResource(in);
-        }
-    }
-
-    public static byte[] serializeToBytes(Object object) throws Exception {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(bos);
-        try {
-            out.writeObject(object);
-            return bos.toByteArray();
-        } finally {
-            closeResource(out);
-        }
-    }
-
-    public static byte[] compress(byte[] input) throws IOException {
-        Deflater compressor = new Deflater();
-        compressor.setLevel(Deflater.BEST_SPEED);
-        compressor.setInput(input);
-        compressor.finish();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(input.length / 10);
-        byte[] buf = new byte[input.length / 10];
-        while (!compressor.finished()) {
-            int count = compressor.deflate(buf);
-            bos.write(buf, 0, count);
-        }
-        bos.close();
-        compressor.end();
-        return bos.toByteArray();
-    }
-
-    public static byte[] decompress(byte[] compressedData) throws IOException {
-        Inflater inflater = new Inflater();
-        inflater.setInput(compressedData);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedData.length);
-        byte[] buf = new byte[1024];
-        while (!inflater.finished()) {
-            try {
-                int count = inflater.inflate(buf);
-                bos.write(buf, 0, count);
-            } catch (DataFormatException e) {
-            }
-        }
-        bos.close();
-        inflater.end();
-        return bos.toByteArray();
     }
 
     public static void closeResource(Closeable closeable) {

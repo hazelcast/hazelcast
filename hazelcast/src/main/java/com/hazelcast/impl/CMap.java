@@ -191,14 +191,14 @@ public class CMap {
                     String factoryClassName = mapStoreConfig.getFactoryClassName();
                     if (factoryClassName != null && !"".equals(factoryClassName)) {
                         factory = (MapStoreFactory)
-                                Serializer.loadClass(node.getConfig().getClassLoader(), factoryClassName).newInstance();
+                                ClassLoaderUtil.loadClass(node.getConfig().getClassLoader(), factoryClassName).newInstance();
                     }
                 }
                 Object storeInstance = factory == null ? mapStoreConfig.getImplementation() :
                         factory.newMapStore(name, mapStoreConfig.getProperties());
                 if (storeInstance == null) {
                     String mapStoreClassName = mapStoreConfig.getClassName();
-                    storeInstance = Serializer.loadClass(node.getConfig().getClassLoader(), mapStoreClassName).newInstance();
+                    storeInstance = ClassLoaderUtil.loadClass(node.getConfig().getClassLoader(), mapStoreClassName).newInstance();
                 }
                 mapStoreWrapper = new MapStoreWrapper(storeInstance,
                         node.factory.getHazelcastInstanceProxy(),
@@ -316,7 +316,7 @@ public class CMap {
                 if (mergePolicyTemp == null) {
                     String mergeClassName = mergePolicyConfig.getClassName();
                     try {
-                        mergePolicyTemp = (MergePolicy) Serializer.loadClass(node.getConfig().getClassLoader(), mergeClassName).newInstance();
+                        mergePolicyTemp = (MergePolicy) ClassLoaderUtil.loadClass(node.getConfig().getClassLoader(), mergeClassName).newInstance();
                     } catch (Exception e) {
                         logger.log(Level.SEVERE, e.getMessage(), e);
                     }

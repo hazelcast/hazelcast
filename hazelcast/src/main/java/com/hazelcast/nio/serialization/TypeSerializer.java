@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.nio.serialization;
 
-public final class IOUtil {
+import com.hazelcast.nio.FastDataInputStream;
+import com.hazelcast.nio.FastDataOutputStream;
 
-    public static byte[] toByte(final Object object) {
-        return ClientThreadContext.get().toByte(object);
-    }
+public interface TypeSerializer<T> {
 
-    public static Object toObject(final byte[] bytes) {
-        return ClientThreadContext.get().toObject(bytes);
-    }
+    int getTypeId();
+
+    void write(FastDataOutputStream out, T object) throws Exception;
+
+    T read(FastDataInputStream in) throws Exception;
+
+    void destroy();
 }

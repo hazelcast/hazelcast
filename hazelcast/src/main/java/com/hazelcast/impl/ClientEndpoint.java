@@ -57,7 +57,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     public CallContext getCallContext(int threadId) {
         CallContext context = callContexts.get(threadId);
         if (context == null) {
-            int locallyMappedThreadId = ThreadContext.get().createNewThreadId();
+            int locallyMappedThreadId = ThreadContext.createNewThreadId();
             context = new CallContext(locallyMappedThreadId, true);
             callContexts.put(threadId, context);
         }

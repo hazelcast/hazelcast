@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.util;
 
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressHolder;

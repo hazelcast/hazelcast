@@ -20,19 +20,23 @@ import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.CMap.InitializationState;
 import com.hazelcast.impl.base.HazelcastManagedContext;
-import com.hazelcast.core.ManagedContext;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.SerializerManager;
+import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.util.ResponseQueueFactory;
+import com.hazelcast.util.Util;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -77,6 +81,8 @@ public class FactoryImpl implements HazelcastInstance {
     final LifecycleServiceImpl lifecycleService;
 
     final ManagedContext managedContext ;
+
+    final SerializerManager serializerManager = new SerializerManager();
 
     public final Node node;
 
@@ -304,6 +310,14 @@ public class FactoryImpl implements HazelcastInstance {
             return hazelcastInstance.getLifecycleService();
         }
 
+        public void registerGlobalSerializer(final TypeSerializer serializer) {
+            hazelcastInstance.registerGlobalSerializer(serializer);
+        }
+
+        public void registerSerializer(final TypeSerializer serializer, final Class type) {
+            hazelcastInstance.registerSerializer(serializer, type);
+        }
+
         public boolean equals(Object obj) {
             if (obj == null) {
                 return false;
@@ -363,15 +377,17 @@ public class FactoryImpl implements HazelcastInstance {
         for (ExecutorService esp : factory.executorServiceProxies.values()) {
             esp.shutdown();
         }
+        factory.serializerManager.destroy();
     }
 
     private static void shutdownManagementService() {
         ManagementService.shutdown();
     }
 
-    public FactoryImpl(String name, Config config) {
+    public FactoryImpl(String name, Config config) throws Exception {
         this.name = name;
         lifecycleService = new LifecycleServiceImpl(FactoryImpl.this);
+        registerConfigSerializers(config);
         managedContext = new HazelcastManagedContext(this, config.getManagedContext());
         node = new Node(this, config);
         lifecycleService.fireLifecycleEvent(STARTING);
@@ -777,6 +793,35 @@ public class FactoryImpl implements HazelcastInstance {
         lsInstanceListeners.remove(instanceListener);
     }
 
+    public void registerGlobalSerializer(final TypeSerializer serializer) {
+        serializerManager.registerGlobal(serializer);
+    }
+
+    public void registerSerializer(final TypeSerializer serializer, final Class type) {
+        serializerManager.register(serializer, type);
+    }
+
+    private void registerConfigSerializers(Config config) throws Exception {
+        final Collection<SerializerConfig> serializerConfigs = config.getSerializerConfigs();
+        if (serializerConfigs != null) {
+            for (SerializerConfig serializerConfig : serializerConfigs) {
+                TypeSerializer factory = serializerConfig.getImplementation();
+                if (factory == null) {
+                    factory = (TypeSerializer) ClassLoaderUtil.newInstance(serializerConfig.getClassName());
+                }
+                if (serializerConfig.isGlobal()) {
+                    serializerManager.registerGlobal(factory);
+                } else {
+                    Class typeClass = serializerConfig.getTypeClass();
+                    if (typeClass == null) {
+                        typeClass = ClassLoaderUtil.loadClass(serializerConfig.getTypeClassName()) ;
+                    }
+                    serializerManager.register(factory, typeClass);
+                }
+            }
+        }
+    }
+
     void fireInstanceCreateEvent(Instance instance) {
         if (lsInstanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.CREATED, instance);
@@ -868,7 +913,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static class ProxyKey extends SerializationHelper implements DataSerializable {
+    public static class ProxyKey implements DataSerializable {
         String name;
         Object key;
 
@@ -882,19 +927,12 @@ public class FactoryImpl implements HazelcastInstance {
 
         public void writeData(DataOutput out) throws IOException {
             out.writeUTF(name);
-            boolean keyNull = (key == null);
-            out.writeBoolean(keyNull);
-            if (!keyNull) {
-                writeObject(out, key);
-            }
+            IOUtil.writeObject(out, key);
         }
 
         public void readData(DataInput in) throws IOException {
             name = in.readUTF();
-            boolean keyNull = in.readBoolean();
-            if (!keyNull) {
-                key = readObject(in);
-            }
+            key = IOUtil.readObject(in);
         }
 
         @Override
@@ -927,10 +965,17 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static class GetAllProxyKeysCallable extends HazelcastInstanceAwareObject implements Callable<Set<ProxyKey>> {
+    public static class GetAllProxyKeysCallable extends HazelcastInstanceAwareObject
+            implements Callable<Set<ProxyKey>>, DataSerializable {
         public Set<ProxyKey> call() throws Exception {
             final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
             return new HashSet<ProxyKey>(factory.proxies.keySet());
+        }
+
+        public void readData(final DataInput in) throws IOException {
+        }
+
+        public void writeData(final DataOutput out) throws IOException {
         }
     }
 }

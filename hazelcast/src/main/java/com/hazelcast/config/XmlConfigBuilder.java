@@ -20,7 +20,7 @@ import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.impl.Util;
+import com.hazelcast.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.w3c.dom.*;
@@ -210,6 +210,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleListeners(node);
             } else if ("partition-group".equals(nodeName)) {
                 handlePartitionGroup(node);
+            } else if ("serializers".equals(nodeName)) {
+                handleSerializers(node);
             } else if ("security".equals(nodeName)) {
                 handleSecurity(node);
             } else if ("license-key".equals(nodeName)) {
@@ -448,7 +450,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final Node att = atts.item(a);
             final String value = getTextContent(att).trim();
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
-                join.getAwsConfig().setEnabled(true);
+                join.getAwsConfig().setEnabled(checkTrue(value));
             } else if (att.getNodeName().equals("conn-timeout-seconds")) {
                 join.getTcpIpConfig().setConnectionTimeoutSeconds(getIntegerValue("conn-timeout-seconds", value, 5));
             }
@@ -833,7 +835,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handlePartitionGroup(Node node) {
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
+        final boolean enabled = enabledNode != null ? checkTrue(getValue(enabledNode)) : false;
         config.getPartitionGroupConfig().setEnabled(enabled);
         final Node groupTypeNode = atts.getNamedItem("group-type");
         final MemberGroupType groupType = groupTypeNode != null ? MemberGroupType.valueOf(getValue(groupTypeNode).toUpperCase()) : null;
@@ -856,10 +858,28 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         config.getPartitionGroupConfig().addMemberGroupConfig(memberGroupConfig);
     }
 
+    private void handleSerializers(final Node node) {
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            if ("serializer".equals(cleanNodeName(child))) {
+                SerializerConfig serializerConfig = new SerializerConfig();
+                serializerConfig.setClassName(getValue(node)) ;
+
+                final NamedNodeMap atts = node.getAttributes();
+                final Node globalNode = atts.getNamedItem("global");
+                serializerConfig.setGlobal(checkTrue(getValue(globalNode)));
+                final Node typeNode = atts.getNamedItem("type-class");
+                final String typeClassName = getValue(typeNode);
+                serializerConfig.setTypeClassName(typeClassName);
+
+                config.addSerializerConfig(serializerConfig);
+            }
+        }
+    }
+
     private void handleManagementCenterConfig(final Node node) {
         NamedNodeMap attrs = node.getAttributes();
         final Node enabledNode = attrs.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
+        final boolean enabled = enabledNode != null ? checkTrue(getValue(enabledNode)) : false;
         final Node intervalNode = attrs.getNamedItem("update-interval");
         final int interval = intervalNode != null ? getIntegerValue("update-interval",
                 getValue(intervalNode), 3) : 3;
@@ -871,7 +891,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handleSecurity(final org.w3c.dom.Node node) throws Exception {
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
+        final boolean enabled = enabledNode != null ? checkTrue(getValue(enabledNode)) : false;
         config.getSecurityConfig().setEnabled(enabled);
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());

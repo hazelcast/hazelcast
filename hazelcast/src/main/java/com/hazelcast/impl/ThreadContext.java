@@ -16,16 +16,17 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.ConcurrentMapManager.MEvict;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.Serializer;
+import com.hazelcast.nio.serialization.SerializationHelper;
+import com.hazelcast.nio.serialization.SerializerManager;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,21 +34,9 @@ import java.util.logging.Level;
 
 public final class ThreadContext {
 
-    private final static AtomicInteger newThreadId = new AtomicInteger();
-
-    private final Thread thread;
-
-    private final Serializer serializer = new Serializer();
-
-    private final Map<FactoryImpl, HazelcastInstanceThreadContext> mapHazelcastInstanceContexts = new HashMap<FactoryImpl, HazelcastInstanceThreadContext>(2);
-
-    private volatile FactoryImpl currentFactory = null;
+    private static final AtomicInteger newThreadId = new AtomicInteger();
 
     private static final ConcurrentMap<Thread, ThreadContext> mapContexts = new ConcurrentHashMap<Thread, ThreadContext>(1000);
-
-    private ThreadContext(Thread thread) {
-        this.thread = thread;
-    }
 
     public static ThreadContext get() {
         Thread currentThread = Thread.currentThread();
@@ -55,10 +44,11 @@ public final class ThreadContext {
         if (threadContext == null) {
             threadContext = new ThreadContext(Thread.currentThread());
             mapContexts.put(currentThread, threadContext);
-            Iterator<Thread> threads = mapContexts.keySet().iterator();
+            Iterator<Entry<Thread,ThreadContext>> threads = mapContexts.entrySet().iterator();
             while (threads.hasNext()) {
-                Thread thread = threads.next();
-                if (!thread.isAlive()) {
+                Entry<Thread, ThreadContext> entry = threads.next();
+                if (!entry.getKey().isAlive()) {
+                    entry.getValue().destroy();
                     threads.remove();
                 }
             }
@@ -70,8 +60,29 @@ public final class ThreadContext {
         return threadContext;
     }
 
+    public static int createNewThreadId() {
+        return newThreadId.incrementAndGet();
+    }
+
     public static void shutdownAll() {
         mapContexts.clear();
+    }
+
+    private final Thread thread;
+
+    private final SerializationHelper serializationHelper = new SerializationHelper(this);
+
+    private final Map<String, HazelcastInstanceThreadContext> mapHazelcastInstanceContexts
+            = new HashMap<String, HazelcastInstanceThreadContext>(2);
+
+    private FactoryImpl currentFactory ;
+
+    private SerializerManager currentSerializerManager ;
+
+    private Object attachment;
+
+    private ThreadContext(Thread thread) {
+        this.thread = thread;
     }
 
     public void finalizeTxn() {
@@ -94,8 +105,17 @@ public final class ThreadContext {
         return currentFactory != null ? currentFactory.managedContext : null ;
     }
 
+    public SerializerManager getCurrentSerializerManager() {
+        return currentSerializerManager != null ? currentSerializerManager : null ;
+    }
+
     public void setCurrentFactory(FactoryImpl currentFactory) {
         this.currentFactory = currentFactory;
+        this.currentSerializerManager = currentFactory.serializerManager;
+    }
+
+    public void setCurrentSerializerManager(SerializerManager serializerManager) {
+        this.currentSerializerManager = serializerManager;
     }
 
     public void reset() {
@@ -103,15 +123,19 @@ public final class ThreadContext {
     }
 
     public byte[] toByteArray(Object obj) {
-        return serializer.toByteArray(obj);
+        return serializationHelper.toByteArray(obj);
     }
 
     public Data toData(Object obj) {
-        return serializer.writeObject(obj);
+        return serializationHelper.writeObject(obj);
     }
 
     public Object toObject(Data data) {
-        return serializer.readObject(data);
+        return serializationHelper.readObject(data);
+    }
+
+    public Object toObject(byte[] data) {
+        return serializationHelper.toObject(data);
     }
 
     public HazelcastInstanceThreadContext getHazelcastInstanceThreadContext(FactoryImpl factory) {
@@ -119,15 +143,12 @@ public final class ThreadContext {
             ILogger logger = Logger.getLogger(ThreadContext.class.getName());
             logger.log(Level.SEVERE, "Factory is null", new Throwable());
         }
-        HazelcastInstanceThreadContext hic = mapHazelcastInstanceContexts.get(factory);
+        final String factoryKey = factory != null ? factory.getName() : "null";
+        HazelcastInstanceThreadContext hic = mapHazelcastInstanceContexts.get(factoryKey);
         if (hic != null) return hic;
         hic = new HazelcastInstanceThreadContext(factory);
-        mapHazelcastInstanceContexts.put(factory, hic);
+        mapHazelcastInstanceContexts.put(factoryKey, hic);
         return hic;
-    }
-
-    public void shutdown(FactoryImpl factory) {
-        mapHazelcastInstanceContexts.remove(factory);
     }
 
     public CallCache getCallCache(FactoryImpl factory) {
@@ -143,16 +164,41 @@ public final class ThreadContext {
         return getCallContext().isClient();
     }
 
-    public int createNewThreadId() {
-        return newThreadId.incrementAndGet();
+    public void setCallContext(CallContext callContext) {
+        getHazelcastInstanceThreadContext(currentFactory).setCallContext(callContext);
     }
 
     public CallContext getCallContext() {
         return getHazelcastInstanceThreadContext(currentFactory).getCallContext();
     }
 
-    class HazelcastInstanceThreadContext {
-        FactoryImpl factory;
+    public int getThreadId() {
+        return getCallContext().getThreadId();
+    }
+
+    public <T> T getAttachment() {
+        return (T) attachment;
+    }
+
+    public void setAttachment(final Object attachment) {
+        this.attachment = attachment;
+    }
+
+    public void shutdown(FactoryImpl factory) {
+        mapHazelcastInstanceContexts.remove(factory.getName());
+        currentFactory = null;
+    }
+
+    private void destroy() {
+        serializationHelper.destroy();
+        mapHazelcastInstanceContexts.clear();
+        attachment = null;
+        currentFactory = null;
+        currentSerializerManager = null;
+    }
+
+    private class HazelcastInstanceThreadContext {
+        final FactoryImpl factory;
         CallCache callCache;
         volatile CallContext callContext = null;
 
@@ -161,22 +207,18 @@ public final class ThreadContext {
             callContext = (new CallContext(createNewThreadId(), false));
         }
 
-        public CallCache getCallCache() {
+        CallCache getCallCache() {
             if (callCache == null) {
                 callCache = new CallCache(factory);
             }
             return callCache;
         }
 
-        public FactoryImpl getFactory() {
-            return factory;
-        }
-
-        public CallContext getCallContext() {
+        CallContext getCallContext() {
             return callContext;
         }
 
-        public void setCallContext(CallContext callContext) {
+        void setCallContext(CallContext callContext) {
             this.callContext = callContext;
         }
     }
@@ -214,18 +256,10 @@ public final class ThreadContext {
             return mremove;
         }
 
-        public MEvict getMEvict() {
+        public ConcurrentMapManager.MEvict getMEvict() {
             mevict.reset();
             return mevict;
         }
-    }
-
-    public int getThreadId() {
-        return getCallContext().getThreadId();
-    }
-
-    public void setCallContext(CallContext callContext) {
-        getHazelcastInstanceThreadContext(currentFactory).setCallContext(callContext);
     }
 
     @Override

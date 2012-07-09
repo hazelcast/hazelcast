@@ -16,6 +16,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.util.EntryHolder;
+import com.hazelcast.client.util.ValueCollection;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

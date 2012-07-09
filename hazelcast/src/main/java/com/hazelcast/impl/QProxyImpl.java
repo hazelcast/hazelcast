@@ -23,6 +23,7 @@ import com.hazelcast.impl.monitor.LocalQueueStatsImpl;
 import com.hazelcast.impl.monitor.QueueOperationsCounter;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.util.Util;
 
 import java.io.*;
 import java.util.AbstractQueue;
@@ -202,7 +203,7 @@ public class QProxyImpl extends AbstractQueue implements QProxy, HazelcastInstan
     }
 
     private static void check(Object obj) {
-        Util.checkSerializable(obj);
+        Util.checkNotNull(obj);
     }
 
     private class QProxyReal extends AbstractQueue implements QProxy {

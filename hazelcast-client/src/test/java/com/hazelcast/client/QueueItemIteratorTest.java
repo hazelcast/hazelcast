@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.util.QueueItemIterator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

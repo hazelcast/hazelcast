@@ -25,11 +25,11 @@ import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.ExecutionManagerCallback;
 import com.hazelcast.impl.InnerFutureTask;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static com.hazelcast.client.IOUtil.toObject;
+import static com.hazelcast.nio.IOUtil.toObject;
+import static com.hazelcast.client.ProxyHelper.check;
 
 public class ExecutorServiceClientProxy implements ExecutorService {
 
@@ -80,14 +80,14 @@ public class ExecutorServiceClientProxy implements ExecutorService {
         return submit(dt, cdt);
     }
 
-    private <T> void check(Object o) {
-        if (o == null) {
-            throw new NullPointerException("Object cannot be null.");
-        }
-        if (!(o instanceof Serializable)) {
-            throw new IllegalArgumentException(o.getClass().getName() + " is not Serializable.");
-        }
-    }
+//    private <T> void check(Object o) {
+//        if (o == null) {
+//            throw new NullPointerException("Object cannot be null.");
+//        }
+//        if (!(o instanceof Serializable)) {
+//            throw new IllegalArgumentException(o.getClass().getName() + " is not Serializable.");
+//        }
+//    }
 
     private Future submit(final DistributedTask dt, final ClientDistributedTask cdt) {
         final Packet request = proxyHelper.prepareRequest(ClusterOperation.EXECUTE, cdt, null);

@@ -29,6 +29,7 @@ import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.Util;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -43,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.impl.ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS;
-import static com.hazelcast.impl.Util.toMillis;
+import static com.hazelcast.util.Util.toMillis;
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSerializable {
@@ -468,7 +469,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     }
 
     private static void check(Object obj) {
-        Util.checkSerializable(obj);
+        Util.checkNotNull(obj);
     }
 
     private class MProxyReal implements MProxy {

@@ -468,4 +468,20 @@ public final class Hazelcast {
     public static LifecycleService getLifecycleService() {
         return getDefaultInstance().getLifecycleService();
     }
+
+//    public static void registerSerializer(final TypeSerializerFactory serializerFactory, Class type) {
+//        SerializerManager.register(serializerFactory, type);
+//    }
+//
+//    public static void registerGlobalSerializer(final TypeSerializerFactory serializerFactory) {
+//        SerializerManager.registerGlobal(serializerFactory);
+//    }
+//
+//    public static void deregisterSerializer(Class type) {
+//        SerializerManager.deregister(type);
+//    }
+//
+//    public static void deregisterGlobalSerializer() {
+//        SerializerManager.deregisterGlobal();
+//    }
 }

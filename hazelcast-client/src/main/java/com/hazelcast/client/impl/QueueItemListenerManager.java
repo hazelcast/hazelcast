@@ -25,6 +25,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareItemEvent;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.SerializerManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,12 +33,15 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.client.IOUtil.toObject;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class QueueItemListenerManager {
+
+    final private SerializerManager serializerManager;
     final private ConcurrentHashMap<String, List<ItemListener>> queueItemListeners = new ConcurrentHashMap<String, List<ItemListener>>();
 
-    public QueueItemListenerManager() {
+    public QueueItemListenerManager(final SerializerManager serializerManager) {
+        this.serializerManager = serializerManager;
     }
 
     public Collection<? extends Call> calls(HazelcastClient client) {
@@ -61,9 +65,11 @@ public class QueueItemListenerManager {
             for (ItemListener<Object> listener : list) {
                 Boolean added = (Boolean) toObject(packet.getValue());
                 if (added) {
-                    listener.itemAdded(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED, new Data(packet.getKey())));
+                    listener.itemAdded(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED,
+                                                              new Data(packet.getKey()), serializerManager));
                 } else {
-                    listener.itemRemoved(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED, new Data(packet.getKey())));
+                    listener.itemRemoved(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED,
+                                                                new Data(packet.getKey()), serializerManager));
                 }
             }
         }

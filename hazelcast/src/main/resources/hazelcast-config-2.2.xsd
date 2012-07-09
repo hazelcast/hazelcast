@@ -36,6 +36,7 @@
                 <xs:element ref="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="merge-policies" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="listeners" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="serializers" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="security" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
@@ -949,6 +950,23 @@
     </xs:element>
     <xs:element name="cache-value" type="xs:boolean" />
     <xs:element name="read-backup-data" type="xs:boolean" />
+    <xs:element name="serializers">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="serializer" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="serializer">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="global" type="xs:boolean" />
+                    <xs:attribute name="type-class" type="xs:string" />
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="security">
         <xs:complexType>
             <xs:sequence>

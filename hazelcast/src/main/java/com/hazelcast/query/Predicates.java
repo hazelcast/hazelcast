@@ -17,9 +17,8 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.Util;
+import com.hazelcast.util.Util;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.SerializationHelper;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -30,6 +29,9 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.hazelcast.nio.IOUtil.readObject;
+import static com.hazelcast.nio.IOUtil.writeObject;
 
 public final class Predicates {
 
@@ -530,7 +532,7 @@ public final class Predicates {
         }
     }
 
-    public static abstract class AbstractPredicate extends SerializationHelper implements Predicate, DataSerializable {
+    public static abstract class AbstractPredicate implements Predicate, DataSerializable {
         public static Object getRealObject(Object type, Object value) {
             String valueString = String.valueOf(value);
             Object result = null;
@@ -847,7 +849,7 @@ public final class Predicates {
         return new GetExpressionImpl(methodName);
     }
 
-    public static abstract class AbstractExpression extends SerializationHelper implements Expression {
+    public static abstract class AbstractExpression implements Expression {
 
     }
 

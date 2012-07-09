@@ -19,7 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.NodeType;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.security.Credentials;
 
 import java.io.DataInput;
@@ -71,12 +71,9 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         config = new Config();
         config.readData(in);
         uuid = in.readUTF();
-        boolean hasCredentials = in.readBoolean();
-        if (hasCredentials) {
-            credentials = (Credentials) SerializationHelper.readObject(in);
-            if (credentials != null) {
-                credentials.setEndpoint(address.getHost());
-            }
+        credentials = (Credentials) IOUtil.readObject(in);
+        if (credentials != null) {
+            credentials.setEndpoint(address.getHost());
         }
     }
 
@@ -93,11 +90,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         out.writeInt(nodeType.getValue());
         config.writeData(out);
         out.writeUTF(uuid);
-        boolean hasCredentials = credentials != null;
-        out.writeBoolean(hasCredentials);
-        if (hasCredentials) {
-            SerializationHelper.writeObject(out, credentials);
-        }
+        IOUtil.writeObject(out, credentials);
     }
 
     public void setCredentials(Credentials credentials) {

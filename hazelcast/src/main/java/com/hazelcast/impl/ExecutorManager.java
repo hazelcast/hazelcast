@@ -363,7 +363,7 @@ public class ExecutorManager extends BaseManager {
         threadContext.setCurrentFactory(node.factory);
         CallContext callContext = mapThreadCallContexts.get(t);
         if (callContext == null) {
-            callContext = new CallContext(threadContext.createNewThreadId(), false);
+            callContext = new CallContext(ThreadContext.createNewThreadId(), false);
             mapThreadCallContexts.put(t, callContext);
         }
         threadContext.setCallContext(callContext);
@@ -637,7 +637,8 @@ public class ExecutorManager extends BaseManager {
     }
 
     Object toObjectWithConfigClassLoader(Data data) {
-        ClassLoader actualContextClassLoader = Thread.currentThread().getContextClassLoader();
+        final ClassLoader actualContextClassLoader = Thread.currentThread().getContextClassLoader();
+        ThreadContext.get().setCurrentFactory(node.factory);
         try {
             Thread.currentThread().setContextClassLoader(node.getConfig().getClassLoader());
             return toObject(data);
