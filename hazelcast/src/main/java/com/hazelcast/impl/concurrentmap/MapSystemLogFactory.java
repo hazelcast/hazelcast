@@ -100,10 +100,12 @@ public class MapSystemLogFactory {
                     ", migrating=" + migratingPartition + "\n" +
                     "partition=" + partition +
                     "\n");
-            for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
-                Address replicaAddress = partition.getReplicaAddress(i);
-                if (replicaAddress != null && !contains(replicaAddress)) {
-                    sb.append(replicaAddress + " not a member!\n");
+            if (partition != null) {
+                for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
+                    Address replicaAddress = partition.getReplicaAddress(i);
+                    if (replicaAddress != null && !contains(replicaAddress)) {
+                        sb.append(replicaAddress + " not a member!\n");
+                    }
                 }
             }
             sb.append("}");
