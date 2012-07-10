@@ -448,7 +448,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final Node att = atts.item(a);
             final String value = getTextContent(att).trim();
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
-                join.getAwsConfig().setEnabled(true);
+                join.getAwsConfig().setEnabled(checkTrue(value));
             } else if (att.getNodeName().equals("conn-timeout-seconds")) {
                 join.getTcpIpConfig().setConnectionTimeoutSeconds(getIntegerValue("conn-timeout-seconds", value, 5));
             }
