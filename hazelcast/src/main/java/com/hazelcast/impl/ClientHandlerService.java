@@ -266,6 +266,7 @@ public class ClientHandlerService implements ConnectionListener {
         if (clientEndpoint != null) {
             node.executorManager.executeNow(new FallThroughRunnable() {
                 public void doRun() {
+                    logger.log(Level.INFO, "Client {" + connection + "} has been removed.");
                     clientEndpoint.connectionRemoved(connection);
                     if (node.securityContext != null) {
                         try {

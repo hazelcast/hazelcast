@@ -19,7 +19,10 @@ package com.hazelcast.impl;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public interface Joiner {
+
     public void join(AtomicBoolean joined);
 
     public void searchForOtherClusters(SplitBrainHandler splitBrainHandler);
+
+    long getStartTime();
 }
