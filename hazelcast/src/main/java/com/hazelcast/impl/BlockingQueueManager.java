@@ -294,6 +294,7 @@ public class BlockingQueueManager extends BaseManager {
                     fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
                 }
             } catch (TimeoutException e) {
+                throw new OperationTimeoutException();
             }
             long now = Clock.currentTimeMillis();
             timeout -= (now - start);
@@ -317,14 +318,15 @@ public class BlockingQueueManager extends BaseManager {
 
     private Data takeKey(String name, int index, long timeout) throws InterruptedException {
         try {
-            MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, timeout);
+            MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, getOperationTimeout(timeout));
             op.request.longValue = index;
             op.request.txnId = ThreadContext.get().getThreadId();
             op.initOp();
             return (Data) op.getResultAsIs();
         } catch (Exception e) {
             if (e instanceof RuntimeInterruptedException) {
-                MasterOp op = new MasterOp(ClusterOperation.BLOCKING_CANCEL_TAKE_KEY, name, timeout);
+                MasterOp op = new MasterOp(ClusterOperation.BLOCKING_CANCEL_TAKE_KEY, name,
+                        getOperationTimeout(timeout));
                 op.request.longValue = index;
                 op.request.txnId = ThreadContext.get().getThreadId();
                 op.initOp();
@@ -590,7 +592,7 @@ public class BlockingQueueManager extends BaseManager {
 
     public long generateKey(String name, long timeout) throws InterruptedException {
         try {
-            MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GENERATE_KEY, name, timeout);
+            MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GENERATE_KEY, name, getOperationTimeout(timeout));
             op.request.setLongRequest();
             op.request.txnId = ThreadContext.get().getThreadId();
             op.initOp();

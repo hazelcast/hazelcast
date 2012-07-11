@@ -108,7 +108,7 @@ public class MapSystemLogFactory {
 //            sb.append("keySize=").append(key != null ? key.size() : 0);
             sb.append("operation=").append(operation)
                     .append(caller ? ", target=" : ", caller=").append(endpoint)
-                    .append("/ connected=").append(connected)
+                    .append(" / connected=").append(connected)
                     .append(", redoCount=").append(redoCount)
                     .append(", migrating=").append(migratingPartition).append("\n")
                     .append("partition=").append(partition).append("\n");
