@@ -127,9 +127,11 @@ public class ConnectionManager implements MembershipListener {
                         if (restored) {
                             try {
                                 ClientConfig clientConfig = client.getClientConfig();
-                                SocketInterceptor socketInterceptor = clientConfig.getSocketInterceptor();
-                                if (socketInterceptor != null) {
-                                    socketInterceptor.onConnect(connection.getSocket());
+                                if (clientConfig != null) {
+                                    SocketInterceptor socketInterceptor = clientConfig.getSocketInterceptor();
+                                    if (socketInterceptor != null) {
+                                        socketInterceptor.onConnect(connection.getSocket());
+                                    }
                                 }
                                 bindConnection(connection);
                                 currentConnection = connection;
