@@ -534,7 +534,6 @@ public class Node {
 
     public boolean validateJoinRequest(JoinRequest joinRequest) throws Exception {
         boolean valid = Packet.PACKET_VERSION == joinRequest.packetVersion;
-//                && buildNumber == joinRequest.buildNumber; //check only packet version!
         if (valid) {
             try {
                 valid = config.isCompatible(joinRequest.config);
@@ -557,8 +556,8 @@ public class Node {
     }
 
     void join() {
-        long joinStartTime = Clock.currentTimeMillis();
-        long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
+        final long joinStartTime = joiner != null ? joiner.getStartTime() : Clock.currentTimeMillis();
+        final long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
         try {
             if (joiner == null) {
                 logger.log(Level.WARNING, "No join method is enabled! Starting standalone.");
@@ -567,13 +566,16 @@ public class Node {
                 joiner.join(joined);
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage());
             if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
-                factory.lifecycleService.restart();
+                logger.log(Level.WARNING, e.getMessage());
+//                factory.lifecycleService.restart();
+                rejoin();
             } else {
-                setActive(false);
-                joined.set(false);
-                Util.throwUncheckedException(e);
+//                setActive(false);
+//                joined.set(false);
+//                Util.throwUncheckedException(e);
+                logger.log(Level.SEVERE, e.getMessage(), e);
+                shutdown(false, true);
             }
         }
     }

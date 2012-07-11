@@ -547,7 +547,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer("\n\nMembers [");
+        StringBuilder sb = new StringBuilder("\n\nMembers [");
         sb.append(lsMembers.size());
         sb.append("] {");
         for (MemberImpl member : lsMembers) {

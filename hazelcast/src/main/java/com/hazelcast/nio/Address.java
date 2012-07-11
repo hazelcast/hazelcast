@@ -35,26 +35,33 @@ public final class Address implements DataSerializable {
     private String host;
     private byte type;
     private transient String scopeId;
+    private transient boolean hostSet;
 
     public Address() {
+    }
+
+    public Address(String host, int port) throws UnknownHostException {
+        this(host, InetAddress.getByName(host), port) ;
+        hostSet = true;
+    }
+
+    public Address(InetAddress inetAddress, int port) {
+        this(null, inetAddress, port);
+        hostSet = false;
     }
 
     public Address(InetSocketAddress inetSocketAddress) {
         this(inetSocketAddress.getAddress(), inetSocketAddress.getPort());
     }
 
-    public Address(String host, int port) throws UnknownHostException {
-        this(InetAddress.getByName(host), port);
-    }
-
-    public Address(InetAddress inetAddress, int port) {
-        this.port = port;
+    private Address(final String hostname, final InetAddress inetAddress, final int port) {
         this.type = (inetAddress instanceof Inet4Address) ? IPv4 : IPv6;
-        String[] host = inetAddress.getHostAddress().split("\\%");
-        this.host = host[0];
-        if (host.length == 2) {
-            scopeId = host[1];
+        final String[] addressArgs = inetAddress.getHostAddress().split("\\%");
+        this.host = hostname != null ? hostname : addressArgs[0];
+        if (addressArgs.length == 2) {
+            scopeId = addressArgs[1];
         }
+        this.port = port;
     }
 
     public Address(Address address) {
@@ -62,6 +69,7 @@ public final class Address implements DataSerializable {
         this.port = address.port;
         this.type = address.type;
         this.scopeId = address.scopeId;
+        this.hostSet = address.hostSet;
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -171,7 +179,7 @@ public final class Address implements DataSerializable {
     }
 
     public String getScopedHost() {
-        return (isIPv4() || scopeId == null) ? getHost()
+        return (isIPv4() || hostSet || scopeId == null) ? getHost()
                                              : getHost() + "%" + scopeId;
     }
 }

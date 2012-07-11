@@ -90,7 +90,7 @@ public final class AddressUtil {
         }
     }
 
-    public static InetAddress fixAndGetInetAddress(final InetAddress inetAddress) throws SocketException {
+    public static InetAddress fixScopeIdAndGetInetAddress(final InetAddress inetAddress) throws SocketException {
         Inet6Address resultInetAddress = null;
         if (inetAddress instanceof Inet6Address &&
             (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress())) {
