@@ -296,13 +296,11 @@
             OK will return.
         </para>
 
-        <sect3 xml:id="EVENT" version="5.0" xmlns="http://docbook.org/ns/docbook">
-            <title>EVENT</title>
 
             <para>
                 After adding the listener. The following events will be received from the server.
             </para>
-
+<!---->
             <para>
                 <emphasis role="bold">EVENT:</emphasis>
             </para>
@@ -315,10 +313,6 @@
             <para>
                 eventType is one of the following: ADDED, REMOVED. Depending on includevalue the element may not be returned at all.
             </para>
-
-        </sect3>
-
-
     </sect2>
 
     <sect2 xml:id="QREMOVELISTENER" version="5.0" xmlns="http://docbook.org/ns/docbook">

@@ -145,6 +145,7 @@
         <xi:include href="client/ClientProtocol.xml"/>
         <xi:include href="client/GeneralCommands.xml"/>
         <xi:include href="client/MapCommands.xml"/>
+        <xi:include href="client/QueueCommands.xml"/>
         <xi:include href="client/SetCommands.xml"/>
         <xi:include href="client/ListCommands.xml"/>
         <xi:include href="client/MultiMapCommands.xml"/>
