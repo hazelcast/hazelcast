@@ -36,6 +36,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
+import static com.hazelcast.impl.Constants.RedoType.REDO_QUEUE_NOT_MASTER;
+import static com.hazelcast.impl.Constants.RedoType.REDO_QUEUE_NOT_READY;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -122,11 +124,12 @@ public class BlockingQueueManager extends BaseManager {
         abstract void doOperation(BQ queue, Request request);
 
         public void handle(Request request) {
-            if (isMaster() && ready(request)) {
+            final boolean master = isMaster();
+            if (master && ready(request)) {
                 BQ bq = getOrCreateBQ(request.name);
                 doOperation(bq, request);
             } else {
-                returnRedoResponse(request);
+                returnRedoResponse(request, !master ? REDO_QUEUE_NOT_MASTER : REDO_QUEUE_NOT_READY);
             }
         }
     }
@@ -638,6 +641,11 @@ public class BlockingQueueManager extends BaseManager {
         protected void handleInterruption() {
             handleInterruptedException(true, op);
         }
+
+        @Override
+        protected boolean canTimeout() {
+            return false;
+        }
     }
 
     class Lease {
@@ -666,11 +674,12 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     final void handlePeekKey(Request req) {
-        if (isMaster() && ready(req)) {
+        final boolean master = isMaster();
+        if (master && ready(req)) {
             BQ bq = getOrCreateBQ(req.name);
             bq.doPeekKey(req);
         } else {
-            returnRedoResponse(req);
+            returnRedoResponse(req, !master ? REDO_QUEUE_NOT_MASTER : REDO_QUEUE_NOT_READY);
         }
     }
 
@@ -687,23 +696,25 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     final void handleAddKey(Request req) {
-        if (isMaster() && ready(req)) {
+        final boolean master = isMaster();
+        if (master && ready(req)) {
             BQ bq = getOrCreateBQ(req.name);
             bq.doAddKey(req.key, (int) req.longValue);
             req.key = null;
             req.response = Boolean.TRUE;
             returnResponse(req);
         } else {
-            returnRedoResponse(req);
+            returnRedoResponse(req, !master ? REDO_QUEUE_NOT_MASTER : REDO_QUEUE_NOT_READY);
         }
     }
 
     final void handleGenerateKey(Request req) {
-        if (isMaster() && ready(req)) {
+        final boolean master = isMaster();
+        if (master && ready(req)) {
             BQ bq = getOrCreateBQ(req.name);
             bq.doGenerateKey(req);
         } else {
-            returnRedoResponse(req);
+            returnRedoResponse(req, !master ? REDO_QUEUE_NOT_MASTER : REDO_QUEUE_NOT_READY);
         }
     }
 

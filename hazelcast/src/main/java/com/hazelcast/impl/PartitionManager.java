@@ -54,7 +54,7 @@ public class PartitionManager {
 
     private final ConcurrentMapManager concurrentMapManager;
     private final ILogger logger;
-    private final int PARTITION_COUNT;
+    private final int partitionCount;
     private final PartitionInfo[] partitions;
 
     // updates will come from ServiceThread (one exception is PartitionManager.reset())
@@ -64,6 +64,7 @@ public class PartitionManager {
     private final AtomicInteger version = new AtomicInteger();
     private final List<PartitionListener> lsPartitionListeners = new CopyOnWriteArrayList<PartitionListener>();
     private final int partitionMigrationInterval;
+    private final long partitionMigrationTimeout;
     private final int immediateBackupInterval;
     private final MigrationService migrationService;
     private boolean running = true; // accessed only by MigrationService thread
@@ -75,13 +76,13 @@ public class PartitionManager {
     private final SystemLogService systemLogService;
 
     public PartitionManager(final ConcurrentMapManager concurrentMapManager) {
-        this.PARTITION_COUNT = concurrentMapManager.getPartitionCount();
+        this.partitionCount = concurrentMapManager.getPartitionCount();
         this.concurrentMapManager = concurrentMapManager;
         this.logger = concurrentMapManager.node.getLogger(PartitionManager.class.getName());
-        this.partitions = new PartitionInfo[PARTITION_COUNT];
+        this.partitions = new PartitionInfo[partitionCount];
         final Node node = concurrentMapManager.node;
         systemLogService = node.getSystemLogService();
-        for (int i = 0; i < PARTITION_COUNT; i++) {
+        for (int i = 0; i < partitionCount; i++) {
             this.partitions[i] = new PartitionInfo(i, new PartitionListener() {
                 public void replicaChanged(PartitionReplicaChangeEvent event) {
                     for (PartitionListener partitionListener : lsPartitionListeners) {
@@ -102,6 +103,8 @@ public class PartitionManager {
             });
         }
         partitionMigrationInterval = node.groupProperties.PARTITION_MIGRATION_INTERVAL.getInteger() * 1000;
+        // partitionMigrationTimeout is 1.5 times of real timeout
+        partitionMigrationTimeout = (long) (node.groupProperties.PARTITION_MIGRATION_TIMEOUT.getLong() * 1.5f);
         immediateBackupInterval = node.groupProperties.IMMEDIATE_BACKUP_INTERVAL.getInteger() * 1000;
         migrationService = new MigrationService(node);
         migrationService.start();
@@ -155,7 +158,7 @@ public class PartitionManager {
         if (!initialized) {
             PartitionStateGenerator psg = getPartitionStateGenerator();
             logger.log(Level.INFO, "Initializing cluster partition table first arrangement...");
-            PartitionInfo[] newState = psg.initialize(concurrentMapManager.lsMembers, PARTITION_COUNT);
+            PartitionInfo[] newState = psg.initialize(concurrentMapManager.lsMembers, partitionCount);
             if (newState != null) {
                 for (PartitionInfo partitionInfo : newState) {
                     partitions[partitionInfo.getPartitionId()].setPartitionInfo(partitionInfo);
@@ -726,8 +729,8 @@ public class PartitionManager {
 
     private class PrepareRepartitioningTask implements Runnable {
         final List<MigrationRequestTask> lostQ = new ArrayList<MigrationRequestTask>();
-        final List<MigrationRequestTask> scheduledQ = new ArrayList<MigrationRequestTask>(PARTITION_COUNT);
-        final List<MigrationRequestTask> immediateQ = new ArrayList<MigrationRequestTask>(PARTITION_COUNT * 2);
+        final List<MigrationRequestTask> scheduledQ = new ArrayList<MigrationRequestTask>(partitionCount);
+        final List<MigrationRequestTask> immediateQ = new ArrayList<MigrationRequestTask>(partitionCount * 2);
 
         private PrepareRepartitioningTask() {
         }
@@ -753,7 +756,7 @@ public class PartitionManager {
                 members.add((MemberImpl) member);
             }
             PartitionStateGenerator psg = getPartitionStateGenerator();
-            psg.reArrange(partitions, members, PARTITION_COUNT, lostQ, immediateQ, scheduledQ);
+            psg.reArrange(partitions, members, partitionCount, lostQ, immediateQ, scheduledQ);
         }
 
         void fillMigrationQueues() {
@@ -787,7 +790,7 @@ public class PartitionManager {
             for (MigrationRequestTask migrationRequestTask : lostQ) {
                 int partitionId = migrationRequestTask.getPartitionId();
                 int replicaIndex = migrationRequestTask.getReplicaIndex();
-                if (replicaIndex != 0 || partitionId >= PARTITION_COUNT) {
+                if (replicaIndex != 0 || partitionId >= partitionCount) {
                     logger.log(Level.WARNING, "Wrong task for lost partitions assignment process" +
                             " => " + migrationRequestTask);
                     continue;
@@ -889,7 +892,7 @@ public class PartitionManager {
                         Future future = concurrentMapManager.node.factory
                                 .getExecutorService(MIGRATION_EXECUTOR_NAME).submit(task);
                         try {
-                            result = future.get(600, TimeUnit.SECONDS);
+                            result = future.get(partitionMigrationTimeout, TimeUnit.SECONDS);
                         } catch (Throwable e) {
                             logger.log(Level.WARNING, "Failed migrating from " + fromMember);
                         }

@@ -39,11 +39,12 @@ public class SocketAcceptor implements Runnable {
     public void run() {
         try {
             connectionManager.ioService.onIOThreadStart();
+            log(Level.FINEST, "Starting SocketAcceptor on " + serverSocketChannel);
             selector = Selector.open();
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
             while (connectionManager.isLive()) {
-                final int keyCount = selector.select(); // block until new connection or interrupt.
+                final int keyCount = selector.select(); // block until new connection or interruption.
                 if (Thread.currentThread().isInterrupted()) {
                     break;
                 }
@@ -61,9 +62,7 @@ public class SocketAcceptor implements Runnable {
                 }
             }
         } catch (IOException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            connectionManager.ioService.getSystemLogService()
-                    .logConnection(e.getClass().getName() + ": " + e.getMessage());
+            log(Level.SEVERE, e.getClass().getName() + ": " + e.getMessage(), e);
         } finally {
             try {
                 logger.log(Level.FINEST, "Closing selector " + Thread.currentThread().getName());
@@ -88,7 +87,10 @@ public class SocketAcceptor implements Runnable {
                 // or ClosedByInterruptException
                 logger.log(Level.FINEST, "Terminating socket acceptor thread...", e);
             } else {
-                logger.log(Level.WARNING, "Unexpected error while accepting connection!", e);
+                String error = "Unexpected error while accepting connection! "
+                               + e.getClass().getName() + ": " + e.getMessage();
+                logger.log(Level.WARNING, error, e);
+                connectionManager.ioService.getSystemLogService().logConnection(error);
                 try {
                     serverSocketChannel.close();
                 } catch (Exception ignore) {
@@ -103,19 +105,19 @@ public class SocketAcceptor implements Runnable {
                     String message = socketChannel.socket().getLocalPort()
                             + " is accepting socket connection from "
                             + socketChannel.socket().getRemoteSocketAddress();
-                    logger.log(Level.INFO, message);
-                    connectionManager.ioService.getSystemLogService().logConnection(message);
+                    log(Level.INFO, message);
                     try {
                         MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
                         if (memberSocketInterceptor != null) {
+                            log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor
+                                              + " for " + socketChannel);
                             memberSocketInterceptor.onAccept(socketChannel.socket());
                         }
                         socketChannel.configureBlocking(false);
                         connectionManager.initSocket(socketChannel.socket());
                         connectionManager.assignSocketChannel(socketChannel);
                     } catch (Exception e) {
-                        logger.log(Level.WARNING, e.getMessage(), e);
-                        connectionManager.ioService.getSystemLogService().logConnection(e.getMessage());
+                        log(Level.WARNING, e.getClass().getName() + ": " + e.getMessage(), e);
                         if (socketChannel != null) {
                             try {
                                 socketChannel.close();
@@ -126,6 +128,15 @@ public class SocketAcceptor implements Runnable {
                 }
             });
         }
+    }
+
+    private void log(Level level, String message) {
+        log(level, message, null);
+    }
+
+    private void log(Level level, String message, Exception e) {
+        logger.log(level, message, e);
+        connectionManager.ioService.getSystemLogService().logConnection(message);
     }
 
 }

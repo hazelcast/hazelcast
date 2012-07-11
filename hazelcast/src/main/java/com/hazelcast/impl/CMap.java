@@ -1266,7 +1266,6 @@ public class CMap {
         }
 
         public boolean overCapacity() {
-//            boolean over = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) > memoryLimit;
             return totalCostOfRecords >= memoryLimit;
         }
     }
@@ -1280,10 +1279,6 @@ public class CMap {
         }
 
         public boolean overCapacity() {
-//            long total = Runtime.getRuntime().totalMemory();
-//            long free = Runtime.getRuntime().freeMemory();
-//            int usedPercentage = (int) (((total - free) / total) * 100D);
-//            boolean over = usedPercentage > maxSizeConfig.getSize();
             final long total = Runtime.getRuntime().maxMemory();
             final long cost = totalCostOfRecords;
             final int usedPercentage = (int) (((float) cost / total) * 100);

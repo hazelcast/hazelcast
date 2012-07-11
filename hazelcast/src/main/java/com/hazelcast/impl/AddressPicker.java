@@ -68,7 +68,7 @@ class AddressPicker {
              *
              * By default if the OS is Windows then reuseaddress will be false.
              */
-            logger.log(Level.FINEST, "inet reuseAddress:" + reuseAddress);
+            log(Level.FINEST, "inet reuseAddress:" + reuseAddress);
             serverSocket.setReuseAddress(reuseAddress);
             serverSocket.setSoTimeout(1000);
             InetSocketAddress isa;
@@ -81,8 +81,9 @@ class AddressPicker {
                     } else {
                         isa = new InetSocketAddress(inetAddress, port);
                     }
-                    logger.log(Level.FINEST, "inet socket address:" + isa);
+                    log(Level.FINEST, "Trying to bind inet socket address:" + isa);
                     serverSocket.bind(isa, 100);
+                    log(Level.FINEST, "Bind successful to inet socket address:" + isa);
                     break;
                 } catch (final Exception e) {
                     if (config.isPortAutoIncrement()) {
@@ -214,5 +215,10 @@ class AddressPicker {
 
     public ServerSocketChannel getServerSocketChannel() {
         return serverSocketChannel;
+    }
+
+    private void log(Level level, String message) {
+        logger.log(level, message);
+        node.getSystemLogService().logNode(message);
     }
 }

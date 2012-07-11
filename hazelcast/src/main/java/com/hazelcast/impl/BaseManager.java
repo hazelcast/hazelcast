@@ -17,10 +17,8 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.RemotelyProcessable;
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Prefix;
-import com.hazelcast.core.RuntimeInterruptedException;
+import com.hazelcast.core.*;
+import com.hazelcast.impl.Constants.RedoType;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.MapSystemLogFactory;
 import com.hazelcast.logging.ILogger;
@@ -29,6 +27,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.DistributedTimeoutException;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
@@ -41,8 +40,9 @@ import java.util.logging.Level;
 import static com.hazelcast.core.Instance.InstanceType;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_NULL;
 import static com.hazelcast.impl.Constants.Objects.OBJECT_REDO;
+import static com.hazelcast.impl.Constants.RedoType.*;
 import static com.hazelcast.impl.Constants.ResponseTypes.*;
-import static com.hazelcast.impl.base.SystemLogService.Level.CS_INFO;
+import static com.hazelcast.impl.base.SystemLogService.Level.INFO;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -66,9 +66,20 @@ public abstract class BaseManager {
 
     protected final ILogger logger;
 
+    protected final long operationResponsePollTimeout;
+
+    protected final long maxOperationTimeout;
+
     protected final long redoWaitMillis;
 
+    protected final int redoLogThreshold;
+
+    protected final int redoGiveUpThreshold;
+
     protected final SystemLogService systemLogService;
+
+    final DistributedTimeoutException distributedTimeoutException = new DistributedTimeoutException();
+    final Data dataTimeoutException = toData(distributedTimeoutException);
 
     protected BaseManager(Node node) {
         this.node = node;
@@ -79,9 +90,13 @@ public abstract class BaseManager {
         thisAddress = node.baseVariables.thisAddress;
         thisMember = node.baseVariables.thisMember;
         qServiceThreadPacketCache = node.baseVariables.qServiceThreadPacketCache;
-        this.localIdGen = node.baseVariables.localIdGen;
-        this.logger = node.getLogger(this.getClass().getName());
-        this.redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
+        localIdGen = node.baseVariables.localIdGen;
+        logger = node.getLogger(this.getClass().getName());
+        operationResponsePollTimeout = node.getGroupProperties().OPERATION_RESPONSE_POLL_TIMEOUT.getLong();
+        maxOperationTimeout = node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong() * 1000;
+        redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
+        redoLogThreshold = node.getGroupProperties().REDO_LOG_THRESHOLD.getInteger();
+        redoGiveUpThreshold = node.getGroupProperties().REDO_GIVE_UP_THRESHOLD.getInteger();
     }
 
     public List<MemberImpl> getMembers() {
@@ -176,7 +191,7 @@ public abstract class BaseManager {
         protected void initCall() {
             callId = localIdGen.incrementAndGet();
             int threadId = ThreadContext.get().getThreadId();
-            callState = node.getSystemLogService().getOrCreateCallState(callId, thisAddress, threadId);
+            callState = systemLogService.getOrCreateCallState(callId, thisAddress, threadId);
         }
 
         public long getCallId() {
@@ -193,7 +208,7 @@ public abstract class BaseManager {
             enqueueCount++;
         }
 
-        public void redo() {
+        public void redo(int redoTypeCode) {
             removeRemoteCall(getCallId());
             enqueueCall(this);
         }
@@ -229,7 +244,14 @@ public abstract class BaseManager {
     abstract class MigrationAwareOperationHandler extends AbstractOperationHandler {
         @Override
         public void process(Packet packet) {
-            super.processMigrationAware(packet);
+            Request remoteReq = Request.copyFromPacket(packet);
+            if (isMigrating(remoteReq)) {
+                remoteReq.clearForResponse();
+                returnRedoResponse(remoteReq, REDO_PARTITION_MIGRATING);
+            } else {
+                handle(remoteReq);
+            }
+            releasePacket(packet);
         }
     }
 
@@ -237,48 +259,49 @@ public abstract class BaseManager {
 
         abstract boolean isRightRemoteTarget(Request request);
 
+        boolean isCallerKnownMember(Request request) {
+            return (request.local || getMember(request.caller) != null);
+        }
+
         @Override
         public void process(Packet packet) {
-            Request remoteReq = Request.copyFromPacket(packet);
-            boolean isMigrating = isMigrating(remoteReq);
-            boolean rightRemoteTarget = isRightRemoteTarget(remoteReq);
-            SystemLogService css = node.getSystemLogService();
-            if (css.shouldLog(CS_INFO)) {
-                css.info(remoteReq, "IsMigrating/RightRemoteTarget", isMigrating, rightRemoteTarget);
+            Request request = Request.copyFromPacket(packet);
+            boolean isMigrating = isMigrating(request);
+            boolean rightRemoteTarget = isRightRemoteTarget(request);
+            boolean callerKnownMember = isCallerKnownMember(request);
+            if (request.redoCount > redoLogThreshold || systemLogService.shouldLog(INFO)) {
+                systemLogService.info(request, new SystemArgsLog("Migrating/CallerKnownMember/RightRemoteTarget",
+                                isMigrating, callerKnownMember, rightRemoteTarget));
             }
-            if (isMigrating || !rightRemoteTarget) {
-                remoteReq.clearForResponse();
-                returnRedoResponse(remoteReq);
+            if (isMigrating || !callerKnownMember || !rightRemoteTarget) {
+                final RedoType redoType = isMigrating ? REDO_PARTITION_MIGRATING :
+                                     (!callerKnownMember ? REDO_MEMBER_UNKNOWN : REDO_TARGET_WRONG);
+                returnRedoResponse(request, redoType);
             } else {
-                if (css.shouldLog(CS_INFO)) {
-                    css.info(remoteReq, "handle");
+                if (systemLogService.shouldLog(INFO)) {
+                    systemLogService.info(request, "handle");
                 }
-                handle(remoteReq);
+                handle(request);
             }
             releasePacket(packet);
+        }
+    }
+
+    protected void logRedo(final Request request, final RedoType redoType, boolean isCaller) {
+        if (request.redoCount > redoLogThreshold) {
+            final SystemLog log = MapSystemLogFactory.newRedoLog(node, request, redoType, isCaller);
+            systemLogService.logState(request, SystemLogService.Level.DEFAULT, log);
+            logger.log(Level.WARNING, (isCaller ? "Caller -> " : "Handler -> ") + log.toString());
+        } else if (systemLogService.shouldTrace()) {
+            systemLogService.trace(request, MapSystemLogFactory.newRedoLog(node, request, redoType, isCaller));
         }
     }
 
     public abstract class ResponsiveOperationHandler implements PacketProcessor, RequestHandler {
 
         public void process(Packet packet) {
-            processSimple(packet);
-        }
-
-        public void processSimple(Packet packet) {
             Request request = Request.copyFromPacket(packet);
             handle(request);
-            releasePacket(packet);
-        }
-
-        public void processMigrationAware(Packet packet) {
-            Request remoteReq = Request.copyFromPacket(packet);
-            if (isMigrating(remoteReq)) {
-                remoteReq.clearForResponse();
-                returnRedoResponse(remoteReq);
-            } else {
-                handle(remoteReq);
-            }
             releasePacket(packet);
         }
     }
@@ -295,23 +318,32 @@ public abstract class BaseManager {
         }
     }
 
-    public boolean returnRedoResponse(Request request) {
+    public boolean returnRedoResponse(Request request, RedoType redoType) {
+        logRedo(request, redoType, false);
+        request.clearForResponse();
         request.response = OBJECT_REDO;
-        return returnResponse(request, null);
+        return returnResponse(request, null, redoType);
     }
 
     public boolean returnResponse(Request request) {
-        return returnResponse(request, null);
+        return returnResponse(request, null, null);
     }
 
     public boolean returnResponse(Request request, Connection conn) {
-        SystemLogService css = node.getSystemLogService();
-        if (css.shouldLog(CS_INFO)) {
-            css.logObject(request, CS_INFO, "ReturnResponse");
+        return returnResponse(request, conn, null);
+    }
+
+    private boolean returnResponse(Request request, Connection conn, RedoType redoType) {
+        if (systemLogService.shouldLog(INFO)) {
+            systemLogService.logObject(request, INFO, "ReturnResponse");
         }
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
-            targetAwareOp.setResult(request.response);
+            if (request.response == OBJECT_REDO) {
+                targetAwareOp.setRedoResult(redoType);
+            } else {
+                targetAwareOp.setResult(request.response);
+            }
         } else {
             Packet packet = obtainPacket();
             packet.setFromRequest(request);
@@ -324,6 +356,7 @@ public abstract class BaseManager {
             if (request.response == OBJECT_REDO) {
                 packet.lockAddress = null;
                 packet.responseType = RESPONSE_REDO;
+                packet.redoData = redoType != null ? redoType.getCode() : REDO_UNKNOWN.getCode();
                 if (systemLogService.shouldInfo()) {
                     systemLogService.info(request, "Returning REDO response");
                 }
@@ -356,10 +389,6 @@ public abstract class BaseManager {
     }
 
     abstract class AbstractOperationHandler extends ResponsiveOperationHandler {
-
-        public void process(Packet packet) {
-            processSimple(packet);
-        }
 
         abstract void doOperation(Request request);
 
@@ -473,7 +502,7 @@ public abstract class BaseManager {
             if (value != null) {
                 valueData = toData(value);
             }
-            request.setLocal(operation, name, keyData, valueData, -1, timeout, ttl, thisAddress);
+            request.setLocal(operation, name, keyData, valueData, -1, getOperationTimeout(timeout), ttl, thisAddress);
             request.attachment = this;
         }
 
@@ -498,13 +527,16 @@ public abstract class BaseManager {
         if (safeToThrowException || forceToThrowException) {
             throw new RuntimeInterruptedException(error);
         } else {
-            logger.log(Level.WARNING, error);
+            logger.log(Level.WARNING, error + " (To throw exception on interruption set '"
+                                      + GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION
+                                      + "' to true.)");
         }
     }
 
     public abstract class ResponseQueueCall extends RequestBasedCall {
 
         private final BlockingQueue<Object> responses = ResponseQueueFactory.newResponseQueue();
+        protected RedoType redoType;
 
         public ResponseQueueCall() {
         }
@@ -540,17 +572,26 @@ public abstract class BaseManager {
         }
 
         public Object waitAndGetResult() {
+            final long noResponseTimeout = (long) (request.timeout * 1.5f); // should be more than request timeout
+            final long start = Clock.currentTimeMillis();
             while (true) {
                 try {
-                    Object obj = responses.poll(10, TimeUnit.SECONDS);
+                    Object obj = responses.poll(operationResponsePollTimeout, TimeUnit.SECONDS);
                     if (obj != null) {
+                        if (obj instanceof DistributedTimeoutException) {
+                            throw new OperationTimeoutException(request.operation.toString(),
+                                    "Operation Timeout: " + request.timeout);
+                        }
                         return obj;
                     }
                     if (node.isActive()) {
-                        logger.log(Level.FINEST, "Still no response! " + request);
-                        SystemLogService css = node.getSystemLogService();
-                        if (css.shouldTrace()) {
-                            css.trace(this, "Still no response");
+                        logger.log(Level.WARNING, "Still no response! " + request);
+                        if (systemLogService.shouldTrace()) {
+                            systemLogService.trace(this, "Still no response");
+                        }
+                        if (canTimeout() && noResponseTimeout <= (Clock.currentTimeMillis() - start)) {
+                            throw new OperationTimeoutException(request.operation.toString(),
+                                    "Operation Timeout: " + request.timeout);
                         }
                     }
                     node.checkNodeState();
@@ -577,12 +618,10 @@ public abstract class BaseManager {
                 }
                 if (result == OBJECT_REDO) {
                     request.redoCount++;
-                    SystemLogService css = node.getSystemLogService();
-                    if (css.shouldTrace()) {
-                        css.trace(this, MapSystemLogFactory.newRedoLog(node, request));
-                    }
-                    if (request.redoCount > 19 && (request.redoCount % 10 == 0)) {
-                        logger.log(Level.WARNING, MapSystemLogFactory.newRedoLog(node, request).toString());
+                    logRedo(request, redoType, true);
+                    if (request.redoCount > redoGiveUpThreshold) {
+                        throw new OperationTimeoutException(request.operation.toString(), "Redo threshold exceeded!" +
+                                " Last redo cause: " + redoType + ", Name: " + request.name);
                     }
                     try {
                         //noinspection BusyWait
@@ -603,10 +642,14 @@ public abstract class BaseManager {
         }
 
         @Override
-        public void redo() {
+        public void redo(int redoTypeCode) {
+            redo(RedoType.getRedoType(redoTypeCode));
+        }
+
+        protected void redo(RedoType redoType) {
             removeRemoteCall(getCallId());
             responses.clear();
-            setResult(OBJECT_REDO);
+            setRedoResult(redoType);
         }
 
         public void reset() {
@@ -617,7 +660,7 @@ public abstract class BaseManager {
         }
 
         private void handleBooleanNoneRedoResponse(final Packet packet) {
-            if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
+            if (packet.responseType == RESPONSE_SUCCESS) {
                 setResult(Boolean.TRUE);
             } else {
                 setResult(Boolean.FALSE);
@@ -625,7 +668,7 @@ public abstract class BaseManager {
         }
 
         private void handleLongNoneRedoResponse(final Packet packet) {
-            if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
+            if (packet.responseType == RESPONSE_SUCCESS) {
                 setResult(packet.longValue);
             } else {
                 throw new RuntimeException("handleLongNoneRedoResponse.responseType "
@@ -634,12 +677,12 @@ public abstract class BaseManager {
         }
 
         private void handleObjectNoneRedoResponse(final Packet packet) {
-            if (packet.responseType == Constants.ResponseTypes.RESPONSE_SUCCESS) {
-                final Data oldValue = packet.getValueData();
-                if (oldValue == null || oldValue.size() == 0) {
+            if (packet.responseType == RESPONSE_SUCCESS) {
+                final Data valueData = packet.getValueData();
+                if (valueData == null || valueData.size() == 0) {
                     setResult(OBJECT_NULL);
                 } else {
-                    setResult(oldValue);
+                    setResult(valueData);
                 }
             } else {
                 throw new RuntimeException(request.operation + " handleObjectNoneRedoResponse.responseType "
@@ -660,17 +703,30 @@ public abstract class BaseManager {
             }
         }
 
+        protected void setRedoResult(final RedoType redoType) {
+            this.redoType = redoType;
+            setResult(OBJECT_REDO);  // volatile write
+        }
+
         protected void setResult(final Object obj) {
             if (obj == OBJECT_REDO) {
                 if (systemLogService.shouldInfo()) {
-                    systemLogService.info(request, "setResult(REDO)");
+                    systemLogService.info(request, "setResult(REDO)", redoType);
                 }
             }
             responses.offer(obj == null ? OBJECT_NULL : obj);
         }
 
         protected void handleInterruption() {
-            handleInterruptedException(false, request.operation);
+            handleInterruptedException(isInterruptible(), request.operation);
+        }
+
+        protected boolean isInterruptible() {
+            return false;
+        }
+
+        protected boolean canTimeout() {
+            return true;
         }
     }
 
@@ -684,7 +740,7 @@ public abstract class BaseManager {
 
         public void handleResponse(final Packet packet) {
             if (packet.responseType == RESPONSE_REDO) {
-                redo();
+                redo(packet.redoData);
             } else {
                 handleNoneRedoResponse(packet);
             }
@@ -743,7 +799,7 @@ public abstract class BaseManager {
 
         public void handleResponse(final Packet packet) {
             if (packet.responseType == RESPONSE_REDO) {
-                redo();
+                redo(packet.redoData);
             } else {
                 handleNoneRedoResponse(packet);
             }
@@ -763,7 +819,7 @@ public abstract class BaseManager {
             enqueueAndReturn(new Processable() {
                 public void process() {
                 if (targetConnection != null && !targetConnection.live()) {
-                    redo();
+                    redo(REDO_CONNECTION_NOT_ALIVE);
                 }
                 }
             });
@@ -773,7 +829,7 @@ public abstract class BaseManager {
         public void onDisconnect(final Address dead) {
             if (dead.equals(target)) {
                 target = null;
-                redo();
+                redo(REDO_TARGET_DEAD);
             }
         }
 
@@ -798,7 +854,7 @@ public abstract class BaseManager {
                 systemLogService.trace(request, "target: " + target);
             }
             if (target == null) {
-                setResult(OBJECT_REDO);
+                setRedoResult(REDO_TARGET_UNKNOWN);
             } else {
                 if (target.equals(thisAddress)) {
                     request.callId = getCallId();
@@ -814,7 +870,7 @@ public abstract class BaseManager {
         }
 
         protected void memberDoesNotExist() {
-            setResult(OBJECT_REDO);
+            setRedoResult(REDO_MEMBER_UNKNOWN);
         }
 
         protected void invoke() {
@@ -841,12 +897,12 @@ public abstract class BaseManager {
         }
 
         protected void packetNotSent() {
-            redo();
+            redo(REDO_PACKET_NOT_SENT);
         }
 
         public void doLocalOp() {
             if (isMigrationAware() && isMigrating(request)) {
-                setResult(OBJECT_REDO);
+                setRedoResult(REDO_PARTITION_MIGRATING);
             } else {
                 request.attachment = TargetAwareOp.this;
                 request.local = true;
@@ -863,6 +919,12 @@ public abstract class BaseManager {
 
         public boolean isMigrationAware() {
             return false;
+        }
+
+        protected void throwTxTimeoutException(final Object key) {
+            throw new OperationTimeoutException(request.operation.toString(),
+                    "Could not acquire resource under transaction! " +
+                    "Another thread holds a lock for the key : " + key);
         }
 
         @Override
@@ -994,7 +1056,7 @@ public abstract class BaseManager {
 
         public void onDisconnect(final Address dead) {
             removeRemoteCall(getCallId());
-            setResult(OBJECT_REDO);
+            setRedoResult(REDO_TARGET_DEAD);
         }
 
         @Override
@@ -1003,7 +1065,7 @@ public abstract class BaseManager {
 
         @Override
         protected void memberDoesNotExist() {
-            setResult(OBJECT_REDO);
+            setRedoResult(REDO_MEMBER_UNKNOWN);
         }
 
         @Override
@@ -1172,8 +1234,9 @@ public abstract class BaseManager {
                                             final boolean skipSuperClient,
                                             final int distance) {
         final int size = lsMembers.size();
-        if (size <= 1)
+        if (size <= 1) {
             return null;
+        }
         int indexOfMember = -1;
         for (int i = 0; i < size; i++) {
             final MemberImpl member = lsMembers.get(i);
@@ -1181,8 +1244,9 @@ public abstract class BaseManager {
                 indexOfMember = i;
             }
         }
-        if (indexOfMember == -1)
+        if (indexOfMember == -1) {
             return null;
+        }
         int foundDistance = 0;
         for (int i = indexOfMember; i < size + indexOfMember; i++) {
             final MemberImpl member = lsMembers.get((1 + i) % size);
@@ -1245,11 +1309,6 @@ public abstract class BaseManager {
         packet.operation = ClusterOperation.RESPONSE;
         packet.responseType = RESPONSE_FAILURE;
         return sendOrReleasePacket(packet, packet.conn);
-    }
-
-    protected void throwCME(final Object key) {
-        throw new ConcurrentModificationException("Could not acquire resource under transaction! " +
-                                                  "Another thread holds a lock for the key : " + key);
     }
 
     void enqueueEvent(int eventType, String name, Data key, Data value, Address from, boolean localEvent) {
@@ -1337,8 +1396,9 @@ public abstract class BaseManager {
                             if (entry.getValue()) {
                                 mapTargetListeners.put(entry.getKey(), entry.getValue());
                             }
-                        } else
+                        } else {
                             mapTargetListeners.put(entry.getKey(), entry.getValue());
+                        }
                     }
                 }
             }
@@ -1430,5 +1490,9 @@ public abstract class BaseManager {
         }
         conn.getWriteHandler().enqueueSocketWritable(packet);
         return true;
+    }
+
+    private long getOperationTimeout(long timeout) {
+        return timeout < 0 ? maxOperationTimeout : timeout;
     }
 }

@@ -517,6 +517,14 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
+                    <literal>hazelcast.partition.migration.timeout</literal>
+                </td>
+                <td>Timeout for partition migration tasks in seconds.</td>
+                <td>integer</td>
+                <td>300</td>
+            </tr>
+            <tr>
+                <td>
                     <literal>hazelcast.immediate.backup.interval</literal>
                 </td>
                 <td>Interval to run immediate backup tasks in seconds.</td>

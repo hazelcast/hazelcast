@@ -29,6 +29,8 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public final class Packet implements SocketWritable, CallStateAware {
 
+    public static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
+
     public String name;
 
     public ClusterOperation operation = ClusterOperation.NONE;
@@ -75,11 +77,11 @@ public final class Packet implements SocketWritable, CallStateAware {
 
     int totalWritten = 0;
 
+    public byte redoData = 0; // used for both redo-count and redo-type-code
+
     public boolean client = false;
 
     public CallState callState = null;
-
-    public static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
 
     public Packet() {
     }
@@ -134,32 +136,32 @@ public final class Packet implements SocketWritable, CallStateAware {
         bbHeader.putShort(operation.getValue());
         bbHeader.putInt(blockId);
         bbHeader.putInt(threadId);
-        byte booleans = 0;
+        byte flags = 0;
         if (lockCount != 0) {
-            booleans = ByteUtil.setTrue(booleans, 0);
+            flags = ByteUtil.setTrue(flags, 0);
         }
         if (timeout != -1) {
-            booleans = ByteUtil.setTrue(booleans, 1);
+            flags = ByteUtil.setTrue(flags, 1);
         }
         if (ttl != -1) {
-            booleans = ByteUtil.setTrue(booleans, 2);
+            flags = ByteUtil.setTrue(flags, 2);
         }
         if (txnId != -1) {
-            booleans = ByteUtil.setTrue(booleans, 3);
+            flags = ByteUtil.setTrue(flags, 3);
         }
         if (longValue != Long.MIN_VALUE) {
-            booleans = ByteUtil.setTrue(booleans, 4);
+            flags = ByteUtil.setTrue(flags, 4);
         }
         if (version != -1) {
-            booleans = ByteUtil.setTrue(booleans, 5);
+            flags = ByteUtil.setTrue(flags, 5);
         }
         if (client) {
-            booleans = ByteUtil.setTrue(booleans, 6);
+            flags = ByteUtil.setTrue(flags, 6);
         }
         if (lockAddress == null) {
-            booleans = ByteUtil.setTrue(booleans, 7);
+            flags = ByteUtil.setTrue(flags, 7);
         }
-        bbHeader.put(booleans);
+        bbHeader.put(flags);
         if (lockCount != 0) {
             bbHeader.putInt(lockCount);
         }
@@ -192,6 +194,7 @@ public final class Packet implements SocketWritable, CallStateAware {
         }
         bbHeader.putInt(key == null ? -1 : key.partitionHash);
         bbHeader.putInt(value == null ? -1 : value.partitionHash);
+        bbHeader.put(redoData); // WARNING: redoData is added by v2.1.3, older versions will not write this field
         bbHeader.flip();
         bbSizes.putInt(bbHeader.limit());
         bbSizes.putInt(key == null ? 0 : key.size);
@@ -209,27 +212,27 @@ public final class Packet implements SocketWritable, CallStateAware {
         operation = ClusterOperation.create(bbHeader.getShort());
         blockId = bbHeader.getInt();
         threadId = bbHeader.getInt();
-        byte booleans = bbHeader.get();
-        if (ByteUtil.isTrue(booleans, 0)) {
+        byte flags = bbHeader.get();
+        if (ByteUtil.isTrue(flags, 0)) {
             lockCount = bbHeader.getInt();
         }
-        if (ByteUtil.isTrue(booleans, 1)) {
+        if (ByteUtil.isTrue(flags, 1)) {
             timeout = bbHeader.getLong();
         }
-        if (ByteUtil.isTrue(booleans, 2)) {
+        if (ByteUtil.isTrue(flags, 2)) {
             ttl = bbHeader.getLong();
         }
-        if (ByteUtil.isTrue(booleans, 3)) {
+        if (ByteUtil.isTrue(flags, 3)) {
             txnId = bbHeader.getLong();
         }
-        if (ByteUtil.isTrue(booleans, 4)) {
+        if (ByteUtil.isTrue(flags, 4)) {
             longValue = bbHeader.getLong();
         }
-        if (ByteUtil.isTrue(booleans, 5)) {
+        if (ByteUtil.isTrue(flags, 5)) {
             version = bbHeader.getLong();
         }
-        client = ByteUtil.isTrue(booleans, 6);
-        boolean lockAddressNull = ByteUtil.isTrue(booleans, 7);
+        client = ByteUtil.isTrue(flags, 6);
+        boolean lockAddressNull = ByteUtil.isTrue(flags, 7);
         if (!lockAddressNull) {
             lockAddress = new Address();
             lockAddress.readObject(bbHeader);
@@ -250,6 +253,11 @@ public final class Packet implements SocketWritable, CallStateAware {
         int valuePartitionHash = bbHeader.getInt();
         if (key != null) key.setPartitionHash(keyPartitionHash);
         if (value != null) value.setPartitionHash(valuePartitionHash);
+
+        if (bbHeader.hasRemaining()) {
+            // WARNING: redoData is added by v2.1.3, older versions will ignore this field
+            redoData = bbHeader.get();
+        }
     }
 
     public void clearForResponse() {
@@ -315,6 +323,8 @@ public final class Packet implements SocketWritable, CallStateAware {
         indexes = request.indexes;
         indexTypes = request.indexTypes;
         callState = request.callState;
+        redoData = request.redoCount > Byte.MAX_VALUE
+                    ? Byte.MAX_VALUE : (byte) request.redoCount; // just don't care values greater than 127.
     }
 
     @Override

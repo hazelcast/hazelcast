@@ -42,18 +42,21 @@ public class SocketConnector implements Runnable {
 
     public void run() {
         if (!connectionManager.isLive()) {
-            logger.log(Level.FINEST, "ConnectionManager is not live, connection attempt to " +
-                                     address + " is cancelled!");
+            String message = "ConnectionManager is not live, connection attempt to " +
+                             address + " is cancelled!";
+            log(Level.FINEST, message);
             return;
         }
         try {
             connectionManager.ioService.onIOThreadStart();
+            log(Level.FINEST, "Starting to connect to " + address);
             final Address thisAddress = connectionManager.ioService.getThisAddress();
             if (address.isIPv4()) {
                 // remote is IPv4; connect...
                 tryToConnect(address.getInetSocketAddress(), 0);
             } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
-                // remote and this are IPv6; this is local address and scope id is known
+                // Both remote and this addresses are IPv6.
+                // This is a local IPv6 address and scope id is known.
                 // find correct inet6 address for remote and connect...
                 final Inet6Address inetAddress = AddressUtil
                         .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
@@ -63,7 +66,7 @@ public class SocketConnector implements Runnable {
                 // find possible remote inet6 addresses and try each one to connect...
                 final Collection<Inet6Address> possibleInetAddresses = AddressUtil.getPossibleInetAddressesFor(
                         (Inet6Address) address.getInetAddress());
-                logger.log(Level.INFO, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
+                log(Level.INFO, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
                 boolean connected = false;
                 Exception error = null;
                 for (Inet6Address inetAddress : possibleInetAddresses) {
@@ -94,7 +97,10 @@ public class SocketConnector implements Runnable {
             final Address thisAddress = connectionManager.ioService.getThisAddress();
             socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
         }
-        logger.log(Level.FINEST, "connecting to " + address);
+        final String message = "Connecting to " + socketAddress
+                               + ", timeout: " + timeout
+                               + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
+        log(Level.FINEST, message);
         try {
             socketChannel.configureBlocking(true);
             if (timeout > 0) {
@@ -102,14 +108,14 @@ public class SocketConnector implements Runnable {
             } else {
                 socketChannel.connect(socketAddress);
             }
-
-            logger.log(Level.FINEST, "connection check. connected to: " + address);
+            log(Level.FINEST, "Successfully connected to: " + address + " using socket " + socketChannel.socket());
             MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
             if (memberSocketInterceptor != null) {
+                log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor
+                   + " for " + socketChannel);
                 memberSocketInterceptor.onConnect(socketChannel.socket());
             }
             socketChannel.configureBlocking(false);
-            logger.log(Level.FINEST, "connected to " + address);
             final SocketChannelWrapper socketChannelWrapper = connectionManager
                     .wrapSocketChannel(socketChannel, true);
             Connection connection = connectionManager.assignSocketChannel(socketChannelWrapper);
@@ -117,7 +123,7 @@ public class SocketConnector implements Runnable {
         } catch (Exception e) {
             closeSocket(socketChannel);
             final Level level = silent ? Level.FINEST : Level.INFO;
-            logger.log(level, "Could not connect to: "
+            log(level, "Could not connect to: "
                                       + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                                       + "[" + e.getMessage() + "]");
             throw e;
@@ -131,5 +137,10 @@ public class SocketConnector implements Runnable {
             } catch (final IOException ignored) {
             }
         }
+    }
+
+    private void log(Level level, String message) {
+        logger.log(level, message);
+        connectionManager.ioService.getSystemLogService().logConnection(message);
     }
 }

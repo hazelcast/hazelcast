@@ -56,7 +56,7 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private void postJoin() {
-        systemLogService.logJoin("PostJoin master:" + node.getMasterAddress() + ", isMaster " + node.isMaster());
+        systemLogService.logJoin("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
         if (!node.isActive()) {
             return;
         }
