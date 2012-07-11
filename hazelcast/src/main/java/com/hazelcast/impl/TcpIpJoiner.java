@@ -18,9 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.cluster.JoinInfo;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.Interfaces;
-import com.hazelcast.config.Join;
+import com.hazelcast.config.*;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -46,7 +44,7 @@ import static com.hazelcast.util.AddressUtil.AddressHolder;
 
 public class TcpIpJoiner extends AbstractJoiner {
 
-    private static final int MAX_ADDRESS_TRIES = 3;
+    private static final int MAX_PORT_TRIES = 3;
 
     public TcpIpJoiner(Node node) {
         super(node);
@@ -297,11 +295,12 @@ public class TcpIpJoiner extends AbstractJoiner {
         final Collection<String> possibleMembers = getMembers();
         final Set<Address> setPossibleAddresses = new HashSet<Address>();
         final Address thisAddress = node.address;
+        final NetworkConfig networkConfig = config.getNetworkConfig();
         for (String host : possibleMembers) {
             try {
                 final AddressHolder addressHolder = AddressUtil.getAddressHolder(host);
                 final boolean portIsDefined = addressHolder.port != -1 || !config.isPortAutoIncrement();
-                final int maxAddressTries = portIsDefined ? 1 : MAX_ADDRESS_TRIES;
+                final int maxPortTries = portIsDefined ? 1 : MAX_PORT_TRIES;
                 final int port = addressHolder.port != -1 ? addressHolder.port : config.getPort();
                 AddressMatcher addressMatcher = null;
                 try {
@@ -317,7 +316,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                         matchedAddresses = Collections.singleton(addressHolder.address);
                     }
                     for (String matchedAddress : matchedAddresses) {
-                        for (int i = 0; i < maxAddressTries; i++) {
+                        for (int i = 0; i < maxPortTries; i++) {
                             final Address addressProper = new Address(matchedAddress, port + i);
                             if (!addressProper.equals(thisAddress)) {
                                 setPossibleAddresses.add(addressProper);
@@ -328,13 +327,13 @@ public class TcpIpJoiner extends AbstractJoiner {
                     final InetAddress[] allAddresses = InetAddress.getAllByName(addressHolder.address);
                     for (final InetAddress inetAddress : allAddresses) {
                         boolean matchingAddress = true;
-                        Interfaces interfaces = config.getNetworkConfig().getInterfaces();
+                        Interfaces interfaces = networkConfig.getInterfaces();
                         if (interfaces.isEnabled()) {
                             matchingAddress = AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
                                     interfaces.getInterfaces());
                         }
                         if (matchingAddress) {
-                            for (int i = 0; i < maxAddressTries; i++) {
+                            for (int i = 0; i < maxPortTries; i++) {
                                 final Address addressProper = new Address(inetAddress, port + i);
                                 if (!addressProper.equals(thisAddress)) {
                                     setPossibleAddresses.add(addressProper);
@@ -347,7 +346,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
-        setPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
+        setPossibleAddresses.addAll(networkConfig.getJoin().getTcpIpConfig().getAddresses());
         return setPossibleAddresses;
     }
 
@@ -356,15 +355,13 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     public static Collection<String> getConfigurationMembers(Config config) {
-        Join join = config.getNetworkConfig().getJoin();
-        final Collection<String> configMembers = join.getTcpIpConfig().getMembers();
+        final TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+        final Collection<String> configMembers = tcpIpConfig.getMembers();
         final Set<String> possibleMembers = new HashSet<String>();
         for (String member : configMembers) {
             // split members defined in tcp-ip configuration by comma(,) semi-colon(;) space( ).
             String[] members = member.split("[,; ]");
-            for (String address : members) {
-                possibleMembers.add(address);
-            }
+            Collections.addAll(possibleMembers, members);
         }
         return possibleMembers;
     }

@@ -48,9 +48,10 @@ public class MulticastJoiner extends AbstractJoiner {
             logger.log(Level.FINEST, msg);
             systemLogService.logJoin(msg);
             Address masterAddressNow = findMasterWithMulticast();
-            if (masterAddressNow != null && masterAddressNow.equals(node.getMasterAddress())) {
-                tryCount--;
-            }
+            // when node cannot join found master, join operation never ends!
+//            if (masterAddressNow != null && masterAddressNow.equals(node.getMasterAddress())) {
+//                tryCount--;
+//            }
             node.setMasterAddress(masterAddressNow);
             systemLogService.logJoin("Setting master " + masterAddressNow);
             if (node.getMasterAddress() == null || node.address.equals(node.getMasterAddress())) {
@@ -63,7 +64,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
                 return;
             }
-            if (tryCount++ > 22) {
+            if (++tryCount > 24) {
                 failedJoiningToMaster(true, tryCount);
             }
             if (!node.getMasterAddress().equals(node.address)) {
@@ -136,8 +137,10 @@ public class MulticastJoiner extends AbstractJoiner {
         systemLogService.logJoin("Master connection " + conn);
         if (conn != null) {
             return node.clusterManager.sendJoinRequest(masterAddress, true);
+        } else {
+            logger.log(Level.INFO, "Connecting to master node: " + masterAddress);
+            return false;
         }
-        return false;
     }
 
     private Address findMasterWithMulticast() {
