@@ -538,7 +538,7 @@
             <key in bytes>
         ]]></programlisting>
 
-        0 timeout means don't wait at atoll.
+        0 timeout means don't wait.
 
         <para>
             <emphasis role="bold">Return value:</emphasis>

@@ -29,6 +29,8 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -77,6 +79,114 @@ public class MapTest extends ProtocolTest{
     }
 
     @Test
+    public void putIfAbsent() throws IOException {
+        String key = "1";
+        String value = "a";
+               
+        OutputStream out = doOp("MPUTIFABSENT 1 default #2", "1 1");
+        out.write(key.getBytes());
+        out.write(value.getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        read(socket);
+    }
+
+    @Test
+    public void replaceIfNotNull() throws IOException {
+        put(socket, "1".getBytes(), "b".getBytes(), 0);
+        String key = "1";
+        String value = "a";
+
+        OutputStream out = doOp("MREPLACEIFNOTNULL 1 default #2", "1 1");
+        out.write(key.getBytes());
+        out.write(value.getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        read(socket);
+    }
+
+    @Test
+    public void removeIfSame() throws IOException {
+        put(socket, "1".getBytes(), "a".getBytes(), 0);
+        String key = "1";
+        String value = "a";
+
+        OutputStream out = doOp("MREMOVEIFSAME 1 default #2", "1 1");
+        out.write(key.getBytes());
+        out.write(value.getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        assertTrue(read(socket).contains("true"));
+    }
+
+    @Test
+    public void tryRemove() throws IOException {
+        put(socket, "1".getBytes(), "a".getBytes(), 0);
+        String key = "1";
+
+        OutputStream out = doOp("MTRYREMOVE 1 default 10 #1", "1");
+        out.write(key.getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        assertTrue(read(socket).contains("a"));
+    }
+
+
+    @Test
+    public void replaceIfSame() throws IOException {
+        put(socket, "1".getBytes(), "a".getBytes(), 0);
+        String key = "1";
+        String value = "a";
+
+        OutputStream out = doOp("MREPLACEIFSAME 1 default #3", "1 1 1");
+        out.write(key.getBytes());
+        out.write(value.getBytes());
+        out.write("b".getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        assertTrue(read(socket).contains("true"));
+    }
+
+    @Test
+    public void getAll() throws IOException {
+        put(socket, "1".getBytes(), "a".getBytes(), 0);
+        put(socket, "2".getBytes(), "b".getBytes(), 0);
+        put(socket, "3".getBytes(), "c".getBytes(), 0);
+        put(socket, "4".getBytes(), "d".getBytes(), 0);
+
+        OutputStream out = doOp("MGETALL 0 default 0 #3", "1 1 1");
+        out.write("1".getBytes());
+        out.write("2".getBytes());
+        out.write("4".getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        List<String> list = read(socket);
+        assertTrue(list.contains("a"));
+        assertTrue(list.contains("b"));
+        assertTrue(list.contains("d"));
+        assertFalse(list.contains("c"));
+    }
+
+    @Test
+    public void tryLock() throws IOException {
+        OutputStream out = doOp("MTRYLOCK 0 default 0 #1", ""+"1".getBytes().length);
+        out.write("1".getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        assertTrue(read(socket).contains("true"));
+    }
+
+    @Test
+    public void tryLockNGet() throws IOException {
+        put(socket, "1".getBytes(), "a".getBytes(), 0);
+        OutputStream out = doOp("MTRYLOCKANDGET 0 default 0 #1", ""+"1".getBytes().length);
+        out.write("1".getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        assertTrue(read(socket).contains("a"));
+    }
+
+    @Test
     public void lockNunlockKey() throws IOException, InterruptedException {
         OutputStream out = doOp("MLOCK 0 default 0 #1", ""+"1".getBytes().length);
         out.write("1".getBytes());
@@ -106,6 +216,8 @@ public class MapTest extends ProtocolTest{
         }
 
     }
+
+
 
     @Test
     public void getMapEntry() throws IOException {
@@ -140,15 +252,68 @@ public class MapTest extends ProtocolTest{
         assertTrue(keys.contains("a"));
         assertTrue(keys.contains("b"));
     }
+
+    @Test
+    public void containsKey() throws IOException {
+        put(socket, "1".getBytes(), "a".getBytes(), 0);
+        put(socket, "2".getBytes(), "b".getBytes(), 0);
+        OutputStream out = doOp("MCONTAINSKEY 0 default #1", ""+"1".getBytes().length);
+        out.write("1".getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        List<String> entry = read(socket);
+        assertTrue(entry.contains("true"));
+    }
+
+    @Test
+    public void containsValue() throws IOException {
+        put(socket, "1".getBytes(), "a".getBytes(), 0);
+        put(socket, "2".getBytes(), "b".getBytes(), 0);
+        OutputStream out = doOp("MCONTAINSVALUE 0 default #1", ""+"a".getBytes().length);
+        out.write("a".getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        List<String> entry = read(socket);
+        assertTrue(entry.contains("true"));
+    }
+
     @Test
     public void addListener() throws IOException, InterruptedException {
-        doOp("ADDLISTENER 3 map default true", null);
+        doOp("MADDLISTENER 3 default true", null);
         assertTrue(read(socket).contains("OK"));
         final String value = "a";
         putFromAnotherThread("1", value);
         List<String> values = read(socket);
         System.out.println("RESULT is " + values.get(0).equals(value));
         assertTrue(values.contains(value));
+    }
+
+    @Test
+    public void addListenerToKey() throws IOException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable(){
+            public void run() {
+                try {
+                    OutputStream out = doOp("MADDLISTENER 3 default true #1", "" + "2".getBytes().length);
+                    out.write("b".getBytes());
+                    out.write("\r\n".getBytes());
+                    out.flush();
+                    assertTrue(read(socket).contains("OK"));
+                    final String value = "a";
+                    putFromAnotherThread("1", value);
+                    List<String> values = read(socket);
+                    latch.countDown();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        
+        assertFalse(latch.await(20000, TimeUnit.MILLISECONDS));
+        
+        
     }
 
     protected void putFromAnotherThread(final String key, final String value) throws InterruptedException {

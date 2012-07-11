@@ -26,6 +26,8 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class ProtocolTest {
@@ -85,6 +87,9 @@ public class ProtocolTest {
         BufferedReader buf = new BufferedReader(reader);
         String commandLine = buf.readLine();
         System.out.println(commandLine);
+        if(commandLine == null){
+            return Collections.emptyList();
+        }
         String[] split = commandLine.split(" ");
         if (split[split.length - 1].startsWith("#")) {
             String sizeLine = buf.readLine();
@@ -102,7 +107,7 @@ public class ProtocolTest {
             }
         }
         if (values.size()  == 0) {
-            values.add(commandLine.split(" ")[0]);
+            values.addAll(Arrays.asList(commandLine.split(" ")));
         }
         return values;
     }

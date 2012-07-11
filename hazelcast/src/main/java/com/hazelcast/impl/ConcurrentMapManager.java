@@ -355,7 +355,10 @@ public class ConcurrentMapManager extends BaseManager {
         boolean locked = mlock.lockAndGetValue(name, key, timeout);
         if (!locked) {
             throw new TimeoutException();
-        } else return toObject(mlock.oldValue);
+        } else {
+
+            return ThreadContext.get().isClient()? mlock.oldValue: toObject(mlock.oldValue);
+        }
     }
 
     void putAndUnlock(String name, Object key, Object value) {
@@ -762,8 +765,14 @@ public class ConcurrentMapManager extends BaseManager {
                     });
                 }
             }
+            ThreadContext tc = ThreadContext.get();
             for (KeyValue keyValue : lsKeyValues) {
-                map.put(keyValue.getKey(), keyValue.getValue());
+                if(!tc.isClient()){
+                    map.put(keyValue.getKey(), keyValue.getValue());
+                }
+                else{
+                    map.put(keyValue.getKeyData(), keyValue.getValueData());
+                }
             }
         } else if (theKeys.size() == 1) {
             Object key = theKeys.iterator().next();

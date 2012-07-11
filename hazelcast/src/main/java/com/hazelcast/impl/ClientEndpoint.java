@@ -64,14 +64,17 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     }
 
     public synchronized void addThisAsListener(IMap map, Data key, boolean includeValue) {
+        System.out.println("Key is " + key);
         if (!listeningMaps.contains(map) && !(listeningKeyExist(map, key))) {
-            map.addEntryListener(this, includeValue);
+            if (key == null)
+                map.addEntryListener(this, includeValue);
+            else
+                map.addEntryListener(this, key, includeValue);
         }
-        if (key == null) {
+        if (key == null)
             listeningMaps.add(map);
-        } else {
+        else
             listeningKeysOfMaps.add(new Entry(map, key));
-        }
     }
 
     public synchronized void removeThisListener(IMap map, Data key) {
@@ -215,14 +218,13 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     private Protocol createEntryEventCommandResponse(EntryEvent event) {
         final DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
         Data key = dataAwareEntryEvent.getKeyData();
-        Data newValue =null;
+        Data newValue = null;
         Data oldValue = null;
         Data value = null;
         String name = dataAwareEntryEvent.getName();
         String type = null;
         Protocol protocol = null;
         String eventType = event.getEventType().toString();
-        
         if (dataAwareEntryEvent.getNewValueData() != null) {
             newValue = dataAwareEntryEvent.getNewValueData();
             oldValue = dataAwareEntryEvent.getOldValueData();
@@ -237,13 +239,11 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
             type = "set";
             key = null;
         }
-
         List<ByteBuffer> list = new ArrayList<ByteBuffer>();
         list.add(ByteBuffer.wrap(key.buffer));
-        if(newValue!=null) list.add(ByteBuffer.wrap(newValue.buffer));
-        if(oldValue!=null) list.add(ByteBuffer.wrap(oldValue.buffer));
-        if(value!=null) list.add(ByteBuffer.wrap(value.buffer));
-        
+        if (newValue != null) list.add(ByteBuffer.wrap(newValue.buffer));
+        if (oldValue != null) list.add(ByteBuffer.wrap(oldValue.buffer));
+        if (value != null) list.add(ByteBuffer.wrap(value.buffer));
         protocol = new Protocol(this.conn, Command.EVENT.value, new String[]{"0", type, name, eventType}, list.toArray(new ByteBuffer[0]));
         return protocol;
     }
