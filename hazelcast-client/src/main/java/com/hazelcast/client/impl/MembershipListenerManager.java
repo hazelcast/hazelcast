@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
 import com.hazelcast.core.Member;
@@ -34,9 +35,12 @@ public class MembershipListenerManager {
 
     public MembershipListenerManager(HazelcastClient client) {
         this.client = client;
-        for (Object listener : client.getClientConfig().getListeners()) {
-            if (listener instanceof MembershipListener) {
-                registerListener((MembershipListener) listener);
+        final ClientConfig clientConfig = client.getClientConfig();
+        if (clientConfig != null) {
+            for (Object listener : clientConfig.getListeners()) {
+                if (listener instanceof MembershipListener) {
+                    registerListener((MembershipListener) listener);
+                }
             }
         }
     }
