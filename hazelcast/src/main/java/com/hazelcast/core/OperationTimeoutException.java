@@ -17,24 +17,25 @@
 package com.hazelcast.core;
 
 /**
- * An unchecked version of {@link InterruptedException}.
+ * An unchecked version of {@link java.util.concurrent.TimeoutException}.
  * <p>
- * Some of the Hazelcast operations may throw an <tt>RuntimeInterruptedException</tt>
- * if a user thread is interrupted while waiting a response.
- * Hazelcast uses RuntimeInterruptedException to pass InterruptedException up through interfaces
- * that don't have InterruptedException in their signatures. Users should be able to catch and handle
- * <tt>RuntimeInterruptedException</tt> in such cases as if their threads are interrupted on
- a blocking operation.
+ * Some of the Hazelcast operations may throw an <tt>OperationTimeoutException</tt>.
+ * Hazelcast uses OperationTimeoutException to pass TimeoutException up through interfaces
+ * that don't have TimeoutException in their signatures.
  * </p>
  *
- * @see InterruptedException
+ * @see java.util.concurrent.TimeoutException
  */
-public class RuntimeInterruptedException extends RuntimeException {
+public class OperationTimeoutException extends RuntimeException {
 
-    public RuntimeInterruptedException() {
+    public OperationTimeoutException() {
     }
 
-    public RuntimeInterruptedException(String message) {
+    public OperationTimeoutException(String message) {
         super(message);
+    }
+
+    public OperationTimeoutException(String op, String message) {
+        super("[" + op + "] " + message);
     }
 }

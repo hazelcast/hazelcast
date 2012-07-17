@@ -94,7 +94,7 @@ public class GetAllCallable implements Callable<Pairs>, HazelcastInstanceAware, 
                         Data dValue = toData(value);
                         if (dKey != null && dValue != null) {
                             pairs.addKeyValue(new KeyValue(dKey, dValue));
-                            c.putTransient(mapName, key, value, 0, -1);
+                            c.putTransient(mapName, key, value, -1);
                         } else {
                             missingKeys.add(dKey);
                         }

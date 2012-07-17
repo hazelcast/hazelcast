@@ -44,26 +44,28 @@ public class MulticastJoiner extends AbstractJoiner {
         long joinStartTime = Clock.currentTimeMillis();
         long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
         while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
-            String msg = "Joining master: " + node.getMasterAddress();
+            String msg = "Joining to master node: " + node.getMasterAddress();
             logger.log(Level.FINEST, msg);
             systemLogService.logJoin(msg);
             Address masterAddressNow = findMasterWithMulticast();
-            if (masterAddressNow != null && masterAddressNow.equals(node.getMasterAddress())) {
-                tryCount--;
-            }
+            // when node cannot join found master, join operation never ends!
+//            if (masterAddressNow != null && masterAddressNow.equals(node.getMasterAddress())) {
+//                tryCount--;
+//            }
             node.setMasterAddress(masterAddressNow);
-            systemLogService.logJoin("Setting master " + masterAddressNow);
+            if (masterAddressNow != null) {
+                systemLogService.logJoin("Setting master address to " + masterAddressNow);
+            }
             if (node.getMasterAddress() == null || node.address.equals(node.getMasterAddress())) {
                 TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
                 if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {
                     doTCP(joined);
                 } else {
-                    systemLogService.logJoin("Setting as master");
                     node.setAsMaster();
                 }
                 return;
             }
-            if (tryCount++ > 22) {
+            if (++tryCount > 24) {
                 failedJoiningToMaster(true, tryCount);
             }
             if (!node.getMasterAddress().equals(node.address)) {
@@ -136,8 +138,10 @@ public class MulticastJoiner extends AbstractJoiner {
         systemLogService.logJoin("Master connection " + conn);
         if (conn != null) {
             return node.clusterManager.sendJoinRequest(masterAddress, true);
+        } else {
+            logger.log(Level.INFO, "Connecting to master node: " + masterAddress);
+            return false;
         }
-        return false;
     }
 
     private Address findMasterWithMulticast() {

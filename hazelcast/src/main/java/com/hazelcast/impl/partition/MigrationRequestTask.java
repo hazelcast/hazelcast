@@ -91,7 +91,8 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
                     replicaIndex, from), target);
 
             Future future = node.factory.getExecutorService(PartitionManager.MIGRATION_EXECUTOR_NAME).submit(task);
-            return (Boolean) future.get(400, TimeUnit.SECONDS);
+            final long timeout = node.groupProperties.PARTITION_MIGRATION_TIMEOUT.getLong();
+            return (Boolean) future.get(timeout, TimeUnit.SECONDS);
         } catch (Throwable e) {
             Level level = Level.WARNING;
             if (e instanceof ExecutionException) {

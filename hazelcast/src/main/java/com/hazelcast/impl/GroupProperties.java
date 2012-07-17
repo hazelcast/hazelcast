@@ -35,6 +35,10 @@ public class GroupProperties {
     public static final String PROP_MERGE_FIRST_RUN_DELAY_SECONDS = "hazelcast.merge.first.run.delay.seconds";
     public static final String PROP_MERGE_NEXT_RUN_DELAY_SECONDS = "hazelcast.merge.next.run.delay.seconds";
     public static final String PROP_REDO_WAIT_MILLIS = "hazelcast.redo.wait.millis";
+    public static final String PROP_REDO_LOG_THRESHOLD = "hazelcast.redo.log.threshold";
+    public static final String PROP_REDO_GIVE_UP_THRESHOLD = "hazelcast.redo.giveup.threshold";
+    public static final String PROP_MAX_OPERATION_TIMEOUT = "hazelcast.max.operation.timeout";
+    public static final String PROP_OPERATION_RESPONSE_POLL_TIMEOUT = "hazelcast.operation.response.poll.timeout";
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
     public static final String PROP_SOCKET_SEND_BUFFER_SIZE = "hazelcast.socket.send.buffer.size";
@@ -77,6 +81,7 @@ public class GroupProperties {
     public static final String PROP_CONNECTION_MONITOR_INTERVAL = "hazelcast.connection.monitor.interval";
     public static final String PROP_CONNECTION_MONITOR_MAX_FAULTS = "hazelcast.connection.monitor.max.faults";
     public static final String PROP_PARTITION_MIGRATION_INTERVAL = "hazelcast.partition.migration.interval";
+    public static final String PROP_PARTITION_MIGRATION_TIMEOUT = "hazelcast.partition.migration.timeout";
     public static final String PROP_IMMEDIATE_BACKUP_INTERVAL = "hazelcast.immediate.backup.interval";
     public static final String PROP_PARTITION_TABLE_SEND_INTERVAL = "hazelcast.partition.table.send.interval";
     public static final String PROP_GRACEFUL_SHUTDOWN_MAX_WAIT = "hazelcast.graceful.shutdown.max.wait";
@@ -122,6 +127,14 @@ public class GroupProperties {
     public final GroupProperty MERGE_NEXT_RUN_DELAY_SECONDS;
 
     public final GroupProperty REDO_WAIT_MILLIS;
+
+    public final GroupProperty REDO_LOG_THRESHOLD;
+
+    public final GroupProperty REDO_GIVE_UP_THRESHOLD;
+
+    public final GroupProperty MAX_OPERATION_TIMEOUT;
+
+    public final GroupProperty OPERATION_RESPONSE_POLL_TIMEOUT;
 
     public final GroupProperty SOCKET_BIND_ANY;
 
@@ -203,6 +216,8 @@ public class GroupProperties {
 
     public final GroupProperty PARTITION_MIGRATION_INTERVAL;
 
+    public final GroupProperty PARTITION_MIGRATION_TIMEOUT;
+
     public final GroupProperty PARTITION_TABLE_SEND_INTERVAL;
 
     public final GroupProperty GRACEFUL_SHUTDOWN_MAX_WAIT;
@@ -236,6 +251,10 @@ public class GroupProperties {
         MERGE_FIRST_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "300");
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
         REDO_WAIT_MILLIS = new GroupProperty(config, PROP_REDO_WAIT_MILLIS, "500");
+        REDO_LOG_THRESHOLD = new GroupProperty(config, PROP_REDO_LOG_THRESHOLD, "10");
+        REDO_GIVE_UP_THRESHOLD = new GroupProperty(config, PROP_REDO_GIVE_UP_THRESHOLD, "60");
+        MAX_OPERATION_TIMEOUT = new GroupProperty(config, PROP_MAX_OPERATION_TIMEOUT, "300");
+        OPERATION_RESPONSE_POLL_TIMEOUT = new GroupProperty(config, PROP_OPERATION_RESPONSE_POLL_TIMEOUT, "10");
         SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SOCKET_RECEIVE_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_RECEIVE_BUFFER_SIZE, "32");
         SOCKET_SEND_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_SEND_BUFFER_SIZE, "32");
@@ -275,6 +294,7 @@ public class GroupProperties {
         CONNECTION_MONITOR_INTERVAL = new GroupProperty(config, PROP_CONNECTION_MONITOR_INTERVAL, "100");
         CONNECTION_MONITOR_MAX_FAULTS = new GroupProperty(config, PROP_CONNECTION_MONITOR_MAX_FAULTS, "3");
         PARTITION_MIGRATION_INTERVAL = new GroupProperty(config, PROP_PARTITION_MIGRATION_INTERVAL, "1");
+        PARTITION_MIGRATION_TIMEOUT = new GroupProperty(config, PROP_PARTITION_MIGRATION_TIMEOUT, "300");
         IMMEDIATE_BACKUP_INTERVAL = new GroupProperty(config, PROP_IMMEDIATE_BACKUP_INTERVAL, "0");
         PARTITION_TABLE_SEND_INTERVAL = new GroupProperty(config, PROP_PARTITION_TABLE_SEND_INTERVAL, "10");
         GRACEFUL_SHUTDOWN_MAX_WAIT = new GroupProperty(config, PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "600");

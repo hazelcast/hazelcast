@@ -547,7 +547,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer("\n\nMembers [");
+        StringBuilder sb = new StringBuilder("\n\nMembers [");
         sb.append(lsMembers.size());
         sb.append("] {");
         for (MemberImpl member : lsMembers) {
@@ -629,7 +629,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
 
         @Override
-        public void redo() {
+        public void redo(int redoTypeCode) {
             removeRemoteCall(getCallId());
             setResult(Boolean.FALSE);
         }
@@ -839,7 +839,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     public void removeMember(MemberImpl member) {
         checkServiceThread();
-        logger.log(Level.FINEST, "removing  " + member);
+        logger.log(Level.FINEST, "ClusterManager removing  " + member);
         mapMembers.remove(member.getAddress());
         lsMembers.remove(member);
     }

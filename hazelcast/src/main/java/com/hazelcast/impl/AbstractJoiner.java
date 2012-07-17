@@ -56,11 +56,12 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private void postJoin() {
-        systemLogService.logJoin("PostJoin master:" + node.getMasterAddress() + ", isMaster " + node.isMaster());
+        systemLogService.logJoin("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
         if (!node.isActive()) {
             return;
         }
         if (tryCount.incrementAndGet() == 5) {
+            logger.log(Level.WARNING, "Join try count exceed limit, setting this node as master!");
             node.setAsMaster();
         }
         if (!node.isMaster()) {
@@ -92,10 +93,11 @@ public abstract class AbstractJoiner implements Joiner {
                     logger.log(Level.WARNING, "Rebooting after 10 seconds.");
                     try {
                         Thread.sleep(10000);
+                        node.rejoin();
                     } catch (InterruptedException e) {
+                        logger.log(Level.WARNING, e.getMessage(), e);
                         node.shutdown(false, true);
                     }
-                    node.rejoin();
                 } else {
                     throw new RuntimeException("Failed to join in " + (maxJoinMillis / 1000) + " seconds!");
                 }
@@ -104,6 +106,8 @@ public abstract class AbstractJoiner implements Joiner {
                 node.clusterManager.finalizeJoin();
             }
         }
+
+        tryCount.set(0);
         node.clusterManager.enqueueAndWait(new Processable() {
             public void process() {
                 if (node.baseVariables.lsMembers.size() == 1) {
@@ -119,7 +123,7 @@ public abstract class AbstractJoiner implements Joiner {
     protected void failedJoiningToMaster(boolean multicast, int tryCount) {
         StringBuilder sb = new StringBuilder();
         sb.append("\n");
-        sb.append("===========================");
+        sb.append("======================================================");
         sb.append("\n");
         sb.append("Couldn't connect to discovered master! tryCount: ").append(tryCount);
         sb.append("\n");
@@ -130,7 +134,8 @@ public abstract class AbstractJoiner implements Joiner {
         sb.append("multicast: ").append(multicast);
         sb.append("\n");
         sb.append("connection: ").append(node.connectionManager.getConnection(node.getMasterAddress()));
-        sb.append("===========================");
+        sb.append("\n");
+        sb.append("======================================================");
         sb.append("\n");
         throw new IllegalStateException(sb.toString());
     }
@@ -190,5 +195,9 @@ public abstract class AbstractJoiner implements Joiner {
                     node.clusterManager.sendJoinRequest(possibleAddress, true);
                 }
             }
+    }
+
+    public final long getStartTime() {
+        return joinStartTime;
     }
 }

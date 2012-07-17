@@ -594,7 +594,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             } else {
                 ttl = toMillis(ttl, timeunit);
             }
-            return put(key, value, -1, ttl);
+            return put(key, value, ttl);
         }
 
         public void putTransient(Object key, Object value, long ttl, TimeUnit timeunit) {
@@ -607,15 +607,15 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
                 ttl = toMillis(ttl, timeunit);
             }
             mapOperationCounter.incrementOtherOperations();
-            concurrentMapManager.putTransient(name, key, value, -1, ttl);
+            concurrentMapManager.putTransient(name, key, value, ttl);
         }
 
-        public Object put(Object key, Object value, long timeout, long ttl) {
+        public Object put(Object key, Object value, long ttl) {
             long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
-            Object result = mput.put(name, key, value, timeout, ttl);
+            Object result = mput.put(name, key, value, ttl);
             mput.clearRequest();
             mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return result;
@@ -734,7 +734,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public Object putIfAbsent(Object key, Object value) {
-            return putIfAbsent(key, value, -1, -1);
+            return putIfAbsent(key, value, -1);
         }
 
         public Object putIfAbsent(Object key, Object value, long ttl, TimeUnit timeunit) {
@@ -746,15 +746,15 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             } else {
                 ttl = toMillis(ttl, timeunit);
             }
-            return putIfAbsent(key, value, -1, ttl);
+            return putIfAbsent(key, value, ttl);
         }
 
-        private Object putIfAbsent(Object key, Object value, long timeout, long ttl) {
+        private Object putIfAbsent(Object key, Object value, long ttl) {
             long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MPut mput = concurrentMapManager.new MPut();
-            Object result = mput.putIfAbsent(name, key, value, timeout, ttl);
+            Object result = mput.putIfAbsent(name, key, value, ttl);
             mput.clearRequest();
             mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return result;
@@ -774,7 +774,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             long begin = Clock.currentTimeMillis();
             check(key);
             MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
-            Object result = mremove.remove(name, key, -1);
+            Object result = mremove.remove(name, key);
             mremove.clearRequest();
             mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
             return result;
@@ -815,7 +815,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(key);
             check(value);
             MRemove mremove = concurrentMapManager.new MRemove();
-            boolean result = mremove.removeIfSame(name, key, value, -1);
+            boolean result = mremove.removeIfSame(name, key, value);
             mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
             return result;
         }
@@ -825,7 +825,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(key);
             check(value);
             MPut mput = concurrentMapManager.new MPut();
-            Object result = mput.replace(name, key, value, -1, -1);
+            Object result = mput.replace(name, key, value);
             mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return result;
         }
@@ -836,7 +836,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(oldValue);
             check(newValue);
             MPut mput = concurrentMapManager.new MPut();
-            Boolean result = mput.replace(name, key, oldValue, newValue, -1);
+            Boolean result = mput.replace(name, key, oldValue, newValue);
             mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return result;
         }

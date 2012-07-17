@@ -18,6 +18,7 @@ package com.hazelcast.impl.concurrentmap;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.*;
+import com.hazelcast.impl.Constants.RedoType;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.SystemLog;
 import com.hazelcast.impl.partition.MigratingPartition;
@@ -31,52 +32,62 @@ import java.util.Set;
 
 public class MapSystemLogFactory {
 
-    public static SystemLog newScheduleRequest(DistributedLock lock, int size) {
-        return new RequestScheduled(lock, size);
+    public static SystemLog newScheduleRequest(Request request, Record record) {
+        int scheduledActionCount = (record == null) ? 0 : record.getScheduledActionCount();
+        DistributedLock lock = (record == null) ? null : record.getLock();
+        return new RequestScheduled(request.name, request.operation, request.caller, lock, scheduledActionCount);
     }
 
-    public static SystemLog newRedoLog(Node node, Request request) {
+    public static SystemLog newRedoLog(Node node, Request request, RedoType redoType, boolean isCaller) {
         final Set<Member> members = new HashSet<Member>(node.getClusterImpl().getMembers());
         final Data key = request.key;
-        final Address target = request.target;
         PartitionInfo partitionInfo = null;
         PartitionManager pm = node.concurrentMapManager.getPartitionManager();
         if (key != null) {
             partitionInfo = new PartitionInfo(pm.getPartition(node.concurrentMapManager.getPartitionId(key)));
         }
-        boolean targetConnected = false;
-        if (target != null && node.getThisAddress().equals(target)) {
-            Connection targetConnection = node.connectionManager.getConnection(target);
-            targetConnected = (targetConnection != null && targetConnection.live());
+        final Address endpoint = isCaller ? request.target : request.caller;
+        boolean connected = false;
+        if (endpoint != null && !endpoint.equals(node.getThisAddress())) {
+            Connection targetConnection = node.connectionManager.getConnection(endpoint);
+            connected = (targetConnection != null && targetConnection.live());
         }
-        return new RedoLog(key, request.operation, target, targetConnected,
-                members, partitionInfo, request.redoCount, pm.getMigratingPartition());
+        return new RedoLog(request.name, key, request.operation, endpoint, connected,
+                members, partitionInfo, request.redoCount, pm.getMigratingPartition(), redoType, isCaller);
     }
 
     static class RedoLog extends SystemLog {
+
+        final String name;
         final Data key;
         final ClusterOperation operation;
-        final Address target;
-        final boolean targetConnected;
+        final Address endpoint;
+        final boolean connected;
         final Set<Member> members;
         final PartitionInfo partition;
         final MigratingPartition migratingPartition;
         final int redoCount;
+        final RedoType redoType;
+        final boolean caller;
 
-        RedoLog(Data key, ClusterOperation operation,
-                Address target,
-                boolean targetConnected,
+        RedoLog(final String name, Data key, ClusterOperation operation,
+                Address endpoint,
+                boolean connected,
                 Set<Member> members,
                 PartitionInfo partition,
-                int redoCount, MigratingPartition migratingPartition) {
+                int redoCount, MigratingPartition migratingPartition,
+                final RedoType redoType, final boolean caller) {
+            this.name = name;
             this.key = key;
             this.operation = operation;
-            this.target = target;
-            this.targetConnected = targetConnected;
+            this.endpoint = endpoint;
+            this.connected = connected;
             this.members = members;
             this.partition = partition;
             this.redoCount = redoCount;
             this.migratingPartition = migratingPartition;
+            this.redoType = redoType;
+            this.caller = caller;
         }
 
         private boolean contains(Address address) {
@@ -92,19 +103,20 @@ public class MapSystemLogFactory {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder("RedoLog{");
-            sb.append("key=" + key +
-                    ", operation=" + operation +
-                    ", target=" + target +
-                    ", targetConnected=" + targetConnected +
-                    ", redoCount=" + redoCount +
-                    ", migrating=" + migratingPartition + "\n" +
-                    "partition=" + partition +
-                    "\n");
+            sb.append("name=").append(name).append(", ");
+            sb.append("redoType=").append(redoType).append(", ");
+//            sb.append("keySize=").append(key != null ? key.size() : 0);
+            sb.append("operation=").append(operation)
+                    .append(caller ? ", target=" : ", caller=").append(endpoint)
+                    .append(" / connected=").append(connected)
+                    .append(", redoCount=").append(redoCount)
+                    .append(", migrating=").append(migratingPartition).append("\n")
+                    .append("partition=").append(partition).append("\n");
             if (partition != null) {
                 for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
                     Address replicaAddress = partition.getReplicaAddress(i);
                     if (replicaAddress != null && !contains(replicaAddress)) {
-                        sb.append(replicaAddress + " not a member!\n");
+                        sb.append(replicaAddress).append(" not a member!\n");
                     }
                 }
             }
@@ -114,24 +126,30 @@ public class MapSystemLogFactory {
     }
 
     static class RequestScheduled extends SystemLog {
+        private final String name;
+        private final ClusterOperation operation;
+        private final Address caller;
         private final DistributedLock lock;
         private final int size;
 
-        public RequestScheduled(DistributedLock lock, int size) {
+        public RequestScheduled(final String name, final ClusterOperation operation,
+                                final Address caller, DistributedLock lock, int size) {
+            this.name = name;
+            this.operation = operation;
+            this.caller = caller;
             this.lock = lock;
             this.size = size;
         }
 
         @Override
         public String toString() {
-            DistributedLock l = lock;
-            StringBuilder sb = new StringBuilder("Scheduled[size=");
-            sb.append(size).append("]");
-            if (l != null) {
-                sb.append(" {");
-                sb.append(l.toString());
-                sb.append("}");
-            }
+            final StringBuilder sb = new StringBuilder();
+            sb.append("RequestScheduled[").append(size).append(']');
+            sb.append(" {name='").append(name).append('\'');
+            sb.append(", caller=").append(caller);
+            sb.append(", operation=").append(operation);
+            sb.append(", lock=").append(lock);
+            sb.append('}');
             return sb.toString();
         }
     }

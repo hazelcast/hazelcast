@@ -209,7 +209,6 @@ public class ICountDownLatchTest {
                     assertFalse(cdl1.await(5, TimeUnit.SECONDS));
                     fail();
                 } catch (IllegalStateException e) {
-                    e.printStackTrace();
                     result.incrementAndGet();
                 } catch (Throwable e) {
                     e.printStackTrace();

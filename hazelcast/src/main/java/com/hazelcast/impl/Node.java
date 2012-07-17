@@ -134,12 +134,14 @@ public class Node {
     public final SecurityContext securityContext;
 
     public Node(FactoryImpl factory, Config config) {
+        ThreadContext.get().setCurrentFactory(factory);
         this.threadGroup = new ThreadGroup(factory.getName());
         this.factory = factory;
         this.config = config;
         this.groupProperties = new GroupProperties(config);
         this.liteMember = config.isLiteMember();
         this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
+        systemLogService = new SystemLogService(this);
         ServerSocketChannel serverSocketChannel = null;
         Address localAddress = null;
         try {
@@ -153,10 +155,8 @@ public class Node {
         address = localAddress;
         localMember = new MemberImpl(address, true, localNodeType, UUID.randomUUID().toString());
         String loggingType = groupProperties.LOGGING_TYPE.getString();
-        systemLogService = new SystemLogService(Node.this);
-        this.loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
-        this.logger = loggingService.getLogger(Node.class.getName());
-        ThreadContext.get().setCurrentFactory(factory);
+        loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
+        logger = loggingService.getLogger(Node.class.getName());
         initializer = NodeInitializerFactory.create();
         initializer.beforeInitialize(this);
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
@@ -311,7 +311,7 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.log(Level.FINE, "** setting master address to " + master.toString());
+            logger.log(Level.INFO, "** setting master address to " + master.toString());
         }
         masterAddress = master;
     }
@@ -534,7 +534,6 @@ public class Node {
 
     public boolean validateJoinRequest(JoinRequest joinRequest) throws Exception {
         boolean valid = Packet.PACKET_VERSION == joinRequest.packetVersion;
-//                && buildNumber == joinRequest.buildNumber; //check only packet version!
         if (valid) {
             try {
                 valid = config.isCompatible(joinRequest.config);
@@ -557,8 +556,8 @@ public class Node {
     }
 
     void join() {
-        long joinStartTime = Clock.currentTimeMillis();
-        long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
+        final long joinStartTime = joiner != null ? joiner.getStartTime() : Clock.currentTimeMillis();
+        final long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
         try {
             if (joiner == null) {
                 logger.log(Level.WARNING, "No join method is enabled! Starting standalone.");
@@ -567,13 +566,16 @@ public class Node {
                 joiner.join(joined);
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage());
             if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
-                factory.lifecycleService.restart();
+                logger.log(Level.WARNING, e.getMessage());
+//                factory.lifecycleService.restart();
+                rejoin();
             } else {
-                setActive(false);
-                joined.set(false);
-                Util.throwUncheckedException(e);
+//                setActive(false);
+//                joined.set(false);
+//                Util.throwUncheckedException(e);
+                logger.log(Level.SEVERE, e.getMessage(), e);
+                shutdown(false, true);
             }
         }
     }
@@ -585,16 +587,16 @@ public class Node {
     Joiner createJoiner() {
         Join join = config.getNetworkConfig().getJoin();
         if (join.getMulticastConfig().isEnabled() && multicastService != null) {
-            systemLogService.logJoin("Created MulticastJoiner");
+            systemLogService.logJoin("Creating MulticastJoiner");
             return new MulticastJoiner(this);
         } else if (join.getTcpIpConfig().isEnabled()) {
-            systemLogService.logJoin("Created TcpIpJoiner");
+            systemLogService.logJoin("Creating TcpIpJoiner");
             return new TcpIpJoiner(this);
         } else if (join.getAwsConfig().isEnabled()) {
             try {
                 Class clazz = Class.forName("com.hazelcast.impl.TcpIpJoinerOverAWS");
                 Constructor constructor = clazz.getConstructor(Node.class);
-                systemLogService.logJoin("Created AWSJoiner");
+                systemLogService.logJoin("Creating AWSJoiner");
                 return (Joiner) constructor.newInstance(this);
             } catch (Exception e) {
                 logger.log(Level.WARNING, e.getMessage());
@@ -606,7 +608,7 @@ public class Node {
 
     void setAsMaster() {
         logger.log(Level.FINEST, "This node is being set as the master");
-        systemLogService.logJoin("setAsMaster()");
+        systemLogService.logJoin("No master node found! Setting this node as the master.");
         masterAddress = address;
         clusterManager.enqueueAndWait(new Processable() {
             public void process() {

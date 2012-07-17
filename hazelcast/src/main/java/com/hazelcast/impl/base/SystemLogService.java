@@ -31,10 +31,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class SystemLogService {
 
     public enum Level {
-        CS_NONE("none"),
-        CS_EMPTY("empty"),
-        CS_INFO("info"),
-        CS_TRACE("trace");
+        NONE("none"),
+        DEFAULT("default"),
+        INFO("info"),
+        TRACE("trace");
 
         private String value;
 
@@ -48,13 +48,13 @@ public class SystemLogService {
 
         public static Level toLevel(String level) {
             if(level.equals("trace"))
-                return Level.CS_TRACE;
-            else if(level.equals("empty"))
-                return Level.CS_EMPTY;
+                return Level.TRACE;
+            else if(level.equals("default"))
+                return Level.DEFAULT;
             else if(level.equals("info"))
-                return Level.CS_INFO;
+                return Level.INFO;
 
-                return Level.CS_NONE;
+            return Level.NONE;
         }
     }
 
@@ -68,7 +68,7 @@ public class SystemLogService {
 
     private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(10000);
 
-    private volatile Level currentLevel = Level.CS_NONE;
+    private volatile Level currentLevel = Level.DEFAULT;
 
     private final Node node;
 
@@ -110,7 +110,7 @@ public class SystemLogService {
 
 
     public CallState getOrCreateCallState(long callId, Address callerAddress, int callerThreadId) {
-        if (currentLevel == Level.CS_NONE) return null;
+        if (currentLevel == Level.NONE || callerAddress == null) return null;
         CallKey callKey = new CallKey(callerAddress, callerThreadId);
         CallState callBefore = mapCallStates.get(callKey);
         if (callBefore == null) {
@@ -131,12 +131,12 @@ public class SystemLogService {
     }
 
     public CallState getCallState(Address callerAddress, int callerThreadId) {
-        if (currentLevel == Level.CS_NONE) return null;
+        if (currentLevel == Level.NONE) return null;
         return mapCallStates.get(new CallKey(callerAddress, callerThreadId));
     }
 
     public CallState getCallStateForCallId(long callId, Address callerAddress, int callerThreadId) {
-        if (currentLevel == Level.CS_NONE) return null;
+        if (currentLevel == Level.NONE) return null;
         CallState callState = mapCallStates.get(new CallKey(callerAddress, callerThreadId));
         if (callState != null && callState.getCallId() == callId) {
             return callState;
@@ -176,15 +176,6 @@ public class SystemLogService {
         for (CallState callState : mapCallStates.values()) {
             sb.append(callState.toString());
             sb.append("\n");
-            for (Object log : callState.getLogs()) {
-                SystemLog systemLog = (SystemLog) log;
-                sb.append(systemLog.getType().toString());
-                sb.append(" - ");
-                sb.append(new Date(systemLog.getDate()).toString());
-                sb.append(" - ");
-                sb.append(systemLog.toString());
-                sb.append("\n");
-            }
         }
         sb.append(node.concurrentMapManager.getPartitionManager().toString());
         sb.append("\n");
@@ -201,7 +192,7 @@ public class SystemLogService {
     }
 
     public void logConnection(String str) {
-        if (currentLevel != Level.CS_NONE) {
+        if (currentLevel != Level.NONE) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.CONNECTION);
             connectionLogs.offer(systemLog);
@@ -209,7 +200,7 @@ public class SystemLogService {
     }
 
     public void logPartition(String str) {
-        if (currentLevel != Level.CS_NONE) {
+        if (currentLevel != Level.NONE) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.PARTITION);
             partitionLogs.offer(systemLog);
@@ -217,7 +208,7 @@ public class SystemLogService {
     }
 
     public void logNode(String str) {
-        if (currentLevel != Level.CS_NONE) {
+        if (currentLevel != Level.NONE) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.NODE);
             nodeLogs.offer(systemLog);
@@ -225,7 +216,7 @@ public class SystemLogService {
     }
 
     public void logJoin(String str) {
-        if (currentLevel != Level.CS_NONE) {
+        if (currentLevel != Level.NONE) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.JOIN);
             joinLogs.offer(systemLog);
@@ -233,47 +224,47 @@ public class SystemLogService {
     }
 
     public boolean shouldLog(Level level) {
-        return currentLevel != Level.CS_NONE && currentLevel.ordinal() >= level.ordinal();
+        return currentLevel != Level.NONE && currentLevel.ordinal() >= level.ordinal();
     }
 
     public boolean shouldTrace() {
-        return currentLevel != Level.CS_NONE && currentLevel.ordinal() >= Level.CS_TRACE.ordinal();
+        return currentLevel != Level.NONE && currentLevel.ordinal() >= Level.TRACE.ordinal();
     }
 
     public boolean shouldInfo() {
-        return currentLevel != Level.CS_NONE && currentLevel.ordinal() >= Level.CS_INFO.ordinal();
+        return currentLevel != Level.NONE && currentLevel.ordinal() >= Level.INFO.ordinal();
     }
 
     public void info(CallStateAware callStateAware, SystemLog callStateLog) {
-        logState(callStateAware, Level.CS_INFO, callStateLog);
+        logState(callStateAware, Level.INFO, callStateLog);
     }
 
     public void trace(CallStateAware callStateAware, SystemLog callStateLog) {
-        logState(callStateAware, Level.CS_TRACE, callStateLog);
+        logState(callStateAware, Level.TRACE, callStateLog);
     }
 
     public void info(CallStateAware callStateAware, String msg) {
-        logObject(callStateAware, Level.CS_INFO, msg);
+        logObject(callStateAware, Level.INFO, msg);
     }
 
     public void trace(CallStateAware callStateAware, String msg) {
-        logObject(callStateAware, Level.CS_TRACE, msg);
+        logObject(callStateAware, Level.TRACE, msg);
     }
 
     public void info(CallStateAware callStateAware, String msg, Object arg1) {
-        logState(callStateAware, Level.CS_INFO, new SystemArgsLog(msg, arg1));
+        logState(callStateAware, Level.INFO, new SystemArgsLog(msg, arg1));
     }
 
     public void info(CallStateAware callStateAware, String msg, Object arg1, Object arg2) {
-        logState(callStateAware, Level.CS_INFO, new SystemArgsLog(msg, arg1, arg2));
+        logState(callStateAware, Level.INFO, new SystemArgsLog(msg, arg1, arg2));
     }
 
     public void trace(CallStateAware callStateAware, String msg, Object arg1) {
-        logState(callStateAware, Level.CS_TRACE, new SystemArgsLog(msg, arg1));
+        logState(callStateAware, Level.TRACE, new SystemArgsLog(msg, arg1));
     }
 
     public void trace(CallStateAware callStateAware, String msg, Object arg1, Object arg2) {
-        logState(callStateAware, Level.CS_TRACE, new SystemArgsLog(msg, arg1, arg2));
+        logState(callStateAware, Level.TRACE, new SystemArgsLog(msg, arg1, arg2));
     }
 
     public void logObject(CallStateAware callStateAware, Level level, Object obj) {
