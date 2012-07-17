@@ -31,14 +31,22 @@
         <emphasis role="bold">2.2</emphasis>
         <itemizedlist>
             <listitem>
+                <para>Improved redo logs and added max call/operation timeout. See configuration properties
+                <code>hazelcast.max.operation.timeout</code> and <code>hazelcast.redo.giveup.threshold</code>
+                    in <link xlink:href="#ConfigurationProperties">ConfigurationProperties</link> page.</para>
+            </listitem>
+            <listitem>
+                <para>Fixed join and split brain issues. Improved domain name handling.</para>
+            </listitem>
+            <listitem>
                 <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=5&amp;state=closed">
                     Fixed issues:</link></para>
-                <para>93</para>
+                <para>39, 93, 152, 153, 163, 164, 169</para>
             </listitem>
             <listitem>
                 <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=4&amp;state=closed">
                     Fixed issues from 2.1 branch:</link></para>
-                <para>73, 142, 146, 148, 149, 153, 158, 162, 163, 164</para>
+                <para>73, 142, 146, 148, 149, 153, 158, 161, 162, 163, 164, 174, 176, 179, 181, 183, 185, 186, 189, 196, 198</para>
             </listitem>
             <listitem>
                 <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=3&amp;state=closed">

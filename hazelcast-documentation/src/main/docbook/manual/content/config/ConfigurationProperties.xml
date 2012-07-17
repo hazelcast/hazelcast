@@ -207,6 +207,30 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
+                    <literal>hazelcast.redo.log.threshold</literal>
+                </td>
+                <td>Minimum number of redo(s) before logging.</td>
+                <td>integer</td>
+                <td>10</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.redo.giveup.threshold</literal>
+                </td>
+                <td>Number of maximum redo calls before giving up and throwing <code>OperationTimeoutException</code>.</td>
+                <td>integer</td>
+                <td>60</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.max.operation.timeout</literal>
+                </td>
+                <td>Maximum operation timeout in seconds if no timeout is specified for a call.</td>
+                <td>integer</td>
+                <td>300</td>
+            </tr>
+            <tr>
+                <td>
                     <literal>hazelcast.socket.bind.any</literal>
                 </td>
                 <td>Bind node socket address to any local address</td>
