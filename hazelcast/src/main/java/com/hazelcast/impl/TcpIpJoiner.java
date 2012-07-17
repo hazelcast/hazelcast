@@ -378,17 +378,15 @@ public class TcpIpJoiner extends AbstractJoiner {
         for (Member member : node.getClusterImpl().getMembers()) {
             colPossibleAddresses.remove(((MemberImpl) member).getAddress());
         }
-        if (colPossibleAddresses.size() == 0) {
+        if (colPossibleAddresses.isEmpty()) {
             return;
         }
-        for (final Address possibleAddress : colPossibleAddresses) {
+        for (Address possibleAddress : colPossibleAddresses) {
             logger.log(Level.FINEST, node.getThisAddress() + " is connecting to " + possibleAddress);
             node.connectionManager.getOrConnect(possibleAddress, true);
-        }
-        for (Address possibleAddress : colPossibleAddresses) {
             try {
                 //noinspection BusyWait
-                Thread.sleep(1000);
+                Thread.sleep(1500);
             } catch (InterruptedException e) {
                 return;
             }
@@ -396,13 +394,12 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (conn != null) {
                 final JoinInfo response = node.clusterManager.checkJoin(conn);
                 if (response != null && shouldMerge(response)) {
-                    // we will join so delay the merge checks.
                     logger.log(Level.WARNING, node.address + " is merging [tcp/ip] to " + possibleAddress);
                     splitBrainHandler.restart();
+                    return;
+                } else {
+                    conn.close();
                 }
-                // trying one live connection is good enough
-                // no need to try other connections
-                return;
             }
         }
     }
