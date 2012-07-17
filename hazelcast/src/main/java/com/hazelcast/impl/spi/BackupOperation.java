@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.spi;
 
-import com.hazelcast.nio.DataSerializable;
+public interface BackupOperation {
 
-public interface Operation extends DataSerializable {
-
-    ConcurrentMapManager.OperationContext getOperationContext();
 }

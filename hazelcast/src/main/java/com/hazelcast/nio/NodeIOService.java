@@ -94,9 +94,9 @@ public class NodeIOService implements IOService {
 //        System.out.println("handle p " + p.operation.getValue());
         if (p.operation == ClusterOperation.C_RESPONSE) {
             System.out.println("!!!!!!!!!!!");
-            node.concurrentMapManager.notifyOperationResponse(p);
+//            node.concurrentMapManager.notifyOperationResponse(p);
         } else if (p.operation == ClusterOperation.REMOTE_CALL) {
-            node.concurrentMapManager.handleOperation(p);
+            node.concurrentMapManager.nodeService.handleOperation(p);
         } else {
             node.clusterService.enqueuePacket(p);
         }

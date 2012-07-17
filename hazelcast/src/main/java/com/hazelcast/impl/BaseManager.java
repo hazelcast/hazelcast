@@ -1400,7 +1400,7 @@ public abstract class BaseManager {
      * Do not forget to release packet if send fails.
      * Better use {@link #sendOrReleasePacket(Packet, Connection)}
      */
-    protected final boolean send(Packet packet, Connection conn) {
+    public final boolean send(Packet packet, Connection conn) {
         return conn != null && conn.live() && writePacket(conn, packet);
     }
 
@@ -1412,7 +1412,7 @@ public abstract class BaseManager {
         return false;
     }
 
-    protected final boolean sendOrReleasePacket(Packet packet, Connection conn) {
+    public final boolean sendOrReleasePacket(Packet packet, Connection conn) {
         if (send(packet, conn)) {
             return true;
         }

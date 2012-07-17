@@ -20,6 +20,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.ConcurrentMapManager.*;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
 import com.hazelcast.impl.concurrentmap.AddMapIndex;
+import com.hazelcast.impl.map.MapProxy;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.impl.monitor.MapOperationsCounter;
 import com.hazelcast.monitor.LocalMapStats;
@@ -468,9 +469,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
     private class MProxyReal implements MProxy {
         private final transient MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
+        private final MapProxy mapProxy;
 
         public MProxyReal() {
             super();
+            mapProxy = new MapProxy(concurrentMapManager.nodeService);
         }
 
         @Override
@@ -616,7 +619,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             check(value);
 //            MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
 //            Object result = mput.put(name, key, value, timeout, ttl);
-            Object result = concurrentMapManager.put(name, key, value, ttl);
+            Object result = mapProxy.put(name, key, value, ttl);
 //            mput.clearRequest();
             mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return result;
@@ -767,7 +770,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 //            MGet mget = ThreadContext.get().getCallCache(factory).getMGet();
 //            Object result = mget.get(name, key, -1);
 //            mget.clearRequest();
-            Object result = concurrentMapManager.getOperation(name, key);
+            Object result = mapProxy.getOperation(name, key);
             mapOperationCounter.incrementGets(Clock.currentTimeMillis() - begin);
             return result;
         }

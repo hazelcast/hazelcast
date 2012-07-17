@@ -151,7 +151,7 @@ public class PartitionServiceImpl implements PartitionService {
         return responseQ.poll(10, TimeUnit.SECONDS);
     }
 
-    class PartitionProxy implements Partition, Comparable {
+    public class PartitionProxy implements Partition, Comparable {
         final int partitionId;
 
         PartitionProxy(int partitionId) {

@@ -66,7 +66,6 @@ public class ExecutorManager extends BaseManager {
     private final ConcurrentMap<String, ExecutorOperationsCounter> internalThroughputMap = new ConcurrentHashMap<String, ExecutorOperationsCounter>();
     private final ConcurrentMap<String, ExecutorOperationsCounter> throughputMap = new ConcurrentHashMap<String, ExecutorOperationsCounter>();
 
-
     final AtomicLong executionIdGen = new AtomicLong();
     private final int interval = 60000;
 
@@ -277,7 +276,6 @@ public class ExecutorManager extends BaseManager {
 
     public void appendFullState(StringBuffer sbState) {
         Set<String> names = mapExecutors.keySet();
-
         for (String name : names) {
             NamedExecutorService namedExecutorService = mapExecutors.get(name);
             namedExecutorService.appendState(sbState);
