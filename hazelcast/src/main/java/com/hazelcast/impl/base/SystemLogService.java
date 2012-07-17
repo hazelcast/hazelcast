@@ -68,7 +68,7 @@ public class SystemLogService {
 
     private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(10000);
 
-    private volatile Level currentLevel = Level.INFO;
+    private volatile Level currentLevel = Level.DEFAULT;
 
     private final Node node;
 

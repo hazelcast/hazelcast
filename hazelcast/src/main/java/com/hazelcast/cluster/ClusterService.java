@@ -154,7 +154,7 @@ public final class ClusterService implements Runnable, Constants {
         unpark();
     }
 
-    void unpark() {
+    private void unpark() {
         LockSupport.unpark(serviceThread);
     }
 

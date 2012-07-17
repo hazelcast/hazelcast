@@ -858,7 +858,7 @@ public class PartitionManager {
                 }
                 if (migrationRequestTask.getToAddress() == null) {
                     // A member is dead, this replica should not have an owner!
-                    logger.log(Level.INFO, "Fixing partition, " + migrationRequestTask.getReplicaIndex()
+                    logger.log(Level.FINEST, "Fixing partition, " + migrationRequestTask.getReplicaIndex()
                             + ". replica of partition[" + migrationRequestTask.getPartitionId() + "] should be removed.");
                     concurrentMapManager.enqueueAndWait(new Processable() {
                         public void process() {

@@ -611,6 +611,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
                 <td>string</td>
                 <td>null</td>
             </tr>
+        </tbody>
     </table>
 
 </sect1>

@@ -97,7 +97,7 @@ class AddressPicker {
             }
             serverSocketChannel.configureBlocking(false);
             address = new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);
-            logger.log(Level.INFO,
+            log(Level.INFO,
                     "Picked " + address + ", using socket " + serverSocket + ", bind any local is " + bindAny);
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
@@ -115,7 +115,7 @@ class AddressPicker {
                 addressDef = pickLoopbackAddress();
             } else {
                 if (preferIPv4Stack()) {
-                    logger.log(Level.INFO, "Prefer IPv4 stack is true.");
+                    log(Level.INFO, "Prefer IPv4 stack is true.");
                 }
                 if (interfaces.size() > 0) {
                     addressDef = pickMatchingAddress(interfaces);
@@ -158,7 +158,7 @@ class AddressPicker {
                                            + "' is not an IP address! Removing from interface list.");
                 }
             }
-            logger.log(Level.INFO, "Interfaces is enabled, trying to pick one address matching " +
+            log(Level.INFO, "Interfaces is enabled, trying to pick one address matching " +
                                    "to one of: " + interfaces);
         } else if (networkConfig.getJoin().getTcpIpConfig().isEnabled()) {
             final Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
@@ -172,7 +172,7 @@ class AddressPicker {
                     interfaces.add(new InterfaceDefinition(s, address));
                 }
             }
-            logger.log(Level.INFO, "Interfaces is disabled, trying to pick one address from TCP-IP config " +
+            log(Level.INFO, "Interfaces is disabled, trying to pick one address from TCP-IP config " +
                                    "addresses: " + interfaces);
         }
         return interfaces;
@@ -196,7 +196,7 @@ class AddressPicker {
             if ("127.0.0.1".equals(localAddress) || "localhost".equals(localAddress)) {
                 return pickLoopbackAddress();
             } else {
-                logger.log(Level.INFO, "Picking address configured by System property 'hazelcast.local.localAddress'");
+                log(Level.INFO, "Picking address configured by System property 'hazelcast.local.localAddress'");
                 return new AddressDefinition(localAddress, InetAddress.getByName(localAddress));
             }
         }
@@ -208,7 +208,7 @@ class AddressPicker {
         if (System.getProperty("java.net.preferIPv6Addresses") == null
             && System.getProperty("java.net.preferIPv4Stack") == null) {
             // When using loopback address and multicast join, leaving IPv6 enabled causes join issues.
-            logger.log(Level.WARNING,
+            log(Level.WARNING,
                     "Picking loopback address [127.0.0.1]; setting 'java.net.preferIPv4Stack' to true.");
             System.setProperty("java.net.preferIPv4Stack", "true");
         }
