@@ -96,7 +96,7 @@ class AddressPicker {
                 }
             }
             serverSocketChannel.configureBlocking(false);
-            address = new Address(addressDef.host, port);
+            address = new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);
             logger.log(Level.INFO,
                     "Picked " + address + ", using socket " + serverSocket + ", bind any local is " + bindAny);
         } catch (Exception e) {
@@ -106,21 +106,21 @@ class AddressPicker {
     }
 
     private AddressDefinition pickAddress(final Config config) throws UnknownHostException, SocketException {
-        AddressDefinition infAddress = getSystemConfiguredAddress();
-        if (infAddress == null) {
+        AddressDefinition addressDef = getSystemConfiguredAddress();
+        if (addressDef == null) {
             final NetworkConfig networkConfig = config.getNetworkConfig();
             final Collection<InterfaceDefinition> interfaces = getInterfaces(networkConfig);
             if (interfaces.contains(new InterfaceDefinition("127.0.0.1"))
                     || interfaces.contains(new InterfaceDefinition("localhost"))) {
-                infAddress = pickLoopbackAddress();
+                addressDef = pickLoopbackAddress();
             } else {
                 if (preferIPv4Stack()) {
                     logger.log(Level.INFO, "Prefer IPv4 stack is true.");
                 }
                 if (interfaces.size() > 0) {
-                    infAddress = pickMatchingAddress(interfaces);
+                    addressDef = pickMatchingAddress(interfaces);
                 }
-                if (infAddress == null) {
+                if (addressDef == null) {
                     if (networkConfig.getInterfaces().isEnabled()) {
                         String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
                         msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
@@ -131,19 +131,19 @@ class AddressPicker {
                             logger.log(Level.WARNING, "Could not find a matching address to start with! " +
                                                       "Picking one of non-loopback addresses.");
                         }
-                        infAddress = pickMatchingAddress(null);
+                        addressDef = pickMatchingAddress(null);
                     }
                 }
             }
         }
-        if (infAddress != null) {
+        if (addressDef != null) {
             // check if scope id correctly set
-            infAddress.inetAddress = AddressUtil.fixScopeIdAndGetInetAddress(infAddress.inetAddress);
+            addressDef.inetAddress = AddressUtil.fixScopeIdAndGetInetAddress(addressDef.inetAddress);
         }
-        if (infAddress == null) {
-            infAddress = pickLoopbackAddress();
+        if (addressDef == null) {
+            addressDef = pickLoopbackAddress();
         }
-        return infAddress;
+        return addressDef;
     }
 
     private Collection<InterfaceDefinition> getInterfaces(final NetworkConfig networkConfig) throws UnknownHostException {
@@ -279,7 +279,7 @@ class AddressPicker {
         }
 
         private InterfaceDefinition(final String address) {
-            this.host = address;
+            this.host = null;
             this.address = address;
         }
 
@@ -290,7 +290,7 @@ class AddressPicker {
 
         @Override
         public String toString() {
-            return host;
+            return host != null ? host : address;
         }
 
         @Override

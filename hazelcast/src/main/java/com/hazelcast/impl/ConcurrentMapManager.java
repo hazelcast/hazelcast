@@ -439,10 +439,16 @@ public class ConcurrentMapManager extends BaseManager {
 
     public boolean lock(String name, Object key, long timeout) {
         MLock mlock = new MLock();
+        final boolean booleanCall = timeout >= 0 ; // tryLock
         try {
-            return mlock.lock(name, key, timeout);
+            final boolean locked = mlock.lock(name, key, timeout);
+            if (!locked && !booleanCall) {
+                throw new OperationTimeoutException(mlock.request.operation.toString(),
+                        "Lock request is timed out! t: " + mlock.request.timeout);
+            }
+            return locked;
         } catch (OperationTimeoutException e) {
-            if (timeout < 0) {
+            if (!booleanCall) {
                 throw e;
             } else {
                 return false;
@@ -502,7 +508,9 @@ public class ConcurrentMapManager extends BaseManager {
             request.setLongRequest();
             doOp();
             long result = (Long) getResultAsObject();
-            if (result == -1L) return false;
+            if (result == -1L) {
+                return false;
+            }
             else {
                 CMap cmap = getMap(name);
                 if (result == 0) {
@@ -2814,7 +2822,7 @@ public class ConcurrentMapManager extends BaseManager {
                         css.trace(request, "Record is", record);
                     }
                     if ((record == null || record.isLoadable()) && cmap.loader != null
-                            && request.operation != ClusterOperation.CONCURRENT_MAP_PUT_TRANSIENT) {
+                            && request.operation != ClusterOperation.CONCURRENT_MAP_SET) {
                         if (css.shouldLog(TRACE)) {
                             css.trace(request, "Will Load");
                         }
@@ -3686,6 +3694,11 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class LockOperationHandler extends SchedulableOperationHandler {
+        protected void onNoTimeToSchedule(Request request) {
+            request.response = -1L;
+            returnResponse(request);
+        }
+
         public void handle(Request request) {
             final CMap cmap = getOrCreateMap(request.name);
             if (cmap.isNotLocked(request)) {

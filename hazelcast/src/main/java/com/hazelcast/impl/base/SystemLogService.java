@@ -110,7 +110,7 @@ public class SystemLogService {
 
 
     public CallState getOrCreateCallState(long callId, Address callerAddress, int callerThreadId) {
-        if (currentLevel == Level.NONE) return null;
+        if (currentLevel == Level.NONE || callerAddress == null) return null;
         CallKey callKey = new CallKey(callerAddress, callerThreadId);
         CallState callBefore = mapCallStates.get(callKey);
         if (callBefore == null) {
