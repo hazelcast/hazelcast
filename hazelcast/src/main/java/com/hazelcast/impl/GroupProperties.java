@@ -52,6 +52,7 @@ public class GroupProperties {
     public static final String PROP_WAIT_SECONDS_BEFORE_JOIN = "hazelcast.wait.seconds.before.join";
     public static final String PROP_MAX_WAIT_SECONDS_BEFORE_JOIN = "hazelcast.max.wait.seconds.before.join";
     public static final String PROP_MAX_JOIN_SECONDS = "hazelcast.max.join.seconds";
+    public static final String PROP_MAX_JOIN_MERGE_TARGET_SECONDS = "hazelcast.max.join.merge.target.seconds";
     public static final String PROP_HEARTBEAT_INTERVAL_SECONDS = "hazelcast.heartbeat.interval.seconds";
     public static final String PROP_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.max.no.heartbeat.seconds";
     public static final String PROP_ICMP_ENABLED = "hazelcast.icmp.enabled";
@@ -157,6 +158,8 @@ public class GroupProperties {
     public final GroupProperty MAX_WAIT_SECONDS_BEFORE_JOIN;
 
     public final GroupProperty MAX_JOIN_SECONDS;
+    
+    public final GroupProperty MAX_JOIN_MERGE_TARGET_SECONDS;
 
     public final GroupProperty MAX_NO_HEARTBEAT_SECONDS;
 
@@ -271,6 +274,7 @@ public class GroupProperties {
         WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, PROP_WAIT_SECONDS_BEFORE_JOIN, "5");
         MAX_WAIT_SECONDS_BEFORE_JOIN = new GroupProperty(config, PROP_MAX_WAIT_SECONDS_BEFORE_JOIN, "20");
         MAX_JOIN_SECONDS = new GroupProperty(config, PROP_MAX_JOIN_SECONDS, "300");
+        MAX_JOIN_MERGE_TARGET_SECONDS = new GroupProperty(config, PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "20");
         HEARTBEAT_INTERVAL_SECONDS = new GroupProperty(config, PROP_HEARTBEAT_INTERVAL_SECONDS, "1");
         MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_MAX_NO_HEARTBEAT_SECONDS, "300");
         ICMP_ENABLED = new GroupProperty(config, PROP_ICMP_ENABLED, "false");

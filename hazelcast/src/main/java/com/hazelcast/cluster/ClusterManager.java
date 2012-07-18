@@ -367,6 +367,10 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             }
         }
     }
+    
+    public void sendClusterMergeToOthers(final Address newTargetAddress) {
+    	sendProcessableToAll(new MergeClusters(newTargetAddress), false);
+    }
 
     public void handleMaster(Master master) {
         if (!node.joined() && !thisAddress.equals(master.address)) {

@@ -38,6 +38,7 @@ public abstract class AbstractJoiner implements Joiner {
     protected volatile ILogger logger;
     private final AtomicInteger tryCount = new AtomicInteger(0);
     protected final SystemLogService systemLogService;
+    protected Address targetAddress;
 
     public AbstractJoiner(Node node) {
         this.node = node;
@@ -204,5 +205,9 @@ public abstract class AbstractJoiner implements Joiner {
 
     public final long getStartTime() {
         return joinStartTime;
+    }
+    
+    public void setTargetAddress(Address targetAddress) {
+        this.targetAddress = targetAddress;
     }
 }

@@ -43,11 +43,20 @@ public class MulticastJoiner extends AbstractJoiner {
         int tryCount = 0;
         long joinStartTime = Clock.currentTimeMillis();
         long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
+        
         while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
             String msg = "Joining to master node: " + node.getMasterAddress();
             logger.log(Level.FINEST, msg);
             systemLogService.logJoin(msg);
-            Address masterAddressNow = findMasterWithMulticast();
+            
+            final Address masterAddressNow;
+            if (targetAddress == null) {
+                masterAddressNow = findMasterWithMulticast();
+            } else {
+                masterAddressNow = targetAddress;
+                targetAddress = null;
+            }
+            
             // when node cannot join found master, join operation never ends!
 //            if (masterAddressNow != null && masterAddressNow.equals(node.getMasterAddress())) {
 //                tryCount--;
@@ -115,6 +124,8 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
                 if (shouldMerge(joinInfo)) {
                     logger.log(Level.WARNING, node.address + " is merging [multicast] to " + joinInfo.address);
+                    targetAddress = joinInfo.address;
+                    node.clusterManager.sendClusterMergeToOthers(targetAddress);
                     node.factory.restart();
                     return;
                 }

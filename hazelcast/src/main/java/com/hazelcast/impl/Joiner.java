@@ -18,6 +18,8 @@ package com.hazelcast.impl;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.hazelcast.nio.Address;
+
 public interface Joiner {
 
     public void join(AtomicBoolean joined);
@@ -25,4 +27,6 @@ public interface Joiner {
     public void searchForOtherClusters(SplitBrainHandler splitBrainHandler);
 
     long getStartTime();
+
+    void setTargetAddress(Address targetAddress);
 }
