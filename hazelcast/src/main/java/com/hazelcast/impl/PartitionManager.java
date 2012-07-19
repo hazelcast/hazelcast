@@ -584,11 +584,20 @@ public class PartitionManager {
      * @return true if owned replica (0) of partition is migrating, false otherwise
      */
     public boolean isOwnedPartitionMigrating(int partitionId) {
+        return isPartitionMigrating(partitionId, 0);
+    }
+
+    /**
+     * @param partitionId
+     * @param replicaIndex
+     * @return true if replicaIndex of partition is migrating, false otherwise
+     */
+    public boolean isPartitionMigrating(int partitionId, int replicaIndex) {
         // volatile read
         final MigratingPartition currentMigratingPartition = migratingPartition;
         return currentMigratingPartition != null
-                && currentMigratingPartition.getPartitionId() == partitionId
-                && currentMigratingPartition.getReplicaIndex() == 0;
+               && currentMigratingPartition.getPartitionId() == partitionId
+               && currentMigratingPartition.getReplicaIndex() == replicaIndex;
     }
 
     public PartitionInfo getPartition(int partitionId) {

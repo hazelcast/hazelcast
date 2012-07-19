@@ -245,13 +245,17 @@ public abstract class BaseManager {
         @Override
         public void process(Packet packet) {
             Request remoteReq = Request.copyFromPacket(packet);
-            if (isMigrating(remoteReq)) {
+            if (isPartitionMigrating(remoteReq)) {
                 remoteReq.clearForResponse();
                 returnRedoResponse(remoteReq, REDO_PARTITION_MIGRATING);
             } else {
                 handle(remoteReq);
             }
             releasePacket(packet);
+        }
+
+        boolean isPartitionMigrating(final Request request) {
+            return isMigrating(request, 0);
         }
     }
 
@@ -266,7 +270,7 @@ public abstract class BaseManager {
         @Override
         public void process(Packet packet) {
             Request request = Request.copyFromPacket(packet);
-            boolean isMigrating = isMigrating(request);
+            boolean isMigrating = isPartitionMigrating(request);
             boolean rightRemoteTarget = isRightRemoteTarget(request);
             boolean callerKnownMember = isCallerKnownMember(request);
             if (request.redoCount > redoLogThreshold || systemLogService.shouldLog(INFO)) {
@@ -901,7 +905,7 @@ public abstract class BaseManager {
         }
 
         public void doLocalOp() {
-            if (isMigrationAware() && isMigrating(request)) {
+            if (isMigrationAware() && isPartitionMigrating()) {
                 setRedoResult(REDO_PARTITION_MIGRATING);
             } else {
                 request.attachment = TargetAwareOp.this;
@@ -917,8 +921,12 @@ public abstract class BaseManager {
             return target;
         }
 
-        public boolean isMigrationAware() {
+        boolean isMigrationAware() {
             return false;
+        }
+
+        boolean isPartitionMigrating() {
+            return isMigrating(request, 0);
         }
 
         protected void throwTxTimeoutException(final Object key) {
@@ -1081,7 +1089,7 @@ public abstract class BaseManager {
         }
     }
 
-    protected boolean isMigrating(Request req) {
+    protected boolean isMigrating(Request req, int replica) {
         return false;
     }
 

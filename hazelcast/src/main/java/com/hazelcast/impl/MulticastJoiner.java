@@ -65,7 +65,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
                 return;
             }
-            if (++tryCount > 24) {
+            if (++tryCount > 49) {
                 failedJoiningToMaster(true, tryCount);
             }
             if (!node.getMasterAddress().equals(node.address)) {

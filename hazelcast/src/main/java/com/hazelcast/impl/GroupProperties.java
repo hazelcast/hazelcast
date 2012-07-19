@@ -251,8 +251,8 @@ public class GroupProperties {
         MERGE_FIRST_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "300");
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
         REDO_WAIT_MILLIS = new GroupProperty(config, PROP_REDO_WAIT_MILLIS, "500");
-        REDO_LOG_THRESHOLD = new GroupProperty(config, PROP_REDO_LOG_THRESHOLD, "10");
-        REDO_GIVE_UP_THRESHOLD = new GroupProperty(config, PROP_REDO_GIVE_UP_THRESHOLD, "60");
+        REDO_LOG_THRESHOLD = new GroupProperty(config, PROP_REDO_LOG_THRESHOLD, "15");
+        REDO_GIVE_UP_THRESHOLD = new GroupProperty(config, PROP_REDO_GIVE_UP_THRESHOLD, "90");
         MAX_OPERATION_TIMEOUT = new GroupProperty(config, PROP_MAX_OPERATION_TIMEOUT, "300");
         OPERATION_RESPONSE_POLL_TIMEOUT = new GroupProperty(config, PROP_OPERATION_RESPONSE_POLL_TIMEOUT, "10");
         SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");

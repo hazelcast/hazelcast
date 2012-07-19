@@ -89,6 +89,7 @@ public class Request implements CallStateAware {
                 ", timeout='" + timeout + '\'' +
                 ", lockThreadId='" + lockThreadId + '\'' +
                 ", target='" + target + '\'' +
+                ", local='" + local + '\'' +
                 '}';
     }
 

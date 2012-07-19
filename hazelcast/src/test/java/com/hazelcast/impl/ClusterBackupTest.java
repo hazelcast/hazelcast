@@ -32,8 +32,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.impl.TestUtil.getConcurrentMapManager;
 import static java.lang.Thread.sleep;
@@ -172,7 +174,7 @@ public class ClusterBackupTest {
     public void issue395BackupProblemWithBCount2() throws InterruptedException {
         final int size = 1000;
         Config config = new Config();
-        config.getProperties().put(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
+        config.setProperty(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
         config.getMapConfig("default").setBackupCount(2);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
@@ -188,7 +190,7 @@ public class ClusterBackupTest {
         // we should wait here a little,
         // since copying 2nd backup is not immediate.
         // we have set 'PROP_PARTITION_MIGRATION_INTERVAL' to 0.
-        Thread.sleep(1000 * 2);
+        Thread.sleep(1000 * 3);
         assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
         assertEquals(2 * size, getTotalBackupEntryCount(map1, map2, map3));
     }
@@ -224,7 +226,7 @@ public class ClusterBackupTest {
         assertEquals(size, getTotalBackupEntryCount(map1, map2, map3));
         MemberImpl member2 = (MemberImpl) h2.getCluster().getLocalMember();
         h2.getLifecycleService().shutdown();
-        sleep(3000);
+        sleep(5000);
         assertEquals(size, map1.size());
         assertEquals(size, map3.size());
         assertEquals(size, getTotalOwnedEntryCount(map1, map3));
@@ -590,5 +592,71 @@ public class ClusterBackupTest {
     private static Node getNode(final HazelcastInstance hazelcastInstance) {
         FactoryImpl.HazelcastInstanceProxy proxy = (FactoryImpl.HazelcastInstanceProxy) hazelcastInstance;
         return proxy.getFactory().node;
+    }
+
+    @Test
+    public void testIssue177BackupCount() throws InterruptedException {
+        final Config config = new Config();
+        config.setProperty("hazelcast.partition.migration.interval", "0");
+        config.setProperty("hazelcast.wait.seconds.before.join", "1");
+
+        final Random rand = new Random(System.currentTimeMillis());
+        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(10);
+        final int count = 10000;
+        final int totalCount = count * (instances.length() - 1);
+        final Thread[] threads = new Thread[instances.length()];
+
+        for (int i = 0; i < instances.length(); i++) {
+            final int finalI = i;
+            Thread thread = new Thread() {
+                public void run() {
+                    try {
+                        Thread.sleep(3000 * finalI);
+                        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+                        instances.set(finalI, instance);
+                        Thread.sleep(rand.nextInt(100));
+                        if (finalI != 0) { // do not run on master node,
+                            // let partition assignment be made during put ops.
+                            for (int j = 0; j < 10000; j++) {
+                                instance.getMap("test").put(getName() + "-" + j, "value");
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+            threads[i] = thread;
+            thread.start();
+        }
+
+        for (Thread thread : threads) {
+            thread.join();
+        }
+
+        final int trials = 10;
+        for (int i = 0; i < trials; i++) {
+            long totalOwned = 0L;
+            long totalBackup = 0L;
+            for (int j = 0; j < instances.length(); j++) {
+                HazelcastInstance hz = instances.get(j);
+                LocalMapStats stats = hz.getMap("test").getLocalMapStats();
+                totalOwned += stats.getOwnedEntryCount();
+                totalBackup += stats.getBackupEntryCount();
+            }
+            System.out.println("totalOwned = " + totalOwned);
+            System.out.println("totalBackup = " + totalBackup);
+            assertEquals("Owned entry count is wrong! ", totalCount, totalOwned);
+            if (i < trials - 1) {
+                if (totalBackup == totalCount) {
+                    break;
+                }
+                // check again after sometime
+                Thread.sleep(1000);
+            } else {
+                assertEquals("Backup entry count is wrong! ", totalCount, totalBackup);
+            }
+        }
+
     }
 }
