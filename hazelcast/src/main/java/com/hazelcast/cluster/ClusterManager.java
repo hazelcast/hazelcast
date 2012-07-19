@@ -48,6 +48,10 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private final boolean ICMP_ENABLED;
 
+    private final int ICMP_TTL;
+
+    private final int ICMP_TIMEOUT;
+
     private final Set<ScheduledAction> setScheduledActions = new LinkedHashSet<ScheduledAction>(1000);
 
     private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
@@ -72,6 +76,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         MAX_NO_HEARTBEAT_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         HEARTBEAT_INTERVAL_MILLIS = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger() * 1000L;
         ICMP_ENABLED = node.groupProperties.ICMP_ENABLED.getBoolean();
+        ICMP_TTL = node.groupProperties.ICMP_TTL.getInteger();
+        ICMP_TIMEOUT = node.groupProperties.ICMP_TIMEOUT.getInteger();
         node.clusterService.registerPeriodicRunnable(new SplitBrainHandler(node));
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
@@ -325,7 +331,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     logger.log(Level.WARNING, thisAddress + " will ping " + address);
                     for (int i = 0; i < 5; i++) {
                         try {
-                            if (address.getInetAddress().isReachable(1000)) {
+                            if (address.getInetAddress().isReachable(null, ICMP_TTL, ICMP_TIMEOUT)) {
                                 logger.log(Level.INFO, thisAddress + " pings successfully. Target: " + address);
                                 return;
                             }
