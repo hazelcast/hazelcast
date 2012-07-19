@@ -569,12 +569,8 @@ public class Node {
         } catch (Exception e) {
             if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
                 logger.log(Level.WARNING, e.getMessage());
-//                factory.lifecycleService.restart();
                 rejoin();
             } else {
-//                setActive(false);
-//                joined.set(false);
-//                Util.throwUncheckedException(e);
                 logger.log(Level.SEVERE, e.getMessage(), e);
                 shutdown(false, true);
             }

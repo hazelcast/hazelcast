@@ -229,7 +229,18 @@ public abstract class BaseManager {
     abstract class MigrationAwareOperationHandler extends AbstractOperationHandler {
         @Override
         public void process(Packet packet) {
-            super.processMigrationAware(packet);
+            Request remoteReq = Request.copyFromPacket(packet);
+            if (isPartitionMigrating(remoteReq)) {
+                remoteReq.clearForResponse();
+                returnRedoResponse(remoteReq);
+            } else {
+                handle(remoteReq);
+            }
+            releasePacket(packet);
+        }
+
+        boolean isPartitionMigrating(final Request request) {
+            return isMigrating(request, 0);
         }
     }
 
@@ -240,7 +251,7 @@ public abstract class BaseManager {
         @Override
         public void process(Packet packet) {
             Request remoteReq = Request.copyFromPacket(packet);
-            boolean isMigrating = isMigrating(remoteReq);
+            boolean isMigrating = isPartitionMigrating(remoteReq);
             boolean rightRemoteTarget = isRightRemoteTarget(remoteReq);
             SystemLogService css = node.getSystemLogService();
             if (css.shouldLog(CS_INFO)) {
@@ -268,17 +279,6 @@ public abstract class BaseManager {
         public void processSimple(Packet packet) {
             Request request = Request.copyFromPacket(packet);
             handle(request);
-            releasePacket(packet);
-        }
-
-        public void processMigrationAware(Packet packet) {
-            Request remoteReq = Request.copyFromPacket(packet);
-            if (isMigrating(remoteReq)) {
-                remoteReq.clearForResponse();
-                returnRedoResponse(remoteReq);
-            } else {
-                handle(remoteReq);
-            }
             releasePacket(packet);
         }
     }
@@ -845,7 +845,7 @@ public abstract class BaseManager {
         }
 
         public void doLocalOp() {
-            if (isMigrationAware() && isMigrating(request)) {
+            if (isMigrationAware() && isPartitionMigrating()) {
                 setResult(OBJECT_REDO);
             } else {
                 request.attachment = TargetAwareOp.this;
@@ -861,8 +861,12 @@ public abstract class BaseManager {
             return target;
         }
 
-        public boolean isMigrationAware() {
+        boolean isMigrationAware() {
             return false;
+        }
+
+        boolean isPartitionMigrating() {
+            return isMigrating(request, 0);
         }
 
         @Override
@@ -1019,7 +1023,7 @@ public abstract class BaseManager {
         }
     }
 
-    protected boolean isMigrating(Request req) {
+    protected boolean isMigrating(Request req, int replica) {
         return false;
     }
 

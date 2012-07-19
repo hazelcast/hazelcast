@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.Constants.Objects;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.*;
 import com.hazelcast.impl.executor.ParallelExecutor;
@@ -118,12 +119,12 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_EVICT, new EvictOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_IF_SAME, new RemoveIfSameOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE_ITEM, new RemoveItemOperationHandler());
-        registerPacketProcessor(CONCURRENT_MAP_BACKUP_PUT, new BackupPacketProcessor());
-        registerPacketProcessor(CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK, new BackupPacketProcessor());
-        registerPacketProcessor(CONCURRENT_MAP_BACKUP_ADD, new BackupPacketProcessor());
-        registerPacketProcessor(CONCURRENT_MAP_BACKUP_REMOVE_MULTI, new BackupPacketProcessor());
-        registerPacketProcessor(CONCURRENT_MAP_BACKUP_REMOVE, new BackupPacketProcessor());
-        registerPacketProcessor(CONCURRENT_MAP_BACKUP_LOCK, new BackupPacketProcessor());
+        registerPacketProcessor(CONCURRENT_MAP_BACKUP_PUT, new BackupOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK, new BackupOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_BACKUP_ADD, new BackupOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_BACKUP_REMOVE_MULTI, new BackupOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_BACKUP_REMOVE, new BackupOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_BACKUP_LOCK, new BackupOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_LOCK, new LockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_TRY_LOCK_AND_GET, new LockOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_UNLOCK, new UnlockOperationHandler());
@@ -1908,6 +1909,7 @@ public class ConcurrentMapManager extends BaseManager {
             request.setFromRequest(reqBackup);
             request.operation = operation;
             request.caller = thisAddress;
+            request.longValue = replicaIndex;
             request.setBooleanRequest();
             doOp();
         }
@@ -1921,7 +1923,11 @@ public class ConcurrentMapManager extends BaseManager {
         public void process() {
             target = getBackupMember(request.blockId, replicaIndex);
             if (target == null) {
-                setResult(Boolean.FALSE);
+                if (isValidBackup()) {
+                    setResult(Objects.OBJECT_REDO);
+                } else {
+                    setResult(Boolean.FALSE);
+                }
             } else {
                 if (target.equals(thisAddress)) {
                     doLocalOp();
@@ -1929,6 +1935,26 @@ public class ConcurrentMapManager extends BaseManager {
                     invoke();
                 }
             }
+        }
+
+        // executed by ServiceThread
+        boolean isValidBackup() {
+            int maxBackupCount = 0;
+            final int members = lsMembers.size();
+            if (members > 1) {
+                CMap map = getOrCreateMap(request.name);
+                maxBackupCount = Math.min(map.getBackupCount(), members);
+            }
+            maxBackupCount = maxBackupCount > 0 ? maxBackupCount : 0;
+            return replicaIndex <= maxBackupCount;
+        }
+
+        boolean isMigrationAware() {
+            return true;
+        }
+
+        boolean isPartitionMigrating() {
+            return isMigrating(request, replicaIndex);
         }
 
         @Override
@@ -1951,13 +1977,13 @@ public class ConcurrentMapManager extends BaseManager {
         public void process() {
             final Address target = getBackupMember(request.blockId, replicaIndex);
             if (target != null) {
-                if (target.equals(thisAddress)) {
+                if (thisAddress.equals(target)) {
                     processBackupRequest(request);
                 } else {
                     final Packet packet = obtainPacket();
                     packet.setFromRequest(request);
                     // this is not a call! we do not expect any response!
-                    // @see BackupPacketProcessor
+                    // @see BackupOperationHandler
                     packet.callId = -1L;
                     sendOrReleasePacket(packet, target);
                 }
@@ -1986,7 +2012,7 @@ public class ConcurrentMapManager extends BaseManager {
             }
             final MBackup[] backupOps = new MBackup[localBackupCount];
             for (int i = 0; i < totalBackupCount; i++) {
-                int replicaIndex = i + 1;
+                final int replicaIndex = i + 1;
                 if (i < localBackupCount) {
                     MBackup backupOp = new MBackup();
                     backupOps[i] = backupOp;
@@ -2003,6 +2029,7 @@ public class ConcurrentMapManager extends BaseManager {
             }
         }
 
+        // executed by ServiceThread
         void prepareForBackup() {
             int localBackupCount = 0;
             int localAsyncBackupCount = 0;
@@ -2204,11 +2231,14 @@ public class ConcurrentMapManager extends BaseManager {
         return getPartitionOwner(partitionId);
     }
 
-    @Override
     public boolean isMigrating(Request req) {
+        return isMigrating(req, 0);
+    }
+
+    @Override
+    public boolean isMigrating(Request req, int replica) {
         final Data key = req.key;
-        if (key == null) return false;
-        return partitionManager.isOwnedPartitionMigrating(getPartitionId(req));
+        return key != null && partitionManager.isPartitionMigrating(getPartitionId(req), replica);
     }
 
     public int getPartitionId(Request req) {
@@ -2266,7 +2296,20 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    class BackupPacketProcessor extends AbstractOperationHandler {
+    class BackupOperationHandler extends TargetAwareOperationHandler {
+
+        boolean isRightRemoteTarget(final Request request) {
+            final int partitionId = getPartitionId(request);
+            final PartitionInfo partition = partitionManager.getPartition(partitionId);
+            return thisAddress.equals(partition.getReplicaAddress(getReplicaIndex(request)));
+        }
+
+        boolean isPartitionMigrating(final Request request) {
+            return isMigrating(request, getReplicaIndex(request));
+        }
+
+        private int getReplicaIndex(final Request request) {return (int) request.longValue;}
+
         public void handle(Request request) {
             doOperation(request);
             // If request is not a Call, no need to return a response
