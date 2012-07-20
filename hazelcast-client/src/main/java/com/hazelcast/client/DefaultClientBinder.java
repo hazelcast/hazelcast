@@ -42,16 +42,17 @@ public class DefaultClientBinder implements ClientBinder {
         logger.log(Level.FINEST, connection + " -> "
                 + connection.getAddress().getHostName() + ":" + connection.getSocket().getLocalPort());
         auth(connection, credentials);
-        Bind b = null;
-        try {
-            b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
-        } catch (UnknownHostException e) {
-            logger.log(Level.WARNING, e.getMessage() + " while creating the bind package.");
-            throw e;
-        }
-        Packet bind = new Packet();
-        bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, toByte(null), toByte(b));
-        write(connection, bind);
+//        Bind b = null;
+//        try {
+//            b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
+//        } catch (UnknownHostException e) {
+//            logger.log(Level.WARNING, e.getMessage() + " while creating the bind package.");
+//            throw e;
+//        }
+//        System.out.println("Client Bind = " + b);
+//        Packet bind = new Packet();
+//        bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, toByte(null), toByte(b));
+//        write(connection, bind);
     }
 
     void auth(Connection connection, Credentials credentials) throws IOException {
