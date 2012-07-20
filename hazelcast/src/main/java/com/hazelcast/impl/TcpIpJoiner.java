@@ -397,8 +397,6 @@ public class TcpIpJoiner extends AbstractJoiner {
                     logger.log(Level.WARNING, node.address + " is merging [tcp/ip] to " + possibleAddress);
                     splitBrainHandler.restart();
                     return;
-                } else {
-                    conn.close();
                 }
             }
         }
