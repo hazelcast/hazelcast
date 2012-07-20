@@ -16,10 +16,7 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.Call;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.Packet;
-import com.hazelcast.client.ProxyHelper;
+import com.hazelcast.client.*;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.InstanceEvent;
 import com.hazelcast.core.InstanceListener;
@@ -39,9 +36,12 @@ public class InstanceListenerManager {
 
     public InstanceListenerManager(HazelcastClient client) {
         this.client = client;
-        for (Object listener : client.getClientConfig().getListeners()) {
-            if (listener instanceof InstanceListener) {
-                registerListener((InstanceListener) listener);
+        final ClientConfig clientConfig = client.getClientConfig();
+        if (clientConfig != null) {
+            for (Object listener : clientConfig.getListeners()) {
+                if (listener instanceof InstanceListener) {
+                    registerListener((InstanceListener) listener);
+                }
             }
         }
     }

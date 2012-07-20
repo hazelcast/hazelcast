@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.impl.base.Call;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.Counter;
 import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.util.*;
@@ -27,6 +28,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class NodeBaseVariables {
     final List<MemberImpl> lsMembers = new ArrayList<MemberImpl>(10);
+
+    // Counter for normal/data (non-lite) members.
+    // Counter is not thread-safe!
+    final Counter dataMemberCount = new Counter() ;
 
     final Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(200);
 
@@ -44,4 +49,5 @@ public class NodeBaseVariables {
         this.thisAddress = thisAddress;
         this.thisMember = thisMember;
     }
+
 }

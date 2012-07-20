@@ -32,7 +32,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 import java.net.InetSocketAddress;
@@ -41,13 +40,9 @@ import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(HzSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
 public class TestFullApplicationContext {
-
-    static {
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-    }
 
     private Config config;
 

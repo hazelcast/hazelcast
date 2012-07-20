@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
-import com.hazelcast.impl.GroupProperties;
 import org.hibernate.*;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CacheKey;
@@ -36,16 +35,17 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
 import static org.junit.Assert.*;
 
+@RunWith(TestBlockJUnit4ClassRunner.class)
 public class CustomPropertiesTest extends HibernateTestSupport {
 
     @BeforeClass
     public static void init() throws Exception {
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         Hazelcast.shutdownAll();
     }
 

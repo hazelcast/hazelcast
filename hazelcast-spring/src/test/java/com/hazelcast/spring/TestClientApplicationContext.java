@@ -19,7 +19,6 @@ package com.hazelcast.spring;
 import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.security.Credentials;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -27,20 +26,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(HzSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
 public class TestClientApplicationContext {
-
-    static {
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-    }
 
     @Resource (name = "client")
     private HazelcastClient client;

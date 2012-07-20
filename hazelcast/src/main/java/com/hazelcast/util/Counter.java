@@ -14,15 +14,37 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.util;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+/**
+ * non-thread-safe counter
+ *
+ * @mdogan 7/19/12
+ */
+public class Counter {
 
-public interface Joiner {
+    private int count ;
 
-    public void join(AtomicBoolean joined);
+    public Counter() {
+    }
 
-    public void searchForOtherClusters(SplitBrainHandler splitBrainHandler);
+    public Counter(final int count) {
+        this.count = count;
+    }
 
-    long getStartTime();
+    public void increment() {
+        ++count;
+    }
+
+    public void decrement() {
+        --count;
+    }
+
+    public int get() {
+        return count;
+    }
+
+    public void reset() {
+        count = 0;
+    }
 }

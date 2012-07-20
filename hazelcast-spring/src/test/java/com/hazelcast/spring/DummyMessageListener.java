@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.spring;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
 
-public interface Joiner {
+/**
+ * @mdogan 7/11/12
+ */
+public class DummyMessageListener implements MessageListener {
 
-    public void join(AtomicBoolean joined);
-
-    public void searchForOtherClusters(SplitBrainHandler splitBrainHandler);
-
-    long getStartTime();
+    public void onMessage(final Message message) {
+        System.out.println(message);
+    }
 }

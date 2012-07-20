@@ -48,6 +48,10 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private final boolean ICMP_ENABLED;
 
+    private final int ICMP_TTL;
+
+    private final int ICMP_TIMEOUT;
+
     private final Set<ScheduledAction> setScheduledActions = new LinkedHashSet<ScheduledAction>(1000);
 
     private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
@@ -72,6 +76,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         MAX_NO_HEARTBEAT_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         HEARTBEAT_INTERVAL_MILLIS = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger() * 1000L;
         ICMP_ENABLED = node.groupProperties.ICMP_ENABLED.getBoolean();
+        ICMP_TTL = node.groupProperties.ICMP_TTL.getInteger();
+        ICMP_TIMEOUT = node.groupProperties.ICMP_TIMEOUT.getInteger();
         node.clusterService.registerPeriodicRunnable(new SplitBrainHandler(node));
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
@@ -325,7 +331,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     logger.log(Level.WARNING, thisAddress + " will ping " + address);
                     for (int i = 0; i < 5; i++) {
                         try {
-                            if (address.getInetAddress().isReachable(1000)) {
+                            if (address.getInetAddress().isReachable(null, ICMP_TTL, ICMP_TIMEOUT)) {
                                 logger.log(Level.INFO, thisAddress + " pings successfully. Target: " + address);
                                 return;
                             }
@@ -547,7 +553,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer("\n\nMembers [");
+        StringBuilder sb = new StringBuilder("\n\nMembers [");
         sb.append(lsMembers.size());
         sb.append("] {");
         for (MemberImpl member : lsMembers) {
@@ -570,6 +576,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 joinReset();
                 lsMembers.clear();
                 mapMembers.clear();
+                dataMemberCount.reset();
             }
         }, 5);
     }
@@ -727,6 +734,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             mapOldMembers.put(member.getAddress(), member);
         }
         lsMembers.clear();
+        dataMemberCount.reset();
         mapMembers.clear();
         for (MemberInfo memberInfo : lsMemberInfos) {
             MemberImpl member = mapOldMembers.get(memberInfo.address);
@@ -833,6 +841,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         } else {
             lsMembers.add(member);
             mapMembers.put(member.getAddress(), member);
+            if (!member.isLiteMember()) {
+                dataMemberCount.increment();
+            }
         }
         return member;
     }
@@ -842,6 +853,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         logger.log(Level.FINEST, "removing  " + member);
         mapMembers.remove(member.getAddress());
         lsMembers.remove(member);
+        if (!member.isLiteMember()) {
+            dataMemberCount.decrement();
+        }
     }
 
     protected MemberImpl createMember(Address address, NodeType nodeType, String nodeUuid, String ipV6ScopeId) {
@@ -878,6 +892,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (lsMembers != null) {
             lsMembers.clear();
         }
+        dataMemberCount.reset();
         if (mapMembers != null) {
             mapMembers.clear();
         }
