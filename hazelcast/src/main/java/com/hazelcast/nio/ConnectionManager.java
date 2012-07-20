@@ -366,17 +366,21 @@ public class ConnectionManager {
     }
 
     public synchronized void shutdown() {
-        if (!live) return;
-        live = false;
-        stop();
-        if (serverSocketChannel != null) {
-            try {
-                serverSocketChannel.close();
-            } catch (IOException ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
+        try {
+            if (live) {
+                stop();
+            }
+        } finally {
+            es.shutdownNow();
+            if (serverSocketChannel != null) {
+                try {
+                    logger.log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
+                    serverSocketChannel.close();
+                } catch (IOException ignore) {
+                    logger.log(Level.FINEST, ignore.getMessage(), ignore);
+                }
             }
         }
-        es.shutdownNow();
     }
 
     private void stop() {
