@@ -158,7 +158,14 @@ public class Node {
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
         logger = loggingService.getLogger(Node.class.getName());
         initializer = NodeInitializerFactory.create();
-        initializer.beforeInitialize(this);
+        try {
+            initializer.beforeInitialize(this);
+        } catch (Throwable e) {
+            try {
+                serverSocketChannel.close();
+            } catch (Throwable ignored) {}
+            Util.throwUncheckedException(e);
+        }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         clusterImpl = new ClusterImpl(this);
         baseVariables = new NodeBaseVariables(address, localMember);
