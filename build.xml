@@ -82,6 +82,18 @@
             <fileset dir="./hazelcast/target/surefire-reports">
                 <include name="TEST-*.xml"/>
             </fileset>
+            <fileset dir="./hazelcast-client/target/surefire-reports" erroronmissingdir="false">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <fileset dir="./hazelcast-hibernate/target/surefire-reports" erroronmissingdir="false">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <fileset dir="./hazelcast-spring/target/surefire-reports" erroronmissingdir="false">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <fileset dir="./hazelcast-cloud/target/surefire-reports" erroronmissingdir="false">
+                <include name="TEST-*.xml"/>
+            </fileset>
             <report format="frames" todir="./reports"/>
         </junitreport>
     </target>
