@@ -23,10 +23,7 @@ import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.nio.Data;
 import com.hazelcast.util.Clock;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
@@ -50,6 +47,7 @@ public class CMapTest extends TestUtil {
         Hazelcast.shutdownAll();
     }
 
+    @Before
     @After
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
