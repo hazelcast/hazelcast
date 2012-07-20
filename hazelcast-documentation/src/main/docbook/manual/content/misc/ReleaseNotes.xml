@@ -39,18 +39,70 @@
                 <para>Fixed join and split brain issues. Improved domain name handling.</para>
             </listitem>
             <listitem>
+                <para>Added <emphasis>Cluster Health Check</emphasis> to
+                    <link xlink:href="http://hazelcast.com/mancenter.jsp">Management Center</link> application.</para>
+            </listitem>
+            <listitem>
                 <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=5&amp;state=closed">
                     Fixed issues:</link></para>
                 <para>39, 93, 152, 153, 163, 164, 169</para>
             </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        <emphasis role="bold">2.1.3</emphasis>
+        <itemizedlist>
             <listitem>
-                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=4&amp;state=closed">
-                    Fixed issues from 2.1 branch:</link></para>
-                <para>73, 142, 146, 148, 149, 153, 158, 161, 162, 163, 164, 174, 176, 179, 181, 183, 185, 186, 189, 196, 198</para>
+                <para>Fixed join and split brain issues. Improved domain name handling.</para>
+            </listitem>
+            <listitem>
+                <para>Fixed host aware partition group when all members are lite but one.</para>
+            </listitem>
+            <listitem>
+                <para>Fixed jmx management service dead-lock issue.</para>
+            </listitem>
+            <listitem>
+                <para>Fixed IMap replace-if-same and and remove-if-same concurrency issues.</para>
+            </listitem>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=7&amp;state=closed">Fixed issues:</link></para>
+                <para>176, 177, 179, 181, 183, 185, 186, 189, 196, 198</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        <emphasis role="bold">2.1.2</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para>Fixed interruption handling to avoid dead-locks and inconsistency.
+                    See configuration property <code>hazelcast.force.throw.interrupted.exception</code>
+                    in <link xlink:href="#ConfigurationProperties">ConfigurationProperties</link> page.</para>
+            </listitem>
+            <listitem>
+                <para>Replaced ExecutorService used by migration process with a custom one.</para>
+            </listitem>
+            <listitem>
+                <para>Fixed ExecutorService a memory leak during executor thread termination.</para>
+            </listitem>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=6&amp;state=closed">Fixed issues:</link></para>
+                <para>161, 174</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        <emphasis role="bold">2.1.1</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=4&amp;state=closed">Fixed issues:</link></para>
+                <para>73, 142, 146, 148, 149, 153, 158, 162, 163, 164</para>
             </listitem>
             <listitem>
                 <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=3&amp;state=closed">
-                    Fixed issues from 2.0 branch:</link></para>
+                    Fixed issues from 2.0.4 branch:</link></para>
                 <para>96, 98, 131, 132, 135, 140, 166</para>
             </listitem>
         </itemizedlist>
