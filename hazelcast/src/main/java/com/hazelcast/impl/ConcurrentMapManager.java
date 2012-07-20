@@ -1926,7 +1926,7 @@ public class ConcurrentMapManager extends BaseManager {
     abstract class MDefaultBackupAndMigrationAwareOp extends MBackupAndMigrationAwareOp {
         @Override
         void prepareForBackup() {
-            backupCount = Math.min(MapConfig.DEFAULT_BACKUP_COUNT, lsMembers.size() - 1);
+            backupCount = Math.min(MapConfig.DEFAULT_BACKUP_COUNT, dataMemberCount.get() - 1);
         }
     }
 
@@ -1993,11 +1993,10 @@ public class ConcurrentMapManager extends BaseManager {
 
         // executed by ServiceThread
         boolean isValidBackup() {
-            int maxBackupCount = 0;
-            final int members = lsMembers.size();
-            if (members > 1) {
+            int maxBackupCount = dataMemberCount.get() - 1;
+            if (maxBackupCount > 0) {
                 CMap map = getOrCreateMap(request.name);
-                maxBackupCount = Math.min(map.getBackupCount(), members);
+                maxBackupCount = Math.min(map.getBackupCount(), maxBackupCount);
             }
             maxBackupCount = maxBackupCount > 0 ? maxBackupCount : 0;
             return replicaIndex <= maxBackupCount;
@@ -2087,11 +2086,11 @@ public class ConcurrentMapManager extends BaseManager {
         void prepareForBackup() {
             int localBackupCount = 0;
             int localAsyncBackupCount = 0;
-            final int members = lsMembers.size();
-            if (members > 1) {
+            final int maxBackup = dataMemberCount.get() - 1;
+            if (maxBackup > 0) {
                 CMap map = getOrCreateMap(request.name);
-                localBackupCount = Math.min(map.getBackupCount(), members);
-                localAsyncBackupCount = Math.min(map.getAsyncBackupCount(), (members - localBackupCount));
+                localBackupCount = Math.min(map.getBackupCount(), maxBackup);
+                localAsyncBackupCount = Math.min(map.getAsyncBackupCount(), (maxBackup - localBackupCount));
             }
             backupCount = localBackupCount > 0 ? localBackupCount : 0;
             asyncBackupCount = localAsyncBackupCount > 0 ? localAsyncBackupCount : 0;

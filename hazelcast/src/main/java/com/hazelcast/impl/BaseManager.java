@@ -26,9 +26,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.DistributedTimeoutException;
-import com.hazelcast.util.ResponseQueueFactory;
+import com.hazelcast.util.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -49,6 +47,11 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public abstract class BaseManager {
 
     protected final List<MemberImpl> lsMembers;
+    /**
+     * Counter for normal/data (non-lite) members.
+     * Counter is not thread-safe!
+     */
+    protected final Counter dataMemberCount;
 
     protected final Map<Address, MemberImpl> mapMembers;
 
@@ -85,6 +88,7 @@ public abstract class BaseManager {
         this.node = node;
         systemLogService = node.getSystemLogService();
         lsMembers = node.baseVariables.lsMembers;
+        dataMemberCount = node.baseVariables.dataMemberCount;
         mapMembers = node.baseVariables.mapMembers;
         mapCalls = node.baseVariables.mapCalls;
         thisAddress = node.baseVariables.thisAddress;

@@ -841,7 +841,7 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         int maxSize() {
-            return (maxSizePerJVM == Integer.MAX_VALUE) ? Integer.MAX_VALUE : maxSizePerJVM * lsMembers.size();
+            return (maxSizePerJVM == Integer.MAX_VALUE) ? Integer.MAX_VALUE : maxSizePerJVM * dataMemberCount.get();
         }
 
         void doGenerateKey(Request req) {
