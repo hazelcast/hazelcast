@@ -148,6 +148,7 @@ public abstract class AbstractJoiner implements Joiner {
                 try {
                     validJoinRequest = node.validateJoinRequest(joinInfo);
                 } catch (Exception e) {
+                    logger.log(Level.FINEST, e.getMessage());
                     validJoinRequest = false;
                 }
                 if (validJoinRequest) {
@@ -175,6 +176,10 @@ public abstract class AbstractJoiner implements Joiner {
                                                      + ", this node member count: " + currentMemberCount);
                             logger.log(Level.FINEST, joinInfo.toString());
                             shouldMerge = true;
+                        } else {
+                            logger.log(Level.FINEST, joinInfo.address + " should merge to this node "
+                                                     + ", because : node.getThisAddress().hashCode() < joinInfo.address.hashCode() "
+                                                     + ", this node member count: " + currentMemberCount);
                         }
                     }
                 }
