@@ -24,13 +24,13 @@ import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.IPermissionPolicy;
+import com.hazelcast.spring.HzSpringJUnit4ClassRunner;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -38,7 +38,7 @@ import java.util.Set;
 
 import static org.junit.Assert.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(HzSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"secure-applicationContext-hazelcast.xml"})
 public class TestSecureApplicationContext {
 
