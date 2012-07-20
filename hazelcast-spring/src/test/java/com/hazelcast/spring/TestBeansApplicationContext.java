@@ -19,7 +19,6 @@ package com.hazelcast.spring;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.GroupProperties;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -28,15 +27,10 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(HzSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"beans-applicationContext-hazelcast.xml"})
 public class TestBeansApplicationContext {
-
-    static {
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-    }
 
     @BeforeClass
     @AfterClass
