@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.wan.WanMergeListener;
 import com.hazelcast.merge.PassThroughMergePolicy;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,6 +50,7 @@ public class WanReplicationTest {
     }
 
     @After
+    @Before
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
     }
