@@ -16,27 +16,29 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import com.hazelcast.impl.GroupProperties;
-import org.hibernate.cfg.Environment;
-import org.junit.BeforeClass;
-import org.junit.runner.RunWith;
+import org.junit.runners.BlockJUnit4ClassRunner;
+import org.junit.runners.model.InitializationError;
 
-import java.util.Properties;
+/**
+ * @mdogan 7/19/12
+ */
+public class TestBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
-@RunWith(TestBlockJUnit4ClassRunner.class)
-public class CacheProviderDefaultTest extends HibernateStatisticsTestSupport {
-
-    @BeforeClass
-    public static void init() throws Exception {
+    static {
+        System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
-        Hazelcast.shutdownAll();
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
     }
 
-    protected Properties getCacheProperties() {
-        Properties props = new Properties();
-        props.setProperty(Environment.CACHE_PROVIDER, HazelcastCacheProvider.class.getName());
-        return props;
+    /**
+     * Creates a BlockJUnit4ClassRunner to run {@code klass}
+     *
+     * @throws org.junit.runners.model.InitializationError
+     *          if the test class is malformed.
+     */
+    public TestBlockJUnit4ClassRunner(Class<?> klass) throws InitializationError {
+        super(klass);
     }
 }
