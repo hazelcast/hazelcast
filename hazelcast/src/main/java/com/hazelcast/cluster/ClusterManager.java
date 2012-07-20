@@ -576,6 +576,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 joinReset();
                 lsMembers.clear();
                 mapMembers.clear();
+                dataMemberCount.reset();
             }
         }, 5);
     }
@@ -733,6 +734,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             mapOldMembers.put(member.getAddress(), member);
         }
         lsMembers.clear();
+        dataMemberCount.reset();
         mapMembers.clear();
         for (MemberInfo memberInfo : lsMemberInfos) {
             MemberImpl member = mapOldMembers.get(memberInfo.address);
@@ -839,6 +841,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         } else {
             lsMembers.add(member);
             mapMembers.put(member.getAddress(), member);
+            if (!member.isLiteMember()) {
+                dataMemberCount.increment();
+            }
         }
         return member;
     }
@@ -848,6 +853,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         logger.log(Level.FINEST, "removing  " + member);
         mapMembers.remove(member.getAddress());
         lsMembers.remove(member);
+        if (!member.isLiteMember()) {
+            dataMemberCount.decrement();
+        }
     }
 
     protected MemberImpl createMember(Address address, NodeType nodeType, String nodeUuid, String ipV6ScopeId) {
@@ -884,6 +892,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (lsMembers != null) {
             lsMembers.clear();
         }
+        dataMemberCount.reset();
         if (mapMembers != null) {
             mapMembers.clear();
         }
