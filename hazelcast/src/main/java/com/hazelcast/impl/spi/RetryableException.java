@@ -16,6 +16,5 @@
 
 package com.hazelcast.impl.spi;
 
-public interface BackupOperation {
-
+public interface RetryableException {
 }

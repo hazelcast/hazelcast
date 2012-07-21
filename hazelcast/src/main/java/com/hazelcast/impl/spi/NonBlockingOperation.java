@@ -16,5 +16,6 @@
 
 package com.hazelcast.impl.spi;
 
-public interface NoResponse {
+public interface NonBlockingOperation {
+
 }

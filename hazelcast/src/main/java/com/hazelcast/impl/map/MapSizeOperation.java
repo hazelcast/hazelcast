@@ -20,13 +20,13 @@ import com.hazelcast.impl.spi.AbstractNamedOperation;
 import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.impl.spi.OperationContext;
 
-public class MapSizeExecutor extends AbstractNamedOperation implements Operation {
+public class MapSizeOperation extends AbstractNamedOperation implements Operation {
 
-    public MapSizeExecutor(String name) {
+    public MapSizeOperation(String name) {
         super(name);
     }
 
-    public MapSizeExecutor() {
+    public MapSizeOperation() {
     }
 
     public Object call() throws Exception {

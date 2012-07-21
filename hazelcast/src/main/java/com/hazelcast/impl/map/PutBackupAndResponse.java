@@ -74,8 +74,4 @@ public class PutBackupAndResponse extends Response {
         value.readData(in);
         name = in.readUTF();
     }
-
-    public String getMapName() {
-        return name;
-    }
 }

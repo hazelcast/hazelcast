@@ -18,12 +18,12 @@ package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
-import com.hazelcast.impl.spi.BackupOperation;
+import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.impl.spi.Response;
 import com.hazelcast.nio.Data;
 
-public class PutBackupOperation extends PutOperation implements BackupOperation {
+public class PutBackupOperation extends PutOperation implements NonBlockingOperation {
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
         super(name, dataKey, dataValue, ttl);

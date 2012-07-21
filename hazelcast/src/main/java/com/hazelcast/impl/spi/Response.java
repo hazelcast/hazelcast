@@ -25,7 +25,7 @@ import java.io.IOException;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class Response extends AbstractOperation implements BackupOperation, Operation, NoResponse {
+public class Response extends AbstractOperation implements NonBlockingOperation, NoReply {
     Object result = null;
     Data resultData = null;
     boolean exception = false;
@@ -40,7 +40,12 @@ public class Response extends AbstractOperation implements BackupOperation, Oper
     public Response(Object result, boolean exception) {
         this.result = result;
         this.exception = exception;
-        this.resultData = toData(result);
+        try {
+            this.resultData = toData(result);
+        } catch (Exception e) {
+            System.out.println("OBJ " + result);
+            e.printStackTrace();
+        }
     }
 
     public Object call() {
@@ -77,7 +82,7 @@ public class Response extends AbstractOperation implements BackupOperation, Oper
     @Override
     public String toString() {
         return "Response{" +
-                "result=" + result +
+                "result=" + getResult() +
                 ", exception=" + exception +
                 '}';
     }

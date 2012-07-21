@@ -19,7 +19,6 @@ package com.hazelcast.impl.map;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.spi.AbstractNamedKeyBasedOperation;
 import com.hazelcast.impl.spi.OperationContext;
-import com.hazelcast.impl.spi.Response;
 import com.hazelcast.nio.Data;
 
 public class GetOperation extends AbstractNamedKeyBasedOperation {
@@ -34,10 +33,11 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
 
     public Object call() {
         OperationContext context = getOperationContext();
+        context.getNodeService().checkTarget(context.getPartitionId(), 0);
         MapService mapService = (MapService) context.getService();
         MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
         Record record = mapPartition.records.get(dataKey);
-        return new Response(record == null ? null : record.getValueData());
+        return record == null ? null : record.getValueData();
     }
 
     @Override

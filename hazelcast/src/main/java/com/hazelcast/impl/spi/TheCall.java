@@ -22,25 +22,31 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class TheCall implements Call, Future {
+public class TheCall implements Call {
     long id;
-    final Address target;
+    private final Address target;
     private final Operation op;
     private final Callback callback;
-    final BlockingQueue<Response> responseQ = ResponseQueueFactory.newResponseQueue();
+
+    public TheCall(Address target, Operation op) {
+        this.target = target;
+        this.op = op;
+        final BlockingQueue responseQ = ResponseQueueFactory.newResponseQueue();
+        this.callback = new Callback() {
+            public void notify(Operation op, final Object result) {
+                responseQ.offer(result);
+            }
+        };
+    }
 
     public TheCall(Address target, Operation op, Callback callback) {
         this.target = target;
         this.op = op;
         this.callback = callback;
-    }
-
-    public BlockingQueue<Response> getResponseQ() {
-        return responseQ;
     }
 
     public long getCallId() {
@@ -63,10 +69,7 @@ public class TheCall implements Call, Future {
     }
 
     public void offerResponse(Response response) {
-        responseQ.offer(response);
-        if (callback != null) {
-            callback.notify(op, response);
-        }
+        callback.notify(op, response);
     }
 
     public void process() {
@@ -74,27 +77,7 @@ public class TheCall implements Call, Future {
 
     public void onDisconnect(Address dead) {
         if (dead.equals(target)) {
-            responseQ.offer(new Response(new IOException(), true));
+            callback.notify(op, new IOException());
         }
-    }
-
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean isCancelled() {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean isDone() {
-        throw new UnsupportedOperationException();
-    }
-
-    public Object get() throws InterruptedException, ExecutionException {
-        return responseQ.take();
-    }
-
-    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return responseQ.poll(timeout, unit);
     }
 }

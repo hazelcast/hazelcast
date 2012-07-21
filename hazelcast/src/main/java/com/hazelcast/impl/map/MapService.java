@@ -18,16 +18,15 @@ package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.spi.NodeService;
-import com.hazelcast.nio.Address;
 
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MapService {
     public final static String MAP_SERVICE_NAME = "mapService";
 
-    final PartitionContainer[] partitionContainers;
-    private NodeService nodeService;
+    private final AtomicLong counter = new AtomicLong();
+    private final PartitionContainer[] partitionContainers;
+    private final NodeService nodeService;
 
     public MapService(NodeService nodeService, PartitionInfo[] partitions) {
         this.nodeService = nodeService;
@@ -38,10 +37,6 @@ public class MapService {
         }
     }
 
-    public Future backup(PutBackupOperation putBackupOperation, Address target) throws Exception {
-        return nodeService.invoke(MAP_SERVICE_NAME, putBackupOperation, target);
-    }
-
     public PartitionContainer getPartitionContainer(int partitionId) {
         return partitionContainers[partitionId];
     }
@@ -49,8 +44,6 @@ public class MapService {
     public MapPartition getMapPartition(int partitionId, String mapName) {
         return getPartitionContainer(partitionId).getMapPartition(mapName);
     }
-
-    final AtomicLong counter = new AtomicLong();
 
     public long nextId() {
         return counter.incrementAndGet();

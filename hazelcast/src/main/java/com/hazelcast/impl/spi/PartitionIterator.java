@@ -31,11 +31,11 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public class PartitionIterator extends AbstractOperation {
     ArrayList<Integer> partitions;
-    Data callableOperation;
+    Data operationData;
 
-    public PartitionIterator(ArrayList<Integer> partitions, Data callableOperation) {
+    public PartitionIterator(ArrayList<Integer> partitions, Data operationData) {
         this.partitions = partitions;
-        this.callableOperation = callableOperation;
+        this.operationData = operationData;
     }
 
     public PartitionIterator() {
@@ -52,16 +52,18 @@ public class PartitionIterator extends AbstractOperation {
                     if (!nodeService.isOwner(partitionId)) {
                         return "NOT OWNER";
                     } else {
-                        Operation mpe = (Operation) toObject(callableOperation);
-                        mpe.getOperationContext().setPartitionId(partitionId).setService(service);
-                        return mpe.call();
+                        Operation op = (Operation) toObject(operationData);
+                        op.getOperationContext().setPartitionId(partitionId).setService(service);
+                        return op.call();
                     }
                 }
             }, false);
             responses.put(partitionId, f);
         }
         for (Map.Entry<Integer, Future> partitionResponse : responses.entrySet()) {
-            results.put(partitionResponse.getKey(), partitionResponse.getValue().get());
+            Object result = partitionResponse.getValue().get();
+            System.out.println("result....  is " + result);
+            results.put(partitionResponse.getKey(), result);
         }
         return new Response(results);
     }
@@ -74,7 +76,7 @@ public class PartitionIterator extends AbstractOperation {
         for (int i = 0; i < pCount; i++) {
             out.writeInt(partitions.get(i));
         }
-        callableOperation.writeData(out);
+        operationData.writeData(out);
     }
 
     @Override
@@ -85,7 +87,7 @@ public class PartitionIterator extends AbstractOperation {
         for (int i = 0; i < pCount; i++) {
             partitions.add(in.readInt());
         }
-        callableOperation = new Data();
-        callableOperation.readData(in);
+        operationData = new Data();
+        operationData.readData(in);
     }
 }

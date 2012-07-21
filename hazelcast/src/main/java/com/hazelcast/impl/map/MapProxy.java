@@ -16,10 +16,7 @@
 
 package com.hazelcast.impl.map;
 
-import com.hazelcast.core.RuntimeInterruptedException;
-import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.spi.NodeService;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 import java.util.Map;
@@ -37,34 +34,28 @@ public class MapProxy {
     public Object put(String name, Object k, Object v, long ttl) {
         Data key = toData(k);
         int partitionId = nodeService.getPartitionId(key);
-        Address target = ((MemberImpl) nodeService.getOwner(partitionId)).getAddress();
         PutOperation putOperation = new PutOperation(name, toData(k), v, ttl);
         try {
-            return nodeService.invoke(MAP_SERVICE_NAME, putOperation, target).get();
-        } catch (InterruptedException e) {
-            throw new RuntimeInterruptedException();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            return nodeService.invokeOptimistically(MAP_SERVICE_NAME, putOperation, partitionId).get();
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
         }
     }
 
     public Object getOperation(String name, Object k) {
         Data key = toData(k);
         int partitionId = nodeService.getPartitionId(key);
-        Address target = ((MemberImpl) nodeService.getOwner(partitionId)).getAddress();
-        GetOperation operation = new GetOperation(name, toData(k));
+        GetOperation getOperation = new GetOperation(name, toData(k));
         try {
-            return nodeService.invoke(MAP_SERVICE_NAME, operation, target).get();
-        } catch (InterruptedException e) {
-            throw new RuntimeInterruptedException();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            return nodeService.invokeOptimistically(MAP_SERVICE_NAME, getOperation, partitionId).get();
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
         }
     }
 
     public int getSize(String name) {
         try {
-            Map<Integer, Object> results = nodeService.invokeOnAllPartitions(MAP_SERVICE_NAME, new MapSizeExecutor(name));
+            Map<Integer, Object> results = nodeService.invokeOnAllPartitions(MAP_SERVICE_NAME, new MapSizeOperation(name));
             int total = 0;
             for (Object result : results.values()) {
                 Integer size = (Integer) result;

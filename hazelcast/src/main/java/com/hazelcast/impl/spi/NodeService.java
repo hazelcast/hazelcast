@@ -39,8 +39,8 @@ public class NodeService {
 
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
     private final ExecutorService executorService = Executors.newCachedThreadPool();
-    private final Workers workers2 = new Workers("hz.NonBlocking", 1);
-    private final Workers workers = new Workers("hz.Blocking", 8);
+    private final Workers nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
+    private final Workers blockingWorkers = new Workers("hz.Blocking", 8);
     private final Node node;
     final int PARTITION_COUNT;
     final int MAX_BACKUP_COUNT;
@@ -55,24 +55,13 @@ public class NodeService {
         return node.concurrentMapManager.getPartitionId(key);
     }
 
-    public Future invoke(final String serviceName, Operation op, Address target) throws Exception {
-        if (target == null) {
-            throw new NullPointerException(op + ": Target is null");
-        }
-        if (getThisAddress().equals(target)) {
-            return invokeLocally(serviceName, op);
-        } else {
-            return invokeRemotely(serviceName, target, op);
-        }
-    }
-
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception {
         Map<Member, ArrayList<Integer>> memberPartitions = getMemberPartitions();
         List<Future> responses = new ArrayList<Future>(memberPartitions.size());
         Data data = toData(op);
         for (Map.Entry<Member, ArrayList<Integer>> mp : memberPartitions.entrySet()) {
             Address target = ((MemberImpl) mp.getKey()).getAddress();
-            responses.add(invoke(serviceName, new PartitionIterator(mp.getValue(), data), target));
+            responses.add(invoke(serviceName, new PartitionIterator(mp.getValue(), data), target, -1));
         }
         Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(PARTITION_COUNT);
         for (Future response : responses) {
@@ -81,6 +70,25 @@ public class NodeService {
             System.out.println(partialResult);
             partitionResults.putAll(partialResult);
         }
+        List<Integer> failedPartitions = new ArrayList<Integer>(0);
+        for (Map.Entry<Integer, Object> partitionResult : partitionResults.entrySet()) {
+            int partitionId = partitionResult.getKey();
+            Object result = partitionResult.getValue();
+            if (result instanceof Exception) {
+                failedPartitions.add(partitionId);
+            }
+        }
+        Thread.sleep(500);
+        System.out.println("TRYING AGAIN...");
+        for (Integer failedPartition : failedPartitions) {
+            partitionResults.put(failedPartition, invoke(serviceName, op, getPartitionInfo(failedPartition).getOwner(), failedPartition));
+        }
+        for (Integer failedPartition : failedPartitions) {
+            Future f = (Future) partitionResults.get(failedPartition);
+            Object result = f.get();
+            System.out.println(failedPartition + " now response " + result);
+            partitionResults.put(failedPartition, result);
+        }
         return partitionResults;
     }
 
@@ -88,7 +96,7 @@ public class NodeService {
         return node.concurrentMapManager.getPartitionServiceImpl().getPartition(partitionId).getOwner();
     }
 
-    Map<Member, ArrayList<Integer>> getMemberPartitions() {
+    private Map<Member, ArrayList<Integer>> getMemberPartitions() {
         Set<Member> members = node.getClusterImpl().getMembers();
         Map<Member, ArrayList<Integer>> memberPartitions = new HashMap<Member, ArrayList<Integer>>(members.size());
         for (int i = 0; i < PARTITION_COUNT; i++) {
@@ -103,24 +111,202 @@ public class NodeService {
         return memberPartitions;
     }
 
-    private Future invokeLocally(final String serviceName, final Operation op) {
-        final int partitionId = (op instanceof KeyBasedOperation)
-                ? getPartitionId(((KeyBasedOperation) op).getKey())
-                : -1;
+    public Future invokeOptimistically(String serviceName, Operation op, int partitionId) {
+        return invoke(serviceName, op, partitionId, 0, 10, 500);
+    }
+
+    public Future invokeOptimistically(String serviceName, Operation op, int partitionId, int replicaIndex) {
+        return invoke(serviceName, op, partitionId, replicaIndex, 10, 500);
+    }
+
+    public Future invoke(String serviceName, Operation op, int partitionId, int tryCount, long tryPauseMillis) {
+        return invoke(serviceName, op, partitionId, 0, tryCount, tryPauseMillis);
+    }
+
+    public Future invoke(String serviceName, Operation op, int partitionId, int replicaIndex, int tryCount, long tryPauseMillis) {
+        SinglePartitionInvocation inv = new SinglePartitionInvocation(serviceName, op, getPartitionInfo(partitionId), replicaIndex, tryCount, tryPauseMillis);
+        invokeOnSinglePartition(inv);
+        return inv;
+    }
+
+    interface Invocation extends Future {
+        void invoke();
+    }
+
+    class SinglePartitionInvocation extends FutureTask implements Invocation, Callback {
+        private final String serviceName;
+        private final Operation op;
+        private final PartitionInfo partitionInfo;
+        private final int replicaIndex;
+        private final int tryCount;
+        private final long tryPauseMillis;
+        private volatile int invokeCount = 0;
+
+        SinglePartitionInvocation(String serviceName, Operation op, PartitionInfo partitionInfo, int replicaIndex, int tryCount, long tryPauseMillis) {
+            super(op);
+            this.serviceName = serviceName;
+            this.op = op;
+            this.partitionInfo = partitionInfo;
+            this.replicaIndex = replicaIndex;
+            this.tryCount = tryCount;
+            this.tryPauseMillis = tryPauseMillis;
+        }
+
+        public void notify(Operation op, Object result) {
+            setResult(result);
+        }
+
+        public void run() {
+            try {
+                setResult(op.call());
+            } catch (Exception e) {
+                setResult(e);
+            }
+        }
+
+        public Address getTarget() {
+            return partitionInfo.getReplicaAddress(replicaIndex);
+        }
+
+        public void invoke() {
+            try {
+                invokeCount++;
+                invokeOnSinglePartition(SinglePartitionInvocation.this);
+            } catch (Exception e) {
+                setResult(e);
+            }
+        }
+
+        public void setResult(Object obj) {
+            if (obj instanceof RetryableException) {
+                if (invokeCount < tryCount) {
+                    try {
+                        Thread.sleep(tryPauseMillis);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    invoke();
+                } else {
+                    setException((Throwable) obj);
+                }
+            } else {
+                if (obj instanceof Exception) {
+                    setException((Throwable) obj);
+                } else {
+                    set(obj);
+                }
+            }
+        }
+
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        public Operation getOperation() {
+            return op;
+        }
+
+        public PartitionInfo getPartitionInfo() {
+            return partitionInfo;
+        }
+
+        public int getReplicaIndex() {
+            return replicaIndex;
+        }
+
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            throw new UnsupportedOperationException();
+        }
+
+        public boolean isCancelled() {
+            return false;
+        }
+    }
+
+    public Future invoke(String serviceName, Operation op, Address target, int partitionId) throws Exception {
+        if (target == null) {
+            throw new NullPointerException(op + ": Target is null");
+        }
+        if (getClusterImpl().getMember(target) == null) {
+            throw new RuntimeException("Target not a member: " + target);
+        }
+        if (getThisAddress().equals(target)) {
+            return invokeLocally(serviceName, op, partitionId);
+        } else {
+            return invokeRemotely(serviceName, target, op, partitionId);
+        }
+    }
+
+    void invokeOnSinglePartition(SinglePartitionInvocation inv) {
+        Address target = inv.getTarget();
+        Operation op = inv.getOperation();
+        int partitionId = inv.getPartitionInfo().getPartitionId();
+        String serviceName = inv.getServiceName();
+        boolean nonBlocking = (op instanceof NonBlockingOperation);
+        setOperationContext(op, serviceName, node.getThisAddress(), -1, partitionId)
+                .setLocal(true);
+        if (target == null) {
+            throw new NullPointerException(inv.getOperation() + ": Target is null");
+        }
+        if (getClusterImpl().getMember(target) == null) {
+            throw new RuntimeException("Target not a member: " + target);
+        }
+        if (getThisAddress().equals(target)) {
+            final ExecutorService executor = getExecutor(partitionId, nonBlocking);
+            executor.execute(inv);
+        } else {
+            if (getThisAddress().equals(target)) {
+                throw new RuntimeException("RemoteTarget cannot be local!");
+            }
+            final Packet packet = new Packet();
+            packet.operation = REMOTE_CALL;
+            packet.blockId = partitionId;
+            packet.name = serviceName;
+            packet.longValue = nonBlocking ? 1 : 0;
+            Data valueData = toData(op);
+            packet.setValue(valueData);
+            TheCall call = new TheCall(target, op, inv);
+            boolean sent = node.concurrentMapManager.registerAndSend(target, packet, call);
+            if (!sent) {
+                inv.setResult(new IOException());
+            }
+        }
+    }
+
+    private Future invokeLocally(String serviceName, Operation op, int partitionId) {
         return invokeLocally(serviceName, partitionId, op);
     }
 
-    private Future invokeLocally(final String serviceName, final int partitionId, final Operation op) {
+    private Future invokeLocally(String serviceName, int partitionId, Operation op) {
         setOperationContext(op, serviceName, node.getThisAddress(), -1, partitionId)
                 .setLocal(true);
-        return runLocally(partitionId, op, (op instanceof BackupOperation));
+        return runLocally(partitionId, op, (op instanceof NonBlockingOperation));
     }
 
-    private Future invokeRemotely(final String serviceName, Address target, Operation op) throws Exception {
-        return invokeRemotely(serviceName, target, op, null);
+    private Future invokeRemotely(String serviceName, Address target, Operation op, int partitionId) throws Exception {
+        return invokeRemotely(serviceName, target, op, partitionId, null);
     }
 
-    private Future invokeRemotely(final String serviceName, Address target, Operation op, Callback callback) throws Exception {
+    public Future runLocally(final int partitionId, final Callable op, final boolean nonBlocking) {
+        final ExecutorService executor = getExecutor(partitionId, nonBlocking);
+        return executor.submit(new Callable() {
+            public Object call() throws Exception {
+                Object response = null;
+                if (partitionId != -1 && !(op instanceof NonBlockingOperation)) {
+                    PartitionInfo partitionInfo = getPartitionInfo(partitionId);
+                    Address owner = partitionInfo.getOwner();
+                    if (true || !getThisAddress().equals(owner)) {
+                        response = new WrongTargetException(getThisAddress(), owner);
+                    }
+                } else {
+                    response = op.call();
+                }
+                return response;
+            }
+        });
+    }
+
+    private Future invokeRemotely(String serviceName, Address target, Operation op, int partitionId, Callback callback) throws Exception {
         if (target == null) throw new NullPointerException("Target is null");
         if (node.getClusterImpl().getMember(target) == null) {
             throw new RuntimeException("TargetNotClusterMember[" + target + "]");
@@ -128,14 +314,11 @@ public class NodeService {
         if (getThisAddress().equals(target)) {
             throw new RuntimeException("RemoteTarget cannot be local!");
         }
-        final int partitionId = (op instanceof KeyBasedOperation)
-                ? getPartitionId(((KeyBasedOperation) op).getKey())
-                : -1;
         final Packet packet = new Packet();
         packet.operation = REMOTE_CALL;
         packet.blockId = partitionId;
         packet.name = serviceName;
-        packet.longValue = (op instanceof BackupOperation) ? 1 : 0;
+        packet.longValue = (op instanceof NonBlockingOperation) ? 1 : 0;
         Data valueData = toData(op);
         packet.setValue(valueData);
         TheCall call = new TheCall(target, op, callback);
@@ -143,7 +326,7 @@ public class NodeService {
         if (!sent) {
             throw new IOException();
         }
-        return call;
+        return null;
     }
 
     public void handleOperation(final Packet packet) {
@@ -157,15 +340,26 @@ public class NodeService {
         executor.execute(new Runnable() {
             public void run() {
                 try {
-                    Object obj = toObject(data);
-                    Operation op = (Operation) obj;
-                    setOperationContext(op, serviceName, caller, callId, partitionId);
-                    Object response = op.call();
-                    if (!(op instanceof NoResponse)) {
+                    Object response = null;
+                    Operation op = (Operation) toObject(data);
+                    if (partitionId != -1 && !(op instanceof NonBlockingOperation)) {
+                        PartitionInfo partitionInfo = getPartitionInfo(partitionId);
+                        Address owner = partitionInfo.getOwner();
+                        if (true || !getThisAddress().equals(owner)) {
+                            response = new Response(new WrongTargetException(getThisAddress(), owner), true);
+                        }
+                    } else {
+                        setOperationContext(op, serviceName, caller, callId, partitionId);
+                        response = op.call();
+                    }
+                    if (!(op instanceof NoReply)) {
+                        if (response instanceof Operation) {
+                            response = new Response(response);
+                        }
                         packet.clearForResponse();
                         packet.blockId = partitionId;
                         packet.callId = callId;
-                        packet.longValue = (response instanceof BackupOperation) ? 1 : 0;
+                        packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
                         packet.setValue(toData(response));
                         packet.name = serviceName;
                         node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
@@ -274,20 +468,23 @@ public class NodeService {
         return node.concurrentMapManager.getPartitionInfo(partitionId);
     }
 
-    public ExecutorService getExecutor(int partitionId, boolean nonBlocking) {
+    private ExecutorService getExecutor(int partitionId, boolean nonBlocking) {
         if (partitionId > -1) {
-            return (nonBlocking) ? workers2.getExecutor(partitionId) : workers.getExecutor(partitionId);
+            return (nonBlocking) ? nonBlockingWorkers.getExecutor(partitionId) : blockingWorkers.getExecutor(partitionId);
         } else {
             return executorService;
         }
     }
 
-    public Future runLocally(final int partitionId, final Callable callable, final boolean nonBlocking) {
-        final ExecutorService executor = getExecutor(partitionId, nonBlocking);
-        return executor.submit(callable);
-    }
-
     public boolean isOwner(int partitionId) {
         return node.concurrentMapManager.getPartitionServiceImpl().getPartition(partitionId).getOwner().localMember();
+    }
+
+    public void checkTarget(int partitionId, int replicaIndex) throws WrongTargetException {
+        PartitionInfo p = getPartitionInfo(partitionId);
+        Address target = p.getReplicaAddress(replicaIndex);
+        if (!getThisAddress().equals(target)) {
+            throw new WrongTargetException(getThisAddress(), target);
+        }
     }
 }

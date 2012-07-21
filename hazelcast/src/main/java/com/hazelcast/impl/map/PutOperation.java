@@ -112,7 +112,8 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
             List<Future> backupOps = new ArrayList<Future>(backupCount);
             PartitionInfo partitionInfo = mapPartition.partitionInfo;
             for (int i = 0; i < backupCount; i++) {
-                Address replicaTarget = partitionInfo.getReplicaAddress(i + 1);
+                int replicaIndex = i + 1;
+                Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
                 if (replicaTarget != null) {
                     if (replicaTarget.equals(nodeService.getThisAddress())) {
 //                            Normally shouldn't happen!!
@@ -126,7 +127,7 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
                         } else {
                             PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
                             try {
-                                backupOps.add(nodeService.invoke(MapService.MAP_SERVICE_NAME, pbo, replicaTarget));
+                                backupOps.add(nodeService.invokeOptimistically(MapService.MAP_SERVICE_NAME, pbo, partitionInfo.getPartitionId(), replicaIndex));
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
