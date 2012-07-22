@@ -34,7 +34,7 @@ public class Response extends AbstractOperation implements NonBlockingOperation,
     }
 
     public Response(Object result) {
-        this(result, false);
+        this(result, (result instanceof Throwable));
     }
 
     public Response(Object result, boolean exception) {
@@ -51,6 +51,14 @@ public class Response extends AbstractOperation implements NonBlockingOperation,
         long callId = getOperationContext().getCallId();
         getOperationContext().getNodeService().notifyCall(callId, Response.this);
         return null;
+    }
+
+    public boolean isException() {
+        return exception;
+    }
+
+    public Data getResultData() {
+        return resultData;
     }
 
     public Object getResult() {

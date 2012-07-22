@@ -137,9 +137,7 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
             }
             for (Future backupOp : backupOps) {
                 try {
-                    if (backupOp.get(10, TimeUnit.SECONDS) == null) {
-                        System.out.println(Thread.currentThread() + " !!!! " + backupOps.size());
-                    }
+                    backupOp.get(10, TimeUnit.SECONDS);
                 } catch (Exception e) {
                 }
             }

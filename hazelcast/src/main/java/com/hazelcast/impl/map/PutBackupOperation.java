@@ -20,7 +20,6 @@ import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.OperationContext;
-import com.hazelcast.impl.spi.Response;
 import com.hazelcast.nio.Data;
 
 public class PutBackupOperation extends PutOperation implements NonBlockingOperation {
@@ -45,7 +44,7 @@ public class PutBackupOperation extends PutOperation implements NonBlockingOpera
         }
         record.setActive();
         record.setDirty(true);
-        return new Response();
+        return null;
     }
 
     @Override

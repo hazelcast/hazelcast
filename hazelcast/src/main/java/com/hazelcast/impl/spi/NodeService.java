@@ -153,13 +153,23 @@ public class NodeService {
         }
 
         public void notify(Operation op, Object result) {
-            setResult(result);
+            if (result instanceof Response) {
+                Response response = (Response) result;
+                if (response.isException()) {
+                    setResult(response.getResult());
+                } else {
+                    setResult(response.getResultData());
+                }
+            } else {
+                setResult(result);
+            }
         }
 
         public void run() {
             try {
-                setResult(op.call());
-            } catch (Exception e) {
+                Object result = op.call();
+                notify(op, result);
+            } catch (Throwable e) {
                 setResult(e);
             }
         }
@@ -238,7 +248,6 @@ public class NodeService {
     }
 
     void invokeOnSinglePartition(final SinglePartitionInvocation inv) {
-//        System.out.println("invockig " + inv.getOperation());
         final Address target = inv.getTarget();
         final Operation op = inv.getOperation();
         final int partitionId = inv.getPartitionInfo().getPartitionId();
@@ -311,7 +320,7 @@ public class NodeService {
                 if (partitionId != -1 && !(op instanceof NonBlockingOperation)) {
                     PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                     Address owner = partitionInfo.getOwner();
-                    if (true || !getThisAddress().equals(owner)) {
+                    if (!getThisAddress().equals(owner)) {
                         response = new WrongTargetException(getThisAddress(), owner);
                     }
                 } else {
@@ -357,18 +366,17 @@ public class NodeService {
             public void run() {
                 try {
                     Object response = null;
-                    Operation op = (Operation) toObject(data);
-                    if (partitionId != -1 && !(op instanceof NonBlockingOperation)) {
-                        PartitionInfo partitionInfo = getPartitionInfo(partitionId);
-                        Address owner = partitionInfo.getOwner();
-                        if (!getThisAddress().equals(owner)) {
-                            response = new Response(new WrongTargetException(getThisAddress(), owner), true);
-                        }
+                    final Operation op = (Operation) toObject(data);
+                    PartitionInfo partitionInfo = getPartitionInfo(partitionId);
+                    Address owner = partitionInfo.getOwner();
+                    if (partitionId != -1 && !(op instanceof NonBlockingOperation) && !getThisAddress().equals(owner)) {
+                        response = new Response(new WrongTargetException(getThisAddress(), owner), true);
                     } else {
-                        setOperationContext(op, serviceName, caller, callId, partitionId);
                         try {
+                            setOperationContext(op, serviceName, caller, callId, partitionId);
                             response = op.call();
                         } catch (Throwable e) {
+                            e.printStackTrace();
                             response = e;
                         }
                     }

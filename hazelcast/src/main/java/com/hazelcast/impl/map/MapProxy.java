@@ -23,6 +23,7 @@ import java.util.Map;
 
 import static com.hazelcast.impl.map.MapService.MAP_SERVICE_NAME;
 import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapProxy {
     final NodeService nodeService;
@@ -36,7 +37,8 @@ public class MapProxy {
         int partitionId = nodeService.getPartitionId(key);
         PutOperation putOperation = new PutOperation(name, toData(k), v, ttl);
         try {
-            return nodeService.invokeOptimistically(MAP_SERVICE_NAME, putOperation, partitionId).get();
+            Data response = (Data) nodeService.invokeOptimistically(MAP_SERVICE_NAME, putOperation, partitionId).get();
+            return toObject(response);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -47,9 +49,8 @@ public class MapProxy {
         int partitionId = nodeService.getPartitionId(key);
         GetOperation getOperation = new GetOperation(name, toData(k));
         try {
-            Object response = nodeService.invokeOptimistically(MAP_SERVICE_NAME, getOperation, partitionId).get();
-            System.out.println("response is " + response);
-            return response;
+            Data response = (Data) nodeService.invokeOptimistically(MAP_SERVICE_NAME, getOperation, partitionId).get();
+            return toObject(response);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
