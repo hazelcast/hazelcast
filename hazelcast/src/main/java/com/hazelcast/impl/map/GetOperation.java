@@ -33,7 +33,6 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
 
     public Object call() {
         OperationContext context = getOperationContext();
-        context.getNodeService().checkTarget(context.getPartitionId(), 0);
         MapService mapService = (MapService) context.getService();
         MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
         Record record = mapPartition.records.get(dataKey);

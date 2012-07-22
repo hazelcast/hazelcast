@@ -47,7 +47,9 @@ public class MapProxy {
         int partitionId = nodeService.getPartitionId(key);
         GetOperation getOperation = new GetOperation(name, toData(k));
         try {
-            return nodeService.invokeOptimistically(MAP_SERVICE_NAME, getOperation, partitionId).get();
+            Object response = nodeService.invokeOptimistically(MAP_SERVICE_NAME, getOperation, partitionId).get();
+            System.out.println("response is " + response);
+            return response;
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }

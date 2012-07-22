@@ -237,12 +237,13 @@ public class NodeService {
         }
     }
 
-    void invokeOnSinglePartition(SinglePartitionInvocation inv) {
-        Address target = inv.getTarget();
-        Operation op = inv.getOperation();
-        int partitionId = inv.getPartitionInfo().getPartitionId();
-        String serviceName = inv.getServiceName();
-        boolean nonBlocking = (op instanceof NonBlockingOperation);
+    void invokeOnSinglePartition(final SinglePartitionInvocation inv) {
+//        System.out.println("invockig " + inv.getOperation());
+        final Address target = inv.getTarget();
+        final Operation op = inv.getOperation();
+        final int partitionId = inv.getPartitionInfo().getPartitionId();
+        final String serviceName = inv.getServiceName();
+        final boolean nonBlocking = (op instanceof NonBlockingOperation);
         setOperationContext(op, serviceName, node.getThisAddress(), -1, partitionId)
                 .setLocal(true);
         if (target == null) {
@@ -253,7 +254,22 @@ public class NodeService {
         }
         if (getThisAddress().equals(target)) {
             final ExecutorService executor = getExecutor(partitionId, nonBlocking);
-            executor.execute(inv);
+            executor.execute(new Runnable() {
+                public void run() {
+                    try {
+                        if (partitionId != -1 && !nonBlocking) {
+                            PartitionInfo partitionInfo = getPartitionInfo(partitionId);
+                            Address owner = partitionInfo.getOwner();
+                            if (!getThisAddress().equals(owner)) {
+                                throw new WrongTargetException(getThisAddress(), owner);
+                            }
+                        }
+                        inv.run();
+                    } catch (Throwable e) {
+                        inv.setResult(e);
+                    }
+                }
+            });
         } else {
             if (getThisAddress().equals(target)) {
                 throw new RuntimeException("RemoteTarget cannot be local!");
@@ -345,15 +361,19 @@ public class NodeService {
                     if (partitionId != -1 && !(op instanceof NonBlockingOperation)) {
                         PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                         Address owner = partitionInfo.getOwner();
-                        if (true || !getThisAddress().equals(owner)) {
+                        if (!getThisAddress().equals(owner)) {
                             response = new Response(new WrongTargetException(getThisAddress(), owner), true);
                         }
                     } else {
                         setOperationContext(op, serviceName, caller, callId, partitionId);
-                        response = op.call();
+                        try {
+                            response = op.call();
+                        } catch (Throwable e) {
+                            response = e;
+                        }
                     }
                     if (!(op instanceof NoReply)) {
-                        if (response instanceof Operation) {
+                        if (!(response instanceof Operation)) {
                             response = new Response(response);
                         }
                         packet.clearForResponse();

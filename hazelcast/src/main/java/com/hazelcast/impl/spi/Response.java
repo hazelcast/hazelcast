@@ -43,7 +43,6 @@ public class Response extends AbstractOperation implements NonBlockingOperation,
         try {
             this.resultData = toData(result);
         } catch (Exception e) {
-            System.out.println("OBJ " + result);
             e.printStackTrace();
         }
     }
