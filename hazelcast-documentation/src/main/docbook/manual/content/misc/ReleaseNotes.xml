@@ -37,7 +37,7 @@
             </listitem>
             <listitem>
                 <para>Improved domain name handling; Hazelcast will use defined addresses/domain-names in
-                TCP-IP Config as it is, without resolving an IP address.</para>
+                TCP-IP Config as they are, without resolving an IP address.</para>
             </listitem>
             <listitem>
                 <para>Added <emphasis>Cluster Health Check</emphasis> to
