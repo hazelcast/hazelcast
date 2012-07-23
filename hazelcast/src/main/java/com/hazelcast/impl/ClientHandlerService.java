@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.Bind;
 import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
@@ -877,6 +878,11 @@ public class ClientHandlerService implements ConnectionListener {
             } else {
                 ClientEndpoint clientEndpoint = node.clientHandlerService.getClientEndpoint(packet.conn);
                 clientEndpoint.authenticated();
+                Bind bind = new Bind(new Address(packet.conn.getSocketChannelWrapper().socket().getInetAddress(), packet.conn.getSocketChannelWrapper().socket().getPort()));
+                bind.setConnection(packet.conn);
+                bind.setNode(node);
+//                System.out.println("bind = " + bind);
+                node.clusterService.enqueueAndWait(bind);
             }
         }
     }
