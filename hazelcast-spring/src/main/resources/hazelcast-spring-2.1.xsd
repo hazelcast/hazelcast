@@ -332,6 +332,7 @@
         <xs:attribute name="access-key" type="xs:string" use="optional" default=""/>
         <xs:attribute name="secret-key" type="xs:string" use="optional" default=""/>
         <xs:attribute name="region" type="xs:string" use="optional" default=""/>
+        <xs:attribute name="hostHeader" type="xs:string" use="optional" default=""/>
         <xs:attribute name="security-group-name" type="xs:string" use="optional" default=""/>
         <xs:attribute name="tag-key" type="xs:string" use="optional" default=""/>
         <xs:attribute name="tag-value" type="xs:string" use="optional" default=""/>

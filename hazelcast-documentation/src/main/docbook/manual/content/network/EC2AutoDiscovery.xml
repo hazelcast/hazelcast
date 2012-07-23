@@ -40,6 +40,8 @@
         <access-key>my-access-key</access-key>
         <secret-key>my-secret-key</secret-key>
         <region>us-west-1</region>                              <!-- optional, default is us-east-1 -->
+        <hostHeader>ec2.amazonaws.com</hostHeader>              <!-- optional, default is ec2.amazonaws.com.
+                                                If set, region shouldn't be set as it will override this property -->
         <security-group-name>hazelcast-sg</security-group-name> <!-- optional -->
         <tag-key>type</tag-key>                                  <!-- optional -->
         <tag-value>hz-nodes</tag-value>                          <!-- optional -->

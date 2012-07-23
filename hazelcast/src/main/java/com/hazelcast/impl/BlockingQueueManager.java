@@ -36,6 +36,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
+import static com.hazelcast.impl.Constants.RedoType.REDO_QUEUE_NOT_MASTER;
+import static com.hazelcast.impl.Constants.RedoType.REDO_QUEUE_NOT_READY;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -122,11 +124,12 @@ public class BlockingQueueManager extends BaseManager {
         abstract void doOperation(BQ queue, Request request);
 
         public void handle(Request request) {
-            if (isMaster() && ready(request)) {
+            final boolean master = isMaster();
+            if (master && ready(request)) {
                 BQ bq = getOrCreateBQ(request.name);
                 doOperation(bq, request);
             } else {
-                returnRedoResponse(request);
+                returnRedoResponse(request, !master ? REDO_QUEUE_NOT_MASTER : REDO_QUEUE_NOT_READY);
             }
         }
     }
@@ -291,6 +294,7 @@ public class BlockingQueueManager extends BaseManager {
                     fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
                 }
             } catch (TimeoutException e) {
+                throw new OperationTimeoutException();
             }
             long now = Clock.currentTimeMillis();
             timeout -= (now - start);
@@ -314,14 +318,15 @@ public class BlockingQueueManager extends BaseManager {
 
     private Data takeKey(String name, int index, long timeout) throws InterruptedException {
         try {
-            MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, timeout);
+            MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, getOperationTimeout(timeout));
             op.request.longValue = index;
             op.request.txnId = ThreadContext.get().getThreadId();
             op.initOp();
             return (Data) op.getResultAsIs();
         } catch (Exception e) {
             if (e instanceof RuntimeInterruptedException) {
-                MasterOp op = new MasterOp(ClusterOperation.BLOCKING_CANCEL_TAKE_KEY, name, timeout);
+                MasterOp op = new MasterOp(ClusterOperation.BLOCKING_CANCEL_TAKE_KEY, name,
+                        getOperationTimeout(timeout));
                 op.request.longValue = index;
                 op.request.txnId = ThreadContext.get().getThreadId();
                 op.initOp();
@@ -587,7 +592,7 @@ public class BlockingQueueManager extends BaseManager {
 
     public long generateKey(String name, long timeout) throws InterruptedException {
         try {
-            MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GENERATE_KEY, name, timeout);
+            MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GENERATE_KEY, name, getOperationTimeout(timeout));
             op.request.setLongRequest();
             op.request.txnId = ThreadContext.get().getThreadId();
             op.initOp();
@@ -638,6 +643,11 @@ public class BlockingQueueManager extends BaseManager {
         protected void handleInterruption() {
             handleInterruptedException(true, op);
         }
+
+        @Override
+        protected boolean canTimeout() {
+            return false;
+        }
     }
 
     class Lease {
@@ -666,11 +676,12 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     final void handlePeekKey(Request req) {
-        if (isMaster() && ready(req)) {
+        final boolean master = isMaster();
+        if (master && ready(req)) {
             BQ bq = getOrCreateBQ(req.name);
             bq.doPeekKey(req);
         } else {
-            returnRedoResponse(req);
+            returnRedoResponse(req, !master ? REDO_QUEUE_NOT_MASTER : REDO_QUEUE_NOT_READY);
         }
     }
 
@@ -687,23 +698,25 @@ public class BlockingQueueManager extends BaseManager {
     }
 
     final void handleAddKey(Request req) {
-        if (isMaster() && ready(req)) {
+        final boolean master = isMaster();
+        if (master && ready(req)) {
             BQ bq = getOrCreateBQ(req.name);
             bq.doAddKey(req.key, (int) req.longValue);
             req.key = null;
             req.response = Boolean.TRUE;
             returnResponse(req);
         } else {
-            returnRedoResponse(req);
+            returnRedoResponse(req, !master ? REDO_QUEUE_NOT_MASTER : REDO_QUEUE_NOT_READY);
         }
     }
 
     final void handleGenerateKey(Request req) {
-        if (isMaster() && ready(req)) {
+        final boolean master = isMaster();
+        if (master && ready(req)) {
             BQ bq = getOrCreateBQ(req.name);
             bq.doGenerateKey(req);
         } else {
-            returnRedoResponse(req);
+            returnRedoResponse(req, !master ? REDO_QUEUE_NOT_MASTER : REDO_QUEUE_NOT_READY);
         }
     }
 
@@ -828,7 +841,7 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         int maxSize() {
-            return (maxSizePerJVM == Integer.MAX_VALUE) ? Integer.MAX_VALUE : maxSizePerJVM * lsMembers.size();
+            return (maxSizePerJVM == Integer.MAX_VALUE) ? Integer.MAX_VALUE : maxSizePerJVM * dataMemberCount.get();
         }
 
         void doGenerateKey(Request req) {

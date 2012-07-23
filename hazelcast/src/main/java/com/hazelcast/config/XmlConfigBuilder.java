@@ -448,7 +448,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final Node att = atts.item(a);
             final String value = getTextContent(att).trim();
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
-                join.getAwsConfig().setEnabled(true);
+                join.getAwsConfig().setEnabled(checkTrue(value));
             } else if (att.getNodeName().equals("conn-timeout-seconds")) {
                 join.getTcpIpConfig().setConnectionTimeoutSeconds(getIntegerValue("conn-timeout-seconds", value, 5));
             }
@@ -461,6 +461,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 join.getAwsConfig().setAccessKey(value);
             } else if ("region".equals(cleanNodeName(n.getNodeName()))) {
                 join.getAwsConfig().setRegion(value);
+            } else if ("host-header".equals(cleanNodeName(n.getNodeName()))) {
+                join.getAwsConfig().setHostHeader(value);
             } else if ("security-group-name".equals(cleanNodeName(n.getNodeName()))) {
                 join.getAwsConfig().setSecurityGroupName(value);
             } else if ("tag-key".equals(cleanNodeName(n.getNodeName()))) {
@@ -732,7 +734,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
         final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
-        config.getSecurityConfig().setEnabled(enabled);
         sslConfig.setEnabled(enabled);
 
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
@@ -751,7 +752,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
         final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
-        config.getSecurityConfig().setEnabled(enabled);
         socketInterceptorConfig.setEnabled(enabled);
 
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {

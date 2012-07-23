@@ -38,6 +38,8 @@
                 <secret-key>my-secret-key</secret-key>
                 <!--optional, default is us-east-1 -->
                 <region>us-west-1</region>
+                <!--optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
+                <hostHeader>ec2.amazonaws.com</hostHeader>
                 <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
                 <security-group-name>hazelcast-sg</security-group-name>
                 <tag-key>type</tag-key>

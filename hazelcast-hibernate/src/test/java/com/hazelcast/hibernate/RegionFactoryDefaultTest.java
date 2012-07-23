@@ -18,22 +18,22 @@ package com.hazelcast.hibernate;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.hibernate.entity.DummyEntity;
-import com.hazelcast.impl.GroupProperties;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Environment;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Date;
 import java.util.Properties;
 
+@RunWith(TestBlockJUnit4ClassRunner.class)
 public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
 
     @BeforeClass
     public static void init() throws Exception {
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         Hazelcast.shutdownAll();
     }
 

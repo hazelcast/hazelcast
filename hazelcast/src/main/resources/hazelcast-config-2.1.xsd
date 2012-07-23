@@ -298,6 +298,11 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
+    <xs:element name="hostHeader">
+        <xs:simpleType>
+            <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+    </xs:element>
 
     <xs:element name="security-group-name" type="xs:string"/>
     <xs:element name="tag-key" type="xs:string"/>
@@ -329,6 +334,7 @@
                 <xs:element ref="access-key" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="secret-key" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="region" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="hostHeader" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="security-group-name" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="tag-key" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="tag-value" minOccurs="0" maxOccurs="1"/>

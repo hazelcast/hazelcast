@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.wan.WanMergeListener;
 import com.hazelcast.merge.PassThroughMergePolicy;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,6 +50,7 @@ public class WanReplicationTest {
     }
 
     @After
+    @Before
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
     }
@@ -91,7 +93,7 @@ public class WanReplicationTest {
             h22.getMap("default").put(size + i, "value" + (size + i));
         }
         assertTrue("Latch state 1: " + mergeLatch1, mergeLatch1.await(60, TimeUnit.SECONDS));
-        Thread.sleep(1000);
+        Thread.sleep(5000);
         assertEquals(0, mergeLatch2.totalOperations());
         assertEquals(2 * size, mergeLatch1.getUpdateCount());
         assertEquals(2 * size, mergeLatch1.totalOperations());
@@ -106,7 +108,7 @@ public class WanReplicationTest {
             h13.getMap("default").remove(size + i);
         }
         assertTrue("Latch state 2: " + mergeLatch2, mergeLatch2.await(60, TimeUnit.SECONDS));
-        Thread.sleep(1000);
+        Thread.sleep(5000);
         assertEquals(size, mergeLatch2.getRemoveCount());
         assertEquals(size, mergeLatch2.totalOperations());
         assertEquals(0, mergeLatch1.totalOperations());
@@ -154,7 +156,7 @@ public class WanReplicationTest {
             h11.getMap("default").put(i, "value" + i);
         }
         assertTrue("Latch state: " + mergeLatch2, mergeLatch2.await(60, TimeUnit.SECONDS));
-        Thread.sleep(1000);
+        Thread.sleep(5000);
         assertEquals(size, mergeLatch2.totalOperations());
         assertEquals(0, mergeLatch1.totalOperations());
         assertEquals(size, h10.getMap("default").size());
@@ -167,7 +169,7 @@ public class WanReplicationTest {
             h21.getMap("default").put(size + i, "value" + (size + i));
         }
         assertTrue("Latch state: " + mergeLatch1, mergeLatch1.await(60, TimeUnit.SECONDS));
-        Thread.sleep(1000);
+        Thread.sleep(5000);
         assertEquals(size, mergeLatch1.totalOperations());
         assertEquals(0, mergeLatch2.totalOperations());
         assertEquals(2 * size, h10.getMap("default").size());
@@ -183,7 +185,7 @@ public class WanReplicationTest {
         }
         assertTrue("Latch state: " + mergeLatch1, mergeLatch1.await(60, TimeUnit.SECONDS));
         assertTrue("Latch state: " + mergeLatch2, mergeLatch2.await(60, TimeUnit.SECONDS));
-        Thread.sleep(1000);
+        Thread.sleep(5000);
         assertEquals(size / 2, mergeLatch1.totalOperations());
         assertEquals(size / 2, mergeLatch2.totalOperations());
         assertEquals(size, h10.getMap("default").size());
@@ -218,7 +220,7 @@ public class WanReplicationTest {
             h10.getMap("default").put(i, "value" + i);
         }
         assertTrue("Latch state: " + mergeLatch2, mergeLatch2.await(60, TimeUnit.SECONDS));
-        Thread.sleep(1000);
+        Thread.sleep(5000);
         assertEquals(size, mergeLatch2.totalOperations());
         assertEquals(size, h10.getMap("default").size());
         assertEquals(size, h20.getMap("default").size());

@@ -108,6 +108,7 @@ public class PartitionInfo {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             Address address = addresses.get(i);
             if (address != null) {
+                sb.append('\t');
                 sb.append(i).append(":").append(address);
                 sb.append("\n");
             }

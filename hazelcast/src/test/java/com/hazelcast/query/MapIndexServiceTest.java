@@ -22,10 +22,7 @@ import com.hazelcast.impl.CMap;
 import com.hazelcast.util.Clock;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.TestUtil;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;
@@ -44,6 +41,7 @@ public class MapIndexServiceTest extends TestUtil {
     }
 
     @After
+    @Before
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
     }

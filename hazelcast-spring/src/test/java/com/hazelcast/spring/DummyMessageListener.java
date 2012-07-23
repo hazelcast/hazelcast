@@ -14,33 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.base;
+package com.hazelcast.spring;
 
-import com.hazelcast.util.Clock;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
 
-public abstract class SystemLog {
-    enum Type {
-        NODE,
-        JOIN,
-        CONNECTION,
-        PARTITION,
-        CALL,
-        NONE
-    }
+/**
+ * @mdogan 7/11/12
+ */
+public class DummyMessageListener implements MessageListener {
 
-    protected long date = Clock.currentTimeMillis();
-
-    protected Type type = Type.NONE;
-
-    public long getDate() {
-        return date;
-    }
-
-    public Type getType() {
-        return type;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
+    public void onMessage(final Message message) {
+        System.out.println(message);
     }
 }

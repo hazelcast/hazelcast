@@ -14,33 +14,37 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.base;
+package com.hazelcast.util;
 
-import com.hazelcast.util.Clock;
+/**
+ * non-thread-safe counter
+ *
+ * @mdogan 7/19/12
+ */
+public class Counter {
 
-public abstract class SystemLog {
-    enum Type {
-        NODE,
-        JOIN,
-        CONNECTION,
-        PARTITION,
-        CALL,
-        NONE
+    private int count ;
+
+    public Counter() {
     }
 
-    protected long date = Clock.currentTimeMillis();
-
-    protected Type type = Type.NONE;
-
-    public long getDate() {
-        return date;
+    public Counter(final int count) {
+        this.count = count;
     }
 
-    public Type getType() {
-        return type;
+    public void increment() {
+        ++count;
     }
 
-    public void setType(Type type) {
-        this.type = type;
+    public void decrement() {
+        --count;
+    }
+
+    public int get() {
+        return count;
+    }
+
+    public void reset() {
+        count = 0;
     }
 }

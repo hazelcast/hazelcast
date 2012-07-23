@@ -419,10 +419,10 @@ public class TransactionImpl implements Transaction {
                     mRemoveItem.removeItem(name, key);
                 } else if (!newRecord) {
                     if (instanceType.isMap()) {
-                        factory.node.concurrentMapManager.new MRemove().remove(name, key, -1);
+                        factory.node.concurrentMapManager.new MRemove().remove(name, key);
                     } else if (instanceType.isMultiMap()) {
                         if (value == null) {
-                            factory.node.concurrentMapManager.new MRemove().remove(name, key, -1);
+                            factory.node.concurrentMapManager.new MRemove().remove(name, key);
                         } else {
                             factory.node.concurrentMapManager.new MRemoveMulti().remove(name, key, value);
                         }
@@ -435,7 +435,7 @@ public class TransactionImpl implements Transaction {
                     factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
                 } else {
                     if (value != null) {
-                        factory.node.concurrentMapManager.new MPut().putAfterCommit(name, key, value, -1, ttl, id);
+                        factory.node.concurrentMapManager.new MPut().putAfterCommit(name, key, value, ttl, id);
                     } else {
                         factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
                     }

@@ -18,6 +18,7 @@ package com.hazelcast.impl.base;
 
 import com.hazelcast.nio.Address;
 
+import java.util.Date;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class CallState implements CallStateAware {
@@ -120,9 +121,20 @@ public class CallState implements CallStateAware {
         StringBuilder sb = new StringBuilder("CallState [");
         sb.append(callId);
         sb.append("] {");
-        sb.append("\ncaller: " + caller);
-        sb.append("\nthreadId: " + callerThreadId);
-        sb.append("\n}");
+        sb.append("\n\tcaller: " + caller);
+        sb.append("\n\tthreadId: " + callerThreadId);
+        sb.append("\n");
+        for (Object log : getLogs()) {
+            SystemLog systemLog = (SystemLog) log;
+            sb.append('\t');
+            sb.append(systemLog.getType().toString());
+            sb.append(" - ");
+            sb.append(new Date(systemLog.getDate()).toString());
+            sb.append(" - ");
+            sb.append(systemLog.toString());
+            sb.append("\n");
+        }
+        sb.append("}");
         return sb.toString();
     }
 }

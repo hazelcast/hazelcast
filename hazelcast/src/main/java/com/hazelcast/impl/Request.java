@@ -84,9 +84,12 @@ public class Request implements CallStateAware {
         return "Request{" +
                 "name='" + name + '\'' +
                 "," + operation +
-                ", redoCount='" + redoCount + '\'' +
                 ", callId='" + callId + '\'' +
+                ", redoCount='" + redoCount + '\'' +
+                ", timeout='" + timeout + '\'' +
                 ", lockThreadId='" + lockThreadId + '\'' +
+                ", target='" + target + '\'' +
+                ", local='" + local + '\'' +
                 '}';
     }
 
@@ -138,7 +141,7 @@ public class Request implements CallStateAware {
                      final Data key, final Data value, final int blockId, final long timeout, long ttl,
                      final long txnId, final long callId, final int lockThreadId,
                      final Address lockAddress, final int lockCount, final Address caller,
-                     final long longValue, final long version) {
+                     final long longValue, final long version, final int redoCount) {
         this.local = local;
         this.operation = operation;
         this.name = name;
@@ -156,6 +159,7 @@ public class Request implements CallStateAware {
         this.longValue = longValue;
         this.version = version;
         this.record = null;
+        this.redoCount = redoCount;
     }
 
     public void setLocal(final ClusterOperation operation, final String name, final Data key,
@@ -165,7 +169,7 @@ public class Request implements CallStateAware {
         this.response = null;
         this.scheduled = false;
         this.attachment = null;
-        this.redoCount = DEFAULT_REDO_COUNT;
+//        this.redoCount = DEFAULT_REDO_COUNT;
         this.indexes = null;
         this.indexTypes = null;
         this.responseType = ResponseType.OBJECT;
@@ -185,7 +189,8 @@ public class Request implements CallStateAware {
                 DEFAULT_LOCK_COUNT,
                 thisAddress,
                 Long.MIN_VALUE,
-                DEFAULT_VERSION);
+                DEFAULT_VERSION,
+                DEFAULT_REDO_COUNT);
     }
 
     public static Request copyFromRequest(Request request) {
@@ -197,7 +202,7 @@ public class Request implements CallStateAware {
     public void setFromRequest(Request req) {
         set(req.local, req.operation, req.name, req.key, req.value, req.blockId, req.timeout, req.ttl,
                 req.txnId, req.callId, req.lockThreadId, req.lockAddress, req.lockCount,
-                req.caller, req.longValue, req.version);
+                req.caller, req.longValue, req.version, req.redoCount);
         attachment = req.attachment;
         response = req.response;
         scheduled = req.scheduled;
@@ -215,7 +220,7 @@ public class Request implements CallStateAware {
         set(false, packet.operation, packet.name, packet.getKeyData(), packet.getValueData(),
             packet.blockId, packet.timeout, packet.ttl, packet.txnId, packet.callId, packet.threadId,
             packet.lockAddress, packet.lockCount, packet.conn.getEndPoint(), packet.longValue,
-            packet.version);
+            packet.version, packet.redoData);
         indexes = packet.indexes;
         indexTypes = packet.indexTypes;
         callState = packet.callState;

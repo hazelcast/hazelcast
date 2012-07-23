@@ -24,10 +24,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.impl.GroupProperties;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -207,6 +204,7 @@ public class HazelcastClientClusterTest {
     }
 
     @Test(timeout = 120000L)
+    @Ignore
     public void testRestartCluster() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final ClientProperties clientProperties =
@@ -260,6 +258,7 @@ public class HazelcastClientClusterTest {
     }
 
     @Test(timeout = 120000L)
+    @Ignore
     public void testRestartClusterTwice() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         final ClientProperties clientProperties =
@@ -305,7 +304,7 @@ public class HazelcastClientClusterTest {
 //            }
             Thread.sleep(50L);
             h1 = Hazelcast.newHazelcastInstance(new Config());
-            assertEquals(LifecycleState.CLIENT_CONNECTION_OPENING, states.poll(500L, TimeUnit.MILLISECONDS));
+            assertEquals(LifecycleState.CLIENT_CONNECTION_OPENING, states.poll(5000L, TimeUnit.MILLISECONDS));
             assertEquals(LifecycleState.CLIENT_CONNECTION_OPENED, states.poll(1000L, TimeUnit.MILLISECONDS));
             map.put("smth", "nothing" + i);
             Thread.sleep(50L);
