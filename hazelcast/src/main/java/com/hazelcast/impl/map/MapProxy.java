@@ -16,10 +16,12 @@
 
 package com.hazelcast.impl.map;
 
+import com.hazelcast.impl.spi.Invocation;
 import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.nio.Data;
 
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.impl.map.MapService.MAP_SERVICE_NAME;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -37,7 +39,9 @@ public class MapProxy {
         int partitionId = nodeService.getPartitionId(key);
         PutOperation putOperation = new PutOperation(name, toData(k), v, ttl);
         try {
-            Data response = (Data) nodeService.invokeOptimistically(MAP_SERVICE_NAME, putOperation, partitionId).get();
+            Invocation invocation = nodeService.createSinglePartitionInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
+            Future f = invocation.invoke();
+            Data response = (Data) f.get();
             return toObject(response);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
@@ -49,7 +53,9 @@ public class MapProxy {
         int partitionId = nodeService.getPartitionId(key);
         GetOperation getOperation = new GetOperation(name, toData(k));
         try {
-            Data response = (Data) nodeService.invokeOptimistically(MAP_SERVICE_NAME, getOperation, partitionId).get();
+            Invocation invocation = nodeService.createSinglePartitionInvocation(MAP_SERVICE_NAME, getOperation, partitionId).build();
+            Future f = invocation.invoke();
+            Data response = (Data) f.get();
             return toObject(response);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);

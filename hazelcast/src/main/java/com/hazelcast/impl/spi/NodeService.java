@@ -111,126 +111,8 @@ public class NodeService {
         return memberPartitions;
     }
 
-    public Future invokeOptimistically(String serviceName, Operation op, int partitionId) {
-        return invoke(serviceName, op, partitionId, 0, 10, 500);
-    }
-
-    public Future invokeOptimistically(String serviceName, Operation op, int partitionId, int replicaIndex) {
-        return invoke(serviceName, op, partitionId, replicaIndex, 10, 500);
-    }
-
-    public Future invoke(String serviceName, Operation op, int partitionId, int tryCount, long tryPauseMillis) {
-        return invoke(serviceName, op, partitionId, 0, tryCount, tryPauseMillis);
-    }
-
-    public Future invoke(String serviceName, Operation op, int partitionId, int replicaIndex, int tryCount, long tryPauseMillis) {
-        SinglePartitionInvocation inv = new SinglePartitionInvocation(serviceName, op, getPartitionInfo(partitionId), replicaIndex, tryCount, tryPauseMillis);
-        invokeOnSinglePartition(inv);
-        return inv;
-    }
-
-    interface Invocation extends Future {
-        void invoke();
-    }
-
-    class SinglePartitionInvocation extends FutureTask implements Invocation, Callback {
-        private final String serviceName;
-        private final Operation op;
-        private final PartitionInfo partitionInfo;
-        private final int replicaIndex;
-        private final int tryCount;
-        private final long tryPauseMillis;
-        private volatile int invokeCount = 0;
-
-        SinglePartitionInvocation(String serviceName, Operation op, PartitionInfo partitionInfo, int replicaIndex, int tryCount, long tryPauseMillis) {
-            super(op);
-            this.serviceName = serviceName;
-            this.op = op;
-            this.partitionInfo = partitionInfo;
-            this.replicaIndex = replicaIndex;
-            this.tryCount = tryCount;
-            this.tryPauseMillis = tryPauseMillis;
-        }
-
-        public void notify(Operation op, Object result) {
-            if (result instanceof Response) {
-                Response response = (Response) result;
-                if (response.isException()) {
-                    setResult(response.getResult());
-                } else {
-                    setResult(response.getResultData());
-                }
-            } else {
-                setResult(result);
-            }
-        }
-
-        public void run() {
-            try {
-                Object result = op.call();
-                notify(op, result);
-            } catch (Throwable e) {
-                setResult(e);
-            }
-        }
-
-        public Address getTarget() {
-            return partitionInfo.getReplicaAddress(replicaIndex);
-        }
-
-        public void invoke() {
-            try {
-                invokeCount++;
-                invokeOnSinglePartition(SinglePartitionInvocation.this);
-            } catch (Exception e) {
-                setResult(e);
-            }
-        }
-
-        public void setResult(Object obj) {
-            if (obj instanceof RetryableException) {
-                if (invokeCount < tryCount) {
-                    try {
-                        Thread.sleep(tryPauseMillis);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    invoke();
-                } else {
-                    setException((Throwable) obj);
-                }
-            } else {
-                if (obj instanceof Exception) {
-                    setException((Throwable) obj);
-                } else {
-                    set(obj);
-                }
-            }
-        }
-
-        public String getServiceName() {
-            return serviceName;
-        }
-
-        public Operation getOperation() {
-            return op;
-        }
-
-        public PartitionInfo getPartitionInfo() {
-            return partitionInfo;
-        }
-
-        public int getReplicaIndex() {
-            return replicaIndex;
-        }
-
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean isCancelled() {
-            return false;
-        }
+    public SinglePartitionInvocationBuilder createSinglePartitionInvocation(String serviceName, Operation op, int partitionId) {
+        return new SinglePartitionInvocationBuilder(NodeService.this, serviceName, op, getPartitionInfo(partitionId));
     }
 
     public Future invoke(String serviceName, Operation op, Address target, int partitionId) throws Exception {
@@ -280,9 +162,6 @@ public class NodeService {
                 }
             });
         } else {
-            if (getThisAddress().equals(target)) {
-                throw new RuntimeException("RemoteTarget cannot be local!");
-            }
             final Packet packet = new Packet();
             packet.operation = REMOTE_CALL;
             packet.blockId = partitionId;

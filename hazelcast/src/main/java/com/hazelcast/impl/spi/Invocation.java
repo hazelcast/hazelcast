@@ -16,6 +16,8 @@
 
 package com.hazelcast.impl.spi;
 
-interface Callback {
-    void notify(Object result);
+import java.util.concurrent.Future;
+
+public interface Invocation {
+    Future invoke();
 }

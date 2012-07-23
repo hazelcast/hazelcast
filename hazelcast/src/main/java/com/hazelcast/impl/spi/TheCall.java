@@ -37,7 +37,7 @@ public class TheCall implements Call {
         this.op = op;
         final BlockingQueue responseQ = ResponseQueueFactory.newResponseQueue();
         this.callback = new Callback() {
-            public void notify(Operation op, final Object result) {
+            public void notify(final Object result) {
                 responseQ.offer(result);
             }
         };
@@ -69,7 +69,7 @@ public class TheCall implements Call {
     }
 
     public void offerResponse(Response response) {
-        callback.notify(op, response);
+        callback.notify(response);
     }
 
     public void process() {
@@ -77,7 +77,7 @@ public class TheCall implements Call {
 
     public void onDisconnect(Address dead) {
         if (dead.equals(target)) {
-            callback.notify(op, new IOException());
+            callback.notify(new IOException());
         }
     }
 }
