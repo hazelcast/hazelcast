@@ -881,7 +881,6 @@ public class ClientHandlerService implements ConnectionListener {
                 Bind bind = new Bind(new Address(packet.conn.getSocketChannelWrapper().socket().getInetAddress(), packet.conn.getSocketChannelWrapper().socket().getPort()));
                 bind.setConnection(packet.conn);
                 bind.setNode(node);
-//                System.out.println("bind = " + bind);
                 node.clusterService.enqueueAndWait(bind);
             }
         }
@@ -915,9 +914,8 @@ public class ClientHandlerService implements ConnectionListener {
                 node.concurrentMapManager.doPutAll(mproxy.getLongName(), pairs);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
-            } finally {
-                return null;
             }
+            return null;
         }
     }
 
