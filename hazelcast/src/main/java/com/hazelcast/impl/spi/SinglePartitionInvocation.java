@@ -23,14 +23,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
 class SinglePartitionInvocation extends FutureTask implements Invocation, Callback {
-    private final NodeService nodeService;
-    private final String serviceName;
-    private final Operation op;
-    private final PartitionInfo partitionInfo;
-    private int replicaIndex = 0;
-    private int tryCount = 100;
-    private long tryPauseMillis = 500;
-    private volatile int invokeCount = 0;
+    protected final NodeService nodeService;
+    protected final String serviceName;
+    protected final Operation op;
+    protected final PartitionInfo partitionInfo;
+    protected int replicaIndex = 0;
+    protected int tryCount = 100;
+    protected long tryPauseMillis = 500;
+    protected volatile int invokeCount = 0;
 
     SinglePartitionInvocation(NodeService nodeService, String serviceName, Operation op, PartitionInfo partitionInfo, int replicaIndex, int tryCount, long tryPauseMillis) {
         super(op);
@@ -122,5 +122,9 @@ class SinglePartitionInvocation extends FutureTask implements Invocation, Callba
 
     public boolean isCancelled() {
         return false;
+    }
+
+    public int getPartitionId() {
+        return partitionInfo.getPartitionId();
     }
 }

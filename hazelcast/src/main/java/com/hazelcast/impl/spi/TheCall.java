@@ -19,33 +19,18 @@ package com.hazelcast.impl.spi;
 import com.hazelcast.impl.base.Call;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
-import java.util.concurrent.BlockingQueue;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class TheCall implements Call {
     long id;
     private final Address target;
-    private final Operation op;
     private final Callback callback;
 
-    public TheCall(Address target, Operation op) {
+    public TheCall(Address target, Callback callback) {
         this.target = target;
-        this.op = op;
-        final BlockingQueue responseQ = ResponseQueueFactory.newResponseQueue();
-        this.callback = new Callback() {
-            public void notify(final Object result) {
-                responseQ.offer(result);
-            }
-        };
-    }
-
-    public TheCall(Address target, Operation op, Callback callback) {
-        this.target = target;
-        this.op = op;
         this.callback = callback;
     }
 
