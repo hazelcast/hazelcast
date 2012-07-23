@@ -19,7 +19,7 @@ package com.hazelcast.spring.cache;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.GroupProperties;
-import com.hazelcast.spring.HzSpringJUnit4ClassRunner;
+import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -32,7 +32,7 @@ import org.springframework.test.context.ContextConfiguration;
 import javax.annotation.Resource;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@RunWith(HzSpringJUnit4ClassRunner.class)
+@RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"cacheManager-applicationContext-hazelcast.xml"})
 public class TestCacheManager {
 

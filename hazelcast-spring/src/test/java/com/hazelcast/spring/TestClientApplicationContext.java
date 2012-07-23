@@ -32,7 +32,7 @@ import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.*;
 
-@RunWith(HzSpringJUnit4ClassRunner.class)
+@RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
 public class TestClientApplicationContext {
 
