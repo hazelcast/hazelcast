@@ -40,7 +40,7 @@ import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.*;
 
-@RunWith(HzSpringJUnit4ClassRunner.class)
+@RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
 public class TestFullApplicationContext {
 
