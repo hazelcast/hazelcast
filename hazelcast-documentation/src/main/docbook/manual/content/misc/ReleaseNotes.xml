@@ -36,7 +36,8 @@
                     in <link xlink:href="#ConfigurationProperties">ConfigurationProperties</link> page.</para>
             </listitem>
             <listitem>
-                <para>Fixed join and split brain issues. Improved domain name handling.</para>
+                <para>Improved domain name handling; Hazelcast will use defined addresses/domain-names in
+                TCP-IP Config as it is, without resolving an IP address.</para>
             </listitem>
             <listitem>
                 <para>Added <emphasis>Cluster Health Check</emphasis> to
