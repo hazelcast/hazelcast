@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.util.AddressUtil;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -42,7 +44,7 @@ public final class Address implements DataSerializable {
 
     public Address(String host, int port) throws UnknownHostException {
         this(host, InetAddress.getByName(host), port) ;
-        hostSet = true;
+        hostSet = !AddressUtil.isIpAddress(host);
     }
 
     public Address(InetAddress inetAddress, int port) {
