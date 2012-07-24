@@ -904,7 +904,7 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     abstract private class CountDownLatchClientHandler extends ClientOperationHandler {
-        abstract Object processCall(CountDownLatchProxy cdlProxy, Integer value) throws Exception;
+        abstract Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) throws Exception;
 
         public void processCall(Node node, Packet packet) {
             final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
@@ -912,7 +912,7 @@ public class ClientHandlerService implements ConnectionListener {
             final Integer value = (Integer) toObject(packet.getValueData());
             Object result = null;
             try {
-                result = processCall(cdlProxy, value);
+                result = processCall(cdlProxy, value, packet.conn.getEndPoint());
                 if (result != null) packet.setValue(toData(result));
             } catch (Exception e) {
                 packet.setValue(toData(new ClientServiceException(e)));
@@ -925,7 +925,7 @@ public class ClientHandlerService implements ConnectionListener {
             final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) node.factory.getCountDownLatch(name);
             Object response = null;
             try {
-                response = processCall(cdlProxy, value);
+                response = processCall(cdlProxy, value, protocol.getConnection().getEndPoint());
             } catch (Exception e) {
                 return protocol.error(null, e.getMessage());
             }
@@ -935,7 +935,7 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     private class CountDownLatchAwaitHandler extends CountDownLatchClientHandler {
-        Object processCall(CountDownLatchProxy cdlProxy, Integer value) throws Exception{
+        Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) throws Exception{
             return cdlProxy.await(value, TimeUnit.MILLISECONDS);
         }
 
@@ -952,20 +952,20 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     private class CountDownLatchCountDownHandler extends CountDownLatchClientHandler {
-        Object processCall(CountDownLatchProxy cdlProxy, Integer value) {
+        Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) {
             cdlProxy.countDown();
             return null;
         }
     }
 
     private class CountDownLatchGetCountHandler extends CountDownLatchClientHandler {
-        Object processCall(CountDownLatchProxy cdlProxy, Integer value) {
+        Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) {
             return cdlProxy.getCount();
         }
     }
 
     private class CountDownLatchGetOwnerHandler extends CountDownLatchClientHandler {
-        Object processCall(CountDownLatchProxy cdlProxy, Integer value) {
+        Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) {
             return cdlProxy.getOwner();
         }
 
@@ -979,22 +979,23 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     private class CountDownLatchSetCountHandler extends CountDownLatchClientHandler {
-        Object processCall(CountDownLatchProxy cdlProxy, Integer count) {
-            return null;
+        Object processCall(CountDownLatchProxy cdlProxy, Integer count, Address address) {
+            boolean isSet = cdlProxy.setCount(count, address);
+            return isSet;
         }
 
-        @Override
-        public void processCall(Node node, Packet packet) {
-            final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
-            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) factory.getCountDownLatch(name);
-            final Integer value = (Integer) toObject(packet.getValueData());
-            try {
-                Address ownerAddress = packet.conn.getEndPoint();
-                packet.setValue(toData(cdlProxy.setCount(value, ownerAddress)));
-            } catch (Throwable e) {
-                packet.setValue(toData(new ClientServiceException(e)));
-            }
-        }
+//        @Override
+//        public void processCall(Node node, Packet packet) {
+//            final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
+//            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) factory.getCountDownLatch(name);
+//            final Integer value = (Integer) toObject(packet.getValueData());
+//            try {
+//                Address ownerAddress = packet.conn.getEndPoint();
+//                packet.setValue(toData(cdlProxy.setCount(value, ownerAddress)));
+//            } catch (Throwable e) {
+//                packet.setValue(toData(new ClientServiceException(e)));
+//            }
+//        }
     }
 
     public static class CountDownLatchLeave implements RemotelyProcessable {
@@ -1325,7 +1326,7 @@ public class ClientHandlerService implements ConnectionListener {
                 v = toObject(value);
             }
             if (ttl <= 0) {
-                System.out.println("Now doing put from " + ThreadContext.get().getCallContext().getThreadId());
+                System.out.println("Now doing put key " + new String(key.buffer));
                 Data result = (Data) map.put(key, v);
                 System.out.println(ThreadContext.get().getCallContext().getThreadId() + " Result of put = " + result);
                 return result;
@@ -1408,10 +1409,13 @@ public class ClientHandlerService implements ConnectionListener {
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
             String[] args = protocol.getArgs();
-            final IMap<Object, Object> map = (IMap) factory.getMap(args[1]);
-            final long ttl = (args.length > 2 + (protocol.isNoReply() ? 1 : 0)) ? Long.valueOf(args[2]) : 0;
+            String name = args[0];
+            final long ttl = Integer.parseInt(args[1]);
+            final IMap<Object, Object> map = (IMap) factory.getMap(name);
             Data value;
             try {
+                System.out.println("key is " + new String(protocol.getBuffers()[0].array()));
+
                 value = (Data) map.tryRemove(new Data(protocol.getBuffers()[0].array()), ttl, TimeUnit.MILLISECONDS);
                 System.out.println("VALUE is " + value);
             } catch (TimeoutException e) {

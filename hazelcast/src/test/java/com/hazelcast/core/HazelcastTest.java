@@ -387,6 +387,15 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testTryRemove() throws TimeoutException {
+        IMap<String, String> map = Hazelcast.getMap("testTryRemove");
+        map.put("hi", "baby");
+        Object value = map.tryRemove("hi", 10, TimeUnit.MILLISECONDS);
+        assertEquals(value, "baby");
+
+    }
+
+    @Test
     public void testMapEntryListener() {
         IMap<String, String> map = Hazelcast.getMap("testMapEntryListener");
         final CountDownLatch latchAdded = new CountDownLatch(1);

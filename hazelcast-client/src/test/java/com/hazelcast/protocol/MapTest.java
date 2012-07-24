@@ -121,8 +121,8 @@ public class MapTest extends ProtocolTest{
 
     @Test
     public void tryRemove() throws IOException {
-        put(socket, "1".getBytes(), "a".getBytes(), 0);
         String key = "1";
+        put(socket, key.getBytes(), "a".getBytes(), 0);
 
         OutputStream out = doOp("MTRYREMOVE 1 default 10 #1", "1");
         out.write(key.getBytes());
