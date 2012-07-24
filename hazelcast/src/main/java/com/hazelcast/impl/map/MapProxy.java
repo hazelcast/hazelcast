@@ -39,7 +39,7 @@ public class MapProxy {
         int partitionId = nodeService.getPartitionId(key);
         PutOperation putOperation = new PutOperation(name, toData(k), v, ttl);
         try {
-            Invocation invocation = nodeService.createSinglePartitionInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
+            Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
             Future f = invocation.invoke();
             Data response = (Data) f.get();
             return toObject(response);
@@ -53,7 +53,7 @@ public class MapProxy {
         int partitionId = nodeService.getPartitionId(key);
         GetOperation getOperation = new GetOperation(name, toData(k));
         try {
-            Invocation invocation = nodeService.createSinglePartitionInvocation(MAP_SERVICE_NAME, getOperation, partitionId).build();
+            Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, getOperation, partitionId).build();
             Future f = invocation.invoke();
             Data response = (Data) f.get();
             return toObject(response);

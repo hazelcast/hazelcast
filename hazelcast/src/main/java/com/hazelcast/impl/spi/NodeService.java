@@ -40,15 +40,15 @@ public class NodeService {
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final Workers nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
-    private final Workers blockingWorkers = new Workers("hz.Blocking", 8);
+    private final Workers blockingWorkers = new Workers("hz.Blocking", 8); // TODO: thread group!
     private final Node node;
-    final int PARTITION_COUNT;
-    final int MAX_BACKUP_COUNT;
+    final int partitionCount;
+    final int maxBackupCount;
 
     public NodeService(Node node) {
         this.node = node;
-        this.PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
-        this.MAX_BACKUP_COUNT = MapConfig.MAX_BACKUP_COUNT;
+        this.partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
+        this.maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
 
     public final int getPartitionId(Data key) {
@@ -61,11 +61,12 @@ public class NodeService {
         Data data = toData(op);
         for (Map.Entry<Member, ArrayList<Integer>> mp : memberPartitions.entrySet()) {
             Address target = ((MemberImpl) mp.getKey()).getAddress();
-            SingleTargetInvocation inv = new SingleTargetInvocation(this, serviceName, new PartitionIterator(mp.getValue(), data), target, 100, 500);
-            inv.invoke();
-            responses.add(inv);
+            Invocation inv = createSingleInvocation(serviceName, new PartitionIterator(mp.getValue(), data), -1)
+                    .setTarget(target).setTryCount(100).setTryPauseMillis(500).build();
+            Future future = inv.invoke();
+            responses.add(future);
         }
-        Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(PARTITION_COUNT);
+        Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(partitionCount);
         for (Future r : responses) {
             Object result = r.get();
             Map<Integer, Object> partialResult = null;
@@ -82,13 +83,14 @@ public class NodeService {
             int partitionId = partitionResult.getKey();
             Object result = partitionResult.getValue();
             if (result instanceof Exception) {
+                System.out.println("result = " + result);
                 failedPartitions.add(partitionId);
             }
         }
         Thread.sleep(500);
         System.out.println("TRYING AGAIN...");
         for (Integer failedPartition : failedPartitions) {
-            Invocation inv = createSinglePartitionInvocation(serviceName, op, failedPartition).build();
+            Invocation inv = createSingleInvocation(serviceName, op, failedPartition).build();
             inv.invoke();
             partitionResults.put(failedPartition, inv);
         }
@@ -108,7 +110,7 @@ public class NodeService {
     private Map<Member, ArrayList<Integer>> getMemberPartitions() {
         Set<Member> members = node.getClusterImpl().getMembers();
         Map<Member, ArrayList<Integer>> memberPartitions = new HashMap<Member, ArrayList<Integer>>(members.size());
-        for (int i = 0; i < PARTITION_COUNT; i++) {
+        for (int i = 0; i < partitionCount; i++) {
             Member owner = getOwner(i);
             ArrayList<Integer> ownedPartitions = memberPartitions.get(owner);
             if (ownedPartitions == null) {
@@ -120,11 +122,11 @@ public class NodeService {
         return memberPartitions;
     }
 
-    public SinglePartitionInvocationBuilder createSinglePartitionInvocation(String serviceName, Operation op, int partitionId) {
-        return new SinglePartitionInvocationBuilder(NodeService.this, serviceName, op, getPartitionInfo(partitionId));
+    public SingleInvocationBuilder createSingleInvocation(String serviceName, Operation op, int partitionId) {
+        return new SingleInvocationBuilder(NodeService.this, serviceName, op, partitionId);
     }
 
-    void invokeOnSinglePartition(final SinglePartitionInvocation inv) {
+    void invokeSingle(final SingleInvocation inv) {
         final Address target = inv.getTarget();
         final Operation op = inv.getOperation();
         final int partitionId = inv.getPartitionId();
@@ -253,6 +255,16 @@ public class NodeService {
         return node;
     }
 
+    public <T> Collection<T> getServices(final Class<T> type) {
+        final Collection<T> result = new LinkedList<T>();
+        for (Object service : services.values()) {
+            if (type.isAssignableFrom(service.getClass())) {
+                result.add((T) service);
+            }
+        }
+        return result;
+    }
+
     class Workers {
         final int threadCount;
         final ExecutorService[] workers;
@@ -342,5 +354,9 @@ public class NodeService {
         } else {
             return executorService;
         }
+    }
+
+    public int getPartitionCount() {
+        return partitionCount;
     }
 }

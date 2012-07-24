@@ -28,6 +28,7 @@ import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.management.ManagementCenterService;
+import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.impl.wan.WanReplicationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -72,6 +73,10 @@ public class Node {
     private final NodeType localNodeType;
 
     final NodeBaseVariables baseVariables;
+
+    public final NodeService nodeService;
+
+    public final PartitionManager partitionManager;
 
     public final ConcurrentMapManager concurrentMapManager;
 
@@ -167,6 +172,7 @@ public class Node {
             Util.throwUncheckedException(e);
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
+        nodeService = new NodeService(this);
         clusterImpl = new ClusterImpl(this);
         baseVariables = new NodeBaseVariables(address, localMember);
         //initialize managers..
@@ -175,6 +181,7 @@ public class Node {
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterManager = new ClusterManager(this);
         executorManager = new ExecutorManager(this);
+        partitionManager = new PartitionManager(this);
         clientHandlerService = new ClientHandlerService(this);
         concurrentMapManager = new ConcurrentMapManager(this);
         blockingQueueManager = new BlockingQueueManager(this);
@@ -655,6 +662,14 @@ public class Node {
 
     public boolean isServiceThread() {
         return Thread.currentThread() == serviceThread;
+    }
+
+    public final void checkServiceThread() {
+        if (Thread.currentThread() != serviceThread) {
+            String msg = "Only ServiceThread can access this method. " + Thread.currentThread();
+            logger.log(Level.SEVERE, msg);
+            throw new Error(msg);
+        }
     }
 
     public String toString() {

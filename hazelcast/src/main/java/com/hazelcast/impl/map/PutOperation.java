@@ -127,7 +127,8 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
                         } else {
                             PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
                             try {
-                                backupOps.add(nodeService.createSinglePartitionInvocation(MapService.MAP_SERVICE_NAME, pbo, partitionInfo.getPartitionId()).setReplicaIndex(replicaIndex).build().invoke());
+                                backupOps.add(nodeService.createSingleInvocation(MapService.MAP_SERVICE_NAME, pbo,
+                                        partitionInfo.getPartitionId()).setReplicaIndex(replicaIndex).build().invoke());
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }

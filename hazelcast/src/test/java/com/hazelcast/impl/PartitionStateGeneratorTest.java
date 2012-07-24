@@ -22,6 +22,7 @@ import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.partition.*;
 import com.hazelcast.nio.Address;
 import org.junit.After;
@@ -66,13 +67,13 @@ public class PartitionStateGeneratorTest {
     @Test
     public void testCustomPartitionStateGenerator() throws Exception {
         final MemberGroupFactory nodeGroupFactory = new MemberGroupFactory() {
-            public Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members) {
+            public Collection<MemberGroup> createMemberGroups(Collection<Member> members) {
                 MemberGroup[] g = new MemberGroup[4];
                 for (int i = 0; i < g.length; i++) {
                     g[i] = new DefaultMemberGroup();
                 }
-                for (MemberImpl member : members) {
-                    Address address = member.getAddress();
+                for (Member member : members) {
+                    Address address = ((MemberImpl) member).getAddress();
                     if (even(address.getHost().hashCode()) && even(address.getPort())) {
                         g[0].addMember(member);
                     } else if (even(address.getHost().hashCode()) && !even(address.getPort())) {
@@ -126,13 +127,13 @@ public class PartitionStateGeneratorTest {
         int maxSameHostCount = 3;
         int[] partitionCounts = new int[]{271, 787/*, 1549, 3217, 8707/**/};
         int[] members = new int[]{3, 6, 7, 9, 10, 5, 11, 13, 8, 17, 57, 100, 130, 77, 255};
-        LinkedList<MigrationRequestTask> lostQ = new LinkedList<MigrationRequestTask>();
-        LinkedList<MigrationRequestTask> immediateQ = new LinkedList<MigrationRequestTask>();
-        LinkedList<MigrationRequestTask> scheduledQ = new LinkedList<MigrationRequestTask>();
+        LinkedList<MigrationRequestOperation> lostQ = new LinkedList<MigrationRequestOperation>();
+        LinkedList<MigrationRequestOperation> immediateQ = new LinkedList<MigrationRequestOperation>();
+        LinkedList<MigrationRequestOperation> scheduledQ = new LinkedList<MigrationRequestOperation>();
         for (int i = 0; i < partitionCounts.length; i++) {
             int partitionCount = partitionCounts[i];
             int memberCount = members[0];
-            List<MemberImpl> memberList = createMembers(memberCount, maxSameHostCount);
+            List<Member> memberList = createMembers(memberCount, maxSameHostCount);
             Collection<MemberGroup> groups = nodeGroupFactory.createMemberGroups(memberList);
             println("PARTITION-COUNT= " + partitionCount + ", MEMBER-COUNT= "
                     + members[0] + ", GROUP-COUNT= " + groups.size());
@@ -146,8 +147,8 @@ public class PartitionStateGeneratorTest {
                     if (previousMemberCount == 0) {
                         memberList = createMembers(memberCount, maxSameHostCount);
                     } else if (memberCount > previousMemberCount) {
-                        MemberImpl last = memberList.get(previousMemberCount - 1);
-                        List<MemberImpl> extra = createMembers(last, (memberCount - previousMemberCount), maxSameHostCount);
+                        Member last = memberList.get(previousMemberCount - 1);
+                        List<Member> extra = createMembers(last, (memberCount - previousMemberCount), maxSameHostCount);
                         memberList.addAll(extra);
                     } else {
                         memberList = memberList.subList(0, memberCount);
@@ -170,10 +171,10 @@ public class PartitionStateGeneratorTest {
         }
     }
 
-    private static void shift(PartitionInfo[] state, List<MemberImpl> members, int replicaCount) {
+    private static void shift(PartitionInfo[] state, List<Member> members, int replicaCount) {
         Set<Address> addresses = new HashSet<Address>();
-        for (MemberImpl member : members) {
-            addresses.add(member.getAddress());
+        for (Member member : members) {
+            addresses.add(((MemberImpl) member).getAddress());
         }
         for (PartitionInfo partition : state) {
             for (int i = 0; i < state.length; i++) {
@@ -199,15 +200,15 @@ public class PartitionStateGeneratorTest {
         }
     }
 
-    private static void printTaskQueueSize(Queue<MigrationRequestTask> scheduledQ, Queue<MigrationRequestTask> immediateQ, int index) {
+    private static void printTaskQueueSize(Queue<MigrationRequestOperation> scheduledQ, Queue<MigrationRequestOperation> immediateQ, int index) {
         int scheduled = 0;
-        for (MigrationRequestTask t : scheduledQ) {
+        for (MigrationRequestOperation t : scheduledQ) {
             if (t.getReplicaIndex() == index && !t.getToAddress().equals(t.getFromAddress())) {
                 scheduled++;
             }
         }
         int immediate = 0;
-        for (MigrationRequestTask t : immediateQ) {
+        for (MigrationRequestOperation t : immediateQ) {
             if (t.getReplicaIndex() == index && !t.getToAddress().equals(t.getFromAddress())) {
                 immediate++;
             }
@@ -215,15 +216,15 @@ public class PartitionStateGeneratorTest {
         println("INDEX= " + index + ", SCHEDULED QUEUE= " + scheduled + ", IMMEDIATE QUEUE= " + immediate);
     }
 
-    private static List<MemberImpl> createMembers(int memberCount, int maxSameHostCount) throws Exception {
+    private static List<Member> createMembers(int memberCount, int maxSameHostCount) throws Exception {
         return createMembers(null, memberCount, maxSameHostCount);
     }
 
-    private static List<MemberImpl> createMembers(MemberImpl startAfter, int memberCount, int maxSameHostCount) throws Exception {
+    private static List<Member> createMembers(Member startAfter, int memberCount, int maxSameHostCount) throws Exception {
         Random rand = new Random();
         final byte[] ip = new byte[]{10, 10, 0, 0};
         if (startAfter != null) {
-            Address address = startAfter.getAddress();
+            Address address = ((MemberImpl) startAfter).getAddress();
             byte[] startIp = address.getInetAddress().getAddress();
             if (startIp[3] < 255) {
                 ip[2] = startIp[2];
@@ -235,7 +236,7 @@ public class PartitionStateGeneratorTest {
         }
         int count = 0;
         int port = 5700;
-        List<MemberImpl> members = new ArrayList<MemberImpl>();
+        List<Member> members = new ArrayList<Member>();
         int sameHostCount = rand.nextInt(maxSameHostCount) + 1;
         for (int i = 0; i < memberCount; i++) {
             if (count == sameHostCount) {

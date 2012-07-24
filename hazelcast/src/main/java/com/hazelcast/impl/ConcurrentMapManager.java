@@ -28,8 +28,8 @@ import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
+import com.hazelcast.impl.partition.MigratingPartition;
 import com.hazelcast.impl.partition.MigrationNotification;
-import com.hazelcast.impl.partition.MigrationRequestTask;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.impl.wan.WanMergeListener;
@@ -79,8 +79,7 @@ public class ConcurrentMapManager extends BaseManager {
     ConcurrentMapManager(final Node node) {
         super(node);
         recordFactory = node.initializer.getRecordFactory();
-        storeExecutor = node.executorManager.newParallelExecutor(
-                node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
+        storeExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         evictionExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         MAX_BACKUP_COUNT = MapConfig.MAX_BACKUP_COUNT;
@@ -94,7 +93,7 @@ public class ConcurrentMapManager extends BaseManager {
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
-        partitionManager = new PartitionManager(this);
+        partitionManager = node.partitionManager;
         partitionServiceImpl = new PartitionServiceImpl(this);
         node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
@@ -160,7 +159,7 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(SEMAPHORE_REDUCE_PERMITS, new SemaphoreReduceOperationHandler());
         registerPacketProcessor(SEMAPHORE_RELEASE, new SemaphoreReleaseOperationHandler());
         registerPacketProcessor(SEMAPHORE_TRY_ACQUIRE, new SemaphoreTryAcquireOperationHandler());
-        nodeService = new NodeService(node);
+        nodeService = node.nodeService;
         nodeService.registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService, partitionManager.getPartitions()));
     }
 
@@ -432,8 +431,8 @@ public class ConcurrentMapManager extends BaseManager {
         return partitionManager.getPartition(partitionId);
     }
 
-    public void sendMigrationEvent(boolean started, MigrationRequestTask migrationRequestTask) {
-        sendProcessableToAll(new MigrationNotification(started, migrationRequestTask), true);
+    public void sendMigrationEvent(boolean started, MigratingPartition migratingPartition) {
+        sendProcessableToAll(new MigrationNotification(started, migratingPartition), true);
     }
 
     public void startCleanup(final boolean now, final boolean force) {

@@ -26,11 +26,15 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.*;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.Counter;
+import com.hazelcast.util.DistributedTimeoutException;
+import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -57,7 +61,7 @@ public abstract class BaseManager {
 
     protected final Queue<Packet> qServiceThreadPacketCache;
 
-    protected final Map<Long, Call> mapCalls;
+    protected final ConcurrentMap<Long, Call> mapCalls;
 
     protected final AtomicLong localIdGen;
 

@@ -77,7 +77,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         version = record.getVersion();
         hits = record.getHits();
         valid = record.isValid();
-        name = record.getName();
+        name = "test" ;//TODO: record.getName();
         keyData = record.getKeyData();
         valueData = value;
         indexes = record.getIndexes();

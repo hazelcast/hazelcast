@@ -18,10 +18,13 @@ package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.spi.NodeService;
+import com.hazelcast.impl.spi.ServiceLifecycle;
+import com.hazelcast.impl.spi.ServiceMigrationOperation;
 
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class MapService {
+public class MapService implements ServiceLifecycle {
     public final static String MAP_SERVICE_NAME = "mapService";
 
     private final AtomicLong counter = new AtomicLong();
@@ -30,11 +33,35 @@ public class MapService {
 
     public MapService(NodeService nodeService, PartitionInfo[] partitions) {
         this.nodeService = nodeService;
-        int partitionCount = nodeService.getNode().groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
+        int partitionCount = nodeService.getPartitionCount();
         partitionContainers = new PartitionContainer[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
             partitionContainers[i] = new PartitionContainer(nodeService.getNode(), partitions[i]);
         }
+
+        new Thread() {
+            public void run() {
+                while (true) {
+                    int k = 0;
+                    for (PartitionContainer partitionContainer : partitionContainers) {
+                        if (!partitionContainer.partitionInfo.isOwnerOrBackup(
+                                MapService.this.nodeService.getThisAddress(), 1)) {
+                            partitionContainer.maps.clear();
+                            continue;
+                        }
+                        for (Entry<String, MapPartition> entry : partitionContainer.maps.entrySet()) {
+                            k += entry.getValue().records.size();
+                        }
+                    }
+                    System.err.println("Total: " + k);
+                    try {
+                        sleep(5000);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }
+        }.start();
+
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
@@ -48,4 +75,13 @@ public class MapService {
     public long nextId() {
         return counter.incrementAndGet();
     }
+
+    public ServiceMigrationOperation getMigrationTask(final int partitionId, final int replicaIndex, boolean diffOnly) {
+        if (partitionId < 0 || partitionId >= nodeService.getPartitionCount()) {
+            return null;
+        }
+        final PartitionContainer container = partitionContainers[partitionId];
+        return new MapMigrationOperation(container, partitionId, replicaIndex, diffOnly);
+    }
+
 }

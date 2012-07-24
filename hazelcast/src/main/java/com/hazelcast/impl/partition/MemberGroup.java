@@ -16,22 +16,22 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.core.Member;
 
 import java.util.Collection;
 import java.util.Iterator;
 
 public interface MemberGroup {
 
-    void addMember(MemberImpl member);
+    void addMember(Member member);
 
-    void addMembers(Collection<MemberImpl> members);
+    void addMembers(Collection<Member> members);
 
-    void removeMember(MemberImpl member);
+    void removeMember(Member member);
 
-    boolean hasMember(MemberImpl member);
+    boolean hasMember(Member member);
 
-    Iterator<MemberImpl> iterator();
+    Iterator<Member> iterator();
 
     int size();
 }

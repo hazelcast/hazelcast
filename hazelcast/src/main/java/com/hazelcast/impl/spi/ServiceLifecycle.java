@@ -14,23 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.partition;
+package com.hazelcast.impl.spi;
 
-import com.hazelcast.core.Member;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
-public class SingleMemberGroupFactory implements MemberGroupFactory {
-
-    public Set<MemberGroup> createMemberGroups(Collection<Member> members) {
-        Set<MemberGroup> groups = new HashSet<MemberGroup>(members.size());
-        for (Member member : members) {
-            if (!member.isLiteMember()) {
-                groups.add(new SingleMemberGroup(member));
-            }
-        }
-        return groups;
-    }
+/**
+ * @mdogan 7/23/12
+ */
+public interface ServiceLifecycle extends MigrationAware {
 }
