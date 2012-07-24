@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -41,31 +40,25 @@ public class PartitionIterator extends AbstractOperation {
     public PartitionIterator() {
     }
 
-    public Response call() throws Exception {
+    public Map<Integer, Object> call() throws Exception {
         final NodeService nodeService = getOperationContext().getNodeService();
-        final Object service = getOperationContext().getService();
         Map<Integer, Object> results = new HashMap<Integer, Object>(partitions.size());
         Map<Integer, Future> responses = new HashMap<Integer, Future>(partitions.size());
         for (final int partitionId : partitions) {
-            Future f = nodeService.runLocally(partitionId, new Callable() {
-                public Object call() throws Exception {
-                    if (!nodeService.isOwner(partitionId)) {
-                        return "NOT OWNER";
-                    } else {
-                        Operation op = (Operation) toObject(operationData);
-                        op.getOperationContext().setPartitionId(partitionId).setService(service);
-                        return op.call();
-                    }
-                }
-            }, false);
+            Operation op = (Operation) toObject(operationData);
+            op.getOperationContext().setNodeService(getOperationContext().getNodeService())
+                    .setCaller(getOperationContext().getCaller())
+                    .setPartitionId(partitionId)
+                    .setLocal(true)
+                    .setService(getOperationContext().getService());
+            Future f = nodeService.runLocally(partitionId, op, false);
             responses.put(partitionId, f);
         }
         for (Map.Entry<Integer, Future> partitionResponse : responses.entrySet()) {
             Object result = partitionResponse.getValue().get();
-            System.out.println("result....  is " + result);
             results.put(partitionResponse.getKey(), result);
         }
-        return new Response(results);
+        return results;
     }
 
     @Override
