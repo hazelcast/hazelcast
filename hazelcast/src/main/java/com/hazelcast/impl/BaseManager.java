@@ -580,7 +580,9 @@ public abstract class BaseManager {
         }
 
         public Object waitAndGetResult() {
-            final long noResponseTimeout = (long) (request.timeout * 1.5f); // should be more than request timeout
+            final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout == -1)
+                                           ? Long.MAX_VALUE
+                                           : (long) (request.timeout * 1.5f); // should be more than request timeout
             final long start = Clock.currentTimeMillis();
             while (true) {
                 try {
@@ -593,7 +595,7 @@ public abstract class BaseManager {
                         return obj;
                     }
                     if (node.isActive()) {
-                        logger.log(Level.WARNING, "Still no response! " + request);
+                        logger.log(Level.FINEST, "Still no response! " + request);
                         if (systemLogService.shouldTrace()) {
                             systemLogService.trace(this, "Still no response");
                         }
