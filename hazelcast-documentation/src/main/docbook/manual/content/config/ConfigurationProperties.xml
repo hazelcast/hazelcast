@@ -303,6 +303,22 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
+                    <literal>hazelcast.icmp.timeout</literal>
+                </td>
+                <td>ICMP timeout in ms</td>
+                <td>int</td>
+                <td>1000</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.icmp.ttl</literal>
+                </td>
+                <td>ICMP TTL (maximum numbers of hops to try)</td>
+                <td>int</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td>
                     <literal>hazelcast.prefer.ipv4.stack</literal>
                 </td>
                 <td>Prefer IPv4 Stack, don't use IPv6. See <link xlink:href="#IPv6">IPv6 doc.</link></td>
