@@ -23,7 +23,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 /**
  * @mdogan 7/19/12
  */
-public class HzSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
+public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
 
     static {
         System.setProperty("java.net.preferIPv4Stack", "true");
@@ -40,7 +40,7 @@ public class HzSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
      * @param clazz the test class to be run
      * @see #createTestContextManager(Class)
      */
-    public HzSpringJUnit4ClassRunner(Class<?> clazz) throws InitializationError {
+    public CustomSpringJUnit4ClassRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
     }
 }

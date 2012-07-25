@@ -28,7 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
-@RunWith(HzSpringJUnit4ClassRunner.class)
+@RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"beans-applicationContext-hazelcast.xml"})
 public class TestBeansApplicationContext {
 

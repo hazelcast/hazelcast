@@ -16,10 +16,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.Join;
-import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -28,6 +25,7 @@ import com.hazelcast.util.AddressUtil;
 import java.net.*;
 import java.nio.channels.ServerSocketChannel;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 
 class AddressPicker {
@@ -96,9 +94,12 @@ class AddressPicker {
                 }
             }
             serverSocketChannel.configureBlocking(false);
-            address = new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);
-            log(Level.INFO,
-                    "Picked " + address + ", using socket " + serverSocket + ", bind any local is " + bindAny);
+            if (addressDef.host != null) {
+                address = new Address(addressDef.host, port);
+            } else {
+                address = new Address(addressDef.inetAddress, port);
+            }
+            log(Level.INFO, "Picked " + address + ", using socket " + serverSocket + ", bind any local is " + bindAny);
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw e;
@@ -147,30 +148,44 @@ class AddressPicker {
     }
 
     private Collection<InterfaceDefinition> getInterfaces(final NetworkConfig networkConfig) throws UnknownHostException {
+        final Map<String, String> addressDomainMap ; // address -> domain
+        final TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
+        if (tcpIpConfig.isEnabled()) {
+            addressDomainMap = new LinkedHashMap<String, String>();  // LinkedHashMap is to guarantee order
+            final Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
+            for (String possibleAddress : possibleAddresses) {
+                final String s = AddressUtil.getAddressHolder(possibleAddress).address;
+                if (AddressUtil.isIpAddress(s)) {
+                    if (!addressDomainMap.containsKey(s)) { // there may be a domain registered for this address
+                        addressDomainMap.put(s, null);
+                    }
+                } else {
+                    final Collection<String> addresses = resolveDomainNames(s);
+                    for (String address : addresses) {
+                        addressDomainMap.put(address, s);
+                    }
+                }
+            }
+        } else {
+            addressDomainMap = Collections.EMPTY_MAP;
+        }
+
         final Collection<InterfaceDefinition> interfaces = new HashSet<InterfaceDefinition>();
         if (networkConfig.getInterfaces().isEnabled()) {
             final Collection<String> configInterfaces = networkConfig.getInterfaces().getInterfaces();
             for (String configInterface : configInterfaces) {
                 if (AddressUtil.isIpAddress(configInterface)) {
-                    interfaces.add(new InterfaceDefinition(configInterface));
+                    interfaces.add(new InterfaceDefinition(addressDomainMap.get(configInterface), configInterface));
                 } else {
                     logger.log(Level.INFO, "'" + configInterface
                                            + "' is not an IP address! Removing from interface list.");
                 }
             }
             log(Level.INFO, "Interfaces is enabled, trying to pick one address matching " +
-                                   "to one of: " + interfaces);
-        } else if (networkConfig.getJoin().getTcpIpConfig().isEnabled()) {
-            final Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
-            for (String possibleAddress : possibleAddresses) {
-                final String s = AddressUtil.getAddressHolder(possibleAddress).address;
-                if (AddressUtil.isIpAddress(s)) {
-                    interfaces.add(new InterfaceDefinition(s));
-                } else {
-                    String address = resolveDomainName(s);
-                    logger.log(Level.INFO, "Updating interface list with " + address + " for domain name '" + s + "'.");
-                    interfaces.add(new InterfaceDefinition(s, address));
-                }
+                            "to one of: " + interfaces);
+        } else if (tcpIpConfig.isEnabled()) {
+            for (Entry<String, String> entry : addressDomainMap.entrySet()) {
+                interfaces.add(new InterfaceDefinition(entry.getValue(), entry.getKey()));
             }
             log(Level.INFO, "Interfaces is disabled, trying to pick one address from TCP-IP config " +
                                    "addresses: " + interfaces);
@@ -178,15 +193,15 @@ class AddressPicker {
         return interfaces;
     }
 
-    private String resolveDomainName(final String domainName)
+    private Collection<String> resolveDomainNames(final String domainName)
             throws UnknownHostException {
         final InetAddress[] inetAddresses = InetAddress.getAllByName(domainName);
-        if (inetAddresses.length > 1) {
-            logger.log(Level.WARNING, "Domain name '" + domainName + "' resolves to more than one address: " +
-                                      Arrays.toString(inetAddresses) + "! Hazelcast will use the first one.");
+        final Collection<String> addresses = new LinkedList<String>();
+        for (InetAddress inetAddress : inetAddresses) {
+            addresses.add(inetAddress.getHostAddress());
         }
-        final InetAddress inetAddress = inetAddresses[0];
-        return inetAddress.getHostAddress();
+        logger.log(Level.INFO, "Resolving domain name '" + domainName + "' to address(es): " + addresses);
+        return addresses;
     }
 
     private AddressDefinition getSystemConfiguredAddress() throws UnknownHostException {
