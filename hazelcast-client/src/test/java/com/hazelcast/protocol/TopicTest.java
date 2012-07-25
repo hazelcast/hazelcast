@@ -21,16 +21,16 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
+import java.net.Socket;
 
 import static org.junit.Assert.assertTrue;
 
-public class TopicTest extends ProtocolTest{
+public class TopicTest extends ProtocolTest {
 
     @Test
     public void publish() throws IOException {
         String message = "m";
-        OutputStream out = doOp("TPUBLISH flag default #1",  ""+message.getBytes().length);
+        OutputStream out = doOp("TPUBLISH flag default #1", "" + message.getBytes().length);
         out.write(message.getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -38,16 +38,23 @@ public class TopicTest extends ProtocolTest{
 
     @Test
     public void addListener() throws IOException {
-        
+        OutputStream out = doOp("TADDLISTENER flag default", null, socket);
+        out.flush();
+        assertTrue(read(socket).contains("OK"));
+        final String message = "m";
         new Thread(new Runnable() {
             public void run() {
+                try {
+                    Socket socket = connect0();
+                    OutputStream out = doOp("TPUBLISH flag default #1", "" + message.getBytes().length, socket);
+                    out.write(message.getBytes());
+                    out.write("\r\n".getBytes());
+                    out.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
-        String message = "m";
-        OutputStream out = doOp("TADDLISTENER flag default",  null, socket);
-        out.write(message.getBytes());
-        out.write("\r\n".getBytes());
-        out.flush();
+        assertTrue(read(socket).contains(message));
     }
-
 }

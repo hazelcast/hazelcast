@@ -306,7 +306,7 @@
             </para>
 
             <programlisting language="java"><![CDATA[
-                EVENT <0> <type> <name> <eventType> #1
+                EVENT <-1> <name> <eventType> #1
                 <size of element in bytes>
                 <element in bytes>
             ]]></programlisting>

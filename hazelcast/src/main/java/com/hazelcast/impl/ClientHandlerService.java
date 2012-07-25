@@ -141,6 +141,7 @@ public class ClientHandlerService implements ConnectionListener {
         mapCommandHandlers.put(Command.LOCK_IS_LOCKED.value, new IsLockedOperationHandler());
         mapCommandHandlers.put(Command.TPUBLISH.value, new TopicPublishHandler());
         mapCommandHandlers.put(Command.TADDLISTENER.value, new TopicAddListenerHandler());
+        mapCommandHandlers.put(Command.DESTROY.value, new DestroyHandler());
 //        SEMATTACHDETACHPERMITS, SEMCANCELACQUIRE, SEMDESTROY, SEM_DRAIN_PERMITS, SEMGETATTACHEDPERMITS,
 //                SEMGETAVAILPERMITS, SEMREDUCEPERMITS, SEMRELEASE, SEMTRYACQUIRE,
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
@@ -419,8 +420,7 @@ public class ClientHandlerService implements ConnectionListener {
                 if (protocol.getCommand().equals(Command.QPUT.value)) {
                     queue.put(item);
                     result = true;
-                }
-                else{
+                } else {
                     long timeout = Long.valueOf(protocol.getArgs()[1]);
                     if (timeout == 0) {
                         result = queue.offer(item);
@@ -589,30 +589,30 @@ public class ClientHandlerService implements ConnectionListener {
         public Protocol processCall(Node node, Protocol protocol) {
             String type = protocol.getArgs()[0];
             String name = protocol.getArgs()[1];
-            if (InstanceType.MAP.toString().equalsIgnoreCase(name)) {
+            if (InstanceType.MAP.toString().equalsIgnoreCase(type)) {
                 node.factory.getMap(name).destroy();
-            } else if (InstanceType.QUEUE.toString().equalsIgnoreCase(name)) {
+            } else if (InstanceType.QUEUE.toString().equalsIgnoreCase(type)) {
                 node.factory.getQueue(name).destroy();
-            } else if (InstanceType.SET.toString().equalsIgnoreCase(name)) {
+            } else if (InstanceType.SET.toString().equalsIgnoreCase(type)) {
                 node.factory.getSet(name).destroy();
-            } else if (InstanceType.LIST.toString().equalsIgnoreCase(name)) {
+            } else if (InstanceType.LIST.toString().equalsIgnoreCase(type)) {
                 node.factory.getList(name).destroy();
-            } else if (InstanceType.MULTIMAP.toString().equalsIgnoreCase(name)) {
+            } else if (InstanceType.MULTIMAP.toString().equalsIgnoreCase(type)) {
                 node.factory.getMultiMap(name).destroy();
-            } else if (InstanceType.TOPIC.toString().equalsIgnoreCase(name)) {
+            } else if (InstanceType.TOPIC.toString().equalsIgnoreCase(type)) {
                 node.factory.getTopic(name).destroy();
-            } else if (InstanceType.ATOMIC_NUMBER.toString().equalsIgnoreCase(name)) {
+            } else if (InstanceType.ATOMIC_NUMBER.toString().equalsIgnoreCase(type)) {
                 node.factory.getAtomicNumber(name).destroy();
-            } else if (InstanceType.ID_GENERATOR.toString().equalsIgnoreCase(name)) {
+            } else if (InstanceType.ID_GENERATOR.toString().equalsIgnoreCase(type)) {
                 node.factory.getIdGenerator(name).destroy();
-            } else if (InstanceType.LOCK.toString().equalsIgnoreCase(name)) {
+            } else if (InstanceType.LOCK.toString().equalsIgnoreCase(type)) {
                 node.factory.getLock(name).destroy();
-            } else if (InstanceType.SEMAPHORE.toString().equalsIgnoreCase(name)) {
+            } else if (InstanceType.SEMAPHORE.toString().equalsIgnoreCase(type)) {
                 node.factory.getSemaphore(name).destroy();
-            } else if (InstanceType.COUNT_DOWN_LATCH.toString().equalsIgnoreCase(name)) {
+            } else if (InstanceType.COUNT_DOWN_LATCH.toString().equalsIgnoreCase(type)) {
                 node.factory.getCountDownLatch(name).destroy();
             } else {
-                return protocol.error(null, "unkonwn", "type");
+                return protocol.error(null, "unknown", "type");
             }
             return protocol.success();
         }
@@ -789,8 +789,9 @@ public class ClientHandlerService implements ConnectionListener {
             String[] args = new String[2 * collection.size()];
             int i = 0;
             for (Instance instance : collection) {
-                args[i++] = instance.getInstanceType().toString();
-                args[i++] = instance.getId().toString();
+                InstanceType instanceType = instance.getInstanceType();
+                args[i++] = instanceType.toString();
+                args[i++] = instance.getId().toString().substring(instanceType.prefix().length());
             }
             return protocol.success(args);
         }
@@ -2167,13 +2168,15 @@ public class ClientHandlerService implements ConnectionListener {
             String name = protocol.getArgs()[0];
             boolean includeValue = Boolean.valueOf(protocol.getArgs()[1]);
             IQueue<Object> queue = (IQueue) factory.getQueue(name);
-            ItemListener itemListener = new ClientItemListener(clientEndpoint, name);
+            ItemListener itemListener = new ClientItemListenerProtocolImpl(clientEndpoint, name);
             queue.addItemListener(itemListener, includeValue);
             clientEndpoint.queueItemListeners.put(queue, itemListener);
             return protocol.success();
         }
 
         public void processCall(Node node, Packet packet) {
+
+
         }
     }
 
@@ -2183,10 +2186,8 @@ public class ClientHandlerService implements ConnectionListener {
         public Protocol processCall(Node node, Protocol protocol) {
             final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
             String name = protocol.getArgs()[0];
-            boolean includeValue = Boolean.valueOf(protocol.getArgs()[1]);
             ITopic<Object> topic = (ITopic) factory.getTopic(name);
-
-            MessageListener messageListener = new ClientMessageListener(clientEndpoint, packetName);
+            MessageListener messageListener = new ClientMessageListenerProtocolImpl(clientEndpoint, name);
             topic.addMessageListener(messageListener);
             clientEndpoint.messageListeners.put(topic, messageListener);
             return protocol.success();
@@ -2253,13 +2254,13 @@ public class ClientHandlerService implements ConnectionListener {
             } else if (getInstanceType(packet.name).equals(InstanceType.QUEUE)) {
                 IQueue<Object> queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
                 final String packetName = packet.name;
-                ItemListener itemListener = new ClientItemListener(clientEndpoint, packetName);
+                ItemListener itemListener = new ClientItemListenerPacketImpl(clientEndpoint, packetName);
                 queue.addItemListener(itemListener, includeValue);
                 clientEndpoint.queueItemListeners.put(queue, itemListener);
             } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
                 ITopic<Object> topic = (ITopic) factory.getOrCreateProxyByName(packet.name);
                 final String packetName = packet.name;
-                MessageListener messageListener = new ClientMessageListener(clientEndpoint, packetName);
+                MessageListener messageListener = new ClientMessageListenerPacketImpl(clientEndpoint, packetName);
                 topic.addMessageListener(messageListener);
                 clientEndpoint.messageListeners.put(topic, messageListener);
             }
@@ -2271,11 +2272,11 @@ public class ClientHandlerService implements ConnectionListener {
 
     }
 
-    public class ClientItemListener implements ItemListener, ClientListener {
+    public class ClientItemListenerPacketImpl implements ItemListener, ClientListener {
         final ClientEndpoint clientEndpoint;
         final String name;
 
-        ClientItemListener(ClientEndpoint clientEndpoint, String name) {
+        ClientItemListenerPacketImpl(ClientEndpoint clientEndpoint, String name) {
             this.clientEndpoint = clientEndpoint;
             this.name = name;
         }
@@ -2295,11 +2296,33 @@ public class ClientHandlerService implements ConnectionListener {
         }
     }
 
-    public class ClientMessageListener implements MessageListener, ClientListener {
+    public class ClientItemListenerProtocolImpl implements ItemListener, ClientListener {
         final ClientEndpoint clientEndpoint;
         final String name;
 
-        ClientMessageListener(ClientEndpoint clientEndpoint, String name) {
+        ClientItemListenerProtocolImpl(ClientEndpoint clientEndpoint, String name) {
+            this.clientEndpoint = clientEndpoint;
+            this.name = name;
+        }
+
+        public void itemAdded(ItemEvent itemEvent) {
+            DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) itemEvent;
+            Protocol protocol = new Protocol(clientEndpoint.conn, Command.EVENT.value, new String[]{ItemEventType.ADDED.name()}, ByteBuffer.wrap(dataAwareItemEvent.getItemData().buffer));
+            clientEndpoint.sendPacket(protocol);
+        }
+
+        public void itemRemoved(ItemEvent itemEvent) {
+            DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) itemEvent;
+            Protocol protocol = new Protocol(clientEndpoint.conn, Command.EVENT.value, new String[]{ItemEventType.REMOVED.name()}, ByteBuffer.wrap(dataAwareItemEvent.getItemData().buffer));
+            clientEndpoint.sendPacket(protocol);
+        }
+    }
+
+    public class ClientMessageListenerPacketImpl implements MessageListener, ClientListener {
+        final ClientEndpoint clientEndpoint;
+        final String name;
+
+        ClientMessageListenerPacketImpl(ClientEndpoint clientEndpoint, String name) {
             this.clientEndpoint = clientEndpoint;
             this.name = name;
         }
@@ -2308,6 +2331,24 @@ public class ClientHandlerService implements ConnectionListener {
             Packet p = new Packet();
             DataMessage dataMessage = (DataMessage) msg;
             p.set(name, ClusterOperation.EVENT, dataMessage.getMessageData(), null);
+            clientEndpoint.sendPacket(p);
+        }
+    }
+
+    public class ClientMessageListenerProtocolImpl implements MessageListener, ClientListener {
+        final ClientEndpoint clientEndpoint;
+        final String name;
+
+        ClientMessageListenerProtocolImpl(ClientEndpoint clientEndpoint, String name) {
+            this.clientEndpoint = clientEndpoint;
+            this.name = name;
+        }
+
+        public void onMessage(Message msg) {
+            DataMessage dm = (DataMessage) msg;
+            System.out.println("On message is called" + ((DataMessage) msg).getMessageData());
+            Protocol p = new Protocol(clientEndpoint.conn, Command.MESSAGE.value, "-1", false, new String[]{name},
+                    ByteBuffer.wrap(dm.getMessageData().buffer));
             clientEndpoint.sendPacket(p);
         }
     }

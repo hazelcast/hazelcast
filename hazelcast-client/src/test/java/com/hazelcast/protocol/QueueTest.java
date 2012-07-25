@@ -22,21 +22,22 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class QueueTest extends ProtocolTest{
+public class QueueTest extends ProtocolTest {
 
     @Test
     public void offer() throws IOException {
         String item = "1";
-        assertTrue(offer(item).contains("OK"));
+        assertTrue(offer(item, socket).contains("OK"));
     }
 
-    private List<String> offer(String item) throws IOException {
-        OutputStream out = doOp("QOFFER 2 default 0 #1", ""+ item.getBytes().length, socket);
+    private List<String> offer(String item, Socket socket) throws IOException {
+        OutputStream out = doOp("QOFFER 2 default 0 #1", "" + item.getBytes().length, socket);
         out.write(item.getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -46,7 +47,7 @@ public class QueueTest extends ProtocolTest{
     @Test
     public void poll() throws IOException {
         String item = "1";
-        offer(item);
+        offer(item, socket);
         OutputStream out = doOp("QPOLL 2 default 0", null, socket);
         out.flush();
         assertTrue(read(socket).contains(item));
@@ -55,7 +56,7 @@ public class QueueTest extends ProtocolTest{
     @Test
     public void take() throws IOException {
         String item = "1";
-        offer(item);
+        offer(item, socket);
         OutputStream out = doOp("QTAKE 2 default", null, socket);
         out.flush();
         assertTrue(read(socket).contains(item));
@@ -64,11 +65,30 @@ public class QueueTest extends ProtocolTest{
     @Test
     public void put() throws IOException {
         String item = "1";
-        offer(item);
-        OutputStream out = doOp("QPUT 2 default #1", ""+item.getBytes().length, socket);
+        offer(item, socket);
+        OutputStream out = doOp("QPUT 2 default #1", "" + item.getBytes().length, socket);
         out.write(item.getBytes());
         out.write("\r\n".getBytes());
         out.flush();
         assertTrue(read(socket).contains("true"));
+    }
+
+    @Test
+    public void addListener() throws IOException {
+        doOp("QADDLISTENER flag default true", null);
+        assertTrue(read(socket).contains("OK"));
+        final String item = "a";
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Socket socket = connect0();
+                    offer(item, socket);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        List<String> values = read(socket);
+        assertTrue(values.contains(item));
     }
 }

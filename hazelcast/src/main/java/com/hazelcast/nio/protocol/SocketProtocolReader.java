@@ -91,8 +91,6 @@ public class SocketProtocolReader implements SocketReader {
                         }
                     }
                     if ((buffers.length == 0 || !buffers[buffers.length - 1].hasRemaining())) {
-                        if (args.length <= 0)
-                            throw new RuntimeException("No argument to the command, at least flag should be provided!");
                         Protocol protocol = new Protocol(connection, command, flag, noreply, args, buffers);
                         connection.setType(Connection.Type.PROTOCOL_CLIENT);
                         ioService.handleClientCommand(protocol);
