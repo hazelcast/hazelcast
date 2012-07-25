@@ -112,8 +112,10 @@ public class ClientHandlerService implements ConnectionListener {
         mapCommandHandlers.put(Command.GETANDADD.value, new AtomicLongGetAndAddHandler());
         mapCommandHandlers.put(Command.QOFFER.value, new QueueOfferHandler());
         mapCommandHandlers.put(Command.QPOLL.value, new QueuePollHandler());
+        mapCommandHandlers.put(Command.QTAKE.value, new QueuePollHandler());
         mapCommandHandlers.put(Command.QSIZE.value, new QueueSizeHandler());
         mapCommandHandlers.put(Command.QPEEK.value, new QueuePeekHandler());
+        mapCommandHandlers.put(Command.QPUT.value, new QueueOfferHandler());
         mapCommandHandlers.put(Command.QREMOVE.value, new QueueRemoveHandler());
         mapCommandHandlers.put(Command.QREMCAPACITY.value, new QueueRemainingCapacityHandler());
         mapCommandHandlers.put(Command.QENTRIES.value, new QueueEntriesHandler());
@@ -138,13 +140,9 @@ public class ClientHandlerService implements ConnectionListener {
         mapCommandHandlers.put(Command.LOCK_FORCE_UNLOCK.value, new UnlockOperationHandler());
         mapCommandHandlers.put(Command.LOCK_IS_LOCKED.value, new IsLockedOperationHandler());
         mapCommandHandlers.put(Command.TPUBLISH.value, new TopicPublishHandler());
-
+        mapCommandHandlers.put(Command.TADDLISTENER.value, new TopicAddListenerHandler());
 //        SEMATTACHDETACHPERMITS, SEMCANCELACQUIRE, SEMDESTROY, SEM_DRAIN_PERMITS, SEMGETATTACHEDPERMITS,
 //                SEMGETAVAILPERMITS, SEMREDUCEPERMITS, SEMRELEASE, SEMTRYACQUIRE,
-
-
-
-
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
         registerHandler(CONCURRENT_MAP_PUT_AND_UNLOCK.getValue(), new MapPutAndUnlockHandler());
         registerHandler(CONCURRENT_MAP_PUT_ALL.getValue(), new MapPutAllHandler());
@@ -414,18 +412,21 @@ public class ClientHandlerService implements ConnectionListener {
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
             String name = protocol.getArgs()[0];
-            long timeout = Long.valueOf(protocol.getArgs()[1]);
             Data item = new Data(protocol.getBuffers()[0].array());
             IQueue<Data> queue = node.factory.getQueue(name);
             boolean result = false;
             try {
-                if (timeout == -1) {
+                if (protocol.getCommand().equals(Command.QPUT.value)) {
                     queue.put(item);
                     result = true;
-                } else if (timeout == 0) {
-                    result = queue.offer(item);
-                } else {
-                    result = queue.offer(item, timeout, TimeUnit.MILLISECONDS);
+                }
+                else{
+                    long timeout = Long.valueOf(protocol.getArgs()[1]);
+                    if (timeout == 0) {
+                        result = queue.offer(item);
+                    } else {
+                        result = queue.offer(item, timeout, TimeUnit.MILLISECONDS);
+                    }
                 }
                 return protocol.success(String.valueOf(result));
             } catch (InterruptedException e) {
@@ -453,17 +454,18 @@ public class ClientHandlerService implements ConnectionListener {
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
             String name = protocol.getArgs()[0];
-            long timeout = Long.valueOf(protocol.getArgs()[1]);
-            Data item = new Data(protocol.getBuffers()[0].array());
             IQueue<Data> queue = node.factory.getQueue(name);
-            Data result = null;
+            Data result;
             try {
-                if (timeout == -1) {
+                if (protocol.getCommand().equals(Command.QTAKE.value)) {
                     result = queue.take();
-                } else if (timeout == 0) {
-                    result = queue.poll();
                 } else {
-                    result = queue.poll(timeout, TimeUnit.MILLISECONDS);
+                    long timeout = Long.valueOf(protocol.getArgs()[1]);
+                    if (timeout == 0) {
+                        result = queue.poll();
+                    } else {
+                        result = queue.poll(timeout, TimeUnit.MILLISECONDS);
+                    }
                 }
                 return protocol.success(result == null ? null : ByteBuffer.wrap(result.buffer));
             } catch (InterruptedException e) {
@@ -936,7 +938,7 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     private class CountDownLatchAwaitHandler extends CountDownLatchClientHandler {
-        Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) throws Exception{
+        Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) throws Exception {
             return cdlProxy.await(value, TimeUnit.MILLISECONDS);
         }
 
@@ -984,7 +986,6 @@ public class ClientHandlerService implements ConnectionListener {
             boolean isSet = cdlProxy.setCount(count, address);
             return isSet;
         }
-
 //        @Override
 //        public void processCall(Node node, Packet packet) {
 //            final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
@@ -1266,10 +1267,9 @@ public class ClientHandlerService implements ConnectionListener {
             } else {
                 ClientEndpoint clientEndpoint = node.clientHandlerService.getClientEndpoint(conn);
                 clientEndpoint.authenticated();
-                Bind bind = new Bind(new Address(packet.conn.getSocketChannelWrapper().socket().getInetAddress(), packet.conn.getSocketChannelWrapper().socket().getPort()));
-                bind.setConnection(packet.conn);
+                Bind bind = new Bind(new Address(conn.getSocketChannelWrapper().socket().getInetAddress(), conn.getSocketChannelWrapper().socket().getPort()));
+                bind.setConnection(conn);
                 bind.setNode(node);
-//                System.out.println("bind = " + bind);
                 node.clusterService.enqueueAndWait(bind);
             }
             return authenticated;
@@ -1421,7 +1421,6 @@ public class ClientHandlerService implements ConnectionListener {
             Data value;
             try {
                 System.out.println("key is " + new String(protocol.getBuffers()[0].array()));
-
                 value = (Data) map.tryRemove(new Data(protocol.getBuffers()[0].array()), ttl, TimeUnit.MILLISECONDS);
                 System.out.println("VALUE is " + value);
             } catch (TimeoutException e) {
@@ -1462,8 +1461,7 @@ public class ClientHandlerService implements ConnectionListener {
             Data key = new Data(protocol.getBuffers()[0].array());
             Data value = new Data(protocol.getBuffers()[1].array());
             Data oldValue = processMapOp(node.factory.getMap(name), key, value, ttl);
-
-            return protocol.success(oldValue == null? null: ByteBuffer.wrap(oldValue.buffer));
+            return protocol.success(oldValue == null ? null : ByteBuffer.wrap(oldValue.buffer));
         }
 
         public void processCall(Node node, Packet packet) {
@@ -1611,20 +1609,17 @@ public class ClientHandlerService implements ConnectionListener {
                     oldValue = new Data(protocol.getBuffers()[1].array());
                     if (protocol.getBuffers().length > 2) {
                         newValue = new Data(protocol.getBuffers()[2].array());
-                    }
-                    else{
+                    } else {
                         return protocol.error(null, "New value is missing");
                     }
-                }
-                else{
+                } else {
                     return protocol.error(null, "old value is missing");
                 }
-            }
-            else{
+            } else {
                 return protocol.error(null, "key is missing");
             }
             IMap<Object, Object> map = (IMap) factory.getMap(name);
-            boolean replaced = map.replace(key, oldValue, newValue );
+            boolean replaced = map.replace(key, oldValue, newValue);
             return protocol.success(String.valueOf(replaced));
         }
     }
@@ -1665,7 +1660,6 @@ public class ClientHandlerService implements ConnectionListener {
             IMap<Object, Object> map = (IMap) factory.getMap(name);
             boolean contains = map.containsValue(value);
             return protocol.success(String.valueOf(contains));
-
         }
 
         public void processCall(Node node, Packet packet) {
@@ -1725,8 +1719,8 @@ public class ClientHandlerService implements ConnectionListener {
             System.out.println("Locking from " + ThreadContext.get().getCallContext().getThreadId());
             String name = protocol.getArgs()[0];
             long timeout = -1;
-            if(protocol.getCommand().equals(Command.MTRYLOCK)){
-                if(protocol.getArgs().length > 0)
+            if (protocol.getCommand().equals(Command.MTRYLOCK)) {
+                if (protocol.getArgs().length > 0)
                     timeout = Long.valueOf(protocol.getArgs()[1]);
                 else
                     timeout = 0;
@@ -1906,19 +1900,19 @@ public class ClientHandlerService implements ConnectionListener {
         public Protocol processCall(Node node, Protocol protocol) {
             String name = protocol.getArgs()[0];
             ILock lock = node.factory.getLock(name);
-            try{
-                if(protocol.getCommand().equals(Command.LOCK_TRYLOCK.value)){
-                    if(protocol.getArgs().length > 1){
+            try {
+                if (protocol.getCommand().equals(Command.LOCK_TRYLOCK.value)) {
+                    if (protocol.getArgs().length > 1) {
                         return protocol.success(String.valueOf(lock.tryLock(Long.valueOf(protocol.getArgs()[1]),
                                 TimeUnit.MILLISECONDS)));
-                    } else{
+                    } else {
                         return protocol.success(String.valueOf(lock.tryLock()));
                     }
-                } else{
+                } else {
                     lock.unlock();
                     return protocol.success();
                 }
-            }catch (InterruptedException e){
+            } catch (InterruptedException e) {
                 logger.log(Level.FINEST, "Lock interrupted!");
                 return protocol.success("interrupted");
             }
@@ -1958,9 +1952,9 @@ public class ClientHandlerService implements ConnectionListener {
         public Protocol processCall(Node node, Protocol protocol) {
             String name = protocol.getArgs()[0];
             ILock lock = node.factory.getLock(name);
-            if(protocol.getCommand().equals(Command.LOCK_UNLOCK.value)){
+            if (protocol.getCommand().equals(Command.LOCK_UNLOCK.value)) {
                 lock.unlock();
-            } else if (protocol.getCommand().equals(Command.LOCK_FORCE_UNLOCK.value)){
+            } else if (protocol.getCommand().equals(Command.LOCK_FORCE_UNLOCK.value)) {
                 lock.forceUnlock();
             }
             return protocol.success();
@@ -2176,6 +2170,25 @@ public class ClientHandlerService implements ConnectionListener {
             ItemListener itemListener = new ClientItemListener(clientEndpoint, name);
             queue.addItemListener(itemListener, includeValue);
             clientEndpoint.queueItemListeners.put(queue, itemListener);
+            return protocol.success();
+        }
+
+        public void processCall(Node node, Packet packet) {
+        }
+    }
+
+    private class TopicAddListenerHandler extends ClientOperationHandler {
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
+            String name = protocol.getArgs()[0];
+            boolean includeValue = Boolean.valueOf(protocol.getArgs()[1]);
+            ITopic<Object> topic = (ITopic) factory.getTopic(name);
+
+            MessageListener messageListener = new ClientMessageListener(clientEndpoint, packetName);
+            topic.addMessageListener(messageListener);
+            clientEndpoint.messageListeners.put(topic, messageListener);
             return protocol.success();
         }
 

@@ -22,6 +22,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
@@ -31,9 +32,43 @@ public class QueueTest extends ProtocolTest{
     @Test
     public void offer() throws IOException {
         String item = "1";
-        OutputStream out = doOp("QOFFER 2 default 0", "#1 " + item.getBytes().length);
+        assertTrue(offer(item).contains("OK"));
+    }
+
+    private List<String> offer(String item) throws IOException {
+        OutputStream out = doOp("QOFFER 2 default 0 #1", ""+ item.getBytes().length, socket);
         out.write(item.getBytes());
+        out.write("\r\n".getBytes());
         out.flush();
-        assertTrue(read(socket).contains("OK"));
+        return read(socket);
+    }
+
+    @Test
+    public void poll() throws IOException {
+        String item = "1";
+        offer(item);
+        OutputStream out = doOp("QPOLL 2 default 0", null, socket);
+        out.flush();
+        assertTrue(read(socket).contains(item));
+    }
+
+    @Test
+    public void take() throws IOException {
+        String item = "1";
+        offer(item);
+        OutputStream out = doOp("QTAKE 2 default", null, socket);
+        out.flush();
+        assertTrue(read(socket).contains(item));
+    }
+
+    @Test
+    public void put() throws IOException {
+        String item = "1";
+        offer(item);
+        OutputStream out = doOp("QPUT 2 default #1", ""+item.getBytes().length, socket);
+        out.write(item.getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        assertTrue(read(socket).contains("true"));
     }
 }

@@ -25,28 +25,29 @@ import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
-public class CountDownLatchTest extends ProtocolTest{
-
+public class TopicTest extends ProtocolTest{
 
     @Test
-    public void setCount() throws IOException {
-        assertTrue(setCount(5).contains("true"));
-    }
-
-    private List<String> setCount(int count) throws IOException {
-        OutputStream out = doOp("CDLSETCOUNT flag default "+count,null, socket);
+    public void publish() throws IOException {
+        String message = "m";
+        OutputStream out = doOp("TPUBLISH flag default #1",  ""+message.getBytes().length);
+        out.write(message.getBytes());
         out.write("\r\n".getBytes());
         out.flush();
-        return read(socket);
     }
 
     @Test
-    public void getCount() throws IOException {
-        setCount(5);
-        OutputStream out = doOp("CDLGETCOUNT flag default",null, socket);
+    public void addListener() throws IOException {
+        
+        new Thread(new Runnable() {
+            public void run() {
+            }
+        }).start();
+        String message = "m";
+        OutputStream out = doOp("TADDLISTENER flag default",  null, socket);
+        out.write(message.getBytes());
         out.write("\r\n".getBytes());
         out.flush();
-        assertTrue(read(socket).contains("5"));
     }
 
 }
