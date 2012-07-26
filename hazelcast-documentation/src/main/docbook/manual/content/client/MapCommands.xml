@@ -953,7 +953,7 @@
             </para>
 
             <programlisting language="java"><![CDATA[
-                EVENT <0> <type> <name> <eventType> #2
+                EVENT <-1> <type> <name> <eventType> #2
                 <size of newvalue in bytes> <size of oldValue in bytes>
                 <newvalue in bytes><oldvalue in bytes>
             ]]></programlisting>

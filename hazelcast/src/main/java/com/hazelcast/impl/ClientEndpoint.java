@@ -238,6 +238,9 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
             value = ((DataAwareEntryEvent) event).getKeyData();
             type = "set";
             key = null;
+        } else{
+            //In case if return value set to false.
+            type = "map";
         }
         List<ByteBuffer> list = new ArrayList<ByteBuffer>();
         list.add(ByteBuffer.wrap(key.buffer));
