@@ -195,7 +195,7 @@ public class CountDownLatchProxyImpl extends FactoryAwareNamedProxy implements C
 
         public Member getOwner() {
             final Address owner = newMCountDownLatch().getOwnerAddress(getNameAsData());
-            final Address local = factory.node.baseVariables.thisAddress;
+            final Address local = factory.node.getThisAddress();
             return owner != null ? new MemberImpl(owner, local.equals(owner)) : null;
         }
 

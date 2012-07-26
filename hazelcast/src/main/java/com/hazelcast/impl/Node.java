@@ -173,13 +173,13 @@ public class Node {
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         nodeService = new NodeService(this);
-        clusterImpl = new ClusterImpl(this);
-        baseVariables = new NodeBaseVariables(address, localMember);
         //initialize managers..
+        baseVariables = new NodeBaseVariables(/*address, localMember*/);
         clusterService = new ClusterService(this);
         clusterService.start();
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterManager = new ClusterManager(this);
+        clusterImpl = new ClusterImpl(this);
         executorManager = new ExecutorManager(this);
         partitionManager = new PartitionManager(this);
         clientHandlerService = new ClientHandlerService(this);
@@ -189,7 +189,7 @@ public class Node {
         clientService = new ClientServiceImpl(concurrentMapManager);
         topicManager = new TopicManager(this);
         textCommandService = new TextCommandServiceImpl(this);
-        clusterManager.addMember(false, localMember);
+        clusterManager.addMember(localMember);
         initializer.printNodeInfo(this);
         buildNumber = initializer.getBuildNumber();
         VersionCheck.check(this, initializer.getBuild(), initializer.getVersion());
@@ -431,7 +431,7 @@ public class Node {
         serviceThread = clusterService.getServiceThread();
 //        serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
-        serviceThread.start();
+//        serviceThread.start();
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
@@ -444,8 +444,8 @@ public class Node {
         }
         logger.log(Level.FINEST, "finished starting threads, calling join");
         join();
-        int clusterSize = clusterImpl.getMembers().size();
-        if (address.getPort() >= config.getPort() + clusterSize) {
+        int clusterSize = clusterImpl.getSize();
+        if (config.isPortAutoIncrement() && address.getPort() >= config.getPort() + clusterSize) {
             StringBuilder sb = new StringBuilder("Config seed port is ");
             sb.append(config.getPort());
             sb.append(" and cluster size is ");
@@ -620,13 +620,14 @@ public class Node {
         logger.log(Level.FINEST, "This node is being set as the master");
         systemLogService.logJoin("No master node found! Setting this node as the master.");
         masterAddress = address;
-        clusterManager.enqueueAndWait(new Processable() {
-            public void process() {
-                clusterManager.addMember(address, getLocalNodeType(), localMember.getUuid()); // add
-                // myself
-                clusterImpl.setMembers(baseVariables.lsMembers);
-            }
-        }, 5);
+//        clusterManager.enqueueAndWait(new Processable() {
+//            public void process() {
+//                clusterManager.addMember(address, getLocalNodeType(), localMember.getUuid()); // add myself
+//                clusterImpl.setMembers(baseVariables.lsMembers);
+//            }
+//        }, 5);
+//        clusterManager.createAndAddMember(address, getLocalNodeType(), localMember.getUuid()); // add myself
+//        clusterImpl.setMembers(clusterManager.getMembers());
         setJoined();
     }
 

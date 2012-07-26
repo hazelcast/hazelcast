@@ -33,27 +33,29 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ClusterImpl implements Cluster {
 
     final CopyOnWriteArraySet<MembershipListener> listeners = new CopyOnWriteArraySet<MembershipListener>();
-    final AtomicReference<Set<Member>> members = new AtomicReference<Set<Member>>();
+//    final AtomicReference<Set<Member>> members = new AtomicReference<Set<Member>>();
     final AtomicReference<Member> localMember = new AtomicReference<Member>();
     final Map<Member, Member> clusterMembers = new ConcurrentHashMap<Member, Member>();
-    final Map<Address, Member> mapMembers = new ConcurrentHashMap<Address, Member>();
+//    final Map<Address, Member> mapMembers = new ConcurrentHashMap<Address, Member>();
     @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long clusterTimeDiff = Long.MAX_VALUE;
     final Node node;
+    final ClusterManager clusterManager;
 
     public ClusterImpl(Node node) {
         this.node = node;
+        this.clusterManager = node.clusterManager;
         this.setMembers(Arrays.asList(node.getLocalMember()));
     }
 
     public void reset() {
-        mapMembers.clear();
+//        mapMembers.clear();
         clusterMembers.clear();
-        members.set(null);
+//        members.set(null);
         this.setMembers(Arrays.asList(node.getLocalMember()));
     }
 
-    public void setMembers(List<MemberImpl> lsMembers) {
+    public void setMembers(Collection<MemberImpl> lsMembers) {
         Set<Member> setNew = new LinkedHashSet<Member>(lsMembers.size());
         ArrayList<Runnable> notifications = new ArrayList<Runnable>();
         for (MemberImpl member : lsMembers) {
@@ -99,12 +101,12 @@ public class ClusterImpl implements Cluster {
             }
         }
         clusterMembers.clear();
-        mapMembers.clear();
+//        mapMembers.clear();
         for (Member member : setNew) {
-            mapMembers.put(((MemberImpl) member).getAddress(), member);
+//            mapMembers.put(((MemberImpl) member).getAddress(), member);
             clusterMembers.put(member, member);
         }
-        members.set(Collections.unmodifiableSet(setNew));
+//        members.set(Collections.unmodifiableSet(setNew));
         // send notifications now
         for (Runnable notification : notifications) {
             node.executorManager.getEventExecutorService().execute(notification);
@@ -124,7 +126,8 @@ public class ClusterImpl implements Cluster {
     }
 
     public Set<Member> getMembers() {
-        return members.get();
+//        return members.get();
+        return new HashSet<Member>(clusterManager.getMembers());
     }
 
     public long getClusterTime() {
@@ -143,7 +146,8 @@ public class ClusterImpl implements Cluster {
     }
 
     public Member getMember(Address address) {
-        return mapMembers.get(address);
+//        return mapMembers.get(address);
+        return clusterManager.getMember(address);
     }
 
     @Override
@@ -162,6 +166,8 @@ public class ClusterImpl implements Cluster {
     }
 
     public int getSize() {
-        return members.get().size();
+//        return members.get().size();
+        final Collection<MemberImpl> members = clusterManager.getMembers();
+        return members != null ? members.size() : 0;
     }
 }

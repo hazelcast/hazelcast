@@ -25,13 +25,13 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MapService implements ServiceLifecycle {
-    public final static String MAP_SERVICE_NAME = "mapService";
+    public final static String MAP_SERVICE_NAME = "hz:mapService";
 
     private final AtomicLong counter = new AtomicLong();
     private final PartitionContainer[] partitionContainers;
     private final NodeService nodeService;
 
-    public MapService(NodeService nodeService, PartitionInfo[] partitions) {
+    public MapService(final NodeService nodeService, PartitionInfo[] partitions) {
         this.nodeService = nodeService;
         int partitionCount = nodeService.getPartitionCount();
         partitionContainers = new PartitionContainer[partitionCount];
@@ -53,7 +53,7 @@ public class MapService implements ServiceLifecycle {
                             k += entry.getValue().records.size();
                         }
                     }
-                    System.err.println("Total: " + k);
+                    System.err.println(nodeService.getThisAddress() + " Total: " + k);
                     try {
                         sleep(5000);
                     } catch (InterruptedException e) {

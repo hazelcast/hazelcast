@@ -23,6 +23,7 @@ import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
@@ -30,6 +31,7 @@ import com.hazelcast.nio.Packet;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.REMOTE_CALL;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -42,11 +44,13 @@ public class NodeService {
     private final Workers nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
     private final Workers blockingWorkers = new Workers("hz.Blocking", 8); // TODO: thread group!
     private final Node node;
+    private final ILogger logger;
     final int partitionCount;
     final int maxBackupCount;
 
     public NodeService(Node node) {
         this.node = node;
+        this.logger = node.getLogger(NodeService.class.getName());
         this.partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         this.maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
@@ -137,8 +141,8 @@ public class NodeService {
         if (target == null) {
             throw new NullPointerException(inv.getOperation() + ": Target is null");
         }
-        if (getClusterImpl().getMember(target) == null) {
-            throw new RuntimeException("Target not a member: " + target);
+        if (!(op instanceof NonMemberOperation) && getClusterImpl().getMember(target) == null) {
+            throw new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName);
         }
         if (getThisAddress().equals(target)) {
             final ExecutorService executor = getExecutor(partitionId, nonBlocking);
@@ -149,7 +153,8 @@ public class NodeService {
                             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                             Address owner = partitionInfo.getOwner();
                             if (!getThisAddress().equals(owner)) {
-                                throw new WrongTargetException(getThisAddress(), owner);
+                                throw new WrongTargetException(getThisAddress(), owner, partitionId,
+                                        op.getClass().getName(), serviceName);
                             }
                         }
                         inv.run();
@@ -169,7 +174,7 @@ public class NodeService {
             TheCall call = new TheCall(target, inv);
             boolean sent = node.concurrentMapManager.registerAndSend(target, packet, call);
             if (!sent) {
-                inv.setResult(new IOException());
+                inv.setResult(new IOException("Packet not sent!"));
             }
         }
     }
@@ -183,7 +188,7 @@ public class NodeService {
                     PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                     Address owner = partitionInfo.getOwner();
                     if (!getThisAddress().equals(owner)) {
-                        response = new WrongTargetException(getThisAddress(), owner);
+                        response = new WrongTargetException(getThisAddress(), owner, partitionId, op.getClass().getName());
                     } else {
                         response = op.call();
                     }
@@ -208,18 +213,24 @@ public class NodeService {
                 try {
                     Object response = null;
                     final Operation op = (Operation) toObject(data);
-                    setOperationContext(op, serviceName, caller, callId, partitionId);
+                    setOperationContext(op, serviceName, caller, callId, partitionId).setConnection(packet.conn);
                     try {
                         if (partitionId != -1) {
                             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                             Address owner = partitionInfo.getOwner();
                             if (!(op instanceof NonBlockingOperation) && !getThisAddress().equals(owner)) {
-                                throw new WrongTargetException(getThisAddress(), owner);
+                                throw new WrongTargetException(getThisAddress(), owner, partitionId,
+                                        op.getClass().getName(), serviceName);
                             }
                         }
                         response = op.call();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        if (e instanceof RetryableException) {
+                            logger.log(Level.WARNING, e.getClass() + ": " + e.getMessage());
+                            logger.log(Level.FINEST, e.getMessage(), e);
+                        } else {
+                            logger.log(Level.SEVERE, e.getMessage(), e);
+                        }
                         response = e;
                     }
                     if (!(op instanceof NoReply)) {
@@ -235,13 +246,14 @@ public class NodeService {
                         node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.log(Level.SEVERE, e.getMessage(), e);
                 }
             }
         });
     }
 
-    private OperationContext setOperationContext(Operation op, String serviceName, Address caller, long callId, int partitionId) {
+    private OperationContext setOperationContext(Operation op, String serviceName, Address caller,
+                                                 long callId, int partitionId) {
         OperationContext context = op.getOperationContext();
         context.setNodeService(this)
                 .setService(getService(serviceName))
@@ -298,7 +310,7 @@ public class NodeService {
                                         try {
                                             ThreadContext.shutdown(this);
                                         } catch (Exception e) {
-                                            e.printStackTrace();
+                                            logger.log(Level.WARNING, e.getMessage(), e);
                                         }
                                     }
                                 }

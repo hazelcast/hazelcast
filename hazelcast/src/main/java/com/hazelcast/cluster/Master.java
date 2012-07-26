@@ -16,6 +16,8 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
@@ -25,7 +27,7 @@ import java.io.IOException;
 /**
  * The Class Master.
  */
-public class Master extends AbstractRemotelyProcessable {
+public class Master extends AbstractOperation implements NonMemberOperation {
 
     /**
      * The address.
@@ -76,8 +78,14 @@ public class Master extends AbstractRemotelyProcessable {
     * @see com.hazelcast.impl.BaseManager.Processable#process()
     */
 
-    public void process() {
-        node.clusterManager.handleMaster(this);
+//    public void process() {
+//        node.clusterManager.handleMaster(this);
+//    }
+
+    public Object call() throws Exception {
+        ClusterManager cm = getOperationContext().getService();
+        cm.handleMaster(this);
+        return Boolean.TRUE;
     }
 
     /**

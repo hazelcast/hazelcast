@@ -16,6 +16,11 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.impl.Node;
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NonBlockingOperation;
+import com.hazelcast.impl.spi.NonMemberOperation;
+import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.util.Clock;
 import com.hazelcast.impl.MemberImpl;
 
@@ -26,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
+public class MembersUpdateCall extends AbstractOperation implements NonBlockingOperation, NonMemberOperation {
 
     private static final long serialVersionUID = -2311579721761844861L;
 
@@ -47,6 +52,8 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
     }
 
     public Boolean call() {
+        OperationContext ctx = getOperationContext();
+        Node node = ctx.getNodeService().getNode();
         node.getClusterImpl().setMasterTime(masterTime);
         node.clusterManager.updateMembers(getMemberInfos());
         return Boolean.TRUE;

@@ -14,17 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
+package com.hazelcast.impl.spi;
 
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.NonBlockingOperation;
-
-public class FinalizeJoin extends AbstractOperation implements NonBlockingOperation {
-
-    public Boolean call() throws Exception {
-        Node node = getOperationContext().getNodeService().getNode();
-        node.listenerManager.syncForAdd(getOperationContext().getCaller());
-        return Boolean.TRUE;
-    }
+/**
+ * @mdogan 7/25/12
+ */
+public interface NonMemberOperation {
 }

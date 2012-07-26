@@ -16,31 +16,36 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.impl.Node;
 import com.hazelcast.impl.PartitionManager;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.NonBlockingOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 
-public class PartitionStateProcessable extends AbstractRemotelyProcessable {
+public class PartitionStateOperation extends AbstractOperation implements NonBlockingOperation, NoReply {
     private PartitionRuntimeState partitionState;
 
-    public PartitionStateProcessable(final Collection<MemberInfo> memberInfos,
-                                     final PartitionInfo[] partitions,
-                                     final long masterTime, int version) {
+    public PartitionStateOperation(final Collection<MemberInfo> memberInfos,
+                                   final PartitionInfo[] partitions,
+                                   final long masterTime, int version) {
         partitionState = new PartitionRuntimeState(memberInfos, partitions, masterTime, version);
     }
 
-    public PartitionStateProcessable() {
+    public PartitionStateOperation() {
     }
 
-    public void process() {
-        PartitionManager partitionManager = node.concurrentMapManager.getPartitionManager();
+    public Object call() {
+        Node node = getOperationContext().getNodeService().getNode();
+        partitionState.setEndpoint(getOperationContext().getCaller());
+        PartitionManager partitionManager = node.partitionManager;
         partitionManager.setPartitionRuntimeState(partitionState);
+        return null;
     }
 
     public void readData(DataInput in) throws IOException {
@@ -52,9 +57,9 @@ public class PartitionStateProcessable extends AbstractRemotelyProcessable {
         partitionState.writeData(out);
     }
 
-    @Override
-    public void setConnection(final Connection conn) {
-        super.setConnection(conn);
-        partitionState.setConnection(conn);
-    }
+//    @Override
+//    public void setConnection(final Connection conn) {
+//        super.setConnection(conn);
+//        partitionState.setConnection(conn);
+//    }
 }

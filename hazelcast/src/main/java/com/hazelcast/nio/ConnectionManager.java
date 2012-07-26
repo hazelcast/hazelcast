@@ -17,9 +17,9 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.Bind;
+import com.hazelcast.cluster.ClusterManager;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
@@ -39,6 +39,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import static com.hazelcast.impl.ClusterOperation.REMOTE_CALL;
 import static com.hazelcast.impl.Constants.IO.KILO_BYTE;
 
 public class ConnectionManager {
@@ -229,7 +230,12 @@ public class ConnectionManager {
     private Packet createBindPacket(Bind rp) {
         Data value = ThreadContext.get().toData(rp);
         Packet packet = new Packet();
-        packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
+        packet.operation = REMOTE_CALL;
+        packet.blockId = -1;
+        packet.name = ClusterManager.SERVICE_NAME;
+        packet.longValue = 1L;
+//        packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
+        packet.setValue(value);
         packet.client = ioService.isClient();
         return packet;
     }

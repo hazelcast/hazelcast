@@ -24,12 +24,13 @@ import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.util.ResponseQueueFactory;
 
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.toData;
@@ -128,27 +129,41 @@ public class PartitionServiceImpl implements PartitionService {
     }
 
     private MemberImpl getPartitionOwner(final int partitionId) throws InterruptedException {
-        final BlockingQueue<MemberImpl> responseQ = ResponseQueueFactory.newResponseQueue();
-        concurrentMapManager.enqueueAndReturn(new Processable() {
-            public void process() {
-                MemberImpl memberOwner = null;
-                try {
-                    Address ownerAddress = concurrentMapManager.getPartitionManager().getOwner(partitionId);
-                    if (ownerAddress != null) {
-                        if (concurrentMapManager.thisAddress.equals(ownerAddress)) {
-                            memberOwner = concurrentMapManager.thisMember;
-                        } else {
-                            memberOwner = concurrentMapManager.getMember(ownerAddress);
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
-                } finally {
-                    responseQ.offer(memberOwner);
+//        final BlockingQueue<MemberImpl> responseQ = ResponseQueueFactory.newResponseQueue();
+//        concurrentMapManager.enqueueAndReturn(new Processable() {
+//            public void process() {
+//                MemberImpl memberOwner = null;
+//                try {
+//                    Address ownerAddress = concurrentMapManager.getPartitionManager().getOwner(partitionId);
+//                    if (ownerAddress != null) {
+//                        if (concurrentMapManager.thisAddress.equals(ownerAddress)) {
+//                            memberOwner = concurrentMapManager.thisMember;
+//                        } else {
+//                            memberOwner = concurrentMapManager.getMember(ownerAddress);
+//                        }
+//                    }
+//                } catch (Exception e) {
+//                    logger.log(Level.SEVERE, e.getMessage(), e);
+//                } finally {
+//                    responseQ.offer(memberOwner);
+//                }
+//            }
+//        });
+//        return responseQ.poll(10, TimeUnit.SECONDS);
+        MemberImpl memberOwner = null;
+        try {
+            Address ownerAddress = concurrentMapManager.getPartitionManager().getOwner(partitionId);
+            if (ownerAddress != null) {
+                if (concurrentMapManager.thisAddress.equals(ownerAddress)) {
+                    memberOwner = concurrentMapManager.thisMember;
+                } else {
+                    memberOwner = concurrentMapManager.getMember(ownerAddress);
                 }
             }
-        });
-        return responseQ.poll(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+        }
+        return memberOwner;
     }
 
     public class PartitionProxy implements Partition, Comparable {

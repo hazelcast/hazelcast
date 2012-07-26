@@ -17,24 +17,22 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.base.Call;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.Counter;
 import com.hazelcast.util.SimpleBoundedQueue;
 
-import java.util.*;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class NodeBaseVariables {
-    final List<MemberImpl> lsMembers = new ArrayList<MemberImpl>(10);
+//    final List<MemberImpl> lsMembers = new ArrayList<MemberImpl>(10);
 
     // Counter for normal/data (non-lite) members.
     // Counter is not thread-safe!
-    final Counter dataMemberCount = new Counter() ;
+//    final Counter dataMemberCount = new Counter() ;
 
-    final Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(200);
+//    final Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(200);
 
     final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(500);
 
@@ -42,13 +40,13 @@ public class NodeBaseVariables {
 
     final AtomicLong localIdGen = new AtomicLong(0);
 
-    final Address thisAddress;
+//    final Address thisAddress;
 
-    final MemberImpl thisMember;
+//    final MemberImpl thisMember;
 
-    NodeBaseVariables(Address thisAddress, MemberImpl thisMember) {
-        this.thisAddress = thisAddress;
-        this.thisMember = thisMember;
+    NodeBaseVariables(/*Address thisAddress, MemberImpl thisMember*/) {
+//        this.thisAddress = thisAddress;
+//        this.thisMember = thisMember;
     }
 
 }

@@ -82,7 +82,7 @@ public class RedoNoneMemberTest extends RedoTestService {
             callerNode.clusterManager.enqueueAndWait(new Processable() {
                 public void process() {
                     callerNode.clusterManager.removeMember((MemberImpl) target.getCluster().getLocalMember());
-                    assertEquals(1, callerNode.clusterManager.lsMembers.size());
+                    assertEquals(1, callerNode.getClusterImpl().getSize());
                 }
             }, 5);
         }
@@ -92,8 +92,8 @@ public class RedoNoneMemberTest extends RedoTestService {
             callerNode.clusterManager.enqueueAndWait(new Processable() {
                 public void process() {
                     MemberImpl secondMember = new MemberImpl(((MemberImpl) target.getCluster().getLocalMember()).getAddress(), false);
-                    callerNode.clusterManager.addMember(secondMember);
-                    assertEquals(2, callerNode.clusterManager.lsMembers.size());
+                    callerNode.clusterManager.addMembers(secondMember);
+                    assertEquals(2, callerNode.getClusterImpl().getSize());
                 }
             }, 5);
         }
@@ -112,7 +112,7 @@ public class RedoNoneMemberTest extends RedoTestService {
                 node1.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
                         node1.clusterManager.removeMember((MemberImpl) h2.getCluster().getLocalMember());
-                        assertEquals(1, node1.clusterManager.lsMembers.size());
+                        assertEquals(1, node1.getClusterImpl().getSize());
                     }
                 }, 5);
             }
@@ -121,8 +121,8 @@ public class RedoNoneMemberTest extends RedoTestService {
                 node1.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
                         MemberImpl secondMember = new MemberImpl(((MemberImpl) h2.getCluster().getLocalMember()).getAddress(), false);
-                        node1.clusterManager.addMember(secondMember);
-                        assertEquals(2, node1.clusterManager.lsMembers.size());
+                        node1.clusterManager.addMembers(secondMember);
+                        assertEquals(2, node1.getClusterImpl().getSize());
                     }
                 }, 5);
             }
@@ -147,7 +147,7 @@ public class RedoNoneMemberTest extends RedoTestService {
                 node2.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
                         node2.clusterManager.removeMember((MemberImpl) h1.getCluster().getLocalMember());
-                        assertEquals(1, node2.clusterManager.lsMembers.size());
+                        assertEquals(1, node2.getClusterImpl().getSize());
                     }
                 }, 5);
             }
@@ -156,8 +156,8 @@ public class RedoNoneMemberTest extends RedoTestService {
                 node2.clusterManager.enqueueAndWait(new Processable() {
                     public void process() {
                         MemberImpl secondMember = new MemberImpl(((MemberImpl) h1.getCluster().getLocalMember()).getAddress(), false);
-                        node2.clusterManager.addMember(secondMember);
-                        assertEquals(2, node2.clusterManager.lsMembers.size());
+                        node2.clusterManager.addMembers(secondMember);
+                        assertEquals(2, node2.getClusterImpl().getSize());
                     }
                 }, 5);
             }

@@ -28,8 +28,6 @@ import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
-import com.hazelcast.impl.partition.MigratingPartition;
-import com.hazelcast.impl.partition.MigrationNotification;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.impl.wan.WanMergeListener;
@@ -171,6 +169,7 @@ public class ConcurrentMapManager extends BaseManager {
         packet.callId = localIdGen.incrementAndGet();
         mapCalls.put(packet.callId, call);
         Connection targetConnection = node.connectionManager.getOrConnect(target);
+//        System.out.println("targetConnection = " + targetConnection);
         return send(packet, targetConnection);
     }
 
@@ -251,7 +250,7 @@ public class ConcurrentMapManager extends BaseManager {
     public void syncForDead(MemberImpl deadMember) {
         syncForDeadSemaphores(deadMember.getAddress());
         syncForDeadCountDownLatches(deadMember.getAddress());
-        partitionManager.syncForDead(deadMember);
+//        partitionManager.syncForDead(deadMember);
     }
 
     void syncForDeadSemaphores(Address deadAddress) {
@@ -291,37 +290,37 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public void syncForAdd() {
-        partitionManager.syncForAdd();
-    }
+//    public void syncForAdd() {
+//        partitionManager.syncForAdd();
+//    }
 
-    void logState() {
-        long now = currentTimeMillis();
-        if (LOG_STATE && ((now - lastLogStateTime) > 15000)) {
-            StringBuffer sbState = new StringBuffer(thisAddress + " State[" + new Date(now));
-            sbState.append("]");
-            Collection<Call> calls = mapCalls.values();
-            sbState.append("\nCall Count:").append(calls.size());
-            sbState.append(partitionManager.toString());
-            Collection<CMap> cmaps = maps.values();
-            for (CMap cmap : cmaps) {
-                cmap.appendState(sbState);
-            }
-            CpuUtilization cpuUtilization = node.getCpuUtilization();
-            node.connectionManager.appendState(sbState);
-            node.executorManager.appendState(sbState);
-            node.clusterManager.appendState(sbState);
-            long total = Runtime.getRuntime().totalMemory();
-            long free = Runtime.getRuntime().freeMemory();
-            sbState.append("\nCluster Size:").append(lsMembers.size());
-            sbState.append("\n").append(cpuUtilization);
-            sbState.append("\nUsed Memory:");
-            sbState.append((total - free) / 1024 / 1024);
-            sbState.append("MB");
-            logger.log(Level.INFO, sbState.toString());
-            lastLogStateTime = now;
-        }
-    }
+//    void logState() {
+//        long now = currentTimeMillis();
+//        if (LOG_STATE && ((now - lastLogStateTime) > 15000)) {
+//            StringBuffer sbState = new StringBuffer(thisAddress + " State[" + new Date(now));
+//            sbState.append("]");
+//            Collection<Call> calls = mapCalls.values();
+//            sbState.append("\nCall Count:").append(calls.size());
+//            sbState.append(partitionManager.toString());
+//            Collection<CMap> cmaps = maps.values();
+//            for (CMap cmap : cmaps) {
+//                cmap.appendState(sbState);
+//            }
+//            CpuUtilization cpuUtilization = node.getCpuUtilization();
+//            node.connectionManager.appendState(sbState);
+//            node.executorManager.appendState(sbState);
+//            node.clusterManager.appendState(sbState);
+//            long total = Runtime.getRuntime().totalMemory();
+//            long free = Runtime.getRuntime().freeMemory();
+//            sbState.append("\nCluster Size:").append(node.getClusterImpl().getSize());
+//            sbState.append("\n").append(cpuUtilization);
+//            sbState.append("\nUsed Memory:");
+//            sbState.append((total - free) / 1024 / 1024);
+//            sbState.append("MB");
+//            logger.log(Level.INFO, sbState.toString());
+//            lastLogStateTime = now;
+//        }
+//    }
 
     /**
      * Should be called from ExecutorService threads.
@@ -431,9 +430,9 @@ public class ConcurrentMapManager extends BaseManager {
         return partitionManager.getPartition(partitionId);
     }
 
-    public void sendMigrationEvent(boolean started, MigratingPartition migratingPartition) {
-        sendProcessableToAll(new MigrationNotification(started, migratingPartition), true);
-    }
+//    public void sendMigrationEvent(boolean started, MigratingPartition migratingPartition) {
+//        sendProcessableToAll(new MigrationNotification(started, migratingPartition), true);
+//    }
 
     public void startCleanup(final boolean now, final boolean force) {
         if (now) {
@@ -1948,7 +1947,7 @@ public class ConcurrentMapManager extends BaseManager {
     abstract class MDefaultBackupAndMigrationAwareOp extends MBackupAndMigrationAwareOp {
         @Override
         void prepareForBackup() {
-            backupCount = Math.min(MapConfig.DEFAULT_BACKUP_COUNT, dataMemberCount.get() - 1);
+            backupCount = Math.min(MapConfig.DEFAULT_BACKUP_COUNT, node.clusterManager.getDataMemberCount() - 1);
         }
     }
 
@@ -2015,7 +2014,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         // executed by ServiceThread
         boolean isValidBackup() {
-            int maxBackupCount = dataMemberCount.get() - 1;
+            int maxBackupCount = node.clusterManager.getDataMemberCount() - 1;
             if (maxBackupCount > 0) {
                 CMap map = getOrCreateMap(request.name);
                 maxBackupCount = Math.min(map.getBackupCount(), maxBackupCount);
@@ -2108,7 +2107,7 @@ public class ConcurrentMapManager extends BaseManager {
         void prepareForBackup() {
             int localBackupCount = 0;
             int localAsyncBackupCount = 0;
-            final int maxBackup = dataMemberCount.get() - 1;
+            final int maxBackup = node.clusterManager.getDataMemberCount() - 1;
             if (maxBackup > 0) {
                 CMap map = getOrCreateMap(request.name);
                 localBackupCount = Math.min(map.getBackupCount(), maxBackup);

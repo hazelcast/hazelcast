@@ -16,9 +16,11 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.impl.spi.NodeService;
+import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.nio.Address;
 
-public class Bind extends Master {
+public class Bind extends Master implements NonMemberOperation {
 
     public Bind() {
     }
@@ -33,6 +35,14 @@ public class Bind extends Master {
     }
 
     public void process() {
-        getNode().connectionManager.bind(address, getConnection(), true);
+        // getNode().connectionManager.bind(address, getConnection(), true);
+    }
+
+    @Override
+    public Object call() throws Exception {
+        NodeService ns = getOperationContext().getNodeService();
+        System.err.println("BINDING ... " + this);
+        ns.getNode().getConnectionManager().bind(address, getOperationContext().getConnection(), true);
+        return true;
     }
 }

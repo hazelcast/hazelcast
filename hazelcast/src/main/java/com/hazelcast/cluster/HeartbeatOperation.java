@@ -16,21 +16,17 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.impl.Node;
 import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 
-public class ConnectionCheckCall extends AbstractOperation implements NonBlockingOperation {
-    public Boolean call() throws Exception {
-        Node node = getOperationContext().getNodeService().getNode();
-        for (MemberImpl member : node.clusterManager.getMembers()) {
-            if (!member.localMember()) {
-                if (node.connectionManager.getConnection(member.getAddress()) == null) {
-                    return Boolean.FALSE;
-                }
-            }
-        }
-        return Boolean.TRUE;
+/**
+ * @mdogan 7/25/12
+ */
+public class HeartbeatOperation extends AbstractOperation implements NoReply, NonBlockingOperation {
+
+    public Object call() throws Exception {
+        // do nothing ...
+        return null;
     }
 }

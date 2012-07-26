@@ -36,7 +36,7 @@ public class PartitionRuntimeState implements DataSerializable {
     protected Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
     private long masterTime = Clock.currentTimeMillis();
     private int version;
-    private Connection connection;
+    private Address endpoint;
 
     public PartitionRuntimeState() {
         super();
@@ -102,12 +102,20 @@ public class PartitionRuntimeState implements DataSerializable {
         return partitions;
     }
 
-    public Connection getConnection() {
-        return connection;
+//    public Connection getConnection() {
+//        return connection;
+//    }
+
+//    void setConnection(final Connection connection) {
+//        this.connection = connection;
+//    }
+
+    public Address getEndpoint() {
+        return endpoint;
     }
 
-    void setConnection(final Connection connection) {
-        this.connection = connection;
+    public void setEndpoint(final Address endpoint) {
+        this.endpoint = endpoint;
     }
 
     public void readData(DataInput in) throws IOException {

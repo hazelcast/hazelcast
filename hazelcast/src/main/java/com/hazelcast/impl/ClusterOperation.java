@@ -160,8 +160,7 @@ public enum ClusterOperation {
     // PARALLEL RESPONSE
     MAP_PUT(201),
     MAP_GET(202),
-    REMOTE_CALL(333),
-    C_RESPONSE(200);
+    REMOTE_CALL(333);
 
     public static final int LENGTH = 500;
 

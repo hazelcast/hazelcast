@@ -1466,7 +1466,7 @@ public class CMap {
 
     void fireInvalidation(Record record) {
         if (nearCache != null && nearCache.shouldInvalidateOnChange()) {
-            for (MemberImpl member : concurrentMapManager.lsMembers) {
+            for (MemberImpl member : concurrentMapManager.getMembers()) {
                 if (!member.localMember()) {
                     if (member.getAddress() != null) {
                         Packet packet = concurrentMapManager.obtainPacket();

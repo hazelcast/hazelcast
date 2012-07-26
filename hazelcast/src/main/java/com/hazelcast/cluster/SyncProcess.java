@@ -17,23 +17,24 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NonBlockingOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class SyncProcess extends AbstractRemotelyCallable<Boolean> {
+public class SyncProcess extends AbstractOperation implements NonBlockingOperation {
 
-    private Connection connection;
-
-    public Connection getConnection() {
-        return connection;
-    }
-
-    public void setConnection(Connection conn) {
-        this.connection = conn;
-    }
+//    private Connection connection;
+//
+//    public Connection getConnection() {
+//        return connection;
+//    }
+//
+//    public void setConnection(Connection conn) {
+//        this.connection = conn;
+//    }
 
     public void readData(DataInput in) throws IOException {
     }
@@ -47,10 +48,7 @@ public class SyncProcess extends AbstractRemotelyCallable<Boolean> {
     }
 
     public void process() {
-        Node node = getNode();
-        node.concurrentMapManager.syncForAdd();
-        node.listenerManager.syncForAdd();
-        node.topicManager.syncForAdd();
-        node.clusterManager.joinReset();
+        Node node = getOperationContext().getNodeService().getNode();
+        node.clusterManager.syncForAdd();
     }
 }

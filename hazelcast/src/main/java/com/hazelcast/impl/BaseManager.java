@@ -27,7 +27,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.Counter;
 import com.hazelcast.util.DistributedTimeoutException;
 import com.hazelcast.util.ResponseQueueFactory;
 
@@ -50,14 +49,14 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BaseManager {
 
-    protected final List<MemberImpl> lsMembers;
+//    protected final List<MemberImpl> lsMembers;
     /**
      * Counter for normal/data (non-lite) members.
      * Counter is not thread-safe!
      */
-    protected final Counter dataMemberCount;
+//    protected final Counter dataMemberCount;
 
-    protected final Map<Address, MemberImpl> mapMembers;
+//    protected final Map<Address, MemberImpl> mapMembers;
 
     protected final Queue<Packet> qServiceThreadPacketCache;
 
@@ -91,12 +90,12 @@ public abstract class BaseManager {
     protected BaseManager(Node node) {
         this.node = node;
         systemLogService = node.getSystemLogService();
-        lsMembers = node.baseVariables.lsMembers;
-        dataMemberCount = node.baseVariables.dataMemberCount;
-        mapMembers = node.baseVariables.mapMembers;
+//        lsMembers = node.baseVariables.lsMembers;
+//        dataMemberCount = node.baseVariables.dataMemberCount;
+//        mapMembers = node.baseVariables.mapMembers;
         mapCalls = node.baseVariables.mapCalls;
-        thisAddress = node.baseVariables.thisAddress;
-        thisMember = node.baseVariables.thisMember;
+        thisAddress = node.getThisAddress();
+        thisMember = node.getLocalMember();
         qServiceThreadPacketCache = node.baseVariables.qServiceThreadPacketCache;
         localIdGen = node.baseVariables.localIdGen;
         logger = node.getLogger(this.getClass().getName());
@@ -107,8 +106,9 @@ public abstract class BaseManager {
         redoGiveUpThreshold = node.getGroupProperties().REDO_GIVE_UP_THRESHOLD.getInteger();
     }
 
-    public List<MemberImpl> getMembers() {
-        return lsMembers;
+    public Collection<MemberImpl> getMembers() {
+//        return lsMembers;
+        return node.clusterManager.getMembers();
     }
 
     public Address getThisAddress() {
@@ -1222,7 +1222,7 @@ public abstract class BaseManager {
             rp.process();
         }
         Data value = toData(rp);
-        for (MemberImpl member : lsMembers) {
+        for (MemberImpl member : getMembers()) {
             if (!member.localMember()) {
                 Packet packet = obtainPacket();
                 packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
@@ -1242,7 +1242,7 @@ public abstract class BaseManager {
     protected MemberImpl getNextMemberAfter(final Address address,
                                             final boolean skipSuperClient,
                                             final int distance) {
-        return getNextMemberAfter(lsMembers, address, skipSuperClient, distance);
+        return getNextMemberAfter(new ArrayList<MemberImpl>(getMembers()), address, skipSuperClient, distance);
     }
 
     protected MemberImpl getNextMemberAfter(final List<MemberImpl> lsMembers,
@@ -1307,9 +1307,7 @@ public abstract class BaseManager {
     }
 
     protected boolean sendResponse(final Packet packet) {
-        if (packet.operation != ClusterOperation.C_RESPONSE) {
-            packet.operation = ClusterOperation.RESPONSE;
-        }
+        packet.operation = ClusterOperation.RESPONSE;
         if (packet.responseType == RESPONSE_NONE) {
             packet.responseType = RESPONSE_SUCCESS;
         } else if (packet.responseType == RESPONSE_REDO) {
@@ -1454,6 +1452,7 @@ public abstract class BaseManager {
 
     public final void handleResponse(Packet packetResponse) {
         final Call call = getRemoteCall(packetResponse.callId);
+        System.out.println("call = " + call);
         if (call != null) {
             call.handleResponse(packetResponse);
         } else {

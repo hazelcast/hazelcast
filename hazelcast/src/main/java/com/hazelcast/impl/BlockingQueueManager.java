@@ -841,7 +841,8 @@ public class BlockingQueueManager extends BaseManager {
         }
 
         int maxSize() {
-            return (maxSizePerJVM == Integer.MAX_VALUE) ? Integer.MAX_VALUE : maxSizePerJVM * dataMemberCount.get();
+            return (maxSizePerJVM == Integer.MAX_VALUE) ? Integer.MAX_VALUE :
+                   maxSizePerJVM * node.clusterManager.getDataMemberCount();
         }
 
         void doGenerateKey(Request req) {

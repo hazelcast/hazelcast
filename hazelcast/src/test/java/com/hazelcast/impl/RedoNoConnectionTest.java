@@ -201,7 +201,7 @@ public class RedoNoConnectionTest extends RedoTestService {
         void after() {
             callerNode.clusterManager.enqueueAndWait(new Processable() {
                 public void process() {
-                    callerNode.clusterManager.addMember(targetMember);
+                    callerNode.clusterManager.addMembers(targetMember);
                 }
             }, 3);
         }
@@ -234,7 +234,7 @@ public class RedoNoConnectionTest extends RedoTestService {
         void after() {
             callerNode.clusterManager.enqueueAndWait(new Processable() {
                 public void process() {
-                    callerNode.clusterManager.addMember(targetMember);
+                    callerNode.clusterManager.addMembers(targetMember);
                 }
             }, 3);
         }
