@@ -62,8 +62,6 @@ public class Node {
 
     private volatile boolean completelyShutdown = false;
 
-    private final ClusterImpl clusterImpl;
-
     private final Set<Address> failedConnections = new ConcurrentHashSet<Address>();
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
@@ -82,7 +80,7 @@ public class Node {
 
     public final BlockingQueueManager blockingQueueManager;
 
-    public final ClusterManager clusterManager;
+    public final ClusterImpl clusterImpl;
 
     public final TopicManager topicManager;
 
@@ -178,9 +176,8 @@ public class Node {
         clusterService = new ClusterService(this);
         clusterService.start();
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
-        clusterManager = new ClusterManager(this);
-        clusterImpl = new ClusterImpl(this);
         executorManager = new ExecutorManager(this);
+        clusterImpl = new ClusterImpl(this);
         partitionManager = new PartitionManager(this);
         clientHandlerService = new ClientHandlerService(this);
         concurrentMapManager = new ConcurrentMapManager(this);
@@ -189,7 +186,7 @@ public class Node {
         clientService = new ClientServiceImpl(concurrentMapManager);
         topicManager = new TopicManager(this);
         textCommandService = new TextCommandServiceImpl(this);
-        clusterManager.addMember(localMember);
+        clusterImpl.addMember(localMember);
         initializer.printNodeInfo(this);
         buildNumber = initializer.getBuildNumber();
         VersionCheck.check(this, initializer.getBuild(), initializer.getVersion());
@@ -331,11 +328,11 @@ public class Node {
     }
 
     public void cleanupServiceThread() {
-        clusterManager.checkServiceThread();
+        clusterImpl.checkServiceThread();
         baseVariables.qServiceThreadPacketCache.clear();
         concurrentMapManager.reset();
         logger.log(Level.FINEST, "Shutting down the cluster manager");
-        clusterManager.stop();
+        clusterImpl.stop();
     }
 
     public void shutdown(final boolean force, final boolean now) {
@@ -564,7 +561,7 @@ public class Node {
         systemLogService.logJoin("Rejoining!");
         masterAddress = null;
         joined.set(false);
-        clusterImpl.reset();
+//        clusterImpl.reset();
         failedConnections.clear();
         join();
     }

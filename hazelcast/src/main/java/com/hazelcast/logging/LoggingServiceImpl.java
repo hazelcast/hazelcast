@@ -16,7 +16,7 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.cluster.ClusterManager;
+import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.base.SystemLogService;
 
@@ -123,7 +123,7 @@ public class LoggingServiceImpl implements LoggingService {
         DefaultLogger(String name) {
             this.name = name;
             this.logger = loggerFactory.getLogger(name);
-            addToLoggingService = (name.equals(ClusterManager.class.getName()));
+            addToLoggingService = (name.equals(ClusterImpl.class.getName()));
         }
 
         public void log(Level level, String message) {

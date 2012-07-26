@@ -190,7 +190,7 @@ public class PartitionManager {
         lock.lock();
         try {
             final long clusterTime = node.getClusterImpl().getClusterTime();
-            final Collection<MemberImpl> members = node.clusterManager.getMembers();
+            final Collection<MemberImpl> members = node.clusterImpl.getMemberList();
             final List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
             for (MemberImpl member : members) {
                 memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType(), member.getUuid()));
@@ -314,7 +314,7 @@ public class PartitionManager {
     }
 
     public MemberImpl getMember(Address address) {
-        return node.clusterManager.getMember(address);
+        return node.clusterImpl.getMember(address);
     }
 
     public void reset() {
@@ -570,7 +570,7 @@ public class PartitionManager {
                 PartitionInfo currentPartition = partitions[newPartition.getPartitionId()];
                 for (int index = 0; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
                     Address address = newPartition.getReplicaAddress(index);
-                    if (address != null && node.clusterManager.getMember(address) == null) {
+                    if (address != null && node.clusterImpl.getMember(address) == null) {
                         logger.log(Level.WARNING,
                                 "Unknown " + address + " is found in received partition table from master "
                                 + sender + ". Probably it is dead. Partition: " + newPartition);
@@ -671,8 +671,8 @@ public class PartitionManager {
     }
 
     public void fireMigrationEvent(final boolean started, int partitionId, Address from, Address to) {
-        final MemberImpl current = node.clusterManager.getMember(from);
-        final MemberImpl newOwner = node.clusterManager.getMember(to);
+        final MemberImpl current = node.clusterImpl.getMember(from);
+        final MemberImpl newOwner = node.clusterImpl.getMember(to);
         final MigrationEvent migrationEvent = new MigrationEvent(node, partitionId, current, newOwner);
         systemLogService.logPartition("MigrationEvent [" + started + "] " + migrationEvent);
         node.concurrentMapManager.partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
@@ -840,7 +840,7 @@ public class PartitionManager {
                     }
                     PartitionInfo partition = partitions[partitionId];
                     Address newOwner = migrationRequestTask.getToAddress();
-                    MemberImpl ownerMember = node.clusterManager.getMember(newOwner);
+                    MemberImpl ownerMember = node.clusterImpl.getMember(newOwner);
                     if (ownerMember != null) {
                         partition.setReplicaAddress(replicaIndex, newOwner);
 //                        node.concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
@@ -982,7 +982,7 @@ public class PartitionManager {
                 lock.lock();
                 try {
                     Address newOwner = migrationRequestOp.getToAddress();
-                    MemberImpl ownerMember = node.clusterManager.getMember(newOwner);
+                    MemberImpl ownerMember = node.clusterImpl.getMember(newOwner);
                     if (ownerMember == null) return;
                     partition.setReplicaAddress(replicaIndex, newOwner);
                     // if this partition should be copied back,

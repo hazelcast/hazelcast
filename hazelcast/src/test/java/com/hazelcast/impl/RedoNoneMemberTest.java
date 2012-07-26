@@ -79,9 +79,9 @@ public class RedoNoneMemberTest extends RedoTestService {
 
         @Override
         void before() throws Exception {
-            callerNode.clusterManager.enqueueAndWait(new Processable() {
+            callerNode.clusterImpl.enqueueAndWait(new Processable() {
                 public void process() {
-                    callerNode.clusterManager.removeMember((MemberImpl) target.getCluster().getLocalMember());
+                    callerNode.clusterImpl.removeMember((MemberImpl) target.getCluster().getLocalMember());
                     assertEquals(1, callerNode.getClusterImpl().getSize());
                 }
             }, 5);
@@ -89,10 +89,10 @@ public class RedoNoneMemberTest extends RedoTestService {
 
         @Override
         void after() {
-            callerNode.clusterManager.enqueueAndWait(new Processable() {
+            callerNode.clusterImpl.enqueueAndWait(new Processable() {
                 public void process() {
                     MemberImpl secondMember = new MemberImpl(((MemberImpl) target.getCluster().getLocalMember()).getAddress(), false);
-                    callerNode.clusterManager.addMembers(secondMember);
+                    callerNode.clusterImpl.addMembers(secondMember);
                     assertEquals(2, callerNode.getClusterImpl().getSize());
                 }
             }, 5);
@@ -109,19 +109,19 @@ public class RedoNoneMemberTest extends RedoTestService {
         final Node node1 = getNode(h1);
         BeforeAfterBehavior behavior = new BeforeAfterBehavior() {
             public void before() throws Exception {
-                node1.clusterManager.enqueueAndWait(new Processable() {
+                node1.clusterImpl.enqueueAndWait(new Processable() {
                     public void process() {
-                        node1.clusterManager.removeMember((MemberImpl) h2.getCluster().getLocalMember());
+                        node1.clusterImpl.removeMember((MemberImpl) h2.getCluster().getLocalMember());
                         assertEquals(1, node1.getClusterImpl().getSize());
                     }
                 }, 5);
             }
 
             public void after() {
-                node1.clusterManager.enqueueAndWait(new Processable() {
+                node1.clusterImpl.enqueueAndWait(new Processable() {
                     public void process() {
                         MemberImpl secondMember = new MemberImpl(((MemberImpl) h2.getCluster().getLocalMember()).getAddress(), false);
-                        node1.clusterManager.addMembers(secondMember);
+                        node1.clusterImpl.addMembers(secondMember);
                         assertEquals(2, node1.getClusterImpl().getSize());
                     }
                 }, 5);
@@ -144,19 +144,19 @@ public class RedoNoneMemberTest extends RedoTestService {
         final Node node2 = getNode(h2);
         BeforeAfterBehavior behavior = new BeforeAfterBehavior() {
             public void before() throws Exception {
-                node2.clusterManager.enqueueAndWait(new Processable() {
+                node2.clusterImpl.enqueueAndWait(new Processable() {
                     public void process() {
-                        node2.clusterManager.removeMember((MemberImpl) h1.getCluster().getLocalMember());
+                        node2.clusterImpl.removeMember((MemberImpl) h1.getCluster().getLocalMember());
                         assertEquals(1, node2.getClusterImpl().getSize());
                     }
                 }, 5);
             }
 
             public void after() {
-                node2.clusterManager.enqueueAndWait(new Processable() {
+                node2.clusterImpl.enqueueAndWait(new Processable() {
                     public void process() {
                         MemberImpl secondMember = new MemberImpl(((MemberImpl) h1.getCluster().getLocalMember()).getAddress(), false);
-                        node2.clusterManager.addMembers(secondMember);
+                        node2.clusterImpl.addMembers(secondMember);
                         assertEquals(2, node2.getClusterImpl().getSize());
                     }
                 }, 5);
@@ -184,14 +184,14 @@ public class RedoNoneMemberTest extends RedoTestService {
             List<MemberImpl> lsNew = new LinkedList<MemberImpl>();
             lsNew.add((MemberImpl) h.getCluster().getLocalMember());
             lsNew.add(new MemberImpl(new Address("127.0.0.1", 5702), false));
-            node.getClusterImpl().setMembers(lsNew);
+//            node.getClusterImpl().setMembers(lsNew);
         }
 
         @Override
         void after() {
             List<MemberImpl> lsNew = new LinkedList<MemberImpl>();
             lsNew.add((MemberImpl) h.getCluster().getLocalMember());
-            node.getClusterImpl().setMembers(lsNew);
+//            node.getClusterImpl().setMembers(lsNew);
         }
     }
 }

@@ -50,7 +50,7 @@ public class MemberRemover extends AbstractOperation implements NoReply, NonBloc
         Node node = getOperationContext().getNodeService().getNode();
         Address caller = getOperationContext().getCaller();
         if (caller != null && caller.equals(node.getMasterAddress())) {
-            node.clusterManager.doRemoveAddress(deadAddress);
+            node.clusterImpl.doRemoveAddress(deadAddress);
         }
         return null;
     }

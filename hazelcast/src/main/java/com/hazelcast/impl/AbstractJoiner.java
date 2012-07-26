@@ -103,7 +103,7 @@ public abstract class AbstractJoiner implements Joiner {
                 }
                 return;
             } else {
-                node.clusterManager.finalizeJoin();
+                node.clusterImpl.finalizeJoin();
             }
         }
 
@@ -121,7 +121,7 @@ public abstract class AbstractJoiner implements Joiner {
         if (node.getClusterImpl().getSize() == 1) {
             final StringBuilder sb = new StringBuilder();
             sb.append("\n");
-            sb.append(node.clusterManager);
+            sb.append(node.clusterImpl);
             logger.log(Level.INFO, sb.toString());
         }
     }
@@ -203,7 +203,7 @@ public abstract class AbstractJoiner implements Joiner {
                 final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
                 if (conn != null) {
                     logger.log(Level.FINEST, "sending join request for " + possibleAddress);
-                    node.clusterManager.sendJoinRequest(possibleAddress, true);
+                    node.clusterImpl.sendJoinRequest(possibleAddress, true);
                 }
             }
     }

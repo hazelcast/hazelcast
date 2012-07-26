@@ -17,7 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.Bind;
-import com.hazelcast.cluster.ClusterManager;
+import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.impl.ThreadContext;
@@ -232,7 +232,7 @@ public class ConnectionManager {
         Packet packet = new Packet();
         packet.operation = REMOTE_CALL;
         packet.blockId = -1;
-        packet.name = ClusterManager.SERVICE_NAME;
+        packet.name = ClusterImpl.SERVICE_NAME;
         packet.longValue = 1L;
 //        packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
         packet.setValue(value);

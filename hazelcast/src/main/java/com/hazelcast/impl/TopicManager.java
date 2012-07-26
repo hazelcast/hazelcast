@@ -140,7 +140,7 @@ public class TopicManager extends BaseManager {
             for (ListenerConfig lc : topicConfig.getMessageListenerConfigs()) {
                 try {
                     node.listenerManager.createAndAddListenerItem(name, lc, InstanceType.TOPIC);
-                    for (MemberImpl member : node.clusterManager.getMembers()) {
+                    for (MemberImpl member : node.clusterImpl.getMemberList()) {
                         addListener(member.getAddress(), true);
                     }
                 } catch (Exception e) {

@@ -262,7 +262,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
             removeMessageListeners();
             cancelRunningOperations();
             releaseAttachedSemaphorePermits();
-            node.clusterManager.sendProcessableToAll(new ClientHandlerService.CountDownLatchLeave(conn.getEndPoint()), true);
+            node.clusterImpl.sendProcessableToAll(new ClientHandlerService.CountDownLatchLeave(conn.getEndPoint()), true);
             node.clientService.remove(this);
         }
     }

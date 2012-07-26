@@ -275,7 +275,7 @@ public class ConcurrentMapManager extends BaseManager {
                     List<ScheduledAction> scheduledActions = record.getScheduledActions();
                     if (scheduledActions != null) {
                         for (ScheduledAction sa : scheduledActions) {
-                            node.clusterManager.deregisterScheduledAction(sa);
+                            node.clusterImpl.deregisterScheduledAction(sa);
                             final Request sr = sa.getRequest();
                             sr.clearForResponse();
                             sr.lockAddress = deadAddress;
@@ -412,7 +412,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public void destroyEndpointThreads(Address endpoint, Set<Integer> threadIds) {
-        node.clusterManager.invalidateScheduledActionsFor(endpoint, threadIds);
+        node.clusterImpl.invalidateScheduledActionsFor(endpoint, threadIds);
         for (CMap cmap : maps.values()) {
             for (Record record : cmap.mapRecords.values()) {
                 DistributedLock lock = record.getLock();
@@ -1947,7 +1947,7 @@ public class ConcurrentMapManager extends BaseManager {
     abstract class MDefaultBackupAndMigrationAwareOp extends MBackupAndMigrationAwareOp {
         @Override
         void prepareForBackup() {
-            backupCount = Math.min(MapConfig.DEFAULT_BACKUP_COUNT, node.clusterManager.getDataMemberCount() - 1);
+            backupCount = Math.min(MapConfig.DEFAULT_BACKUP_COUNT, node.clusterImpl.getDataMemberCount() - 1);
         }
     }
 
@@ -2014,7 +2014,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         // executed by ServiceThread
         boolean isValidBackup() {
-            int maxBackupCount = node.clusterManager.getDataMemberCount() - 1;
+            int maxBackupCount = node.clusterImpl.getDataMemberCount() - 1;
             if (maxBackupCount > 0) {
                 CMap map = getOrCreateMap(request.name);
                 maxBackupCount = Math.min(map.getBackupCount(), maxBackupCount);
@@ -2107,7 +2107,7 @@ public class ConcurrentMapManager extends BaseManager {
         void prepareForBackup() {
             int localBackupCount = 0;
             int localAsyncBackupCount = 0;
-            final int maxBackup = node.clusterManager.getDataMemberCount() - 1;
+            final int maxBackup = node.clusterImpl.getDataMemberCount() - 1;
             if (maxBackup > 0) {
                 CMap map = getOrCreateMap(request.name);
                 localBackupCount = Math.min(map.getBackupCount(), maxBackup);
@@ -3073,7 +3073,7 @@ public class ConcurrentMapManager extends BaseManager {
             final List<ScheduledAction> scheduledActions = record.getScheduledActions();
             if (scheduledActions != null) {
                 for (ScheduledAction sa : scheduledActions) {
-                    node.clusterManager.deregisterScheduledAction(sa);
+                    node.clusterImpl.deregisterScheduledAction(sa);
                     if (!sa.expired()) {
                         sa.consume();
                         ++threadsReleased;
@@ -3113,7 +3113,7 @@ public class ConcurrentMapManager extends BaseManager {
             final List<ScheduledAction> scheduledActions = request.record.getScheduledActions();
             if (scheduledActions != null) {
                 for (ScheduledAction sa : scheduledActions) {
-                    node.clusterManager.deregisterScheduledAction(sa);
+                    node.clusterImpl.deregisterScheduledAction(sa);
                     doResponse(sa.getRequest(), null, CountDownLatchProxy.INSTANCE_DESTROYED, false);
                 }
             }
@@ -3224,7 +3224,7 @@ public class ConcurrentMapManager extends BaseManager {
                 int remaining = scheduledActions.size();
                 while (remaining-- > 0 && semaphore.getAvailable() > 0) {
                     ScheduledAction sa = scheduledActions.remove(0);
-                    node.clusterManager.deregisterScheduledAction(sa);
+                    node.clusterImpl.deregisterScheduledAction(sa);
                     if (!sa.expired()) {
                         sa.consume();
                     } else {
@@ -3254,7 +3254,7 @@ public class ConcurrentMapManager extends BaseManager {
                     final ScheduledAction sa = i.next();
                     final Request sr = sa.getRequest();
                     if (sr.lockThreadId == threadId && sr.caller.equals(request.caller)) {
-                        node.clusterManager.deregisterScheduledAction(sa);
+                        node.clusterImpl.deregisterScheduledAction(sa);
                         doResponse(sr, null, SemaphoreProxy.ACQUIRE_FAILED, false);
                         i.remove();
                         retValue = 1L;
@@ -3275,7 +3275,7 @@ public class ConcurrentMapManager extends BaseManager {
                 for (ScheduledAction sa : scheduledActions) {
                     final Request sr = sa.getRequest();
                     if (sr.caller.equals(request.caller) && sr.lockThreadId == ThreadContext.get().getThreadId()) {
-                        node.clusterManager.deregisterScheduledAction(sa);
+                        node.clusterImpl.deregisterScheduledAction(sa);
                         doResponse(sr, null, SemaphoreProxy.INSTANCE_DESTROYED, false);
                     }
                 }
@@ -3876,7 +3876,7 @@ public class ConcurrentMapManager extends BaseManager {
             }
         };
         record.addScheduledAction(scheduledAction);
-        node.clusterManager.registerScheduledAction(scheduledAction);
+        node.clusterImpl.registerScheduledAction(scheduledAction);
     }
 
     class IsKeyLockedOperationHandler extends MTargetAwareOperationHandler {

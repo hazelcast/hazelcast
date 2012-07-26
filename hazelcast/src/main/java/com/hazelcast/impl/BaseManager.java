@@ -106,9 +106,9 @@ public abstract class BaseManager {
         redoGiveUpThreshold = node.getGroupProperties().REDO_GIVE_UP_THRESHOLD.getInteger();
     }
 
-    public Collection<MemberImpl> getMembers() {
+    public Collection<MemberImpl> getMemberList() {
 //        return lsMembers;
-        return node.clusterManager.getMembers();
+        return node.clusterImpl.getMemberList();
     }
 
     public Address getThisAddress() {
@@ -1222,7 +1222,7 @@ public abstract class BaseManager {
             rp.process();
         }
         Data value = toData(rp);
-        for (MemberImpl member : getMembers()) {
+        for (MemberImpl member : getMemberList()) {
             if (!member.localMember()) {
                 Packet packet = obtainPacket();
                 packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
@@ -1242,7 +1242,7 @@ public abstract class BaseManager {
     protected MemberImpl getNextMemberAfter(final Address address,
                                             final boolean skipSuperClient,
                                             final int distance) {
-        return getNextMemberAfter(new ArrayList<MemberImpl>(getMembers()), address, skipSuperClient, distance);
+        return getNextMemberAfter(new ArrayList<MemberImpl>(getMemberList()), address, skipSuperClient, distance);
     }
 
     protected MemberImpl getNextMemberAfter(final List<MemberImpl> lsMembers,
@@ -1437,7 +1437,7 @@ public abstract class BaseManager {
     }
 
     MemberImpl getMember(Address address) {
-        return node.clusterManager.getMember(address);
+        return node.clusterImpl.getMember(address);
     }
 
     void registerListener(boolean add, String name, Data key, Address address, boolean includeValue) {
@@ -1465,48 +1465,24 @@ public abstract class BaseManager {
      * Do not forget to release packet if send fails.
      * * Better use {@link #sendOrReleasePacket(Packet, Address)}
      */
-    protected boolean send(Packet packet, Address address) {
-        if (address == null) return false;
-        final Connection conn = node.connectionManager.getOrConnect(address);
-        return send(packet, conn);
+    public boolean send(Packet packet, Address address) {
+        return node.clusterImpl.send(packet, address);
     }
 
     /**
      * Do not forget to release packet if send fails.
      * Better use {@link #sendOrReleasePacket(Packet, Connection)}
      */
-    public final boolean send(Packet packet, Connection conn) {
-        return conn != null && conn.live() && writePacket(conn, packet);
+    public boolean send(Packet packet, Connection conn) {
+        return node.clusterImpl.send(packet, conn);
     }
 
-    protected final boolean sendOrReleasePacket(Packet packet, Address address) {
-        if (send(packet, address)) {
-            return true;
-        }
-        releasePacket(packet);
-        return false;
+    public boolean sendOrReleasePacket(Packet packet, Address address) {
+        return node.clusterImpl.send(packet, address);
     }
 
-    public final boolean sendOrReleasePacket(Packet packet, Connection conn) {
-        if (send(packet, conn)) {
-            return true;
-        }
-        releasePacket(packet);
-        return false;
-    }
-
-    private boolean writePacket(Connection conn, Packet packet) {
-        final MemberImpl memberImpl = getMember(conn.getEndPoint());
-        if (memberImpl != null) {
-            memberImpl.didWrite();
-        }
-        if (packet.lockAddress != null) {
-            if (thisAddress.equals(packet.lockAddress)) {
-                packet.lockAddress = null;
-            }
-        }
-        conn.getWriteHandler().enqueueSocketWritable(packet);
-        return true;
+    public boolean sendOrReleasePacket(Packet packet, Connection conn) {
+        return node.clusterImpl.sendOrReleasePacket(packet, conn);
     }
 
     long getOperationTimeout(long timeout) {

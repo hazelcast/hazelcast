@@ -39,7 +39,7 @@ public class SplitBrainHandler implements Runnable {
     public void run() {
         if (node.isMaster() && node.joined() && node.isActive()) {
             long now = Clock.currentTimeMillis();
-            if (!inProgress && (now - lastRun > NEXT_RUN_DELAY_MILLIS) && node.clusterManager.shouldTryMerge()) {
+            if (!inProgress && (now - lastRun > NEXT_RUN_DELAY_MILLIS) && node.clusterImpl.shouldTryMerge()) {
                 inProgress = true;
                 node.executorManager.executeNow(new FallThroughRunnable() {
                     @Override

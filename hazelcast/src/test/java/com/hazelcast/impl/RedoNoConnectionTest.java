@@ -183,9 +183,9 @@ public class RedoNoConnectionTest extends RedoTestService {
         @Override
         void before() throws Exception {
             callerNode.getConnectionManager().detachAndGetConnection(targetConn.getEndPoint());
-            callerNode.clusterManager.enqueueAndWait(new Processable() {
+            callerNode.clusterImpl.enqueueAndWait(new Processable() {
                 public void process() {
-                    callerNode.clusterManager.removeMember(targetMember);
+                    callerNode.clusterImpl.removeMember(targetMember);
                 }
             }, 3);
         }
@@ -199,9 +199,9 @@ public class RedoNoConnectionTest extends RedoTestService {
 
         @Override
         void after() {
-            callerNode.clusterManager.enqueueAndWait(new Processable() {
+            callerNode.clusterImpl.enqueueAndWait(new Processable() {
                 public void process() {
-                    callerNode.clusterManager.addMembers(targetMember);
+                    callerNode.clusterImpl.addMembers(targetMember);
                 }
             }, 3);
         }
@@ -223,18 +223,18 @@ public class RedoNoConnectionTest extends RedoTestService {
                     e.printStackTrace();
                 }
             }
-            callerNode.clusterManager.enqueueAndWait(new Processable() {
+            callerNode.clusterImpl.enqueueAndWait(new Processable() {
                 public void process() {
-                    callerNode.clusterManager.removeMember(targetMember);
+                    callerNode.clusterImpl.removeMember(targetMember);
                 }
             }, 3);
         }
 
         @Override
         void after() {
-            callerNode.clusterManager.enqueueAndWait(new Processable() {
+            callerNode.clusterImpl.enqueueAndWait(new Processable() {
                 public void process() {
-                    callerNode.clusterManager.addMembers(targetMember);
+                    callerNode.clusterImpl.addMembers(targetMember);
                 }
             }, 3);
         }

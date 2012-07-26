@@ -164,7 +164,7 @@ public final class ClusterService implements Runnable, Constants {
 
     private void processPacket(Packet packet) {
         if (!running) return;
-        final MemberImpl memberFrom = node.clusterManager.getMember(packet.conn.getEndPoint());
+        final MemberImpl memberFrom = node.clusterImpl.getMember(packet.conn.getEndPoint());
         if (memberFrom != null) {
             memberFrom.didRead();
         }

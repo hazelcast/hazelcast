@@ -831,7 +831,7 @@ public class BlockingQueueManager extends BaseManager {
             for (ItemListenerConfig lc : queueConfig.getItemListenerConfigs()) {
                 try {
                     node.listenerManager.createAndAddListenerItem(name, lc, Instance.InstanceType.QUEUE);
-                    for (MemberImpl member : node.clusterManager.getMembers()) {
+                    for (MemberImpl member : node.clusterImpl.getMemberList()) {
                         mapListeners.put(member.getAddress(), lc.isIncludeValue());
                     }
                 } catch (Exception e) {
@@ -842,7 +842,7 @@ public class BlockingQueueManager extends BaseManager {
 
         int maxSize() {
             return (maxSizePerJVM == Integer.MAX_VALUE) ? Integer.MAX_VALUE :
-                   maxSizePerJVM * node.clusterManager.getDataMemberCount();
+                   maxSizePerJVM * node.clusterImpl.getDataMemberCount();
         }
 
         void doGenerateKey(Request req) {
@@ -931,7 +931,7 @@ public class BlockingQueueManager extends BaseManager {
                 ScheduledAction scheduledActionPoll = pollWaitList.removeFirst();
                 if (!scheduledActionPoll.expired() && scheduledActionPoll.isValid()) {
                     scheduledActionPoll.consume();
-                    node.clusterManager.deregisterScheduledAction(scheduledActionPoll);
+                    node.clusterImpl.deregisterScheduledAction(scheduledActionPoll);
                     return;
                 }
             }
@@ -942,7 +942,7 @@ public class BlockingQueueManager extends BaseManager {
                 ScheduledAction scheduledActionOffer = offerWaitList.removeFirst();
                 if (!scheduledActionOffer.expired() && scheduledActionOffer.isValid()) {
                     scheduledActionOffer.consume();
-                    node.clusterManager.deregisterScheduledAction(scheduledActionOffer);
+                    node.clusterImpl.deregisterScheduledAction(scheduledActionOffer);
                     return;
                 }
             }
@@ -1044,7 +1044,7 @@ public class BlockingQueueManager extends BaseManager {
 
         void addPollAction(PollAction pollAction) {
             pollWaitList.add(pollAction);
-            node.clusterManager.registerScheduledAction(pollAction);
+            node.clusterImpl.registerScheduledAction(pollAction);
         }
 
         void cancelPollAction(Request req) {
@@ -1057,13 +1057,13 @@ public class BlockingQueueManager extends BaseManager {
             }
             if (toCancel != null) {
                 pollWaitList.remove(toCancel);
-                node.clusterManager.deregisterScheduledAction(toCancel);
+                node.clusterImpl.deregisterScheduledAction(toCancel);
             }
         }
 
         void addOfferAction(OfferAction offerAction) {
             offerWaitList.add(offerAction);
-            node.clusterManager.registerScheduledAction(offerAction);
+            node.clusterImpl.registerScheduledAction(offerAction);
         }
 
         public int size() {
@@ -1111,13 +1111,13 @@ public class BlockingQueueManager extends BaseManager {
             for (PollAction pollAction : pollWaitList) {
                 if (deadMember.address.equals(pollAction.getRequest().caller)) {
                     pollAction.setValid(false);
-                    node.clusterManager.deregisterScheduledAction(pollAction);
+                    node.clusterImpl.deregisterScheduledAction(pollAction);
                 }
             }
             for (ScheduledAction offerAction : offerWaitList) {
                 if (deadMember.address.equals(offerAction.getRequest().caller)) {
                     offerAction.setValid(false);
-                    node.clusterManager.deregisterScheduledAction(offerAction);
+                    node.clusterImpl.deregisterScheduledAction(offerAction);
                 }
             }
         }

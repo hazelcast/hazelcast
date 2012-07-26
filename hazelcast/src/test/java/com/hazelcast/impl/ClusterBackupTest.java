@@ -557,7 +557,7 @@ public class ClusterBackupTest {
 
     private static int[] getPartitionCounts(Node node) {
         int[] counts = new int[PartitionInfo.MAX_REPLICA_COUNT];
-        Address address = node.clusterManager.getThisAddress();
+        Address address = node.clusterImpl.getThisAddress();
         PartitionManager partitionManager = node.concurrentMapManager.getPartitionManager();
         PartitionInfo[] partitions = partitionManager.getPartitions();
         for (PartitionInfo p : partitions) {
@@ -573,7 +573,7 @@ public class ClusterBackupTest {
     private static int[] getCMapRecordCounts(Node node, String name) {
         int[] counts = new int[PartitionInfo.MAX_REPLICA_COUNT];
         CMap map = node.concurrentMapManager.getMap(Prefix.MAP + name);
-        Address address = node.clusterManager.getThisAddress();
+        Address address = node.clusterImpl.getThisAddress();
         PartitionManager partitionManager = node.concurrentMapManager.getPartitionManager();
         Collection<Record> records = map.mapRecords.values();
         for (Record record : records) {

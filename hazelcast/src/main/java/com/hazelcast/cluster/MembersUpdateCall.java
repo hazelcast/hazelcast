@@ -55,7 +55,7 @@ public class MembersUpdateCall extends AbstractOperation implements NonBlockingO
         OperationContext ctx = getOperationContext();
         Node node = ctx.getNodeService().getNode();
         node.getClusterImpl().setMasterTime(masterTime);
-        node.clusterManager.updateMembers(getMemberInfos());
+        node.clusterImpl.updateMembers(getMemberInfos());
         return Boolean.TRUE;
     }
 

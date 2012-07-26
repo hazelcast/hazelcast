@@ -212,7 +212,7 @@ public class ListenerManager extends BaseManager {
         }
 
         private void processWithoutKey() {
-            for (MemberImpl member : getMembers()) {
+            for (MemberImpl member : getMemberList()) {
                 if (member.localMember()) {
                     registerListener(true, name, null, thisAddress, includeValue);
                 } else {

@@ -114,7 +114,7 @@ public class NodeIOService implements IOService {
     public void removeEndpoint(Address endPoint) {
         AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
         addOrRemoveConnection.setNode(node);
-        node.clusterManager.enqueueAndReturn(addOrRemoveConnection);
+        node.clusterImpl.enqueueAndReturn(addOrRemoveConnection);
     }
 
     public String getThreadPrefix() {
@@ -179,9 +179,9 @@ public class NodeIOService implements IOService {
 
     public void disconnectExistingCalls(final Address deadEndpoint) {
         if (deadEndpoint != null) {
-            node.clusterManager.enqueueAndReturn(new Processable() {
+            node.clusterImpl.enqueueAndReturn(new Processable() {
                 public void process() {
-                    node.clusterManager.disconnectExistingCalls(deadEndpoint);
+                    node.clusterImpl.disconnectExistingCalls(deadEndpoint);
                 }
             });
         }
@@ -200,11 +200,11 @@ public class NodeIOService implements IOService {
     }
 
     public void onShutdown() {
-        node.clusterManager.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
+        node.clusterImpl.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
         try {
             // wait a little
             Thread.sleep(100);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         }
     }
 }

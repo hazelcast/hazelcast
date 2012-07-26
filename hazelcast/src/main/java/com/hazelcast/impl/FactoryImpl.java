@@ -824,7 +824,7 @@ public class FactoryImpl implements HazelcastInstance {
             if (name.equals("lock")) {
                 locksMapProxy.remove(key);
             }
-            node.clusterManager.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, false), true);
+            node.clusterImpl.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, false), true);
         } else {
             logger.log(Level.WARNING, "Destroying unknown instance name: " + name);
         }

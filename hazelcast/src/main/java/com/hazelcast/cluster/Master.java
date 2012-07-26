@@ -83,7 +83,7 @@ public class Master extends AbstractOperation implements NonMemberOperation {
 //    }
 
     public Object call() throws Exception {
-        ClusterManager cm = getOperationContext().getService();
+        ClusterImpl cm = getOperationContext().getService();
         cm.handleMaster(this);
         return Boolean.TRUE;
     }

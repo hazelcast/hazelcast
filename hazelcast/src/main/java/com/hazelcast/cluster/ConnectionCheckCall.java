@@ -24,7 +24,7 @@ import com.hazelcast.impl.spi.NonBlockingOperation;
 public class ConnectionCheckCall extends AbstractOperation implements NonBlockingOperation {
     public Boolean call() throws Exception {
         Node node = getOperationContext().getNodeService().getNode();
-        for (MemberImpl member : node.clusterManager.getMembers()) {
+        for (MemberImpl member : node.clusterImpl.getMemberList()) {
             if (!member.localMember()) {
                 if (node.connectionManager.getConnection(member.getAddress()) == null) {
                     return Boolean.FALSE;

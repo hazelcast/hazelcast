@@ -131,7 +131,7 @@ public class JoinRequest extends AbstractOperation implements NonMemberOperation
 //    }
 
     public Object call() throws Exception {
-        ClusterManager cm = getOperationContext().getService();
+        ClusterImpl cm = getOperationContext().getService();
         cm.handleJoinRequest(this);
         return Boolean.TRUE;
     }

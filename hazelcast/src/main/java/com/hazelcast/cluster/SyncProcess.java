@@ -49,6 +49,6 @@ public class SyncProcess extends AbstractOperation implements NonBlockingOperati
 
     public void process() {
         Node node = getOperationContext().getNodeService().getNode();
-        node.clusterManager.syncForAdd();
+        node.clusterImpl.syncForAdd();
     }
 }

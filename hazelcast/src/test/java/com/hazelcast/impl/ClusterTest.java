@@ -2459,10 +2459,10 @@ public class ClusterTest {
         final FactoryImpl f2 = (FactoryImpl) ((FactoryImpl.HazelcastInstanceProxy) h2).getHazelcastInstance();
         AddOrRemoveConnection addOrRemoveConnection1 = new AddOrRemoveConnection(f2.node.address, false);
         addOrRemoveConnection1.setNode(f1.node);
-        f1.node.clusterManager.enqueueAndWait(addOrRemoveConnection1, 5);
+        f1.node.clusterImpl.enqueueAndWait(addOrRemoveConnection1, 5);
         AddOrRemoveConnection addOrRemoveConnection2 = new AddOrRemoveConnection(f1.node.address, false);
         addOrRemoveConnection2.setNode(f2.node);
-        f2.node.clusterManager.enqueueAndWait(addOrRemoveConnection2, 5);
+        f2.node.clusterImpl.enqueueAndWait(addOrRemoveConnection2, 5);
     }
 
     @Test
