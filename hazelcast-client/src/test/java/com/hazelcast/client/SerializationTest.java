@@ -16,11 +16,11 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -64,8 +64,8 @@ public class SerializationTest {
     @Test
     public void newDataSerializer() {
         final Object value = "dummy-value";
-        byte[] data = IOUtil.toByte(value);
-        assertArrayEquals(data, IOUtil.toByte(new Data(data)));
+        byte[] data = IOUtil.toByteArray(value);
+        assertArrayEquals(data, IOUtil.toByteArray(new Data(data)));
         assertEquals(value, IOUtil.toObject(new Data(data)));
     }
 

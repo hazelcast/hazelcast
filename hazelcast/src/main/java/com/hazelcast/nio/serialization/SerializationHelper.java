@@ -35,83 +35,41 @@ public final class SerializationHelper {
 
     private static final ILogger logger = Logger.getLogger(SerializationHelper.class.getName());
 
-    private final FastDataOutputStream dataOut;
-    private final FastDataInputStream dataIn;
     private final ThreadContext context;
-    private final SerializerManager defaultManager ;
+    private final SerializerRegistry defaultRegistry;
+    private final int maxDepth = 5;
+    private final SerializationBuffer[] bufferPool = new SerializationBuffer[maxDepth];
+    private int depth = 0;
 
-    public SerializationHelper(SerializerManager manager) {
-        dataIn = new FastDataInputStream(new byte[0]);
-        dataOut = new FastDataOutputStream(OUTPUT_STREAM_BUFFER_SIZE);
-        context = null;
-        defaultManager = manager;
+    public SerializationHelper(SerializerRegistry registry) {
+        this(registry, null);
     }
 
     public SerializationHelper(ThreadContext ctx) {
-        dataIn = new FastDataInputStream(new byte[0]);
-        dataOut = new FastDataOutputStream(OUTPUT_STREAM_BUFFER_SIZE);
-        context = ctx;
-        defaultManager = null;
+        this(null, ctx);
     }
 
-    private void writeObject(final FastDataOutputStream out, final Object object) {
-        if (object == null) {
-            return;
-        }
-        try {
-            final TypeSerializer serializer = getTypeSerializerManager().serializerFor(object.getClass());
-            if (serializer == null) {
-                throw new NotSerializableException("There is no suitable serializer for " + object.getClass());
-            }
-            out.writeInt(serializer.getTypeId());
-            serializer.write(out, object);
-            out.flush();
-        } catch (Throwable e) {
-            throw new HazelcastSerializationException(e);
-        }
-    }
-
-    private Object readObject(final FastDataInputStream in) {
-        int typeId = -1;
-        try {
-            typeId = in.readInt();
-            final TypeSerializer serializer = getTypeSerializerManager().serializerFor(typeId);
-            if (serializer == null) {
-                throw new IllegalArgumentException("There is no suitable de-serializer for type " + typeId);
-            }
-            return serializer.read(in);
-        } catch (Throwable e) {
-            if (e instanceof HazelcastSerializationException) {
-                throw (HazelcastSerializationException) e;
-            }
-            throw new HazelcastSerializationException("Problem while serializing type " + typeId, e);
-        }
-    }
-
-    private SerializerManager getTypeSerializerManager() {
-        final SerializerManager serializerManager = context != null ? context.getCurrentSerializerManager()
-                                                                    : defaultManager;
-        if (serializerManager == null) {
-            throw new HazelcastSerializationException("SerializerManager could not be found!");
-        }
-        return serializerManager;
+    private SerializationHelper(SerializerRegistry registry, ThreadContext ctx) {
+        this.context = ctx;
+        this.defaultRegistry = registry;
     }
 
     public byte[] toByteArray(Object obj) {
         if (obj == null) {
             return null;
         }
+        incrementDepth();
         try {
-            dataOut.reset();
-            writeObject(dataOut, obj);
-            final byte[] result = dataOut.toByteArray();
-            if (dataOut.size() > OUTPUT_STREAM_BUFFER_SIZE) {
-                dataOut.set(new byte[OUTPUT_STREAM_BUFFER_SIZE]);
-            }
-            return result;
+            final SerializationBuffer buffer = getBuffer();
+            return buffer.toByteArray(obj);
         } catch (Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
+            if (e instanceof HazelcastSerializationException) {
+                throw (HazelcastSerializationException) e;
+            }
             throw new HazelcastSerializationException(e);
+        } finally {
+            decrementDepth();
         }
     }
 
@@ -119,10 +77,13 @@ public final class SerializationHelper {
         if (byteArray == null || byteArray.length == 0) {
             return null;
         }
-        dataIn.set(byteArray, byteArray.length);
-        final Object obj = readObject(dataIn);
-        dataIn.set(null, 0);
-        return obj;
+        incrementDepth();
+        try {
+            final SerializationBuffer buffer = getBuffer();
+            return buffer.toObject(byteArray);
+        } finally {
+            decrementDepth();
+        }
     }
 
     public Data writeObject(final Object obj) {
@@ -159,8 +120,108 @@ public final class SerializationHelper {
         return obj;
     }
 
-    public void destroy() {
-        dataOut.set(null);
-        dataIn.set(null, 0);
+    private SerializerRegistry getSerializerRegistry() {
+        final SerializerRegistry serializerRegistry = context != null
+                                                    ? context.getCurrentSerializerRegistry() : defaultRegistry;
+        if (serializerRegistry == null) {
+            throw new HazelcastSerializationException("SerializerRegistry could not be found!");
+        }
+        return serializerRegistry;
     }
+
+    private SerializationBuffer getBuffer() {
+        final int index = depth - 1;
+        SerializationBuffer buffer = bufferPool[index];
+        if (buffer == null) {
+            buffer = new SerializationBuffer();
+            bufferPool[index] = buffer;
+        }
+        return buffer;
+    }
+
+    private void incrementDepth() {
+        if (depth == maxDepth) {
+            throw new HazelcastSerializationException("Inner serialization count exceeded! max: " + maxDepth);
+        }
+        depth++;
+    }
+
+    private void decrementDepth() {
+        depth--;
+    }
+
+    public void destroy() {
+        synchronized (bufferPool) {
+            for (int i = 0; i < bufferPool.length; i++) {
+                SerializationBuffer buffer = bufferPool[i];
+                if (buffer != null) {
+                    buffer.destroy();
+                    bufferPool[i] = null;
+                }
+            }
+        }
+    }
+
+    private class SerializationBuffer {
+
+        private final FastDataOutputStream out;
+        private final FastDataInputStream in;
+
+        private SerializationBuffer() {
+            this.in = new FastDataInputStream(new byte[0]);
+            this.out = new FastDataOutputStream(OUTPUT_STREAM_BUFFER_SIZE);
+        }
+
+        private byte[] toByteArray(final Object object) {
+            if (object == null) {
+                return null;
+            }
+            out.reset();
+            try {
+                final TypeSerializer serializer = getSerializerRegistry().serializerFor(object.getClass());
+                if (serializer == null) {
+                    throw new NotSerializableException("There is no suitable serializer for " + object.getClass());
+                }
+                out.writeInt(serializer.getTypeId());
+                serializer.write(out, object);
+                out.flush();
+                return out.toByteArray();
+            } catch (Throwable e) {
+                if (e instanceof HazelcastSerializationException) {
+                    throw (HazelcastSerializationException) e;
+                }
+                throw new HazelcastSerializationException(e);
+            } finally {
+                if (out.size() > OUTPUT_STREAM_BUFFER_SIZE) {
+                    out.set(new byte[OUTPUT_STREAM_BUFFER_SIZE]);
+                }
+            }
+        }
+
+        private Object toObject(byte[] byteArray) {
+            int typeId = -1;
+            in.set(byteArray, byteArray.length);
+            try {
+                typeId = in.readInt();
+                final TypeSerializer serializer = getSerializerRegistry().serializerFor(typeId);
+                if (serializer == null) {
+                    throw new IllegalArgumentException("There is no suitable de-serializer for type " + typeId);
+                }
+                return serializer.read(in);
+            } catch (Throwable e) {
+                if (e instanceof HazelcastSerializationException) {
+                    throw (HazelcastSerializationException) e;
+                }
+                throw new HazelcastSerializationException("Problem while serializing type " + typeId, e);
+            } finally {
+                in.set(null, 0);
+            }
+        }
+
+        private void destroy() {
+            out.set(null);
+            in.set(null, 0);
+        }
+    }
+
 }

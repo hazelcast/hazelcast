@@ -20,7 +20,7 @@ import com.hazelcast.client.Packet;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.serialization.SerializationHelper;
-import com.hazelcast.nio.serialization.SerializerManager;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,11 +33,11 @@ import static org.junit.Assert.assertTrue;
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MessageListenerManagerTest {
 
-    final private SerializerManager serializerManager = new SerializerManager();
+    final private SerializerRegistry serializerRegistry = new SerializerRegistry();
 
     @Test
     public void testRegisterMessageListener() throws Exception {
-        MessageListenerManager manager = new MessageListenerManager(serializerManager);
+        MessageListenerManager manager = new MessageListenerManager(serializerRegistry);
         String name = "default";
         assertTrue(manager.noListenerRegistered(name));
         MessageListener listener = new MessageListener<Object>() {
@@ -51,7 +51,7 @@ public class MessageListenerManagerTest {
 
     @Test
     public void testRemoveMessageListener() throws Exception {
-        MessageListenerManager manager = new MessageListenerManager(serializerManager);
+        MessageListenerManager manager = new MessageListenerManager(serializerRegistry);
         String name = "default";
         assertTrue(manager.noListenerRegistered(name));
         MessageListener listener = new MessageListener<Object>() {
@@ -69,7 +69,7 @@ public class MessageListenerManagerTest {
 
     @Test
     public void testNotifyMessageListeners() throws Exception {
-        final MessageListenerManager manager = new MessageListenerManager(serializerManager);
+        final MessageListenerManager manager = new MessageListenerManager(serializerRegistry);
         final String name = "default";
         assertTrue(manager.noListenerRegistered(name));
         final String myMessage = "my myMessage";
@@ -86,7 +86,7 @@ public class MessageListenerManagerTest {
         assertFalse(manager.noListenerRegistered(name));
         new Thread(new Runnable() {
             public void run() {
-                SerializationHelper serializer = new SerializationHelper(serializerManager);
+                SerializationHelper serializer = new SerializationHelper(serializerRegistry);
                 Packet packet = new Packet();
                 packet.setName(name);
                 packet.setKey(serializer.toByteArray(myMessage));

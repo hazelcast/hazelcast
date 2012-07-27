@@ -25,7 +25,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareItemEvent;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.serialization.SerializerManager;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,10 +37,10 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public class QueueItemListenerManager {
     final private ConcurrentHashMap<String, List<ItemListenerHolder>> queueItemListeners = new ConcurrentHashMap<String, List<ItemListenerHolder>>();
-    final private SerializerManager serializerManager;
+    final private SerializerRegistry serializerRegistry;
 
-    public QueueItemListenerManager(final SerializerManager serializerManager) {
-        this.serializerManager = serializerManager;
+    public QueueItemListenerManager(final SerializerRegistry serializerRegistry) {
+        this.serializerRegistry = serializerRegistry;
     }
 
     public Collection<? extends Call> calls(HazelcastClient client) {
@@ -66,10 +66,10 @@ public class QueueItemListenerManager {
                 Boolean added = (Boolean) toObject(packet.getValue());
                 if (added) {
                     listener.itemAdded(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED,
-                            listenerHolder.includeValue ? new Data(packet.getKey()) : null, serializerManager));
+                            listenerHolder.includeValue ? new Data(packet.getKey()) : null, serializerRegistry));
                 } else {
                     listener.itemRemoved(new DataAwareItemEvent(packet.getName(), ItemEventType.REMOVED,
-                            listenerHolder.includeValue ? new Data(packet.getKey()) : null, serializerManager));
+                            listenerHolder.includeValue ? new Data(packet.getKey()) : null, serializerRegistry));
                 }
             }
         }

@@ -19,6 +19,7 @@ package com.hazelcast.impl.spi;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.ExecutorThreadFactory;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ThreadContext;
@@ -41,8 +42,8 @@ public class NodeService {
 
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
     private final ExecutorService executorService; //= Executors.newCachedThreadPool();
-    private final Workers nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
-    private final Workers blockingWorkers = new Workers("hz.Blocking", 8);
+    private final Workers nonBlockingWorkers; // = new Workers("hz.NonBlocking", 1);
+    private final Workers blockingWorkers; // = new Workers("hz.Blocking", 8);
     private final Node node;
     private final ILogger logger;
     final int partitionCount;
@@ -50,6 +51,8 @@ public class NodeService {
 
     public NodeService(Node node) {
         this.node = node;
+        nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
+        blockingWorkers = new Workers("hz.Blocking", 8);
         this.executorService = node.executorManager.getThreadPoolExecutor();
         this.logger = node.getLogger(NodeService.class.getName());
         this.partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
@@ -267,15 +270,12 @@ public class NodeService {
     class Workers {
         final int threadCount;
         final ExecutorService[] workers;
-        private final String threadNamePrefix;
 
-        Workers(String s, int threadCount) {
-            threadNamePrefix = s;
+        Workers(String threadNamePrefix, int threadCount) {
             this.threadCount = threadCount;
             workers = new ExecutorService[threadCount];
             for (int i = 0; i < threadCount; i++) {
-                String threadName = threadNamePrefix + "_" + (i + 1);
-                workers[i] = newSingleThreadExecutorService(threadName);
+                workers[i] = newSingleThreadExecutorService(threadNamePrefix);
             }
         }
 
@@ -287,31 +287,37 @@ public class NodeService {
             return new ThreadPoolExecutor(
                     1, 1, 0L, TimeUnit.MILLISECONDS,
                     new LinkedBlockingQueue<Runnable>(),
-                    new ThreadFactory() {
-                        public Thread newThread(Runnable r) {
-                            final Thread t = new Thread(node.threadGroup, r, node.getThreadNamePrefix(threadName), 0) {
-                                public void run() {
-                                    try {
-                                        super.run();
-                                    } finally {
-                                        try {
-                                            ThreadContext.shutdown(this);
-                                        } catch (Exception e) {
-                                            logger.log(Level.WARNING, e.getMessage(), e);
-                                        }
-                                    }
-                                }
-                            };
-                            t.setContextClassLoader(node.getConfig().getClassLoader());
-                            if (t.isDaemon()) {
-                                t.setDaemon(false);
-                            }
-                            if (t.getPriority() != Thread.NORM_PRIORITY) {
-                                t.setPriority(Thread.NORM_PRIORITY);
-                            }
-                            return t;
+                    new ExecutorThreadFactory(node.threadGroup, node.getThreadNamePrefix(threadName),
+                            node.getConfig().getClassLoader()) {
+                        protected void beforeRun() {
+                            ThreadContext.get().setCurrentFactory(node.factory);
                         }
                     },
+//                    new ThreadFactory() {
+//                        public Thread newThread(Runnable r) {
+//                            final Thread t = new Thread(node.threadGroup, r, node.getThreadNamePrefix(threadName), 0) {
+//                                public void run() {
+//                                    try {
+//                                        super.run();
+//                                    } finally {
+//                                        try {
+//                                            ThreadContext.shutdown(this);
+//                                        } catch (Exception e) {
+//                                            logger.log(Level.WARNING, e.getMessage(), e);
+//                                        }
+//                                    }
+//                                }
+//                            };
+//                            t.setContextClassLoader(node.getConfig().getClassLoader());
+//                            if (t.isDaemon()) {
+//                                t.setDaemon(false);
+//                            }
+//                            if (t.getPriority() != Thread.NORM_PRIORITY) {
+//                                t.setPriority(Thread.NORM_PRIORITY);
+//                            }
+//                            return t;
+//                        }
+//                    },
                     new RejectedExecutionHandler() {
                         public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         }

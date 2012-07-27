@@ -34,6 +34,7 @@ public class ExecutorThreadFactory implements ThreadFactory {
     public Thread newThread(Runnable r) {
         final Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0) {
             public void run() {
+                beforeRun();
                 try {
                     super.run();
                 } finally {
@@ -53,5 +54,8 @@ public class ExecutorThreadFactory implements ThreadFactory {
             t.setPriority(Thread.NORM_PRIORITY);
         }
         return t;
+    }
+
+    protected void beforeRun() {
     }
 }

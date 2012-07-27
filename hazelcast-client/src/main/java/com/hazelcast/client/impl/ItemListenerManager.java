@@ -24,7 +24,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.impl.DataAwareItemEvent;
-import com.hazelcast.nio.serialization.SerializerManager;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -35,11 +35,11 @@ public class ItemListenerManager {
 
     final Map<ItemListener, EntryListener> itemListener2EntryListener = new ConcurrentHashMap<ItemListener, EntryListener>();
     final private EntryListenerManager entryListenerManager;
-    final private SerializerManager serializerManager;
+    final private SerializerRegistry serializerRegistry;
 
-    public ItemListenerManager(EntryListenerManager entryListenerManager, final SerializerManager serializerManager) {
+    public ItemListenerManager(EntryListenerManager entryListenerManager, final SerializerRegistry serializerRegistry) {
         this.entryListenerManager = entryListenerManager;
-        this.serializerManager = serializerManager;
+        this.serializerRegistry = serializerRegistry;
     }
 
     public synchronized <E, V> void registerListener(final String name, final ItemListener<V> itemListener, boolean includeValue) {
@@ -47,13 +47,13 @@ public class ItemListenerManager {
             public void entryAdded(EntryEvent<E, V> event) {
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
                 itemListener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, dataAwareEntryEvent.getNewValueData(),
-                        serializerManager));
+                        serializerRegistry));
             }
 
             public void entryRemoved(EntryEvent<E, V> event) {
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
                 itemListener.itemRemoved(new DataAwareItemEvent(name, ItemEventType.REMOVED, dataAwareEntryEvent.getNewValueData(),
-                        serializerManager));
+                        serializerRegistry));
             }
         };
         entryListenerManager.registerListener(name, null, includeValue, e);

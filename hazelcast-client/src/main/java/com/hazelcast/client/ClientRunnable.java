@@ -36,7 +36,7 @@ public abstract class ClientRunnable implements Runnable {
 
     public void run() {
         if (client != null) {
-            ThreadContext.get().setCurrentSerializerManager(client.getSerializerManager());
+            ThreadContext.get().setCurrentSerializerRegistry(client.getSerializerRegistry());
         }
         try {
             while (running) {

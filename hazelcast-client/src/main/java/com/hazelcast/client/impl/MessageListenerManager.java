@@ -24,7 +24,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataMessage;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.serialization.SerializerManager;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,10 +35,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class MessageListenerManager {
 
     final private ConcurrentHashMap<String, List<MessageListener>> messageListeners = new ConcurrentHashMap<String, List<MessageListener>>();
-    final private SerializerManager serializerManager;
+    final private SerializerRegistry serializerRegistry;
 
-    public MessageListenerManager(final SerializerManager serializerManager) {
-        this.serializerManager = serializerManager;
+    public MessageListenerManager(final SerializerRegistry serializerRegistry) {
+        this.serializerRegistry = serializerRegistry;
     }
 
     public void registerListener(String name, MessageListener messageListener) {
@@ -72,7 +72,7 @@ public class MessageListenerManager {
         if (list != null) {
             for (MessageListener<Object> messageListener : list) {
                 messageListener.onMessage(new DataMessage(packet.getName(), new Data(packet.getKey()),
-                        serializerManager));
+                        serializerRegistry));
             }
         }
     }

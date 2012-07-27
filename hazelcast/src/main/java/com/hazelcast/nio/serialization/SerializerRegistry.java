@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @mdogan 5/16/12
  */
-public class SerializerManager {
+public class SerializerRegistry {
 
     private final AtomicReference<TypeSerializer> global = new AtomicReference<TypeSerializer>();
 

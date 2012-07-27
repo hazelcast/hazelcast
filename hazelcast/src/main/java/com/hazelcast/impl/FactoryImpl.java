@@ -32,7 +32,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.serialization.SerializerManager;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.util.Util;
@@ -81,7 +81,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     final ManagedContext managedContext ;
 
-    final SerializerManager serializerManager = new SerializerManager();
+    final SerializerRegistry serializerRegistry = new SerializerRegistry();
 
     public final Node node;
 
@@ -372,7 +372,7 @@ public class FactoryImpl implements HazelcastInstance {
         for (ExecutorService esp : factory.executorServiceProxies.values()) {
             esp.shutdown();
         }
-        factory.serializerManager.destroy();
+        factory.serializerRegistry.destroy();
     }
 
     private static void shutdownManagementService() {
@@ -790,11 +790,11 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public void registerGlobalSerializer(final TypeSerializer serializer) {
-        serializerManager.registerGlobal(serializer);
+        serializerRegistry.registerGlobal(serializer);
     }
 
     public void registerSerializer(final TypeSerializer serializer, final Class type) {
-        serializerManager.register(serializer, type);
+        serializerRegistry.register(serializer, type);
     }
 
     private void registerConfigSerializers(Config config) throws Exception {
@@ -806,13 +806,13 @@ public class FactoryImpl implements HazelcastInstance {
                     factory = (TypeSerializer) ClassLoaderUtil.newInstance(serializerConfig.getClassName());
                 }
                 if (serializerConfig.isGlobal()) {
-                    serializerManager.registerGlobal(factory);
+                    serializerRegistry.registerGlobal(factory);
                 } else {
                     Class typeClass = serializerConfig.getTypeClass();
                     if (typeClass == null) {
                         typeClass = ClassLoaderUtil.loadClass(serializerConfig.getTypeClassName()) ;
                     }
-                    serializerManager.register(factory, typeClass);
+                    serializerRegistry.register(factory, typeClass);
                 }
             }
         }

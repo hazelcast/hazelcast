@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
-import static com.hazelcast.nio.IOUtil.toByteArray;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ProxyHelper {
@@ -155,7 +154,7 @@ public class ProxyHelper {
 
     Packet prepareRequest(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit timeunit) {
         final ThreadContext threadContext = ThreadContext.get();
-        threadContext.setCurrentSerializerManager(client.getSerializerManager());
+        threadContext.setCurrentSerializerRegistry(client.getSerializerRegistry());
         byte[] k = null;
         byte[] v = null;
         if (key != null) {

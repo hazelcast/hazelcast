@@ -19,7 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.serialization.SerializerManager;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -33,19 +33,19 @@ public class DataAwareEntryEvent extends EntryEvent {
 
     protected final boolean firedLocally;
 
-    private final transient SerializerManager serializerManager;
+    private final transient SerializerRegistry serializerRegistry;
 
     public DataAwareEntryEvent(Member from, int eventType,
                                String name, Data dataKey,
                                Data dataNewValue, Data dataOldValue,
                                boolean firedLocally,
-                               SerializerManager serializerManager) {
+                               SerializerRegistry serializerRegistry) {
         super(name, from, eventType, null, null);
         this.dataKey = dataKey;
         this.dataNewValue = dataNewValue;
         this.dataOldValue = dataOldValue;
         this.firedLocally = firedLocally;
-        this.serializerManager = serializerManager;
+        this.serializerRegistry = serializerRegistry;
     }
 
     public Data getKeyData() {
@@ -85,8 +85,8 @@ public class DataAwareEntryEvent extends EntryEvent {
     }
 
     private void beforeReadData() {
-        if (serializerManager != null) {
-            ThreadContext.get().setCurrentSerializerManager(serializerManager);
+        if (serializerRegistry != null) {
+            ThreadContext.get().setCurrentSerializerRegistry(serializerRegistry);
         }
     }
 

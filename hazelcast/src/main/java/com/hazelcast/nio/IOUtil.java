@@ -56,7 +56,7 @@ public final class IOUtil {
         }
     }
 
-    public static Object readObject(DataInput in) throws IOException {
+    public static <T> T readObject(DataInput in) throws IOException {
         final boolean isNotNull = in.readBoolean();
         if (isNotNull) {
             Data data = new Data();
@@ -87,15 +87,15 @@ public final class IOUtil {
         return ThreadContext.get().toData(obj);
     }
 
-    public static Object toObject(byte[] data) {
-        return ThreadContext.get().toObject(data);
+    public static <T> T toObject(byte[] data) {
+        return (T) ThreadContext.get().toObject(data);
     }
 
-    public static Object toObject(Data data) {
+    public static <T> T toObject(Data data) {
         if (data == null) {
             return null;
         }
-        return ThreadContext.get().toObject(data);
+        return (T) ThreadContext.get().toObject(data);
     }
 
     public static Object toObject(Object data) {
@@ -108,7 +108,7 @@ public final class IOUtil {
         return data;
     }
 
-    public static Object toObject(DataHolder dataHolder) {
+    public static <T> T toObject(DataHolder dataHolder) {
         return toObject(dataHolder.toData());
     }
 
@@ -220,28 +220,6 @@ public final class IOUtil {
     public static Data addDelta(Data intData, int delta) {
         int intValue = (Integer) toObject(intData);
         return toData(intValue + delta);
-    }
-
-    public static Object serializeToObject(byte[] bytes) throws Exception {
-        if (bytes == null) return null;
-        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes));
-        try {
-            Object obj = in.readObject();
-            return obj;
-        } finally {
-            closeResource(in);
-        }
-    }
-
-    public static byte[] serializeToBytes(Object object) throws Exception {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(bos);
-        try {
-            out.writeObject(object);
-            return bos.toByteArray();
-        } finally {
-            closeResource(out);
-        }
     }
 
     public static byte[] compress(byte[] input) throws IOException {

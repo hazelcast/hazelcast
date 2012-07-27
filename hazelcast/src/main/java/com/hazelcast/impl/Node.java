@@ -171,11 +171,11 @@ public class Node {
             Util.throwUncheckedException(e);
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
-        executorManager = new ExecutorManager(this);
-        nodeService = new NodeService(this);
         //initialize managers..
         baseVariables = new NodeBaseVariables(/*address, localMember*/);
         clusterService = new ClusterService(this);
+        executorManager = new ExecutorManager(this);
+        nodeService = new NodeService(this);
         clusterService.start();
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterImpl = new ClusterImpl(this);

@@ -20,7 +20,7 @@ import com.hazelcast.client.*;
 import com.hazelcast.core.Instance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.serialization.SerializerManager;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,14 +44,14 @@ public class ListenerManager extends ClientRunnable {
     final private ItemListenerManager itemListenerManager;
     final private QueueItemListenerManager queueItemListenerManager;
 
-    public ListenerManager(HazelcastClient hazelcastClient, SerializerManager serializerManager) {
+    public ListenerManager(HazelcastClient hazelcastClient, SerializerRegistry serializerRegistry) {
         super(hazelcastClient);
         instanceListenerManager = new InstanceListenerManager(client);
         membershipListenerManager = new MembershipListenerManager(client);
-        messageListenerManager = new MessageListenerManager(serializerManager);
-        entryListenerManager = new EntryListenerManager(serializerManager);
-        itemListenerManager = new ItemListenerManager(entryListenerManager, serializerManager);
-        queueItemListenerManager = new QueueItemListenerManager(serializerManager);
+        messageListenerManager = new MessageListenerManager(serializerRegistry);
+        entryListenerManager = new EntryListenerManager(serializerRegistry);
+        itemListenerManager = new ItemListenerManager(entryListenerManager, serializerRegistry);
+        queueItemListenerManager = new QueueItemListenerManager(serializerRegistry);
     }
 
     public void enqueue(Object object) {

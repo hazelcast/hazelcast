@@ -21,7 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.serialization.SerializationHelper;
-import com.hazelcast.nio.serialization.SerializerManager;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,7 +34,7 @@ import java.util.logging.Level;
 
 public final class ThreadContext {
 
-    private final static AtomicInteger newThreadId = new AtomicInteger();
+    private static final AtomicInteger newThreadId = new AtomicInteger();
 
     private static final ConcurrentMap<Thread, ThreadContext> mapContexts = new ConcurrentHashMap<Thread, ThreadContext>(1000);
 
@@ -84,7 +84,7 @@ public final class ThreadContext {
 
     private FactoryImpl currentFactory ;
 
-    private SerializerManager currentSerializerManager ;
+    private SerializerRegistry currentSerializerRegistry;
 
     private Object attachment;
 
@@ -112,17 +112,17 @@ public final class ThreadContext {
         return currentFactory != null ? currentFactory.managedContext : null;
     }
 
-    public SerializerManager getCurrentSerializerManager() {
-        return currentSerializerManager != null ? currentSerializerManager : null ;
+    public SerializerRegistry getCurrentSerializerRegistry() {
+        return currentSerializerRegistry != null ? currentSerializerRegistry : null ;
     }
 
     public void setCurrentFactory(FactoryImpl currentFactory) {
         this.currentFactory = currentFactory;
-        this.currentSerializerManager = currentFactory.serializerManager;
+        this.currentSerializerRegistry = currentFactory.serializerRegistry;
     }
 
-    public void setCurrentSerializerManager(SerializerManager serializerManager) {
-        this.currentSerializerManager = serializerManager;
+    public void setCurrentSerializerRegistry(SerializerRegistry serializerRegistry) {
+        this.currentSerializerRegistry = serializerRegistry;
     }
 
     public void reset() {
@@ -201,7 +201,7 @@ public final class ThreadContext {
         mapHazelcastInstanceContexts.clear();
         attachment = null;
         currentFactory = null;
-        currentSerializerManager = null;
+        currentSerializerRegistry = null;
     }
 
     private class HazelcastInstanceThreadContext {

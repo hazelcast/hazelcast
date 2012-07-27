@@ -24,7 +24,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.serialization.SerializerManager;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -70,7 +70,7 @@ public class HazelcastClient implements HazelcastInstance {
     private final PartitionClientProxy partitionClientProxy;
     private final LifecycleServiceClientImpl lifecycleService;
     private final ConnectionManager connectionManager;
-    private final SerializerManager serializerManager = new SerializerManager();
+    private final SerializerRegistry serializerRegistry = new SerializerRegistry();
 
     private HazelcastClient(ClientConfig config) {
         if (config.getAddressList().size() == 0) {
@@ -89,7 +89,7 @@ public class HazelcastClient implements HazelcastInstance {
         connectionManager.setBinder(new DefaultClientBinder(this));
         out = new OutRunnable(this, calls, new PacketWriter());
         in = new InRunnable(this, out, calls, new PacketReader());
-        listenerManager = new ListenerManager(this, serializerManager);
+        listenerManager = new ListenerManager(this, serializerRegistry);
         try {
             final Connection c = connectionManager.getInitConnection();
             if (c == null) {
@@ -213,8 +213,8 @@ public class HazelcastClient implements HazelcastInstance {
         return connectionManager;
     }
 
-    SerializerManager getSerializerManager() {
-        return serializerManager;
+    SerializerRegistry getSerializerRegistry() {
+        return serializerRegistry;
     }
 
     public void addInstanceListener(InstanceListener instanceListener) {
@@ -321,7 +321,7 @@ public class HazelcastClient implements HazelcastInstance {
             in.shutdown();
             listenerManager.shutdown();
             lsClients.remove(this);
-            serializerManager.destroy();
+            serializerRegistry.destroy();
         }
     }
 
@@ -370,10 +370,10 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public void registerGlobalSerializer(final TypeSerializer serializer) {
-        serializerManager.registerGlobal(serializer);
+        serializerRegistry.registerGlobal(serializer);
     }
 
     public void registerSerializer(final TypeSerializer serializer, final Class type) {
-        serializerManager.register(serializer, type);
+        serializerRegistry.register(serializer, type);
     }
 }
