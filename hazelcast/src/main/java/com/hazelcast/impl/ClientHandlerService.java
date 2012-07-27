@@ -41,11 +41,13 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.BaseManager.getInstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
+import static com.hazelcast.nio.IOUtil.addDelta;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -53,7 +55,7 @@ public class ClientHandlerService implements ConnectionListener {
     private final Node node;
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
     private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[ClusterOperation.LENGTH];
-    private final Map<String, CommandHandler> mapCommandHandlers = new HashMap<String, CommandHandler>();
+    private final ClientOperationHandler[] commandHandlers = new ClientOperationHandler[Command.LENGTH];
     private final ClientOperationHandler unknownOperationHandler = new UnknownClientOperationHandler();
     private final ILogger logger;
     private final int THREAD_COUNT;
@@ -65,85 +67,92 @@ public class ClientHandlerService implements ConnectionListener {
         this.node = node;
         this.logger = node.getLogger(this.getClass().getName());
         node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
-        mapCommandHandlers.put(Command.AUTH.value, new ClientAuthenticateHandler());
-        mapCommandHandlers.put(Command.MGET.value, new MapGetHandler());
-        mapCommandHandlers.put(Command.MGETALL.value, new MapGetAllHandler());
-        mapCommandHandlers.put(Command.MPUT.value, new MapPutHandler());
-        mapCommandHandlers.put(Command.MTRYPUT.value, new MapTryPutHandler());
-        mapCommandHandlers.put(Command.MSET.value, new MapSetHandler());
-        mapCommandHandlers.put(Command.MPUTTRANSIENT.value, new MapPutTransientHandler());
-        mapCommandHandlers.put(Command.MPUTANDUNLOCK.value, new MapPutAndUnlockHandler());
-        mapCommandHandlers.put(Command.MTRYLOCKANDGET.value, new MapTryLockAndGetHandler());
-        mapCommandHandlers.put(Command.MADDLISTENER.value, new MapAddListenerHandler());
-        mapCommandHandlers.put(Command.MREMOVELISTENER.value, new MapRemoveListenerHandler());
-        mapCommandHandlers.put(Command.ADDLISTENER.value, new AddListenerHandler());
-        mapCommandHandlers.put(Command.REMOVELISTENER.value, new RemoveListenerHandler());
-        mapCommandHandlers.put(Command.KEYSET.value, new MapIterateKeysHandler());
-        mapCommandHandlers.put(Command.ENTRYSET.value, new MapIterateEntriesHandler());
-        mapCommandHandlers.put(Command.MGETENTRY.value, new GetMapEntryHandler());
-        mapCommandHandlers.put(Command.MLOCK.value, new MapLockHandler());
-        mapCommandHandlers.put(Command.MTRYLOCK.value, new MapLockHandler());
-        mapCommandHandlers.put(Command.MTRYREMOVE.value, new MapTryRemoveHandler());
-        mapCommandHandlers.put(Command.MLOCKMAP.value, new MapLockMapHandler());
-        mapCommandHandlers.put(Command.MUNLOCKMAP.value, new MapUnlockMapHandler());
-        mapCommandHandlers.put(Command.MFORCEUNLOCK.value, new MapForceUnlockHandler());
-        mapCommandHandlers.put(Command.MISKEYLOCKED.value, new MapIsKeyLockedHandler());
-        mapCommandHandlers.put(Command.MUNLOCK.value, new MapUnlockHandler());
-        mapCommandHandlers.put(Command.MPUTALL.value, new MapPutAllHandler());
-        mapCommandHandlers.put(Command.MREMOVE.value, new MapRemoveHandler());
-        mapCommandHandlers.put(Command.MREMOVEITEM.value, new MapItemRemoveHandler());
-        mapCommandHandlers.put(Command.MCONTAINSKEY.value, new MapContainsHandler());
-        mapCommandHandlers.put(Command.MCONTAINSVALUE.value, new MapContainsValueHandler());
-        mapCommandHandlers.put(Command.MPUTIFABSENT.value, new MapPutIfAbsentHandler());
-        mapCommandHandlers.put(Command.MREMOVEIFSAME.value, new MapRemoveIfSameHandler());
-        mapCommandHandlers.put(Command.MREPLACEIFNOTNULL.value, new MapReplaceIfNotNullHandler());
-        mapCommandHandlers.put(Command.MREPLACEIFSAME.value, new MapReplaceIfSameHandler());
-        mapCommandHandlers.put(Command.MFLUSH.value, new MapFlushHandler());
-        mapCommandHandlers.put(Command.MMPUT.value, new MapPutMultiHandler());
-        mapCommandHandlers.put(Command.MMREMOVE.value, new MapRemoveMultiHandler());
-        mapCommandHandlers.put(Command.MMVALUECOUNT.value, new MapValueCountHandler());
-        mapCommandHandlers.put(Command.MEVICT.value, new MapEvictHandler());
-        mapCommandHandlers.put(Command.MFLUSH.value, new MapFlushHandler());
-        mapCommandHandlers.put(Command.SADD.value, new SetAddHandler());
-        mapCommandHandlers.put(Command.LADD.value, new ListAddHandler());
-        mapCommandHandlers.put(Command.ADDANDGET.value, new AtomicLongAddAndGetHandler());
-        mapCommandHandlers.put(Command.COMPAREANDSET.value, new AtomicLongCompareAndSetHandler());
-        mapCommandHandlers.put(Command.GETANDSET.value, new AtomicLongGetAndSetHandler());
-        mapCommandHandlers.put(Command.GETANDADD.value, new AtomicLongGetAndAddHandler());
-        mapCommandHandlers.put(Command.QOFFER.value, new QueueOfferHandler());
-        mapCommandHandlers.put(Command.QPOLL.value, new QueuePollHandler());
-        mapCommandHandlers.put(Command.QTAKE.value, new QueuePollHandler());
-        mapCommandHandlers.put(Command.QSIZE.value, new QueueSizeHandler());
-        mapCommandHandlers.put(Command.QPEEK.value, new QueuePeekHandler());
-        mapCommandHandlers.put(Command.QPUT.value, new QueueOfferHandler());
-        mapCommandHandlers.put(Command.QREMOVE.value, new QueueRemoveHandler());
-        mapCommandHandlers.put(Command.QREMCAPACITY.value, new QueueRemainingCapacityHandler());
-        mapCommandHandlers.put(Command.QENTRIES.value, new QueueEntriesHandler());
-        mapCommandHandlers.put(Command.QADDLISTENER.value, new QueueAddListenerHandler());
-        mapCommandHandlers.put(Command.QREMOVELISTENER.value, new QueueRemoveListenerHandler());
-        mapCommandHandlers.put(Command.TRXBEGIN.value, new TransactionBeginHandler());
-        mapCommandHandlers.put(Command.TRXCOMMIT.value, new TransactionCommitHandler());
-        mapCommandHandlers.put(Command.TRXROLLBACK.value, new TransactionRollbackHandler());
-        mapCommandHandlers.put(Command.NEWID.value, new NewIdHandler());
-        mapCommandHandlers.put(Command.INSTANCES.value, new GetInstancesHandler());
-        mapCommandHandlers.put(Command.MEMBERS.value, new GetMembersHandler());
-        mapCommandHandlers.put(Command.CLUSTERTIME.value, new GetClusterTimeHandler());
-        mapCommandHandlers.put(Command.PARTITIONS.value, new GetPartitionsHandler());
-        mapCommandHandlers.put(Command.CDLAWAIT.value, new CountDownLatchAwaitHandler());
-        mapCommandHandlers.put(Command.CDLCOUNTDOWN.value, new CountDownLatchCountDownHandler());
-        mapCommandHandlers.put(Command.CDLGETCOUNT.value, new CountDownLatchGetCountHandler());
-        mapCommandHandlers.put(Command.CDLGETOWNER.value, new CountDownLatchGetOwnerHandler());
-        mapCommandHandlers.put(Command.CDLSETCOUNT.value, new CountDownLatchSetCountHandler());
-        mapCommandHandlers.put(Command.LOCK_LOCK.value, new LockOperationHandler());
-        mapCommandHandlers.put(Command.LOCK_TRYLOCK.value, new LockOperationHandler());
-        mapCommandHandlers.put(Command.LOCK_UNLOCK.value, new UnlockOperationHandler());
-        mapCommandHandlers.put(Command.LOCK_FORCE_UNLOCK.value, new UnlockOperationHandler());
-        mapCommandHandlers.put(Command.LOCK_IS_LOCKED.value, new IsLockedOperationHandler());
-        mapCommandHandlers.put(Command.TPUBLISH.value, new TopicPublishHandler());
-        mapCommandHandlers.put(Command.TADDLISTENER.value, new TopicAddListenerHandler());
-        mapCommandHandlers.put(Command.DESTROY.value, new DestroyHandler());
+
+
+        
+        registerHandler(Command.UNKNOWN, unknownOperationHandler);
+        registerHandler(Command.AUTH, new ClientAuthenticateHandler());
+        registerHandler(Command.MGET, new MapGetHandler());
+        registerHandler(Command.MGETALL, new MapGetAllHandler());
+        registerHandler(Command.MPUT, new MapPutHandler());
+        registerHandler(Command.MTRYPUT, new MapTryPutHandler());
+        registerHandler(Command.MSET, new MapSetHandler());
+        registerHandler(Command.MPUTTRANSIENT, new MapPutTransientHandler());
+        registerHandler(Command.MPUTANDUNLOCK, new MapPutAndUnlockHandler());
+        registerHandler(Command.MTRYLOCKANDGET, new MapTryLockAndGetHandler());
+        registerHandler(Command.MADDLISTENER, new MapAddListenerHandler());
+        registerHandler(Command.MREMOVELISTENER, new MapRemoveListenerHandler());
+        registerHandler(Command.ADDLISTENER, new AddListenerHandler());
+        registerHandler(Command.REMOVELISTENER, new RemoveListenerHandler());
+        registerHandler(Command.KEYSET, new MapIterateKeysHandler());
+        registerHandler(Command.ENTRYSET, new MapIterateEntriesHandler());
+        registerHandler(Command.MGETENTRY, new GetMapEntryHandler());
+        registerHandler(Command.MLOCK, new MapLockHandler());
+        registerHandler(Command.MTRYLOCK, new MapLockHandler());
+        registerHandler(Command.MTRYREMOVE, new MapTryRemoveHandler());
+        registerHandler(Command.MLOCKMAP, new MapLockMapHandler());
+        registerHandler(Command.MUNLOCKMAP, new MapUnlockMapHandler());
+        registerHandler(Command.MFORCEUNLOCK, new MapForceUnlockHandler());
+        registerHandler(Command.MISKEYLOCKED, new MapIsKeyLockedHandler());
+        registerHandler(Command.MUNLOCK, new MapUnlockHandler());
+        registerHandler(Command.MPUTALL, new MapPutAllHandler());
+        registerHandler(Command.MREMOVE, new MapRemoveHandler());
+        registerHandler(Command.MREMOVEITEM, new MapItemRemoveHandler());
+        registerHandler(Command.MCONTAINSKEY, new MapContainsHandler());
+        registerHandler(Command.MCONTAINSVALUE, new MapContainsValueHandler());
+        registerHandler(Command.MPUTIFABSENT, new MapPutIfAbsentHandler());
+        registerHandler(Command.MREMOVEIFSAME, new MapRemoveIfSameHandler());
+        registerHandler(Command.MREPLACEIFNOTNULL, new MapReplaceIfNotNullHandler());
+        registerHandler(Command.MREPLACEIFSAME, new MapReplaceIfSameHandler());
+        registerHandler(Command.MFLUSH, new MapFlushHandler());
+        registerHandler(Command.MMPUT, new MapPutMultiHandler());
+        registerHandler(Command.MMREMOVE, new MapRemoveMultiHandler());
+        registerHandler(Command.MMVALUECOUNT, new MapValueCountHandler());
+        registerHandler(Command.MEVICT, new MapEvictHandler());
+        registerHandler(Command.MFLUSH, new MapFlushHandler());
+        registerHandler(Command.SADD, new SetAddHandler());
+        registerHandler(Command.LADD, new ListAddHandler());
+        registerHandler(Command.ADDANDGET, new AtomicLongAddAndGetHandler());
+        registerHandler(Command.COMPAREANDSET, new AtomicLongCompareAndSetHandler());
+        registerHandler(Command.GETANDSET, new AtomicLongGetAndSetHandler());
+        registerHandler(Command.GETANDADD, new AtomicLongGetAndAddHandler());
+        registerHandler(Command.QOFFER, new QueueOfferHandler());
+        registerHandler(Command.QPOLL, new QueuePollHandler());
+        registerHandler(Command.QTAKE, new QueuePollHandler());
+        registerHandler(Command.QSIZE, new QueueSizeHandler());
+        registerHandler(Command.QPEEK, new QueuePeekHandler());
+        registerHandler(Command.QPUT, new QueueOfferHandler());
+        registerHandler(Command.QREMOVE, new QueueRemoveHandler());
+        registerHandler(Command.QREMCAPACITY, new QueueRemainingCapacityHandler());
+        registerHandler(Command.QENTRIES, new QueueEntriesHandler());
+        registerHandler(Command.QADDLISTENER, new QueueAddListenerHandler());
+        registerHandler(Command.QREMOVELISTENER, new QueueRemoveListenerHandler());
+        registerHandler(Command.TRXBEGIN, new TransactionBeginHandler());
+        registerHandler(Command.TRXCOMMIT, new TransactionCommitHandler());
+        registerHandler(Command.TRXROLLBACK, new TransactionRollbackHandler());
+        registerHandler(Command.NEWID, new NewIdHandler());
+        registerHandler(Command.INSTANCES, new GetInstancesHandler());
+        registerHandler(Command.MEMBERS, new GetMembersHandler());
+        registerHandler(Command.CLUSTERTIME, new GetClusterTimeHandler());
+        registerHandler(Command.PARTITIONS, new GetPartitionsHandler());
+        registerHandler(Command.CDLAWAIT, new CountDownLatchAwaitHandler());
+        registerHandler(Command.CDLCOUNTDOWN, new CountDownLatchCountDownHandler());
+        registerHandler(Command.CDLGETCOUNT, new CountDownLatchGetCountHandler());
+        registerHandler(Command.CDLGETOWNER, new CountDownLatchGetOwnerHandler());
+        registerHandler(Command.CDLSETCOUNT, new CountDownLatchSetCountHandler());
+        registerHandler(Command.LOCK_LOCK, new LockOperationHandler());
+        registerHandler(Command.LOCK_TRYLOCK, new LockOperationHandler());
+        registerHandler(Command.LOCK_UNLOCK, new UnlockOperationHandler());
+        registerHandler(Command.LOCK_FORCE_UNLOCK, new UnlockOperationHandler());;
+        registerHandler(Command.LOCK_IS_LOCKED, new IsLockedOperationHandler());
+        registerHandler(Command.TPUBLISH, new TopicPublishHandler());
+        registerHandler(Command.TADDLISTENER, new TopicAddListenerHandler());
+        registerHandler(Command.DESTROY, new DestroyHandler());
+
 //        SEMATTACHDETACHPERMITS, SEMCANCELACQUIRE, SEMDESTROY, SEM_DRAIN_PERMITS, SEMGETATTACHEDPERMITS,
 //                SEMGETAVAILPERMITS, SEMREDUCEPERMITS, SEMRELEASE, SEMTRYACQUIRE,
+
+
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
         registerHandler(CONCURRENT_MAP_PUT_AND_UNLOCK.getValue(), new MapPutAndUnlockHandler());
         registerHandler(CONCURRENT_MAP_PUT_ALL.getValue(), new MapPutAllHandler());
@@ -239,16 +248,20 @@ public class ClientHandlerService implements ConnectionListener {
         clientOperationHandlers[operation] = handler;
     }
 
+    void registerHandler(Command command, ClientOperationHandler handler){
+        commandHandlers[command.getId()] = handler;
+    }
+
+
     public void handle(Protocol protocol) {
         checkFirstCall();
         ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
         CallContext callContext = clientEndpoint.getCallContext(0);
-        CommandHandler handler = mapCommandHandlers.get(protocol.getCommand());
+        CommandHandler handler = commandHandlers[protocol.getCommand().getId()];
         if (handler == null) {
             handler = unknownOperationHandler;
         }
-        System.out.println(protocol.getCommand() + "::: Handler is :" + handler);
-        if (!clientEndpoint.isAuthenticated() && !Command.AUTH.value.equals(protocol.getCommand())) {
+        if (!clientEndpoint.isAuthenticated() && !Command.AUTH.equals(protocol.getCommand())) {
             checkAuth(protocol.getConnection());
             return;
         }
@@ -417,7 +430,7 @@ public class ClientHandlerService implements ConnectionListener {
             IQueue<Data> queue = node.factory.getQueue(name);
             boolean result = false;
             try {
-                if (protocol.getCommand().equals(Command.QPUT.value)) {
+                if (Command.QPUT.equals(protocol.getCommand())){
                     queue.put(item);
                     result = true;
                 } else {
@@ -457,7 +470,7 @@ public class ClientHandlerService implements ConnectionListener {
             IQueue<Data> queue = node.factory.getQueue(name);
             Data result;
             try {
-                if (protocol.getCommand().equals(Command.QTAKE.value)) {
+                if (Command.QTAKE.equals(protocol.getCommand())){
                     result = queue.take();
                 } else {
                     long timeout = Long.valueOf(protocol.getArgs()[1]);
@@ -1324,18 +1337,34 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     private class MapPutHandler extends ClientMapOperationHandlerWithTTL {
+        
+        AtomicLong counter = new AtomicLong();
+        AtomicLong time = new AtomicLong();
 
         @Override
         protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
+
+            counter.incrementAndGet();
             MProxy mproxy = (MProxy) map;
             Object v = value;
             if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
                 v = toObject(value);
             }
             if (ttl <= 0) {
-                System.out.println("Now doing put key " + new String(key.buffer));
                 Data result = (Data) map.put(key, v);
-                System.out.println(ThreadContext.get().getCallContext().getThreadId() + " Result of put = " + result);
+                long begin;
+                if(value.buffer.length > 20)
+                     begin = Long.valueOf(new String(value.buffer, 6, value.buffer.length-6));
+                else
+                    begin = Long.valueOf(new String(value.buffer));
+//
+                time.addAndGet(System.nanoTime()-begin);
+              if(counter.get()%100000==0){
+                  long c = counter.getAndSet(0);
+                  System.out.println("counter = " + c);
+                  System.out.println("Average time = " + (time.getAndSet(0)/c));
+
+              }
                 return result;
             } else {
                 return (Data) map.put(key, v, ttl, TimeUnit.MILLISECONDS);
@@ -1421,9 +1450,9 @@ public class ClientHandlerService implements ConnectionListener {
             final IMap<Object, Object> map = (IMap) factory.getMap(name);
             Data value;
             try {
-                System.out.println("key is " + new String(protocol.getBuffers()[0].array()));
+//                System.out.println("key is " + new String(protocol.getBuffers()[0].array()));
                 value = (Data) map.tryRemove(new Data(protocol.getBuffers()[0].array()), ttl, TimeUnit.MILLISECONDS);
-                System.out.println("VALUE is " + value);
+//                System.out.println("VALUE is " + value);
             } catch (TimeoutException e) {
                 return protocol.success("timeout");
             }
@@ -1513,7 +1542,7 @@ public class ClientHandlerService implements ConnectionListener {
 
         public Protocol processMapOp(Protocol protocol, IMap<Object, Object> map, Data key, Data value) {
             MapEntry<Object, Object> mapEntry = map.getMapEntry(key);
-            System.out.println("mapEntry = " + mapEntry);
+//            System.out.println("mapEntry = " + mapEntry);
             if (mapEntry == null)
                 return protocol.success();
             else
@@ -1717,7 +1746,7 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            System.out.println("Locking from " + ThreadContext.get().getCallContext().getThreadId());
+//            System.out.println("Locking from " + ThreadContext.get().getCallContext().getThreadId());
             String name = protocol.getArgs()[0];
             long timeout = -1;
             if (protocol.getCommand().equals(Command.MTRYLOCK)) {
@@ -1902,7 +1931,7 @@ public class ClientHandlerService implements ConnectionListener {
             String name = protocol.getArgs()[0];
             ILock lock = node.factory.getLock(name);
             try {
-                if (protocol.getCommand().equals(Command.LOCK_TRYLOCK.value)) {
+                if (Command.LOCK_TRYLOCK.equals(protocol.getCommand())) {
                     if (protocol.getArgs().length > 1) {
                         return protocol.success(String.valueOf(lock.tryLock(Long.valueOf(protocol.getArgs()[1]),
                                 TimeUnit.MILLISECONDS)));
@@ -1953,9 +1982,9 @@ public class ClientHandlerService implements ConnectionListener {
         public Protocol processCall(Node node, Protocol protocol) {
             String name = protocol.getArgs()[0];
             ILock lock = node.factory.getLock(name);
-            if (protocol.getCommand().equals(Command.LOCK_UNLOCK.value)) {
+            if (Command.LOCK_UNLOCK.equals(protocol.getCommand())) {
                 lock.unlock();
-            } else if (protocol.getCommand().equals(Command.LOCK_FORCE_UNLOCK.value)) {
+            } else if (Command.LOCK_FORCE_UNLOCK.equals(protocol.getCommand())) {
                 lock.forceUnlock();
             }
             return protocol.success();
@@ -1991,7 +2020,7 @@ public class ClientHandlerService implements ConnectionListener {
                 Collection<Map.Entry> colEntries = entries.getKeyValues();
                 ByteBuffer[] buffers = new ByteBuffer[colEntries.size() * 2];
                 int i = 0;
-                System.out.println(colEntries.size());
+//                System.out.println(colEntries.size());
                 for (Object obj : colEntries) {
                     KeyValue entry = (KeyValue) obj;
                     Data key = entry.getKeyData();
@@ -2228,7 +2257,7 @@ public class ClientHandlerService implements ConnectionListener {
                 if (protocol.getBuffers() != null && protocol.getBuffers().length > 0) {
                     key = new Data(protocol.getBuffers()[0].array());
                 }
-                System.out.println(includeValue + " Key is " + key);
+//                System.out.println(includeValue + " Key is " + key);
                 clientEndpoint.addThisAsListener(map, key, includeValue);
             }
             return protocol.success();
@@ -2307,13 +2336,13 @@ public class ClientHandlerService implements ConnectionListener {
 
         public void itemAdded(ItemEvent itemEvent) {
             DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) itemEvent;
-            Protocol protocol = new Protocol(clientEndpoint.conn, Command.EVENT.value, new String[]{ItemEventType.ADDED.name()}, ByteBuffer.wrap(dataAwareItemEvent.getItemData().buffer));
+            Protocol protocol = new Protocol(clientEndpoint.conn, Command.EVENT, new String[]{ItemEventType.ADDED.name()}, ByteBuffer.wrap(dataAwareItemEvent.getItemData().buffer));
             clientEndpoint.sendPacket(protocol);
         }
 
         public void itemRemoved(ItemEvent itemEvent) {
             DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) itemEvent;
-            Protocol protocol = new Protocol(clientEndpoint.conn, Command.EVENT.value, new String[]{ItemEventType.REMOVED.name()}, ByteBuffer.wrap(dataAwareItemEvent.getItemData().buffer));
+            Protocol protocol = new Protocol(clientEndpoint.conn, Command.EVENT, new String[]{ItemEventType.REMOVED.name()}, ByteBuffer.wrap(dataAwareItemEvent.getItemData().buffer));
             clientEndpoint.sendPacket(protocol);
         }
     }
@@ -2346,8 +2375,8 @@ public class ClientHandlerService implements ConnectionListener {
 
         public void onMessage(Message msg) {
             DataMessage dm = (DataMessage) msg;
-            System.out.println("On message is called" + ((DataMessage) msg).getMessageData());
-            Protocol p = new Protocol(clientEndpoint.conn, Command.MESSAGE.value, "-1", false, new String[]{name},
+//            System.out.println("On message is called" + ((DataMessage) msg).getMessageData());
+            Protocol p = new Protocol(clientEndpoint.conn, Command.MESSAGE, "-1", false, new String[]{name},
                     ByteBuffer.wrap(dm.getMessageData().buffer));
             clientEndpoint.sendPacket(p);
         }
@@ -2484,7 +2513,7 @@ public class ClientHandlerService implements ConnectionListener {
             } catch (RuntimeException e) {
                 logger.log(Level.WARNING,
                         "exception during handling " + protocol.getCommand() + ": " + e.getMessage(), e);
-                response = new Protocol(protocol.getConnection(), "ERROR", new String[]{protocol.getFlag(), e.getMessage()});
+                response = new Protocol(protocol.getConnection(), Command.ERROR, new String[]{protocol.getFlag(), e.getMessage()});
             }
             sendResponse(response, protocol.getConnection());
         }
@@ -2509,7 +2538,7 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            return protocol.error(null, "unknown_command", protocol.getCommand());
+            return protocol.error(null, "unknown_command", protocol.getCommand().toString());
         }
     }
 

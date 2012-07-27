@@ -77,7 +77,7 @@ public class ProtocolTest {
     }
 
     private void auth(Socket socket) throws IOException {
-        doOp("AUTH 0 dev dev-pass", null, socket);
+        doOp("AUTH 0 dev dev-pass", null, socket).flush();
         read(socket);
     }
 
@@ -86,14 +86,14 @@ public class ProtocolTest {
         InputStreamReader reader = new InputStreamReader(socket.getInputStream(), "UTF-8");
         BufferedReader buf = new BufferedReader(reader);
         String commandLine = buf.readLine();
-        System.out.println(commandLine);
+//        System.out.println(commandLine);
         if(commandLine == null){
             return Collections.emptyList();
         }
         String[] split = commandLine.split(" ");
         if (split[split.length - 1].startsWith("#")) {
             String sizeLine = buf.readLine();
-            System.out.println(sizeLine);
+//            System.out.println(sizeLine);
             String[] tokens = sizeLine.split(" ");
             int count = Integer.valueOf(split[split.length - 1].substring(1));
 //        System.out.println("Count is " + count);
@@ -102,12 +102,12 @@ public class ProtocolTest {
 //            System.out.println("Size is " + s);
                 char[] value = new char[s];
                 buf.read(value);
-                System.out.println(String.valueOf(value));
+//                System.out.println(String.valueOf(value));
                 values.add(String.valueOf(value));
             }
         }
         if (values.size()  == 0) {
-            values.addAll(Arrays.asList(commandLine.split(" ")));
+            values.addAll(Arrays.asList(split));
         }
         return values;
     }

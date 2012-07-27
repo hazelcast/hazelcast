@@ -22,7 +22,7 @@ import com.hazelcast.nio.protocol.Command;
 import java.nio.ByteBuffer;
 
 public class Protocol implements SocketWritable {
-    private final String command;
+    private final Command command;
     private final String[] args;
     private final ByteBuffer[] buffers;
     private final Connection connection;
@@ -33,11 +33,11 @@ public class Protocol implements SocketWritable {
     int totalSize = 0;
     int totalWritten = 0;
 
-    public Protocol(Connection connection, String command, String[] args, ByteBuffer... buffers) {
+    public Protocol(Connection connection, Command command, String[] args, ByteBuffer... buffers) {
         this(connection, command, args[0], false, args, buffers);
     }
 
-    public Protocol(Connection connection, String command, String flag, boolean noReply, String[] args, ByteBuffer... buffers) {
+    public Protocol(Connection connection, Command command, String flag, boolean noReply, String[] args, ByteBuffer... buffers) {
         this.buffers = buffers;
         this.args = args;
         this.command = command;
@@ -46,7 +46,7 @@ public class Protocol implements SocketWritable {
         this.flag = flag;
     }
 
-    public String getCommand() {
+    public Command getCommand() {
         return command;
     }
 
@@ -71,7 +71,7 @@ public class Protocol implements SocketWritable {
     }
 
     public void onEnqueue() {
-        StringBuilder builder = new StringBuilder(command);
+        StringBuilder builder = new StringBuilder(command.toString());
         for (String arg : args) {
             builder.append(" ").append(arg);
         }
@@ -133,6 +133,6 @@ public class Protocol implements SocketWritable {
         String[] argWithFlag = new String[args.length + 1];
         argWithFlag[0] = String.valueOf(this.flag);
         System.arraycopy(args, 0, argWithFlag, 1, args.length);
-        return new Protocol(this.connection, command.value, this.flag, this.noReply, argWithFlag, buffers);
+        return new Protocol(this.connection, command, this.flag, this.noReply, argWithFlag, buffers);
     }
 }

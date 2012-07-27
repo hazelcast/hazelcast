@@ -23,6 +23,7 @@ import com.hazelcast.nio.ascii.SocketTextReader;
 
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 //    COMMAND <arg1>É<argN> \r\n
 //    #M  <s1>É<sM> \r\n
 //    B1B2É. BM
@@ -31,7 +32,7 @@ public class SocketProtocolReader implements SocketReader {
 
     final ILogger logger;
 
-    ByteBuffer commandLine = ByteBuffer.allocate(500);
+    ByteBuffer binaryCommandLine = ByteBuffer.allocate(500);
     MutableBoolean commandLineRead = new MutableBoolean(false);
 
     boolean commandLineIsParsed = false;
@@ -39,7 +40,7 @@ public class SocketProtocolReader implements SocketReader {
     ByteBuffer sizeLine = ByteBuffer.allocate(500);
     MutableBoolean sizeLineRead = new MutableBoolean(false);
 
-    private String command;
+    private Command command;
     private String[] args;
     private ByteBuffer[] buffers;
     private boolean noreply = false;
@@ -54,6 +55,8 @@ public class SocketProtocolReader implements SocketReader {
     private String flag = "0";
     final ByteBuffer firstNewLineRead = ByteBuffer.allocate(2);
 
+    Pattern p = Pattern.compile("\\s+");
+
     public SocketProtocolReader(SocketChannelWrapper socketChannel, Connection connection) {
         this.connection = connection;
         this.ioService = connection.getConnectionManager().getIOHandler();
@@ -67,20 +70,33 @@ public class SocketProtocolReader implements SocketReader {
     }
 
     private void doRead(ByteBuffer bb) {
+//        long t1 = System.nanoTime();
         try {
             while (firstNewLineRead.hasRemaining()) {
                 firstNewLineRead.put(bb.get());
             }
-            readLine(bb, commandLineRead, commandLine);
-            if (commandLineRead.get()) {
-                parseCommandLine(SocketTextReader.toStringAndClear(commandLine));
-                if (commandLineIsParsed && bufferSize.length > 0) {
-                    readLine(bb, sizeLineRead, sizeLine);
-                } else if (commandLineIsParsed) {
-                    sizeLineRead.set(true);
+            readLineIfnotRead(bb, commandLineRead, binaryCommandLine);
+            if (commandLineIsRead()) {
+//                System.out.println("CDL READ 1        " + (System.nanoTime()-t1));
+//                long t2 = System.nanoTime();
+                String stringCommandLine = SocketTextReader.toStringAndClear(binaryCommandLine);
+//                System.out.println("TOSTRING CDL       " + (System.nanoTime()-t2));
+//                long t = System.nanoTime();
+                parseCommandLine(stringCommandLine);
+//                long t3 = System.nanoTime();
+//                System.out.println("OUTER PARSE     " + (t3-t));
+                if (commandLineIsParsed) {
+                    if (hasSizeLine())
+                        readLineIfnotRead(bb, sizeLineRead, sizeLine);
+                    else
+                        sizeLineRead.set(true);
                 }
-                if (commandLineIsParsed && bufferSize.length == 0 || sizeLineRead.get()) {
+                if (commandLineIsParsed && !hasSizeLine() || sizeLineIsRead()) {
+//                    long t4 = System.nanoTime();
+//                    System.out.println("SLN READ        " + (t4-t3));
                     parseSizeLine(SocketTextReader.toStringAndClear(sizeLine));
+//                    long t5 = System.nanoTime();
+//                    System.out.println("PARSE SIZE      " + (t5-t4));
                     for (int i = 0; bb.hasRemaining() && i < buffers.length; i++) {
                         if (buffers[i].hasRemaining()) {
                             copy(bb, buffers[i]);
@@ -90,6 +106,8 @@ public class SocketProtocolReader implements SocketReader {
                                 copy(bb, endOfTheCommand);
                         }
                     }
+//                    long t6 = System.nanoTime();
+//                    System.out.println("Diff 5 " + (t6-t5));
                     if ((buffers.length == 0 || !buffers[buffers.length - 1].hasRemaining())) {
                         Protocol protocol = new Protocol(connection, command, flag, noreply, args, buffers);
                         connection.setType(Connection.Type.PROTOCOL_CLIENT);
@@ -100,9 +118,21 @@ public class SocketProtocolReader implements SocketReader {
             }
         } catch (Exception e) {
             connection.getWriteHandler().enqueueSocketWritable(new Protocol(connection,
-                    Command.ERROR.value, new String[]{flag, "Malformed_request", e.toString()}));
+                    Command.ERROR, new String[]{flag, "Malformed_request", e.toString()}));
             logger.log(Level.SEVERE, e.toString(), e);
         }
+    }
+
+    private Boolean sizeLineIsRead() {
+        return sizeLineRead.get();
+    }
+
+    private boolean hasSizeLine() {
+        return bufferSize.length > 0;
+    }
+
+    private Boolean commandLineIsRead() {
+        return commandLineRead.get();
     }
 
     void copy(ByteBuffer from, ByteBuffer to) {
@@ -118,7 +148,7 @@ public class SocketProtocolReader implements SocketReader {
     }
 
     private void reset() {
-        commandLine.clear();
+        binaryCommandLine.clear();
         commandLineRead.set(false);
         sizeLine.clear();
         sizeLineRead.set(false);
@@ -134,9 +164,10 @@ public class SocketProtocolReader implements SocketReader {
 
     private void parseSizeLine(String line) {
         if (buffers != null) return;
-        System.out.println("Size line is : " + line);
-        String[] split = line.split("\\s");
-        if (line != "" && split.length != bufferSize.length) {
+//        System.out.println("Size line is : " + line);
+//        String[] split = line.split("\\s");
+        String[] split = fastSplit(line, ' ');
+        if (line.length()!=0 && split.length != bufferSize.length) {
             throw new RuntimeException("Size # tag and number of size entries do not match!" + split.length + ":: " + bufferSize.length);
         }
         for (int i = 0; i < bufferSize.length; i++) {
@@ -148,38 +179,66 @@ public class SocketProtocolReader implements SocketReader {
         }
     }
 
-    private boolean parseCommandLine(String line) {
-        if (commandLineIsParsed || sizeLineRead.get()) return true;
-        if (line.equals("")) {
+    public static String[] fastSplit(String line, char split) {
+        String[] temp = new String[line.length() / 2 + 1];
+        int wordCount = 0;
+        int i = 0;
+        int j = line.indexOf(split);  // First substring
+        while (j >= 0) {
+            temp[wordCount++] = line.substring(i, j);
+            i = j + 1;
+            j = line.indexOf(split, i);   // Rest of substrings
+        }
+        temp[wordCount++] = line.substring(i); // Last substring
+        String[] result = new String[wordCount];
+        System.arraycopy(temp, 0, result, 0, wordCount);
+        return result;
+    }//end
+
+    private void parseCommandLine(String line) {
+//        long t1 = System.nanoTime();
+        if (commandLineIsParsed || sizeLineIsRead()) return;
+        if (line.length() == 0) {
             commandLineIsParsed = false;
             commandLineRead.set(false);
-            return false;
+            return;
         }
-        System.out.println("Command line is : " + line);
-        String[] split = line.split("\\s");
-        command = split[0];
+//        String[] split = p.split(line);
+        String[] split = fastSplit(line, ' ');
+//        System.out.println("T0: " + (System.nanoTime() - t1));
+//        long t2 = System.nanoTime();
+        try {
+            command = Command.valueOf(split[0]);
+        } catch (IllegalArgumentException illegalArgException) {
+            command = Command.UNKNOWN;
+        }
+//        System.out.println("T1: " + (System.nanoTime() - t2));
+//        long t3 = System.nanoTime();
         int bufferCount = -1;
-        int argLength = split.length;
+        //The first two commands are COMMAND and FLAG
+        int argLength = split.length - 2;
         if (split.length > 0 && split[split.length - 1].startsWith("#")) {
             bufferCount = Integer.parseInt(split[split.length - 1].substring(1));
             noreply = split.length > 1 && NOREPLY.equals(split[split.length - 2]);
         } else {
             noreply = split.length > 1 && NOREPLY.equals(split[split.length - 2]);
         }
+//        System.out.println("T2: " + (System.nanoTime() - t3));
+//        long t4 = System.nanoTime();
         if (bufferCount >= 0) argLength--;
         if (noreply) argLength--;
         flag = split[1];
-        args = new String[argLength - 2];
-        for (int i = 2; i < argLength; i++) {
-            args[i - 2] = split[i];
+        args = new String[argLength];
+        for (int i = 0; i < argLength; i++) {
+            args[i] = split[i + 2];
         }
         if (bufferCount < 0) bufferCount = 0;
         bufferSize = new int[bufferCount];
         commandLineIsParsed = true;
-        return true;
+//        System.out.println("T3: " + (System.nanoTime() - t4));
     }
 
-    private void readLine(ByteBuffer bb, MutableBoolean lineIsRead, ByteBuffer line) {
+    private void readLineIfnotRead(ByteBuffer bb, MutableBoolean lineIsRead, ByteBuffer line) {
         while (!lineIsRead.get() && bb.hasRemaining()) {
             byte b = bb.get();
             char c = (char) b;
@@ -207,4 +266,3 @@ public class SocketProtocolReader implements SocketReader {
         }
     }
 }
-

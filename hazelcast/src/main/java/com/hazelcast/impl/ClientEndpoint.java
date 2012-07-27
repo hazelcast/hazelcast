@@ -247,7 +247,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         if (newValue != null) list.add(ByteBuffer.wrap(newValue.buffer));
         if (oldValue != null) list.add(ByteBuffer.wrap(oldValue.buffer));
         if (value != null) list.add(ByteBuffer.wrap(value.buffer));
-        protocol = new Protocol(this.conn, Command.EVENT.value, new String[]{"0", type, name, eventType}, list.toArray(new ByteBuffer[0]));
+        protocol = new Protocol(this.conn, Command.EVENT, new String[]{"0", type, name, eventType}, list.toArray(new ByteBuffer[0]));
         return protocol;
     }
 
