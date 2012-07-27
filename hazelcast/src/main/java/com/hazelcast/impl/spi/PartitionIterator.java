@@ -29,7 +29,7 @@ import java.util.concurrent.BlockingQueue;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class PartitionIterator extends AbstractOperation {
+class PartitionIterator extends AbstractOperation {
     ArrayList<Integer> partitions;
     Data operationData;
 

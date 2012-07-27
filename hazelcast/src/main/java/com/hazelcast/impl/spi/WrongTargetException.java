@@ -18,7 +18,7 @@ package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Address;
 
-public class WrongTargetException extends RuntimeException implements RetryableException {
+class WrongTargetException extends RuntimeException implements RetryableException {
     public WrongTargetException(Address thisAddress, Address target) {
         super("WrongTarget. this:" + thisAddress + ", target:" + target);
     }

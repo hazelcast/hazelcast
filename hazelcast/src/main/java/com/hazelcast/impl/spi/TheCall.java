@@ -24,7 +24,7 @@ import java.io.IOException;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class TheCall implements Call {
+class TheCall implements Call {
     long id;
     private final Address target;
     private final Callback callback;

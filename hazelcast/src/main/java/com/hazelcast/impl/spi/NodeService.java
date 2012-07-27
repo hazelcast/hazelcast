@@ -42,8 +42,8 @@ public class NodeService {
     private final Workers nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
     private final Workers blockingWorkers = new Workers("hz.Blocking", 8);
     private final Node node;
-    final int PARTITION_COUNT;
-    final int MAX_BACKUP_COUNT;
+    private final int PARTITION_COUNT;
+    private final int MAX_BACKUP_COUNT;
 
     public NodeService(Node node) {
         this.node = node;
@@ -139,11 +139,13 @@ public class NodeService {
             throw new RuntimeException("Target not a member: " + target);
         }
         if (getThisAddress().equals(target)) {
-            op.getOperationContext().setResponseHandler(new ResponseHandler() {
-                public void sendResponse(Object obj) {
-                    inv.setResult(obj);
-                }
-            });
+            if (!(op instanceof NoReply)) {
+                op.getOperationContext().setResponseHandler(new ResponseHandler() {
+                    public void sendResponse(Object obj) {
+                        inv.setResult(obj);
+                    }
+                });
+            }
             runLocally(partitionId, op, nonBlocking);
         } else {
             final Packet packet = new Packet();
@@ -161,7 +163,7 @@ public class NodeService {
         }
     }
 
-    public void runLocally(final int partitionId, final Operation op, final boolean nonBlocking) {
+    void runLocally(final int partitionId, final Operation op, final boolean nonBlocking) {
         final ExecutorService executor = getExecutor(partitionId, nonBlocking);
         executor.execute(new Runnable() {
             public void run() {
@@ -195,23 +197,26 @@ public class NodeService {
                 try {
                     final Operation op = (Operation) toObject(data);
                     setOperationContext(op, serviceName, caller, callId, partitionId);
-                    ResponseHandler responseHandler = new ResponseHandler() {
-                        public void sendResponse(Object response) {
-                            if (!(op instanceof NoReply)) {
-                                if (!(response instanceof Operation)) {
-                                    response = new Response(response);
+                    final boolean noReply = (op instanceof NoReply);
+                    if (!noReply) {
+                        ResponseHandler responseHandler = new ResponseHandler() {
+                            public void sendResponse(Object response) {
+                                if (!noReply) {
+                                    if (!(response instanceof Operation)) {
+                                        response = new Response(response);
+                                    }
+                                    packet.clearForResponse();
+                                    packet.blockId = partitionId;
+                                    packet.callId = callId;
+                                    packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
+                                    packet.setValue(toData(response));
+                                    packet.name = serviceName;
+                                    node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
                                 }
-                                packet.clearForResponse();
-                                packet.blockId = partitionId;
-                                packet.callId = callId;
-                                packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
-                                packet.setValue(toData(response));
-                                packet.name = serviceName;
-                                node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
                             }
-                        }
-                    };
-                    op.getOperationContext().setResponseHandler(responseHandler);
+                        };
+                        op.getOperationContext().setResponseHandler(responseHandler);
+                    }
                     try {
                         if (partitionId != -1) {
                             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
@@ -223,7 +228,9 @@ public class NodeService {
                         op.run();
                     } catch (Exception e) {
                         e.printStackTrace();
-                        op.getOperationContext().getResponseHandler().sendResponse(e);
+                        if (!noReply) {
+                            op.getOperationContext().getResponseHandler().sendResponse(e);
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
