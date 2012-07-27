@@ -25,6 +25,7 @@ import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.impl.Keys;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.SerializerManager;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -32,15 +33,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.client.IOUtil.toByte;
-import static com.hazelcast.client.IOUtil.toObject;
+import static com.hazelcast.nio.IOUtil.toByteArray;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class EntryListenerManager {
 
+    private final SerializerManager serializerManager;
     private final Object NULL_KEY = new Object();
 
     private final ConcurrentMap<String, ConcurrentHashMap<Object, List<EntryListenerHolder>>> entryListeners =
             new ConcurrentHashMap<String, ConcurrentHashMap<Object, List<EntryListenerHolder>>>();
+
+    public EntryListenerManager(final SerializerManager serializerManager) {this.serializerManager = serializerManager;}
 
     public synchronized void registerListener(String name, Object key, boolean includeValue, EntryListener<?, ?> entryListener) {
         ConcurrentHashMap<Object, List<EntryListenerHolder>> map = entryListeners.get(name);
@@ -123,7 +127,7 @@ public class EntryListenerManager {
                 new Data(packet.getKey()),
                 newValue,
                 oldValue,
-                false);
+                true, serializerManager);
         String name = packet.getName();
         Object key = toKey(keyObj);
         if (entryListeners.get(name) != null) {
@@ -140,7 +144,7 @@ public class EntryListenerManager {
         }
         DataAwareEntryEvent eventNoValue = event.getValue() != null ?
                 new DataAwareEntryEvent(event.getMember(), event.getEventType().getType(), event.getName(),
-                                        event.getKeyData(), null, null, false) :
+                                        event.getKeyData(), null, null, false, serializerManager) :
                 event;
         switch (event.getEventType()) {
             case ADDED:
@@ -167,7 +171,7 @@ public class EntryListenerManager {
     }
 
     public Call createNewAddListenerCall(final ProxyHelper proxyHelper, final Object key, boolean includeValue) {
-        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
+        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByteArray(key), null);
         request.setLongValue(includeValue ? 1 : 0);
         return proxyHelper.createCall(request);
     }

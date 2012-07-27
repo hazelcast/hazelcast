@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
 import com.hazelcast.nio.Data;
@@ -36,27 +37,27 @@ public class SerializationTest {
     @Test(expected = RuntimeException.class)
     public void newNotSerializableException() {
         final Object o = new Object();
-        IOUtil.toByte(o);
+        IOUtil.toByteArray(o);
     }
 
     @Test
     public void newNullSerializer() {
         final Object o = null;
-        final byte[] data = IOUtil.toByte(o);
+        final byte[] data = IOUtil.toByteArray(o);
         assertEquals(o, IOUtil.toObject(data));
     }
 
     @Test
     public void newStringSerializer() {
         final String s = "newStringSerializer 2@Z";
-        final byte[] data = IOUtil.toByte(s);
+        final byte[] data = IOUtil.toByteArray(s);
         assertEquals(s, IOUtil.toObject(data));
     }
 
     @Test
     public void newDateSerializer() {
         final Date date = new Date();
-        final byte[] data = IOUtil.toByte(date);
+        final byte[] data = IOUtil.toByteArray(date);
         assertEquals(date, IOUtil.toObject(data));
     }
 
@@ -73,7 +74,7 @@ public class SerializationTest {
         final ExternalizableImpl o = new ExternalizableImpl();
         o.s = "Gallaxy";
         o.v = 42;
-        final byte[] data = IOUtil.toByte(o);
+        final byte[] data = IOUtil.toByteArray(o);
         assertFalse(data.length == 0);
         assertFalse(o.readExternal);
         assertTrue(o.writeExternal);
@@ -88,7 +89,7 @@ public class SerializationTest {
     @Test
     public void newSerializerProxyKey() {
         final FactoryImpl.ProxyKey o = new ProxyKey("key", 15L);
-        final byte[] data = IOUtil.toByte(o);
+        final byte[] data = IOUtil.toByteArray(o);
         assertFalse(data.length == 0);
         final ProxyKey object = (ProxyKey) IOUtil.toObject(data);
         assertNotNull(object);

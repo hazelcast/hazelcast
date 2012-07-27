@@ -132,7 +132,7 @@ public class XMLConfigBuilderTest {
     public void testConfig2Xml() throws SAXException, IOException {
         String fullXml = new ConfigXmlGenerator().generate(new ClasspathXmlConfig("hazelcast-fullconfig.xml"));
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-        URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-2.1.xsd");
+        URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.0.xsd");
         File schemaFile = new File(schemaUrl.getFile());
         Schema schema = factory.newSchema(schemaFile);
         Validator validator = schema.newValidator();
@@ -147,7 +147,7 @@ public class XMLConfigBuilderTest {
 
     private void testXSDConfigXML(String xmlResource) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-        URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-2.1.xsd");
+        URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.0.xsd");
         URL xmlURL = XMLConfigBuilderTest.class.getClassLoader().getResource(xmlResource);
         File schemaFile = new File(schemaUrl.getFile());
         File defaultXML = new File(xmlURL.getFile());

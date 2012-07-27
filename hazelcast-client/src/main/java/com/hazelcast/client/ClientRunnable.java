@@ -16,14 +16,28 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.impl.ThreadContext;
+
 public abstract class ClientRunnable implements Runnable {
     protected volatile boolean running = true;
     protected volatile boolean terminated = false;
     protected final Object monitor = new Object();
+    protected final HazelcastClient client;
+
+    protected ClientRunnable() {
+        client = null;
+    }
+
+    protected ClientRunnable(final HazelcastClient client) {
+        this.client = client;
+    }
 
     protected abstract void customRun() throws InterruptedException;
 
     public void run() {
+        if (client != null) {
+            ThreadContext.get().setCurrentSerializerManager(client.getSerializerManager());
+        }
         try {
             while (running) {
                 try {

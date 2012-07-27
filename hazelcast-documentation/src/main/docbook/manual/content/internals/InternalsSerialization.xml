@@ -36,7 +36,7 @@
         whether the object is an instance
         of<literal>com.hazelcast.nio.DataSerializable</literal>. If not, Hazelcast
         uses standard java serialization to convert the object into binary format. See
-        <literal>com.hazelcast.nio.Serializer</literal>
+        <literal>com.hazelcast.nio.serialization.SerializerSupport</literal>
         for details.
     </para>
     <para>So for faster serialization, Hazelcast recommends to use of

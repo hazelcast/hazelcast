@@ -18,7 +18,7 @@ package com.hazelcast.impl.base;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.AbstractSerializer;
+import com.hazelcast.nio.ClassLoaderUtil;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -37,8 +37,8 @@ public final class NodeInitializerFactory {
         final String initializerClassname = ServiceLoader.load(FACTORY_ID);
         if (initializerClassname != null) {
             try {
-                Class klass = AbstractSerializer.loadClass(initializerClassname);
-                initializer = (NodeInitializer) AbstractSerializer.newInstance(klass);
+                Class klass = ClassLoaderUtil.loadClass(initializerClassname);
+                initializer = (NodeInitializer) ClassLoaderUtil.newInstance(klass);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Initializer instance of class[" + initializerClassname + "] " +
                         "could not be instantiated! => "

@@ -21,12 +21,12 @@ import com.hazelcast.core.PartitionAware;
 import com.hazelcast.impl.ClientServiceException;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Keys;
-import com.hazelcast.impl.Util;
+import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.util.Util;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
@@ -35,8 +35,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
-import static com.hazelcast.client.IOUtil.toByte;
-import static com.hazelcast.client.IOUtil.toObject;
+import static com.hazelcast.nio.IOUtil.toByteArray;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ProxyHelper {
     private final static AtomicLong callIdGen = new AtomicLong(0);
@@ -154,24 +154,26 @@ public class ProxyHelper {
     }
 
     Packet prepareRequest(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit timeunit) {
+        final ThreadContext threadContext = ThreadContext.get();
+        threadContext.setCurrentSerializerManager(client.getSerializerManager());
         byte[] k = null;
         byte[] v = null;
         if (key != null) {
-            k = toByte(key);
+            k = threadContext.toByteArray(key);
         }
         if (value != null) {
-            v = toByte(value);
+            v = threadContext.toByteArray(value);
         }
         Packet packet = createRequestPacket(operation, k, v, ttl, timeunit);
         if (key instanceof PartitionAware) {
             Object partitionKey = ((PartitionAware) key).getPartitionKey();
             if (partitionKey == null) throw new IllegalArgumentException("PartitionKey cannot be null!");
-            packet.setKeyHash(Util.hashCode(toByte(partitionKey)));
+            packet.setKeyHash(Util.hashCode(threadContext.toByteArray(partitionKey)));
         }
         if (value instanceof PartitionAware) {
             Object partitionKey = ((PartitionAware) value).getPartitionKey();
             if (partitionKey == null) throw new IllegalArgumentException("PartitionKey cannot be null!");
-            packet.setValueHash(Util.hashCode(toByte(partitionKey)));
+            packet.setValueHash(Util.hashCode(threadContext.toByteArray(partitionKey)));
         }
         return packet;
     }
@@ -220,9 +222,9 @@ public class ProxyHelper {
         if (obj == null) {
             throw new NullPointerException("Object cannot be null.");
         }
-        if (!(obj instanceof Serializable)) {
-            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
-        }
+//        if (!(obj instanceof Serializable)) {
+//            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
+//        }
     }
 
     static void check(EventListener listener) {

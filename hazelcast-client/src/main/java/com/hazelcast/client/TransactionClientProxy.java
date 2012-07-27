@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.util.TransactionUtil;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterOperation;
 
@@ -32,8 +33,7 @@ public class TransactionClientProxy implements Transaction {
 
     public void commit() throws IllegalStateException {
         proxyHelper.doOp(ClusterOperation.TRANSACTION_COMMIT, null, null);
-        ClientThreadContext threadContext = ClientThreadContext.get();
-        threadContext.removeTransaction();
+        TransactionUtil.removeTransaction();
     }
 
     public int getStatus() {
@@ -42,7 +42,6 @@ public class TransactionClientProxy implements Transaction {
 
     public void rollback() throws IllegalStateException {
         proxyHelper.doOp(ClusterOperation.TRANSACTION_ROLLBACK, null, null);
-        ClientThreadContext threadContext = ClientThreadContext.get();
-        threadContext.removeTransaction();
+        TransactionUtil.removeTransaction();
     }
 }

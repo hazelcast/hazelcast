@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.util;
+
+import com.hazelcast.client.QueueClientProxy;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

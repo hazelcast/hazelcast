@@ -88,7 +88,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         maxVisibleInstanceCount = factory.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         commandHandler = new ConsoleCommandHandler(factory);
 
-        String tmpWebServerUrl = managementCenterConfig != null ? managementCenterConfig.getUrl() : null;
+        String tmpWebServerUrl = managementCenterConfig.getUrl();
         webServerUrl = tmpWebServerUrl != null ?
                 (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
         updateIntervalMs = (managementCenterConfig != null && managementCenterConfig.getUpdateInterval() > 0)
@@ -239,21 +239,21 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             }
             try {
                 while (running.get()) {
-                        try {
-                            URL url = new URL(webServerUrl + "collector.do");
-                            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                            connection.setDoOutput(true);
-                            connection.setRequestMethod("POST");
-                            connection.setConnectTimeout(1000);
-                            connection.setReadTimeout(1000);
-                            final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-                            TimedMemberState ts = getTimedMemberState();
-                            ts.writeData(out);
-                            out.flush();
-                            connection.getInputStream();
-                        } catch (Exception e) {
-                            logger.log(Level.FINEST, e.getMessage(), e);
-                        }
+                    try {
+                        URL url = new URL(webServerUrl + "collector.do");
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setDoOutput(true);
+                        connection.setRequestMethod("POST");
+                        connection.setConnectTimeout(1000);
+                        connection.setReadTimeout(1000);
+                        final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+                        TimedMemberState ts = getTimedMemberState();
+                        ts.writeData(out);
+                        out.flush();
+                        connection.getInputStream();
+                    } catch (Exception e) {
+                        logger.log(Level.FINEST, e.getMessage(), e);
+                    }
                     Thread.sleep(updateIntervalMs);
                 }
             } catch (Throwable throwable) {
@@ -311,7 +311,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 GroupConfig groupConfig = factory.getConfig().getGroupConfig();
                 while (running.get()) {
                     try {
-                        URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost() + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
+                        URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost()
+                                          + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setRequestProperty("Connection", "keep-alive");
                         InputStream inputStream = connection.getInputStream();

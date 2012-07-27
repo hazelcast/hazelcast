@@ -28,12 +28,11 @@ import java.util.logging.Level;
 public abstract class IORunnable extends ClientRunnable {
 
     protected Map<Long, Call> callMap;
-    protected final HazelcastClient client;
     final ILogger logger = Logger.getLogger(this.getClass().getName());
     protected static final Call RECONNECT_CALL = new Call(-1L, null);
 
     public IORunnable(HazelcastClient client, Map<Long, Call> calls) {
-        this.client = client;
+        super(client);
         this.callMap = calls;
     }
 

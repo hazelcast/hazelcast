@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.core.*;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
 import com.hazelcast.partition.Partition;
@@ -774,7 +775,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
     @Test
     public void newSerializer() {
         final String str = "Fuad";
-        byte[] b = IOUtil.toByte(str);
+        byte[] b = IOUtil.toByteArray(str);
         assertEquals(str, IOUtil.toObject(b));
     }
 
@@ -783,7 +784,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         final ExternalizableImpl o = new ExternalizableImpl();
         o.s = "Gallaxy";
         o.v = 42;
-        byte[] b = IOUtil.toByte(o);
+        byte[] b = IOUtil.toByteArray(o);
         assertFalse(b.length == 0);
         assertFalse(o.readExternal);
         assertTrue(o.writeExternal);

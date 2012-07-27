@@ -188,7 +188,7 @@ public class HazelcastClientCountDownLatchTest {
 
     // remove this when Clients become members
     private Member clientToMember(HazelcastClient client) throws IOException {
-        final Socket socket1 = client.connectionManager.getConnection().getSocket();
+        final Socket socket1 = client.getConnectionManager().getConnection().getSocket();
         final Address client1Address = new Address(socket1.getLocalAddress(), socket1.getLocalPort());
         return new MemberImpl(client1Address, false);
     }

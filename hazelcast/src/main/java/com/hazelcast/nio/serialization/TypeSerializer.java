@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.nio.serialization;
 
-public interface EntryHolder<K, V> {
+import com.hazelcast.nio.FastDataInputStream;
+import com.hazelcast.nio.FastDataOutputStream;
 
-    V remove(Object arg0);
+public interface TypeSerializer<T> {
 
-    V get(K key);
+    int getTypeId();
 
-    boolean remove(Object key, Object value);
+    void write(FastDataOutputStream out, T object) throws Exception;
 
-    boolean containsValue(Object v);
+    T read(FastDataInputStream in) throws Exception;
 
-    int size();
+    void destroy();
 }

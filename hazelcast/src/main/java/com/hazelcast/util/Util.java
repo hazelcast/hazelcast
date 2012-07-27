@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.util;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -33,13 +33,13 @@ public class Util {
 
     final static ILogger logger = Logger.getLogger(Util.class.getName());
 
-    public static void checkSerializable(Object obj) {
+    public static void checkNotNull(Object obj) {
         if (obj == null) {
             throw new NullPointerException("Object cannot be null.");
         }
-        if (!(obj instanceof Serializable)) {
-            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
-        }
+//        if (!(obj instanceof Serializable)) {
+//            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
+//        }
     }
 
     public static void throwUncheckedException(Throwable t) {
