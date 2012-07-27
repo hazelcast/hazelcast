@@ -27,6 +27,24 @@ public class SerializationHelper {
 
     final static ILogger logger = Logger.getLogger(SerializationHelper.class.getName());
 
+    public static void writeNullableData(DataOutput out, Data data) throws IOException {
+        boolean NULL = data == null;
+        out.writeBoolean(NULL);
+        if (!NULL) {
+            data.writeData(out);
+        }
+    }
+
+    public static Data readNullableData(DataInput in) throws IOException {
+        boolean NULL = in.readBoolean();
+        Data data = null;
+        if (!NULL) {
+            data = new Data();
+            data.readData(in);
+        }
+        return data;
+    }
+
     public static void writeObject(DataOutput out, Object obj) throws IOException {
         if (obj == null) {
             out.writeByte(0);

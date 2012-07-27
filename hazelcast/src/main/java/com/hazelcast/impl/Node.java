@@ -28,6 +28,8 @@ import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.management.ManagementCenterService;
+import com.hazelcast.impl.map.MapService;
+import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.impl.wan.WanReplicationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -138,6 +140,8 @@ public class Node {
 
     public final SecurityContext securityContext;
 
+    public final NodeService nodeService;
+
     public Node(FactoryImpl factory, Config config) {
         this.id = counter.incrementAndGet();
         this.threadGroup = new ThreadGroup(factory.getName());
@@ -176,6 +180,8 @@ public class Node {
         executorManager = new ExecutorManager(this);
         clientHandlerService = new ClientHandlerService(this);
         concurrentMapManager = new ConcurrentMapManager(this);
+        nodeService = new NodeService(this);
+        nodeService.registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService, concurrentMapManager.partitionManager.getPartitions()));
         blockingQueueManager = new BlockingQueueManager(this);
         listenerManager = new ListenerManager(this);
         clientService = new ClientServiceImpl(concurrentMapManager);

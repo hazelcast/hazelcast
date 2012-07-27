@@ -31,12 +31,12 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
     public GetOperation() {
     }
 
-    public Object call() {
+    public void run() {
         OperationContext context = getOperationContext();
         MapService mapService = (MapService) context.getService();
         MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
         Record record = mapPartition.records.get(dataKey);
-        return record == null ? null : record.getValueData();
+        context.getResponseHandler().sendResponse(record == null ? null : record.getValueData());
     }
 
     @Override

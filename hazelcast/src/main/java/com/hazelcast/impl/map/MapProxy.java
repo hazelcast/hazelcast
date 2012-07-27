@@ -16,6 +16,9 @@
 
 package com.hazelcast.impl.map;
 
+import com.hazelcast.core.Transaction;
+import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.impl.TransactionImpl;
 import com.hazelcast.impl.spi.Invocation;
 import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.nio.Data;
@@ -37,7 +40,14 @@ public class MapProxy {
     public Object put(String name, Object k, Object v, long ttl) {
         Data key = toData(k);
         int partitionId = nodeService.getPartitionId(key);
-        PutOperation putOperation = new PutOperation(name, toData(k), v, ttl);
+        ThreadContext threadContext = ThreadContext.get();
+        TransactionImpl txn = threadContext.getTransaction();
+        String txnId = null;
+        if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+            txnId = txn.getTxnId();
+            txn.attachParticipant(MAP_SERVICE_NAME, partitionId);
+        }
+        PutOperation putOperation = new PutOperation(name, toData(k), v, txnId, ttl);
         try {
             Invocation invocation = nodeService.createSinglePartitionInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
             Future f = invocation.invoke();

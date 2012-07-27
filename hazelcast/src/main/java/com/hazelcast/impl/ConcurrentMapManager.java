@@ -22,8 +22,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.*;
 import com.hazelcast.impl.executor.ParallelExecutor;
-import com.hazelcast.impl.map.MapProxy;
-import com.hazelcast.impl.map.MapService;
 import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
@@ -31,7 +29,6 @@ import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
 import com.hazelcast.impl.partition.MigrationNotification;
 import com.hazelcast.impl.partition.MigrationRequestTask;
 import com.hazelcast.impl.partition.PartitionInfo;
-import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.impl.wan.WanMergeListener;
 import com.hazelcast.merge.MergePolicy;
 import com.hazelcast.nio.*;
@@ -73,7 +70,6 @@ public class ConcurrentMapManager extends BaseManager {
     final ParallelExecutor evictionExecutor;
     final RecordFactory recordFactory;
     final Collection<WanMergeListener> colWanMergeListeners = new CopyOnWriteArrayList<WanMergeListener>();
-    public final NodeService nodeService;
 
     ConcurrentMapManager(final Node node) {
         super(node);
@@ -159,8 +155,6 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(SEMAPHORE_REDUCE_PERMITS, new SemaphoreReduceOperationHandler());
         registerPacketProcessor(SEMAPHORE_RELEASE, new SemaphoreReleaseOperationHandler());
         registerPacketProcessor(SEMAPHORE_TRY_ACQUIRE, new SemaphoreTryAcquireOperationHandler());
-        nodeService = new NodeService(node);
-        nodeService.registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService, partitionManager.getPartitions()));
     }
 
     public PartitionServiceImpl getPartitionServiceImpl() {
@@ -389,7 +383,7 @@ public class ConcurrentMapManager extends BaseManager {
         final boolean shouldUnlock = localLock != null
                 && localLock.getThreadId() == tc.getThreadId();
         final boolean shouldRemove = shouldUnlock && localLock.getCount() == 1;
-        MPut mput = tc.getCallCache(node.factory).getMPut();
+        MPut mput = new MPut();
         if (shouldRemove) {
             mput.txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, -1, -1);
             // remove if current LocalLock is not changed
@@ -702,28 +696,6 @@ public class ConcurrentMapManager extends BaseManager {
         MPut mput = new MPut();
         mput.putTransient(name, key, value, timeout, ttl);
     }
-    // TODO: remove when safe!
-//    void putTransientAsync(Request request) {
-//        final MPut mput = new MPut();
-//        mput.request.setFromRequest(request);
-//        mput.request.timeout = 0;
-//        mput.request.ttl = -1;
-//        mput.request.local = true;
-//        mput.request.operation = CONCURRENT_MAP_PUT_TRANSIENT;
-//        mput.request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
-//        request.setBooleanRequest();
-//        final Data value = request.value;
-//        node.executorManager.executeNow(new Runnable() {
-//            public void run() {
-//                mput.doOp();
-//                boolean success = mput.getResultAsBoolean();
-//                if (success) {
-//                    mput.request.value = value;
-//                    mput.backup(CONCURRENT_MAP_BACKUP_PUT);
-//                }
-//            }
-//        });
-//    }
 
     // used by GetMapEntryLoader, GetOperationHandler, ContainsKeyOperationHandler
     // this method replaces 'putTransientAsync'
@@ -851,59 +823,6 @@ public class ConcurrentMapManager extends BaseManager {
             }
         }
         return results;
-    }
-
-    int size(String name) {
-//        while (true) {
-//            try {
-//                int size = trySize(name);
-//                TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
-//                if (txn != null) {
-//                    size += txn.size(name);
-//                }
-//                return size;
-//            } catch (Throwable e) {
-//                if (e instanceof MemberLeftException || e instanceof IllegalPartitionState) {
-//                    try {
-//                        Thread.sleep(redoWaitMillis);
-//                    } catch (InterruptedException e1) {
-//                        handleInterruptedException(true, CONCURRENT_MAP_SIZE);
-//                    }
-//                } else if (e instanceof InterruptedException) {
-//                    handleInterruptedException(true, CONCURRENT_MAP_SIZE);
-//                } else if (e instanceof RuntimeException) {
-//                    throw (RuntimeException) e;
-//                } else {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//        }
-        return new MapProxy(nodeService).getSize(name);
-    }
-
-    int trySize(String name) throws ExecutionException, InterruptedException {
-        int totalSize = 0;
-        Set<Member> members = node.getClusterImpl().getMembers();
-        List<Future<Integer>> lsFutures = new ArrayList<Future<Integer>>();
-        int expectedPartitionVersion = partitionManager.getVersion();
-        for (Member member : members) {
-            if (!member.isLiteMember()) {
-                MapSizeCallable callable = new MapSizeCallable(name, expectedPartitionVersion);
-                DistributedTask<Integer> dt = new DistributedTask<Integer>(callable, member);
-                lsFutures.add(dt);
-                node.factory.getExecutorService(BATCH_OPS_EXECUTOR_NAME).execute(dt);
-            }
-        }
-        for (Future<Integer> future : lsFutures) {
-            Integer partialSize = future.get();
-            if (partialSize != null) {
-                if (partialSize == -1) {
-                    throw new IllegalPartitionState("Unexpected partition version!");
-                }
-                totalSize += partialSize;
-            }
-        }
-        return totalSize;
     }
 
     Entries query(String name, ClusterOperation operation, Predicate predicate) {
@@ -2218,7 +2137,7 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            return size(name) == 0;
+            throw new UnsupportedOperationException();
         }
     }
 

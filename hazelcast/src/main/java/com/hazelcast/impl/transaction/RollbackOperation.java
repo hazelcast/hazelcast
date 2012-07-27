@@ -14,27 +14,44 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.map;
+package com.hazelcast.impl.transaction;
 
-import com.hazelcast.impl.spi.AbstractNamedOperation;
-import com.hazelcast.impl.spi.Operation;
+import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.impl.spi.ResponseHandler;
+import com.hazelcast.impl.spi.TransactionalService;
 
-public class MapSizeOperation extends AbstractNamedOperation implements Operation {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-    public MapSizeOperation(String name) {
-        super(name);
+public class RollbackOperation extends AbstractOperation {
+    String txnId = null;
+
+    public RollbackOperation(String txnId) {
+        this.txnId = txnId;
     }
 
-    public MapSizeOperation() {
+    public RollbackOperation() {
     }
 
     public void run() {
         OperationContext context = getOperationContext();
+        TransactionalService txnalService = (TransactionalService) context.getService();
+        txnalService.rollback(txnId, context.getPartitionId());
         ResponseHandler responseHandler = context.getResponseHandler();
-        MapService mapService = (MapService) context.getService();
-        MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
-        responseHandler.sendResponse(mapPartition.records.size());
+        responseHandler.sendResponse(null);
+    }
+
+    @Override
+    public void writeData(DataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeUTF(txnId);
+    }
+
+    @Override
+    public void readData(DataInput in) throws IOException {
+        super.readData(in);
+        txnId = in.readUTF();
     }
 }

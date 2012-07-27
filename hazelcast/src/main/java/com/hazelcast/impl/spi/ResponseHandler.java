@@ -16,9 +16,6 @@
 
 package com.hazelcast.impl.spi;
 
-import com.hazelcast.nio.DataSerializable;
-
-public interface Operation extends Runnable, DataSerializable {
-
-    OperationContext getOperationContext();
+public interface ResponseHandler {
+    void sendResponse(Object obj);
 }

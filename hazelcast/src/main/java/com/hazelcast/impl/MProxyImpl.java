@@ -473,7 +473,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
         public MProxyReal() {
             super();
-            mapProxy = new MapProxy(concurrentMapManager.nodeService);
+            mapProxy = new MapProxy(factory.node.nodeService);
         }
 
         @Override
@@ -554,7 +554,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
-            MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
+            MPut mput = concurrentMapManager.new MPut();
             mput.putForSync(name, key, value);
             mput.clearRequest();
             mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
@@ -563,7 +563,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         public void removeForSync(Object key) {
             long begin = Clock.currentTimeMillis();
             check(key);
-            MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
+            MRemove mremove = concurrentMapManager.new MRemove();
             mremove.removeForSync(name, key);
             mremove.clearRequest();
             mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
@@ -637,7 +637,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             }
             check(key);
             check(value);
-            MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
+            MPut mput = concurrentMapManager.new MPut();
             mput.set(name, key, value, ttl);
             mput.clearRequest();
             mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
@@ -651,7 +651,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             timeout = toMillis(timeout, timeunit);
             check(key);
             check(value);
-            MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
+            MPut mput = concurrentMapManager.new MPut();
             Boolean result = mput.tryPut(name, key, value, timeout, -1);
             mput.clearRequest();
             mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
@@ -778,7 +778,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         public Object remove(Object key) {
             long begin = Clock.currentTimeMillis();
             check(key);
-            MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
+            MRemove mremove = concurrentMapManager.new MRemove();
             Object result = mremove.remove(name, key, -1);
             mremove.clearRequest();
             mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
@@ -788,7 +788,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         public Object tryRemove(Object key, long timeout, TimeUnit timeunit) throws TimeoutException {
             long begin = Clock.currentTimeMillis();
             check(key);
-            MRemove mremove = ThreadContext.get().getCallCache(factory).getMRemove();
+            MRemove mremove = concurrentMapManager.new MRemove();
             Object result = mremove.tryRemove(name, key, toMillis(timeout, timeunit));
             mremove.clearRequest();
             mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
@@ -797,7 +797,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
         public int size() {
             mapOperationCounter.incrementOtherOperations();
-            return concurrentMapManager.size(name);
+            return mapProxy.getSize(name);
         }
 
         public int valueCount(Object key) {
@@ -1030,7 +1030,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
         public boolean evict(Object key) {
             mapOperationCounter.incrementOtherOperations();
-            MEvict mevict = ThreadContext.get().getCallCache(factory).getMEvict();
+            MEvict mevict = concurrentMapManager.new MEvict();
             boolean result = mevict.evict(name, key);
             mevict.clearRequest();
             return result;

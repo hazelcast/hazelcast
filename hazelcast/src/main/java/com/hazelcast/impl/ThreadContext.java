@@ -17,7 +17,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.impl.ConcurrentMapManager.MEvict;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Data;
@@ -142,10 +141,6 @@ public final class ThreadContext {
         return hic;
     }
 
-    public CallCache getCallCache(FactoryImpl factory) {
-        return getHazelcastInstanceThreadContext(factory).getCallCache();
-    }
-
     /**
      * Is this thread remote Java or CSharp Client thread?
      *
@@ -164,20 +159,12 @@ public final class ThreadContext {
     }
 
     class HazelcastInstanceThreadContext {
-        FactoryImpl factory;
-        CallCache callCache;
+        final FactoryImpl factory;
         volatile CallContext callContext = null;
 
         HazelcastInstanceThreadContext(FactoryImpl factory) {
             this.factory = factory;
             callContext = (new CallContext(createNewThreadId(), false));
-        }
-
-        public CallCache getCallCache() {
-            if (callCache == null) {
-                callCache = new CallCache(factory);
-            }
-            return callCache;
         }
 
         public FactoryImpl getFactory() {
@@ -190,45 +177,6 @@ public final class ThreadContext {
 
         public void setCallContext(CallContext callContext) {
             this.callContext = callContext;
-        }
-    }
-
-    class CallCache {
-        final FactoryImpl factory;
-        final ConcurrentMapManager.MPut mput;
-        final ConcurrentMapManager.MGet mget;
-        final ConcurrentMapManager.MRemove mremove;
-        final ConcurrentMapManager.MEvict mevict;
-
-        CallCache(FactoryImpl factory) {
-            this.factory = factory;
-            mput = factory.node.concurrentMapManager.new MPut();
-            mget = factory.node.concurrentMapManager.new MGet();
-            mremove = factory.node.concurrentMapManager.new MRemove();
-            mevict = factory.node.concurrentMapManager.new MEvict();
-        }
-
-        public ConcurrentMapManager.MPut getMPut() {
-            mput.reset();
-            mput.request.lastTime = System.nanoTime();
-            return mput;
-        }
-
-        public ConcurrentMapManager.MGet getMGet() {
-            mget.reset();
-            mget.request.lastTime = System.nanoTime();
-            return mget;
-        }
-
-        public ConcurrentMapManager.MRemove getMRemove() {
-            mremove.reset();
-            mremove.request.lastTime = System.nanoTime();
-            return mremove;
-        }
-
-        public MEvict getMEvict() {
-            mevict.reset();
-            return mevict;
         }
     }
 

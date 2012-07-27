@@ -20,12 +20,17 @@ import com.hazelcast.core.Instance;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.core.Transaction;
+import com.hazelcast.impl.spi.Operation;
+import com.hazelcast.impl.transaction.CommitOperation;
+import com.hazelcast.impl.transaction.PrepareOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
 import com.hazelcast.util.Clock;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -37,14 +42,51 @@ public class TransactionImpl implements Transaction {
     private final long id;
     private final FactoryImpl factory;
     private final List<TransactionRecord> transactionRecords = new CopyOnWriteArrayList<TransactionRecord>();
+    private final Set<TxnParticipant> participants = new HashSet<TxnParticipant>(1);
 
     private int status = TXN_STATUS_NO_TXN;
     private final ILogger logger;
+    private final String txnId = UUID.randomUUID().toString();
 
     public TransactionImpl(FactoryImpl factory, long txnId) {
         this.id = txnId;
         this.factory = factory;
         this.logger = factory.getLoggingService().getLogger(this.getClass().getName());
+    }
+
+    public String getTxnId() {
+        return txnId;
+    }
+
+    public void attachParticipant(String serviceName, int partitionId) {
+        participants.add(new TxnParticipant(serviceName, partitionId));
+    }
+
+    class TxnParticipant {
+        final String serviceName;
+        final int partitionId;
+
+        TxnParticipant(String serviceName, int partitionId) {
+            this.serviceName = serviceName;
+            this.partitionId = partitionId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TxnParticipant that = (TxnParticipant) o;
+            if (partitionId != that.partitionId) return false;
+            if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = serviceName != null ? serviceName.hashCode() : 0;
+            result = 31 * result + partitionId;
+            return result;
+        }
     }
 
     public Data attachPutOp(String name, Object key, Data value, boolean newRecord) {
@@ -112,6 +154,40 @@ public class TransactionImpl implements Transaction {
     }
 
     public void commit() throws IllegalStateException {
+        if (status != TXN_STATUS_ACTIVE) {
+            throw new IllegalStateException("Transaction is not active");
+        }
+        status = TXN_STATUS_COMMITTING;
+        try {
+            ThreadContext.get().setCurrentFactory(factory);
+            List<Future> futures = new ArrayList<Future>(participants.size());
+            futures = new ArrayList<Future>(participants.size());
+            for (TxnParticipant t : participants) {
+                Operation op = new PrepareOperation(txnId);
+                futures.add(factory.node.nodeService.createSinglePartitionInvocation(t.serviceName, op, t.partitionId).build().invoke());
+            }
+            for (Future future : futures) {
+                future.get(300, TimeUnit.SECONDS);
+            }
+            futures.clear();
+            for (TxnParticipant t : participants) {
+                Operation op = new CommitOperation(txnId);
+                futures.add(factory.node.nodeService.createSinglePartitionInvocation(t.serviceName, op, t.partitionId).build().invoke());
+            }
+            for (Future future : futures) {
+                future.get(300, TimeUnit.SECONDS);
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            finalizeTxn();
+            status = TXN_STATUS_COMMITTED;
+        }
+    }
+
+    public void commit2() throws IllegalStateException {
         if (status != TXN_STATUS_ACTIVE) {
             throw new IllegalStateException("Transaction is not active");
         }

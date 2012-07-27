@@ -17,19 +17,25 @@
 package com.hazelcast.impl.map;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.Record;
 import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.nio.Data;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class PartitionContainer {
     private final Node node;
+    private final MapService mapService;
     final PartitionInfo partitionInfo;
     final Map<String, MapPartition> maps = new HashMap<String, MapPartition>(100);
+    final Map<String, TransactionLog> transactions = new HashMap<String, TransactionLog>(100);
 
-    public PartitionContainer(Node node, PartitionInfo partitionInfo) {
+    public PartitionContainer(Node node, MapService mapService, PartitionInfo partitionInfo) {
         this.node = node;
+        this.mapService = mapService;
         this.partitionInfo = partitionInfo;
     }
 
@@ -44,5 +50,49 @@ public class PartitionContainer {
             maps.put(name, mapPartition);
         }
         return mapPartition;
+    }
+
+    public TransactionLog getTransactionLog(String txnId) {
+        return transactions.get(txnId);
+    }
+
+    public void addTransactionLogItem(String txnId, TransactionLogItem logItem) {
+        TransactionLog log = transactions.get(txnId);
+        if (log == null) {
+            log = new TransactionLog(txnId);
+            transactions.put(txnId, log);
+        }
+        log.addLogItem(logItem);
+    }
+
+    public void putTransactionLog(String txnId, TransactionLog txnLog) {
+        transactions.put(txnId, txnLog);
+    }
+
+    void rollback(String txnId) {
+        transactions.remove(txnId);
+    }
+
+    void commit(String txnId) {
+        TransactionLog txnLog = transactions.get(txnId);
+        if (txnLog == null) return;
+        for (TransactionLogItem txnLogItem : txnLog.changes.values()) {
+            System.out.println(mapService.getNodeService().getThisAddress() + " pc.commit " + txnLogItem);
+            MapPartition mapPartition = getMapPartition(txnLogItem.getName());
+            Data key = txnLogItem.getKey();
+            if (txnLogItem.isRemoved()) {
+                mapPartition.records.remove(key);
+            } else {
+                Record record = mapPartition.records.get(key);
+                if (record == null) {
+                    record = new DefaultRecord(null, mapPartition.partitionInfo.getPartitionId(), key, txnLogItem.getValue(), -1, -1, mapService.nextId());
+                    mapPartition.records.put(key, record);
+                } else {
+                    record.setValueData(txnLogItem.getValue());
+                }
+                record.setActive();
+                record.setDirty(true);
+            }
+        }
     }
 }

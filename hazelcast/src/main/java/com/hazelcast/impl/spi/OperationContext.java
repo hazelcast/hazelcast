@@ -21,6 +21,7 @@ import com.hazelcast.nio.Address;
 public class OperationContext {
     NodeService nodeService;
     Object service = null;
+    ResponseHandler responseHandler = null;
     Address caller = null;
     long callId = -1;
     boolean local = true;
@@ -42,6 +43,14 @@ public class OperationContext {
     public OperationContext setService(Object service) {
         this.service = service;
         return OperationContext.this;
+    }
+
+    public ResponseHandler getResponseHandler() {
+        return responseHandler;
+    }
+
+    public void setResponseHandler(ResponseHandler responseHandler) {
+        this.responseHandler = responseHandler;
     }
 
     public int getPartitionId() {

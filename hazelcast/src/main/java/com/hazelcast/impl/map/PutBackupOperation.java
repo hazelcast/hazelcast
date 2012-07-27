@@ -18,14 +18,14 @@ package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
-import com.hazelcast.impl.spi.NonBlockingOperation;
+import com.hazelcast.impl.spi.BackupOperation;
 import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.nio.Data;
 
-public class PutBackupOperation extends PutOperation implements NonBlockingOperation {
+public class PutBackupOperation extends PutOperation implements BackupOperation {
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
-        super(name, dataKey, dataValue, ttl);
+        super(name, dataKey, dataValue, null, ttl);
     }
 
     public PutBackupOperation() {
@@ -34,6 +34,7 @@ public class PutBackupOperation extends PutOperation implements NonBlockingOpera
     public Object call() {
         OperationContext context = getOperationContext();
         MapService mapService = (MapService) context.getService();
+        System.out.println(context.getNodeService().getThisAddress() + " backup " + txnId);
         MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
         Record record = mapPartition.records.get(dataKey);
         if (record == null) {

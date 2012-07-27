@@ -33,7 +33,7 @@ class SinglePartitionInvocation extends FutureTask implements Invocation, Callba
     protected volatile int invokeCount = 0;
 
     SinglePartitionInvocation(NodeService nodeService, String serviceName, Operation op, PartitionInfo partitionInfo, int replicaIndex, int tryCount, long tryPauseMillis) {
-        super(op);
+        super(op, null);
         this.nodeService = nodeService;
         this.serviceName = serviceName;
         this.op = op;
@@ -53,15 +53,6 @@ class SinglePartitionInvocation extends FutureTask implements Invocation, Callba
             }
         } else {
             setResult(result);
-        }
-    }
-
-    public void run() {
-        try {
-            Object result = op.call();
-            notify(result);
-        } catch (Throwable e) {
-            setResult(e);
         }
     }
 

@@ -16,9 +16,11 @@
 
 package com.hazelcast.impl.spi;
 
-import com.hazelcast.nio.DataSerializable;
+public interface TransactionalService {
 
-public interface Operation extends Runnable, DataSerializable {
+    void prepare(String txnId, int partitionId);
 
-    OperationContext getOperationContext();
+    void commit(String txnId, int partitionId);
+
+    void rollback(String txnId, int partitionId);
 }
