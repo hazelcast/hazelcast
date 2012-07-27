@@ -130,6 +130,7 @@ public class LifecycleServiceImpl implements LifecycleService {
             node.clientHandlerService.restart();
             node.connectionManager.onRestart();
             node.clusterImpl.onRestart();
+            node.partitionManager.onRestart();
             node.concurrentMapManager.onRestart();
             node.rejoin();
             final CountDownLatch latch = new CountDownLatch(lsOwnedRecords.size());

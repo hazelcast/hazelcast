@@ -122,18 +122,6 @@ public class PartitionManager {
         nodeService.registerService(PARTITION_SERVICE_NAME, this);
     }
 
-    public MigratingPartition getMigratingPartition() {
-        return migratingPartition;
-    }
-
-    public void addPartitionListener(PartitionListener partitionListener) {
-        lsPartitionListeners.add(partitionListener);
-    }
-
-    public PartitionInfo[] getPartitions() {
-        return partitions;
-    }
-
     public Address getOwner(int partitionId) {
 //        node.checkServiceThread();
         if (!initialized) {
@@ -151,7 +139,6 @@ public class PartitionManager {
 
     private void firstArrangement() {
 //        node.checkServiceThread();
-//        checkThreadAccess();
         if (!node.isMaster() || !node.isActive()) return;
         if (!hasStorageMember()) return;
         if (!initialized) {
@@ -210,24 +197,9 @@ public class PartitionManager {
 
     }
 
-    private PartitionStateGenerator getPartitionStateGenerator() {
-        return PartitionStateGeneratorFactory.newConfigPartitionStateGenerator(
-                node.getConfig().getPartitionGroupConfig());
-    }
-
     public Collection<ServiceMigrationOperation> collectMigrationTasks(final int partitionId, final int replicaIndex,
                                                                 final Address newAddress, boolean diffOnly) {
         final Address thisAddress = node.getThisAddress();
-//        node.clusterManager.enqueueAndWait(new Processable() {
-//            public void process() {
-//                addActiveMigration(partitionId, replicaIndex, thisAddress, newAddress);
-//            }
-//        });
-//        runImmediatelyAndWait(new Runnable() {
-//            public void run() {
-//                addActiveMigration(partitionId, replicaIndex, thisAddress, newAddress);
-//            }
-//        });
         addActiveMigration(partitionId, replicaIndex, thisAddress, newAddress);
         final Collection<MigrationAware> services = node.nodeService.getServices(MigrationAware.class);
         final Collection<ServiceMigrationOperation> tasks = new LinkedList<ServiceMigrationOperation>();
@@ -240,13 +212,8 @@ public class PartitionManager {
         return tasks;
     }
 
-    public void runMigrationTasks(Collection<ServiceMigrationOperation> tasks, final int partitionId, final int replicaIndex,
+    public boolean runMigrationTasks(Collection<ServiceMigrationOperation> tasks, final int partitionId, final int replicaIndex,
                                   final Address from) {
-//        runImmediatelyAndWait(new Runnable() {
-//            public void run() {
-//                addActiveMigration(partitionId, replicaIndex, from, node.getThisAddress());
-//            }
-//        });
         addActiveMigration(partitionId, replicaIndex, from, node.getThisAddress());
         boolean error = false;
         for (ServiceMigrationOperation task : tasks) {
@@ -267,6 +234,7 @@ public class PartitionManager {
                 task.onError();
             }
         }
+        return !error;
     }
 
     private void addActiveMigration(final MigratingPartition migrationRequestTask) {
@@ -277,7 +245,6 @@ public class PartitionManager {
     private void addActiveMigration(final int partitionId, final int replicaIndex,
                                     final Address currentAddress, final Address newAddress) {
 //        node.checkServiceThread();
-//        checkThreadAccess();
         lock.lock();
         try {
             final MigratingPartition currentMigratingPartition = migratingPartition;
@@ -298,7 +265,6 @@ public class PartitionManager {
     private void compareAndSetActiveMigratingPartition(final MigratingPartition expectedMigratingPartition,
                                                        final MigratingPartition newMigratingPartition) {
 //        node.checkServiceThread();
-//        checkThreadAccess();
         lock.lock();
         try {
             if (expectedMigratingPartition == null) {
@@ -311,47 +277,6 @@ public class PartitionManager {
         } finally {
             lock.unlock();
         }
-    }
-
-    public MemberImpl getMember(Address address) {
-        return node.clusterImpl.getMember(address);
-    }
-
-    public void reset() {
-        clearTaskQueues();
-        lock.lock();
-        try {
-            initialized = false;
-            migratingPartition = null;
-            for (PartitionInfo partition : partitions) {
-                for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
-                    partition.setReplicaAddress(i, null);
-                }
-            }
-            version.set(0);
-        } finally {
-            lock.unlock();
-        }
-
-    }
-
-    private void clearTaskQueues() {
-        immediateTasksQueue.clear();
-        scheduledTasksQueue.clear();
-    }
-
-    public void shutdown() {
-        logger.log(Level.FINEST, "Shutting down the partition manager");
-        migrationService.stopNow();
-    }
-
-    private boolean hasStorageMember() {
-        for (Member member : node.getClusterImpl().getMembers()) {
-            if (!member.isLiteMember()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public void syncForDead(final MemberImpl deadMember) {
@@ -436,8 +361,7 @@ public class PartitionManager {
                             if (target != null && !target.equals(owner)) {
                                 if (getMember(target) != null) {
                                     MigrationRequestOperation mrt = new MigrationRequestOperation(partitionId, owner,
-                                            target,
-                                            replicaIndex, false, true);
+                                            target, replicaIndex, false, true);
                                     immediateTasksQueue.offer(new Migrator(mrt));
                                     diffCount++;
                                 } else {
@@ -538,17 +462,7 @@ public class PartitionManager {
         }
     }
 
-    public int getVersion() {
-        return version.get();
-    }
-
-    // for testing purposes only
-    void forcePartitionOwnerMigration(int partitionId, int replicaIndex, Address from, Address to) {
-        MigrationRequestOperation mrt = new MigrationRequestOperation(partitionId, from, to, replicaIndex, true);
-        immediateTasksQueue.offer(new Migrator(mrt));
-    }
-
-    public void setPartitionRuntimeState(PartitionRuntimeState runtimeState) {
+    public void processPartitionRuntimeState(PartitionRuntimeState runtimeState) {
 //        node.checkServiceThread();
         lock.lock();
         try {
@@ -603,6 +517,40 @@ public class PartitionManager {
             lock.unlock();
         }
 
+    }
+
+    private PartitionStateGenerator getPartitionStateGenerator() {
+        return PartitionStateGeneratorFactory.newConfigPartitionStateGenerator(
+                node.getConfig().getPartitionGroupConfig());
+    }
+
+    private boolean hasStorageMember() {
+        for (Member member : node.getClusterImpl().getMembers()) {
+            if (!member.isLiteMember()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public MigratingPartition getMigratingPartition() {
+        return migratingPartition;
+    }
+
+    public void addPartitionListener(PartitionListener partitionListener) {
+        lsPartitionListeners.add(partitionListener);
+    }
+
+    public PartitionInfo[] getPartitions() {
+        return partitions;
+    }
+
+    public MemberImpl getMember(Address address) {
+        return node.clusterImpl.getMember(address);
+    }
+
+    public int getVersion() {
+        return version.get();
     }
 
     public boolean shouldPurge(int partitionId, int maxBackupCount) {
@@ -697,6 +645,7 @@ public class PartitionManager {
                 if (!scheduledTasksQueue.isEmpty() || !immediateTasksQueue.isEmpty()) {
                     logger.log(Level.INFO, "Remaining migration tasks in queue => Immediate-Tasks: " + immediateTasksQueue.size()
                                            + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
+                    System.err.println("====> " + immediateTasksQueue);
                 }
                 sendPartitionRuntimeState();
             }
@@ -781,8 +730,7 @@ public class PartitionManager {
         }
 
         public final void run() {
-            if (node.isMaster()
-                    && node.isActive() && initialized) {
+            if (node.isMaster() && node.isActive() && initialized) {
                 doRun();
             }
         }
@@ -1060,7 +1008,7 @@ public class PartitionManager {
         private boolean running = true;
 
         MigrationService(Node node) {
-            thread = new Thread(node.threadGroup, node.getThreadNamePrefix("MigrationThread"));
+            thread = new Thread(node.threadGroup, this, node.getThreadNamePrefix("MigrationThread"));
         }
 
         public void run() {
@@ -1105,7 +1053,7 @@ public class PartitionManager {
         }
 
         private boolean isActive() {
-            return migrationActive.get() && running;
+            return running && !thread.isInterrupted() && migrationActive.get();
         }
 
         private boolean safeRun(final Runnable r) {
@@ -1129,6 +1077,7 @@ public class PartitionManager {
         }
 
         private void stop() {
+            clearTaskQueues();
             try {
                 final CountDownLatch stopLatch = new CountDownLatch(1);
                 immediateTasksQueue.offer(new Runnable() {
@@ -1144,7 +1093,12 @@ public class PartitionManager {
 
         private void stopNow() {
             clearTaskQueues();
-            stop();
+//            stop();
+            immediateTasksQueue.offer(new Runnable() {
+                public void run() {
+                    running = false;
+                }
+            });
             thread.interrupt();
         }
 
@@ -1155,6 +1109,38 @@ public class PartitionManager {
                 throw new Error(msg);
             }
         }
+    }
+
+    public void reset() {
+        clearTaskQueues();
+        lock.lock();
+        try {
+            initialized = false;
+            migratingPartition = null;
+            for (PartitionInfo partition : partitions) {
+                for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
+                    partition.setReplicaAddress(i, null);
+                }
+            }
+            version.set(0);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void onRestart() {
+        reset();
+    }
+
+    public void shutdown() {
+        logger.log(Level.FINEST, "Shutting down the partition manager");
+        migrationService.stopNow();
+        reset();
+    }
+
+    private void clearTaskQueues() {
+        immediateTasksQueue.clear();
+        scheduledTasksQueue.clear();
     }
 
 //    private void checkThreadAccess() {
@@ -1192,6 +1178,12 @@ public class PartitionManager {
 //        }
 //        return true;
 //    }
+
+    // for testing purposes only
+    void forcePartitionOwnerMigration(int partitionId, int replicaIndex, Address from, Address to) {
+        MigrationRequestOperation mrt = new MigrationRequestOperation(partitionId, from, to, replicaIndex, true);
+        immediateTasksQueue.offer(new Migrator(mrt));
+    }
 
     @Override
     public String toString() {

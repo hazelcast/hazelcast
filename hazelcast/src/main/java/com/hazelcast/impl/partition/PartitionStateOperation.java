@@ -44,7 +44,7 @@ public class PartitionStateOperation extends AbstractOperation implements NonBlo
         Node node = getOperationContext().getNodeService().getNode();
         partitionState.setEndpoint(getOperationContext().getCaller());
         PartitionManager partitionManager = node.partitionManager;
-        partitionManager.setPartitionRuntimeState(partitionState);
+        partitionManager.processPartitionRuntimeState(partitionState);
         return null;
     }
 

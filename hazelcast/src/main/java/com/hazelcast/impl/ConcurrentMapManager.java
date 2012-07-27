@@ -62,7 +62,7 @@ public class ConcurrentMapManager extends BaseManager {
     final int MAX_BACKUP_COUNT;
     final long GLOBAL_REMOVE_DELAY_MILLIS;
     final boolean LOG_STATE;
-    long lastLogStateTime = currentTimeMillis();
+//    long lastLogStateTime = currentTimeMillis();
     final ConcurrentMap<String, CMap> maps;
     final ConcurrentMap<String, NearCache> mapCaches;
     final PartitionServiceImpl partitionServiceImpl;
@@ -197,7 +197,6 @@ public class ConcurrentMapManager extends BaseManager {
     public void onRestart() {
         enqueueAndWait(new Processable() {
             public void process() {
-                partitionManager.reset();
                 for (CMap cmap : maps.values()) {
                     // do not invalidate records,
                     // values will be invalidated after merge
@@ -210,7 +209,6 @@ public class ConcurrentMapManager extends BaseManager {
     public void reset() {
         maps.clear();
         mapCaches.clear();
-        partitionManager.reset();
     }
 
     public void shutdown() {
@@ -226,7 +224,6 @@ public class ConcurrentMapManager extends BaseManager {
             }
         }
         reset();
-        partitionManager.shutdown();
     }
 
     public void flush(String name) {

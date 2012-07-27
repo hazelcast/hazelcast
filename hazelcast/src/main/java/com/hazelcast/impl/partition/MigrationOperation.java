@@ -112,14 +112,13 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
 //                recordSet.addDataRecordEntry(r);
 //            }
             if (taskCount != tasks.size()) {
-                getLogger().log(Level.SEVERE, "Migration record count mismatch! => " +
+                getLogger().log(Level.SEVERE, "Migration task count mismatch! => " +
                                               "expected-count: " + size + ", actual-count: " + tasks.size() +
                                               "\nfrom: " + from + ", partition: " + partitionId
                                               + ", replica: " + replicaIndex);
             }
 //            pm.doMigrate(partitionId, replicaIndex, recordSet, from);
-            pm.runMigrationTasks(tasks, partitionId, replicaIndex, from);
-            return Boolean.TRUE;
+            return pm.runMigrationTasks(tasks, partitionId, replicaIndex, from);
         } catch (Throwable e) {
             Level level = Level.WARNING;
             if (e instanceof IllegalStateException) {

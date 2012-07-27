@@ -274,7 +274,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         }
         Set<Member> allMembers = node.getClusterImpl().getMembers();
         MultiTask task = new MultiTask(new DestroyEndpointThreadsCallable(node.getThisAddress(), threadIds), allMembers);
-        node.factory.getExecutorService().execute(task);
+        node.factory.getExecutorService("default").execute(task);
     }
 
     private void cancelRunningOperations() {

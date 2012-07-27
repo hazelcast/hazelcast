@@ -111,10 +111,15 @@ public class NodeIOService implements IOService {
         return node.groupProperties.REST_ENABLED.getBoolean();
     }
 
-    public void removeEndpoint(Address endPoint) {
-        AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
-        addOrRemoveConnection.setNode(node);
-        node.clusterImpl.enqueueAndReturn(addOrRemoveConnection);
+    public void removeEndpoint(final Address endPoint) {
+//        AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
+//        addOrRemoveConnection.setNode(node);
+//        node.clusterImpl.enqueueAndReturn(addOrRemoveConnection);
+        node.executorManager.executeNow(new Runnable() {
+            public void run() {
+                node.clusterImpl.removeAddress(endPoint);
+            }
+        });
     }
 
     public String getThreadPrefix() {

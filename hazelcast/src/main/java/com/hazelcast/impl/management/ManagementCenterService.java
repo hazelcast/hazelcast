@@ -51,6 +51,7 @@ import java.util.regex.Pattern;
 
 public class ManagementCenterService implements LifecycleListener, MembershipListener {
 
+    public static final String MANAGEMENT_EXECUTOR = "hz:management";
     private final FactoryImpl factory;
     private AtomicBoolean running = new AtomicBoolean(false);
     private final TaskPoller taskPoller;
@@ -139,7 +140,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             callable.setHazelcastInstance(factory);
             Set<Member> members = factory.getCluster().getMembers();
             MultiTask<Void> task = new MultiTask<Void>(callable, members);
-            ExecutorService executorService = factory.getExecutorService();
+            ExecutorService executorService = factory.getExecutorService(MANAGEMENT_EXECUTOR);
             executorService.execute(task);
         } catch (Throwable throwable) {
             logger.log(Level.WARNING, "New web server url cannot be assigned.", throwable);
@@ -154,7 +155,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if(member != null && factory.node.isMaster() && urlChanged) {
                 ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(webServerUrl);
                 FutureTask<Void> task = new DistributedTask<Void>(callable, member);
-                ExecutorService executorService = factory.getExecutorService();
+                ExecutorService executorService = factory.getExecutorService(MANAGEMENT_EXECUTOR);
                 executorService.execute(task);
             }
         } catch (Exception e) {
@@ -562,7 +563,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     private Object executeTaskAndGet(final DistributedTask task) {
         try {
-            factory.getExecutorService().execute(task);
+            factory.getExecutorService(MANAGEMENT_EXECUTOR).execute(task);
             try {
                 return task.get(3, TimeUnit.SECONDS);
             } catch (Throwable e) {

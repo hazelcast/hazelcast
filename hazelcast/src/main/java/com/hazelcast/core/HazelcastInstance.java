@@ -139,6 +139,11 @@ public interface HazelcastInstance {
     /**
      * Returns the distributed executor service for the given
      * name.
+     * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * on the Hazelcast cluster.
+     *
+     * <p><b>Note:</b> Note that it don't support invokeAll/Any
+     * and don't have standard shutdown behavior</p>
      *
      * @param name name of the executor service
      * @return executor service for the given name

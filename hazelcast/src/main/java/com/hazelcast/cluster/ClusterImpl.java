@@ -327,7 +327,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
             if (lsDeadAddresses != null) {
                 for (Address address : lsDeadAddresses) {
                     logger.log(Level.FINEST, "No heartbeat should remove " + address);
-                    doRemoveAddress(address);
+                    removeAddress(address);
                 }
             }
         } else {
@@ -340,7 +340,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
                 if (masterMember != null) {
                     if ((now - masterMember.getLastRead()) >= (maxNoHeartbeatMillis)) {
                         logger.log(Level.WARNING, "Master node has timed out its heartbeat and will be removed");
-                        doRemoveAddress(masterAddress);
+                        removeAddress(masterAddress);
                         removed = true;
                     } else if ((now - masterMember.getLastRead()) >= 5000 && (now - masterMember.getLastPing()) >= 5000) {
                         ping(masterMember);
@@ -387,7 +387,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
                     // not reachable.
 //                    enqueueAndReturn(new Processable() {
 //                        public void process() {
-                            doRemoveAddress(address);
+                            removeAddress(address);
 //                        }
 //                    });
                 } catch (Throwable ignored) {
@@ -427,12 +427,12 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         } else { // Remove dead member
             if (connection.address != null) {
                 logger.log(Level.FINEST, "Disconnected from " + connection.address + "... will be removed!");
-                doRemoveAddress(connection.address);
+                removeAddress(connection.address);
             }
         } // end of REMOVE CONNECTION
     }
 
-    void doRemoveAddress(Address deadAddress) {
+    public void removeAddress(Address deadAddress) {
         doRemoveAddress(deadAddress, true);
     }
 
@@ -584,8 +584,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
                             startJoin();
                         } else {
                             if (setJoins.add(newMemberInfo)) {
-                                // TODO: send master
-                                //                            sendProcessableTo(new Master(node.getMasterAddress()), conn);
+                        //                            sendProcessableTo(new Master(node.getMasterAddress()), conn);
                                 sendMaster(joinRequest);
                                 if (firstJoinRequest == 0) {
                                     firstJoinRequest = now;
@@ -635,21 +634,6 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
 //        sendProcessableTo(new AuthenticationFailureProcessable(), conn);
         node.nodeService.createSingleInvocation(SERVICE_NAME, new AuthenticationFailureOperation(), -1)
                 .setTarget(target).setTryCount(1).build().invoke();
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("\n\nMembers [");
-//        sb.append(lsMembers.size());
-        final Collection<MemberImpl> members = getMemberList();
-        sb.append(members.size());
-        sb.append("] {");
-//        for (MemberImpl member : lsMembers) {
-        for (MemberImpl member : members) {
-            sb.append("\n\t").append(member);
-        }
-        sb.append("\n}\n");
-        return sb.toString();
     }
 
     private void joinReset() {
@@ -1165,24 +1149,30 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
     }
 
     public void stop() {
-        if (setJoins != null) {
-            setJoins.clear();
+        lock.lock();
+        try {
+            if (setJoins != null) {
+                setJoins.clear();
+            }
+            timeToStartJoin = 0;
+            //        if (lsMembers != null) {
+            //            lsMembers.clear();
+            //        }
+            membersRef.set(null);
+            dataMemberCount.set(0);
+            //        if (mapMembers != null) {
+            //            mapMembers.clear();
+            //        }
+            //        if (lsMembersBefore != null) {
+            //            lsMembersBefore.clear();
+            //        }
+            if (mapCalls != null) {
+                mapCalls.clear();
+            }
+        } finally {
+            lock.unlock();
         }
-        timeToStartJoin = 0;
-//        if (lsMembers != null) {
-//            lsMembers.clear();
-//        }
-        membersRef.set(null);
-        dataMemberCount.set(0);
-//        if (mapMembers != null) {
-//            mapMembers.clear();
-//        }
-//        if (lsMembersBefore != null) {
-//            lsMembersBefore.clear();
-//        }
-        if (mapCalls != null) {
-            mapCalls.clear();
-        }
+
     }
 
     public Member getLocalMember() {
@@ -1220,5 +1210,20 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
 
     public void removeMembershipListener(MembershipListener listener) {
         listeners.remove(listener);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("\n\nMembers [");
+//        sb.append(lsMembers.size());
+        final Collection<MemberImpl> members = getMemberList();
+        sb.append(members.size());
+        sb.append("] {");
+//        for (MemberImpl member : lsMembers) {
+        for (Member member : members) {
+            sb.append("\n\t").append(member);
+        }
+        sb.append("\n}\n");
+        return sb.toString();
     }
 }

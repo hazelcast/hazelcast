@@ -40,9 +40,9 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public class NodeService {
 
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private final ExecutorService executorService; //= Executors.newCachedThreadPool();
     private final Workers nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
-    private final Workers blockingWorkers = new Workers("hz.Blocking", 8); // TODO: thread group!
+    private final Workers blockingWorkers = new Workers("hz.Blocking", 8);
     private final Node node;
     private final ILogger logger;
     final int partitionCount;
@@ -50,13 +50,10 @@ public class NodeService {
 
     public NodeService(Node node) {
         this.node = node;
+        this.executorService = node.executorManager.getThreadPoolExecutor();
         this.logger = node.getLogger(NodeService.class.getName());
         this.partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         this.maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
-    }
-
-    public final int getPartitionId(Data key) {
-        return node.concurrentMapManager.getPartitionId(key);
     }
 
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception {
@@ -105,10 +102,6 @@ public class NodeService {
             partitionResults.put(failedPartition, result);
         }
         return partitionResults;
-    }
-
-    public Member getOwner(int partitionId) {
-        return node.concurrentMapManager.getPartitionServiceImpl().getPartition(partitionId).getOwner();
     }
 
     private Map<Member, ArrayList<Integer>> getMemberPartitions() {
@@ -263,18 +256,12 @@ public class NodeService {
         return context;
     }
 
-    public Node getNode() {
-        return node;
-    }
-
-    public <T> Collection<T> getServices(final Class<T> type) {
-        final Collection<T> result = new LinkedList<T>();
-        for (Object service : services.values()) {
-            if (type.isAssignableFrom(service.getClass())) {
-                result.add((T) service);
-            }
+    private ExecutorService getExecutor(int partitionId, boolean nonBlocking) {
+        if (partitionId > -1) {
+            return (nonBlocking) ? nonBlockingWorkers.getExecutor(partitionId) : blockingWorkers.getExecutor(partitionId);
+        } else {
+            return executorService;
         }
-        return result;
     }
 
     class Workers {
@@ -333,12 +320,33 @@ public class NodeService {
         }
     }
 
+    public void notifyCall(long callId, Response response) {
+        TheCall call = (TheCall) node.concurrentMapManager.removeRemoteCall(callId);
+        if (call != null) {
+            call.offerResponse(response);
+        }
+    }
+
     public void registerService(String serviceName, Object obj) {
         services.put(serviceName, obj);
     }
 
-    public Object getService(String serviceName) {
-        return services.get(serviceName);
+    public <T> T getService(String serviceName) {
+        return (T) services.get(serviceName);
+    }
+
+    public <T> Collection<T> getServices(final Class<T> type) {
+        final Collection<T> result = new LinkedList<T>();
+        for (Object service : services.values()) {
+            if (type.isAssignableFrom(service.getClass())) {
+                result.add((T) service);
+            }
+        }
+        return result;
+    }
+
+    public Node getNode() {
+        return node;
     }
 
     public ClusterImpl getClusterImpl() {
@@ -349,23 +357,16 @@ public class NodeService {
         return node.getThisAddress();
     }
 
-    public void notifyCall(long callId, Response response) {
-        TheCall call = (TheCall) node.concurrentMapManager.removeRemoteCall(callId);
-        if (call != null) {
-            call.offerResponse(response);
-        }
+    public Member getOwner(int partitionId) {
+        return node.concurrentMapManager.getPartitionServiceImpl().getPartition(partitionId).getOwner();
+    }
+
+    public final int getPartitionId(Data key) {
+        return node.concurrentMapManager.getPartitionId(key);
     }
 
     public PartitionInfo getPartitionInfo(int partitionId) {
         return node.concurrentMapManager.getPartitionInfo(partitionId);
-    }
-
-    private ExecutorService getExecutor(int partitionId, boolean nonBlocking) {
-        if (partitionId > -1) {
-            return (nonBlocking) ? nonBlockingWorkers.getExecutor(partitionId) : blockingWorkers.getExecutor(partitionId);
-        } else {
-            return executorService;
-        }
     }
 
     public int getPartitionCount() {

@@ -170,13 +170,13 @@ public class Node {
             Util.throwUncheckedException(e);
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
+        executorManager = new ExecutorManager(this);
         nodeService = new NodeService(this);
         //initialize managers..
         baseVariables = new NodeBaseVariables(/*address, localMember*/);
         clusterService = new ClusterService(this);
         clusterService.start();
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
-        executorManager = new ExecutorManager(this);
         clusterImpl = new ClusterImpl(this);
         partitionManager = new PartitionManager(this);
         clientHandlerService = new ClientHandlerService(this);
@@ -330,9 +330,46 @@ public class Node {
     public void cleanupServiceThread() {
         clusterImpl.checkServiceThread();
         baseVariables.qServiceThreadPacketCache.clear();
+        partitionManager.reset();
         concurrentMapManager.reset();
         logger.log(Level.FINEST, "Shutting down the cluster manager");
         clusterImpl.stop();
+    }
+
+    public void start() {
+        logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
+        if (completelyShutdown) return;
+        serviceThread = clusterService.getServiceThread();
+//        serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
+        logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
+        serviceThread.start();
+        connectionManager.start();
+        if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
+            final Thread multicastServiceThread = new Thread(threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
+            multicastServiceThread.start();
+        }
+        setActive(true);
+        if (!completelyShutdown) {
+            logger.log(Level.FINEST, "Adding ShutdownHook");
+            Runtime.getRuntime().addShutdownHook(shutdownHookThread);
+        }
+        logger.log(Level.FINEST, "finished starting threads, calling join");
+        join();
+        int clusterSize = clusterImpl.getSize();
+        if (config.isPortAutoIncrement() && address.getPort() >= config.getPort() + clusterSize) {
+            StringBuilder sb = new StringBuilder("Config seed port is ");
+            sb.append(config.getPort());
+            sb.append(" and cluster size is ");
+            sb.append(clusterSize);
+            sb.append(". Some of the ports seem occupied!");
+            logger.log(Level.WARNING, sb.toString());
+        }
+        try {
+            managementCenterService = new ManagementCenterService(factory);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "ManagementCenterService could not be constructed!", e);
+        }
+        initializer.afterInitialize(this);
     }
 
     public void shutdown(final boolean force, final boolean now) {
@@ -388,6 +425,8 @@ public class Node {
             }
             logger.log(Level.FINEST, "Shutting down the clientHandlerService");
             clientHandlerService.shutdown();
+            logger.log(Level.FINEST, "Shutting down the partitionManager");
+            partitionManager.shutdown();
             logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
             concurrentMapManager.shutdown();
             logger.log(Level.FINEST, "Shutting down the cluster service");
@@ -420,42 +459,6 @@ public class Node {
             ThreadContext.get().shutdown(this.factory);
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
-    }
-
-    public void start() {
-        logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
-        if (completelyShutdown) return;
-        serviceThread = clusterService.getServiceThread();
-//        serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
-        logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
-//        serviceThread.start();
-        connectionManager.start();
-        if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-            final Thread multicastServiceThread = new Thread(threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
-            multicastServiceThread.start();
-        }
-        setActive(true);
-        if (!completelyShutdown) {
-            logger.log(Level.FINEST, "Adding ShutdownHook");
-            Runtime.getRuntime().addShutdownHook(shutdownHookThread);
-        }
-        logger.log(Level.FINEST, "finished starting threads, calling join");
-        join();
-        int clusterSize = clusterImpl.getSize();
-        if (config.isPortAutoIncrement() && address.getPort() >= config.getPort() + clusterSize) {
-            StringBuilder sb = new StringBuilder("Config seed port is ");
-            sb.append(config.getPort());
-            sb.append(" and cluster size is ");
-            sb.append(clusterSize);
-            sb.append(". Some of the ports seem occupied!");
-            logger.log(Level.WARNING, sb.toString());
-        }
-        try {
-            managementCenterService = new ManagementCenterService(factory);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "ManagementCenterService could not be constructed!", e);
-        }
-        initializer.afterInitialize(this);
     }
 
     public void onRestart() {

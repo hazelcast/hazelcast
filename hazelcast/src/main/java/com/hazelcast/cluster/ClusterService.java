@@ -115,12 +115,12 @@ public final class ClusterService implements Runnable, Constants {
             }
         }
         System.err.println(packet);
+        new Throwable("!!! DO NOT USE SERVICE THREAD !!!").printStackTrace();
         packetQueue.offer(packet);
         unpark();
     }
 
     public boolean enqueueAndWait(final Processable processable, final int seconds) {
-        System.err.println("processable = " + processable);
         try {
             final CountDownLatch l = new CountDownLatch(1);
             enqueueAndReturn(new Processable() {
@@ -137,7 +137,6 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void enqueueAndWait(final Processable processable) {
-        System.err.println("processable = " + processable);
         try {
             final CountDownLatch l = new CountDownLatch(1);
             enqueueAndReturn(new Processable() {
@@ -154,6 +153,7 @@ public final class ClusterService implements Runnable, Constants {
 
     public void enqueueAndReturn(Processable processable) {
         System.err.println("processable = " + processable);
+        new Throwable("!!! DO NOT USE SERVICE THREAD !!!").printStackTrace();
         processableQueue.offer(processable);
         unpark();
     }
