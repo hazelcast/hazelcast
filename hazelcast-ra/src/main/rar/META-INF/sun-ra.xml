@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sun-connector PUBLIC "-//Sun Microsystems, Inc.//DTD Sun ONE Application Server 7.0 Connector 1.0//EN" "http://www.sun.com/software/sunone/appserver/dtds/sun-connector_1_0-0.dtd">
 <sun-connector>
     <resource-adapter
             jndi-name="HazelcastCF" max-pool-size="20"

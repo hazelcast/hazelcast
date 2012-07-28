@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE weblogic-connection-factory-dd PUBLIC 
+	"-//BEA Systems, Inc.//DTD WebLogic 8.1.0 Connector//EN" "http://www.bea.com/servers/wls810/dtd/weblogic810-ra.dtd">
 <weblogic-connector xmlns="http://www.bea.com/ns/weblogic/90">
 	<jndi-name>HazelcastResource</jndi-name>
 	<enable-access-outside-app>true</enable-access-outside-app>
