@@ -20,19 +20,22 @@ import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.CMap.InitializationState;
 import com.hazelcast.impl.base.HazelcastManagedContext;
-import com.hazelcast.core.ManagedContext;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.SerializerRegistry;
+import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.util.ResponseQueueFactory;
+import com.hazelcast.util.Util;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -77,6 +80,8 @@ public class FactoryImpl implements HazelcastInstance {
     final LifecycleServiceImpl lifecycleService;
 
     final ManagedContext managedContext ;
+
+    final SerializerRegistry serializerRegistry = new SerializerRegistry();
 
     public final Node node;
 
@@ -128,11 +133,11 @@ public class FactoryImpl implements HazelcastInstance {
                     Thread.sleep(initialWaitSeconds * 1000);
                     if (firstMember) {
                         final ConcurrentMapManager concurrentMapManager = factory.node.concurrentMapManager;
-                        concurrentMapManager.enqueueAndReturn(new Processable() {
-                            public void process() {
-                                concurrentMapManager.partitionManager.firstArrangement();
-                            }
-                        });
+//                        concurrentMapManager.enqueueAndReturn(new Processable() {
+//                            public void process() {
+//                                concurrentMapManager.partitionManager.firstArrangement();
+//                            }
+//                        });
                     } else {
                         Thread.sleep(4 * 1000);
                     }
@@ -150,11 +155,11 @@ public class FactoryImpl implements HazelcastInstance {
             if (initialMinClusterSize > 0) {
                 if (firstMember) {
                     final ConcurrentMapManager concurrentMapManager = factory.node.concurrentMapManager;
-                    concurrentMapManager.enqueueAndReturn(new Processable() {
-                        public void process() {
-                            concurrentMapManager.partitionManager.firstArrangement();
-                        }
-                    });
+//                    concurrentMapManager.enqueueAndReturn(new Processable() {
+//                        public void process() {
+//                            concurrentMapManager.partitionManager.firstArrangement();
+//                        }
+//                    });
                 } else {
                     Thread.sleep(4 * 1000);
                 }
@@ -302,6 +307,14 @@ public class FactoryImpl implements HazelcastInstance {
             return hazelcastInstance.getLifecycleService();
         }
 
+        public void registerGlobalSerializer(final TypeSerializer serializer) {
+            hazelcastInstance.registerGlobalSerializer(serializer);
+        }
+
+        public void registerSerializer(final TypeSerializer serializer, final Class type) {
+            hazelcastInstance.registerSerializer(serializer, type);
+        }
+
         public boolean equals(Object obj) {
             if (obj == null) {
                 return false;
@@ -335,8 +348,7 @@ public class FactoryImpl implements HazelcastInstance {
         ThreadContext.shutdownAll();
     }
 
-    public static void kill(HazelcastInstanceProxy hazelcastInstanceProxy) {
-        FactoryImpl factory = hazelcastInstanceProxy.getFactory();
+    public static void kill(FactoryImpl factory) {
         factory.managementService.unregister();
         factories.remove(factory.getName());
         if (factories.size() == 0) {
@@ -349,8 +361,7 @@ public class FactoryImpl implements HazelcastInstance {
         factory.node.shutdown(true, true);
     }
 
-    public static void shutdown(HazelcastInstanceProxy hazelcastInstanceProxy) {
-        FactoryImpl factory = hazelcastInstanceProxy.getFactory();
+    public static void shutdown(FactoryImpl factory) {
         factory.managementService.unregister();
         factories.remove(factory.getName());
         if (factories.size() == 0) {
@@ -361,15 +372,17 @@ public class FactoryImpl implements HazelcastInstance {
         for (ExecutorService esp : factory.executorServiceProxies.values()) {
             esp.shutdown();
         }
+        factory.serializerRegistry.destroy();
     }
 
     private static void shutdownManagementService() {
         ManagementService.shutdown();
     }
 
-    public FactoryImpl(String name, Config config) {
+    public FactoryImpl(String name, Config config) throws Exception {
         this.name = name;
         lifecycleService = new LifecycleServiceImpl(FactoryImpl.this);
+        registerConfigSerializers(config);
         managedContext = new HazelcastManagedContext(this, config.getManagedContext());
         node = new Node(this, config);
         lifecycleService.fireLifecycleEvent(STARTING);
@@ -379,6 +392,7 @@ public class FactoryImpl implements HazelcastInstance {
         locksMapProxy = proxyFactory.createMapProxy(Prefix.LOCKS_MAP_HAZELCAST);
         node.start();
         if (!node.isActive()) {
+            node.connectionManager.shutdown();
             throw new IllegalStateException("Node failed to start!");
         }
 
@@ -392,22 +406,22 @@ public class FactoryImpl implements HazelcastInstance {
                 }
             }
             if (target != null) {
-                DistributedTask task = new DistributedTask(new GetAllProxyKeysCallable(), target);
-                Future f = getExecutorService().submit(task);
-                try {
-                    final Set<ProxyKey> proxyKeys = (Set<ProxyKey>) f.get(10, TimeUnit.SECONDS);
-                    for (final ProxyKey proxyKey : proxyKeys) {
-                        if (!proxies.containsKey(proxyKey)) {
-                            node.clusterService.enqueueAndReturn(new Processable() {
-                                public void process() {
-                                    createProxy(proxyKey);
-                                }
-                            });
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
-                }
+//                DistributedTask task = new DistributedTask(new GetAllProxyKeysCallable(), target);
+//                Future f = getExecutorService().submit(task);
+//                try {
+//                    final Set<ProxyKey> proxyKeys = (Set<ProxyKey>) f.get(10, TimeUnit.SECONDS);
+//                    for (final ProxyKey proxyKey : proxyKeys) {
+//                        if (!proxies.containsKey(proxyKey)) {
+//                            node.clusterService.enqueueAndReturn(new Processable() {
+//                                public void process() {
+//                                    createProxy(proxyKey);
+//                                }
+//                            });
+//                        }
+//                    }
+//                } catch (Exception e) {
+//                    logger.log(Level.WARNING, e.getMessage(), e);
+//                }
             }
         }
         managementService = new ManagementService(this);
@@ -542,7 +556,7 @@ public class FactoryImpl implements HazelcastInstance {
         if (proxy == null) {
             proxy = getOrCreateProxy(new ProxyKey(name, null));
         }
-        checkInitialization(proxy);
+//        checkInitialization(proxy);
         return proxy;
     }
 
@@ -718,7 +732,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     // should only be called from service thread!!
     public Object createProxy(ProxyKey proxyKey) {
-        node.clusterManager.checkServiceThread();
+//        node.clusterManager.checkServiceThread();
         boolean created = false;
         HazelcastInstanceAwareInstance proxy = proxies.get(proxyKey);
         if (proxy == null) {
@@ -732,7 +746,7 @@ public class FactoryImpl implements HazelcastInstance {
                 node.topicManager.getTopicInstance(name);
             } else if (name.startsWith(Prefix.MAP)) {
                 proxy = proxyFactory.createMapProxy(name);
-                node.concurrentMapManager.getOrCreateMap(name);
+//                node.concurrentMapManager.getOrCreateMap(name);
             } else if (name.startsWith(Prefix.AS_LIST)) {
                 proxy = proxyFactory.createListProxy(name);
             } else if (name.startsWith(Prefix.MULTIMAP)) {
@@ -775,6 +789,35 @@ public class FactoryImpl implements HazelcastInstance {
         lsInstanceListeners.remove(instanceListener);
     }
 
+    public void registerGlobalSerializer(final TypeSerializer serializer) {
+        serializerRegistry.registerGlobal(serializer);
+    }
+
+    public void registerSerializer(final TypeSerializer serializer, final Class type) {
+        serializerRegistry.register(serializer, type);
+    }
+
+    private void registerConfigSerializers(Config config) throws Exception {
+        final Collection<SerializerConfig> serializerConfigs = config.getSerializerConfigs();
+        if (serializerConfigs != null) {
+            for (SerializerConfig serializerConfig : serializerConfigs) {
+                TypeSerializer factory = serializerConfig.getImplementation();
+                if (factory == null) {
+                    factory = (TypeSerializer) ClassLoaderUtil.newInstance(serializerConfig.getClassName());
+                }
+                if (serializerConfig.isGlobal()) {
+                    serializerRegistry.registerGlobal(factory);
+                } else {
+                    Class typeClass = serializerConfig.getTypeClass();
+                    if (typeClass == null) {
+                        typeClass = ClassLoaderUtil.loadClass(serializerConfig.getTypeClassName()) ;
+                    }
+                    serializerRegistry.register(factory, typeClass);
+                }
+            }
+        }
+    }
+
     void fireInstanceCreateEvent(Instance instance) {
         if (lsInstanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.CREATED, instance);
@@ -802,22 +845,23 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     Object createInstanceClusterWide(final ProxyKey proxyKey) {
-        final BlockingQueue<Object> result = ResponseQueueFactory.newResponseQueue();
-        node.clusterService.enqueueAndWait(new Processable() {
-            public void process() {
-                try {
-                    result.put(createProxy(proxyKey));
-                } catch (InterruptedException ignored) {
-                }
-            }
-        }, 10);
-        Object proxy = null;
-        try {
-            proxy = result.take();
-        } catch (InterruptedException e) {
-        }
-        node.clusterManager.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, true), false);
-        return proxy;
+//        final BlockingQueue<Object> result = ResponseQueueFactory.newResponseQueue();
+//        node.clusterService.enqueueAndWait(new Processable() {
+//            public void process() {
+//                try {
+//                    result.put(createProxy(proxyKey));
+//                } catch (InterruptedException ignored) {
+//                }
+//            }
+//        }, 10);
+//        Object proxy = null;
+//        try {
+//            proxy = result.take();
+//        } catch (InterruptedException e) {
+//        }
+//        node.clusterManager.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, true), false);
+//        return proxy;
+        return createProxy(proxyKey);
     }
 
     void destroyInstanceClusterWide(String name, Object key) {
@@ -826,7 +870,7 @@ public class FactoryImpl implements HazelcastInstance {
             if (name.equals("lock")) {
                 locksMapProxy.remove(key);
             }
-            node.clusterManager.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, false), true);
+            node.clusterImpl.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, false), true);
         } else {
             logger.log(Level.WARNING, "Destroying unknown instance name: " + name);
         }
@@ -866,7 +910,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static class ProxyKey extends SerializationHelper implements DataSerializable {
+    public static class ProxyKey implements DataSerializable {
         String name;
         Object key;
 
@@ -880,19 +924,12 @@ public class FactoryImpl implements HazelcastInstance {
 
         public void writeData(DataOutput out) throws IOException {
             out.writeUTF(name);
-            boolean keyNull = (key == null);
-            out.writeBoolean(keyNull);
-            if (!keyNull) {
-                writeObject(out, key);
-            }
+            IOUtil.writeObject(out, key);
         }
 
         public void readData(DataInput in) throws IOException {
             name = in.readUTF();
-            boolean keyNull = in.readBoolean();
-            if (!keyNull) {
-                key = readObject(in);
-            }
+            key = IOUtil.readObject(in);
         }
 
         @Override
@@ -925,10 +962,17 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static class GetAllProxyKeysCallable extends HazelcastInstanceAwareObject implements Callable<Set<ProxyKey>> {
+    public static class GetAllProxyKeysCallable extends HazelcastInstanceAwareObject
+            implements Callable<Set<ProxyKey>>, DataSerializable {
         public Set<ProxyKey> call() throws Exception {
             final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
             return new HashSet<ProxyKey>(factory.proxies.keySet());
+        }
+
+        public void readData(final DataInput in) throws IOException {
+        }
+
+        public void writeData(final DataOutput out) throws IOException {
         }
     }
 }

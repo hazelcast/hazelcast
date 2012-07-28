@@ -16,58 +16,17 @@
 
 package com.hazelcast.impl.spi;
 
-import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.nio.Address;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
+class SinglePartitionInvocation extends SingleInvocation {
 
-class SinglePartitionInvocation extends FutureTask implements Invocation, Callback {
-    protected final NodeService nodeService;
-    protected final String serviceName;
-    protected final Operation op;
-    protected final PartitionInfo partitionInfo;
-    protected int replicaIndex = 0;
-    protected int tryCount = 100;
-    protected long tryPauseMillis = 500;
-    protected volatile int invokeCount = 0;
-
-    SinglePartitionInvocation(NodeService nodeService, String serviceName, Operation op, PartitionInfo partitionInfo, int replicaIndex, int tryCount, long tryPauseMillis) {
-        super(op, null);
-        this.nodeService = nodeService;
-        this.serviceName = serviceName;
-        this.op = op;
-        this.partitionInfo = partitionInfo;
-        this.replicaIndex = replicaIndex;
-        this.tryCount = tryCount;
-        this.tryPauseMillis = tryPauseMillis;
-    }
-
-    public void notify(Object result) {
-        if (result instanceof Response) {
-            Response response = (Response) result;
-            if (response.isException()) {
-                setResult(response.getResult());
-            } else {
-                setResult(response.getResultData());
-            }
-        } else {
-            setResult(result);
-        }
+    SinglePartitionInvocation(NodeService nodeService, String serviceName, Operation op, int partitionId,
+                              int replicaIndex, int tryCount, long tryPauseMillis) {
+        super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
     }
 
     Address getTarget() {
-        return partitionInfo.getReplicaAddress(replicaIndex);
-    }
-
-    public Future invoke() {
-        try {
-            invokeCount++;
-            nodeService.invokeOnSinglePartition(SinglePartitionInvocation.this);
-        } catch (Exception e) {
-            setResult(e);
-        }
-        return this;
+        return getPartitionInfo().getReplicaAddress(replicaIndex);
     }
 
     void setResult(Object obj) {
@@ -91,31 +50,4 @@ class SinglePartitionInvocation extends FutureTask implements Invocation, Callba
         }
     }
 
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public Operation getOperation() {
-        return op;
-    }
-
-    public PartitionInfo getPartitionInfo() {
-        return partitionInfo;
-    }
-
-    public int getReplicaIndex() {
-        return replicaIndex;
-    }
-
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean isCancelled() {
-        return false;
-    }
-
-    public int getPartitionId() {
-        return partitionInfo.getPartitionId();
-    }
 }

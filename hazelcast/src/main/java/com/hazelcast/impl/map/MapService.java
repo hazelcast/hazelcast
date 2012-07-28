@@ -17,22 +17,25 @@
 package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.partition.PartitionInfo;
-import com.hazelcast.impl.spi.NodeService;
-import com.hazelcast.impl.spi.TransactionException;
-import com.hazelcast.impl.spi.TransactionalService;
+import com.hazelcast.impl.spi.*;
+import com.hazelcast.nio.Address;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class MapService implements TransactionalService {
-    public final static String MAP_SERVICE_NAME = "mapService";
+public class MapService implements ServiceLifecycle, TransactionalService {
+    public final static String MAP_SERVICE_NAME = "hz:mapService";
 
     private final AtomicLong counter = new AtomicLong();
     private final PartitionContainer[] partitionContainers;
     private final NodeService nodeService;
 
-    public MapService(NodeService nodeService, PartitionInfo[] partitions) {
+    public MapService(final NodeService nodeService, PartitionInfo[] partitions) {
         this.nodeService = nodeService;
-        int partitionCount = nodeService.getNode().groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
+        int partitionCount = nodeService.getPartitionCount();
         partitionContainers = new PartitionContainer[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
             partitionContainers[i] = new PartitionContainer(nodeService.getNode(), this, partitions[i]);
@@ -51,7 +54,15 @@ public class MapService implements TransactionalService {
         return counter.incrementAndGet();
     }
 
-    public void prepare(String txnId, int partitionId) throws TransactionException {
+    public ServiceMigrationOperation getMigrationTask(final int partitionId, final int replicaIndex, boolean diffOnly) {
+        if (partitionId < 0 || partitionId >= nodeService.getPartitionCount()) {
+            return null;
+        }
+        final PartitionContainer container = partitionContainers[partitionId];
+        return new MapMigrationOperation(container, partitionId, replicaIndex, diffOnly);
+    }
+
+    public void prepare(String txnId, int partitionId) {
         System.out.println(nodeService.getThisAddress() + " MapService prepare " + txnId);
         PartitionContainer pc = partitionContainers[partitionId];
         TransactionLog txnLog = pc.getTransactionLog(txnId);

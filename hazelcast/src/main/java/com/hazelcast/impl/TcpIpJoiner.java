@@ -18,9 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.cluster.JoinInfo;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.Interfaces;
-import com.hazelcast.config.Join;
+import com.hazelcast.config.*;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -46,7 +44,7 @@ import static com.hazelcast.util.AddressUtil.AddressHolder;
 
 public class TcpIpJoiner extends AbstractJoiner {
 
-    private static final int MAX_ADDRESS_TRIES = 3;
+    private static final int MAX_PORT_TRIES = 3;
 
     public TcpIpJoiner(Node node) {
         super(node);
@@ -79,7 +77,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     joinViaRequiredMember(joined);
                 }
                 logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
-                node.clusterManager.sendJoinRequest(requiredAddress, true);
+                node.clusterImpl.sendJoinRequest(requiredAddress, true);
                 //noinspection BusyWait
                 Thread.sleep(3000L);
             }
@@ -92,7 +90,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         public void process() {
             TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) getNode().getJoiner();
             boolean shouldApprove = (tcpIpJoiner.askingForApproval || node.isMaster()) ? false : true;
-            getNode().clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove),
+            getNode().clusterImpl.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove),
                                                        getConnection());
         }
     }
@@ -143,7 +141,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             final Collection<Address> colPossibleAddresses = getPossibleAddresses();
             colPossibleAddresses.remove(node.address);
             for (final Address possibleAddress : colPossibleAddresses) {
-                logger.log(Level.INFO, "connecting to " + possibleAddress);
+                logger.log(Level.INFO, "Connecting to possible member: " + possibleAddress);
                 node.connectionManager.getOrConnect(possibleAddress);
             }
             boolean foundConnection = false;
@@ -164,7 +162,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     if (conn != null) {
                         foundConnection = true;
                         logger.log(Level.FINEST, "Found and sending join request for " + possibleAddress);
-                        node.clusterManager.sendJoinRequest(possibleAddress, true);
+                        node.clusterImpl.sendJoinRequest(possibleAddress, true);
                     }
                 }
             }
@@ -198,7 +196,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                                 Connection conn = node.getConnectionManager().getConnection(address);
                                 if (conn != null) {
                                     responseCounter.incrementAndGet();
-                                    node.clusterManager.sendProcessableTo(new MasterQuestion(), conn);
+                                    node.clusterImpl.sendProcessableTo(new MasterQuestion(), conn);
                                 }
                             }
                             int waitCount = 0;
@@ -249,7 +247,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             Thread.sleep(1000L);
             final Address master = node.getMasterAddress();
             if (master != null) {
-                node.clusterManager.sendJoinRequest(master, true);
+                node.clusterImpl.sendJoinRequest(master, true);
                 if (requestCount++ > node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) {
                     logger.log(Level.WARNING, "Couldn't join to the master : " + master);
                     return;
@@ -295,13 +293,13 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     private Collection<Address> getPossibleAddresses() {
         final Collection<String> possibleMembers = getMembers();
-        final Set<Address> setPossibleAddresses = new HashSet<Address>();
-        final Address thisAddress = node.address;
-        for (String host : possibleMembers) {
+        final Set<Address> possibleAddresses = new HashSet<Address>();
+        final NetworkConfig networkConfig = config.getNetworkConfig();
+        for (String possibleMember : possibleMembers) {
             try {
-                final AddressHolder addressHolder = AddressUtil.getAddressHolder(host);
+                final AddressHolder addressHolder = AddressUtil.getAddressHolder(possibleMember);
                 final boolean portIsDefined = addressHolder.port != -1 || !config.isPortAutoIncrement();
-                final int maxAddressTries = portIsDefined ? 1 : MAX_ADDRESS_TRIES;
+                final int count = portIsDefined ? 1 : MAX_PORT_TRIES;
                 final int port = addressHolder.port != -1 ? addressHolder.port : config.getPort();
                 AddressMatcher addressMatcher = null;
                 try {
@@ -317,38 +315,56 @@ public class TcpIpJoiner extends AbstractJoiner {
                         matchedAddresses = Collections.singleton(addressHolder.address);
                     }
                     for (String matchedAddress : matchedAddresses) {
-                        for (int i = 0; i < maxAddressTries; i++) {
-                            final Address addressProper = new Address(matchedAddress, port + i);
-                            if (!addressProper.equals(thisAddress)) {
-                                setPossibleAddresses.add(addressProper);
-                            }
-                        }
+                        addPossibleAddresses(possibleAddresses, matchedAddress, null, port, count);
                     }
                 } else {
-                    final InetAddress[] allAddresses = InetAddress.getAllByName(addressHolder.address);
-                    for (final InetAddress inetAddress : allAddresses) {
-                        boolean matchingAddress = true;
-                        Interfaces interfaces = config.getNetworkConfig().getInterfaces();
-                        if (interfaces.isEnabled()) {
-                            matchingAddress = AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
-                                    interfaces.getInterfaces());
-                        }
-                        if (matchingAddress) {
-                            for (int i = 0; i < maxAddressTries; i++) {
-                                final Address addressProper = new Address(inetAddress, port + i);
-                                if (!addressProper.equals(thisAddress)) {
-                                    setPossibleAddresses.add(addressProper);
+                    final String host = addressHolder.address;
+                    final Interfaces interfaces = networkConfig.getInterfaces();
+                    if (interfaces.isEnabled()) {
+                        final InetAddress[] inetAddresses = InetAddress.getAllByName(host);
+                        if (inetAddresses.length > 1) {
+                            for (InetAddress inetAddress : inetAddresses) {
+                                if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
+                                        interfaces.getInterfaces())) {
+                                    addPossibleAddresses(possibleAddresses, null, inetAddress, port, count);
                                 }
                             }
+                        } else {
+                            final InetAddress inetAddress = inetAddresses[0];
+                            if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
+                                    interfaces.getInterfaces())) {
+                                addPossibleAddresses(possibleAddresses, host, null, port, count);
+                            }
                         }
+                    } else {
+                        addPossibleAddresses(possibleAddresses, host, null, port, count);
                     }
                 }
             } catch (UnknownHostException e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
-        setPossibleAddresses.addAll(config.getNetworkConfig().getJoin().getTcpIpConfig().getAddresses());
-        return setPossibleAddresses;
+        possibleAddresses.addAll(networkConfig.getJoin().getTcpIpConfig().getAddresses());
+        return possibleAddresses;
+    }
+
+    private void addPossibleAddresses(final Set<Address> possibleAddresses,
+                                      final String host, final InetAddress inetAddress,
+                                      final int port, final int count) throws UnknownHostException {
+        for (int i = 0; i < count; i++) {
+            final int currentPort = port + i;
+            final Address address = host != null ? new Address(host, currentPort) : new Address(inetAddress, currentPort);
+            if (!isLocalAddress(address)) {
+                possibleAddresses.add(address);
+            }
+        }
+    }
+
+    private boolean isLocalAddress(final Address address) throws UnknownHostException {
+        final Address thisAddress = node.address;
+        final boolean local = thisAddress.getInetSocketAddress().equals(address.getInetSocketAddress());
+        logger.log(Level.FINEST, address + " is local? " + local);
+        return local;
     }
 
     protected Collection<String> getMembers() {
@@ -356,15 +372,13 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     public static Collection<String> getConfigurationMembers(Config config) {
-        Join join = config.getNetworkConfig().getJoin();
-        final Collection<String> configMembers = join.getTcpIpConfig().getMembers();
+        final TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+        final Collection<String> configMembers = tcpIpConfig.getMembers();
         final Set<String> possibleMembers = new HashSet<String>();
         for (String member : configMembers) {
             // split members defined in tcp-ip configuration by comma(,) semi-colon(;) space( ).
             String[] members = member.split("[,; ]");
-            for (String address : members) {
-                possibleMembers.add(address);
-            }
+            Collections.addAll(possibleMembers, members);
         }
         return possibleMembers;
     }
@@ -381,31 +395,26 @@ public class TcpIpJoiner extends AbstractJoiner {
         for (Member member : node.getClusterImpl().getMembers()) {
             colPossibleAddresses.remove(((MemberImpl) member).getAddress());
         }
-        if (colPossibleAddresses.size() == 0) {
+        if (colPossibleAddresses.isEmpty()) {
             return;
         }
-        for (final Address possibleAddress : colPossibleAddresses) {
+        for (Address possibleAddress : colPossibleAddresses) {
             logger.log(Level.FINEST, node.getThisAddress() + " is connecting to " + possibleAddress);
             node.connectionManager.getOrConnect(possibleAddress, true);
-        }
-        for (Address possibleAddress : colPossibleAddresses) {
             try {
                 //noinspection BusyWait
-                Thread.sleep(1000);
+                Thread.sleep(1500);
             } catch (InterruptedException e) {
                 return;
             }
             final Connection conn = node.connectionManager.getConnection(possibleAddress);
             if (conn != null) {
-                final JoinInfo response = node.clusterManager.checkJoin(conn);
+                final JoinInfo response = node.clusterImpl.checkJoin(conn);
                 if (response != null && shouldMerge(response)) {
-                    // we will join so delay the merge checks.
                     logger.log(Level.WARNING, node.address + " is merging [tcp/ip] to " + possibleAddress);
                     splitBrainHandler.restart();
+                    return;
                 }
-                // trying one live connection is good enough
-                // no need to try other connections
-                return;
             }
         }
     }

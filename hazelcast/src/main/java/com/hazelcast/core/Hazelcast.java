@@ -262,7 +262,7 @@ public final class Hazelcast {
      */
     @Deprecated
     public static ExecutorService getExecutorService() {
-        return getDefaultInstance().getExecutorService();
+        return getDefaultInstance().getExecutorService("default");
     }
 
     /**

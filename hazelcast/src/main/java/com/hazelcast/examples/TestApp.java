@@ -1010,7 +1010,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private void ex(String input) throws Exception {
         FutureTask<String> task = new DistributedTask<String>(new Echo(input));
-        ExecutorService executorService = hazelcast.getExecutorService();
+        ExecutorService executorService = hazelcast.getExecutorService("default");
         executorService.execute(task);
         String echoResult = task.get();
     }
@@ -1018,7 +1018,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void doExecute(boolean onKey, boolean onMember, String[] args) {
         // executeOnKey <echo-string> <key>
         try {
-            ExecutorService executorService = hazelcast.getExecutorService();
+            ExecutorService executorService = hazelcast.getExecutorService("default");
             Echo callable = new Echo(args[1]);
             FutureTask<String> task = null;
             if (onKey) {
@@ -1043,7 +1043,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void executeOnMembers(String[] args) {
         // executeOnMembers <echo-string>
         try {
-            ExecutorService executorService = hazelcast.getExecutorService();
+            ExecutorService executorService = hazelcast.getExecutorService("default");
             MultiTask<String> echoTask = new MultiTask(new Echo(args[1]), hazelcast.getCluster()
                     .getMembers());
             executorService.execute(echoTask);
@@ -1061,7 +1061,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void executeLong(String[] args) {
         // executeOnMembers <echo-string>
         try {
-            ExecutorService executorService = hazelcast.getExecutorService();
+            ExecutorService executorService = hazelcast.getExecutorService("default");
             MultiTask<String> echoTask = new MultiTask(new LongTask(args[1]), hazelcast.getCluster()
                     .getMembers()) {
                 @Override
@@ -1087,7 +1087,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void executeLongTaskOnOtherMember(String[] args) {
         // executeOnMembers <echo-string>
         try {
-            ExecutorService executorService = hazelcast.getExecutorService();
+            ExecutorService executorService = hazelcast.getExecutorService("default");
             Member otherMember = null;
             Set<Member> members = hazelcast.getCluster().getMembers();
             for (Member member : members) {

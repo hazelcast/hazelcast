@@ -51,6 +51,7 @@ import java.util.regex.Pattern;
 
 public class ManagementCenterService implements LifecycleListener, MembershipListener {
 
+    public static final String MANAGEMENT_EXECUTOR = "hz:management";
     private final FactoryImpl factory;
     private AtomicBoolean running = new AtomicBoolean(false);
     private final TaskPoller taskPoller;
@@ -87,7 +88,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         maxVisibleInstanceCount = factory.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         commandHandler = new ConsoleCommandHandler(factory);
 
-        String tmpWebServerUrl = managementCenterConfig != null ? managementCenterConfig.getUrl() : null;
+        String tmpWebServerUrl = managementCenterConfig.getUrl();
         webServerUrl = tmpWebServerUrl != null ?
                 (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
         updateIntervalMs = (managementCenterConfig != null && managementCenterConfig.getUpdateInterval() > 0)
@@ -139,7 +140,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             callable.setHazelcastInstance(factory);
             Set<Member> members = factory.getCluster().getMembers();
             MultiTask<Void> task = new MultiTask<Void>(callable, members);
-            ExecutorService executorService = factory.getExecutorService();
+            ExecutorService executorService = factory.getExecutorService(MANAGEMENT_EXECUTOR);
             executorService.execute(task);
         } catch (Throwable throwable) {
             logger.log(Level.WARNING, "New web server url cannot be assigned.", throwable);
@@ -154,7 +155,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if(member != null && factory.node.isMaster() && urlChanged) {
                 ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(webServerUrl);
                 FutureTask<Void> task = new DistributedTask<Void>(callable, member);
-                ExecutorService executorService = factory.getExecutorService();
+                ExecutorService executorService = factory.getExecutorService(MANAGEMENT_EXECUTOR);
                 executorService.execute(task);
             }
         } catch (Exception e) {
@@ -238,21 +239,21 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             }
             try {
                 while (running.get()) {
-                        try {
-                            URL url = new URL(webServerUrl + "collector.do");
-                            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                            connection.setDoOutput(true);
-                            connection.setRequestMethod("POST");
-                            connection.setConnectTimeout(1000);
-                            connection.setReadTimeout(1000);
-                            final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-                            TimedMemberState ts = getTimedMemberState();
-                            ts.writeData(out);
-                            out.flush();
-                            connection.getInputStream();
-                        } catch (Exception e) {
-                            logger.log(Level.FINEST, e.getMessage(), e);
-                        }
+                    try {
+                        URL url = new URL(webServerUrl + "collector.do");
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setDoOutput(true);
+                        connection.setRequestMethod("POST");
+                        connection.setConnectTimeout(1000);
+                        connection.setReadTimeout(1000);
+                        final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+                        TimedMemberState ts = getTimedMemberState();
+                        ts.writeData(out);
+                        out.flush();
+                        connection.getInputStream();
+                    } catch (Exception e) {
+                        logger.log(Level.FINEST, e.getMessage(), e);
+                    }
                     Thread.sleep(updateIntervalMs);
                 }
             } catch (Throwable throwable) {
@@ -310,7 +311,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 GroupConfig groupConfig = factory.getConfig().getGroupConfig();
                 while (running.get()) {
                     try {
-                        URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost() + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
+                        URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost()
+                                          + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setRequestProperty("Connection", "keep-alive");
                         InputStream inputStream = connection.getInputStream();
@@ -562,7 +564,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     private Object executeTaskAndGet(final DistributedTask task) {
         try {
-            factory.getExecutorService().execute(task);
+            factory.getExecutorService(MANAGEMENT_EXECUTOR).execute(task);
             try {
                 return task.get(3, TimeUnit.SECONDS);
             } catch (Throwable e) {

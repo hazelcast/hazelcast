@@ -19,11 +19,9 @@ package com.hazelcast.impl.spi;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Member;
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.impl.map.MapService;
+import com.hazelcast.impl.*;
 import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
@@ -31,6 +29,7 @@ import com.hazelcast.nio.Packet;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.REMOTE_CALL;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -39,21 +38,29 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public class NodeService {
 
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
-    private final Workers nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
-    private final Workers blockingWorkers = new Workers("hz.Blocking", 8);
+    private final ExecutorService executorService;
+    private final Workers nonBlockingWorkers; // = new Workers("hz.NonBlocking", 1);
+    private final Workers blockingWorkers; // = new Workers("hz.Blocking", 8);
+    private final ScheduledExecutorService scheduledExecutorService;
     private final Node node;
-    private final int PARTITION_COUNT;
-    private final int MAX_BACKUP_COUNT;
+    private final ILogger logger;
+    private final int partitionCount;
+    private final int maxBackupCount;
 
     public NodeService(Node node) {
         this.node = node;
-        this.PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
-        this.MAX_BACKUP_COUNT = MapConfig.MAX_BACKUP_COUNT;
-    }
-
-    public final int getPartitionId(Data key) {
-        return node.concurrentMapManager.getPartitionId(key);
+        logger = node.getLogger(NodeService.class.getName());
+        final ClassLoader classLoader = node.getConfig().getClassLoader();
+        executorService = new ThreadPoolExecutor(
+                3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+                new SynchronousQueue(),
+                new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"), classLoader));
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(node.threadGroup,
+                node.getThreadPoolNamePrefix("scheduled"), classLoader));
+        nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
+        blockingWorkers = new Workers("hz.Blocking", 8);
+        partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
+        maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
 
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception {
@@ -62,11 +69,12 @@ public class NodeService {
         Data data = toData(op);
         for (Map.Entry<Member, ArrayList<Integer>> mp : memberPartitions.entrySet()) {
             Address target = ((MemberImpl) mp.getKey()).getAddress();
-            SingleTargetInvocation inv = new SingleTargetInvocation(this, serviceName, new PartitionIterator(mp.getValue(), data), target, 100, 500);
-            inv.invoke();
-            responses.add(inv);
+            Invocation inv = createSingleInvocation(serviceName, new PartitionIterator(mp.getValue(), data), -1)
+                    .setTarget(target).setTryCount(100).setTryPauseMillis(500).build();
+            Future future = inv.invoke();
+            responses.add(future);
         }
-        Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(PARTITION_COUNT);
+        Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(partitionCount);
         for (Future r : responses) {
             Object result = r.get();
             Map<Integer, Object> partialResult = null;
@@ -89,7 +97,7 @@ public class NodeService {
         Thread.sleep(500);
         System.out.println("TRYING AGAIN...");
         for (Integer failedPartition : failedPartitions) {
-            Invocation inv = createSinglePartitionInvocation(serviceName, op, failedPartition).build();
+            Invocation inv = createSingleInvocation(serviceName, op, failedPartition).build();
             inv.invoke();
             partitionResults.put(failedPartition, inv);
         }
@@ -102,14 +110,10 @@ public class NodeService {
         return partitionResults;
     }
 
-    public Member getOwner(int partitionId) {
-        return node.concurrentMapManager.getPartitionServiceImpl().getPartition(partitionId).getOwner();
-    }
-
     private Map<Member, ArrayList<Integer>> getMemberPartitions() {
         Set<Member> members = node.getClusterImpl().getMembers();
         Map<Member, ArrayList<Integer>> memberPartitions = new HashMap<Member, ArrayList<Integer>>(members.size());
-        for (int i = 0; i < PARTITION_COUNT; i++) {
+        for (int i = 0; i < partitionCount; i++) {
             Member owner = getOwner(i);
             ArrayList<Integer> ownedPartitions = memberPartitions.get(owner);
             if (ownedPartitions == null) {
@@ -121,27 +125,22 @@ public class NodeService {
         return memberPartitions;
     }
 
-    public SinglePartitionInvocationBuilder createSinglePartitionInvocation(String serviceName, Operation op, int partitionId) {
-        return new SinglePartitionInvocationBuilder(NodeService.this, serviceName, op, getPartitionInfo(partitionId));
+    public SingleInvocationBuilder createSingleInvocation(String serviceName, Operation op, int partitionId) {
+        return new SingleInvocationBuilder(NodeService.this, serviceName, op, partitionId);
     }
 
-    void invokeOnSinglePartition(final SinglePartitionInvocation inv) {
-        ThreadContext.get().setCurrentFactory(node.factory);
+    void invokeSingle(final SingleInvocation inv) {
         final Address target = inv.getTarget();
         final Operation op = inv.getOperation();
         final int partitionId = inv.getPartitionId();
         final String serviceName = inv.getServiceName();
         final boolean nonBlocking = (op instanceof NonBlockingOperation);
-        setOperationContext(op, serviceName, node.getThisAddress(), -1, partitionId)
-                .setLocal(true);
-        if (op instanceof KeyBasedOperation) {
-            ((KeyBasedOperation) op).setThreadId(ThreadContext.get().getThreadId());
-        }
+        setOperationContext(op, serviceName, node.getThisAddress(), -1, partitionId).setLocal(true);
         if (target == null) {
             throw new NullPointerException(inv.getOperation() + ": Target is null");
         }
-        if (getClusterImpl().getMember(target) == null) {
-            throw new RuntimeException("Target not a member: " + target);
+        if (!(op instanceof NonMemberOperation) && getClusterImpl().getMember(target) == null) {
+            throw new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName);
         }
         if (getThisAddress().equals(target)) {
             if (!(op instanceof NoReply)) {
@@ -163,7 +162,7 @@ public class NodeService {
             TheCall call = new TheCall(target, inv);
             boolean sent = node.concurrentMapManager.registerAndSend(target, packet, call);
             if (!sent) {
-                inv.setResult(new IOException());
+                inv.setResult(new IOException("Packet not sent!"));
             }
         }
     }
@@ -176,7 +175,8 @@ public class NodeService {
                     PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                     Address owner = partitionInfo.getOwner();
                     if (!getThisAddress().equals(owner)) {
-                        op.getOperationContext().getResponseHandler().sendResponse(new WrongTargetException(getThisAddress(), owner));
+                        op.getOperationContext().getResponseHandler().sendResponse(
+                                new WrongTargetException(getThisAddress(), owner, partitionId, op.getClass().getName()));
                         return;
                     }
                 }
@@ -201,7 +201,7 @@ public class NodeService {
             public void run() {
                 try {
                     final Operation op = (Operation) toObject(data);
-                    setOperationContext(op, serviceName, caller, callId, partitionId);
+                    setOperationContext(op, serviceName, caller, callId, partitionId).setConnection(packet.conn);
                     final boolean noReply = (op instanceof NoReply);
                     if (!noReply) {
                         ResponseHandler responseHandler = new ResponseHandler() {
@@ -225,18 +225,24 @@ public class NodeService {
                             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                             Address owner = partitionInfo.getOwner();
                             if (!(op instanceof NonBlockingOperation) && !getThisAddress().equals(owner)) {
-                                throw new WrongTargetException(getThisAddress(), owner);
+                                throw new WrongTargetException(getThisAddress(), owner, partitionId,
+                                        op.getClass().getName(), serviceName);
                             }
                         }
                         op.run();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        if (e instanceof RetryableException) {
+                            logger.log(Level.WARNING, e.getClass() + ": " + e.getMessage());
+                            logger.log(Level.FINEST, e.getMessage(), e);
+                        } else {
+                            logger.log(Level.SEVERE, e.getMessage(), e);
+                        }
                         if (!noReply) {
                             op.getOperationContext().getResponseHandler().sendResponse(e);
                         }
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.log(Level.SEVERE, e.getMessage(), e);
                     packet.clearForResponse();
                     packet.blockId = partitionId;
                     packet.callId = callId;
@@ -249,7 +255,8 @@ public class NodeService {
         });
     }
 
-    private OperationContext setOperationContext(Operation op, String serviceName, Address caller, long callId, int partitionId) {
+    private OperationContext setOperationContext(Operation op, String serviceName, Address caller,
+                                                 long callId, int partitionId) {
         OperationContext context = op.getOperationContext();
         context.setNodeService(this)
                 .setService(getService(serviceName))
@@ -259,43 +266,23 @@ public class NodeService {
         return context;
     }
 
-    public Node getNode() {
-        return node;
-    }
-
-    public void takeBackups(Operation op, int partitionId, int backupCount, int timeoutSeconds) throws ExecutionException, TimeoutException, InterruptedException {
-        if (backupCount > 0) {
-            List<Future> backupOps = new ArrayList<Future>(backupCount);
-            PartitionInfo partitionInfo = getPartitionInfo(partitionId);
-            for (int i = 0; i < backupCount; i++) {
-                int replicaIndex = i + 1;
-                Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
-                if (replicaTarget != null) {
-                    if (replicaTarget.equals(getThisAddress())) {
-                        // Normally shouldn't happen!!
-                    } else {
-                        backupOps.add(createSinglePartitionInvocation(MapService.MAP_SERVICE_NAME, op, partitionId).setReplicaIndex(replicaIndex).build().invoke());
-                    }
-                }
-            }
-            for (Future backupOp : backupOps) {
-                backupOp.get(timeoutSeconds, TimeUnit.SECONDS);
-            }
+    private ExecutorService getExecutor(int partitionId, boolean nonBlocking) {
+        if (partitionId > -1) {
+            return (nonBlocking) ? nonBlockingWorkers.getExecutor(partitionId) : blockingWorkers.getExecutor(partitionId);
+        } else {
+            return executorService;
         }
     }
 
     class Workers {
         final int threadCount;
         final ExecutorService[] workers;
-        private final String threadNamePrefix;
 
-        Workers(String s, int threadCount) {
-            threadNamePrefix = s;
+        Workers(String threadNamePrefix, int threadCount) {
             this.threadCount = threadCount;
             workers = new ExecutorService[threadCount];
             for (int i = 0; i < threadCount; i++) {
-                String threadName = threadNamePrefix + "_" + (i + 1);
-                workers[i] = newSingleThreadExecutorService(threadName);
+                workers[i] = newSingleThreadExecutorService(threadNamePrefix);
             }
         }
 
@@ -307,29 +294,10 @@ public class NodeService {
             return new ThreadPoolExecutor(
                     1, 1, 0L, TimeUnit.MILLISECONDS,
                     new LinkedBlockingQueue<Runnable>(),
-                    new ThreadFactory() {
-                        public Thread newThread(Runnable r) {
-                            final Thread t = new Thread(node.threadGroup, r, node.getThreadNamePrefix(threadName), 0) {
-                                public void run() {
-                                    try {
-                                        super.run();
-                                    } finally {
-                                        try {
-                                            ThreadContext.shutdown(this);
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
-                                }
-                            };
-                            t.setContextClassLoader(node.getConfig().getClassLoader());
-                            if (t.isDaemon()) {
-                                t.setDaemon(false);
-                            }
-                            if (t.getPriority() != Thread.NORM_PRIORITY) {
-                                t.setPriority(Thread.NORM_PRIORITY);
-                            }
-                            return t;
+                    new ExecutorThreadFactory(node.threadGroup, node.getThreadNamePrefix(threadName),
+                            node.getConfig().getClassLoader()) {
+                        protected void beforeRun() {
+                            ThreadContext.get().setCurrentFactory(node.factory);
                         }
                     },
                     new RejectedExecutionHandler() {
@@ -338,14 +306,50 @@ public class NodeService {
                     }
             );
         }
+
+        void shutdownNow() {
+            for (ExecutorService worker : workers) {
+                worker.shutdownNow();
+            }
+        }
+
+        void awaitTermination(int timeoutSeconds) {
+            for (ExecutorService worker : workers) {
+                try {
+                    worker.awaitTermination(timeoutSeconds, TimeUnit.SECONDS);
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }
+    }
+
+    public void notifyCall(long callId, Response response) {
+        TheCall call = (TheCall) node.concurrentMapManager.removeRemoteCall(callId);
+        if (call != null) {
+            call.offerResponse(response);
+        }
     }
 
     public void registerService(String serviceName, Object obj) {
         services.put(serviceName, obj);
     }
 
-    public Object getService(String serviceName) {
-        return services.get(serviceName);
+    public <T> T getService(String serviceName) {
+        return (T) services.get(serviceName);
+    }
+
+    public <T> Collection<T> getServices(final Class<T> type) {
+        final Collection<T> result = new LinkedList<T>();
+        for (Object service : services.values()) {
+            if (type.isAssignableFrom(service.getClass())) {
+                result.add((T) service);
+            }
+        }
+        return result;
+    }
+
+    public Node getNode() {
+        return node;
     }
 
     public ClusterImpl getClusterImpl() {
@@ -356,22 +360,40 @@ public class NodeService {
         return node.getThisAddress();
     }
 
-    public void notifyCall(long callId, Response response) {
-        TheCall call = (TheCall) node.concurrentMapManager.removeRemoteCall(callId);
-        if (call != null) {
-            call.offerResponse(response);
-        }
+    public Member getOwner(int partitionId) {
+        return node.concurrentMapManager.getPartitionServiceImpl().getPartition(partitionId).getOwner();
+    }
+
+    public final int getPartitionId(Data key) {
+        return node.concurrentMapManager.getPartitionId(key);
     }
 
     public PartitionInfo getPartitionInfo(int partitionId) {
         return node.concurrentMapManager.getPartitionInfo(partitionId);
     }
 
-    private ExecutorService getExecutor(int partitionId, boolean nonBlocking) {
-        if (partitionId > -1) {
-            return (nonBlocking) ? nonBlockingWorkers.getExecutor(partitionId) : blockingWorkers.getExecutor(partitionId);
-        } else {
-            return executorService;
+    public int getPartitionCount() {
+        return partitionCount;
+    }
+
+    public ScheduledExecutorService getScheduledExecutorService() {
+        return scheduledExecutorService;
+    }
+
+    public void shutdown() {
+        blockingWorkers.shutdownNow();
+        executorService.shutdownNow();
+        nonBlockingWorkers.shutdownNow();
+        scheduledExecutorService.shutdownNow();
+        nonBlockingWorkers.awaitTermination(1);
+        try {
+            scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
         }
+        try {
+            executorService.awaitTermination(3, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+        blockingWorkers.awaitTermination(3);
     }
 }

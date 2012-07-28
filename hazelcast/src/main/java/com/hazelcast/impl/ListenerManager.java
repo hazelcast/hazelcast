@@ -21,6 +21,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.nio.*;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -212,7 +213,7 @@ public class ListenerManager extends BaseManager {
         }
 
         private void processWithoutKey() {
-            for (MemberImpl member : lsMembers) {
+            for (MemberImpl member : getMemberList()) {
                 if (member.localMember()) {
                     registerListener(true, name, null, thisAddress, includeValue);
                 } else {
@@ -316,7 +317,7 @@ public class ListenerManager extends BaseManager {
     void createAndAddListenerItem(String name, ListenerConfig lc, Instance.InstanceType instanceType) throws Exception {
         Object listener = lc.getImplementation();
         if (listener == null) {
-            listener = Serializer.newInstance(Serializer.loadClass(lc.getClassName()));
+            listener = ClassLoaderUtil.newInstance(lc.getClassName());
         }
         if (listener != null) {
             final ListenerItem listenerItem = new ListenerItem(name, null, listener,
@@ -369,7 +370,8 @@ public class ListenerManager extends BaseManager {
                 }
             }
         }
-        final EntryEvent event2 = listenerItem.includeValue ?
+        final SerializerRegistry serializerRegistry = node.factory.serializerRegistry;
+        final DataAwareEntryEvent event2 = listenerItem.includeValue ?
                 event :
                 // if new value is already null no need to create a new value-less event
                 (event.getNewValueData() != null ?
@@ -379,7 +381,7 @@ public class ListenerManager extends BaseManager {
                                 event.getKeyData(),
                                 null,
                                 null,
-                                event.firedLocally) :
+                                event.firedLocally, serializerRegistry) :
                         event);
 
         switch (listenerItem.instanceType) {
@@ -406,25 +408,30 @@ public class ListenerManager extends BaseManager {
                 ItemListener itemListener = (ItemListener) listener;
                 switch (entryEventType) {
                     case ADDED:
-                        itemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED, event.getKeyData()));
+                        itemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED,
+                                event.getKeyData(), serializerRegistry));
                         break;
                     case REMOVED:
-                        itemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED, event.getKeyData()));
+                        itemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED,
+                                event.getKeyData(), serializerRegistry));
                         break;
                 }
                 break;
             case TOPIC:
                 MessageListener messageListener = (MessageListener) listener;
-                messageListener.onMessage(new DataMessage(listenerItem.name, event.getNewValueData()));
+                messageListener.onMessage(new DataMessage(listenerItem.name, event.getNewValueData(),
+                        serializerRegistry));
                 break;
             case QUEUE:
                 ItemListener queueItemListener = (ItemListener) listener;
                 switch (entryEventType) {
                     case ADDED:
-                        queueItemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED, event.getNewValueData()));
+                        queueItemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED,
+                                event.getNewValueData(), serializerRegistry));
                         break;
                     case REMOVED:
-                        queueItemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED, event.getNewValueData()));
+                        queueItemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED,
+                                event.getNewValueData(), serializerRegistry));
                         break;
                 }
                 break;
@@ -465,13 +472,13 @@ public class ListenerManager extends BaseManager {
 
         public void writeData(DataOutput out) throws IOException {
             out.writeUTF(name);
-            writeObject(out, key);
+            IOUtil.writeObject(out, key);
             out.writeBoolean(includeValue);
         }
 
         public void readData(DataInput in) throws IOException {
             name = in.readUTF();
-            key = readObject(in);
+            key = IOUtil.readObject(in);
             includeValue = in.readBoolean();
         }
 

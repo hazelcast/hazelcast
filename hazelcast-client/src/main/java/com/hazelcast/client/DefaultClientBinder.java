@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 
-import static com.hazelcast.client.IOUtil.toByte;
-import static com.hazelcast.client.IOUtil.toObject;
+import static com.hazelcast.nio.IOUtil.toByteArray;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class DefaultClientBinder implements ClientBinder {
     private HazelcastClient client;
@@ -42,21 +42,21 @@ public class DefaultClientBinder implements ClientBinder {
         logger.log(Level.FINEST, connection + " -> "
                 + connection.getAddress().getHostName() + ":" + connection.getSocket().getLocalPort());
         auth(connection, credentials);
-        Bind b = null;
-        try {
-            b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
-        } catch (UnknownHostException e) {
-            logger.log(Level.WARNING, e.getMessage() + " while creating the bind package.");
-            throw e;
-        }
-        Packet bind = new Packet();
-        bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, toByte(null), toByte(b));
-        write(connection, bind);
+//        Bind b = null;
+//        try {
+//            b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
+//        } catch (UnknownHostException e) {
+//            logger.log(Level.WARNING, e.getMessage() + " while creating the bind package.");
+//            throw e;
+//        }
+//        Packet bind = new Packet();
+//        bind.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, toByteArray(null), toByteArray(b));
+//        write(connection, bind);
     }
 
     void auth(Connection connection, Credentials credentials) throws IOException {
         Packet auth = new Packet();
-        auth.set("", ClusterOperation.CLIENT_AUTHENTICATE, new byte[0], toByte(credentials));
+        auth.set("", ClusterOperation.CLIENT_AUTHENTICATE, new byte[0], toByteArray(credentials));
         Packet packet = writeAndRead(connection, auth);
         final Object response = toObject(packet.getValue());
         logger.log(Level.FINEST, "auth response:" + response);

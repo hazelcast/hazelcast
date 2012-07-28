@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl.partition;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 
@@ -23,7 +24,8 @@ import java.util.*;
 
 public class HostAwareMemberGroupFactory implements MemberGroupFactory {
 
-    public Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members) {
+    public Collection<MemberGroup> createMemberGroups(final Collection<Member> allMembers) {
+        final Collection<Member> members = removeLiteMembers(allMembers);
         final Collection<MemberGroup> groups = createHostAwareMemberGroups(members);
         if (groups.size() == 1 && members.size() >= 2) {
             // If there are multiple members and just one host
@@ -32,7 +34,7 @@ public class HostAwareMemberGroupFactory implements MemberGroupFactory {
             MemberGroup group2 = new DefaultMemberGroup();
             final int sizePerGroup = group1.size() / 2;
 
-            Iterator<MemberImpl> iter = group1.iterator();
+            Iterator<Member> iter = group1.iterator();
             while (group2.size() < sizePerGroup && iter.hasNext()) {
                 group2.addMember(iter.next());
                 iter.remove();
@@ -42,11 +44,11 @@ public class HostAwareMemberGroupFactory implements MemberGroupFactory {
         return groups;
     }
 
-    private Collection<MemberGroup> createHostAwareMemberGroups(final Collection<MemberImpl> members) {
+    private Collection<MemberGroup> createHostAwareMemberGroups(final Collection<Member> members) {
         Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             if (!member.isLiteMember()) {
-                Address address = member.getAddress();
+                Address address = ((MemberImpl) member).getAddress();
                 MemberGroup group = groups.get(address.getHost());
                 if (group == null) {
                     group = new DefaultMemberGroup();
@@ -55,6 +57,16 @@ public class HostAwareMemberGroupFactory implements MemberGroupFactory {
                 group.addMember(member);
             }
         }
-        return new HashSet<MemberGroup> (groups.values());
+        return new HashSet<MemberGroup>(groups.values());
+    }
+
+    private Collection<Member> removeLiteMembers(Collection<Member> members) {
+        final Collection<Member> result = new LinkedList<Member>();
+        for (Member member : members) {
+            if (!member.isLiteMember()) {
+                result.add(member);
+            }
+        }
+        return result;
     }
 }

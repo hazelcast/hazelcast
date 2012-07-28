@@ -20,6 +20,17 @@ import com.hazelcast.nio.Address;
 
 class WrongTargetException extends RuntimeException implements RetryableException {
     public WrongTargetException(Address thisAddress, Address target) {
-        super("WrongTarget. this:" + thisAddress + ", target:" + target);
+        this(thisAddress, target, -1, null);
     }
+
+    public WrongTargetException(Address thisAddress, Address target, int partitionId, String operationName) {
+        this(thisAddress, target, partitionId, operationName, null);
+    }
+
+    public WrongTargetException(Address thisAddress, Address target, int partitionId,
+                                String operationName, String serviceName) {
+        super("WrongTarget! this:" + thisAddress + ", target:" + target
+              + ", partitionId: " + partitionId + ", operation: " + operationName + ", service: " + serviceName);
+    }
+
 }

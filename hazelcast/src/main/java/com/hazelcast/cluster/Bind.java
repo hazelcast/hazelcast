@@ -16,9 +16,13 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.NodeService;
+import com.hazelcast.impl.spi.NonBlockingOperation;
+import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.nio.Address;
 
-public class Bind extends Master {
+public class Bind extends Master implements NonMemberOperation, NoReply, NonBlockingOperation {
 
     public Bind() {
     }
@@ -32,7 +36,13 @@ public class Bind extends Master {
         return "Bind " + address;
     }
 
-    public void process() {
-        getNode().connectionManager.bind(address, getConnection(), true);
+//    public void process() {
+//        getNode().connectionManager.bind(address, getConnection(), true);
+//    }
+
+    @Override
+    public void run() {
+        NodeService ns = getOperationContext().getNodeService();
+        ns.getNode().getConnectionManager().bind(address, getOperationContext().getConnection(), true);
     }
 }

@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-2.1.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.0.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -101,6 +101,8 @@
                 <secret-key>my-secret-key</secret-key>
                 <!--optional, default is us-east-1 -->
                 <region>us-west-1</region>
+                <!--optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
+                <hostHeader>ec2.amazonaws.com</hostHeader>
                 <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
                 <security-group-name>hazelcast-sg</security-group-name>
                 <tag-key>type</tag-key>
@@ -322,6 +324,12 @@
         <listener>com.hazelcast.examples.InstanceListener</listener>
         <listener>com.hazelcast.examples.MigrationListener</listener>
     </listeners>
+
+    <serializers>
+        <serializer global="true">com.hazelcast.examples.GlobalSerializerFactory</serializer>
+        <serializer global="false" type-class="com.hazelcast.examples.DummyType">
+            com.hazelcast.examples.SerializerFactory</serializer>
+    </serializers>
 
     <security enabled="false">
         <member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">

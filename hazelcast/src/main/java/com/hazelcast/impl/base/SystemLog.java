@@ -18,7 +18,7 @@ package com.hazelcast.impl.base;
 
 import com.hazelcast.util.Clock;
 
-public class SystemLog {
+public abstract class SystemLog {
     enum Type {
         NODE,
         JOIN,

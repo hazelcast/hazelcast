@@ -20,6 +20,7 @@ import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -36,35 +37,35 @@ public class SerializationTest {
     @Test(expected = RuntimeException.class)
     public void newNotSerializableException() {
         final Object o = new Object();
-        IOUtil.toByte(o);
+        IOUtil.toByteArray(o);
     }
 
     @Test
     public void newNullSerializer() {
         final Object o = null;
-        final byte[] data = IOUtil.toByte(o);
+        final byte[] data = IOUtil.toByteArray(o);
         assertEquals(o, IOUtil.toObject(data));
     }
 
     @Test
     public void newStringSerializer() {
         final String s = "newStringSerializer 2@Z";
-        final byte[] data = IOUtil.toByte(s);
+        final byte[] data = IOUtil.toByteArray(s);
         assertEquals(s, IOUtil.toObject(data));
     }
 
     @Test
     public void newDateSerializer() {
         final Date date = new Date();
-        final byte[] data = IOUtil.toByte(date);
+        final byte[] data = IOUtil.toByteArray(date);
         assertEquals(date, IOUtil.toObject(data));
     }
 
     @Test
     public void newDataSerializer() {
         final Object value = "dummy-value";
-        byte[] data = IOUtil.toByte(value);
-        assertArrayEquals(data, IOUtil.toByte(new Data(data)));
+        byte[] data = IOUtil.toByteArray(value);
+        assertArrayEquals(data, IOUtil.toByteArray(new Data(data)));
         assertEquals(value, IOUtil.toObject(new Data(data)));
     }
 
@@ -73,7 +74,7 @@ public class SerializationTest {
         final ExternalizableImpl o = new ExternalizableImpl();
         o.s = "Gallaxy";
         o.v = 42;
-        final byte[] data = IOUtil.toByte(o);
+        final byte[] data = IOUtil.toByteArray(o);
         assertFalse(data.length == 0);
         assertFalse(o.readExternal);
         assertTrue(o.writeExternal);
@@ -88,7 +89,7 @@ public class SerializationTest {
     @Test
     public void newSerializerProxyKey() {
         final FactoryImpl.ProxyKey o = new ProxyKey("key", 15L);
-        final byte[] data = IOUtil.toByte(o);
+        final byte[] data = IOUtil.toByteArray(o);
         assertFalse(data.length == 0);
         final ProxyKey object = (ProxyKey) IOUtil.toObject(data);
         assertNotNull(object);

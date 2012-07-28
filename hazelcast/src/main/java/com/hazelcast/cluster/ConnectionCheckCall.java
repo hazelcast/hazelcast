@@ -17,16 +17,25 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.impl.Node;
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NonBlockingOperation;
+import com.hazelcast.nio.ConnectionManager;
 
-public class ConnectionCheckCall extends AbstractRemotelyCallable<Boolean> {
-    public Boolean call() throws Exception {
-        for (MemberImpl member : node.clusterManager.getMembers()) {
+// TODO: check if this call is required really!
+public class ConnectionCheckCall extends AbstractOperation implements NonBlockingOperation {
+    public void run() {
+        Boolean result = Boolean.TRUE;
+        Node node = getOperationContext().getNodeService().getNode();
+        final ConnectionManager connectionManager = node.connectionManager;
+        for (MemberImpl member : node.clusterImpl.getMemberList()) {
             if (!member.localMember()) {
-                if (node.connectionManager.getConnection(member.getAddress()) == null) {
-                    return Boolean.FALSE;
+                if (connectionManager.getConnection(member.getAddress()) == null) {
+                    result = Boolean.FALSE;
+                    break;
                 }
             }
         }
-        return Boolean.TRUE;
+        getOperationContext().getResponseHandler().sendResponse(result);
     }
 }

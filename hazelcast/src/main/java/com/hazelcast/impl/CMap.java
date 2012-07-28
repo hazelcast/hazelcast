@@ -192,14 +192,14 @@ public class CMap {
                     String factoryClassName = mapStoreConfig.getFactoryClassName();
                     if (factoryClassName != null && !"".equals(factoryClassName)) {
                         factory = (MapStoreFactory)
-                                Serializer.loadClass(node.getConfig().getClassLoader(), factoryClassName).newInstance();
+                                ClassLoaderUtil.loadClass(node.getConfig().getClassLoader(), factoryClassName).newInstance();
                     }
                 }
                 Object storeInstance = factory == null ? mapStoreConfig.getImplementation() :
                         factory.newMapStore(name, mapStoreConfig.getProperties());
                 if (storeInstance == null) {
                     String mapStoreClassName = mapStoreConfig.getClassName();
-                    storeInstance = Serializer.loadClass(node.getConfig().getClassLoader(), mapStoreClassName).newInstance();
+                    storeInstance = ClassLoaderUtil.loadClass(node.getConfig().getClassLoader(), mapStoreClassName).newInstance();
                 }
                 mapStoreWrapper = new MapStoreWrapper(storeInstance,
                         node.factory.getHazelcastInstanceProxy(),
@@ -297,7 +297,7 @@ public class CMap {
                     if (lc.isLocal()) {
                         addListener(null, thisAddress, lc.isIncludeValue());
                     } else {
-                        for (MemberImpl member : node.clusterManager.getMembers()) {
+                        for (MemberImpl member : node.clusterImpl.getMemberList()) {
                             addListener(null, member.getAddress(), lc.isIncludeValue());
                         }
                     }
@@ -317,7 +317,7 @@ public class CMap {
                 if (mergePolicyTemp == null) {
                     String mergeClassName = mergePolicyConfig.getClassName();
                     try {
-                        mergePolicyTemp = (MergePolicy) Serializer.loadClass(node.getConfig().getClassLoader(), mergeClassName).newInstance();
+                        mergePolicyTemp = (MergePolicy) ClassLoaderUtil.loadClass(node.getConfig().getClassLoader(), mergeClassName).newInstance();
                     } catch (Exception e) {
                         logger.log(Level.SEVERE, e.getMessage(), e);
                     }
@@ -749,7 +749,7 @@ public class CMap {
             record.clearLock();
             while (record.hasScheduledAction()) {
                 ScheduledAction sa = record.getScheduledActions().remove(0);
-                node.clusterManager.deregisterScheduledAction(sa);
+                node.clusterImpl.deregisterScheduledAction(sa);
                 if (!sa.expired()) {
                     sa.consume();
                     if (record.isLocked()) {
@@ -774,7 +774,7 @@ public class CMap {
                         sa.onMigrate();
                     }
                     sa.setValid(false);
-                    node.clusterManager.deregisterScheduledAction(sa);
+                    node.clusterImpl.deregisterScheduledAction(sa);
                     it.remove();
                 }
             }
@@ -804,7 +804,7 @@ public class CMap {
             while (it.hasNext()) {
                 ScheduledAction sa = it.next();
                 if (deadAddress.equals(sa.getRequest().caller)) {
-                    node.clusterManager.deregisterScheduledAction(sa);
+                    node.clusterImpl.deregisterScheduledAction(sa);
                     sa.setValid(false);
                     it.remove();
                 }
@@ -822,7 +822,8 @@ public class CMap {
             unlock(record, req);
         }
         record.incrementVersion();
-        concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKeyData(), null, req.value, record.getListeners(), req.caller);
+        concurrentMapManager.fireMapEvent(mapListeners, getName(), EntryEvent.TYPE_REMOVED, record.getKeyData(), null,
+                req.value, record.getListeners(), req.caller);
         req.version = record.getVersion();
         if (record.valueCount() == 0) {
             markAsRemoved(record);
@@ -958,40 +959,43 @@ public class CMap {
         if (dirtyRecords.size() > 0) {
             concurrentMapManager.storeExecutor.execute(new Runnable() {
                 public void run() {
-                    try {
-                        Set<Object> keysToDelete = new HashSet<Object>();
-                        Set<Record> toStore = new HashSet<Record>();
-                        Map<Object, Object> updates = new HashMap<Object, Object>();
-                        for (Record dirtyRecord : dirtyRecords) {
-                            if (!dirtyRecord.isActive()) {
-                                keysToDelete.add(dirtyRecord.getKey());
-                            } else {
-                                toStore.add(dirtyRecord);
-                                updates.put(dirtyRecord.getKey(), dirtyRecord.getValue());
-                            }
-                        }
-                        if (keysToDelete.size() == 1) {
-                            store.delete(keysToDelete.iterator().next());
-                        } else if (keysToDelete.size() > 1) {
-                            store.deleteAll(keysToDelete);
-                        }
-                        if (updates.size() == 1) {
-                            Map.Entry entry = updates.entrySet().iterator().next();
-                            store.store(entry.getKey(), entry.getValue());
-                        } else if (updates.size() > 1) {
-                            store.storeAll(updates);
-                        }
-                        for (Record stored : toStore) {
-                            stored.setLastStoredTime(Clock.currentTimeMillis());
-                            // stored.setDirty(false); // not required since we are setting dirty false before execution
-                        }
-                    } catch (Exception e) {
-                        for (Record dirtyRecord : dirtyRecords) {
-                            dirtyRecord.setDirty(true);
-                        }
-                    }
+                    runStoreUpdate(dirtyRecords);
                 }
             });
+        }
+    }
+
+    void runStoreUpdate(final Set<Record> dirtyRecords) {
+        try {
+            Set<Object> keysToDelete = new HashSet<Object>();
+            Set<Record> toStore = new HashSet<Record>();
+            Map<Object, Object> updates = new HashMap<Object, Object>();
+            for (Record dirtyRecord : dirtyRecords) {
+                if (!dirtyRecord.isActive()) {
+                    keysToDelete.add(dirtyRecord.getKey());
+                } else {
+                    toStore.add(dirtyRecord);
+                    updates.put(dirtyRecord.getKey(), dirtyRecord.getValue());
+                }
+            }
+            if (keysToDelete.size() == 1) {
+                store.delete(keysToDelete.iterator().next());
+            } else if (keysToDelete.size() > 1) {
+                store.deleteAll(keysToDelete);
+            }
+            if (updates.size() == 1) {
+                Map.Entry entry = updates.entrySet().iterator().next();
+                store.store(entry.getKey(), entry.getValue());
+            } else if (updates.size() > 1) {
+                store.storeAll(updates);
+            }
+            for (Record stored : toStore) {
+                stored.setLastStoredTime(Clock.currentTimeMillis());
+            }
+        } catch (Exception e) {
+            for (Record dirtyRecord : dirtyRecords) {
+                dirtyRecord.setDirty(true);
+            }
         }
     }
 
@@ -1262,7 +1266,6 @@ public class CMap {
         }
 
         public boolean overCapacity() {
-//            boolean over = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) > memoryLimit;
             return totalCostOfRecords >= memoryLimit;
         }
     }
@@ -1276,10 +1279,6 @@ public class CMap {
         }
 
         public boolean overCapacity() {
-//            long total = Runtime.getRuntime().totalMemory();
-//            long free = Runtime.getRuntime().freeMemory();
-//            int usedPercentage = (int) (((total - free) / total) * 100D);
-//            boolean over = usedPercentage > maxSizeConfig.getSize();
             final long total = Runtime.getRuntime().maxMemory();
             final long cost = totalCostOfRecords;
             final int usedPercentage = (int) (((float) cost / total) * 100);
@@ -1467,7 +1466,7 @@ public class CMap {
 
     void fireInvalidation(Record record) {
         if (nearCache != null && nearCache.shouldInvalidateOnChange()) {
-            for (MemberImpl member : concurrentMapManager.lsMembers) {
+            for (MemberImpl member : concurrentMapManager.getMemberList()) {
                 if (!member.localMember()) {
                     if (member.getAddress() != null) {
                         Packet packet = concurrentMapManager.obtainPacket();

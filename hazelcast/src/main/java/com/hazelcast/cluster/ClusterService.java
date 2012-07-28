@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Level;
 
-import static com.hazelcast.impl.base.SystemLogService.Level.CS_INFO;
+import static com.hazelcast.impl.base.SystemLogService.Level.INFO;
 
 public final class ClusterService implements Runnable, Constants {
 
@@ -110,10 +110,12 @@ public final class ClusterService implements Runnable, Constants {
         if (packet.callId != -1) {
             SystemLogService css = node.getSystemLogService();
             packet.callState = css.getOrCreateCallState(packet.callId, packet.lockAddress, packet.threadId);
-            if (css.shouldLog(CS_INFO)) {
+            if (css.shouldLog(INFO)) {
                 css.info(packet, "Enqueue Packet ", packet.operation);
             }
         }
+        System.err.println(packet);
+        new Throwable("!!! DO NOT USE SERVICE THREAD !!!").printStackTrace();
         packetQueue.offer(packet);
         unpark();
     }
@@ -150,17 +152,19 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void enqueueAndReturn(Processable processable) {
+        System.err.println("processable = " + processable);
+        new Throwable("!!! DO NOT USE SERVICE THREAD !!!").printStackTrace();
         processableQueue.offer(processable);
         unpark();
     }
 
-    void unpark() {
+    private void unpark() {
         LockSupport.unpark(serviceThread);
     }
 
     private void processPacket(Packet packet) {
         if (!running) return;
-        final MemberImpl memberFrom = node.clusterManager.getMember(packet.conn.getEndPoint());
+        final MemberImpl memberFrom = node.clusterImpl.getMember(packet.conn.getEndPoint());
         if (memberFrom != null) {
             memberFrom.didRead();
         }
@@ -176,9 +180,9 @@ public final class ClusterService implements Runnable, Constants {
             throw new RuntimeException(msg);
         }
         SystemLogService css = node.getSystemLogService();
-        if (css.shouldLog(CS_INFO)) {
-            css.logObject(packet, CS_INFO, "Processing packet");
-            css.logObject(packet, CS_INFO, packetProcessor.getClass());
+        if (css.shouldLog(INFO)) {
+            css.logObject(packet, INFO, "Processing packet");
+            css.logObject(packet, INFO, packetProcessor.getClass());
         }
         packetProcessor.process(packet);
     }

@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -28,7 +29,6 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 import java.util.concurrent.ExecutionException;
@@ -37,7 +37,7 @@ import java.util.concurrent.Future;
 /**
  * @mdogan 4/6/12
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"managedContext-applicationContext-hazelcast.xml"})
 public class TestManagedContext {
 

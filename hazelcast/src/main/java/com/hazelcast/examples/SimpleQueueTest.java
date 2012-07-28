@@ -17,6 +17,7 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
@@ -29,12 +30,13 @@ public class SimpleQueueTest {
 
     public static void main(String[] args) {
         int threadCount = 20;
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(null);
         final Stats stats = new Stats();
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
         for (int i = 0; i < threadCount; i++) {
             es.submit(new Runnable() {
                 public void run() {
-                    Queue<byte[]> queue = Hazelcast.getQueue("default");
+                    Queue<byte[]> queue = hz.getQueue("default");
                     while (true) {
                         for (int j = 0; j < 1000; j++) {
                             queue.offer(new byte[VALUE_SIZE]);
@@ -55,7 +57,7 @@ public class SimpleQueueTest {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
                         System.out.println("cluster size:"
-                                + Hazelcast.getCluster().getMembers().size());
+                                + hz.getCluster().getMembers().size());
                         Stats currentStats = stats.getAndReset();
                         System.out.println(currentStats);
                         System.out.println("Operations per Second : " + currentStats.total()

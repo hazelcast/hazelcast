@@ -23,7 +23,7 @@ import com.hazelcast.impl.monitor.LocalLockStatsImpl;
 import com.hazelcast.impl.monitor.LockOperationsCounter;
 import com.hazelcast.monitor.LocalLockStats;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
 @SuppressWarnings("LockAcquiredButNotSafelyReleased")
-public class LockProxyImpl extends SerializationHelper implements HazelcastInstanceAwareInstance, LockProxy, DataSerializable {
+public class LockProxyImpl implements HazelcastInstanceAwareInstance, LockProxy, DataSerializable {
 
     private Object key = null;
     private transient LockProxy base = null;
@@ -78,11 +78,11 @@ public class LockProxyImpl extends SerializationHelper implements HazelcastInsta
     }
 
     public void writeData(DataOutput out) throws IOException {
-        writeObject(out, key);
+        IOUtil.writeObject(out, key);
     }
 
     public void readData(DataInput in) throws IOException {
-        key = readObject(in);
+        key = IOUtil.readObject(in);
         setHazelcastInstance(ThreadContext.get().getCurrentFactory());
     }
 

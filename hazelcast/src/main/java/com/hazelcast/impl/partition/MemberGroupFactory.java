@@ -16,11 +16,11 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.core.Member;
 
 import java.util.Collection;
 
 public interface MemberGroupFactory {
 
-    Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members);
+    Collection<MemberGroup> createMemberGroups(Collection<Member> members);
 }

@@ -21,6 +21,7 @@ import com.hazelcast.nio.Data;
 public interface Constants {
 
     interface Objects {
+
         public static final Object OBJECT_DONE = new Object() {
             @Override
             public String toString() {
@@ -80,5 +81,35 @@ public interface Constants {
         public static final byte RESPONSE_FAILURE = 4;
 
         public static final byte RESPONSE_REDO = 5;
+    }
+
+    public enum RedoType {
+        // using ordinal as redo type code
+        // !!! never change the order !!!
+        REDO_UNKNOWN,
+        REDO_PARTITION_MIGRATING,
+        REDO_MEMBER_UNKNOWN,
+        REDO_TARGET_WRONG,
+        REDO_TARGET_UNKNOWN,
+        REDO_TARGET_DEAD,
+        REDO_CONNECTION_NOT_ALIVE,
+        REDO_PACKET_NOT_SENT,
+        REDO_MAP_LOCKED,
+        REDO_MAP_OVER_CAPACITY,
+        REDO_QUEUE_NOT_MASTER,
+        REDO_QUEUE_NOT_READY,
+        ;
+
+        public static RedoType getRedoType(int code) {
+            final RedoType types[] = RedoType.values();
+            if (code < 0 || code >= types.length) {
+                return REDO_UNKNOWN;
+            }
+            return types[code];
+        }
+
+        public byte getCode() {
+            return (byte) ordinal();
+        }
     }
 }

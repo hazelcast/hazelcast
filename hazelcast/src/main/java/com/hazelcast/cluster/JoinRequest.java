@@ -18,15 +18,19 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.NodeType;
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.NonBlockingOperation;
+import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.security.Credentials;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class JoinRequest extends AbstractRemotelyProcessable {
+public class JoinRequest extends AbstractOperation implements NonMemberOperation, NoReply, NonBlockingOperation {
 
     protected NodeType nodeType = NodeType.MEMBER;
     public Address address;
@@ -71,12 +75,9 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         config = new Config();
         config.readData(in);
         uuid = in.readUTF();
-        boolean hasCredentials = in.readBoolean();
-        if (hasCredentials) {
-            credentials = (Credentials) SerializationHelper.readObject(in);
-            if (credentials != null) {
-                credentials.setEndpoint(address.getHost());
-            }
+        credentials = (Credentials) IOUtil.readObject(in);
+        if (credentials != null) {
+            credentials.setEndpoint(address.getHost());
         }
     }
 
@@ -93,11 +94,7 @@ public class JoinRequest extends AbstractRemotelyProcessable {
         out.writeInt(nodeType.getValue());
         config.writeData(out);
         out.writeUTF(uuid);
-        boolean hasCredentials = credentials != null;
-        out.writeBoolean(hasCredentials);
-        if (hasCredentials) {
-            SerializationHelper.writeObject(out, credentials);
-        }
+        IOUtil.writeObject(out, credentials);
     }
 
     public void setCredentials(Credentials credentials) {
@@ -122,7 +119,12 @@ public class JoinRequest extends AbstractRemotelyProcessable {
                 + ", config='" + config + "'}";
     }
 
-    public void process() {
-        getNode().clusterManager.handleJoinRequest(this);
+//    public void process() {
+//        getNode().clusterManager.handleJoinRequest(this);
+//    }
+
+    public void run() {
+        ClusterImpl cm = getOperationContext().getService();
+        cm.handleJoinRequest(this);
     }
 }

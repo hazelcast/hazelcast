@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.InstanceListenerManager;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.FactoryImpl;

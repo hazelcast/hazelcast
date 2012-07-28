@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.Bind;
 import com.hazelcast.cluster.RemotelyProcessable;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
@@ -266,6 +267,7 @@ public class ClientHandlerService implements ConnectionListener {
         if (clientEndpoint != null) {
             node.executorManager.executeNow(new FallThroughRunnable() {
                 public void doRun() {
+                    logger.log(Level.INFO, "Client {" + connection + "} has been removed.");
                     clientEndpoint.connectionRemoved(connection);
                     if (node.securityContext != null) {
                         try {
@@ -844,7 +846,6 @@ public class ClientHandlerService implements ConnectionListener {
                 logger.log(Level.SEVERE, "Could not retrieve Credentials object!");
             } else if (node.securityContext != null) {
                 final Socket endpointSocket = packet.conn.getSocketChannelWrapper().socket();
-                // TODO: check!!!
                 credentials.setEndpoint(endpointSocket.getInetAddress().getHostAddress());
                 try {
                     LoginContext lc = node.securityContext.createClientLoginContext(credentials);
@@ -879,6 +880,11 @@ public class ClientHandlerService implements ConnectionListener {
             } else {
                 ClientEndpoint clientEndpoint = node.clientHandlerService.getClientEndpoint(packet.conn);
                 clientEndpoint.authenticated();
+                Bind bind = new Bind(new Address(packet.conn.getSocketChannelWrapper().socket().getInetAddress(), packet.conn.getSocketChannelWrapper().socket().getPort()));
+                // TODO: client bind !!!
+//                bind.setConnection(packet.conn);
+//                bind.setNode(node);
+//                node.clusterService.enqueueAndWait(bind);
             }
         }
     }
@@ -911,9 +917,8 @@ public class ClientHandlerService implements ConnectionListener {
                 node.concurrentMapManager.doPutAll(mproxy.getLongName(), pairs);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
-            } finally {
-                return null;
             }
+            return null;
         }
     }
 

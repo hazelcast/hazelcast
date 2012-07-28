@@ -18,11 +18,13 @@ package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Address;
 
-class SingleTargetInvocation extends SinglePartitionInvocation {
+class SingleTargetInvocation extends SingleInvocation {
+
     private final Address target;
 
-    SingleTargetInvocation(NodeService nodeService, String serviceName, Operation op, Address target, int tryCount, long tryPauseMillis) {
-        super(nodeService, serviceName, op, null, 0, tryCount, tryPauseMillis);
+    SingleTargetInvocation(NodeService nodeService, String serviceName, Operation op, int partitionId,
+                           Address target, int tryCount, long tryPauseMillis) {
+        super(nodeService, serviceName, op, partitionId, 0, tryCount, tryPauseMillis);
         this.target = target;
     }
 
@@ -32,7 +34,25 @@ class SingleTargetInvocation extends SinglePartitionInvocation {
     }
 
     @Override
-    public int getPartitionId() {
-        return -1;
+    void setResult(final Object obj) {
+        if (obj instanceof RetryableException) {
+            if (invokeCount < tryCount) {
+                try {
+                    Thread.sleep(tryPauseMillis);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                invoke();
+            } else {
+                setException((Throwable) obj);
+            }
+        } else {
+            if (obj instanceof Exception) {
+                setException((Throwable) obj);
+            } else {
+                set(obj);
+            }
+        }
     }
+
 }

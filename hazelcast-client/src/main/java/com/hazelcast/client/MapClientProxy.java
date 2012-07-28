@@ -17,6 +17,10 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.EntryListenerManager;
+import com.hazelcast.client.util.EntryHolder;
+import com.hazelcast.client.util.LightEntrySetSet;
+import com.hazelcast.client.util.LightKeySet;
+import com.hazelcast.client.util.ValueCollection;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
@@ -234,7 +238,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public Map<K, V> getAll(Set<K> setKeys) {
-        check(setKeys);
         Keys keys = new Keys();
         for (K key : setKeys) {
             keys.add(toData(key));

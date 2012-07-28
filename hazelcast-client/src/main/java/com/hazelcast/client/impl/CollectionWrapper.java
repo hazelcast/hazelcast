@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.client.IOUtil.toObject;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class CollectionWrapper<K> implements DataSerializable {
     /**

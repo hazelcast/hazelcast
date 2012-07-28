@@ -58,7 +58,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     public CallContext getCallContext(int threadId) {
         CallContext context = callContexts.get(threadId);
         if (context == null) {
-            int locallyMappedThreadId = ThreadContext.get().createNewThreadId();
+            int locallyMappedThreadId = ThreadContext.createNewThreadId();
             context = new CallContext(locallyMappedThreadId, true);
             callContexts.put(threadId, context);
         }
@@ -262,7 +262,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
             removeMessageListeners();
             cancelRunningOperations();
             releaseAttachedSemaphorePermits();
-            node.clusterManager.sendProcessableToAll(new ClientHandlerService.CountDownLatchLeave(conn.getEndPoint()), true);
+            node.clusterImpl.sendProcessableToAll(new ClientHandlerService.CountDownLatchLeave(conn.getEndPoint()), true);
             node.clientService.remove(this);
         }
     }
@@ -274,7 +274,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         }
         Set<Member> allMembers = node.getClusterImpl().getMembers();
         MultiTask task = new MultiTask(new DestroyEndpointThreadsCallable(node.getThisAddress(), threadIds), allMembers);
-        node.factory.getExecutorService().execute(task);
+        node.factory.getExecutorService("default").execute(task);
     }
 
     private void cancelRunningOperations() {

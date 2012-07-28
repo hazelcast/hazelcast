@@ -24,6 +24,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.impl.DataAwareItemEvent;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -31,24 +32,28 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ItemListenerManager {
+
     final Map<ItemListener, EntryListener> itemListener2EntryListener = new ConcurrentHashMap<ItemListener, EntryListener>();
-
     final private EntryListenerManager entryListenerManager;
+    final private SerializerRegistry serializerRegistry;
 
-    public ItemListenerManager(EntryListenerManager entryListenerManager) {
+    public ItemListenerManager(EntryListenerManager entryListenerManager, final SerializerRegistry serializerRegistry) {
         this.entryListenerManager = entryListenerManager;
+        this.serializerRegistry = serializerRegistry;
     }
 
     public synchronized <E, V> void registerListener(final String name, final ItemListener<V> itemListener, boolean includeValue) {
         EntryListener<E, V> e = new EntryAdapter<E, V>() {
             public void entryAdded(EntryEvent<E, V> event) {
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                itemListener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, dataAwareEntryEvent.getNewValueData()));
+                itemListener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, dataAwareEntryEvent.getNewValueData(),
+                        serializerRegistry));
             }
 
             public void entryRemoved(EntryEvent<E, V> event) {
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                itemListener.itemRemoved(new DataAwareItemEvent(name, ItemEventType.REMOVED, dataAwareEntryEvent.getNewValueData()));
+                itemListener.itemRemoved(new DataAwareItemEvent(name, ItemEventType.REMOVED, dataAwareEntryEvent.getNewValueData(),
+                        serializerRegistry));
             }
         };
         entryListenerManager.registerListener(name, null, includeValue, e);

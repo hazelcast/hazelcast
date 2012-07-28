@@ -20,6 +20,11 @@ package com.hazelcast.nio;
  * This is an exception thrown when an exception occurs while serializing/deserializing objects.
  */
 public class HazelcastSerializationException extends RuntimeException {
+
+    public HazelcastSerializationException(final String message) {
+        super(message);
+    }
+
     public HazelcastSerializationException(String message, Throwable cause) {
         super(message, cause);
     }

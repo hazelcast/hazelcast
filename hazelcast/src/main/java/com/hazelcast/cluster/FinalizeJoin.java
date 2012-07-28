@@ -16,9 +16,15 @@
 
 package com.hazelcast.cluster;
 
-public class FinalizeJoin extends AbstractRemotelyCallable<Boolean> {
-    public Boolean call() throws Exception {
-        getNode().listenerManager.syncForAdd(getConnection().getEndPoint());
-        return Boolean.TRUE;
+import com.hazelcast.impl.Node;
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.NonBlockingOperation;
+
+public class FinalizeJoin extends AbstractOperation implements NonBlockingOperation, NoReply {
+
+    public void run() {
+        Node node = getOperationContext().getNodeService().getNode();
+        node.listenerManager.syncForAdd(getOperationContext().getCaller());
     }
 }

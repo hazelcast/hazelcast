@@ -17,9 +17,9 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.Bind;
+import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
@@ -39,6 +39,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import static com.hazelcast.impl.ClusterOperation.REMOTE_CALL;
 import static com.hazelcast.impl.Constants.IO.KILO_BYTE;
 
 public class ConnectionManager {
@@ -200,6 +201,7 @@ public class ConnectionManager {
 
     public boolean bind(Address endPoint, Connection connection,
                         boolean accept) {
+        log(Level.FINEST, "Binding " + connection + " to " + endPoint + ", accept: " + accept);
         connection.setEndPoint(endPoint);
         if (mapConnections.containsKey(endPoint)) {
             return false;
@@ -228,7 +230,12 @@ public class ConnectionManager {
     private Packet createBindPacket(Bind rp) {
         Data value = ThreadContext.get().toData(rp);
         Packet packet = new Packet();
-        packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
+        packet.operation = REMOTE_CALL;
+        packet.blockId = -1;
+        packet.name = ClusterImpl.SERVICE_NAME;
+        packet.longValue = 1L;
+//        packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
+        packet.setValue(value);
         packet.client = ioService.isClient();
         return packet;
     }
@@ -239,7 +246,7 @@ public class ConnectionManager {
         setActiveConnections.add(connection);
         selectorAssigned.addTask(connection.getReadHandler());
         selectorAssigned.selector.wakeup();
-        logger.log(Level.INFO, channel.socket().getLocalPort()
+        log(Level.INFO, channel.socket().getLocalPort()
                 + " accepted socket connection from "
                 + channel.socket().getRemoteSocketAddress());
         return connection;
@@ -304,6 +311,7 @@ public class ConnectionManager {
     public void destroyConnection(Connection connection) {
         if (connection == null)
             return;
+        log(Level.FINEST, "Destroying " + connection);
         setActiveConnections.remove(connection);
         final Address endPoint = connection.getEndPoint();
         if (endPoint != null) {
@@ -344,6 +352,7 @@ public class ConnectionManager {
     public synchronized void start() {
         if (live) return;
         live = true;
+        log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
         for (int i = 0; i < selectors.length; i++) {
             InOutSelector s = new InOutSelector(this);
             selectors[i] = s;
@@ -367,21 +376,26 @@ public class ConnectionManager {
     }
 
     public synchronized void shutdown() {
-        if (!live) return;
-        live = false;
-        stop();
-        if (serverSocketChannel != null) {
-            try {
-                serverSocketChannel.close();
-            } catch (IOException ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
+        try {
+            if (live) {
+                stop();
+            }
+        } finally {
+            es.shutdownNow();
+            if (serverSocketChannel != null) {
+                try {
+                    log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
+                    serverSocketChannel.close();
+                } catch (IOException ignore) {
+                    logger.log(Level.FINEST, ignore.getMessage(), ignore);
+                }
             }
         }
-        es.shutdownNow();
     }
 
     private void stop() {
         live = false;
+        log(Level.FINEST, "Stopping ConnectionManager");
         shutdownSocketAcceptor(); // interrupt acceptor thread after live=false
         ioService.onShutdown();
         for (Connection conn : mapConnections.values()) {
@@ -406,6 +420,7 @@ public class ConnectionManager {
     }
 
     private synchronized void shutdownIOSelectors() {
+        log(Level.FINEST, "Shutting down IO selectors, total: " + selectors.length);
         for (int i = 0; i < selectors.length; i++) {
             InOutSelector ioSelector = selectors[i];
             if (ioSelector != null) {
@@ -416,6 +431,7 @@ public class ConnectionManager {
     }
 
     private synchronized void shutdownSocketAcceptor() {
+        log(Level.FINEST, "Shutting down SocketAcceptor thread.");
         socketAcceptorThread.interrupt();
         socketAcceptorThread = null;
     }
@@ -446,6 +462,11 @@ public class ConnectionManager {
 
     public Map<Address, Connection> getReadonlyConnectionMap() {
         return Collections.unmodifiableMap(mapConnections);
+    }
+
+    private void log(Level level, String message) {
+        logger.log(level, message);
+        ioService.getSystemLogService().logConnection(message);
     }
 
     public void appendState(StringBuffer sbState) {

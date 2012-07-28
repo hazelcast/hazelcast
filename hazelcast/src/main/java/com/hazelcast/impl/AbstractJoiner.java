@@ -56,11 +56,12 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private void postJoin() {
-        systemLogService.logJoin("PostJoin master:" + node.getMasterAddress() + ", isMaster " + node.isMaster());
+        systemLogService.logJoin("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
         if (!node.isActive()) {
             return;
         }
         if (tryCount.incrementAndGet() == 5) {
+            logger.log(Level.WARNING, "Join try count exceed limit, setting this node as master!");
             node.setAsMaster();
         }
         if (!node.isMaster()) {
@@ -79,7 +80,7 @@ public abstract class AbstractJoiner implements Joiner {
                     allConnected = true;
                     for (Member member : members) {
                         MemberImpl memberImpl = (MemberImpl) member;
-                        if (!memberImpl.localMember() && node.connectionManager.getConnection(memberImpl.getAddress()) == null) {
+                        if (!memberImpl.localMember() && node.connectionManager.getOrConnect(memberImpl.getAddress()) == null) {
                             allConnected = false;
                             systemLogService.logJoin("Not-connected to " + memberImpl.getAddress());
                         }
@@ -92,34 +93,33 @@ public abstract class AbstractJoiner implements Joiner {
                     logger.log(Level.WARNING, "Rebooting after 10 seconds.");
                     try {
                         Thread.sleep(10000);
+                        node.rejoin();
                     } catch (InterruptedException e) {
+                        logger.log(Level.WARNING, e.getMessage(), e);
                         node.shutdown(false, true);
                     }
-                    node.rejoin();
                 } else {
                     throw new RuntimeException("Failed to join in " + (maxJoinMillis / 1000) + " seconds!");
                 }
                 return;
             } else {
-                node.clusterManager.finalizeJoin();
+                node.clusterImpl.finalizeJoin();
             }
         }
-        node.clusterManager.enqueueAndWait(new Processable() {
-            public void process() {
-                if (node.baseVariables.lsMembers.size() == 1) {
-                    final StringBuilder sb = new StringBuilder();
-                    sb.append("\n");
-                    sb.append(node.clusterManager);
-                    logger.log(Level.INFO, sb.toString());
-                }
-            }
-        }, 5);
+
+        tryCount.set(0);
+        if (node.getClusterImpl().getSize() == 1) {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("\n");
+            sb.append(node.clusterImpl);
+            logger.log(Level.INFO, sb.toString());
+        }
     }
 
     protected void failedJoiningToMaster(boolean multicast, int tryCount) {
         StringBuilder sb = new StringBuilder();
         sb.append("\n");
-        sb.append("===========================");
+        sb.append("======================================================");
         sb.append("\n");
         sb.append("Couldn't connect to discovered master! tryCount: ").append(tryCount);
         sb.append("\n");
@@ -130,7 +130,8 @@ public abstract class AbstractJoiner implements Joiner {
         sb.append("multicast: ").append(multicast);
         sb.append("\n");
         sb.append("connection: ").append(node.connectionManager.getConnection(node.getMasterAddress()));
-        sb.append("===========================");
+        sb.append("\n");
+        sb.append("======================================================");
         sb.append("\n");
         throw new IllegalStateException(sb.toString());
     }
@@ -143,6 +144,7 @@ public abstract class AbstractJoiner implements Joiner {
                 try {
                     validJoinRequest = node.validateJoinRequest(joinInfo);
                 } catch (Exception e) {
+                    logger.log(Level.FINEST, e.getMessage());
                     validJoinRequest = false;
                 }
                 if (validJoinRequest) {
@@ -170,6 +172,10 @@ public abstract class AbstractJoiner implements Joiner {
                                                      + ", this node member count: " + currentMemberCount);
                             logger.log(Level.FINEST, joinInfo.toString());
                             shouldMerge = true;
+                        } else {
+                            logger.log(Level.FINEST, joinInfo.address + " should merge to this node "
+                                                     + ", because : node.getThisAddress().hashCode() < joinInfo.address.hashCode() "
+                                                     + ", this node member count: " + currentMemberCount);
                         }
                     }
                 }
@@ -187,8 +193,12 @@ public abstract class AbstractJoiner implements Joiner {
                 final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
                 if (conn != null) {
                     logger.log(Level.FINEST, "sending join request for " + possibleAddress);
-                    node.clusterManager.sendJoinRequest(possibleAddress, true);
+                    node.clusterImpl.sendJoinRequest(possibleAddress, true);
                 }
             }
+    }
+
+    public final long getStartTime() {
+        return joinStartTime;
     }
 }

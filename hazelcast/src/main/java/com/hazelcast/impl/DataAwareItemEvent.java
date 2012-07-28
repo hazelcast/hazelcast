@@ -19,15 +19,19 @@ package com.hazelcast.impl;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class DataAwareItemEvent extends ItemEvent {
     final Data itemData;
+    private final transient SerializerRegistry serializerRegistry;
 
-    public DataAwareItemEvent(String name, ItemEventType itemEventType, Data itemData) {
+    public DataAwareItemEvent(String name, ItemEventType itemEventType, Data itemData,
+                              SerializerRegistry serializerRegistry) {
         super(name, itemEventType, null);
         this.itemData = itemData;
+        this.serializerRegistry = serializerRegistry;
     }
 
     public Data getItemData() {
@@ -36,6 +40,9 @@ public class DataAwareItemEvent extends ItemEvent {
 
     @Override
     public Object getItem() {
+        if (serializerRegistry != null) {
+            ThreadContext.get().setCurrentSerializerRegistry(serializerRegistry);
+        }
         return toObject(itemData);
     }
 }

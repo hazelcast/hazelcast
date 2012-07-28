@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl.partition;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -40,15 +41,15 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         this.memberGroupFactory = memberGroupFactory;
     }
 
-    public PartitionInfo[] initialize(Collection<MemberImpl> members, int partitionCount) {
+    public PartitionInfo[] initialize(Collection<Member> members, int partitionCount) {
         final LinkedList<NodeGroup> groups = createNodeGroups(memberGroupFactory.createMemberGroups(members));
         if (groups.size() == 0) return null;
         return arrange(groups, partitionCount, new EmptyStateInitializer());
     }
 
-    public PartitionInfo[] reArrange(PartitionInfo[] currentState, Collection<MemberImpl> members, int partitionCount,
-                                     List<MigrationRequestTask> lostPartitionTasksList, List<MigrationRequestTask> immediateTasksList,
-                                     List<MigrationRequestTask> scheduledTasksList) {
+    public PartitionInfo[] reArrange(PartitionInfo[] currentState, Collection<Member> members, int partitionCount,
+                                     List<MigrationRequestOperation> lostPartitionTasksList, List<MigrationRequestOperation> immediateTasksList,
+                                     List<MigrationRequestOperation> scheduledTasksList) {
         final LinkedList<NodeGroup> groups = createNodeGroups(memberGroupFactory.createMemberGroups(members));
         if (groups.size() == 0) return currentState;
         PartitionInfo[] newState = arrange(groups, partitionCount, new CopyStateInitializer(currentState));
@@ -81,22 +82,21 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return state;
     }
 
-    private void finalizeArrangement(PartitionInfo[] currentState, PartitionInfo[] newState, List<MigrationRequestTask> lostPartitionTasksList,
-                                     List<MigrationRequestTask> immediateTasksList, List<MigrationRequestTask> scheduledTasksList) {
+    private void finalizeArrangement(PartitionInfo[] currentState, PartitionInfo[] newState, List<MigrationRequestOperation> lostPartitionTasksList,
+                                     List<MigrationRequestOperation> immediateTasksList, List<MigrationRequestOperation> scheduledTasksList) {
         final int partitionCount = currentState.length;
         // hold migration tasks related to a partition temporarily
-        final List<MigrationRequestTask> partitionMigrationTasks = new LinkedList<MigrationRequestTask>();
+        final List<MigrationRequestOperation> partitionMigrationTasks = new LinkedList<MigrationRequestOperation>();
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             PartitionInfo currentPartition = currentState[partitionId];
             PartitionInfo newPartition = newState[partitionId];
-            boolean lost = false;
             for (int replicaIndex = 0; replicaIndex < PartitionInfo.MAX_REPLICA_COUNT; replicaIndex++) {
                 Address currentOwner = currentPartition.getReplicaAddress(replicaIndex);
                 Address newOwner = newPartition.getReplicaAddress(replicaIndex);
-                MigrationRequestTask migrationRequestTask = null;
+                MigrationRequestOperation migrationRequestTask = null;
                 if (currentOwner != null && newOwner != null && !currentOwner.equals(newOwner)) {
                     // migration owner or backup
-                    migrationRequestTask = new MigrationRequestTask(
+                    migrationRequestTask = new MigrationRequestOperation(
                             partitionId, currentOwner, newOwner, replicaIndex, true);
                 } else if (currentOwner == null && newOwner != null) {
                     // copy of a backup
@@ -105,9 +105,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     // an earlier level replica of this partition may be migrated from
                     // target of this copy task. if so, to avoid copy back partition data after migration,
                     // set partition's replica owner to just after earlier replica is migrated.
-                    ListIterator<MigrationRequestTask> iter = partitionMigrationTasks.listIterator(partitionMigrationTasks.size());
+                    ListIterator<MigrationRequestOperation> iter = partitionMigrationTasks.listIterator(partitionMigrationTasks.size());
                     while (iter.hasPrevious()) {
-                        MigrationRequestTask task = iter.previous();
+                        MigrationRequestOperation task = iter.previous();
                         // task to be attached to must be a migration, not a copy of a backup!
                         if (task.isMigration() && newOwner.equals(task.getFromAddress())) {
                             selfCopy = true;
@@ -118,12 +118,12 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     if (!selfCopy) {
                         // currentOwner set here is not used on operation, just for an info.
                         // actual currentOwner will be determined just before copy.
-                        migrationRequestTask = new MigrationRequestTask(
+                        migrationRequestTask = new MigrationRequestOperation(
                                 partitionId, currentOwner, newOwner, replicaIndex, false);
                     }
                 } else if (currentOwner != null && newOwner == null) {
                     // A member is dead, this replica should not have an owner!
-                    immediateTasksList.add(new MigrationRequestTask(partitionId, currentOwner, null, replicaIndex, false));
+                    immediateTasksList.add(new MigrationRequestOperation(partitionId, currentOwner, null, replicaIndex, false));
                 }
                 if (migrationRequestTask != null) {
                     partitionMigrationTasks.add(migrationRequestTask);
@@ -144,11 +144,11 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         arrangeScheduledTasks(scheduledTasksList);
     }
 
-    private void arrangeScheduledTasks(final List<MigrationRequestTask> scheduledTasksList) {
+    private void arrangeScheduledTasks(final List<MigrationRequestOperation> scheduledTasksList) {
         // hope list is random access
         Collections.shuffle(scheduledTasksList);
-        Collections.sort(scheduledTasksList, new Comparator<MigrationRequestTask>() {
-            public int compare(final MigrationRequestTask t1, final MigrationRequestTask t2) {
+        Collections.sort(scheduledTasksList, new Comparator<MigrationRequestOperation>() {
+            public int compare(final MigrationRequestOperation t1, final MigrationRequestOperation t2) {
                 if (t1.getReplicaIndex() == t2.getReplicaIndex()) {
                     return 0;
                 } else if (t1.getReplicaIndex() <= 1 && t2.getReplicaIndex() <= 1) {
@@ -375,12 +375,14 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             if (memberGroup instanceof SingleMemberGroup || memberGroup.size() == 1) {
                 nodeGroup = new SingleNodeGroup();
-                nodeGroup.addNode(memberGroup.iterator().next().getAddress());
+                final MemberImpl next = (MemberImpl) memberGroup.iterator().next();
+                nodeGroup.addNode(next.getAddress());
             } else {
                 nodeGroup = new DefaultNodeGroup();
-                Iterator<MemberImpl> iter = memberGroup.iterator();
+                Iterator<Member> iter = memberGroup.iterator();
                 while (iter.hasNext()) {
-                    nodeGroup.addNode(iter.next().getAddress());
+                    final MemberImpl next = (MemberImpl) iter.next();
+                    nodeGroup.addNode(next.getAddress());
                 }
             }
             nodeGroups.add(nodeGroup);

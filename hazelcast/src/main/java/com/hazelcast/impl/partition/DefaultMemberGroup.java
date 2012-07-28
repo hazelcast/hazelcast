@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.core.Member;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -25,38 +25,38 @@ import java.util.Set;
 
 public class DefaultMemberGroup implements MemberGroup {
 
-    private final Set<MemberImpl> members = new HashSet<MemberImpl>();
+    private final Set<Member> members = new HashSet<Member>();
 
     public DefaultMemberGroup() {
         super();
     }
 
-    public DefaultMemberGroup(Collection<MemberImpl> members) {
+    public DefaultMemberGroup(Collection<Member> members) {
         super();
         addMembers(members);
     }
 
-    public void addMember(MemberImpl member) {
+    public void addMember(Member member) {
         members.add(member);
     }
 
-    public void addMembers(Collection<MemberImpl> members) {
+    public void addMembers(Collection<Member> members) {
         this.members.addAll(members);
     }
 
-    public void removeMember(MemberImpl member) {
+    public void removeMember(Member member) {
         members.remove(member);
     }
 
-    public boolean hasMember(MemberImpl member) {
+    public boolean hasMember(Member member) {
         return members.contains(member);
     }
 
-    public Set<MemberImpl> getMembers() {
+    public Set<Member> getMembers() {
         return members;
     }
 
-    public Iterator<MemberImpl> iterator() {
+    public Iterator<Member> iterator() {
         return members.iterator();
     }
 

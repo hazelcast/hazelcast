@@ -20,6 +20,7 @@ import com.hazelcast.impl.ClientHandlerService.ClientOperationHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.Util;
 
 import javax.security.auth.Subject;
 import java.security.PrivilegedExceptionAction;
@@ -67,7 +68,8 @@ public class ClientRequestHandler extends FallThroughRunnable {
         } catch (Throwable e) {
             logger.log(Level.WARNING, e.getMessage(), e);
             if (node.isActive()) {
-                throw (RuntimeException) e;
+//                throw (RuntimeException) e;
+                Util.throwUncheckedException(e);
             }
         } finally {
             runningThread = null;

@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.partition.PartitionService;
 
 import java.util.Collection;
@@ -139,6 +140,11 @@ public interface HazelcastInstance {
     /**
      * Returns the distributed executor service for the given
      * name.
+     * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * on the Hazelcast cluster.
+     *
+     * <p><b>Note:</b> Note that it don't support invokeAll/Any
+     * and don't have standard shutdown behavior</p>
      *
      * @param name name of the executor service
      * @return executor service for the given name
@@ -307,4 +313,9 @@ public interface HazelcastInstance {
      * @return lifecycle service
      */
     LifecycleService getLifecycleService();
+
+    void registerSerializer(final TypeSerializer serializer, Class type) ;
+
+    void registerGlobalSerializer(final TypeSerializer serializer) ;
+
 }

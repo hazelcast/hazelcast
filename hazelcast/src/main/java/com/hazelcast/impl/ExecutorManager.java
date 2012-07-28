@@ -61,7 +61,6 @@ public class ExecutorManager extends BaseManager {
     private final ParallelExecutorService parallelExecutorService;
     private final ThreadPoolExecutor threadPoolExecutor;
     private final ConcurrentMap<ExecutionKey, RequestExecutor> executions = new ConcurrentHashMap<ExecutionKey, RequestExecutor>(100);
-    private final ScheduledThreadPoolExecutor esScheduled;
 
     private final ConcurrentMap<String, ExecutorOperationsCounter> internalThroughputMap = new ConcurrentHashMap<String, ExecutorOperationsCounter>();
     private final ConcurrentMap<String, ExecutorOperationsCounter> throughputMap = new ConcurrentHashMap<String, ExecutorOperationsCounter>();
@@ -85,12 +84,6 @@ public class ExecutorManager extends BaseManager {
                 threadPoolBeforeExecute(t, r);
             }
         };
-        esScheduled = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(node.threadGroup,
-                node.getThreadPoolNamePrefix("scheduled"), classLoader), new RejectionHandler()) {
-            protected void beforeExecute(Thread t, Runnable r) {
-                threadPoolBeforeExecute(t, r);
-            }
-        };
         parallelExecutorService = new ParallelExecutorService(node.getLogger(ParallelExecutorService.class.getName()), threadPoolExecutor);
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
@@ -104,10 +97,6 @@ public class ExecutorManager extends BaseManager {
 
     public NamedExecutorService getOrCreateNamedExecutorService(String name) {
         return getOrCreateNamedExecutorService(name, null);
-    }
-
-    public ScheduledThreadPoolExecutor getScheduledExecutorService() {
-        return esScheduled;
     }
 
     public ParallelExecutor getMapLoaderExecutorService() {
@@ -296,21 +285,12 @@ public class ExecutorManager extends BaseManager {
             namedExecutorService.stop();
         }
         parallelExecutorService.shutdown();
-        esScheduled.shutdownNow();
         threadPoolExecutor.shutdownNow();
-        try {
-            esScheduled.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
-        }
         try {
             threadPoolExecutor.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
         started = false;
-    }
-
-    public NamedExecutorService getDefaultExecutorService() {
-        return defaultExecutorService;
     }
 
     public NamedExecutorService getEventExecutorService() {
@@ -386,7 +366,7 @@ public class ExecutorManager extends BaseManager {
         threadContext.setCurrentFactory(node.factory);
         CallContext callContext = mapThreadCallContexts.get(t);
         if (callContext == null) {
-            callContext = new CallContext(threadContext.createNewThreadId(), false);
+            callContext = new CallContext(ThreadContext.createNewThreadId(), false);
             mapThreadCallContexts.put(t, callContext);
         }
         threadContext.setCallContext(callContext);
@@ -672,7 +652,8 @@ public class ExecutorManager extends BaseManager {
     }
 
     Object toObjectWithConfigClassLoader(Data data) {
-        ClassLoader actualContextClassLoader = Thread.currentThread().getContextClassLoader();
+        final ClassLoader actualContextClassLoader = Thread.currentThread().getContextClassLoader();
+        ThreadContext.get().setCurrentFactory(node.factory);
         try {
             Thread.currentThread().setContextClassLoader(node.getConfig().getClassLoader());
             return toObject(data);

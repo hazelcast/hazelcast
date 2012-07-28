@@ -17,12 +17,14 @@
 package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 
 public class OperationContext {
     NodeService nodeService;
-    Object service = null;
-    ResponseHandler responseHandler = null;
-    Address caller = null;
+    Object service;
+    ResponseHandler responseHandler ;
+    Address caller ;
+    Connection connection;
     long callId = -1;
     boolean local = true;
     int partitionId;
@@ -33,24 +35,25 @@ public class OperationContext {
 
     public OperationContext setNodeService(NodeService nodeService) {
         this.nodeService = nodeService;
-        return OperationContext.this;
+        return this;
     }
 
-    public Object getService() {
-        return service;
+    public <T> T getService() {
+        return (T) service;
     }
 
     public OperationContext setService(Object service) {
         this.service = service;
-        return OperationContext.this;
+        return this;
     }
 
     public ResponseHandler getResponseHandler() {
         return responseHandler;
     }
 
-    public void setResponseHandler(ResponseHandler responseHandler) {
+    public OperationContext setResponseHandler(ResponseHandler responseHandler) {
         this.responseHandler = responseHandler;
+        return this;
     }
 
     public int getPartitionId() {
@@ -59,7 +62,7 @@ public class OperationContext {
 
     public OperationContext setPartitionId(int partitionId) {
         this.partitionId = partitionId;
-        return OperationContext.this;
+        return this;
     }
 
     public Address getCaller() {
@@ -68,7 +71,7 @@ public class OperationContext {
 
     public OperationContext setCaller(Address caller) {
         this.caller = caller;
-        return OperationContext.this;
+        return this;
     }
 
     public long getCallId() {
@@ -77,7 +80,7 @@ public class OperationContext {
 
     public OperationContext setCallId(long callId) {
         this.callId = callId;
-        return OperationContext.this;
+        return this;
     }
 
     public boolean isLocal() {
@@ -86,6 +89,15 @@ public class OperationContext {
 
     public OperationContext setLocal(boolean local) {
         this.local = local;
-        return OperationContext.this;
+        return this;
+    }
+
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public OperationContext setConnection(final Connection connection) {
+        this.connection = connection;
+        return this;
     }
 }

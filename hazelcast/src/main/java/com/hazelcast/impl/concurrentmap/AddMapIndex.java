@@ -18,6 +18,7 @@ package com.hazelcast.impl.concurrentmap;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.impl.CMap;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.query.Expression;
 
 import java.io.DataInput;
@@ -56,14 +57,14 @@ public class AddMapIndex extends AbstractRemotelyProcessable {
         out.writeUTF(mapName);
         out.writeBoolean(isOrdered());
         out.writeInt(attributeIndex);
-        writeObject(out, getExpression());
+        IOUtil.writeObject(out, getExpression());
     }
 
     public void readData(DataInput in) throws IOException {
         mapName = in.readUTF();
         setOrdered(in.readBoolean());
         attributeIndex = in.readInt();
-        setExpression((Expression) readObject(in));
+        setExpression((Expression) IOUtil.readObject(in));
     }
 
     /**

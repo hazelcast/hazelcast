@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
 import com.hazelcast.core.Cluster;
@@ -26,11 +27,12 @@ import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.stubbing.Answer;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.IOUtil.toByte;
+import static com.hazelcast.nio.IOUtil.toByteArray;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -41,6 +43,9 @@ public class MembershipListenerManagerTest {
     @Test
     public void testRegisterMembershipListener() throws Exception {
         HazelcastClient client = mock(HazelcastClient.class);
+        ClientConfig config = new ClientConfig();
+        when(client.getClientConfig()).thenReturn(config);
+
         MembershipListenerManager listenerManager = new MembershipListenerManager(client);
         MembershipListener listener = new MembershipListener() {
 
@@ -59,6 +64,8 @@ public class MembershipListenerManagerTest {
     @Test
     public void testRemoveMembershipListener() throws Exception {
         HazelcastClient client = mock(HazelcastClient.class);
+        ClientConfig config = new ClientConfig();
+        when(client.getClientConfig()).thenReturn(config);
         MembershipListenerManager listenerManager = new MembershipListenerManager(client);
         MembershipListener listener = new MembershipListener() {
 
@@ -87,6 +94,8 @@ public class MembershipListenerManagerTest {
 
     private void notifyMembershipListener(final int type) throws InterruptedException {
         HazelcastClient client = mock(HazelcastClient.class);
+        ClientConfig config = new ClientConfig();
+        when(client.getClientConfig()).thenReturn(config);
         Cluster cluster = mock(Cluster.class);
         when(client.getCluster()).thenReturn(cluster);
         final MembershipListenerManager membershipListenerManager = new MembershipListenerManager(client);
@@ -109,8 +118,8 @@ public class MembershipListenerManagerTest {
                 Packet packet = new Packet();
                 Address address = new Address();
                 Member member = new MemberImpl(address, false);
-                packet.setKey(toByte(member));
-                packet.setValue(toByte(type));
+                packet.setKey(toByteArray(member));
+                packet.setValue(toByteArray(type));
                 membershipListenerManager.notifyListeners(packet);
             }
         }).start();
