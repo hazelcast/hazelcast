@@ -18,9 +18,9 @@ package com.hazelcast.impl.spi;
 
 public interface TransactionalService {
 
-    void prepare(String txnId, int partitionId);
+    void prepare(String txnId, int partitionId) throws TransactionException;
 
-    void commit(String txnId, int partitionId);
+    void commit(String txnId, int partitionId) throws TransactionException;
 
-    void rollback(String txnId, int partitionId);
+    void rollback(String txnId, int partitionId) throws TransactionException;
 }

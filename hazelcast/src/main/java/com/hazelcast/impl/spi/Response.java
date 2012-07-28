@@ -17,6 +17,7 @@
 package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.SerializationHelper;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -26,9 +27,10 @@ import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class Response extends AbstractOperation implements NonBlockingOperation, NoReply {
-    Object result = null;
-    Data resultData = null;
-    boolean exception = false;
+    private Object result = null;
+    private Data resultData = null;
+    private boolean exception = false;
+    private Data opBeforeData = null;
 
     public Response() {
     }
@@ -38,16 +40,31 @@ public class Response extends AbstractOperation implements NonBlockingOperation,
     }
 
     public Response(Object result, boolean exception) {
+        this(null, result, exception);
+    }
+
+    public Response(Operation opBefore, Object result, boolean exception) {
         this.result = result;
         this.exception = exception;
         try {
             this.resultData = toData(result);
+            this.opBeforeData = toData(opBefore);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public void run() {
+        if (opBeforeData != null) {
+            Operation op = (Operation) toObject(opBeforeData);
+            op.getOperationContext().setCallId(getOperationContext().getCallId())
+                    .setService(getOperationContext().getService())
+                    .setPartitionId(getOperationContext().getPartitionId())
+                    .setCaller(getOperationContext().getCaller())
+                    .setCallId(getOperationContext().getCallId())
+                    .setNodeService(getOperationContext().getNodeService());
+            op.run();
+        }
         long callId = getOperationContext().getCallId();
         getOperationContext().getNodeService().notifyCall(callId, Response.this);
     }
@@ -68,20 +85,14 @@ public class Response extends AbstractOperation implements NonBlockingOperation,
     }
 
     public void writeData(DataOutput out) throws IOException {
-        boolean NULL = (resultData == null);
-        out.writeBoolean(NULL);
-        if (!NULL) {
-            resultData.writeData(out);
-        }
+        SerializationHelper.writeNullableData(out, opBeforeData);
+        SerializationHelper.writeNullableData(out, resultData);
         out.writeBoolean(exception);
     }
 
     public void readData(DataInput in) throws IOException {
-        boolean NULL = in.readBoolean();
-        if (!NULL) {
-            resultData = new Data();
-            resultData.readData(in);
-        }
+        opBeforeData = SerializationHelper.readNullableData(in);
+        resultData = SerializationHelper.readNullableData(in);
         exception = in.readBoolean();
     }
 

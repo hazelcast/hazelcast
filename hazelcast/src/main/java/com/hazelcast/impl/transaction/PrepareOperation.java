@@ -16,10 +16,7 @@
 
 package com.hazelcast.impl.transaction;
 
-import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.OperationContext;
-import com.hazelcast.impl.spi.ResponseHandler;
-import com.hazelcast.impl.spi.TransactionalService;
+import com.hazelcast.impl.spi.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -38,9 +35,13 @@ public class PrepareOperation extends AbstractOperation {
     public void run() {
         OperationContext context = getOperationContext();
         TransactionalService txnalService = (TransactionalService) context.getService();
-        txnalService.prepare(txnId, context.getPartitionId());
         ResponseHandler responseHandler = context.getResponseHandler();
-        responseHandler.sendResponse(null);
+        try {
+            txnalService.prepare(txnId, context.getPartitionId());
+            responseHandler.sendResponse(null);
+        } catch (TransactionException e) {
+            responseHandler.sendResponse(e);
+        }
     }
 
     @Override

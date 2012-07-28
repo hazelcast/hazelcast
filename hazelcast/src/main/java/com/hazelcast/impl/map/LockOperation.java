@@ -14,45 +14,53 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.transaction;
+package com.hazelcast.impl.map;
 
-import com.hazelcast.impl.spi.*;
+import com.hazelcast.impl.spi.AbstractNamedKeyBasedOperation;
+import com.hazelcast.impl.spi.OperationContext;
+import com.hazelcast.impl.spi.ResponseHandler;
+import com.hazelcast.nio.Data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class CommitOperation extends AbstractOperation {
-    String txnId = null;
+public class LockOperation extends AbstractNamedKeyBasedOperation {
 
-    public CommitOperation(String txnId) {
-        this.txnId = txnId;
+    private static final long DEFAULT_LOCK_TTL = 60 * 1000;
+
+    long ttl = DEFAULT_LOCK_TTL; // how long should the lock live?
+
+    public LockOperation(String name, Data dataKey) {
+        super(name, dataKey);
     }
 
-    public CommitOperation() {
+    public LockOperation(String name, Data dataKey, long ttl) {
+        super(name, dataKey);
+        this.ttl = ttl;
+    }
+
+    public LockOperation() {
     }
 
     public void run() {
         OperationContext context = getOperationContext();
-        TransactionalService txnalService = (TransactionalService) context.getService();
         ResponseHandler responseHandler = context.getResponseHandler();
-        try {
-            txnalService.commit(txnId, context.getPartitionId());
-            responseHandler.sendResponse(null);
-        } catch (TransactionException e) {
-            responseHandler.sendResponse(e);
-        }
+        MapService mapService = (MapService) context.getService();
+        MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
+        LockInfo lock = mapPartition.getOrCreateLock(getKey());
+        responseHandler.sendResponse(lock.lock(context.getCaller(), threadId, ttl));
     }
 
     @Override
     public void writeData(DataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(txnId);
+        out.writeLong(ttl);
     }
 
     @Override
     public void readData(DataInput in) throws IOException {
         super.readData(in);
-        txnId = in.readUTF();
+        ttl = in.readLong();
     }
 }

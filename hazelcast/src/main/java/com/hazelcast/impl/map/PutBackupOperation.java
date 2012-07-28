@@ -22,19 +22,30 @@ import com.hazelcast.impl.spi.BackupOperation;
 import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.nio.Data;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 public class PutBackupOperation extends PutOperation implements BackupOperation {
 
+    boolean sendResponse = true;
+
     public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
+        this(name, dataKey, dataValue, ttl, true);
+    }
+
+    public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl, boolean sendResponse) {
         super(name, dataKey, dataValue, null, ttl);
+        this.sendResponse = sendResponse;
     }
 
     public PutBackupOperation() {
     }
 
-    public Object call() {
+    public void run() {
         OperationContext context = getOperationContext();
         MapService mapService = (MapService) context.getService();
-        System.out.println(context.getNodeService().getThisAddress() + " backup " + txnId);
+        System.out.println(context.getNodeService().getThisAddress() + " backup " + txnId + " response " + sendResponse);
         MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
         Record record = mapPartition.records.get(dataKey);
         if (record == null) {
@@ -45,7 +56,19 @@ public class PutBackupOperation extends PutOperation implements BackupOperation 
         }
         record.setActive();
         record.setDirty(true);
-        return null;
+        if (sendResponse) context.getResponseHandler().sendResponse(null);
+    }
+
+    @Override
+    public void writeData(DataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeBoolean(sendResponse);
+    }
+
+    @Override
+    public void readData(DataInput in) throws IOException {
+        super.readData(in);
+        sendResponse = in.readBoolean();
     }
 
     @Override

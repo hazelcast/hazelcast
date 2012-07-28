@@ -22,6 +22,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.impl.map.MapService;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -125,6 +126,7 @@ public class NodeService {
     }
 
     void invokeOnSinglePartition(final SinglePartitionInvocation inv) {
+        ThreadContext.get().setCurrentFactory(node.factory);
         final Address target = inv.getTarget();
         final Operation op = inv.getOperation();
         final int partitionId = inv.getPartitionId();
@@ -132,6 +134,9 @@ public class NodeService {
         final boolean nonBlocking = (op instanceof NonBlockingOperation);
         setOperationContext(op, serviceName, node.getThisAddress(), -1, partitionId)
                 .setLocal(true);
+        if (op instanceof KeyBasedOperation) {
+            ((KeyBasedOperation) op).setThreadId(ThreadContext.get().getThreadId());
+        }
         if (target == null) {
             throw new NullPointerException(inv.getOperation() + ": Target is null");
         }
@@ -201,18 +206,16 @@ public class NodeService {
                     if (!noReply) {
                         ResponseHandler responseHandler = new ResponseHandler() {
                             public void sendResponse(Object response) {
-                                if (!noReply) {
-                                    if (!(response instanceof Operation)) {
-                                        response = new Response(response);
-                                    }
-                                    packet.clearForResponse();
-                                    packet.blockId = partitionId;
-                                    packet.callId = callId;
-                                    packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
-                                    packet.setValue(toData(response));
-                                    packet.name = serviceName;
-                                    node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
+                                if (!(response instanceof Operation)) {
+                                    response = new Response(response);
                                 }
+                                packet.clearForResponse();
+                                packet.blockId = partitionId;
+                                packet.callId = callId;
+                                packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
+                                packet.setValue(toData(response));
+                                packet.name = serviceName;
+                                node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
                             }
                         };
                         op.getOperationContext().setResponseHandler(responseHandler);
@@ -258,6 +261,27 @@ public class NodeService {
 
     public Node getNode() {
         return node;
+    }
+
+    public void takeBackups(Operation op, int partitionId, int backupCount, int timeoutSeconds) throws ExecutionException, TimeoutException, InterruptedException {
+        if (backupCount > 0) {
+            List<Future> backupOps = new ArrayList<Future>(backupCount);
+            PartitionInfo partitionInfo = getPartitionInfo(partitionId);
+            for (int i = 0; i < backupCount; i++) {
+                int replicaIndex = i + 1;
+                Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
+                if (replicaTarget != null) {
+                    if (replicaTarget.equals(getThisAddress())) {
+                        // Normally shouldn't happen!!
+                    } else {
+                        backupOps.add(createSinglePartitionInvocation(MapService.MAP_SERVICE_NAME, op, partitionId).setReplicaIndex(replicaIndex).build().invoke());
+                    }
+                }
+            }
+            for (Future backupOp : backupOps) {
+                backupOp.get(timeoutSeconds, TimeUnit.SECONDS);
+            }
+        }
     }
 
     class Workers {

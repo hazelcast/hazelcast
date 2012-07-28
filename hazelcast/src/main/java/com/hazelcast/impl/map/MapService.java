@@ -18,14 +18,9 @@ package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.spi.NodeService;
-import com.hazelcast.impl.spi.Operation;
+import com.hazelcast.impl.spi.TransactionException;
 import com.hazelcast.impl.spi.TransactionalService;
-import com.hazelcast.nio.Address;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MapService implements TransactionalService {
@@ -56,53 +51,37 @@ public class MapService implements TransactionalService {
         return counter.incrementAndGet();
     }
 
-    public void prepare(String txnId, int partitionId) {
+    public void prepare(String txnId, int partitionId) throws TransactionException {
         System.out.println(nodeService.getThisAddress() + " MapService prepare " + txnId);
         PartitionContainer pc = partitionContainers[partitionId];
         TransactionLog txnLog = pc.getTransactionLog(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
-        takeBackups(new MapTxnBackupPrepareOperation(txnLog), partitionId, maxBackupCount);
+        try {
+            nodeService.takeBackups(new MapTxnBackupPrepareOperation(txnLog), partitionId, maxBackupCount, 60);
+        } catch (Exception e) {
+            throw new TransactionException(e);
+        }
     }
 
-    public void commit(String txnId, int partitionId) {
+    public void commit(String txnId, int partitionId) throws TransactionException {
         System.out.println(nodeService.getThisAddress() + " MapService commit " + txnId);
         getPartitionContainer(partitionId).commit(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
-        takeBackups(new MapTxnBackupCommitOperation(txnId), partitionId, maxBackupCount);
+        try {
+            nodeService.takeBackups(new MapTxnBackupCommitOperation(txnId), partitionId, maxBackupCount, 60);
+        } catch (Exception e) {
+            throw new TransactionException(e);
+        }
     }
 
-    public void rollback(String txnId, int partitionId) {
+    public void rollback(String txnId, int partitionId) throws TransactionException {
         System.out.println(nodeService.getThisAddress() + " MapService commit " + txnId);
         getPartitionContainer(partitionId).rollback(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
-        takeBackups(new MapTxnBackupRollbackOperation(txnId), partitionId, maxBackupCount);
-    }
-
-    private void takeBackups(Operation op, int partitionId, int backupCount) {
-        if (backupCount > 0) {
-            List<Future> backupOps = new ArrayList<Future>(backupCount);
-            PartitionInfo partitionInfo = nodeService.getPartitionInfo(partitionId);
-            for (int i = 0; i < backupCount; i++) {
-                int replicaIndex = i + 1;
-                Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
-                if (replicaTarget != null) {
-                    if (replicaTarget.equals(nodeService.getThisAddress())) {
-                        // Normally shouldn't happen!!
-                    } else {
-                        try {
-                            backupOps.add(nodeService.createSinglePartitionInvocation(MapService.MAP_SERVICE_NAME, op, partitionId).setReplicaIndex(replicaIndex).build().invoke());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }
-            for (Future backupOp : backupOps) {
-                try {
-                    backupOp.get(10, TimeUnit.SECONDS);
-                } catch (Exception e) {
-                }
-            }
+        try {
+            nodeService.takeBackups(new MapTxnBackupRollbackOperation(txnId), partitionId, maxBackupCount, 60);
+        } catch (Exception e) {
+            throw new TransactionException(e);
         }
     }
 

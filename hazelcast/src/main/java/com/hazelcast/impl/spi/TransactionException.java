@@ -16,13 +16,19 @@
 
 package com.hazelcast.impl.spi;
 
-import com.hazelcast.nio.Data;
+public class TransactionException extends Exception {
+    public TransactionException() {
+    }
 
-public interface KeyBasedOperation extends Operation {
+    public TransactionException(String message) {
+        super(message);
+    }
 
-    Data getKey();
+    public TransactionException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-    int getThreadId();
-
-    void setThreadId(int threadId);
+    public TransactionException(Throwable cause) {
+        super(cause);
+    }
 }

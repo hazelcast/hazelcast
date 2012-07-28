@@ -21,6 +21,7 @@ import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.TransactionImpl;
 import com.hazelcast.impl.spi.Invocation;
 import com.hazelcast.impl.spi.NodeService;
+import com.hazelcast.impl.spi.Response;
 import com.hazelcast.nio.Data;
 
 import java.util.Map;
@@ -51,8 +52,11 @@ public class MapProxy {
         try {
             Invocation invocation = nodeService.createSinglePartitionInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
             Future f = invocation.invoke();
-            Data response = (Data) f.get();
-            return toObject(response);
+            Object response = f.get();
+            if (response instanceof Response) {
+                return ((Response) response).getResult();
+            }
+            return toObject((Data) response);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }

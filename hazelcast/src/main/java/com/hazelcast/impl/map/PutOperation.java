@@ -114,8 +114,11 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
             mapPartition.store.store(key, record.getValue());
         }
         boolean callerBackup = takeBackup();
-        Object result = (callerBackup) ? new PutBackupAndResponse(oldValueData, name, dataKey, dataValue) : new Response(oldValueData);
-        responseHandler.sendResponse(result);
+        Operation preResponseBackupOp = null;
+        if (callerBackup) {
+            preResponseBackupOp = new PutBackupOperation(name, dataKey, dataValue, ttl, false);
+        }
+        responseHandler.sendResponse(new Response(preResponseBackupOp, oldValueData, false));
     }
 
     private boolean takeBackup() {

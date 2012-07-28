@@ -23,7 +23,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public abstract class AbstractKeyBasedOperation extends AbstractOperation implements KeyBasedOperation {
-    protected Data dataKey;
+    protected Data dataKey = null;
+    protected int threadId = -1;
 
     public AbstractKeyBasedOperation(Data dataKey) {
         this.dataKey = dataKey;
@@ -36,12 +37,22 @@ public abstract class AbstractKeyBasedOperation extends AbstractOperation implem
         return dataKey;
     }
 
+    public int getThreadId() {
+        return threadId;
+    }
+
+    public void setThreadId(int threadId) {
+        this.threadId = threadId;
+    }
+
     public void writeData(DataOutput out) throws IOException {
         dataKey.writeData(out);
+        out.writeInt(threadId);
     }
 
     public void readData(DataInput in) throws IOException {
         dataKey = new Data();
         dataKey.readData(in);
+        threadId = in.readInt();
     }
 }

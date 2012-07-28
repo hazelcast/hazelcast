@@ -29,6 +29,7 @@ public class MapPartition {
     final PartitionInfo partitionInfo;
     final PartitionContainer partitionContainer;
     final Map<Data, Record> records = new HashMap<Data, Record>(1000);
+    final Map<Data, LockInfo> locks = new HashMap<Data, LockInfo>(100);
     final MapLoader loader;
     final MapStore store;
     final long writeDelayMillis = 0;
@@ -38,5 +39,14 @@ public class MapPartition {
         this.partitionContainer = partitionContainer;
         loader = null;
         store = null;
+    }
+
+    public LockInfo getOrCreateLock(Data key) {
+        LockInfo lock = locks.get(key);
+        if (lock == null) {
+            lock = new LockInfo();
+            locks.put(key, lock);
+        }
+        return lock;
     }
 }
