@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -118,7 +118,7 @@ public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>,
             Set<Entry<String, Object>> entries = bindings.entrySet();
             for (Entry<String, Object> entry : entries) {
                 out.writeUTF(entry.getKey());
-                SerializationHelper.writeObject(out, entry.getValue());
+                IOUtil.writeObject(out, entry.getValue());
             }
         } else {
             out.writeInt(0);
@@ -133,7 +133,7 @@ public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>,
             bindings = new HashMap<String, Object>(size);
             for (int i = 0; i < size; i++) {
                 String key = in.readUTF();
-                Object value = SerializationHelper.readObject(in);
+                Object value = IOUtil.readObject(in);
                 bindings.put(key, value);
             }
         }

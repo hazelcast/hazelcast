@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/*
+
+
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.IOUtil;
@@ -42,3 +45,4 @@ public class KeyValue extends com.hazelcast.impl.base.KeyValue {
         return oldValue;
     }
 }
+*/

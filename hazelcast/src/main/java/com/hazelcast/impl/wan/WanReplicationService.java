@@ -20,7 +20,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Serializer;
+import com.hazelcast.nio.ClassLoaderUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -54,7 +54,7 @@ public class WanReplicationService {
                 WanReplicationEndpoint target = null;
                 if( targetClusterConfig.getReplicationImpl() != null) {
                     try {
-                        target = (WanReplicationEndpoint) Serializer.loadClass(targetClusterConfig.getReplicationImpl()).newInstance();
+                        target = (WanReplicationEndpoint) ClassLoaderUtil.newInstance(targetClusterConfig.getReplicationImpl());
                     } catch (Exception e) {
                         logger.log(Level.SEVERE, e.getMessage(), e);
                     }

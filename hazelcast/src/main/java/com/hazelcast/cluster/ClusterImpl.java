@@ -107,15 +107,6 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
         heartbeatOperationData = toData(new HeartbeatOperation()) ;
         node.clusterService.registerPeriodicRunnable(new SplitBrainHandler(node));
-//        node.clusterService.registerPeriodicRunnable(new Runnable() {
-//            public void run() {
-//                long now = Clock.currentTimeMillis();
-//                if (now - lastHeartbeat >= heartbeatIntervalMillis) {
-//                    heartBeater();
-//                    lastHeartbeat = now;
-//                }
-//            }
-//        });
         node.nodeService.getScheduledExecutorService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 heartBeater();

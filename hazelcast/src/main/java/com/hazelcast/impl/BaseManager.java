@@ -1348,7 +1348,8 @@ public abstract class BaseManager {
                     }
                 }
             }
-            final DataAwareEntryEvent dataAwareEntryEvent = new DataAwareEntryEvent(member, eventType, name, key, newValue, oldValue, localEvent);
+            final DataAwareEntryEvent dataAwareEntryEvent = new DataAwareEntryEvent(member, eventType, name, key,
+                    newValue, oldValue, localEvent, node.factory.serializerRegistry);
             int hash;
             if (key != null) {
                 hash = key.hashCode();

@@ -26,6 +26,109 @@ import java.util.zip.Inflater;
 
 public final class IOUtil {
 
+    public static void writeByteArray(DataOutput out, byte[] value) throws IOException {
+        int size = (value == null) ? 0 : value.length;
+        out.writeInt(size);
+        if (size > 0) {
+            out.write(value);
+        }
+    }
+
+    public static byte[] readByteArray(DataInput in) throws IOException {
+        int size = in.readInt();
+        if (size == 0) {
+            return null;
+        } else {
+            byte[] b = new byte[size];
+            in.readFully(b);
+            return b;
+        }
+    }
+
+    public static void writeObject(DataOutput out, Object obj) throws IOException {
+        Data data = toData(obj);
+        writeData(out, data);
+    }
+
+    public static <T> T readObject(DataInput in) throws IOException {
+        Data data = readData(in);
+        return toObject(data);
+    }
+
+    public static void writeData(DataOutput out, Data data) throws IOException {
+        if(data != null) {
+            out.writeBoolean(true);
+            data.writeData(out);
+        } else {
+            // null
+            out.writeBoolean(false);
+        }
+    }
+
+    public static Data readData(DataInput in) throws IOException {
+        final boolean isNotNull = in.readBoolean();
+        if (isNotNull) {
+            Data data = new Data();
+            data.readData(in);
+            return data;
+        } else {
+            return null;
+        }
+    }
+
+    public static byte[] toByteArray(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        if (obj instanceof byte[]) {
+            return (byte[]) obj;
+        }
+        return ThreadContext.get().toByteArray(obj);
+    }
+
+    public static Data toData(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        if (obj instanceof Data) {
+            return (Data) obj;
+        }
+        return ThreadContext.get().toData(obj);
+    }
+
+    public static <T> T toObject(byte[] data) {
+        return (T) ThreadContext.get().toObject(data);
+    }
+
+    public static <T> T toObject(Data data) {
+        if (data == null) {
+            return null;
+        }
+        return (T) ThreadContext.get().toObject(data);
+    }
+
+    public static Object toObject(Object data) {
+        if (data == null) {
+            return null;
+        }
+        if (data instanceof Data) {
+            return ThreadContext.get().toObject((Data) data);
+        }
+        return data;
+    }
+
+    public static <T> T toObject(DataHolder dataHolder) {
+        return toObject(dataHolder.toData());
+    }
+
+    public static ObjectInputStream newObjectInputStream(final InputStream in) throws IOException {
+        return new ObjectInputStream(in) {
+            protected Class<?> resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
+                return ClassLoaderUtil.loadClass(desc.getName());
+            }
+        };
+    }
+
     public static OutputStream newOutputStream(final ByteBuffer buf) {
         return new OutputStream() {
             public void write(int b) throws IOException {
@@ -118,31 +221,6 @@ public final class IOUtil {
         return sb.toString();
     }
 
-    public static void putBoolean(ByteBuffer bb, boolean value) {
-        bb.put((byte) (value ? 1 : 0));
-    }
-
-    public static boolean getBoolean(ByteBuffer bb) {
-        return bb.get() == 1;
-    }
-
-    public static Data toData(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-        if (obj instanceof Data) {
-            return (Data) obj;
-        }
-        return ThreadContext.get().toData(obj);
-    }
-
-    public static long getLong(Data longData) {
-        byte[] b = longData.buffer;
-        ByteBuffer current = ByteBuffer.wrap(b);
-        current.get(); // type
-        return current.getLong();
-    }
-
     public static Data addDelta(Data longData, long delta) {
         long longValue = (Long) toObject(longData);
         return toData(longValue + delta);
@@ -151,49 +229,6 @@ public final class IOUtil {
     public static Data addDelta(Data intData, int delta) {
         int intValue = (Integer) toObject(intData);
         return toData(intValue + delta);
-    }
-
-    public static Object toObject(Data data) {
-        if (data == null) {
-            return null;
-        }
-        return ThreadContext.get().toObject(data);
-    }
-
-    public static Object toObject(Object data) {
-        if (data == null) {
-            return null;
-        }
-        if (data instanceof Data) {
-            return ThreadContext.get().toObject((Data) data);
-        }
-        return data;
-    }
-
-    public static Object toObject(DataHolder dataHolder) {
-        return toObject(dataHolder.toData());
-    }
-
-    public static Object serializeToObject(byte[] bytes) throws Exception {
-        if (bytes == null) return null;
-        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes));
-        try {
-            Object obj = in.readObject();
-            return obj;
-        } finally {
-            closeResource(in);
-        }
-    }
-
-    public static byte[] serializeToBytes(Object object) throws Exception {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(bos);
-        try {
-            out.writeObject(object);
-            return bos.toByteArray();
-        } finally {
-            closeResource(out);
-        }
     }
 
     public static byte[] compress(byte[] input) throws IOException {

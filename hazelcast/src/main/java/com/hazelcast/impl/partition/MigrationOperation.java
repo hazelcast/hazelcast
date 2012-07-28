@@ -24,7 +24,7 @@ import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.Serializer;
+import com.hazelcast.nio.ClassLoaderUtil;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -101,7 +101,7 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
             int size = in.readInt();
             tasks = new ArrayList<ServiceMigrationOperation>(size);
             for (int i = 0; i < size; i++) {
-                ServiceMigrationOperation task = (ServiceMigrationOperation) Serializer.loadClass(in.readUTF()).newInstance();
+                ServiceMigrationOperation task = (ServiceMigrationOperation) ClassLoaderUtil.newInstance(in.readUTF());
                 task.readData(in);
                 tasks.add(task);
             }

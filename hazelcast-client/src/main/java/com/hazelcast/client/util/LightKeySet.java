@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.util;
+
+import com.hazelcast.client.util.EntryHolder;
 
 import java.util.AbstractCollection;
 import java.util.Iterator;

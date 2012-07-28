@@ -15,6 +15,7 @@
  */
 package com.hazelcast.client;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Keys;
 import com.hazelcast.nio.Data;

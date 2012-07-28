@@ -16,13 +16,11 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.Call;
-import com.hazelcast.client.ClientRunnable;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.Packet;
+import com.hazelcast.client.*;
 import com.hazelcast.core.Instance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,13 +30,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.client.IOUtil.toObject;
+import static com.hazelcast.nio.IOUtil.toObject;
 import static com.hazelcast.impl.BaseManager.getInstanceType;
 
 public class ListenerManager extends ClientRunnable {
 
     final private ILogger logger = Logger.getLogger(this.getClass().getName());
-    final private HazelcastClient client;
     final private BlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
     final private InstanceListenerManager instanceListenerManager;
     final private MembershipListenerManager membershipListenerManager;
@@ -47,14 +44,14 @@ public class ListenerManager extends ClientRunnable {
     final private ItemListenerManager itemListenerManager;
     final private QueueItemListenerManager queueItemListenerManager;
 
-    public ListenerManager(HazelcastClient hazelcastClient) {
-        this.client = hazelcastClient;
+    public ListenerManager(HazelcastClient hazelcastClient, SerializerRegistry serializerRegistry) {
+        super(hazelcastClient);
         instanceListenerManager = new InstanceListenerManager(client);
         membershipListenerManager = new MembershipListenerManager(client);
-        messageListenerManager = new MessageListenerManager();
-        entryListenerManager = new EntryListenerManager();
-        itemListenerManager = new ItemListenerManager(entryListenerManager);
-        queueItemListenerManager = new QueueItemListenerManager();
+        messageListenerManager = new MessageListenerManager(serializerRegistry);
+        entryListenerManager = new EntryListenerManager(serializerRegistry);
+        itemListenerManager = new ItemListenerManager(entryListenerManager, serializerRegistry);
+        queueItemListenerManager = new QueueItemListenerManager(serializerRegistry);
     }
 
     public void enqueue(Object object) {

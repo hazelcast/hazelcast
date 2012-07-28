@@ -16,22 +16,25 @@
 
 package com.hazelcast.nio;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public final class FastByteArrayOutputStream extends ByteArrayOutputStream implements DataOutput {
-
-    private final byte writeBuffer[] = new byte[8];
+public final class FastDataOutputStream extends OutputStream implements DataOutput {
 
     static final int STRING_CHUNK_SIZE = 16 * 1024;
 
-    public FastByteArrayOutputStream() {
+    private byte buf[];
+
+    private int count;
+
+    private final byte writeBuffer[] = new byte[8];
+
+    public FastDataOutputStream() {
         this(32);
     }
 
-    public FastByteArrayOutputStream(int size) {
+    public FastDataOutputStream(int size) {
         if (size < 0) {
             throw new IllegalArgumentException("Negative initial size: "
                     + size);
@@ -69,7 +72,6 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
         count = newcount;
     }
 
-    @Override
     public void writeTo(OutputStream out) throws IOException {
         out.write(buf, 0, count);
     }
@@ -78,16 +80,14 @@ public final class FastByteArrayOutputStream extends ByteArrayOutputStream imple
         this.buf = buffer;
     }
 
-    @Override
     public void reset() {
         count = 0;
     }
 
-    public int getCount() {
+    public int size() {
         return count;
     }
 
-    @Override
     public byte toByteArray()[] {
         byte newbuf[] = new byte[count];
         System.arraycopy(buf, 0, newbuf, 0, count);

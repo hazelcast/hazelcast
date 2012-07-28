@@ -14,32 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.util;
 
+import com.hazelcast.client.MapClientProxy;
+import com.hazelcast.client.util.MapEntrySetIterator;
 import com.hazelcast.core.Instance;
 
 import java.util.AbstractCollection;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
-public class LightMultiMapEntrySet<K, V> extends AbstractCollection<Map.Entry<K, V>> implements Set<Map.Entry<K, V>> {
+public class LightEntrySetSet<K, V> extends AbstractCollection<java.util.Map.Entry<K, V>> implements Set<java.util.Map.Entry<K, V>> {
 
-    private final Set<K> keySet;
-    private final MultiMapClientProxy proxy;
+    private final Collection entrySet;
+    private final MapClientProxy<K, V> proxy;
     private final Instance.InstanceType instanceType;
 
-    public LightMultiMapEntrySet(Set<K> set, MultiMapClientProxy proxy, Instance.InstanceType instanceType) {
-        this.keySet = set;
+    public LightEntrySetSet(Collection collection, MapClientProxy<K, V> proxy, Instance.InstanceType instanceType) {
+        this.entrySet = collection;
         this.proxy = proxy;
         this.instanceType = instanceType;
     }
 
-    public Iterator<Map.Entry<K, V>> iterator() {
-        return new MultiMapEntryIterator(keySet.iterator(), proxy, instanceType);
+    public Iterator<Entry<K, V>> iterator() {
+        return new MapEntrySetIterator<K, V>(entrySet.iterator(), proxy, instanceType);
     }
 
     public int size() {
-        return proxy.size();
+        return entrySet.size();
     }
 }
+

@@ -44,7 +44,7 @@ public class InRunnable extends IORunnable implements Runnable {
         Packet packet;
         try {
             Connection oldConnection = connection;
-            connection = client.connectionManager.getConnection();
+            connection = client.getConnectionManager().getConnection();
             if (restoredConnection(oldConnection, connection)) {
                 if (outRunnable.sendReconnectCall(connection)) {
                     logger.log(Level.FINEST, "restoredConnection");
@@ -89,7 +89,7 @@ public class InRunnable extends IORunnable implements Runnable {
             if (running) {
                 this.running = false;
                 try {
-                    Connection connection = client.connectionManager.getConnection();
+                    Connection connection = client.getConnectionManager().getConnection();
                     if (connection != null) {
                         connection.close();
                     }

@@ -19,10 +19,12 @@ package com.hazelcast.impl;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class DataAwareEntryEvent extends EntryEvent {
+
     protected final Data dataKey;
 
     protected final Data dataNewValue;
@@ -31,14 +33,19 @@ public class DataAwareEntryEvent extends EntryEvent {
 
     protected final boolean firedLocally;
 
+    private final transient SerializerRegistry serializerRegistry;
+
     public DataAwareEntryEvent(Member from, int eventType,
                                String name, Data dataKey,
-                               Data dataNewValue, Data dataOldValue, boolean firedLocally) {
+                               Data dataNewValue, Data dataOldValue,
+                               boolean firedLocally,
+                               SerializerRegistry serializerRegistry) {
         super(name, from, eventType, null, null);
         this.dataKey = dataKey;
         this.dataNewValue = dataNewValue;
         this.dataOldValue = dataOldValue;
         this.firedLocally = firedLocally;
+        this.serializerRegistry = serializerRegistry;
     }
 
     public Data getKeyData() {
@@ -55,6 +62,7 @@ public class DataAwareEntryEvent extends EntryEvent {
 
     public Object getKey() {
         if (key == null && dataKey != null) {
+            beforeReadData();
             key = toObject(dataKey);
         }
         return key;
@@ -62,6 +70,7 @@ public class DataAwareEntryEvent extends EntryEvent {
 
     public Object getOldValue() {
         if (oldValue == null && dataOldValue != null) {
+            beforeReadData();
             oldValue = toObject(dataOldValue);
         }
         return oldValue;
@@ -69,9 +78,16 @@ public class DataAwareEntryEvent extends EntryEvent {
 
     public Object getValue() {
         if (value == null && dataNewValue != null) {
+            beforeReadData();
             value = toObject(dataNewValue);
         }
         return value;
+    }
+
+    private void beforeReadData() {
+        if (serializerRegistry != null) {
+            ThreadContext.get().setCurrentSerializerRegistry(serializerRegistry);
+        }
     }
 
     public String getLongName() {

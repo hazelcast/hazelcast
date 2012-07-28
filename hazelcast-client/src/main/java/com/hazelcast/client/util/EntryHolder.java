@@ -14,27 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.util;
 
-import com.hazelcast.nio.Data;
+public interface EntryHolder<K, V> {
 
-public final class IOUtil {
+    V remove(Object arg0);
 
-    public static byte[] toByte(final Object object) {
-        if (object == null) {
-            return null;
-        }
-        if (object instanceof Data) {
-            return ((Data) object).buffer;
-        }
-        return ClientThreadContext.get().toByte(object);
-    }
+    V get(K key);
 
-    public static Object toObject(final byte[] bytes) {
-        return ClientThreadContext.get().toObject(bytes);
-    }
+    boolean remove(Object key, Object value);
 
-    public static Object toObject(final Data data) {
-        return ClientThreadContext.get().toObject(data.buffer);
-    }
+    boolean containsValue(Object v);
+
+    int size();
 }

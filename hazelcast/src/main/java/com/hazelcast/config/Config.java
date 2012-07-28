@@ -91,10 +91,11 @@ public class Config implements DataSerializable {
 
     private ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig();
 
+    private Collection<SerializerConfig> serializerConfigs;
+
     private ManagedContext managedContext;
 
     private String licenseKey;
-
 
     public Config() {
         final String liteMemberProp = System.getProperty("hazelcast.lite.member");
@@ -651,6 +652,23 @@ public class Config implements DataSerializable {
 
     public Config setListenerConfigs(List<ListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+        return this;
+    }
+
+    public Collection<SerializerConfig> getSerializerConfigs() {
+        if (serializerConfigs == null) {
+            serializerConfigs = new LinkedList<SerializerConfig>();
+        }
+        return serializerConfigs;
+    }
+
+    public Config addSerializerConfig(SerializerConfig serializerConfig) {
+        getSerializerConfigs().add(serializerConfig);
+        return this;
+    }
+
+    public Config setSerializerConfigs(Collection<SerializerConfig> serializerConfigs) {
+        this.serializerConfigs = serializerConfigs;
         return this;
     }
 
