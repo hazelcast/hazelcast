@@ -21,13 +21,22 @@ import javax.naming.Reference;
 import javax.resource.ResourceException;
 import javax.resource.cci.*;
 import javax.resource.spi.ConnectionManager;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConnectionFactoryImpl extends JcaBase implements ConnectionFactory {
-    final ManagedConnectionFactoryImpl mcf;
-    final ConnectionManager cm;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+
+public class ConnectionFactoryImpl implements ConnectionFactory {
+	private static final long serialVersionUID = -5909363703528221650L;
+	
+	private final ManagedConnectionFactoryImpl mcf;
+    private final ConnectionManager cm;
     private Reference ref;
     private final static AtomicInteger idGen = new AtomicInteger();
+    private final static ILogger logger = Logger.getLogger("com.hazelcast.jca");
     private transient final int id;
 
     public ConnectionFactoryImpl(ManagedConnectionFactoryImpl mcf, ConnectionManager cm) {
@@ -36,19 +45,20 @@ public class ConnectionFactoryImpl extends JcaBase implements ConnectionFactory 
         this.cm = cm;
         id = idGen.incrementAndGet();
     }
-
+    
+    
     public Connection getConnection() throws ResourceException {
-        log(this, "getConnection");
+        logger.log(Level.FINEST, "getConnection");
         return (Connection) cm.allocateConnection(mcf, null);
     }
 
     public Connection getConnection(ConnectionSpec connSpec) throws ResourceException {
-        log(this, "getConnection spec: " + connSpec);
+    	logger.log(Level.FINEST, "getConnection spec: " + connSpec);
         return (Connection) cm.allocateConnection(mcf, null);
     }
 
     public ResourceAdapterMetaData getMetaData() throws ResourceException {
-        return null;
+        return new ConnectionFactoryMetaData();
     }
 
     public RecordFactory getRecordFactory() throws ResourceException {
@@ -67,4 +77,27 @@ public class ConnectionFactoryImpl extends JcaBase implements ConnectionFactory 
     public String toString() {
         return "hazelcast.ConnectionFactoryImpl [" + id + "]";
     }
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + id;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ConnectionFactoryImpl other = (ConnectionFactoryImpl) obj;
+		if (id != other.id)
+			return false;
+		return true;
+	}
+    
 }

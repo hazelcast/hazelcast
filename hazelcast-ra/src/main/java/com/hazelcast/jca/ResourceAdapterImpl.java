@@ -16,6 +16,8 @@
 
 package com.hazelcast.jca;
 
+import java.io.Serializable;
+
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.BootstrapContext;
@@ -24,9 +26,16 @@ import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.transaction.xa.XAResource;
 
-public class ResourceAdapterImpl implements ResourceAdapter {
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 
-    public void endpointActivation(MessageEndpointFactory arg0, ActivationSpec arg1)
+public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
+
+	private static final long serialVersionUID = -1727994229521767306L;
+	private HazelcastInstance hazelcast;
+
+	public void endpointActivation(MessageEndpointFactory arg0, ActivationSpec arg1)
             throws ResourceException {
     }
 
@@ -34,12 +43,24 @@ public class ResourceAdapterImpl implements ResourceAdapter {
     }
 
     public XAResource[] getXAResources(ActivationSpec[] arg0) throws ResourceException {
-        return null;
+        return new XAResource[0];
     }
 
-    public void start(BootstrapContext arg0) throws ResourceAdapterInternalException {
+    public void start(BootstrapContext ctx) throws ResourceAdapterInternalException {
+    	setHazelcast(Hazelcast.newHazelcastInstance(new XmlConfigBuilder().build()));;
     }
 
     public void stop() {
+    	if (getHazelcast() != null) {
+    		getHazelcast().getLifecycleService().shutdown();
+    	}
     }
+
+	private void setHazelcast(HazelcastInstance hazelcast) {
+		this.hazelcast = hazelcast;
+	}
+
+	HazelcastInstance getHazelcast() {
+		return hazelcast;
+	}
 }

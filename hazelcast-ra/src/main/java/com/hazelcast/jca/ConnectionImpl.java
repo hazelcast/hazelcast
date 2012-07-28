@@ -22,40 +22,54 @@ import javax.resource.cci.ConnectionMetaData;
 import javax.resource.cci.Interaction;
 import javax.resource.cci.ResultSetInfo;
 import javax.resource.spi.ConnectionEvent;
-import java.util.concurrent.atomic.AtomicInteger;
+import javax.security.auth.Subject;
 
-public class ConnectionImpl extends JcaBase implements Connection {
-    final ManagedConnectionImpl mc;
+import com.hazelcast.core.IMap;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+
+public class ConnectionImpl implements Connection {
+    final ManagedConnectionImpl managedConnection;
     private static AtomicInteger idGen = new AtomicInteger();
     private final int id;
-
-    public ConnectionImpl(ManagedConnectionImpl mc) {
+    
+    public ConnectionImpl(ManagedConnectionImpl mc, Subject subject) {
         super();
-        this.mc = mc;
+        this.managedConnection = mc;
         id = idGen.incrementAndGet();
     }
+    
+    public <K, V> IMap<K, V> getMap(String name) {
+    	return managedConnection.getHazelcastInstance().getMap(name);
+    }
+    
+    //TODO Expose all functionalty without transaction mgmt behavoir!
 
     public void close() throws ResourceException {
-        log(this, "close");
-        mc.fireConnectionEvent(ConnectionEvent.CONNECTION_CLOSED);
+    	managedConnection.log(Level.FINEST, "close");
+        managedConnection.fireConnectionEvent(ConnectionEvent.CONNECTION_CLOSED, this);
     }
 
     public Interaction createInteraction() throws ResourceException {
-        return null;
-    }
-
-    public javax.resource.cci.LocalTransaction getLocalTransaction() throws ResourceException {
-        log(this, "getLocalTransaction");
-        return mc;
-    }
-
-    public ConnectionMetaData getMetaData() throws ResourceException {
+    	//TODO
         return null;
     }
 
     public ResultSetInfo getResultSetInfo() throws ResourceException {
+    	//TODO
         return null;
     }
+    
+    public javax.resource.cci.LocalTransaction getLocalTransaction() throws ResourceException {
+    	managedConnection.log(Level.FINEST, "getLocalTransaction");
+        return managedConnection;
+    }
+
+    public ConnectionMetaData getMetaData() throws ResourceException {
+    	return managedConnection.getMetaData();
+    }
+
 
     @Override
     public String toString() {
