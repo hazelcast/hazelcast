@@ -19,7 +19,10 @@ package com.hazelcast.impl.spi;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Member;
-import com.hazelcast.impl.*;
+import com.hazelcast.impl.ExecutorThreadFactory;
+import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.impl.Node;
+import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -264,6 +267,27 @@ public class NodeService {
                 .setCallId(callId)
                 .setPartitionId(partitionId);
         return context;
+    }
+
+    public void takeBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds) throws ExecutionException, TimeoutException, InterruptedException {
+        if (backupCount > 0) {
+            List<Future> backupOps = new ArrayList<Future>(backupCount);
+            PartitionInfo partitionInfo = getPartitionInfo(partitionId);
+            for (int i = 0; i < backupCount; i++) {
+                int replicaIndex = i + 1;
+                Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
+                if (replicaTarget != null) {
+                    if (replicaTarget.equals(getThisAddress())) {
+                        // Normally shouldn't happen!!
+                    } else {
+                        backupOps.add(createSingleInvocation(serviceName, op, partitionId).setReplicaIndex(replicaIndex).build().invoke());
+                    }
+                }
+            }
+            for (Future backupOp : backupOps) {
+                backupOp.get(timeoutSeconds, TimeUnit.SECONDS);
+            }
+        }
     }
 
     private ExecutorService getExecutor(int partitionId, boolean nonBlocking) {

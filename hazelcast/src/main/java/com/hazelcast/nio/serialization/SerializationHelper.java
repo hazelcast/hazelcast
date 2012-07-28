@@ -26,6 +26,9 @@ import com.hazelcast.nio.FastDataInputStream;
 import com.hazelcast.nio.FastDataOutputStream;
 import com.hazelcast.nio.HazelcastSerializationException;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.NotSerializableException;
 import java.util.logging.Level;
 
@@ -113,7 +116,7 @@ public final class SerializationHelper {
         }
         final Object obj = toObject(data.buffer);
         final ManagedContext managedContext = context != null
-                                              ? context.getCurrentManagedContext() : null;
+                ? context.getCurrentManagedContext() : null;
         if (managedContext != null) {
             managedContext.initialize(obj);
         }
@@ -122,7 +125,7 @@ public final class SerializationHelper {
 
     private SerializerRegistry getSerializerRegistry() {
         final SerializerRegistry serializerRegistry = context != null
-                                                    ? context.getCurrentSerializerRegistry() : defaultRegistry;
+                ? context.getCurrentSerializerRegistry() : defaultRegistry;
         if (serializerRegistry == null) {
             throw new HazelcastSerializationException("SerializerRegistry could not be found!");
         }
@@ -160,6 +163,24 @@ public final class SerializationHelper {
                 }
             }
         }
+    }
+
+    public static void writeNullableData(DataOutput out, Data data) throws IOException {
+        boolean isNull = (data == null);
+        out.writeBoolean(isNull);
+        if (!isNull) {
+            data.writeData(out);
+        }
+    }
+
+    public static Data readNullableData(DataInput in) throws IOException {
+        boolean isNull = in.readBoolean();
+        if (!isNull) {
+            Data data = new Data();
+            data.readData(in);
+            return data;
+        }
+        return null;
     }
 
     private class SerializationBuffer {
@@ -223,5 +244,4 @@ public final class SerializationHelper {
             in.set(null, 0);
         }
     }
-
 }

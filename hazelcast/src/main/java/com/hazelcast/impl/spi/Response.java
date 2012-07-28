@@ -17,7 +17,7 @@
 package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.nio.serialization.SerializationHelper;
 
 import java.io.DataInput;
 import java.io.DataOutput;
