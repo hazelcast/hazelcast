@@ -16,7 +16,10 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.*;
+import com.hazelcast.cluster.ClusterImpl;
+import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.JoinInfo;
+import com.hazelcast.cluster.JoinRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.Join;
 import com.hazelcast.config.ListenerConfig;
@@ -168,16 +171,17 @@ public class Node {
         } catch (Throwable e) {
             try {
                 serverSocketChannel.close();
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
             Util.throwUncheckedException(e);
         }
+        baseVariables = new NodeBaseVariables(/*address, localMember*/);
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
-        executorManager = new ExecutorManager(this);
         nodeService = new NodeService(this);
         //initialize managers..
-        baseVariables = new NodeBaseVariables(/*address, localMember*/);
         clusterService = new ClusterService(this);
         clusterService.start();
+        executorManager = new ExecutorManager(this);
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterImpl = new ClusterImpl(this);
         partitionManager = new PartitionManager(this);
