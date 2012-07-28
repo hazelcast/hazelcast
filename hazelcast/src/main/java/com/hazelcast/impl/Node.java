@@ -433,6 +433,8 @@ public class Node {
             concurrentMapManager.shutdown();
             logger.log(Level.FINEST, "Shutting down the cluster service");
             clusterService.stop();
+            logger.log(Level.FINEST, "Shutting down the nodeService");
+            nodeService.shutdown();
             if (multicastService != null) {
                 logger.log(Level.FINEST, "Shutting down the multicast service");
                 multicastService.stop();

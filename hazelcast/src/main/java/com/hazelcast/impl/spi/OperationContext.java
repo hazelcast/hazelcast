@@ -51,8 +51,9 @@ public class OperationContext {
         return responseHandler;
     }
 
-    public void setResponseHandler(ResponseHandler responseHandler) {
+    public OperationContext setResponseHandler(ResponseHandler responseHandler) {
         this.responseHandler = responseHandler;
+        return this;
     }
 
     public int getPartitionId() {

@@ -90,7 +90,7 @@ public class ConcurrentMapManager extends BaseManager {
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
         partitionManager = node.partitionManager;
         partitionServiceImpl = new PartitionServiceImpl(this);
-        node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
+        node.nodeService.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
                 startCleanup(true, false);
             }

@@ -105,11 +105,11 @@ public class PartitionManager {
         if (partitionTableSendInterval <= 0) {
             partitionTableSendInterval = 1;
         }
-        node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new SendClusterStateTask(),
+        nodeService.getScheduledExecutorService().scheduleAtFixedRate(new SendClusterStateTask(),
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
-        node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new CheckMigratingPartitionTask(),
+        nodeService.getScheduledExecutorService().scheduleAtFixedRate(new CheckMigratingPartitionTask(),
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
-        node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
+        nodeService.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
                 if (node.isMaster() && node.isActive()
                         && initialized && shouldCheckRepartitioning()) {
@@ -323,7 +323,7 @@ public class PartitionManager {
                 final long waitBeforeMigrationActivate = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
                                                          * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS
                         .getInteger() * 10;
-                node.executorManager.getScheduledExecutorService().schedule(new Runnable() {
+                nodeService.getScheduledExecutorService().schedule(new Runnable() {
                     public void run() {
                         migrationActive.compareAndSet(false, migrationStatus);
                     }

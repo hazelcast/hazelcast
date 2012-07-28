@@ -116,7 +116,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
 //                }
 //            }
 //        });
-        node.executorManager.getScheduledExecutorService().scheduleWithFixedDelay(new Runnable() {
+        node.nodeService.getScheduledExecutorService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 heartBeater();
             }

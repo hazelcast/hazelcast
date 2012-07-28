@@ -19,9 +19,7 @@ package com.hazelcast.impl.spi;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Member;
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.impl.*;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -40,18 +38,25 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public class NodeService {
 
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
-    private final ExecutorService executorService; //= Executors.newCachedThreadPool();
+    private final ExecutorService executorService;
     private final Workers nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
     private final Workers blockingWorkers = new Workers("hz.Blocking", 8);
+    private final ScheduledExecutorService scheduledExecutorService;
     private final Node node;
     private final ILogger logger;
-    final int partitionCount;
-    final int maxBackupCount;
+    private final int partitionCount;
+    private final int maxBackupCount;
 
     public NodeService(Node node) {
         this.node = node;
-        this.executorService = node.executorManager.getThreadPoolExecutor();
         this.logger = node.getLogger(NodeService.class.getName());
+        final ClassLoader classLoader = node.getConfig().getClassLoader();
+        this.executorService = new ThreadPoolExecutor(
+                3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+                new SynchronousQueue(),
+                new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"), classLoader));
+        this.scheduledExecutorService = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(node.threadGroup,
+                node.getThreadPoolNamePrefix("scheduled"), classLoader));
         this.partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         this.maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
@@ -136,11 +141,13 @@ public class NodeService {
             throw new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName);
         }
         if (getThisAddress().equals(target)) {
-            op.getOperationContext().setResponseHandler(new ResponseHandler() {
-                public void sendResponse(Object obj) {
-                    inv.setResult(obj);
-                }
-            });
+            if (!(op instanceof NoReply)) {
+                op.getOperationContext().setResponseHandler(new ResponseHandler() {
+                    public void sendResponse(Object obj) {
+                        inv.setResult(obj);
+                    }
+                });
+            }
             runLocally(partitionId, op, nonBlocking);
         } else {
             final Packet packet = new Packet();
@@ -158,7 +165,7 @@ public class NodeService {
         }
     }
 
-    public void runLocally(final int partitionId, final Operation op, final boolean nonBlocking) {
+    void runLocally(final int partitionId, final Operation op, final boolean nonBlocking) {
         final ExecutorService executor = getExecutor(partitionId, nonBlocking);
         executor.execute(new Runnable() {
             public void run() {
@@ -192,24 +199,27 @@ public class NodeService {
             public void run() {
                 try {
                     final Operation op = (Operation) toObject(data);
-                    setOperationContext(op, serviceName, caller, callId, partitionId).setConnection(packet.conn);
-                    ResponseHandler responseHandler = new ResponseHandler() {
-                        public void sendResponse(Object response) {
-                            if (!(op instanceof NoReply)) {
-                                if (!(response instanceof Operation)) {
-                                    response = new Response(response);
+                    setOperationContext(op, serviceName, caller, callId, partitionId);
+                    final boolean noReply = (op instanceof NoReply);
+                    if (!noReply) {
+                        ResponseHandler responseHandler = new ResponseHandler() {
+                            public void sendResponse(Object response) {
+                                if (!noReply) {
+                                    if (!(response instanceof Operation)) {
+                                        response = new Response(response);
+                                    }
+                                    packet.clearForResponse();
+                                    packet.blockId = partitionId;
+                                    packet.callId = callId;
+                                    packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
+                                    packet.setValue(toData(response));
+                                    packet.name = serviceName;
+                                    node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
                                 }
-                                packet.clearForResponse();
-                                packet.blockId = partitionId;
-                                packet.callId = callId;
-                                packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
-                                packet.setValue(toData(response));
-                                packet.name = serviceName;
-                                node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
                             }
-                        }
-                    };
-                    op.getOperationContext().setResponseHandler(responseHandler);
+                        };
+                        op.getOperationContext().setResponseHandler(responseHandler);
+                    }
                     try {
                         if (partitionId != -1) {
                             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
@@ -227,7 +237,9 @@ public class NodeService {
                         } else {
                             logger.log(Level.SEVERE, e.getMessage(), e);
                         }
-                        op.getOperationContext().getResponseHandler().sendResponse(e);
+                        if (!noReply) {
+                            op.getOperationContext().getResponseHandler().sendResponse(e);
+                        }
                     }
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
@@ -316,6 +328,21 @@ public class NodeService {
                     }
             );
         }
+
+        void shutdownNow() {
+            for (ExecutorService worker : workers) {
+                worker.shutdownNow();
+            }
+        }
+
+        void awaitTermination(int timeoutSeconds) {
+            for (ExecutorService worker : workers) {
+                try {
+                    worker.awaitTermination(timeoutSeconds, TimeUnit.SECONDS);
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }
     }
 
     public void notifyCall(long callId, Response response) {
@@ -369,5 +396,26 @@ public class NodeService {
 
     public int getPartitionCount() {
         return partitionCount;
+    }
+
+    public ScheduledExecutorService getScheduledExecutorService() {
+        return scheduledExecutorService;
+    }
+
+    public void shutdown() {
+        blockingWorkers.shutdownNow();
+        executorService.shutdownNow();
+        nonBlockingWorkers.shutdownNow();
+        scheduledExecutorService.shutdownNow();
+        nonBlockingWorkers.awaitTermination(1);
+        try {
+            scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+        try {
+            executorService.awaitTermination(3, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+        blockingWorkers.awaitTermination(3);
     }
 }
