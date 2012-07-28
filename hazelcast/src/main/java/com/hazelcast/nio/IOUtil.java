@@ -160,6 +160,16 @@ public final class IOUtil {
         return ThreadContext.get().toObject(data);
     }
 
+    public static Object toObject(Object data) {
+        if (data == null) {
+            return null;
+        }
+        if (data instanceof Data) {
+            return ThreadContext.get().toObject((Data) data);
+        }
+        return data;
+    }
+
     public static Object toObject(DataHolder dataHolder) {
         return toObject(dataHolder.toData());
     }

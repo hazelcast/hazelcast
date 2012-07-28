@@ -16,46 +16,46 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.core.Member;
 
 import java.util.Collection;
 import java.util.Iterator;
 
 public class SingleMemberGroup implements MemberGroup {
 
-    private MemberImpl member;
+    private Member member;
 
     public SingleMemberGroup() {
         super();
     }
 
-    public SingleMemberGroup(MemberImpl member) {
+    public SingleMemberGroup(Member member) {
         super();
         this.member = member;
     }
 
-    public void addMember(MemberImpl member) {
+    public void addMember(Member member) {
         if (this.member != null) {
             throw new UnsupportedOperationException();
         }
         this.member = member;
     }
 
-    public void addMembers(Collection<MemberImpl> members) {
+    public void addMembers(Collection<Member> members) {
         throw new UnsupportedOperationException();
     }
 
-    public void removeMember(MemberImpl member) {
+    public void removeMember(Member member) {
         if (this.member != null && this.member.equals(member)) {
             this.member = null;
         }
     }
 
-    public boolean hasMember(MemberImpl member) {
+    public boolean hasMember(Member member) {
         return this.member != null && this.member.equals(member);
     }
 
-    public Iterator<MemberImpl> iterator() {
+    public Iterator<Member> iterator() {
         return new MemberIterator();
     }
 
@@ -63,14 +63,14 @@ public class SingleMemberGroup implements MemberGroup {
         return member != null ? 1 : 0;
     }
 
-    private class MemberIterator implements Iterator<MemberImpl> {
+    private class MemberIterator implements Iterator<Member> {
         boolean end = false;
 
         public boolean hasNext() {
             return !end;
         }
 
-        public MemberImpl next() {
+        public Member next() {
             if (hasNext()) {
                 end = true;
                 return member;

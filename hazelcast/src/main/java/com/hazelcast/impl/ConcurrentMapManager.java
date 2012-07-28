@@ -22,16 +22,12 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.*;
 import com.hazelcast.impl.executor.ParallelExecutor;
-import com.hazelcast.impl.map.MapProxy;
 import com.hazelcast.impl.map.MapService;
 import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
-import com.hazelcast.impl.partition.MigrationNotification;
-import com.hazelcast.impl.partition.MigrationRequestTask;
 import com.hazelcast.impl.partition.PartitionInfo;
-import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.impl.wan.WanMergeListener;
 import com.hazelcast.merge.MergePolicy;
 import com.hazelcast.nio.*;
@@ -64,7 +60,7 @@ public class ConcurrentMapManager extends BaseManager {
     final int MAX_BACKUP_COUNT;
     final long GLOBAL_REMOVE_DELAY_MILLIS;
     final boolean LOG_STATE;
-    long lastLogStateTime = currentTimeMillis();
+//    long lastLogStateTime = currentTimeMillis();
     final ConcurrentMap<String, CMap> maps;
     final ConcurrentMap<String, NearCache> mapCaches;
     final PartitionServiceImpl partitionServiceImpl;
@@ -74,13 +70,11 @@ public class ConcurrentMapManager extends BaseManager {
     final ParallelExecutor evictionExecutor;
     final RecordFactory recordFactory;
     final Collection<WanMergeListener> colWanMergeListeners = new CopyOnWriteArrayList<WanMergeListener>();
-    public final NodeService nodeService;
 
     ConcurrentMapManager(final Node node) {
         super(node);
         recordFactory = node.initializer.getRecordFactory();
-        storeExecutor = node.executorManager.newParallelExecutor(
-                node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
+        storeExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         evictionExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         MAX_BACKUP_COUNT = MapConfig.MAX_BACKUP_COUNT;
@@ -94,7 +88,7 @@ public class ConcurrentMapManager extends BaseManager {
         LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
-        partitionManager = new PartitionManager(this);
+        partitionManager = node.partitionManager;
         partitionServiceImpl = new PartitionServiceImpl(this);
         node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
@@ -160,8 +154,6 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(SEMAPHORE_REDUCE_PERMITS, new SemaphoreReduceOperationHandler());
         registerPacketProcessor(SEMAPHORE_RELEASE, new SemaphoreReleaseOperationHandler());
         registerPacketProcessor(SEMAPHORE_TRY_ACQUIRE, new SemaphoreTryAcquireOperationHandler());
-        nodeService = new NodeService(node);
-        nodeService.registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService, partitionManager.getPartitions()));
     }
 
     public PartitionServiceImpl getPartitionServiceImpl() {
@@ -172,6 +164,7 @@ public class ConcurrentMapManager extends BaseManager {
         packet.callId = localIdGen.incrementAndGet();
         mapCalls.put(packet.callId, call);
         Connection targetConnection = node.connectionManager.getOrConnect(target);
+//        System.out.println("targetConnection = " + targetConnection);
         return send(packet, targetConnection);
     }
 
@@ -199,7 +192,6 @@ public class ConcurrentMapManager extends BaseManager {
     public void onRestart() {
         enqueueAndWait(new Processable() {
             public void process() {
-                partitionManager.reset();
                 for (CMap cmap : maps.values()) {
                     // do not invalidate records,
                     // values will be invalidated after merge
@@ -212,7 +204,6 @@ public class ConcurrentMapManager extends BaseManager {
     public void reset() {
         maps.clear();
         mapCaches.clear();
-        partitionManager.reset();
     }
 
     public void shutdown() {
@@ -228,7 +219,6 @@ public class ConcurrentMapManager extends BaseManager {
             }
         }
         reset();
-        partitionManager.shutdown();
     }
 
     public void flush(String name) {
@@ -252,7 +242,7 @@ public class ConcurrentMapManager extends BaseManager {
     public void syncForDead(MemberImpl deadMember) {
         syncForDeadSemaphores(deadMember.getAddress());
         syncForDeadCountDownLatches(deadMember.getAddress());
-        partitionManager.syncForDead(deadMember);
+//        partitionManager.syncForDead(deadMember);
     }
 
     void syncForDeadSemaphores(Address deadAddress) {
@@ -277,7 +267,7 @@ public class ConcurrentMapManager extends BaseManager {
                     List<ScheduledAction> scheduledActions = record.getScheduledActions();
                     if (scheduledActions != null) {
                         for (ScheduledAction sa : scheduledActions) {
-                            node.clusterManager.deregisterScheduledAction(sa);
+                            node.clusterImpl.deregisterScheduledAction(sa);
                             final Request sr = sa.getRequest();
                             sr.clearForResponse();
                             sr.lockAddress = deadAddress;
@@ -292,37 +282,37 @@ public class ConcurrentMapManager extends BaseManager {
         }
     }
 
-    public void syncForAdd() {
-        partitionManager.syncForAdd();
-    }
+//    public void syncForAdd() {
+//        partitionManager.syncForAdd();
+//    }
 
-    void logState() {
-        long now = currentTimeMillis();
-        if (LOG_STATE && ((now - lastLogStateTime) > 15000)) {
-            StringBuffer sbState = new StringBuffer(thisAddress + " State[" + new Date(now));
-            sbState.append("]");
-            Collection<Call> calls = mapCalls.values();
-            sbState.append("\nCall Count:").append(calls.size());
-            sbState.append(partitionManager.toString());
-            Collection<CMap> cmaps = maps.values();
-            for (CMap cmap : cmaps) {
-                cmap.appendState(sbState);
-            }
-            CpuUtilization cpuUtilization = node.getCpuUtilization();
-            node.connectionManager.appendState(sbState);
-            node.executorManager.appendState(sbState);
-            node.clusterManager.appendState(sbState);
-            long total = Runtime.getRuntime().totalMemory();
-            long free = Runtime.getRuntime().freeMemory();
-            sbState.append("\nCluster Size:").append(lsMembers.size());
-            sbState.append("\n").append(cpuUtilization);
-            sbState.append("\nUsed Memory:");
-            sbState.append((total - free) / 1024 / 1024);
-            sbState.append("MB");
-            logger.log(Level.INFO, sbState.toString());
-            lastLogStateTime = now;
-        }
-    }
+//    void logState() {
+//        long now = currentTimeMillis();
+//        if (LOG_STATE && ((now - lastLogStateTime) > 15000)) {
+//            StringBuffer sbState = new StringBuffer(thisAddress + " State[" + new Date(now));
+//            sbState.append("]");
+//            Collection<Call> calls = mapCalls.values();
+//            sbState.append("\nCall Count:").append(calls.size());
+//            sbState.append(partitionManager.toString());
+//            Collection<CMap> cmaps = maps.values();
+//            for (CMap cmap : cmaps) {
+//                cmap.appendState(sbState);
+//            }
+//            CpuUtilization cpuUtilization = node.getCpuUtilization();
+//            node.connectionManager.appendState(sbState);
+//            node.executorManager.appendState(sbState);
+//            node.clusterManager.appendState(sbState);
+//            long total = Runtime.getRuntime().totalMemory();
+//            long free = Runtime.getRuntime().freeMemory();
+//            sbState.append("\nCluster Size:").append(node.getClusterImpl().getSize());
+//            sbState.append("\n").append(cpuUtilization);
+//            sbState.append("\nUsed Memory:");
+//            sbState.append((total - free) / 1024 / 1024);
+//            sbState.append("MB");
+//            logger.log(Level.INFO, sbState.toString());
+//            lastLogStateTime = now;
+//        }
+//    }
 
     /**
      * Should be called from ExecutorService threads.
@@ -395,7 +385,7 @@ public class ConcurrentMapManager extends BaseManager {
         final boolean shouldUnlock = localLock != null
                 && localLock.getThreadId() == tc.getThreadId();
         final boolean shouldRemove = shouldUnlock && localLock.getCount() == 1;
-        MPut mput = tc.getCallCache(node.factory).getMPut();
+        MPut mput = new MPut();
         if (shouldRemove) {
             mput.txnalPut(CONCURRENT_MAP_PUT_AND_UNLOCK, name, key, value, -1, -1);
             // remove if current LocalLock is not changed
@@ -414,7 +404,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public void destroyEndpointThreads(Address endpoint, Set<Integer> threadIds) {
-        node.clusterManager.invalidateScheduledActionsFor(endpoint, threadIds);
+        node.clusterImpl.invalidateScheduledActionsFor(endpoint, threadIds);
         for (CMap cmap : maps.values()) {
             for (Record record : cmap.mapRecords.values()) {
                 DistributedLock lock = record.getLock();
@@ -432,9 +422,9 @@ public class ConcurrentMapManager extends BaseManager {
         return partitionManager.getPartition(partitionId);
     }
 
-    public void sendMigrationEvent(boolean started, MigrationRequestTask migrationRequestTask) {
-        sendProcessableToAll(new MigrationNotification(started, migrationRequestTask), true);
-    }
+//    public void sendMigrationEvent(boolean started, MigratingPartition migratingPartition) {
+//        sendProcessableToAll(new MigrationNotification(started, migratingPartition), true);
+//    }
 
     public void startCleanup(final boolean now, final boolean force) {
         if (now) {
@@ -870,59 +860,6 @@ public class ConcurrentMapManager extends BaseManager {
             }
         }
         return results;
-    }
-
-    int size(String name) {
-//        while (true) {
-//            try {
-//                int size = trySize(name);
-//                TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
-//                if (txn != null) {
-//                    size += txn.size(name);
-//                }
-//                return size;
-//            } catch (Throwable e) {
-//                if (e instanceof MemberLeftException || e instanceof IllegalPartitionState) {
-//                    try {
-//                        Thread.sleep(redoWaitMillis);
-//                    } catch (InterruptedException e1) {
-//                        handleInterruptedException(true, CONCURRENT_MAP_SIZE);
-//                    }
-//                } else if (e instanceof InterruptedException) {
-//                    handleInterruptedException(true, CONCURRENT_MAP_SIZE);
-//                } else if (e instanceof RuntimeException) {
-//                    throw (RuntimeException) e;
-//                } else {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//        }
-        return new MapProxy(nodeService).getSize(name);
-    }
-
-    int trySize(String name) throws ExecutionException, InterruptedException {
-        int totalSize = 0;
-        Set<Member> members = node.getClusterImpl().getMembers();
-        List<Future<Integer>> lsFutures = new ArrayList<Future<Integer>>();
-        int expectedPartitionVersion = partitionManager.getVersion();
-        for (Member member : members) {
-            if (!member.isLiteMember()) {
-                MapSizeCallable callable = new MapSizeCallable(name, expectedPartitionVersion);
-                DistributedTask<Integer> dt = new DistributedTask<Integer>(callable, member);
-                lsFutures.add(dt);
-                node.factory.getExecutorService(BATCH_OPS_EXECUTOR_NAME).execute(dt);
-            }
-        }
-        for (Future<Integer> future : lsFutures) {
-            Integer partialSize = future.get();
-            if (partialSize != null) {
-                if (partialSize == -1) {
-                    throw new IllegalPartitionState("Unexpected partition version!");
-                }
-                totalSize += partialSize;
-            }
-        }
-        return totalSize;
     }
 
     Entries query(String name, ClusterOperation operation, Predicate predicate) {
@@ -1949,7 +1886,7 @@ public class ConcurrentMapManager extends BaseManager {
     abstract class MDefaultBackupAndMigrationAwareOp extends MBackupAndMigrationAwareOp {
         @Override
         void prepareForBackup() {
-            backupCount = Math.min(MapConfig.DEFAULT_BACKUP_COUNT, dataMemberCount.get() - 1);
+            backupCount = Math.min(MapConfig.DEFAULT_BACKUP_COUNT, node.clusterImpl.getDataMemberCount() - 1);
         }
     }
 
@@ -2016,7 +1953,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         // executed by ServiceThread
         boolean isValidBackup() {
-            int maxBackupCount = dataMemberCount.get() - 1;
+            int maxBackupCount = node.clusterImpl.getDataMemberCount() - 1;
             if (maxBackupCount > 0) {
                 CMap map = getOrCreateMap(request.name);
                 maxBackupCount = Math.min(map.getBackupCount(), maxBackupCount);
@@ -2109,7 +2046,7 @@ public class ConcurrentMapManager extends BaseManager {
         void prepareForBackup() {
             int localBackupCount = 0;
             int localAsyncBackupCount = 0;
-            final int maxBackup = dataMemberCount.get() - 1;
+            final int maxBackup = node.clusterImpl.getDataMemberCount() - 1;
             if (maxBackup > 0) {
                 CMap map = getOrCreateMap(request.name);
                 localBackupCount = Math.min(map.getBackupCount(), maxBackup);
@@ -2281,7 +2218,7 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            return size(name) == 0;
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -3075,7 +3012,7 @@ public class ConcurrentMapManager extends BaseManager {
             final List<ScheduledAction> scheduledActions = record.getScheduledActions();
             if (scheduledActions != null) {
                 for (ScheduledAction sa : scheduledActions) {
-                    node.clusterManager.deregisterScheduledAction(sa);
+                    node.clusterImpl.deregisterScheduledAction(sa);
                     if (!sa.expired()) {
                         sa.consume();
                         ++threadsReleased;
@@ -3115,7 +3052,7 @@ public class ConcurrentMapManager extends BaseManager {
             final List<ScheduledAction> scheduledActions = request.record.getScheduledActions();
             if (scheduledActions != null) {
                 for (ScheduledAction sa : scheduledActions) {
-                    node.clusterManager.deregisterScheduledAction(sa);
+                    node.clusterImpl.deregisterScheduledAction(sa);
                     doResponse(sa.getRequest(), null, CountDownLatchProxy.INSTANCE_DESTROYED, false);
                 }
             }
@@ -3226,7 +3163,7 @@ public class ConcurrentMapManager extends BaseManager {
                 int remaining = scheduledActions.size();
                 while (remaining-- > 0 && semaphore.getAvailable() > 0) {
                     ScheduledAction sa = scheduledActions.remove(0);
-                    node.clusterManager.deregisterScheduledAction(sa);
+                    node.clusterImpl.deregisterScheduledAction(sa);
                     if (!sa.expired()) {
                         sa.consume();
                     } else {
@@ -3256,7 +3193,7 @@ public class ConcurrentMapManager extends BaseManager {
                     final ScheduledAction sa = i.next();
                     final Request sr = sa.getRequest();
                     if (sr.lockThreadId == threadId && sr.caller.equals(request.caller)) {
-                        node.clusterManager.deregisterScheduledAction(sa);
+                        node.clusterImpl.deregisterScheduledAction(sa);
                         doResponse(sr, null, SemaphoreProxy.ACQUIRE_FAILED, false);
                         i.remove();
                         retValue = 1L;
@@ -3277,7 +3214,7 @@ public class ConcurrentMapManager extends BaseManager {
                 for (ScheduledAction sa : scheduledActions) {
                     final Request sr = sa.getRequest();
                     if (sr.caller.equals(request.caller) && sr.lockThreadId == ThreadContext.get().getThreadId()) {
-                        node.clusterManager.deregisterScheduledAction(sa);
+                        node.clusterImpl.deregisterScheduledAction(sa);
                         doResponse(sr, null, SemaphoreProxy.INSTANCE_DESTROYED, false);
                     }
                 }
@@ -3878,7 +3815,7 @@ public class ConcurrentMapManager extends BaseManager {
             }
         };
         record.addScheduledAction(scheduledAction);
-        node.clusterManager.registerScheduledAction(scheduledAction);
+        node.clusterImpl.registerScheduledAction(scheduledAction);
     }
 
     class IsKeyLockedOperationHandler extends MTargetAwareOperationHandler {

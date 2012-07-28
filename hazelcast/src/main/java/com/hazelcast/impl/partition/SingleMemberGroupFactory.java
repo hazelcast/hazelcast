@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.core.Member;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,9 +24,9 @@ import java.util.Set;
 
 public class SingleMemberGroupFactory implements MemberGroupFactory {
 
-    public Set<MemberGroup> createMemberGroups(Collection<MemberImpl> members) {
+    public Set<MemberGroup> createMemberGroups(Collection<Member> members) {
         Set<MemberGroup> groups = new HashSet<MemberGroup>(members.size());
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             if (!member.isLiteMember()) {
                 groups.add(new SingleMemberGroup(member));
             }

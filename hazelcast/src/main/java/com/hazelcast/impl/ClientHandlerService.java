@@ -881,9 +881,10 @@ public class ClientHandlerService implements ConnectionListener {
                 ClientEndpoint clientEndpoint = node.clientHandlerService.getClientEndpoint(packet.conn);
                 clientEndpoint.authenticated();
                 Bind bind = new Bind(new Address(packet.conn.getSocketChannelWrapper().socket().getInetAddress(), packet.conn.getSocketChannelWrapper().socket().getPort()));
-                bind.setConnection(packet.conn);
-                bind.setNode(node);
-                node.clusterService.enqueueAndWait(bind);
+                // TODO: client bind !!!
+//                bind.setConnection(packet.conn);
+//                bind.setNode(node);
+//                node.clusterService.enqueueAndWait(bind);
             }
         }
     }

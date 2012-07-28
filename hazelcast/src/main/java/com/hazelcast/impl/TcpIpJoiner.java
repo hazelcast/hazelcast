@@ -77,7 +77,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     joinViaRequiredMember(joined);
                 }
                 logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
-                node.clusterManager.sendJoinRequest(requiredAddress, true);
+                node.clusterImpl.sendJoinRequest(requiredAddress, true);
                 //noinspection BusyWait
                 Thread.sleep(3000L);
             }
@@ -90,7 +90,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         public void process() {
             TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) getNode().getJoiner();
             boolean shouldApprove = (tcpIpJoiner.askingForApproval || node.isMaster()) ? false : true;
-            getNode().clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove),
+            getNode().clusterImpl.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove),
                                                        getConnection());
         }
     }
@@ -162,7 +162,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     if (conn != null) {
                         foundConnection = true;
                         logger.log(Level.FINEST, "Found and sending join request for " + possibleAddress);
-                        node.clusterManager.sendJoinRequest(possibleAddress, true);
+                        node.clusterImpl.sendJoinRequest(possibleAddress, true);
                     }
                 }
             }
@@ -196,7 +196,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                                 Connection conn = node.getConnectionManager().getConnection(address);
                                 if (conn != null) {
                                     responseCounter.incrementAndGet();
-                                    node.clusterManager.sendProcessableTo(new MasterQuestion(), conn);
+                                    node.clusterImpl.sendProcessableTo(new MasterQuestion(), conn);
                                 }
                             }
                             int waitCount = 0;
@@ -247,7 +247,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             Thread.sleep(1000L);
             final Address master = node.getMasterAddress();
             if (master != null) {
-                node.clusterManager.sendJoinRequest(master, true);
+                node.clusterImpl.sendJoinRequest(master, true);
                 if (requestCount++ > node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) {
                     logger.log(Level.WARNING, "Couldn't join to the master : " + master);
                     return;
@@ -409,7 +409,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
             final Connection conn = node.connectionManager.getConnection(possibleAddress);
             if (conn != null) {
-                final JoinInfo response = node.clusterManager.checkJoin(conn);
+                final JoinInfo response = node.clusterImpl.checkJoin(conn);
                 if (response != null && shouldMerge(response)) {
                     logger.log(Level.WARNING, node.address + " is merging [tcp/ip] to " + possibleAddress);
                     splitBrainHandler.restart();

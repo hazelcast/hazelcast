@@ -16,13 +16,17 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.impl.Node;
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MemberRemover extends AbstractRemotelyProcessable {
+public class MemberRemover extends AbstractOperation implements NoReply, NonBlockingOperation {
     private Address deadAddress = null;
 
     public MemberRemover() {
@@ -33,12 +37,20 @@ public class MemberRemover extends AbstractRemotelyProcessable {
         this.deadAddress = deadAddress;
     }
 
-    public void process() {
-        if (conn != null) {
-            Address endpoint = conn.getEndPoint();
-            if (endpoint != null && endpoint.equals(getNode().getMasterAddress())) {
-                getNode().clusterManager.doRemoveAddress(deadAddress);
-            }
+//    public void process() {
+//        if (conn != null) {
+//            Address endpoint = conn.getEndPoint();
+//            if (endpoint != null && endpoint.equals(getNode().getMasterAddress())) {
+//                getNode().clusterManager.removeAddress(deadAddress);
+//            }
+//        }
+//    }
+
+    public void run() {
+        Node node = getOperationContext().getNodeService().getNode();
+        Address caller = getOperationContext().getCaller();
+        if (caller != null && caller.equals(node.getMasterAddress())) {
+            node.clusterImpl.removeAddress(deadAddress);
         }
     }
 

@@ -47,10 +47,9 @@ public class Response extends AbstractOperation implements NonBlockingOperation,
         }
     }
 
-    public Object call() {
+    public void run() {
         long callId = getOperationContext().getCallId();
         getOperationContext().getNodeService().notifyCall(callId, Response.this);
-        return null;
     }
 
     public boolean isException() {

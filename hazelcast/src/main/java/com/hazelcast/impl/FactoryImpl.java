@@ -24,7 +24,6 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.CMap.InitializationState;
 import com.hazelcast.impl.base.HazelcastManagedContext;
-import com.hazelcast.core.ManagedContext;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
@@ -32,7 +31,6 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.SerializationHelper;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -128,11 +126,11 @@ public class FactoryImpl implements HazelcastInstance {
                     Thread.sleep(initialWaitSeconds * 1000);
                     if (firstMember) {
                         final ConcurrentMapManager concurrentMapManager = factory.node.concurrentMapManager;
-                        concurrentMapManager.enqueueAndReturn(new Processable() {
-                            public void process() {
-                                concurrentMapManager.partitionManager.firstArrangement();
-                            }
-                        });
+//                        concurrentMapManager.enqueueAndReturn(new Processable() {
+//                            public void process() {
+//                                concurrentMapManager.partitionManager.firstArrangement();
+//                            }
+//                        });
                     } else {
                         Thread.sleep(4 * 1000);
                     }
@@ -150,11 +148,11 @@ public class FactoryImpl implements HazelcastInstance {
             if (initialMinClusterSize > 0) {
                 if (firstMember) {
                     final ConcurrentMapManager concurrentMapManager = factory.node.concurrentMapManager;
-                    concurrentMapManager.enqueueAndReturn(new Processable() {
-                        public void process() {
-                            concurrentMapManager.partitionManager.firstArrangement();
-                        }
-                    });
+//                    concurrentMapManager.enqueueAndReturn(new Processable() {
+//                        public void process() {
+//                            concurrentMapManager.partitionManager.firstArrangement();
+//                        }
+//                    });
                 } else {
                     Thread.sleep(4 * 1000);
                 }
@@ -391,22 +389,22 @@ public class FactoryImpl implements HazelcastInstance {
                 }
             }
             if (target != null) {
-                DistributedTask task = new DistributedTask(new GetAllProxyKeysCallable(), target);
-                Future f = getExecutorService().submit(task);
-                try {
-                    final Set<ProxyKey> proxyKeys = (Set<ProxyKey>) f.get(10, TimeUnit.SECONDS);
-                    for (final ProxyKey proxyKey : proxyKeys) {
-                        if (!proxies.containsKey(proxyKey)) {
-                            node.clusterService.enqueueAndReturn(new Processable() {
-                                public void process() {
-                                    createProxy(proxyKey);
-                                }
-                            });
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
-                }
+//                DistributedTask task = new DistributedTask(new GetAllProxyKeysCallable(), target);
+//                Future f = getExecutorService().submit(task);
+//                try {
+//                    final Set<ProxyKey> proxyKeys = (Set<ProxyKey>) f.get(10, TimeUnit.SECONDS);
+//                    for (final ProxyKey proxyKey : proxyKeys) {
+//                        if (!proxies.containsKey(proxyKey)) {
+//                            node.clusterService.enqueueAndReturn(new Processable() {
+//                                public void process() {
+//                                    createProxy(proxyKey);
+//                                }
+//                            });
+//                        }
+//                    }
+//                } catch (Exception e) {
+//                    logger.log(Level.WARNING, e.getMessage(), e);
+//                }
             }
         }
         managementService = new ManagementService(this);
@@ -541,7 +539,7 @@ public class FactoryImpl implements HazelcastInstance {
         if (proxy == null) {
             proxy = getOrCreateProxy(new ProxyKey(name, null));
         }
-        checkInitialization(proxy);
+//        checkInitialization(proxy);
         return proxy;
     }
 
@@ -717,7 +715,7 @@ public class FactoryImpl implements HazelcastInstance {
 
     // should only be called from service thread!!
     public Object createProxy(ProxyKey proxyKey) {
-        node.clusterManager.checkServiceThread();
+//        node.clusterManager.checkServiceThread();
         boolean created = false;
         HazelcastInstanceAwareInstance proxy = proxies.get(proxyKey);
         if (proxy == null) {
@@ -731,7 +729,7 @@ public class FactoryImpl implements HazelcastInstance {
                 node.topicManager.getTopicInstance(name);
             } else if (name.startsWith(Prefix.MAP)) {
                 proxy = proxyFactory.createMapProxy(name);
-                node.concurrentMapManager.getOrCreateMap(name);
+//                node.concurrentMapManager.getOrCreateMap(name);
             } else if (name.startsWith(Prefix.AS_LIST)) {
                 proxy = proxyFactory.createListProxy(name);
             } else if (name.startsWith(Prefix.MULTIMAP)) {
@@ -801,22 +799,23 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     Object createInstanceClusterWide(final ProxyKey proxyKey) {
-        final BlockingQueue<Object> result = ResponseQueueFactory.newResponseQueue();
-        node.clusterService.enqueueAndWait(new Processable() {
-            public void process() {
-                try {
-                    result.put(createProxy(proxyKey));
-                } catch (InterruptedException ignored) {
-                }
-            }
-        }, 10);
-        Object proxy = null;
-        try {
-            proxy = result.take();
-        } catch (InterruptedException e) {
-        }
-        node.clusterManager.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, true), false);
-        return proxy;
+//        final BlockingQueue<Object> result = ResponseQueueFactory.newResponseQueue();
+//        node.clusterService.enqueueAndWait(new Processable() {
+//            public void process() {
+//                try {
+//                    result.put(createProxy(proxyKey));
+//                } catch (InterruptedException ignored) {
+//                }
+//            }
+//        }, 10);
+//        Object proxy = null;
+//        try {
+//            proxy = result.take();
+//        } catch (InterruptedException e) {
+//        }
+//        node.clusterManager.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, true), false);
+//        return proxy;
+        return createProxy(proxyKey);
     }
 
     void destroyInstanceClusterWide(String name, Object key) {
@@ -825,7 +824,7 @@ public class FactoryImpl implements HazelcastInstance {
             if (name.equals("lock")) {
                 locksMapProxy.remove(key);
             }
-            node.clusterManager.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, false), true);
+            node.clusterImpl.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, false), true);
         } else {
             logger.log(Level.WARNING, "Destroying unknown instance name: " + name);
         }

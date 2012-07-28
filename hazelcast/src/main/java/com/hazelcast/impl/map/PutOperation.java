@@ -19,10 +19,7 @@ package com.hazelcast.impl.map;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.partition.PartitionInfo;
-import com.hazelcast.impl.spi.AbstractNamedKeyBasedOperation;
-import com.hazelcast.impl.spi.NodeService;
-import com.hazelcast.impl.spi.OperationContext;
-import com.hazelcast.impl.spi.Response;
+import com.hazelcast.impl.spi.*;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
@@ -41,9 +38,11 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
     Object value;
     Data dataValue;
     long ttl;
+    String txnId;
 
-    public PutOperation(String name, Data dataKey, Object value, long ttl) {
+    public PutOperation(String name, Data dataKey, Object value, String txnId, long ttl) {
         super(name, dataKey);
+        this.txnId = txnId;
         this.dataValue = toData(value);
         this.value = value;
         this.ttl = ttl;
@@ -56,6 +55,11 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
         super.writeData(out);
         dataValue.writeData(out);
         out.writeLong(ttl);
+        boolean txnal = (txnId != null);
+        out.writeBoolean(txnal);
+        if (txnal) {
+            out.writeUTF(txnId);
+        }
     }
 
     public void readData(DataInput in) throws IOException {
@@ -63,15 +67,28 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
         dataValue = new Data();
         dataValue.readData(in);
         ttl = in.readLong();
+        boolean txnal = in.readBoolean();
+        if (txnal) {
+            txnId = in.readUTF();
+        }
     }
 
-    public Object call() {
+    public void run() {
         if (dataValue == null) {
             dataValue = toData(value);
         }
         OperationContext context = getOperationContext();
+        ResponseHandler responseHandler = context.getResponseHandler();
+        System.out.println(context.getNodeService().getThisAddress() + " Put txnId  " + txnId);
         MapService mapService = (MapService) context.getService();
-        MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
+        int partitionId = context.getPartitionId();
+        PartitionContainer pc = mapService.getPartitionContainer(partitionId);
+        if (txnId != null) {
+            pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, dataValue, false, false));
+            responseHandler.sendResponse(null);
+            return;
+        }
+        MapPartition mapPartition = pc.getMapPartition(name);
         Record record = mapPartition.records.get(dataKey);
         Object key = null;
         Object oldValue = null;
@@ -82,7 +99,7 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
                 oldValue = mapPartition.loader.load(key);
                 oldValueData = toData(oldValue);
             }
-            record = new DefaultRecord(null, mapPartition.partitionInfo.getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
+            record = new DefaultRecord(null, partitionId, dataKey, dataValue, -1, -1, mapService.nextId());
             mapPartition.records.put(dataKey, record);
         } else {
             oldValueData = record.getValueData();
@@ -97,7 +114,8 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
             mapPartition.store.store(key, record.getValue());
         }
         boolean callerBackup = takeBackup();
-        return (callerBackup) ? new PutBackupAndResponse(oldValueData, name, dataKey, dataValue) : new Response(oldValueData);
+        Object result = (callerBackup) ? new PutBackupAndResponse(oldValueData, name, dataKey, dataValue) : new Response(oldValueData);
+        responseHandler.sendResponse(result);
     }
 
     private boolean takeBackup() {
@@ -127,7 +145,8 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
                         } else {
                             PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
                             try {
-                                backupOps.add(nodeService.createSinglePartitionInvocation(MapService.MAP_SERVICE_NAME, pbo, partitionInfo.getPartitionId()).setReplicaIndex(replicaIndex).build().invoke());
+                                backupOps.add(nodeService.createSingleInvocation(MapService.MAP_SERVICE_NAME, pbo,
+                                        partitionInfo.getPartitionId()).setReplicaIndex(replicaIndex).build().invoke());
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }

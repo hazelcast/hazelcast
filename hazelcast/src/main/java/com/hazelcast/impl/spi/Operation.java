@@ -18,9 +18,7 @@ package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.DataSerializable;
 
-import java.util.concurrent.Callable;
-
-public interface Operation extends Callable, DataSerializable {
+public interface Operation extends Runnable, DataSerializable {
 
     OperationContext getOperationContext();
 }

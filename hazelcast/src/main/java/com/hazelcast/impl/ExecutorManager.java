@@ -106,8 +106,12 @@ public class ExecutorManager extends BaseManager {
         return getOrCreateNamedExecutorService(name, null);
     }
 
-    public ScheduledThreadPoolExecutor getScheduledExecutorService() {
+    public ScheduledExecutorService getScheduledExecutorService() {
         return esScheduled;
+    }
+
+    public ExecutorService getThreadPoolExecutor() {
+        return threadPoolExecutor;
     }
 
     public ParallelExecutor getMapLoaderExecutorService() {
@@ -307,10 +311,6 @@ public class ExecutorManager extends BaseManager {
         } catch (InterruptedException ignored) {
         }
         started = false;
-    }
-
-    public NamedExecutorService getDefaultExecutorService() {
-        return defaultExecutorService;
     }
 
     public NamedExecutorService getEventExecutorService() {

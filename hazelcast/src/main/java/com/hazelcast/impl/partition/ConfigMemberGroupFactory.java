@@ -17,6 +17,7 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.config.MemberGroupConfig;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.util.AddressUtil;
 
@@ -39,14 +40,15 @@ public class ConfigMemberGroupFactory implements MemberGroupFactory {
         }
     }
 
-    public Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members) {
+    public Collection<MemberGroup> createMemberGroups(Collection<Member> members) {
         final Map<Integer, MemberGroup> memberGroups = new HashMap<Integer, MemberGroup>();
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             if (member.isLiteMember()) {
                 continue;
             }
             for (Entry<Integer, MemberGroupConfig> groupConfigEntry : memberGroupConfigMap.entrySet()) {
-                if (AddressUtil.matchAnyInterface(member.getAddress().getHost(), groupConfigEntry.getValue().getInterfaces())) {
+                if (AddressUtil.matchAnyInterface(((MemberImpl) member).getAddress().getHost(),
+                        groupConfigEntry.getValue().getInterfaces())) {
                     MemberGroup group = memberGroups.get(groupConfigEntry.getKey());
                     if (group == null) {
                         group = new DefaultMemberGroup();

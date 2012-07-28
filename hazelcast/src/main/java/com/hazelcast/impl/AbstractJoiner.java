@@ -80,7 +80,7 @@ public abstract class AbstractJoiner implements Joiner {
                     allConnected = true;
                     for (Member member : members) {
                         MemberImpl memberImpl = (MemberImpl) member;
-                        if (!memberImpl.localMember() && node.connectionManager.getConnection(memberImpl.getAddress()) == null) {
+                        if (!memberImpl.localMember() && node.connectionManager.getOrConnect(memberImpl.getAddress()) == null) {
                             allConnected = false;
                             systemLogService.logJoin("Not-connected to " + memberImpl.getAddress());
                         }
@@ -103,21 +103,17 @@ public abstract class AbstractJoiner implements Joiner {
                 }
                 return;
             } else {
-                node.clusterManager.finalizeJoin();
+                node.clusterImpl.finalizeJoin();
             }
         }
 
         tryCount.set(0);
-        node.clusterManager.enqueueAndWait(new Processable() {
-            public void process() {
-                if (node.baseVariables.lsMembers.size() == 1) {
-                    final StringBuilder sb = new StringBuilder();
-                    sb.append("\n");
-                    sb.append(node.clusterManager);
-                    logger.log(Level.INFO, sb.toString());
-                }
-            }
-        }, 5);
+        if (node.getClusterImpl().getSize() == 1) {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("\n");
+            sb.append(node.clusterImpl);
+            logger.log(Level.INFO, sb.toString());
+        }
     }
 
     protected void failedJoiningToMaster(boolean multicast, int tryCount) {
@@ -197,7 +193,7 @@ public abstract class AbstractJoiner implements Joiner {
                 final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
                 if (conn != null) {
                     logger.log(Level.FINEST, "sending join request for " + possibleAddress);
-                    node.clusterManager.sendJoinRequest(possibleAddress, true);
+                    node.clusterImpl.sendJoinRequest(possibleAddress, true);
                 }
             }
     }

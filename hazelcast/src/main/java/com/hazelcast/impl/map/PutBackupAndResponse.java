@@ -41,9 +41,10 @@ public class PutBackupAndResponse extends Response {
     public PutBackupAndResponse() {
     }
 
-    public Object call() {
+    public void run() {
         OperationContext context = getOperationContext();
         MapService service = (MapService) context.getService();
+        System.out.println(context.getNodeService().getThisAddress() + " backupAndResponse ");
         MapPartition mapPartition = service.getMapPartition(context.getPartitionId(), name);
         Record record = mapPartition.records.get(key);
         if (record == null) {
@@ -54,7 +55,7 @@ public class PutBackupAndResponse extends Response {
         }
         record.setActive();
         record.setDirty(true);
-        return super.call();
+        super.run();
     }
 
     @Override

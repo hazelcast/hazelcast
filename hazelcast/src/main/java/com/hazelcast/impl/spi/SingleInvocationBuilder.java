@@ -17,46 +17,54 @@
 package com.hazelcast.impl.spi;
 
 import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.nio.Address;
 
-public class SinglePartitionInvocationBuilder {
+public class SingleInvocationBuilder {
 
     private final NodeService nodeService;
     private final String serviceName;
     private final Operation op;
-    private final PartitionInfo partitionInfo;
+    private final int partitionId;
+    private Address target;
     private int replicaIndex = 0;
     private int tryCount = 100;
     private long tryPauseMillis = 500;
 
-    public SinglePartitionInvocationBuilder(NodeService nodeService, String serviceName, Operation op, PartitionInfo partitionInfo) {
+    public SingleInvocationBuilder(NodeService nodeService, String serviceName, Operation op, int partitionId) {
         this.nodeService = nodeService;
         this.serviceName = serviceName;
         this.op = op;
-        this.partitionInfo = partitionInfo;
+        this.partitionId = partitionId;
     }
 
-    public SinglePartitionInvocationBuilder(NodeService nodeService, String serviceName, Operation op, PartitionInfo partitionInfo, int replicaIndex, int tryCount, long tryPauseMillis) {
+    public SingleInvocationBuilder(NodeService nodeService, String serviceName, Operation op,
+                                   int partitionId, int replicaIndex, int tryCount, long tryPauseMillis) {
         this.nodeService = nodeService;
         this.serviceName = serviceName;
         this.op = op;
-        this.partitionInfo = partitionInfo;
+        this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
     }
 
-    public SinglePartitionInvocationBuilder setReplicaIndex(int replicaIndex) {
+    public SingleInvocationBuilder setReplicaIndex(int replicaIndex) {
         this.replicaIndex = replicaIndex;
         return this;
     }
 
-    public SinglePartitionInvocationBuilder setTryCount(int tryCount) {
+    public SingleInvocationBuilder setTryCount(int tryCount) {
         this.tryCount = tryCount;
         return this;
     }
 
-    public SinglePartitionInvocationBuilder setTryPauseMillis(long tryPauseMillis) {
+    public SingleInvocationBuilder setTryPauseMillis(long tryPauseMillis) {
         this.tryPauseMillis = tryPauseMillis;
+        return this;
+    }
+
+    public SingleInvocationBuilder setTarget(final Address target) {
+        this.target = target;
         return this;
     }
 
@@ -69,7 +77,7 @@ public class SinglePartitionInvocationBuilder {
     }
 
     public PartitionInfo getPartitionInfo() {
-        return partitionInfo;
+        return partitionId > -1 ? nodeService.getPartitionInfo(partitionId) : null;
     }
 
     public int getReplicaIndex() {
@@ -84,7 +92,15 @@ public class SinglePartitionInvocationBuilder {
         return tryPauseMillis;
     }
 
+    public Address getTarget() {
+        return target;
+    }
+
     public Invocation build() {
-        return new SinglePartitionInvocation(nodeService, serviceName, op, partitionInfo, replicaIndex, tryCount, tryPauseMillis);
+        if (target == null) {
+            return new SinglePartitionInvocation(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
+        } else {
+            return new SingleTargetInvocation(nodeService, serviceName, op, partitionId, target, tryCount, tryPauseMillis);
+        }
     }
 }

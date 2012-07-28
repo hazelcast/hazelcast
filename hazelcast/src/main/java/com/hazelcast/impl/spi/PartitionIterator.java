@@ -17,6 +17,7 @@
 package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Data;
+import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -24,7 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Future;
+import java.util.concurrent.BlockingQueue;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -40,25 +41,44 @@ public class PartitionIterator extends AbstractOperation {
     public PartitionIterator() {
     }
 
-    public Map<Integer, Object> call() throws Exception {
-        final NodeService nodeService = getOperationContext().getNodeService();
-        Map<Integer, Object> results = new HashMap<Integer, Object>(partitions.size());
-        Map<Integer, Future> responses = new HashMap<Integer, Future>(partitions.size());
-        for (final int partitionId : partitions) {
-            Operation op = (Operation) toObject(operationData);
-            op.getOperationContext().setNodeService(getOperationContext().getNodeService())
-                    .setCaller(getOperationContext().getCaller())
-                    .setPartitionId(partitionId)
-                    .setLocal(true)
-                    .setService(getOperationContext().getService());
-            Future f = nodeService.runLocally(partitionId, op, false);
-            responses.put(partitionId, f);
+    public void run() {
+        OperationContext context = getOperationContext();
+        try {
+            final NodeService nodeService = context.getNodeService();
+            Map<Integer, Object> results = new HashMap<Integer, Object>(partitions.size());
+            Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
+            for (final int partitionId : partitions) {
+                Operation op = (Operation) toObject(operationData);
+                op.getOperationContext().setNodeService(getOperationContext().getNodeService())
+                        .setCaller(getOperationContext().getCaller())
+                        .setPartitionId(partitionId)
+                        .setLocal(true)
+                        .setService(getOperationContext().getService());
+                ResponseQueue r = new ResponseQueue();
+                nodeService.runLocally(partitionId, op, false);
+                responses.put(partitionId, r);
+            }
+            for (Map.Entry<Integer, ResponseQueue> partitionResponse : responses.entrySet()) {
+                Object result = partitionResponse.getValue().get();
+                results.put(partitionResponse.getKey(), result);
+            }
+            context.getResponseHandler().sendResponse(results);
+        } catch (Exception e) {
+            e.printStackTrace();
+            context.getResponseHandler().sendResponse(e);
         }
-        for (Map.Entry<Integer, Future> partitionResponse : responses.entrySet()) {
-            Object result = partitionResponse.getValue().get();
-            results.put(partitionResponse.getKey(), result);
+    }
+
+    class ResponseQueue implements ResponseHandler {
+        final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
+
+        public void sendResponse(Object obj) {
+            b.offer(obj);
         }
-        return results;
+
+        public Object get() throws InterruptedException {
+            return b.take();
+        }
     }
 
     @Override

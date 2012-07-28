@@ -16,6 +16,10 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.NonBlockingOperation;
+import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
@@ -25,7 +29,7 @@ import java.io.IOException;
 /**
  * The Class Master.
  */
-public class Master extends AbstractRemotelyProcessable {
+public class Master extends AbstractOperation implements NonMemberOperation, NoReply, NonBlockingOperation {
 
     /**
      * The address.
@@ -47,37 +51,28 @@ public class Master extends AbstractRemotelyProcessable {
         super();
         this.address = originAddress;
     }
-    /* (non-Javadoc)
-    * @see com.hazelcast.cluster.AbstractRemotelyProcessable#readData(java.io.DataInput)
-    */
 
-    @Override
     public void readData(final DataInput in) throws IOException {
         address = new Address();
         address.readData(in);
     }
-    /* (non-Javadoc)
-    * @see com.hazelcast.cluster.AbstractRemotelyProcessable#writeData(java.io.DataOutput)
-    */
 
-    @Override
     public void writeData(final DataOutput out) throws IOException {
         address.writeData(out);
     }
-    /* (non-Javadoc)
-    * @see java.lang.Object#toString()
-    */
 
     @Override
     public String toString() {
         return "Master " + address;
     }
-    /* (non-Javadoc)
-    * @see com.hazelcast.impl.BaseManager.Processable#process()
-    */
 
-    public void process() {
-        node.clusterManager.handleMaster(this);
+//    public void process() {
+//        node.clusterManager.handleMaster(this);
+//    }
+
+    public void run() {
+        ClusterImpl cm = getOperationContext().getService();
+        cm.handleMaster(this);
     }
 
     /**

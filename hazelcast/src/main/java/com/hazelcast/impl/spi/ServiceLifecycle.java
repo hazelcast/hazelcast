@@ -14,25 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.spi;
 
-import java.io.Serializable;
-import java.util.concurrent.Callable;
-
-public class SleepCallable implements Callable<Long>, Serializable {
-    private long time;
-
-    public SleepCallable() {
-    }
-
-    public SleepCallable(long time) {
-        this.time = time;
-    }
-
-    public Long call() throws Exception {
-        if (time > 0) {
-            Thread.sleep(time);
-        }
-        return time;
-    }
+/**
+ * @mdogan 7/23/12
+ */
+public interface ServiceLifecycle extends MigrationAware {
 }

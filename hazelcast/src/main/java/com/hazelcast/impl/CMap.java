@@ -297,7 +297,7 @@ public class CMap {
                     if (lc.isLocal()) {
                         addListener(null, thisAddress, lc.isIncludeValue());
                     } else {
-                        for (MemberImpl member : node.clusterManager.getMembers()) {
+                        for (MemberImpl member : node.clusterImpl.getMemberList()) {
                             addListener(null, member.getAddress(), lc.isIncludeValue());
                         }
                     }
@@ -749,7 +749,7 @@ public class CMap {
             record.clearLock();
             while (record.hasScheduledAction()) {
                 ScheduledAction sa = record.getScheduledActions().remove(0);
-                node.clusterManager.deregisterScheduledAction(sa);
+                node.clusterImpl.deregisterScheduledAction(sa);
                 if (!sa.expired()) {
                     sa.consume();
                     if (record.isLocked()) {
@@ -774,7 +774,7 @@ public class CMap {
                         sa.onMigrate();
                     }
                     sa.setValid(false);
-                    node.clusterManager.deregisterScheduledAction(sa);
+                    node.clusterImpl.deregisterScheduledAction(sa);
                     it.remove();
                 }
             }
@@ -804,7 +804,7 @@ public class CMap {
             while (it.hasNext()) {
                 ScheduledAction sa = it.next();
                 if (deadAddress.equals(sa.getRequest().caller)) {
-                    node.clusterManager.deregisterScheduledAction(sa);
+                    node.clusterImpl.deregisterScheduledAction(sa);
                     sa.setValid(false);
                     it.remove();
                 }
@@ -1466,7 +1466,7 @@ public class CMap {
 
     void fireInvalidation(Record record) {
         if (nearCache != null && nearCache.shouldInvalidateOnChange()) {
-            for (MemberImpl member : concurrentMapManager.lsMembers) {
+            for (MemberImpl member : concurrentMapManager.getMemberList()) {
                 if (!member.localMember()) {
                     if (member.getAddress() != null) {
                         Packet packet = concurrentMapManager.obtainPacket();
