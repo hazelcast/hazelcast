@@ -48,8 +48,10 @@ public class AbsDeploymentTest {
 	public void setUp() throws Throwable {
 		String archiveVersion = getClass().getPackage().getImplementationVersion();
 		if (archiveVersion == null) {
-			//TODO HACK
+			//TODO Dirty Hary 9 3/4
 			archiveVersion = "2.2.1";
+			System.err.println("Manifest entry for current version not found!");
+			System.err.println("Will continue with version " + archiveVersion);
 		}
 		File f = new File("./target/hazelcast-ra-"+archiveVersion+".rar");
 		rarArchive = f.toURI().toURL();
