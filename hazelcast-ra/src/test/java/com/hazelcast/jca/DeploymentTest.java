@@ -5,10 +5,12 @@ import org.jboss.jca.embedded.EmbeddedFactory;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Map;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -47,7 +49,17 @@ public class DeploymentTest {
 			Object o = context.lookup(JNDI_PREFIX + "HazelcastCF");
 
 			assertNotNull(o);
+			assertTrue(o instanceof ConnectionFactoryImpl);
 
+			ConnectionFactoryImpl cf = (ConnectionFactoryImpl) o;
+			ConnectionImpl c = cf.getConnection();
+
+			Map<String, String> m = c.getMap("testmap");
+			
+			m.put("key", "value");
+			assertEquals("value", m.get("key"));
+		
+			
 		} finally {
 
 			embedded.undeploy(archive);
@@ -74,6 +86,6 @@ public class DeploymentTest {
 	@AfterClass
 	public static void afterClass() throws Throwable {
 		// Shutdown
-		embedded.shutdown();
+//		embedded.shutdown();
 	}
 }
