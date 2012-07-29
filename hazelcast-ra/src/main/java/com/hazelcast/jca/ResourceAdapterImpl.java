@@ -51,7 +51,7 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 
     public void start(BootstrapContext ctx) throws ResourceAdapterInternalException {
     	ConfigBuilder config;
-    	if (configurationLocation == null || configurationLocation.isEmpty()) {
+    	if (configurationLocation == null || configurationLocation.length() == 0) {
     		config = new XmlConfigBuilder();
     	} else {
     		try {
