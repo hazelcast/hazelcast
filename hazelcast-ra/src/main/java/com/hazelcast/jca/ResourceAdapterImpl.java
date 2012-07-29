@@ -63,4 +63,31 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 	HazelcastInstance getHazelcast() {
 		return hazelcast;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((hazelcast == null) ? 0 : hazelcast.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ResourceAdapterImpl other = (ResourceAdapterImpl) obj;
+		if (hazelcast == null) {
+			if (other.hazelcast != null)
+				return false;
+		} else if (!hazelcast.equals(other.hazelcast))
+			return false;
+		return true;
+	}
+	
 }
