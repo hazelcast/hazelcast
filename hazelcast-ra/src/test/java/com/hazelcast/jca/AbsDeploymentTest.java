@@ -47,6 +47,10 @@ public class AbsDeploymentTest {
 	@Before
 	public void setUp() throws Throwable {
 		String archiveVersion = getClass().getPackage().getImplementationVersion();
+		if (archiveVersion == null) {
+			//TODO HACK
+			archiveVersion = "2.2.1";
+		}
 		File f = new File("./target/hazelcast-ra-"+archiveVersion+".rar");
 		rarArchive = f.toURI().toURL();
 
