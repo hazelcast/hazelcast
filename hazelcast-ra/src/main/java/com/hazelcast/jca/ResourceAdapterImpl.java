@@ -50,8 +50,14 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
     }
 
     public void start(BootstrapContext ctx) throws ResourceAdapterInternalException {
-    	ConfigBuilder config;
-    	if (configurationLocation == null || configurationLocation.length() == 0) {
+    	ConfigBuilder config = buildConfiguration();
+    	setHazelcast(Hazelcast.newHazelcastInstance(config.build()));;
+    }
+
+	private ConfigBuilder buildConfiguration()
+			throws ResourceAdapterInternalException {
+		XmlConfigBuilder config;
+		if (configurationLocation == null || configurationLocation.length() == 0) {
     		config = new XmlConfigBuilder();
     	} else {
     		try {
@@ -60,8 +66,8 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 				throw new ResourceAdapterInternalException(e.getMessage(), e);
 			}
     	}
-    	setHazelcast(Hazelcast.newHazelcastInstance(config.build()));;
-    }
+		return config;
+	}
 
     public void stop() {
     	if (getHazelcast() != null) {
