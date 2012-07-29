@@ -11,7 +11,7 @@
  -->
  
 	<connection-definitions>
-		<connection-definition class-name="com.hazelcast.jca.ManagedConnectionFactory"
+		<connection-definition class-name="com.hazelcast.jca.ManagedConnectionFactoryImpl"
 			jndi-name="java:/HazelcastCF" pool-name="HazelcastConnectionFactory">
 
 		</connection-definition>
