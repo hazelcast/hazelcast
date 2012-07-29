@@ -16,6 +16,7 @@
 
 package com.hazelcast.jca;
 
+import java.io.FileNotFoundException;
 import java.io.Serializable;
 
 import javax.resource.ResourceException;
@@ -26,6 +27,7 @@ import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.transaction.xa.XAResource;
 
+import com.hazelcast.config.ConfigBuilder;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -34,6 +36,7 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 
 	private static final long serialVersionUID = -1727994229521767306L;
 	private HazelcastInstance hazelcast;
+	private String configurationLocation;
 
 	public void endpointActivation(MessageEndpointFactory arg0, ActivationSpec arg1)
             throws ResourceException {
@@ -47,7 +50,17 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
     }
 
     public void start(BootstrapContext ctx) throws ResourceAdapterInternalException {
-    	setHazelcast(Hazelcast.newHazelcastInstance(new XmlConfigBuilder().build()));;
+    	ConfigBuilder config;
+    	if (configurationLocation == null || configurationLocation.isEmpty()) {
+    		config = new XmlConfigBuilder();
+    	} else {
+    		try {
+				config = new XmlConfigBuilder(configurationLocation);
+			} catch (FileNotFoundException e) {
+				throw new ResourceAdapterInternalException(e.getMessage(), e);
+			}
+    	}
+    	setHazelcast(Hazelcast.newHazelcastInstance(config.build()));;
     }
 
     public void stop() {
@@ -88,6 +101,14 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 		} else if (!hazelcast.equals(other.hazelcast))
 			return false;
 		return true;
+	}
+
+	public void setConfigLocation(String configLocation) {
+		this.configurationLocation = configLocation;
+	}
+
+	public String getConfigLocation() {
+		return configurationLocation;
 	}
 	
 }

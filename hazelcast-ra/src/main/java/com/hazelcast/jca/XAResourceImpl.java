@@ -9,8 +9,6 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.impl.TransactionImpl;
 
 public class XAResourceImpl implements XAResource {
 

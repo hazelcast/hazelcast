@@ -22,7 +22,6 @@ import javax.resource.ResourceException;
 import javax.resource.cci.*;
 import javax.resource.spi.ConnectionManager;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -32,29 +31,32 @@ import java.util.logging.Level;
 public class ConnectionFactoryImpl implements ConnectionFactory {
 	private static final long serialVersionUID = -5909363703528221650L;
 	
-	private final ManagedConnectionFactoryImpl mcf;
-    private final ConnectionManager cm;
+	private ManagedConnectionFactoryImpl mcf;
+    private  ConnectionManager cm;
     private Reference ref;
     private final static AtomicInteger idGen = new AtomicInteger();
     private final static ILogger logger = Logger.getLogger("com.hazelcast.jca");
     private transient final int id;
 
+    public ConnectionFactoryImpl() {
+    	id = idGen.incrementAndGet();
+    }
+    
     public ConnectionFactoryImpl(ManagedConnectionFactoryImpl mcf, ConnectionManager cm) {
-        super();
         this.mcf = mcf;
         this.cm = cm;
         id = idGen.incrementAndGet();
     }
     
     
-    public Connection getConnection() throws ResourceException {
+    public ConnectionImpl getConnection() throws ResourceException {
         logger.log(Level.FINEST, "getConnection");
-        return (Connection) cm.allocateConnection(mcf, null);
+        return (ConnectionImpl) cm.allocateConnection(mcf, null);
     }
 
-    public Connection getConnection(ConnectionSpec connSpec) throws ResourceException {
+    public ConnectionImpl getConnection(ConnectionSpec connSpec) throws ResourceException {
     	logger.log(Level.FINEST, "getConnection spec: " + connSpec);
-        return (Connection) cm.allocateConnection(mcf, null);
+        return (ConnectionImpl) cm.allocateConnection(mcf, null);
     }
 
     public ResourceAdapterMetaData getMetaData() throws ResourceException {
