@@ -38,14 +38,15 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 	private HazelcastInstance hazelcast;
 	private String configurationLocation;
 
-	public void endpointActivation(MessageEndpointFactory arg0, ActivationSpec arg1)
+	public void endpointActivation(MessageEndpointFactory endpointFactory, ActivationSpec spec)
             throws ResourceException {
     }
 
-    public void endpointDeactivation(MessageEndpointFactory arg0, ActivationSpec arg1) {
+    public void endpointDeactivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) {
     }
 
-    public XAResource[] getXAResources(ActivationSpec[] arg0) throws ResourceException {
+    public XAResource[] getXAResources(ActivationSpec[] specs) throws ResourceException {
+    	//JBoss is fine with null, weblogic requires an empty array
         return new XAResource[0];
     }
 

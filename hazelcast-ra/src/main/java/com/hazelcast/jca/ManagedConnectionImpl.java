@@ -86,9 +86,9 @@ public class ManagedConnectionImpl implements ManagedConnection,
     	log(Level.FINEST, "destroy");
     }
 
-    //must be new per JCA spec
     public Object getConnection(Subject subject, ConnectionRequestInfo connectionRequestInfo) {
     	log(Level.FINEST, "getConnection: " + subject + ", " + connectionRequestInfo);
+    	//must be new per JCA spec
         return new ConnectionImpl(this, subject);
     }
 
@@ -111,6 +111,7 @@ public class ManagedConnectionImpl implements ManagedConnection,
 
     public XAResource getXAResource() throws ResourceException {
     	log(Level.FINEST, "getXAResource");
+    	//must be the same per JCA spec
         return xaResource;
     }
 

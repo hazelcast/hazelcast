@@ -8,6 +8,7 @@ import java.net.URL;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.transaction.UserTransaction;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -25,7 +26,7 @@ public class AbsDeploymentTest {
 	private static final String JNDI_PREFIX = "java:/";
 	private static final String JNDI_HAZELCAST_CF = "HazelcastCF";
 
-	private InitialContext context;
+	protected InitialContext context;
 
 	private URL rarArchive;
 
@@ -57,7 +58,7 @@ public class AbsDeploymentTest {
 		rarArchive = f.toURI().toURL();
 
 		embeddedJCAContainer.deploy(rarArchive);
-
+		
 		context = new InitialContext();
 		
 		Object o = context.lookup(JNDI_PREFIX + JNDI_HAZELCAST_CF);

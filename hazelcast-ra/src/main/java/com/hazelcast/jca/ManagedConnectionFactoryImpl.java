@@ -68,7 +68,7 @@ public class ManagedConnectionFactoryImpl implements ManagedConnectionFactory, R
         return printWriter;
     }
 
-    @SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	public ManagedConnection matchManagedConnections(Set set, Subject subject,
     		ConnectionRequestInfo connectionRequestInfo) throws ResourceException {
     	logger.log(Level.FINEST, "matchManagedConnections");

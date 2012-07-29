@@ -1,5 +1,9 @@
 package com.hazelcast.jca;
 
+/**
+ * @deprecated Hopefully not required anymore with correct transaction handling
+ */
+@Deprecated
 public class WasManagedConnectionImpl extends ManagedConnectionImpl {
 
 	public WasManagedConnectionImpl(ResourceAdapterImpl resourceAdapter) {
