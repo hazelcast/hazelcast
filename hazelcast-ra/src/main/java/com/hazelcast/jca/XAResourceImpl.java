@@ -25,8 +25,7 @@ public class XAResourceImpl implements XAResource {
 		Transaction tx = managedConnection.getHazelcastInstance().getTransaction();
 		
 		transactionCache.put(xid, tx);
-		
-		tx.begin();
+		// No tx start here - already started
 	}
 
 	public int prepare(Xid xid) throws XAException {
