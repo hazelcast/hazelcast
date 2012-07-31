@@ -18,7 +18,6 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.Member;
-import com.hazelcast.impl.CountDownLatchProxy;
 
 /**
  * MBean for ICountDownLatch
@@ -62,12 +61,14 @@ public class CountDownLatchMBean extends AbstractMBean<ICountDownLatch> {
     @JMXOperation("getCount")
     @JMXDescription("return current count value")
     public long getCount() {
-        return ((CountDownLatchProxy) getManagedObject()).getCount();
+//        return ((CountDownLatchProxy) getManagedObject()).getCount();
+        return 0;
     }
 
     @JMXOperation("getOwner")
     @JMXDescription("return current count owner")
     public Member getOwner() {
-        return ((CountDownLatchProxy) getManagedObject()).getOwner();
+//        return ((CountDownLatchProxy) getManagedObject()).getOwner();
+        return null;
     }
 }

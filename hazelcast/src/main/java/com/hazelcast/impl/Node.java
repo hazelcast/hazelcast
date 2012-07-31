@@ -17,7 +17,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.ClusterImpl;
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.cluster.JoinRequest;
 import com.hazelcast.config.Config;
@@ -81,25 +80,17 @@ public class Node {
 
     public final PartitionManager partitionManager;
 
-    public final ConcurrentMapManager concurrentMapManager;
-
-    public final BlockingQueueManager blockingQueueManager;
-
+//    public final ConcurrentMapManager concurrentMapManager;
+//
     public final ClusterImpl clusterImpl;
 
-    public final TopicManager topicManager;
-
     public final ListenerManager listenerManager;
-
-    public final ClusterService clusterService;
-
-    public final ExecutorManager executorManager;
 
     public final MulticastService multicastService;
 
     public final ConnectionManager connectionManager;
 
-    public final ClientHandlerService clientHandlerService;
+//    public final ClientHandlerService clientHandlerService;
 
     public final TextCommandServiceImpl textCommandService;
 
@@ -115,16 +106,14 @@ public class Node {
 
     volatile Address masterAddress = null;
 
-    volatile Thread serviceThread = null;
-
     public final FactoryImpl factory;
 
     private final int buildNumber;
 
     public final LoggingServiceImpl loggingService;
 
-    public final ClientServiceImpl clientService;
-
+//    public final ClientServiceImpl clientService;
+//
     private final CpuUtilization cpuUtilization = new CpuUtilization();
 
     private final SystemLogService systemLogService;
@@ -179,19 +168,14 @@ public class Node {
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         nodeService = new NodeService(this);
         //initialize managers..
-        clusterService = new ClusterService(this);
-        clusterService.start();
-        executorManager = new ExecutorManager(this);
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterImpl = new ClusterImpl(this);
         partitionManager = new PartitionManager(this);
-        clientHandlerService = new ClientHandlerService(this);
-        concurrentMapManager = new ConcurrentMapManager(this);
-        nodeService.registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService, concurrentMapManager.partitionManager.getPartitions()));
-        blockingQueueManager = new BlockingQueueManager(this);
+//        clientHandlerService = new ClientHandlerService(this);
+//        concurrentMapManager = new ConcurrentMapManager(this);
+        nodeService.registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService, partitionManager.getPartitions()));
         listenerManager = new ListenerManager(this);
-        clientService = new ClientServiceImpl(concurrentMapManager);
-        topicManager = new TopicManager(this);
+//        clientService = new ClientServiceImpl(concurrentMapManager);
         textCommandService = new TextCommandServiceImpl(this);
         clusterImpl.addMember(localMember);
         initializer.printNodeInfo(this);
@@ -249,7 +233,7 @@ public class Node {
             } else if (listener instanceof MembershipListener) {
                 clusterImpl.addMembershipListener((MembershipListener) listener);
             } else if (listener instanceof MigrationListener) {
-                concurrentMapManager.partitionServiceImpl.addMigrationListener((MigrationListener) listener);
+//                concurrentMapManager.partitionServiceImpl.addMigrationListener((MigrationListener) listener);
             } else if (listener instanceof LifecycleListener) {
                 factory.lifecycleService.addLifecycleListener((LifecycleListener) listener);
             } else if (listener != null) {
@@ -335,10 +319,8 @@ public class Node {
     }
 
     public void cleanupServiceThread() {
-        clusterImpl.checkServiceThread();
-        baseVariables.qServiceThreadPacketCache.clear();
         partitionManager.reset();
-        concurrentMapManager.reset();
+//        concurrentMapManager.reset();
         logger.log(Level.FINEST, "Shutting down the cluster manager");
         clusterImpl.stop();
     }
@@ -346,10 +328,6 @@ public class Node {
     public void start() {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
-        serviceThread = clusterService.getServiceThread();
-//        serviceThread.setPriority(groupProperties.SERVICE_THREAD_PRIORITY.getInteger());
-        logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
-        serviceThread.start();
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
@@ -410,7 +388,7 @@ public class Node {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                 }
-            } while (concurrentMapManager.partitionManager.hasActiveBackupTask() && ++waitSeconds < maxWaitSeconds);
+            } while (partitionManager.hasActiveBackupTask() && ++waitSeconds < maxWaitSeconds);
             if (waitSeconds >= maxWaitSeconds) {
                 logger.log(Level.WARNING, "Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
@@ -430,14 +408,12 @@ public class Node {
             if (managementCenterService != null) {
                 managementCenterService.shutdown();
             }
-            logger.log(Level.FINEST, "Shutting down the clientHandlerService");
-            clientHandlerService.shutdown();
+//            logger.log(Level.FINEST, "Shutting down the clientHandlerService");
+//            clientHandlerService.shutdown();
             logger.log(Level.FINEST, "Shutting down the partitionManager");
             partitionManager.shutdown();
-            logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
-            concurrentMapManager.shutdown();
-            logger.log(Level.FINEST, "Shutting down the cluster service");
-            clusterService.stop();
+//            logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
+//            concurrentMapManager.shutdown();
             logger.log(Level.FINEST, "Shutting down the nodeService");
             nodeService.shutdown();
             if (multicastService != null) {
@@ -446,8 +422,8 @@ public class Node {
             }
             logger.log(Level.FINEST, "Shutting down the connection manager");
             connectionManager.shutdown();
-            logger.log(Level.FINEST, "Shutting down the executorManager");
-            executorManager.stop();
+//            logger.log(Level.FINEST, "Shutting down the executorManager");
+//            executorManager.stop();
             textCommandService.stop();
             masterAddress = null;
             if (securityContext != null) {
@@ -644,10 +620,6 @@ public class Node {
         return config;
     }
 
-    public ExecutorManager getExecutorManager() {
-        return executorManager;
-    }
-
     /**
      * @param active the active to set
      */
@@ -668,18 +640,6 @@ public class Node {
 
     public CpuUtilization getCpuUtilization() {
         return cpuUtilization;
-    }
-
-    public boolean isServiceThread() {
-        return Thread.currentThread() == serviceThread;
-    }
-
-    public final void checkServiceThread() {
-        if (Thread.currentThread() != serviceThread) {
-            String msg = "Only ServiceThread can access this method. " + Thread.currentThread();
-            logger.log(Level.SEVERE, msg);
-            throw new Error(msg);
-        }
     }
 
     public String toString() {

@@ -49,7 +49,7 @@ public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRunt
 
     private ClusterRuntimeState createState(final FactoryImpl factory) {
         final ClusterImpl cluster = factory.getCluster();
-        final PartitionManager pm = factory.node.concurrentMapManager.getPartitionManager();
+        final PartitionManager pm = factory.node.partitionManager ;
         final Collection<Record> lockedRecords = collectLockState(factory);
         return new ClusterRuntimeState(cluster.getMembers(), pm.getPartitions(), pm.getMigratingPartition(),
                                   factory.node.connectionManager.getReadonlyConnectionMap(), lockedRecords);
@@ -66,13 +66,13 @@ public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRunt
         }
         final Node node = factory.node;
         final Collection<Record> lockedRecords = new LinkedList<Record>();
-        for (final String mapName : mapNames) {
-            final CMap cmap = node.concurrentMapManager.getMap(mapName);
-            if (cmap != null) {
-                Collection<Record> records = cmap.getLockedRecordsFor(LOCK_TIME_THRESHOLD);
-                lockedRecords.addAll(records);
-            }
-        }
+//        for (final String mapName : mapNames) {
+//            final CMap cmap = node.concurrentMapManager.getMap(mapName);
+//            if (cmap != null) {
+//                Collection<Record> records = cmap.getLockedRecordsFor(LOCK_TIME_THRESHOLD);
+//                lockedRecords.addAll(records);
+//            }
+//        }
         return lockedRecords;
     }
 

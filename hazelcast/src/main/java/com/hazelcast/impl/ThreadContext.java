@@ -202,7 +202,7 @@ public final class ThreadContext {
 
     private class HazelcastInstanceThreadContext {
         final FactoryImpl factory;
-        CallCache callCache;
+//        CallCache callCache;
         volatile CallContext callContext = null;
 
         HazelcastInstanceThreadContext(FactoryImpl factory) {
@@ -210,12 +210,12 @@ public final class ThreadContext {
             callContext = (new CallContext(createNewThreadId(), false));
         }
 
-        CallCache getCallCache() {
-            if (callCache == null) {
-                callCache = new CallCache(factory);
-            }
-            return callCache;
-        }
+//        CallCache getCallCache() {
+//            if (callCache == null) {
+//                callCache = new CallCache(factory);
+//            }
+//            return callCache;
+//        }
 
         CallContext getCallContext() {
             return callContext;
@@ -226,44 +226,44 @@ public final class ThreadContext {
         }
     }
 
-    class CallCache {
-        final FactoryImpl factory;
-        final ConcurrentMapManager.MPut mput;
-        final ConcurrentMapManager.MGet mget;
-        final ConcurrentMapManager.MRemove mremove;
-        final ConcurrentMapManager.MEvict mevict;
-
-        CallCache(FactoryImpl factory) {
-            this.factory = factory;
-            mput = factory.node.concurrentMapManager.new MPut();
-            mget = factory.node.concurrentMapManager.new MGet();
-            mremove = factory.node.concurrentMapManager.new MRemove();
-            mevict = factory.node.concurrentMapManager.new MEvict();
-        }
-
-        public ConcurrentMapManager.MPut getMPut() {
-            mput.reset();
-            mput.request.lastTime = System.nanoTime();
-            return mput;
-        }
-
-        public ConcurrentMapManager.MGet getMGet() {
-            mget.reset();
-            mget.request.lastTime = System.nanoTime();
-            return mget;
-        }
-
-        public ConcurrentMapManager.MRemove getMRemove() {
-            mremove.reset();
-            mremove.request.lastTime = System.nanoTime();
-            return mremove;
-        }
-
-        public ConcurrentMapManager.MEvict getMEvict() {
-            mevict.reset();
-            return mevict;
-        }
-    }
+//    class CallCache {
+//        final FactoryImpl factory;
+//        final ConcurrentMapManager.MPut mput;
+//        final ConcurrentMapManager.MGet mget;
+//        final ConcurrentMapManager.MRemove mremove;
+//        final ConcurrentMapManager.MEvict mevict;
+//
+//        CallCache(FactoryImpl factory) {
+//            this.factory = factory;
+//            mput = factory.node.concurrentMapManager.new MPut();
+//            mget = factory.node.concurrentMapManager.new MGet();
+//            mremove = factory.node.concurrentMapManager.new MRemove();
+//            mevict = factory.node.concurrentMapManager.new MEvict();
+//        }
+//
+//        public ConcurrentMapManager.MPut getMPut() {
+//            mput.reset();
+//            mput.request.lastTime = System.nanoTime();
+//            return mput;
+//        }
+//
+//        public ConcurrentMapManager.MGet getMGet() {
+//            mget.reset();
+//            mget.request.lastTime = System.nanoTime();
+//            return mget;
+//        }
+//
+//        public ConcurrentMapManager.MRemove getMRemove() {
+//            mremove.reset();
+//            mremove.request.lastTime = System.nanoTime();
+//            return mremove;
+//        }
+//
+//        public ConcurrentMapManager.MEvict getMEvict() {
+//            mevict.reset();
+//            return mevict;
+//        }
+//    }
 
     @Override
     public boolean equals(Object o) {

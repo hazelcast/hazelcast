@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.executor;
 
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Instance;
-import com.hazelcast.impl.monitor.TopicOperationsCounter;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 
-public interface TopicProxy extends ITopic, Instance, HazelcastInstanceAwareInstance {
-
-    TopicOperationsCounter getTopicOperationCounter();
-
-    String getLongName();
+public interface ExecutionLoadBalancer {
+    Member getTarget(HazelcastInstance hazelcastInstance);
 }

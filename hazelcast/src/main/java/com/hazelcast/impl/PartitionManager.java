@@ -23,6 +23,7 @@ import com.hazelcast.impl.partition.*;
 import com.hazelcast.impl.spi.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.util.Clock;
@@ -47,7 +48,7 @@ public class PartitionManager {
     private static final int REPARTITIONING_TASK_COUNT_THRESHOLD = 20;
     private static final int REPARTITIONING_TASK_REPLICA_THRESHOLD = 2;
 
-    private final Node node;
+    final Node node;
     final NodeService nodeService ;
     private final ILogger logger;
     private final int partitionCount;
@@ -67,6 +68,8 @@ public class PartitionManager {
     private final AtomicBoolean migrationActive = new AtomicBoolean(true); // for testing purposes only
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final SystemLogService systemLogService;
+
+    public final PartitionServiceImpl partitionServiceImpl ;
 
     public PartitionManager(final Node node) {
         this.partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
@@ -118,6 +121,8 @@ public class PartitionManager {
                 }
             }
         }, 180, 180, TimeUnit.SECONDS);
+
+        partitionServiceImpl = new PartitionServiceImpl(this);
 
         nodeService.registerService(PARTITION_SERVICE_NAME, this);
     }
@@ -297,7 +302,7 @@ public class PartitionManager {
                 // otherwise new master may take action fast and send new partition state
                 // before other members realize the dead one and fix their records.
                 final boolean migrationStatus = migrationActive.getAndSet(false);
-                node.concurrentMapManager.partitionServiceImpl.reset();
+                partitionServiceImpl.reset();
                 checkMigratingPartitionForDead(deadAddress);
                 // list of partitions those have dead member in their replicas
                 // !! this should be calculated before dead member is removed from partition table !!
@@ -623,13 +628,31 @@ public class PartitionManager {
         final MemberImpl newOwner = node.clusterImpl.getMember(to);
         final MigrationEvent migrationEvent = new MigrationEvent(node, partitionId, current, newOwner);
         systemLogService.logPartition("MigrationEvent [" + started + "] " + migrationEvent);
-        node.concurrentMapManager.partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
+        partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
     }
 
     private boolean shouldCheckRepartitioning() {
         return immediateTasksQueue.isEmpty() && scheduledTasksQueue.isEmpty()
                 && lastRepartitionTime.get() < (Clock.currentTimeMillis() - REPARTITIONING_CHECK_INTERVAL)
                 && migratingPartition == null;
+    }
+
+    public final int getPartitionId(Data key) {
+        int hash = key.getPartitionHash();
+        return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % partitionCount;
+    }
+
+    public Address getPartitionOwner(int partitionId) {
+        return getOwner(partitionId);
+    }
+
+    public Address getKeyOwner(Data key) {
+        int partitionId = getPartitionId(key);
+        return getPartitionOwner(partitionId);
+    }
+
+    public int getPartitionCount() {
+        return partitionCount;
     }
 
     public static class AssignPartitions extends AbstractOperation implements NonBlockingOperation, NoReply {
@@ -665,8 +688,7 @@ public class PartitionManager {
             boolean result = false;
             if (migratingPartition != null) {
                 Node node = getOperationContext().getNodeService().getNode();
-                final MigratingPartition masterMigratingPartition = node
-                        .concurrentMapManager.getPartitionManager().migratingPartition;
+                final MigratingPartition masterMigratingPartition = node.partitionManager.migratingPartition;
                 result = migratingPartition.equals(masterMigratingPartition);
             }
             getOperationContext().getResponseHandler().sendResponse(result);

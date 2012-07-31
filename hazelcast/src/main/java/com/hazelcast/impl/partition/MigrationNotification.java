@@ -39,7 +39,7 @@ public class MigrationNotification extends AbstractRemotelyProcessable {
         Address from = migratingPartition.getFromAddress();
         Address to = migratingPartition.getToAddress();
         int partitionId = migratingPartition.getPartitionId();
-        node.concurrentMapManager.getPartitionManager().fireMigrationEvent(started, partitionId, from, to);
+        node.partitionManager.fireMigrationEvent(started, partitionId, from, to);
     }
 
     @Override

@@ -25,7 +25,6 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Prefix;
-import com.hazelcast.impl.CMap.CMapEntry;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Keys;
 import com.hazelcast.impl.base.KeyValue;
@@ -108,11 +107,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public MapEntry<K, V> getMapEntry(K key) {
         ProxyHelper.check(key);
-        CMapEntry cMapEntry = (CMapEntry) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY, key, null);
-        if (cMapEntry == null) {
-            return null;
-        }
-        return new ClientMapEntry(cMapEntry, key, this);
+//        CMapEntry cMapEntry = (CMapEntry) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY, key, null);
+//        if (cMapEntry == null) {
+//            return null;
+//        }
+//        return new ClientMapEntry(cMapEntry, key, this);
+        return null;
     }
 
     public Set<K> keySet(Predicate predicate) {

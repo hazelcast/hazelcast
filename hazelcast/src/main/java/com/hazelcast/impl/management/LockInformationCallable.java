@@ -20,17 +20,16 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.Prefix;
-import com.hazelcast.impl.CMap;
-import com.hazelcast.impl.Processable;
 import com.hazelcast.impl.base.DistributedLock;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+
+//import com.hazelcast.impl.CMap;
 
 public class LockInformationCallable extends ClusterServiceCallable implements
         Callable<Map<String, LockInformationCallable.MapLockState>>, Serializable, HazelcastInstanceAware {
@@ -46,22 +45,22 @@ public class LockInformationCallable extends ClusterServiceCallable implements
             }
         }
         final ConcurrentHashMap<String, MapLockState> lockInformation = new ConcurrentHashMap<String, MapLockState>();
-        getClusterService().enqueueAndWait(new Processable() {
-            public void process() {
-                for (String mapName : mapNames) {
-                    final CMap cmap = getCMap(mapName);
-                    Map<Object, DistributedLock> lockOwners = new HashMap<Object, DistributedLock>();
-                    Map<Object, DistributedLock> lockRequested = new HashMap<Object, DistributedLock>();
-                    cmap.collectScheduledLocks(lockOwners, lockRequested);
-                    MapLockState mapLockState = new MapLockState();
-                    mapLockState.setLockOwners(lockOwners);
-                    mapLockState.setLockRequested(lockRequested);
-                    mapLockState.setGlobalLock(mapName.equals(globalLockMapName));
-                    mapLockState.setMapName(mapName);
-                    lockInformation.put(mapName, mapLockState);
-                }
-            }
-        }, 5);
+//        getClusterService().enqueueAndWait(new Processable() {
+//            public void process() {
+//                for (String mapName : mapNames) {
+//                    final CMap cmap = getCMap(mapName);
+//                    Map<Object, DistributedLock> lockOwners = new HashMap<Object, DistributedLock>();
+//                    Map<Object, DistributedLock> lockRequested = new HashMap<Object, DistributedLock>();
+//                    cmap.collectScheduledLocks(lockOwners, lockRequested);
+//                    MapLockState mapLockState = new MapLockState();
+//                    mapLockState.setLockOwners(lockOwners);
+//                    mapLockState.setLockRequested(lockRequested);
+//                    mapLockState.setGlobalLock(mapName.equals(globalLockMapName));
+//                    mapLockState.setMapName(mapName);
+//                    lockInformation.put(mapName, mapLockState);
+//                }
+//            }
+//        }, 5);
         return lockInformation;
     }
 

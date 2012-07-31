@@ -26,6 +26,7 @@ import com.hazelcast.impl.transaction.PrepareOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.SimpleMapEntry;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -106,7 +107,7 @@ public class TransactionImpl implements Transaction {
     }
 
     public Data attachPutOp(String name, Object key, Data value, long timeout, long ttl, boolean newRecord, int index) {
-        Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
+        Instance.InstanceType instanceType = Prefix.getInstanceType(name);
         Object matchValue = (instanceType.isMultiMap()) ? toObject(value) : null;
         TransactionRecord rec = findTransactionRecord(name, key, matchValue);
         if (rec == null) {
@@ -130,7 +131,7 @@ public class TransactionImpl implements Transaction {
     }
 
     public Data attachRemoveOp(String name, Object key, Data value, boolean newRecord, int valueCount) {
-        Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
+        Instance.InstanceType instanceType = Prefix.getInstanceType(name);
         Object matchValue = (instanceType.isMultiMap()) ? toObject(value) : null;
         TransactionRecord rec = findTransactionRecord(name, key, matchValue);
         Data oldValue = null;
@@ -382,7 +383,7 @@ public class TransactionImpl implements Transaction {
                             if (lsEntries == null) {
                                 lsEntries = new ArrayList<Map.Entry>(2);
                             }
-                            lsEntries.add(BaseManager.createSimpleMapEntry(factory, name, transactionRecord.key, transactionRecord.value));
+                            lsEntries.add(new SimpleMapEntry(factory, name, transactionRecord.key, transactionRecord.value));
                         }
                     }
                 }
@@ -468,7 +469,7 @@ public class TransactionImpl implements Transaction {
             this.key = key;
             this.value = value;
             this.newRecord = newRecord;
-            instanceType = ConcurrentMapManager.getInstanceType(name);
+            instanceType = Prefix.getInstanceType(name);
         }
 
         public TransactionRecord(String name, Object key, Data value, int index, boolean newRecord) {
@@ -477,7 +478,7 @@ public class TransactionImpl implements Transaction {
             this.value = value;
             this.newRecord = newRecord;
             this.index = index;
-            instanceType = ConcurrentMapManager.getInstanceType(name);
+            instanceType = Prefix.getInstanceType(name);
         }
 
         public void commit() {
@@ -489,39 +490,39 @@ public class TransactionImpl implements Transaction {
         }
 
         public void commitMap() {
-            if (removed) {
-                if (instanceType.isSet()) {
-                    ConcurrentMapManager.MRemoveItem mRemoveItem = factory.node.concurrentMapManager.new MRemoveItem();
-                    mRemoveItem.removeItem(name, key);
-                } else if (!newRecord) {
-                    if (instanceType.isMap()) {
-                        factory.node.concurrentMapManager.new MRemove().remove(name, key);
-                    } else if (instanceType.isMultiMap()) {
-                        if (value == null) {
-                            factory.node.concurrentMapManager.new MRemove().remove(name, key);
-                        } else {
-                            factory.node.concurrentMapManager.new MRemoveMulti().remove(name, key, value);
-                        }
-                    }
-                } else {
-                    factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
-                }
-            } else {
-                if (instanceType.isMultiMap()) {
-                    factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
-                } else {
-                    if (value != null) {
-                        factory.node.concurrentMapManager.new MPut().putAfterCommit(name, key, value, ttl, id);
-                    } else {
-                        factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
-                    }
-                }
-            }
+//            if (removed) {
+//                if (instanceType.isSet()) {
+//                    ConcurrentMapManager.MRemoveItem mRemoveItem = factory.node.concurrentMapManager.new MRemoveItem();
+//                    mRemoveItem.removeItem(name, key);
+//                } else if (!newRecord) {
+//                    if (instanceType.isMap()) {
+//                        factory.node.concurrentMapManager.new MRemove().remove(name, key);
+//                    } else if (instanceType.isMultiMap()) {
+//                        if (value == null) {
+//                            factory.node.concurrentMapManager.new MRemove().remove(name, key);
+//                        } else {
+//                            factory.node.concurrentMapManager.new MRemoveMulti().remove(name, key, value);
+//                        }
+//                    }
+//                } else {
+//                    factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
+//                }
+//            } else {
+//                if (instanceType.isMultiMap()) {
+//                    factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
+//                } else {
+//                    if (value != null) {
+//                        factory.node.concurrentMapManager.new MPut().putAfterCommit(name, key, value, ttl, id);
+//                    } else {
+//                        factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
+//                    }
+//                }
+//            }
         }
 
         public void commitQueue() {
             if (!removed) {
-                factory.node.blockingQueueManager.offerCommit(name, key, value, index);
+//                factory.node.blockingQueueManager.offerCommit(name, key, value, index);
             }
         }
 
@@ -544,7 +545,7 @@ public class TransactionImpl implements Transaction {
 
         public void rollbackQueue() {
             if (removed) {
-                factory.node.blockingQueueManager.rollbackPoll(name, key, value);
+//                factory.node.blockingQueueManager.rollbackPoll(name, key, value);
             }
         }
 

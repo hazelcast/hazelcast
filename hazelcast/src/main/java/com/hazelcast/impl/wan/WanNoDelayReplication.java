@@ -51,7 +51,8 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         this.groupName = groupName;
         this.password = password;
         addressQueue.addAll(Arrays.asList(targets));
-        node.executorManager.executeNow(this);
+//        node.executorManager.executeNow(this);
+        node.nodeService.getExecutorService().execute(this);
     }
 
     /**

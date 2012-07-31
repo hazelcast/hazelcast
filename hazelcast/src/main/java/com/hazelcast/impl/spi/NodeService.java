@@ -42,8 +42,8 @@ public class NodeService {
 
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
     private final ExecutorService executorService;
-    private final Workers nonBlockingWorkers; // = new Workers("hz.NonBlocking", 1);
-    private final Workers blockingWorkers; // = new Workers("hz.Blocking", 8);
+    private final Workers nonBlockingWorkers;
+    private final Workers blockingWorkers;
     private final ScheduledExecutorService scheduledExecutorService;
     private final Node node;
     private final ILogger logger;
@@ -55,13 +55,13 @@ public class NodeService {
         logger = node.getLogger(NodeService.class.getName());
         final ClassLoader classLoader = node.getConfig().getClassLoader();
         executorService = new ThreadPoolExecutor(
-                3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-                new SynchronousQueue(),
-                new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"), classLoader));
-        scheduledExecutorService = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(node.threadGroup,
+                3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue(),
+                new NodeExecutorThreadFactory(node.getThreadPoolNamePrefix("cached"), classLoader));
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(2, new NodeExecutorThreadFactory(
                 node.getThreadPoolNamePrefix("scheduled"), classLoader));
-        nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
-        blockingWorkers = new Workers("hz.Blocking", 8);
+        nonBlockingWorkers = new Workers("nonBlocking", 1);
+        final int threadCount = Runtime.getRuntime().availableProcessors() * 2;
+        blockingWorkers = new Workers("blocking", threadCount);
         partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
@@ -129,7 +129,7 @@ public class NodeService {
     }
 
     public SingleInvocationBuilder createSingleInvocation(String serviceName, Operation op, int partitionId) {
-        return new SingleInvocationBuilder(NodeService.this, serviceName, op, partitionId);
+        return new SingleInvocationBuilder(this, serviceName, op, partitionId);
     }
 
     void invokeSingle(final SingleInvocation inv) {
@@ -163,7 +163,7 @@ public class NodeService {
             Data valueData = toData(op);
             packet.setValue(valueData);
             TheCall call = new TheCall(target, inv);
-            boolean sent = node.concurrentMapManager.registerAndSend(target, packet, call);
+            boolean sent = node.clusterImpl.registerAndSendRemoteCall(target, packet, call);
             if (!sent) {
                 inv.setResult(new IOException("Packet not sent!"));
             }
@@ -193,7 +193,6 @@ public class NodeService {
     }
 
     public void handleOperation(final Packet packet) {
-        ThreadContext.get().setCurrentFactory(node.factory);
         final int partitionId = packet.blockId;
         final boolean nonBlocking = packet.longValue == 1;
         final Data data = packet.getValueData();
@@ -204,7 +203,6 @@ public class NodeService {
         executor.execute(new Runnable() {
             public void run() {
                 try {
-                    ThreadContext.get().setCurrentFactory(node.factory);
                     final Operation op = (Operation) toObject(data);
                     setOperationContext(op, serviceName, caller, callId, partitionId).setConnection(packet.conn);
                     final boolean noReply = (op instanceof NoReply);
@@ -220,7 +218,7 @@ public class NodeService {
                                 packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
                                 packet.setValue(toData(response));
                                 packet.name = serviceName;
-                                node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
+                                node.clusterImpl.send(packet, packet.conn);
                             }
                         };
                         op.getOperationContext().setResponseHandler(responseHandler);
@@ -254,7 +252,7 @@ public class NodeService {
                     packet.longValue = 1;
                     packet.setValue(toData(e));
                     packet.name = serviceName;
-                    node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
+                    node.clusterImpl.send(packet, packet.conn);
                 }
             }
         });
@@ -300,15 +298,18 @@ public class NodeService {
         }
     }
 
-    class Workers {
+    private class Workers {
         final int threadCount;
         final ExecutorService[] workers;
+        final NodeExecutorThreadFactory threadFactory;
 
         Workers(String threadNamePrefix, int threadCount) {
             this.threadCount = threadCount;
+            threadFactory = new NodeExecutorThreadFactory(node.getThreadPoolNamePrefix(threadNamePrefix),
+                    node.getConfig().getClassLoader());
             workers = new ExecutorService[threadCount];
             for (int i = 0; i < threadCount; i++) {
-                workers[i] = newSingleThreadExecutorService(threadNamePrefix);
+                workers[i] = newSingleThreadExecutorService();
             }
         }
 
@@ -316,16 +317,9 @@ public class NodeService {
             return workers[partitionId % threadCount];
         }
 
-        ExecutorService newSingleThreadExecutorService(final String threadName) {
+        ExecutorService newSingleThreadExecutorService() {
             return new ThreadPoolExecutor(
-                    1, 1, 0L, TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<Runnable>(),
-                    new ExecutorThreadFactory(node.threadGroup, node.getThreadNamePrefix(threadName),
-                            node.getConfig().getClassLoader()) {
-                        protected void beforeRun() {
-                            ThreadContext.get().setCurrentFactory(node.factory);
-                        }
-                    },
+                    1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), threadFactory,
                     new RejectedExecutionHandler() {
                         public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         }
@@ -349,8 +343,19 @@ public class NodeService {
         }
     }
 
+    private class NodeExecutorThreadFactory extends ExecutorThreadFactory {
+
+        public NodeExecutorThreadFactory(String threadNamePrefix, ClassLoader classLoader) {
+            super(node.threadGroup, threadNamePrefix, classLoader);
+        }
+
+        protected void beforeRun() {
+            ThreadContext.get().setCurrentFactory(node.factory);
+        }
+    }
+
     public void notifyCall(long callId, Response response) {
-        TheCall call = (TheCall) node.concurrentMapManager.removeRemoteCall(callId);
+        TheCall call = (TheCall) node.clusterImpl.deregisterRemoteCall(callId);
         if (call != null) {
             call.offerResponse(response);
         }
@@ -387,15 +392,15 @@ public class NodeService {
     }
 
     public Member getOwner(int partitionId) {
-        return node.concurrentMapManager.getPartitionServiceImpl().getPartition(partitionId).getOwner();
+        return node.partitionManager.partitionServiceImpl.getPartition(partitionId).getOwner();
     }
 
     public final int getPartitionId(Data key) {
-        return node.concurrentMapManager.getPartitionId(key);
+        return node.partitionManager.getPartitionId(key);
     }
 
     public PartitionInfo getPartitionInfo(int partitionId) {
-        PartitionInfo p = node.concurrentMapManager.getPartitionInfo(partitionId);
+        PartitionInfo p = node.partitionManager.getPartition(partitionId);
         if (p.getOwner() == null) {
             // probably ownerships are not set yet.
             // force it.
@@ -406,6 +411,10 @@ public class NodeService {
 
     public int getPartitionCount() {
         return partitionCount;
+    }
+
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
 
     public ScheduledExecutorService getScheduledExecutorService() {

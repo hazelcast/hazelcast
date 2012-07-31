@@ -42,9 +42,9 @@ public class MapSystemLogFactory {
         final Set<Member> members = new HashSet<Member>(node.getClusterImpl().getMembers());
         final Data key = request.key;
         PartitionInfo partitionInfo = null;
-        PartitionManager pm = node.concurrentMapManager.getPartitionManager();
+        PartitionManager pm = node.partitionManager;
         if (key != null) {
-            partitionInfo = new PartitionInfo(pm.getPartition(node.concurrentMapManager.getPartitionId(key)));
+            partitionInfo = new PartitionInfo(pm.getPartition(pm.getPartitionId(key)));
         }
         final Address endpoint = isCaller ? request.target : request.caller;
         boolean connected = false;

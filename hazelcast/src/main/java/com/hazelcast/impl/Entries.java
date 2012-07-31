@@ -24,6 +24,7 @@ import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.util.SimpleMapEntry;
 
 import java.util.*;
 
@@ -34,10 +35,10 @@ public class Entries extends AbstractSet {
     private final String name;
     private final ClusterOperation operation;
     private final boolean checkValue;
-    private final ConcurrentMapManager concurrentMapManager;
+    private final FactoryImpl factory;
 
-    public Entries(ConcurrentMapManager concurrentMapManager, String name, ClusterOperation operation, Predicate predicate) {
-        this.concurrentMapManager = concurrentMapManager;
+    public Entries(FactoryImpl factory, String name, ClusterOperation operation, Predicate predicate) {
+        this.factory = factory;
         this.name = name;
         this.operation = operation;
         if (name.startsWith(Prefix.MULTIMAP)) {
@@ -46,7 +47,7 @@ public class Entries extends AbstractSet {
             colKeyValues = new HashSet<Map.Entry>();
         }
         TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();
-        this.checkValue = (Instance.InstanceType.MAP == BaseManager.getInstanceType(name)) &&
+        this.checkValue = (Instance.InstanceType.MAP == Prefix.getInstanceType(name)) &&
                 (operation == CONCURRENT_MAP_ITERATE_VALUES
                         || operation == CONCURRENT_MAP_ITERATE_ENTRIES);
         if (txn != null) {
@@ -87,14 +88,14 @@ public class Entries extends AbstractSet {
                 if (txn.has(name, key)) {
                     Data value = txn.get(name, key);
                     if (value != null) {
-                        colKeyValues.add(BaseManager.createSimpleMapEntry(concurrentMapManager.node.factory, name, key, value));
+                        colKeyValues.add(new SimpleMapEntry(factory, name, key, value));
                     }
                 } else {
-                    entry.setName(concurrentMapManager.node.factory, name);
+                    entry.setName(factory, name);
                     colKeyValues.add(entry);
                 }
             } else {
-                entry.setName(concurrentMapManager.node.factory, name);
+                entry.setName(factory, name);
                 colKeyValues.add(entry);
             }
         }
@@ -154,14 +155,14 @@ public class Entries extends AbstractSet {
         }
 
         public void remove() {
-            if (BaseManager.getInstanceType(name) == Instance.InstanceType.MULTIMAP) {
+            if (Prefix.getInstanceType(name) == Instance.InstanceType.MULTIMAP) {
                 if (operation == CONCURRENT_MAP_ITERATE_KEYS) {
-                    ((MultiMap) concurrentMapManager.node.factory.getOrCreateProxyByName(name)).remove(entry.getKey(), null);
+                    ((MultiMap) factory.getOrCreateProxyByName(name)).remove(entry.getKey(), null);
                 } else {
-                    ((MultiMap) concurrentMapManager.node.factory.getOrCreateProxyByName(name)).remove(entry.getKey(), entry.getValue());
+                    ((MultiMap) factory.getOrCreateProxyByName(name)).remove(entry.getKey(), entry.getValue());
                 }
             } else {
-                ((IRemoveAwareProxy) concurrentMapManager.node.factory.getOrCreateProxyByName(name)).removeKey(entry.getKey());
+                ((IRemoveAwareProxy) factory.getOrCreateProxyByName(name)).removeKey(entry.getKey());
             }
             it.remove();
         }
