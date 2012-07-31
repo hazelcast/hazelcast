@@ -28,7 +28,6 @@ import java.util.Set;
  * If not started already, Hazelcast member (HazelcastInstance) will start
  * automatically if any of the functions is called on Hazelcast.
  */
-@SuppressWarnings("SynchronizationOnStaticField")
 public final class Hazelcast {
 
     private Hazelcast() {
