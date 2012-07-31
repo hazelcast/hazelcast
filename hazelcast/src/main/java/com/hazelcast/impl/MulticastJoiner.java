@@ -53,14 +53,11 @@ public class MulticastJoiner extends AbstractJoiner {
             if (targetAddress == null) {
                 masterAddressNow = findMasterWithMulticast();
             } else {
+                // if target address is set explicitly, try to join target address first.
                 masterAddressNow = targetAddress;
                 targetAddress = null;
             }
             
-            // when node cannot join found master, join operation never ends!
-//            if (masterAddressNow != null && masterAddressNow.equals(node.getMasterAddress())) {
-//                tryCount--;
-//            }
             node.setMasterAddress(masterAddressNow);
             if (masterAddressNow != null) {
                 systemLogService.logJoin("Setting master address to " + masterAddressNow);

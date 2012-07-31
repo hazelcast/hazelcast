@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
@@ -26,23 +42,22 @@ public class MergeClusters extends AbstractRemotelyProcessable {
             return;
         }
 
-        Address endpoint = conn.getEndPoint();
-        if (endpoint == null || !endpoint.equals(getNode().getMasterAddress())) {
+        final Address endpoint = conn.getEndPoint();
+        final Address masterAddress = node.getMasterAddress();
+        final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
+        if (endpoint == null || !endpoint.equals(masterAddress)) {
+            logger.log(Level.WARNING, "Merge instruction sent from non-master endpoint: " + endpoint);
             return;
         }
 
-        final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
-        logger.log(Level.WARNING, node.address + " is merging [tcp/ip] to " + newTargetAddress + ", because : instructed by master");
-
-        // XXX: Do the restarting work in another thread because doing it on the processable thread doesn't seem to work.
-        new Thread(new Runnable() {
-
+        node.getExecutorManager().executeNow(new Runnable() {
             public void run() {
-                ThreadContext.get().setCurrentFactory(node.factory);
+                logger.log(Level.WARNING, node.address + " is merging to " + newTargetAddress
+                                          + ", because: instructed by master " + masterAddress);
                 node.getJoiner().setTargetAddress(newTargetAddress);
                 node.factory.restart();
             }
-        }).start();
+        });
     }
 
     public void readData(DataInput in) throws IOException {
