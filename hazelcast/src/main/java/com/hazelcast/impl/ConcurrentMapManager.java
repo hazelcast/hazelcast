@@ -2440,6 +2440,12 @@ public class ConcurrentMapManager extends BaseManager {
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.removeItem(request);
         }
+
+        // removeItem returns boolean, no need to throw timeout exception!
+        protected void onNoTimeToSchedule(Request request) {
+            request.response = Boolean.FALSE;
+            returnResponse(request);
+        }
     }
 
     class RemoveOperationHandler extends SchedulableOperationHandler {
