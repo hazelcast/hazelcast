@@ -427,18 +427,18 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
         }
     }
 
-    public void handleAddRemoveConnection(final AddOrRemoveConnection connection) {
-        if (connection.add) { // Just connect to the new address if not connected already.
-            if (!connection.address.equals(thisAddress)) {
-                node.connectionManager.getOrConnect(connection.address);
-            }
-        } else { // Remove dead member
-            if (connection.address != null) {
-                logger.log(Level.FINEST, "Disconnected from " + connection.address + "... will be removed!");
-                removeAddress(connection.address);
-            }
-        } // end of REMOVE CONNECTION
-    }
+//    public void handleAddRemoveConnection(final AddOrRemoveConnection connection) {
+//        if (connection.add) { // Just connect to the new address if not connected already.
+//            if (!connection.address.equals(thisAddress)) {
+//                node.connectionManager.getOrConnect(connection.address);
+//            }
+//        } else { // Remove dead member
+//            if (connection.address != null) {
+//                logger.log(Level.FINEST, "Disconnected from " + connection.address + "... will be removed!");
+//                removeAddress(connection.address);
+//            }
+//        } // end of REMOVE CONNECTION
+//    }
 
     public void removeAddress(Address deadAddress) {
         doRemoveAddress(deadAddress, true);
@@ -714,10 +714,13 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
     }
 
     public boolean checkAuthorization(String groupName, String groupPassword, Address target) {
-        AbstractRemotelyCallable<Boolean> authorizationCall = new AuthorizationCall(groupName, groupPassword);
-//        AsyncRemotelyBooleanCallable call = new NoneMemberAsyncRemotelyBooleanCallable();
-//        call.executeProcess(target, authorizationCall);
-//        return call.getResultAsBoolean();
+        Operation authorizationCall = new AuthorizationCall(groupName, groupPassword);
+        Future<Boolean> future = node.nodeService.createSingleInvocation(SERVICE_NAME, authorizationCall, -1)
+                .setTarget(target).setTryCount(1).build().invoke();
+        try {
+            return future.get();
+        } catch (Exception ignored) {
+        }
         return false;
     }
 

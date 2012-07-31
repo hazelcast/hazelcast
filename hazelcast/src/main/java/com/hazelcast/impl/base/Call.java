@@ -16,11 +16,10 @@
 
 package com.hazelcast.impl.base;
 
-import com.hazelcast.impl.Processable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 
-public interface Call extends Processable {
+public interface Call {
 
     long getCallId();
 

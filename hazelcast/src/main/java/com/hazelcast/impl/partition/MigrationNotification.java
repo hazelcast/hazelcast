@@ -16,14 +16,16 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.cluster.AbstractRemotelyProcessable;
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MigrationNotification extends AbstractRemotelyProcessable {
+public class MigrationNotification extends AbstractOperation implements NoReply, NonBlockingOperation {
     MigratingPartition migratingPartition;
     boolean started;
 
@@ -35,11 +37,12 @@ public class MigrationNotification extends AbstractRemotelyProcessable {
         this.migratingPartition = migratingPartition;
     }
 
-    public void process() {
+    public void run() {
         Address from = migratingPartition.getFromAddress();
         Address to = migratingPartition.getToAddress();
         int partitionId = migratingPartition.getPartitionId();
-        node.partitionManager.fireMigrationEvent(started, partitionId, from, to);
+        getOperationContext().getNodeService().getNode()
+                .partitionManager.fireMigrationEvent(started, partitionId, from, to);
     }
 
     @Override

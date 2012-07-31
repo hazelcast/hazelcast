@@ -16,7 +16,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
@@ -181,7 +180,7 @@ public class ListenerManager {
 //        enqueueAndReturn(new ListenerRegistrationProcess(name, dataKey, includeValue));
     }
 
-    final class ListenerRegistrationProcess implements Processable {
+    final class ListenerRegistrationProcess  {
         final String name;
         final Data key;
         final boolean includeValue;
@@ -439,7 +438,7 @@ public class ListenerManager {
         }
     }
 
-    public static class ListenerItem extends AbstractRemotelyProcessable implements DataSerializable {
+    public static class ListenerItem implements DataSerializable {
         public String name;
         public Object key;
         public Object listener;
