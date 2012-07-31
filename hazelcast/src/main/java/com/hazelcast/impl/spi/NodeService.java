@@ -193,6 +193,7 @@ public class NodeService {
     }
 
     public void handleOperation(final Packet packet) {
+        ThreadContext.get().setCurrentFactory(node.factory);
         final int partitionId = packet.blockId;
         final boolean nonBlocking = packet.longValue == 1;
         final Data data = packet.getValueData();
@@ -203,6 +204,7 @@ public class NodeService {
         executor.execute(new Runnable() {
             public void run() {
                 try {
+                    ThreadContext.get().setCurrentFactory(node.factory);
                     final Operation op = (Operation) toObject(data);
                     setOperationContext(op, serviceName, caller, callId, partitionId).setConnection(packet.conn);
                     final boolean noReply = (op instanceof NoReply);
@@ -393,7 +395,13 @@ public class NodeService {
     }
 
     public PartitionInfo getPartitionInfo(int partitionId) {
-        return node.concurrentMapManager.getPartitionInfo(partitionId);
+        PartitionInfo p = node.concurrentMapManager.getPartitionInfo(partitionId);
+        if (p.getOwner() == null) {
+            // probably ownerships are not set yet.
+            // force it.
+            getOwner(partitionId);
+        }
+        return p;
     }
 
     public int getPartitionCount() {
