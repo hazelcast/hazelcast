@@ -177,7 +177,7 @@ public class SystemLogService {
             sb.append(callState.toString());
             sb.append("\n");
         }
-        sb.append(node.concurrentMapManager.getPartitionManager().toString());
+        sb.append(node.partitionManager.toString());
         sb.append("\n");
         return sb.toString();
     }

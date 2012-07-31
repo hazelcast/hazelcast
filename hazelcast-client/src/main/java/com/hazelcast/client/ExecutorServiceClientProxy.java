@@ -22,7 +22,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.MultiTask;
 import com.hazelcast.impl.ClientDistributedTask;
 import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.impl.ExecutionManagerCallback;
+import com.hazelcast.impl.executor.ExecutionManagerCallback;
 import com.hazelcast.impl.InnerFutureTask;
 
 import java.util.*;

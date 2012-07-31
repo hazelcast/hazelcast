@@ -19,7 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.base.PacketProcessor;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 
@@ -32,54 +32,55 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
-import static com.hazelcast.impl.ClusterOperation.*;
-import static com.hazelcast.nio.IOUtil.toData;
+public class ListenerManager {
 
-public class ListenerManager extends BaseManager {
+    private final Node node;
     final ConcurrentMap<String, List<ListenerItem>> namedListeners = new ConcurrentHashMap<String, List<ListenerItem>>(100);
+    private final ILogger logger;
 
     ListenerManager(Node node) {
-        super(node);
-        registerPacketProcessor(ClusterOperation.EVENT, new PacketProcessor() {
-            public void process(Packet packet) {
-                handleEvent(packet);
-            }
-        });
-        registerPacketProcessor(ADD_LISTENER, new AddRemoveListenerOperationHandler());
-        registerPacketProcessor(REMOVE_LISTENER, new AddRemoveListenerOperationHandler());
-        registerPacketProcessor(ADD_LISTENER_NO_RESPONSE, new PacketProcessor() {
-            public void process(Packet packet) {
-                handleAddRemoveListener(true, packet);
-            }
-        });
+        this.node = node;
+        logger = node.getLogger(getClass().getName());
+//        registerPacketProcessor(ClusterOperation.EVENT, new PacketProcessor() {
+//            public void process(Packet packet) {
+//                handleEvent(packet);
+//            }
+//        });
+//        registerPacketProcessor(ADD_LISTENER, new AddRemoveListenerOperationHandler());
+//        registerPacketProcessor(REMOVE_LISTENER, new AddRemoveListenerOperationHandler());
+//        registerPacketProcessor(ADD_LISTENER_NO_RESPONSE, new PacketProcessor() {
+//            public void process(Packet packet) {
+//                handleAddRemoveListener(true, packet);
+//            }
+//        });
     }
 
-    private void handleEvent(Packet packet) {
-        int eventType = (int) packet.longValue;
-        Data key = packet.getKeyData();
-        Data value = packet.getValueData();
-        String name = packet.name;
-        Address from = packet.lockAddress;
-        releasePacket(packet);
-        enqueueEvent(eventType, name, key, value, from, false);
-    }
-
-    private void handleAddRemoveListener(boolean add, Packet packet) {
-        Data key = packet.getKeyData();
-        boolean returnValue = (packet.longValue == 1);
-        String name = packet.name;
-        Address address = packet.conn.getEndPoint();
-        releasePacket(packet);
-        registerListener(add, name, key, address, returnValue);
-    }
+//    private void handleEvent(Packet packet) {
+//        int eventType = (int) packet.longValue;
+//        Data key = packet.getKeyData();
+//        Data value = packet.getValueData();
+//        String name = packet.name;
+//        Address from = packet.lockAddress;
+//        releasePacket(packet);
+//        enqueueEvent(eventType, name, key, value, from, false);
+//    }
+//
+//    private void handleAddRemoveListener(boolean add, Packet packet) {
+//        Data key = packet.getKeyData();
+//        boolean returnValue = (packet.longValue == 1);
+//        String name = packet.name;
+//        Address address = packet.conn.getEndPoint();
+//        releasePacket(packet);
+//        registerListener(add, name, key, address, returnValue);
+//    }
 
     public void syncForDead(Address deadAddress) {
         //syncForAdd();
         for (List<ListenerItem> listeners : namedListeners.values()) {
             for (ListenerItem listenerItem : listeners) {
                 if (!listenerItem.localListener) {
-                    registerListener(false, listenerItem.name,
-                                     toData(listenerItem.key), deadAddress, listenerItem.includeValue);
+//                    registerListener(false, listenerItem.name,
+//                                     toData(listenerItem.key), deadAddress, listenerItem.includeValue);
                 }
             }
         }
@@ -109,66 +110,66 @@ public class ListenerManager extends BaseManager {
         }
     }
 
-    class AddRemoveListenerOperationHandler extends TargetAwareOperationHandler {
-        boolean isRightRemoteTarget(Request request) {
-            return (null == request.key) || thisAddress.equals(node.concurrentMapManager.getKeyOwner(request));
-        }
-
-        void doOperation(Request request) {
-            Address from = request.caller;
-            logger.log(Level.FINEST, "AddListenerOperation from " + from + ", local=" + request.local + "  key:" + request.key + " op:" + request.operation);
-            if (from == null) throw new RuntimeException("Listener origin is not known!");
-            boolean add = (request.operation == ADD_LISTENER);
-            boolean includeValue = (request.longValue == 1);
-            registerListener(add, request.name, request.key, request.caller, includeValue);
-            request.response = Boolean.TRUE;
-        }
-    }
-
-    public class AddRemoveListener extends MultiCall<Boolean> {
-        final String name;
-        final boolean add;
-        final boolean includeValue;
-
-        public AddRemoveListener(String name, boolean add, boolean includeValue) {
-            this.name = name;
-            this.add = add;
-            this.includeValue = includeValue;
-        }
-
-        SubCall createNewTargetAwareOp(Address target) {
-            return new AddListenerAtTarget(target);
-        }
-
-        boolean onResponse(Object response) {
-            return true;
-        }
-
-        Object returnResult() {
-            return Boolean.TRUE;
-        }
-
-        protected boolean excludeLiteMember() {
-            return false;
-        }
-
-        private final class AddListenerAtTarget extends SubCall {
-            public AddListenerAtTarget(Address target) {
-                super(target);
-                ClusterOperation operation = (add) ? ADD_LISTENER : REMOVE_LISTENER;
-                setLocal(operation, name, null, null, -1, -1);
-                request.setBooleanRequest();
-                request.longValue = (includeValue) ? 1 : 0;
-            }
-        }
-    }
+//    class AddRemoveListenerOperationHandler extends TargetAwareOperationHandler {
+//        boolean isRightRemoteTarget(Request request) {
+//            return (null == request.key) || thisAddress.equals(node.partitionManager.getKeyOwner(request.key));
+//        }
+//
+//        protected void doOperation(Request request) {
+//            Address from = request.caller;
+//            logger.log(Level.FINEST, "AddListenerOperation from " + from + ", local=" + request.local + "  key:" + request.key + " op:" + request.operation);
+//            if (from == null) throw new RuntimeException("Listener origin is not known!");
+//            boolean add = (request.operation == ADD_LISTENER);
+//            boolean includeValue = (request.longValue == 1);
+//            registerListener(add, request.name, request.key, request.caller, includeValue);
+//            request.response = Boolean.TRUE;
+//        }
+//    }
+//
+//    public class AddRemoveListener extends MultiCall<Boolean> {
+//        final String name;
+//        final boolean add;
+//        final boolean includeValue;
+//
+//        public AddRemoveListener(String name, boolean add, boolean includeValue) {
+//            this.name = name;
+//            this.add = add;
+//            this.includeValue = includeValue;
+//        }
+//
+//        SubCall createNewTargetAwareOp(Address target) {
+//            return new AddListenerAtTarget(target);
+//        }
+//
+//        boolean onResponse(Object response) {
+//            return true;
+//        }
+//
+//        Object returnResult() {
+//            return Boolean.TRUE;
+//        }
+//
+//        protected boolean excludeLiteMember() {
+//            return false;
+//        }
+//
+//        private final class AddListenerAtTarget extends SubCall {
+//            public AddListenerAtTarget(Address target) {
+//                super(target);
+//                ClusterOperation operation = (add) ? ADD_LISTENER : REMOVE_LISTENER;
+//                setLocal(operation, name, null, null, -1, -1);
+//                request.setBooleanRequest();
+//                request.longValue = (includeValue) ? 1 : 0;
+//            }
+//        }
+//    }
 
     private void registerListener(String name, Object key, boolean add, boolean includeValue) {
         if (key == null) {
-            AddRemoveListener addRemoveListener = new AddRemoveListener(name, add, includeValue);
-            addRemoveListener.call();
+//            AddRemoveListener addRemoveListener = new AddRemoveListener(name, add, includeValue);
+//            addRemoveListener.call();
         } else {
-            node.concurrentMapManager.new MAddKeyListener().addListener(name, add, key, includeValue);
+//            node.concurrentMapManager.new MAddKeyListener().addListener(name, add, key, includeValue);
         }
     }
 
@@ -177,7 +178,7 @@ public class ListenerManager extends BaseManager {
         if (key != null) {
             dataKey = ThreadContext.get().toData(key);
         }
-        enqueueAndReturn(new ListenerRegistrationProcess(name, dataKey, includeValue));
+//        enqueueAndReturn(new ListenerRegistrationProcess(name, dataKey, includeValue));
     }
 
     final class ListenerRegistrationProcess implements Processable {
@@ -201,45 +202,45 @@ public class ListenerManager extends BaseManager {
         }
 
         private void processWithKey() {
-            Address owner = node.concurrentMapManager.getKeyOwner(key);
-            if (owner.equals(thisAddress)) {
-                registerListener(true, name, key, thisAddress, includeValue);
-            } else {
-                Packet packet = obtainPacket();
-                packet.set(name, ADD_LISTENER_NO_RESPONSE, key, null);
-                packet.longValue = (includeValue) ? 1 : 0;
-                sendOrReleasePacket(packet, owner);
-            }
+//            Address owner = node.partitionManager.getKeyOwner(key);
+//            if (owner.equals(thisAddress)) {
+//                registerListener(true, name, key, thisAddress, includeValue);
+//            } else {
+//                Packet packet = obtainPacket();
+//                packet.set(name, ADD_LISTENER_NO_RESPONSE, key, null);
+//                packet.longValue = (includeValue) ? 1 : 0;
+//                sendOrReleasePacket(packet, owner);
+//            }
         }
 
         private void processWithoutKey() {
-            for (MemberImpl member : getMemberList()) {
-                if (member.localMember()) {
-                    registerListener(true, name, null, thisAddress, includeValue);
-                } else {
-                    sendAddListener(member.getAddress(), name, null, includeValue);
-                }
-            }
+//            for (MemberImpl member : getMemberList()) {
+//                if (member.localMember()) {
+//                    registerListener(true, name, null, thisAddress, includeValue);
+//                } else {
+//                    sendAddListener(member.getAddress(), name, null, includeValue);
+//                }
+//            }
         }
     }
 
     void sendAddListener(Address toAddress, String name, Data key,
                          boolean includeValue) {
-        Packet packet = obtainPacket();
-        packet.set(name, ClusterOperation.ADD_LISTENER_NO_RESPONSE, key, null);
-        packet.longValue = (includeValue) ? 1 : 0;
-        sendOrReleasePacket(packet, toAddress);
+//        Packet packet = obtainPacket();
+//        packet.set(name, ClusterOperation.ADD_LISTENER_NO_RESPONSE, key, null);
+//        packet.longValue = (includeValue) ? 1 : 0;
+//        sendOrReleasePacket(packet, toAddress);
     }
 
     public synchronized void addLocalListener(final String name, Object listener, Instance.InstanceType instanceType) {
         List<ListenerItem> listeners = getOrCreateListenerList(name);
         ListenerItem listenerItem = new ListenerItem(name, null, listener, true, instanceType, true);
         listeners.add(listenerItem);
-        node.concurrentMapManager.enqueueAndWait(new Processable() {
-            public void process() {
-                node.concurrentMapManager.getOrCreateMap(name).addListener(null, node.getThisAddress(), true);
-            }
-        }, 10);
+//        node.concurrentMapManager.enqueueAndWait(new Processable() {
+//            public void process() {
+//                node.concurrentMapManager.getOrCreateMap(name).addListener(null, node.getThisAddress(), true);
+//            }
+//        }, 10);
     }
 
     public synchronized List<ListenerItem> getOrCreateListenerList(String name) {
@@ -348,26 +349,26 @@ public class ListenerManager extends BaseManager {
         if (listenerItem.instanceType == Instance.InstanceType.MAP) {
             if (!listenerItem.name.startsWith(Prefix.MAP_HAZELCAST)) {
                 Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
-                if (proxy instanceof MProxy) {
-                    MProxy mProxy = (MProxy) proxy;
-                    mProxy.getMapOperationCounter().incrementReceivedEvents();
-                }
+//                if (proxy instanceof MProxy) {
+//                    MProxy mProxy = (MProxy) proxy;
+//                    mProxy.getMapOperationCounter().incrementReceivedEvents();
+//                }
             }
         } else if (listenerItem.instanceType == Instance.InstanceType.QUEUE) {
             if (!listenerItem.name.startsWith(Prefix.QUEUE_HAZELCAST)) {
                 Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
-                if (proxy instanceof QProxy) {
-                    QProxy qProxy = (QProxy) proxy;
-                    qProxy.getQueueOperationCounter().incrementReceivedEvents();
-                }
+//                if (proxy instanceof QProxy) {
+//                    QProxy qProxy = (QProxy) proxy;
+//                    qProxy.getQueueOperationCounter().incrementReceivedEvents();
+//                }
             }
         } else if (listenerItem.instanceType == Instance.InstanceType.TOPIC) {
             if (!listenerItem.name.startsWith(Prefix.TOPIC_HAZELCAST)) {
                 Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
-                if (proxy instanceof TopicProxy) {
-                    TopicProxy tProxy = (TopicProxy) proxy;
-                    tProxy.getTopicOperationCounter().incrementReceivedMessages();
-                }
+//                if (proxy instanceof TopicProxy) {
+//                    TopicProxy tProxy = (TopicProxy) proxy;
+//                    tProxy.getTopicOperationCounter().incrementReceivedMessages();
+//                }
             }
         }
         final SerializerRegistry serializerRegistry = node.factory.serializerRegistry;
@@ -483,7 +484,7 @@ public class ListenerManager extends BaseManager {
         }
 
         public void process() {
-            getNode().listenerManager.registerListener(true, name, toData(key), getConnection().getEndPoint(), includeValue);
+//            getNode().listenerManager.registerListener(true, name, toData(key), getConnection().getEndPoint(), includeValue);
         }
     }
 }

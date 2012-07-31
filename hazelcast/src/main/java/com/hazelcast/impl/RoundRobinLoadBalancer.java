@@ -18,6 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.executor.ExecutionLoadBalancer;
 
 import java.util.concurrent.atomic.AtomicLong;
 

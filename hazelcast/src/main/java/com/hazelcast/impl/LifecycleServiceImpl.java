@@ -20,14 +20,9 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.logging.ILogger;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -118,42 +113,43 @@ public class LifecycleServiceImpl implements LifecycleService {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(RESTARTING);
             paused.set(true);
-            final Node node = factory.node;
-            final ILogger logger = getLogger();
-            List<Record> lsOwnedRecords = new ArrayList<Record>();
-            for (CMap cmap : node.concurrentMapManager.getCMaps().values()) {
-                if (cmap.isUserMap()) {
-                    lsOwnedRecords.addAll(cmap.getMapIndexService().getOwnedRecords());
-                }
-            }
-            node.onRestart();
-            node.clientHandlerService.restart();
-            node.connectionManager.onRestart();
-            node.clusterImpl.onRestart();
-            node.partitionManager.onRestart();
-            node.concurrentMapManager.onRestart();
-            node.rejoin();
-            final CountDownLatch latch = new CountDownLatch(lsOwnedRecords.size());
-            final ParallelExecutor executor = node.executorManager.newParallelExecutor(16);
-            for (final Record ownedRecord : lsOwnedRecords) {
-                executor.execute(new Runnable() {
-                    public void run() {
-                        try {
-                            ConcurrentMapManager.MPut mput = node.concurrentMapManager.new MPut();
-                            mput.merge(ownedRecord);
-                            // invalidate record now (skipped invalidation on restart)
-                            ownedRecord.invalidate();
-                            latch.countDown();
-                        } catch (Exception e) {
-                            logger.log(Level.WARNING, e.getMessage(), e);
-                        }
-                    }
-                });
-            }
-            try {
-                latch.await(60, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            }
+//            final Node node = factory.node;
+//            final ILogger logger = getLogger();
+//            List<Record> lsOwnedRecords = new ArrayList<Record>();
+//            for (CMap cmap : node.concurrentMapManager.getCMaps().values()) {
+//                if (cmap.isUserMap()) {
+//                    lsOwnedRecords.addAll(cmap.getMapIndexService().getOwnedRecords());
+//                }
+//            }
+//            node.onRestart();
+////            node.clientHandlerService.restart();
+//            node.connectionManager.onRestart();
+//            node.clusterImpl.onRestart();
+//            node.partitionManager.onRestart();
+//            node.concurrentMapManager.onRestart();
+//            node.rejoin();
+//            final CountDownLatch latch = new CountDownLatch(lsOwnedRecords.size());
+////            final ParallelExecutor executor = node.executorManager.newParallelExecutor(16);
+//            final ExecutorService executor = node.nodeService.getExecutorService();
+//            for (final Record ownedRecord : lsOwnedRecords) {
+//                executor.execute(new Runnable() {
+//                    public void run() {
+//                        try {
+//                            ConcurrentMapManager.MPut mput = node.concurrentMapManager.new MPut();
+//                            mput.merge(ownedRecord);
+//                            // invalidate record now (skipped invalidation on restart)
+//                            ownedRecord.invalidate();
+//                            latch.countDown();
+//                        } catch (Exception e) {
+//                            logger.log(Level.WARNING, e.getMessage(), e);
+//                        }
+//                    }
+//                });
+//            }
+//            try {
+//                latch.await(60, TimeUnit.SECONDS);
+//            } catch (InterruptedException ignored) {
+//            }
             paused.set(false);
             fireLifecycleEvent(RESTARTED);
         }

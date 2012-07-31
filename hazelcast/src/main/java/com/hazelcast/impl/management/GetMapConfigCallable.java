@@ -18,8 +18,6 @@ package com.hazelcast.impl.management;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.impl.CMap;
-import com.hazelcast.impl.Processable;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
@@ -27,6 +25,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
+
+//import com.hazelcast.impl.CMap;
 
 public class GetMapConfigCallable extends ClusterServiceCallable implements Callable<MapConfig>, HazelcastInstanceAware, DataSerializable {
 
@@ -43,13 +43,13 @@ public class GetMapConfigCallable extends ClusterServiceCallable implements Call
 
     public MapConfig call() throws Exception {
         final AtomicReference<MapConfig> ref = new AtomicReference<MapConfig>();
-        getClusterService().enqueueAndWait(new Processable() {
-            public void process() {
-                final CMap cmap = getCMap(mapName);
-                MapConfig cfg = cmap.getRuntimeConfig();
-                ref.set(cfg);
-            }
-        }, 5);
+//        getClusterService().enqueueAndWait(new Processable() {
+//            public void process() {
+//                final CMap cmap = getCMap(mapName);
+//                MapConfig cfg = cmap.getRuntimeConfig();
+//                ref.set(cfg);
+//            }
+//        }, 5);
         return ref.get();
     }
 

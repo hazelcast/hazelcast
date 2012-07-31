@@ -17,8 +17,6 @@
 package com.hazelcast.impl.management;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.impl.CMap;
-import com.hazelcast.impl.Processable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -39,12 +37,12 @@ public class UpdateMapConfigCallable extends GetMapConfigCallable {
     }
 
     public MapConfig call() throws Exception {
-        getClusterService().enqueueAndReturn(new Processable() {
-            public void process() {
-                final CMap cmap = getCMap(mapName);
-                cmap.setRuntimeConfig(mapConfig);
-            }
-        });
+//        getClusterService().enqueueAndReturn(new Processable() {
+//            public void process() {
+//                final CMap cmap = getCMap(mapName);
+//                cmap.setRuntimeConfig(mapConfig);
+//            }
+//        });
         return null;
     }
 

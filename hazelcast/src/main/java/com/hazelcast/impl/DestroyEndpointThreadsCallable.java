@@ -51,19 +51,19 @@ public class DestroyEndpointThreadsCallable implements Callable<Boolean>, Hazelc
     }
 
     public Boolean call() throws Exception {
-        final ConcurrentMapManager c = getConcurrentMapManager(hazelcastInstance);
-        c.enqueueAndWait(new Processable() {
-            public void process() {
-                c.destroyEndpointThreads(endpoint, threadIds);
-            }
-        }, 10);
+//        final ConcurrentMapManager c = getConcurrentMapManager(hazelcastInstance);
+//        c.enqueueAndWait(new Processable() {
+//            public void process() {
+//                c.destroyEndpointThreads(endpoint, threadIds);
+//            }
+//        }, 10);
         return Boolean.TRUE;
     }
 
-    private ConcurrentMapManager getConcurrentMapManager(HazelcastInstance h) {
-        FactoryImpl factory = (FactoryImpl) h;
-        return factory.node.concurrentMapManager;
-    }
+//    private ConcurrentMapManager getConcurrentMapManager(HazelcastInstance h) {
+//        FactoryImpl factory = (FactoryImpl) h;
+//        return factory.node.concurrentMapManager;
+//    }
 
     public void writeData(DataOutput out) throws IOException {
         endpoint.writeData(out);

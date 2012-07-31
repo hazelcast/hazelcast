@@ -52,22 +52,23 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     public Object getValue() {
-        if (cmap.isCacheValue()) {
-            final Object currentValue = valueObject;
-            if (currentValue != null) {
-                return currentValue;
-            }
-            synchronized (this) {
-                if (valueObject != null) {
-                    return valueObject;
-                }
-                final Object v = toObject(value);
-                valueObject = v;
-                return v;
-            }
-        } else {
-            return toObject(value);
-        }
+//        if (cmap.isCacheValue()) {
+//            final Object currentValue = valueObject;
+//            if (currentValue != null) {
+//                return currentValue;
+//            }
+//            synchronized (this) {
+//                if (valueObject != null) {
+//                    return valueObject;
+//                }
+//                final Object v = toObject(value);
+//                valueObject = v;
+//                return v;
+//            }
+//        } else {
+//            return toObject(value);
+//        }
+        return toObject(value);
     }
 
     public Object setValue(Object value) {

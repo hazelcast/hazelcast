@@ -18,7 +18,6 @@ package com.hazelcast.impl;
 
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DefaultProxyFactory implements ProxyFactory {
@@ -35,49 +34,49 @@ public class DefaultProxyFactory implements ProxyFactory {
         return new MProxyImpl(name, factory);
     }
 
-    public QProxy createQueueProxy(String name) {
-        return new QProxyImpl(name, factory);
-    }
+//    public QProxy createQueueProxy(String name) {
+//        return new QProxyImpl(name, factory);
+//    }
 
-    public TopicProxy createTopicProxy(String name) {
-        return new TopicProxyImpl(name, factory);
-    }
-
-    public MultiMapProxy createMultiMapProxy(String name) {
-        return new MultiMapProxyImpl(name, factory);
-    }
-
-    public ListProxy createListProxy(String name) {
-        return new ListProxyImpl(name, factory);
-    }
-
-    public SetProxy createSetProxy(String name) {
-        return new SetProxyImpl(name, factory);
-    }
-
-    public LockProxy createLockProxy(Object key) {
-        return new LockProxyImpl(factory, key);
-    }
-
-    public AtomicNumberProxy createAtomicNumberProxy(String name) {
-        return new AtomicNumberProxyImpl(name, factory);
-    }
-
-    public SemaphoreProxy createSemaphoreProxy(String name) {
-        return new SemaphoreProxyImpl(name, factory);
-    }
-
-    public CountDownLatchProxy createCountDownLatchProxy(String name) {
-        return new CountDownLatchProxyImpl(name, factory);
-    }
-
-    public IdGeneratorProxy createIdGeneratorProxy(String name) {
-        return new IdGeneratorProxyImpl(name, factory);
-    }
-
-    public ExecutorService createExecutorServiceProxy(String name) {
-        return new ExecutorServiceProxy(factory.node, name);
-    }
+//    public TopicProxy createTopicProxy(String name) {
+//        return new TopicProxyImpl(name, factory);
+//    }
+//
+//    public MultiMapProxy createMultiMapProxy(String name) {
+//        return new MultiMapProxyImpl(name, factory);
+//    }
+//
+//    public ListProxy createListProxy(String name) {
+//        return new ListProxyImpl(name, factory);
+//    }
+//
+//    public SetProxy createSetProxy(String name) {
+//        return new SetProxyImpl(name, factory);
+//    }
+//
+//    public LockProxy createLockProxy(Object key) {
+//        return new LockProxyImpl(factory, key);
+//    }
+//
+//    public AtomicNumberProxy createAtomicNumberProxy(String name) {
+//        return new AtomicNumberProxyImpl(name, factory);
+//    }
+//
+//    public SemaphoreProxy createSemaphoreProxy(String name) {
+//        return new SemaphoreProxyImpl(name, factory);
+//    }
+//
+//    public CountDownLatchProxy createCountDownLatchProxy(String name) {
+//        return new CountDownLatchProxyImpl(name, factory);
+//    }
+//
+//    public IdGeneratorProxy createIdGeneratorProxy(String name) {
+//        return new IdGeneratorProxyImpl(name, factory);
+//    }
+//
+//    public ExecutorService createExecutorServiceProxy(String name) {
+//        return new ExecutorServiceProxy(factory.node, name);
+//    }
 
     public TransactionImpl createTransaction() {
         return transactionFactory.newTransaction();

@@ -196,7 +196,8 @@ public abstract class AbstractSimpleRecord implements Record {
     }
 
     public String getName() {
-        return cmap.name;
+//        return cmap.name;
+        return null;
     }
 
     public int getBlockId() {
