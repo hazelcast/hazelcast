@@ -27,7 +27,7 @@ import java.io.Serializable;
 public class ChatApplication {
 
     private String username;
-    private final IMap<String, ChatMessage> map = Hazelcast.getMap("chat-application");
+    private final IMap<String, ChatMessage> map = Hazelcast.newHazelcastInstance(null).getMap("chat-application");
 
     public static void main(String[] args) {
         ChatApplication application = new ChatApplication();

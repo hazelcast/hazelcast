@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.ILock;
 import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.impl.HazelcastInstanceFactory;
 import com.hazelcast.monitor.LocalLockStats;
 
 import java.util.concurrent.TimeUnit;
@@ -93,7 +93,7 @@ public class LockClientProxy implements ILock {
     }
 
     public Object getId() {
-        return new FactoryImpl.ProxyKey("lock", lockObject);
+        return new HazelcastInstanceFactory.ProxyKey("lock", lockObject);
     }
 
     @Override

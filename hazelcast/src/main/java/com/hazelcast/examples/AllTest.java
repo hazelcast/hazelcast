@@ -42,6 +42,7 @@ public class AllTest {
     private static final int STATS_SECONDS = 10;
 
     final Logger logger = Logger.getLogger("All-test");
+    final HazelcastInstance hazelcast;
 
     public static void main(String[] args) {
         int nThreads = (args.length == 0) ? 10 : new Integer(args[0]);
@@ -55,7 +56,7 @@ public class AllTest {
                         //noinspection BusyWait
                         Thread.sleep(STATS_SECONDS * 1000);
                         System.out.println("cluster size:"
-                                + Hazelcast.getCluster().getMembers().size());
+                                + allTest.hazelcast.getCluster().getMembers().size());
                         allTest.mapStats();
                         allTest.qStats();
                         allTest.topicStats();
@@ -68,7 +69,7 @@ public class AllTest {
     }
 
     private void qStats() {
-        LocalQueueOperationStats qOpStats = Hazelcast.getQueue("myQ").getLocalQueueStats().getOperationStats();
+        LocalQueueOperationStats qOpStats = hazelcast.getQueue("myQ").getLocalQueueStats().getOperationStats();
         long period = ((qOpStats.getPeriodEnd() - qOpStats.getPeriodStart()) / 1000);
         if (period == 0) {
             return;
@@ -84,7 +85,7 @@ public class AllTest {
     }
 
     private void mapStats() {
-        LocalMapOperationStats mapOpStats = Hazelcast.getMap("myMap").getLocalMapStats().getOperationStats();
+        LocalMapOperationStats mapOpStats = hazelcast.getMap("myMap").getLocalMapStats().getOperationStats();
         long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
         if (period == 0) {
             return;
@@ -100,6 +101,7 @@ public class AllTest {
     AllTest(int nThreads) {
         this.nThreads = nThreads;
         ex = Executors.newFixedThreadPool(nThreads);
+        hazelcast = Hazelcast.newHazelcastInstance(null);
         List<Runnable> mapOperations = loadMapOperations();
         List<Runnable> qOperations = loadQOperations();
         List<Runnable> topicOperations = loadTopicOperations();
@@ -146,7 +148,7 @@ public class AllTest {
     }
 
     private List<Runnable> loadTopicOperations() {
-        ITopic topic = Hazelcast.getTopic("myTopic");
+        ITopic topic = hazelcast.getTopic("myTopic");
         topic.addMessageListener(new MessageListener() {
             public void onMessage(Message message) {
                 messagesReceived.incrementAndGet();
@@ -155,7 +157,7 @@ public class AllTest {
         List<Runnable> operations = new ArrayList<Runnable>();
         addOperation(operations, new Runnable() {
             public void run() {
-                ITopic topic = Hazelcast.getTopic("myTopic");
+                ITopic topic = hazelcast.getTopic("myTopic");
                 topic.publish(String.valueOf(random.nextInt(100000000)));
                 messagesSend.incrementAndGet();
             }
@@ -167,13 +169,13 @@ public class AllTest {
         List<Runnable> operations = new ArrayList<Runnable>();
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 q.offer(new byte[100]);
             }
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 try {
                     q.offer(new byte[100], 10, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
@@ -183,49 +185,49 @@ public class AllTest {
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 q.contains(new byte[100]);
             }
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 q.isEmpty();
             }
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 q.size();
             }
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 q.remove(new byte[100]);
             }
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 q.remainingCapacity();
             }
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 q.poll();
             }
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 q.add(new byte[100]);
             }
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 try {
                     q.take();
                 } catch (InterruptedException e) {
@@ -235,7 +237,7 @@ public class AllTest {
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 List list = new ArrayList();
                 for (int i = 0; i < 10; i++) {
                     list.add(new byte[100]);
@@ -245,7 +247,7 @@ public class AllTest {
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IQueue q = Hazelcast.getQueue("myQ");
+                IQueue q = hazelcast.getQueue("myQ");
                 List list = new ArrayList();
                 q.drainTo(list);
             }
@@ -257,13 +259,13 @@ public class AllTest {
         ArrayList<Runnable> operations = new ArrayList<Runnable>();
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.evict(random.nextInt(size));
             }
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 try {
                     map.getAsync(random.nextInt(size)).get();
                 } catch (InterruptedException e) {
@@ -275,19 +277,19 @@ public class AllTest {
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.containsKey(random.nextInt(size));
             }
         }, 2);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.containsValue(new Customer(random.nextInt(100), String.valueOf(random.nextInt(100000))));
             }
         }, 2);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 int key = random.nextInt(size);
                 map.lock(key);
                 try {
@@ -300,7 +302,7 @@ public class AllTest {
         }, 1);
 //        addOperation(operations, new Runnable() {
 //            public void run() {
-//                IMap map = Hazelcast.getMap("myMap");
+//                IMap map = hazelcast.getMap("myMap");
 //                int key = random.nextInt(size);
 //                map.lockMap(10, TimeUnit.MILLISECONDS);
 //                try {
@@ -313,7 +315,7 @@ public class AllTest {
 //        }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 int key = random.nextInt(size);
                 boolean locked = map.tryLock(key);
                 if (locked) {
@@ -328,7 +330,7 @@ public class AllTest {
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 int key = random.nextInt(size);
                 boolean locked = map.tryLock(key, 10, TimeUnit.MILLISECONDS);
                 if (locked) {
@@ -343,7 +345,7 @@ public class AllTest {
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 Iterator it = map.entrySet().iterator();
                 for (int i = 0; i < 10 && it.hasNext(); i++) {
                     it.next();
@@ -352,31 +354,31 @@ public class AllTest {
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.getMapEntry(random.nextInt(size));
             }
         }, 2);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.isEmpty();
             }
         }, 3);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.put(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
             }
         }, 50);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.tryPut(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))), 10, TimeUnit.MILLISECONDS);
             }
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 try {
                     map.putAsync(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000)))).get();
                 } catch (InterruptedException e) {
@@ -388,25 +390,25 @@ public class AllTest {
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.put(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))), 10, TimeUnit.MILLISECONDS);
             }
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.putIfAbsent(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))), 10, TimeUnit.MILLISECONDS);
             }
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.putIfAbsent(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
             }
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 Map localMap = new HashMap();
                 for (int i = 0; i < 10; i++) {
                     localMap.put(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
@@ -416,19 +418,19 @@ public class AllTest {
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.get(random.nextInt(size));
             }
         }, 100);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.remove(random.nextInt(size));
             }
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 try {
                     map.tryRemove(random.nextInt(size), 10, TimeUnit.MILLISECONDS);
                 } catch (TimeoutException e) {
@@ -438,38 +440,38 @@ public class AllTest {
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.removeAsync(random.nextInt(size));
             }
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.remove(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
             }
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.replace(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
             }
         }, 4);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.replace(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
             }
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.size();
             }
         }, 4);
         addOperation(operations, new Runnable() {
             public void run() {
                 long begin = Clock.currentTimeMillis();
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 Iterator it = map.entrySet(new SqlPredicate("year=" + random.nextInt(100))).iterator();
                 while (it.hasNext()) {
                     it.next();
@@ -479,7 +481,7 @@ public class AllTest {
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 Iterator it = map.entrySet(new SqlPredicate("name=" + random.nextInt(10000))).iterator();
                 while (it.hasNext()) {
                     it.next();
@@ -488,7 +490,7 @@ public class AllTest {
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 Iterator it = map.keySet(new SqlPredicate("name=" + random.nextInt(10000))).iterator();
                 while (it.hasNext()) {
                     it.next();
@@ -497,7 +499,7 @@ public class AllTest {
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 Iterator it = map.localKeySet().iterator();
                 while (it.hasNext()) {
                     it.next();
@@ -506,7 +508,7 @@ public class AllTest {
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 Iterator it = map.localKeySet(new SqlPredicate("name=" + random.nextInt(10000))).iterator();
                 while (it.hasNext()) {
                     it.next();
@@ -515,7 +517,7 @@ public class AllTest {
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 final CountDownLatch latch = new CountDownLatch(1);
                 EntryListener listener = new EntryListener() {
                     public void entryAdded(EntryEvent entryEvent) {
@@ -545,13 +547,13 @@ public class AllTest {
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 map.addIndex("year", true);
             }
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
-                IMap map = Hazelcast.getMap("myMap");
+                IMap map = hazelcast.getMap("myMap");
                 final CountDownLatch latch = new CountDownLatch(1);
                 EntryListener listener = new EntryListener() {
                     public void entryAdded(EntryEvent entryEvent) {

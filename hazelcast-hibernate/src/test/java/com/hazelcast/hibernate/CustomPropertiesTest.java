@@ -61,13 +61,11 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         props.put(CacheEnvironment.SHUTDOWN_ON_STOP, "false");
         SessionFactory sf = createSessionFactory(props);
         HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
-        assertNotSame(Hazelcast.getDefaultInstance(), hz);
         assertEquals(1, hz.getCluster().getMembers().size());
         MapConfig cfg = hz.getConfig().getMapConfig("com.hazelcast.hibernate.entity.*");
         assertNotNull(cfg);
         assertEquals(30, cfg.getTimeToLiveSeconds());
         assertEquals(50, cfg.getMaxSizeConfig().getSize());
-        Hazelcast.getDefaultInstance().getLifecycleService().shutdown();
         sf.close();
         assertTrue(hz.getLifecycleService().isRunning());
         hz.getLifecycleService().shutdown();

@@ -18,26 +18,26 @@ package com.hazelcast.impl.base;
 
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.impl.HazelcastInstanceImpl;
 
 /**
  * @mdogan 4/6/12
  */
 public final class HazelcastManagedContext implements ManagedContext {
 
-    private final FactoryImpl factory;
+    private final HazelcastInstanceImpl instance;
     private final ManagedContext externalContext;
     private final boolean hasExternalContext;
 
-    public HazelcastManagedContext(final FactoryImpl factory, final ManagedContext externalContext) {
-        this.factory = factory;
+    public HazelcastManagedContext(final HazelcastInstanceImpl instance, final ManagedContext externalContext) {
+        this.instance = instance;
         this.externalContext = externalContext;
         hasExternalContext = this.externalContext != null;
     }
 
     public final void initialize(final Object obj) {
         if (obj instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) obj).setHazelcastInstance(factory);
+            ((HazelcastInstanceAware) obj).setHazelcastInstance(instance);
         }
 
         if (hasExternalContext) {

@@ -115,7 +115,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
                 if (shouldMerge(joinInfo)) {
                     logger.log(Level.WARNING, node.address + " is merging [multicast] to " + joinInfo.address);
-                    node.factory.restart();
+                    node.instance.getLifecycleService().restart();
                     return;
                 }
             }

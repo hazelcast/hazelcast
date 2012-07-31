@@ -362,7 +362,7 @@ public class ExecutorManager  {
 
     private void threadPoolBeforeExecute(Thread t, Runnable r) {
         ThreadContext threadContext = ThreadContext.get();
-        threadContext.setCurrentFactory(node.factory);
+        threadContext.setCurrentInstance(node.instance);
         CallContext callContext = mapThreadCallContexts.get(t);
         if (callContext == null) {
             callContext = new CallContext(ThreadContext.createNewThreadId(), false);
@@ -652,7 +652,7 @@ public class ExecutorManager  {
 
     Object toObjectWithConfigClassLoader(Data data) {
         final ClassLoader actualContextClassLoader = Thread.currentThread().getContextClassLoader();
-        ThreadContext.get().setCurrentFactory(node.factory);
+        ThreadContext.get().setCurrentInstance(node.instance);
         try {
             Thread.currentThread().setContextClassLoader(node.getConfig().getClassLoader());
             return toObject(data);

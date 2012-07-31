@@ -348,7 +348,7 @@ public class ListenerManager {
         final EntryEventType entryEventType = event.getEventType();
         if (listenerItem.instanceType == Instance.InstanceType.MAP) {
             if (!listenerItem.name.startsWith(Prefix.MAP_HAZELCAST)) {
-                Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
+//                Object proxy = node.instance.getOrCreateProxyByName(listenerItem.name);
 //                if (proxy instanceof MProxy) {
 //                    MProxy mProxy = (MProxy) proxy;
 //                    mProxy.getMapOperationCounter().incrementReceivedEvents();
@@ -356,7 +356,7 @@ public class ListenerManager {
             }
         } else if (listenerItem.instanceType == Instance.InstanceType.QUEUE) {
             if (!listenerItem.name.startsWith(Prefix.QUEUE_HAZELCAST)) {
-                Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
+//                Object proxy = node.instance.getOrCreateProxyByName(listenerItem.name);
 //                if (proxy instanceof QProxy) {
 //                    QProxy qProxy = (QProxy) proxy;
 //                    qProxy.getQueueOperationCounter().incrementReceivedEvents();
@@ -364,14 +364,14 @@ public class ListenerManager {
             }
         } else if (listenerItem.instanceType == Instance.InstanceType.TOPIC) {
             if (!listenerItem.name.startsWith(Prefix.TOPIC_HAZELCAST)) {
-                Object proxy = node.factory.getOrCreateProxyByName(listenerItem.name);
+//                Object proxy = node.instance.getOrCreateProxyByName(listenerItem.name);
 //                if (proxy instanceof TopicProxy) {
 //                    TopicProxy tProxy = (TopicProxy) proxy;
 //                    tProxy.getTopicOperationCounter().incrementReceivedMessages();
 //                }
             }
         }
-        final SerializerRegistry serializerRegistry = node.factory.serializerRegistry;
+        final SerializerRegistry serializerRegistry = node.instance.serializerRegistry;
         final DataAwareEntryEvent event2 = listenerItem.includeValue ?
                 event :
                 // if new value is already null no need to create a new value-less event

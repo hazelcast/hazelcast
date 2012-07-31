@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
-import com.hazelcast.impl.ClientServiceException;
+import com.hazelcast.impl.client.ClientServiceException;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Keys;
 import com.hazelcast.impl.ThreadContext;

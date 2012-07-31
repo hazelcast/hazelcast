@@ -17,6 +17,7 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.partition.Partition;
@@ -37,11 +38,12 @@ public class SimpleMultiMapTest {
     public static int PUT_PERCENTAGE = 40;
 
     static Logger logger = Logger.getLogger(SimpleMapTest.class.getName());
+    static HazelcastInstance instance = Hazelcast.newHazelcastInstance(null);
 
     public static void main(String[] args) {
         boolean load = init(args);
         ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
-        final MultiMap<String, byte[]> map = Hazelcast.getMultiMap("default");
+        final MultiMap<String, byte[]> map = instance.getMultiMap("default");
         final AtomicInteger gets = new AtomicInteger(0);
         final AtomicInteger puts = new AtomicInteger(0);
         final AtomicInteger removes = new AtomicInteger(0);
@@ -73,7 +75,7 @@ public class SimpleMultiMapTest {
                         //noinspection BusyWait
                         Thread.sleep(STATS_SECONDS * 1000);
                         logger.info("cluster size:"
-                                + Hazelcast.getCluster().getMembers().size());
+                                + instance.getCluster().getMembers().size());
                         int putCount = puts.getAndSet(0);
                         int getCount = gets.getAndSet(0);
                         int removeCount = removes.getAndSet(0);
@@ -91,10 +93,10 @@ public class SimpleMultiMapTest {
 
     private static void load(boolean load, ExecutorService es, final MultiMap<String, byte[]> map) {
         if (load) {
-            final Member thisMember = Hazelcast.getCluster().getLocalMember();
+            final Member thisMember = instance.getCluster().getLocalMember();
             for (int i = 0; i < ENTRY_COUNT; i++) {
                 final String key = String.valueOf(i);
-                Partition partition = Hazelcast.getPartitionService().getPartition(key);
+                Partition partition = instance.getPartitionService().getPartition(key);
                 if (thisMember.equals(partition.getOwner())) {
                     es.execute(new Runnable() {
                         public void run() {

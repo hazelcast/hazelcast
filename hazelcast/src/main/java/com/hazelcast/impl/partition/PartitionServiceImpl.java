@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.partition;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;

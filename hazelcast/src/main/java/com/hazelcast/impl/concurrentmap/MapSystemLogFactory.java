@@ -23,6 +23,7 @@ import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.SystemLog;
 import com.hazelcast.impl.partition.MigratingPartition;
 import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.impl.partition.PartitionManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;

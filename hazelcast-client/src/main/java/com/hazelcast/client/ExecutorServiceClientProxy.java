@@ -20,7 +20,7 @@ import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.MultiTask;
-import com.hazelcast.impl.ClientDistributedTask;
+import com.hazelcast.impl.client.ClientDistributedTask;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.executor.ExecutionManagerCallback;
 import com.hazelcast.impl.InnerFutureTask;

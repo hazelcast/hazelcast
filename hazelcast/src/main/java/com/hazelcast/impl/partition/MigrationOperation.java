@@ -16,7 +16,6 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.impl.PartitionManager;
 import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.ServiceMigrationOperation;
 import com.hazelcast.impl.spi.NonBlockingOperation;

@@ -17,12 +17,11 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.InstanceListenerManager;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.Keys;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.IOUtil;
 
 import java.util.*;
 
@@ -42,13 +41,13 @@ public class ClusterClientProxy implements Cluster {
         List<Instance> list = new ArrayList<Instance>();
         if (instances != null) {
             for (Data data : instances) {
-                Object o = IOUtil.toObject(data.buffer);
-                if (o instanceof FactoryImpl.ProxyKey) {
-                    FactoryImpl.ProxyKey proxyKey = (FactoryImpl.ProxyKey) o;
-                    list.add((Instance) client.getClientProxy(proxyKey.getKey()));
-                } else {
-                    list.add((Instance) client.getClientProxy(o));
-                }
+//                Object o = IOUtil.toObject(data.buffer);
+//                if (o instanceof HazelcastInstanceFactory.ProxyKey) {
+//                    HazelcastInstanceFactory.ProxyKey proxyKey = (HazelcastInstanceFactory.ProxyKey) o;
+//                    list.add((Instance) client.getClientProxy(proxyKey.getKey()));
+//                } else {
+//                    list.add((Instance) client.getClientProxy(o));
+//                }
             }
         }
         return list;

@@ -113,7 +113,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     public static void main(String[] args) throws Exception {
-        TestApp testApp = new TestApp(Hazelcast.getDefaultInstance());
+        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(null));
         testApp.start(args);
     }
 
@@ -264,9 +264,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if ("silent".equals(first)) {
             silent = Boolean.parseBoolean(args[1]);
         } else if ("restart".equals(first)) {
-            hazelcast.restart();
+            hazelcast.getLifecycleService().restart();
         } else if ("shutdown".equals(first)) {
-            hazelcast.shutdown();
+            hazelcast.getLifecycleService().shutdown();
         } else if ("echo".equals(first)) {
             echo = Boolean.parseBoolean(args[1]);
             println("echo: " + echo);

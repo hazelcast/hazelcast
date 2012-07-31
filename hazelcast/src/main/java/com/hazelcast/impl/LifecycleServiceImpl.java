@@ -22,6 +22,7 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -29,17 +30,17 @@ import java.util.logging.Level;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
 public class LifecycleServiceImpl implements LifecycleService {
-    final FactoryImpl factory;
+    final HazelcastInstanceImpl instance;
     final AtomicBoolean paused = new AtomicBoolean(false);
-    final CopyOnWriteArrayList<LifecycleListener> lsLifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
+    final List<LifecycleListener> lsLifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
     final Object lifecycleLock = new Object();
 
-    public LifecycleServiceImpl(FactoryImpl factory) {
-        this.factory = factory;
+    public LifecycleServiceImpl(HazelcastInstanceImpl instance) {
+        this.instance = instance;
     }
 
     private ILogger getLogger() {
-        return factory.node.getLogger(LifecycleServiceImpl.class.getName());
+        return instance.node.getLogger(LifecycleServiceImpl.class.getName());
     }
 
     public void addLifecycleListener(LifecycleListener lifecycleListener) {
@@ -55,7 +56,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void fireLifecycleEvent(LifecycleEvent lifecycleEvent) {
-        getLogger().log(Level.INFO, factory.node.getThisAddress() + " is " + lifecycleEvent.getState());
+        getLogger().log(Level.INFO, instance.node.getThisAddress() + " is " + lifecycleEvent.getState());
         for (LifecycleListener lifecycleListener : lsLifecycleListeners) {
             lifecycleListener.stateChanged(lifecycleEvent);
         }
@@ -89,14 +90,14 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     public boolean isRunning() {
         synchronized (lifecycleLock) {
-            return factory.node.isActive();
+            return instance.node.isActive();
         }
     }
 
     public void shutdown() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            FactoryImpl.shutdown(factory);
+            instance.shutdown();
             fireLifecycleEvent(SHUTDOWN);
         }
     }
@@ -104,7 +105,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     public void kill() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            FactoryImpl.kill(factory);
+            instance.shutdown();
             fireLifecycleEvent(SHUTDOWN);
         }
     }

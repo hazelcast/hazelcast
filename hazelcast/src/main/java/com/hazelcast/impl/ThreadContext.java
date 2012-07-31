@@ -82,7 +82,7 @@ public final class ThreadContext {
     private final Map<String, HazelcastInstanceThreadContext> mapHazelcastInstanceContexts
             = new HashMap<String, HazelcastInstanceThreadContext>(2);
 
-    private FactoryImpl currentFactory ;
+    private HazelcastInstanceImpl currentInstance;
 
     private SerializerRegistry currentSerializerRegistry;
 
@@ -104,21 +104,21 @@ public final class ThreadContext {
         return getCallContext().getTxnId();
     }
 
-    public FactoryImpl getCurrentFactory() {
-        return currentFactory;
+    public HazelcastInstanceImpl getCurrentInstance() {
+        return currentInstance;
     }
 
     public ManagedContext getCurrentManagedContext() {
-        return currentFactory != null ? currentFactory.managedContext : null;
+        return currentInstance != null ? currentInstance.managedContext : null;
     }
 
     public SerializerRegistry getCurrentSerializerRegistry() {
-        return currentSerializerRegistry != null ? currentSerializerRegistry : null ;
+        return currentSerializerRegistry;
     }
 
-    public void setCurrentFactory(FactoryImpl currentFactory) {
-        this.currentFactory = currentFactory;
-        this.currentSerializerRegistry = currentFactory.serializerRegistry;
+    public void setCurrentInstance(HazelcastInstanceImpl instance) {
+        this.currentInstance = instance;
+        this.currentSerializerRegistry = instance.serializerRegistry;
     }
 
     public void setCurrentSerializerRegistry(SerializerRegistry serializerRegistry) {
@@ -145,15 +145,15 @@ public final class ThreadContext {
         return serializationHelper.toObject(data);
     }
 
-    public HazelcastInstanceThreadContext getHazelcastInstanceThreadContext(FactoryImpl factory) {
-        if (factory == null) {
+    public HazelcastInstanceThreadContext getHazelcastInstanceThreadContext(HazelcastInstanceImpl instance) {
+        if (instance == null) {
             ILogger logger = Logger.getLogger(ThreadContext.class.getName());
-            logger.log(Level.SEVERE, "Factory is null", new Throwable());
+            logger.log(Level.SEVERE, "HazelcastInstance is null", new Throwable());
         }
-        final String factoryKey = factory != null ? factory.getName() : "null";
+        final String factoryKey = instance != null ? instance.getName() : "null";
         HazelcastInstanceThreadContext hic = mapHazelcastInstanceContexts.get(factoryKey);
         if (hic != null) return hic;
-        hic = new HazelcastInstanceThreadContext(factory);
+        hic = new HazelcastInstanceThreadContext(instance);
         mapHazelcastInstanceContexts.put(factoryKey, hic);
         return hic;
     }
@@ -168,11 +168,11 @@ public final class ThreadContext {
     }
 
     public void setCallContext(CallContext callContext) {
-        getHazelcastInstanceThreadContext(currentFactory).setCallContext(callContext);
+        getHazelcastInstanceThreadContext(currentInstance).setCallContext(callContext);
     }
 
     public CallContext getCallContext() {
-        return getHazelcastInstanceThreadContext(currentFactory).getCallContext();
+        return getHazelcastInstanceThreadContext(currentInstance).getCallContext();
     }
 
     public int getThreadId() {
@@ -187,26 +187,27 @@ public final class ThreadContext {
         this.attachment = attachment;
     }
 
-    public void shutdown(FactoryImpl factory) {
-        mapHazelcastInstanceContexts.remove(factory.getName());
-        currentFactory = null;
+    public void shutdown(HazelcastInstanceImpl instance) {
+        mapHazelcastInstanceContexts.remove(instance.getName());
+        currentInstance = null;
+        currentSerializerRegistry = null;
     }
 
     private void destroy() {
         serializationHelper.destroy();
         mapHazelcastInstanceContexts.clear();
         attachment = null;
-        currentFactory = null;
+        currentInstance = null;
         currentSerializerRegistry = null;
     }
 
     private class HazelcastInstanceThreadContext {
-        final FactoryImpl factory;
+        final HazelcastInstanceImpl instance;
 //        CallCache callCache;
         volatile CallContext callContext = null;
 
-        HazelcastInstanceThreadContext(FactoryImpl factory) {
-            this.factory = factory;
+        HazelcastInstanceThreadContext(HazelcastInstanceImpl instance) {
+            this.instance = instance;
             callContext = (new CallContext(createNewThreadId(), false));
         }
 

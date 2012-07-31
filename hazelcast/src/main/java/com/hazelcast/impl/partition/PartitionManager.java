@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.partition;
 
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.impl.Node;
+import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.base.SystemLogService;
-import com.hazelcast.impl.partition.*;
 import com.hazelcast.impl.spi.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -142,7 +144,7 @@ public class PartitionManager {
         return owner;
     }
 
-    private void firstArrangement() {
+    public void firstArrangement() {
 //        node.checkServiceThread();
         if (!node.isMaster() || !node.isActive()) return;
         if (!hasStorageMember()) return;
@@ -163,7 +165,6 @@ public class PartitionManager {
             } finally {
                 lock.unlock();
             }
-
         }
     }
 
@@ -1034,7 +1035,7 @@ public class PartitionManager {
         }
 
         public void run() {
-            ThreadContext.get().setCurrentFactory(node.factory);
+            ThreadContext.get().setCurrentInstance(node.instance);
             try {
                 while (running) {
                     Runnable r = null;

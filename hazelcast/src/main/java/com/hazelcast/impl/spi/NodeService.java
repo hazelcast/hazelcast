@@ -350,7 +350,7 @@ public class NodeService {
         }
 
         protected void beforeRun() {
-            ThreadContext.get().setCurrentFactory(node.factory);
+            ThreadContext.get().setCurrentInstance(node.instance);
         }
     }
 

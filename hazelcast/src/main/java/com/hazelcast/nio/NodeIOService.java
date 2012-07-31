@@ -56,7 +56,7 @@ public class NodeIOService implements IOService {
     }
 
     public void onIOThreadStart() {
-        ThreadContext.get().setCurrentFactory(node.factory);
+        ThreadContext.get().setCurrentInstance(node.instance);
     }
 
     public Address getThisAddress() {

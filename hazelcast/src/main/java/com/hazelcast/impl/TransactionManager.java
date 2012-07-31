@@ -22,9 +22,9 @@ class TransactionManager {
 
     AtomicLong ids = new AtomicLong(0);
 
-    final FactoryImpl factory;
+    final HazelcastInstanceImpl factory;
 
-    TransactionManager(FactoryImpl factory) {
+    TransactionManager(HazelcastInstanceImpl factory) {
         this.factory = factory;
     }
 

@@ -18,7 +18,6 @@ package com.hazelcast.impl.partition;
 
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.impl.Node;
-import com.hazelcast.impl.PartitionManager;
 import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;

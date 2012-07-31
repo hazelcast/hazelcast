@@ -35,10 +35,10 @@ public class Entries extends AbstractSet {
     private final String name;
     private final ClusterOperation operation;
     private final boolean checkValue;
-    private final FactoryImpl factory;
+    private final HazelcastInstanceImpl instance;
 
-    public Entries(FactoryImpl factory, String name, ClusterOperation operation, Predicate predicate) {
-        this.factory = factory;
+    public Entries(HazelcastInstanceImpl instance, String name, ClusterOperation operation, Predicate predicate) {
+        this.instance = instance;
         this.name = name;
         this.operation = operation;
         if (name.startsWith(Prefix.MULTIMAP)) {
@@ -88,14 +88,14 @@ public class Entries extends AbstractSet {
                 if (txn.has(name, key)) {
                     Data value = txn.get(name, key);
                     if (value != null) {
-                        colKeyValues.add(new SimpleMapEntry(factory, name, key, value));
+                        colKeyValues.add(new SimpleMapEntry(instance, name, key, value));
                     }
                 } else {
-                    entry.setName(factory, name);
+                    entry.setName(instance, name);
                     colKeyValues.add(entry);
                 }
             } else {
-                entry.setName(factory, name);
+                entry.setName(instance, name);
                 colKeyValues.add(entry);
             }
         }
@@ -157,12 +157,12 @@ public class Entries extends AbstractSet {
         public void remove() {
             if (Prefix.getInstanceType(name) == Instance.InstanceType.MULTIMAP) {
                 if (operation == CONCURRENT_MAP_ITERATE_KEYS) {
-                    ((MultiMap) factory.getOrCreateProxyByName(name)).remove(entry.getKey(), null);
+                    ((MultiMap) instance.getOrCreateInstance(name)).remove(entry.getKey(), null);
                 } else {
-                    ((MultiMap) factory.getOrCreateProxyByName(name)).remove(entry.getKey(), entry.getValue());
+                    ((MultiMap) instance.getOrCreateInstance(name)).remove(entry.getKey(), entry.getValue());
                 }
             } else {
-                ((IRemoveAwareProxy) factory.getOrCreateProxyByName(name)).removeKey(entry.getKey());
+                ((IRemoveAwareProxy) instance.getOrCreateInstance(name)).removeKey(entry.getKey());
             }
             it.remove();
         }
