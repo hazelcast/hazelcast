@@ -138,9 +138,9 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     }
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        FactoryImpl factoryImpl = (FactoryImpl) hazelcastInstance;
-        localMember = factoryImpl.node.address.equals(address);
-        logger = factoryImpl.node.getLogger(this.getClass().getName());
+        HazelcastInstanceImpl instance = (HazelcastInstanceImpl) hazelcastInstance;
+        localMember = instance.node.address.equals(address);
+        logger = instance.node.getLogger(this.getClass().getName());
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {

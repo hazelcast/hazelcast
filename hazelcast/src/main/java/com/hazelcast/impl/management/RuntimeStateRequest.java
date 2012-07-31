@@ -19,6 +19,7 @@ package com.hazelcast.impl.management;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.*;
+import com.hazelcast.impl.partition.PartitionManager;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -43,19 +44,19 @@ public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRunt
     }
 
     public ClusterRuntimeState call() throws Exception {
-        final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
+        final HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
         return createState(factory);
     }
 
-    private ClusterRuntimeState createState(final FactoryImpl factory) {
-        final ClusterImpl cluster = factory.getCluster();
+    private ClusterRuntimeState createState(final HazelcastInstanceImpl factory) {
+        final ClusterImpl cluster = factory.node.getClusterImpl();
         final PartitionManager pm = factory.node.partitionManager ;
         final Collection<Record> lockedRecords = collectLockState(factory);
         return new ClusterRuntimeState(cluster.getMembers(), pm.getPartitions(), pm.getMigratingPartition(),
                                   factory.node.connectionManager.getReadonlyConnectionMap(), lockedRecords);
     }
 
-    private Collection<Record> collectLockState(final FactoryImpl factory) {
+    private Collection<Record> collectLockState(final HazelcastInstanceImpl factory) {
         final List<String> mapNames = new LinkedList<String>();
         mapNames.add(Prefix.LOCKS_MAP_HAZELCAST);
         for (Instance instance : factory.getInstances()) {

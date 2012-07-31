@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl.base;
 
-import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.impl.HazelcastInstanceImpl;
 import com.hazelcast.impl.IGetAwareProxy;
 import com.hazelcast.impl.MProxy;
 import com.hazelcast.nio.Data;
@@ -35,7 +35,7 @@ public class KeyValue implements Map.Entry, DataSerializable {
     protected Object objKey = null;
     protected Object objValue = null;
     String name = null;
-    FactoryImpl factory;
+    HazelcastInstanceImpl instance;
 
     public KeyValue() {
     }
@@ -84,7 +84,7 @@ public class KeyValue implements Map.Entry, DataSerializable {
             if (value != null) {
                 objValue = toObject(value);
             } else {
-                objValue = ((IGetAwareProxy) factory.getOrCreateProxyByName(name)).get((key == null) ? getKey() : key);
+                objValue = ((IGetAwareProxy) instance.getOrCreateInstance(name)).get((key == null) ? getKey() : key);
             }
         }
         return objValue;
@@ -93,11 +93,11 @@ public class KeyValue implements Map.Entry, DataSerializable {
     public Object setValue(Object newValue) {
         if (name == null) throw new UnsupportedOperationException();
         this.objValue = value;
-        return ((MProxy) factory.getOrCreateProxyByName(name)).put(key, newValue);
+        return ((MProxy) instance.getOrCreateInstance(name)).put(key, newValue);
     }
 
-    public void setName(FactoryImpl factoryImpl, String name) {
-        this.factory = factoryImpl;
+    public void setName(HazelcastInstanceImpl factoryImpl, String name) {
+        this.instance = factoryImpl;
         this.name = name;
     }
 

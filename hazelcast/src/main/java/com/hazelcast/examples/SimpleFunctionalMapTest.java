@@ -17,6 +17,7 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 
 import java.util.Collection;
@@ -36,11 +37,12 @@ public class SimpleFunctionalMapTest {
     public static void main(String[] args) {
         int threadCount = 40;
         final Stats stats = new Stats();
+        final HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(null);
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
         for (int i = 0; i < threadCount; i++) {
             es.submit(new Runnable() {
                 public void run() {
-                    IMap map = Hazelcast.getMap("default");
+                    IMap map = hazelcast.getMap("default");
                     while (true) {
                         int keyInt = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 1000)) % 20;
@@ -94,7 +96,7 @@ public class SimpleFunctionalMapTest {
                         //noinspection BusyWait
                         Thread.sleep(STATS_SECONDS * 1000);
                         System.out.println("cluster size:"
-                                + Hazelcast.getCluster().getMembers().size());
+                                + hazelcast.getCluster().getMembers().size());
                         Stats currentStats = stats.getAndReset();
                         System.out.println(currentStats);
                     } catch (Exception e) {

@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.impl.HazelcastInstanceImpl;
 import com.hazelcast.impl.MProxy;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
@@ -27,13 +27,13 @@ import com.hazelcast.nio.IOUtil;
  */
 public class SimpleMapEntry implements MapEntry {
 
-    final FactoryImpl factory;
+    final HazelcastInstanceImpl instance;
     final String name;
     final Object key;
     final Data value;
 
-    public SimpleMapEntry(final FactoryImpl factory, final String name, final Object key, final Data value) {
-        this.factory = factory;
+    public SimpleMapEntry(final HazelcastInstanceImpl instance, final String name, final Object key, final Data value) {
+        this.instance = instance;
         this.name = name;
         this.key = key;
         this.value = value;
@@ -48,7 +48,7 @@ public class SimpleMapEntry implements MapEntry {
     }
 
     public Object setValue(Object newValue) {
-        return ((MProxy) factory.getOrCreateProxyByName(name)).put(key, newValue);
+        return ((MProxy) instance.getOrCreateInstance(name)).put(key, newValue);
     }
 
     public long getCost() {

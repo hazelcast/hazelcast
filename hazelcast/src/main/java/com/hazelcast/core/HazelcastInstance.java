@@ -127,17 +127,6 @@ public interface HazelcastInstance {
     Cluster getCluster();
 
     /**
-     * Returns the default distributed executor service. Executor
-     * service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
-     * on the Hazelcast cluster.
-     *
-     * Note that it don't support invokeAll/Any and don't have standard shutdown behavior
-     *
-     * @return distributed executor service of this Hazelcast instance
-     */
-    ExecutorService getExecutorService();
-
-    /**
      * Returns the distributed executor service for the given
      * name.
      * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
@@ -228,25 +217,6 @@ public interface HazelcastInstance {
     ISemaphore getSemaphore(String name);
 
     /**
-     * Detaches this member from the cluster.
-     * It doesn't shutdown the entire cluster, it shuts down
-     * this local member only.
-     *
-     * @see #getLifecycleService()
-     * @deprecated as of version 1.9
-     */
-    void shutdown();
-
-    /**
-     * Detaches this member from the cluster first and then restarts it
-     * as a new member.
-     *
-     * @see #getLifecycleService()
-     * @deprecated as of version 1.9
-     */
-    void restart();
-
-    /**
      * Returns all queue, map, set, list, topic, lock, multimap
      * instances created by Hazelcast.
      *
@@ -316,6 +286,6 @@ public interface HazelcastInstance {
 
     void registerSerializer(final TypeSerializer serializer, Class type) ;
 
-    void registerGlobalSerializer(final TypeSerializer serializer) ;
+    void registerFallbackSerializer(final TypeSerializer serializer) ;
 
 }

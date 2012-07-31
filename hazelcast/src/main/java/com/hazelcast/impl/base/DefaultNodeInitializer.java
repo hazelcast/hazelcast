@@ -97,7 +97,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
 
     public ProxyFactory getProxyFactory() {
-        return new DefaultProxyFactory(node.factory);
+        return new DefaultProxyFactory(node.instance);
     }
 
     public SecurityContext getSecurityContext() {

@@ -41,7 +41,7 @@ public class TransactionImpl implements Transaction {
     public static final long DEFAULT_TXN_TIMEOUT = 30 * 1000;
 
     private final long id;
-    private final FactoryImpl factory;
+    private final HazelcastInstanceImpl instance;
     private final List<TransactionRecord> transactionRecords = new CopyOnWriteArrayList<TransactionRecord>();
     private final Set<TxnParticipant> participants = new HashSet<TxnParticipant>(1);
 
@@ -49,10 +49,10 @@ public class TransactionImpl implements Transaction {
     private final ILogger logger;
     private final String txnId = UUID.randomUUID().toString();
 
-    public TransactionImpl(FactoryImpl factory, long txnId) {
+    public TransactionImpl(HazelcastInstanceImpl instance, long txnId) {
         this.id = txnId;
-        this.factory = factory;
-        this.logger = factory.getLoggingService().getLogger(this.getClass().getName());
+        this.instance = instance;
+        this.logger = instance.getLoggingService().getLogger(this.getClass().getName());
     }
 
     public String getTxnId() {
@@ -160,12 +160,13 @@ public class TransactionImpl implements Transaction {
         }
         status = TXN_STATUS_COMMITTING;
         try {
-            ThreadContext.get().setCurrentFactory(factory);
+            ThreadContext.get().setCurrentInstance(instance);
             List<Future> futures = new ArrayList<Future>(participants.size());
             futures = new ArrayList<Future>(participants.size());
             for (TxnParticipant t : participants) {
                 Operation op = new PrepareOperation(txnId);
-                futures.add(factory.node.nodeService.createSingleInvocation(t.serviceName, op, t.partitionId).build().invoke());
+                futures.add(instance.node.nodeService.createSingleInvocation(t.serviceName, op, t.partitionId).build()
+                        .invoke());
             }
             for (Future future : futures) {
                 future.get(300, TimeUnit.SECONDS);
@@ -173,7 +174,8 @@ public class TransactionImpl implements Transaction {
             futures.clear();
             for (TxnParticipant t : participants) {
                 Operation op = new CommitOperation(txnId);
-                futures.add(factory.node.nodeService.createSingleInvocation(t.serviceName, op, t.partitionId).build().invoke());
+                futures.add(instance.node.nodeService.createSingleInvocation(t.serviceName, op, t.partitionId).build()
+                        .invoke());
             }
             for (Future future : futures) {
                 future.get(300, TimeUnit.SECONDS);
@@ -194,7 +196,7 @@ public class TransactionImpl implements Transaction {
         }
         status = TXN_STATUS_COMMITTING;
         try {
-            ThreadContext.get().setCurrentFactory(factory);
+            ThreadContext.get().setCurrentInstance(instance);
             for (TransactionRecord transactionRecord : transactionRecords) {
                 transactionRecord.commit();
             }
@@ -216,7 +218,7 @@ public class TransactionImpl implements Transaction {
         }
         status = TXN_STATUS_ROLLING_BACK;
         try {
-            ThreadContext.get().setCurrentFactory(factory);
+            ThreadContext.get().setCurrentInstance(instance);
             final int size = transactionRecords.size();
             ListIterator<TransactionRecord> iter = transactionRecords.listIterator(size);
             while (iter.hasPrevious()) {
@@ -383,7 +385,7 @@ public class TransactionImpl implements Transaction {
                             if (lsEntries == null) {
                                 lsEntries = new ArrayList<Map.Entry>(2);
                             }
-                            lsEntries.add(new SimpleMapEntry(factory, name, transactionRecord.key, transactionRecord.value));
+                            lsEntries.add(new SimpleMapEntry(instance, name, transactionRecord.key, transactionRecord.value));
                         }
                     }
                 }
@@ -536,7 +538,7 @@ public class TransactionImpl implements Transaction {
 
         public void rollbackMap() {
             MProxy mapProxy = null;
-            Object proxy = factory.getOrCreateProxyByName(name);
+            Object proxy = instance.getOrCreateInstance(name);
             if (proxy instanceof MProxy) {
                 mapProxy = (MProxy) proxy;
             }

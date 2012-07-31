@@ -35,7 +35,7 @@ public abstract class HazelcastInstanceAwareObject implements HazelcastInstanceA
     }
 
     public void readData(DataInput in) throws IOException {
-        hazelcastInstance = ThreadContext.get().getCurrentFactory();
+        hazelcastInstance = ThreadContext.get().getCurrentInstance();
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl.management;
 
-import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.impl.HazelcastInstanceImpl;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
@@ -38,7 +38,7 @@ public class ManagementCenterConfigCallable extends ClusterServiceCallable imple
     }
 
     public Void call() throws Exception {
-        FactoryImpl factory = (FactoryImpl) hazelcastInstance;
+        HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
         ManagementCenterService service = factory.node.getManagementCenterService();
         int count = 0;
         while (service == null && count < redoCount) {

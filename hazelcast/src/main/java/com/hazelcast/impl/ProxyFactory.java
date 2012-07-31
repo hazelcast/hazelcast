@@ -16,11 +16,9 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.FactoryImpl.ProxyKey;
-
 public interface ProxyFactory {
 
-    void checkProxy(ProxyKey proxyKey);
+//    void checkProxy(ProxyKey proxyKey);
 
     MProxy createMapProxy(String name);
 

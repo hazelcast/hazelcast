@@ -46,6 +46,6 @@ public class SplitBrainHandler implements Runnable {
     }
 
     public void restart() {
-        node.factory.restart();
+        node.instance.getLifecycleService().restart();
     }
 }

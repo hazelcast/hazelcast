@@ -19,7 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.config.*;
 import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.FactoryImpl.ProxyKey;
+import com.hazelcast.impl.HazelcastInstanceFactory.ProxyKey;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.wan.WanReplicationEndpoint;
 import com.hazelcast.merge.MergePolicy;

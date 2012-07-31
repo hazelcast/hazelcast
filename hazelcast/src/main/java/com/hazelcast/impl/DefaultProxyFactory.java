@@ -16,22 +16,20 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.FactoryImpl.ProxyKey;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DefaultProxyFactory implements ProxyFactory {
 
-    private final FactoryImpl factory;
+    private final HazelcastInstanceImpl instance;
     private final TransactionFactory transactionFactory = new TransactionFactory();
 
-    public DefaultProxyFactory(FactoryImpl factory) {
+    public DefaultProxyFactory(HazelcastInstanceImpl instance) {
         super();
-        this.factory = factory;
+        this.instance = instance;
     }
 
     public MProxy createMapProxy(String name) {
-        return new MProxyImpl(name, factory);
+        return new MProxyImpl(name, instance);
     }
 
 //    public QProxy createQueueProxy(String name) {
@@ -82,14 +80,14 @@ public class DefaultProxyFactory implements ProxyFactory {
         return transactionFactory.newTransaction();
     }
 
-    public void checkProxy(ProxyKey proxyKey) {
-    }
+//    public void checkProxy(ProxyKey proxyKey) {
+//    }
 
     private class TransactionFactory {
         final AtomicLong ids = new AtomicLong(0);
 
         TransactionImpl newTransaction() {
-            return new TransactionImpl(factory, newTransactionId());
+            return new TransactionImpl(instance, newTransactionId());
         }
 
         long newTransactionId() {

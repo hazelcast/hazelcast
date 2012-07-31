@@ -16,8 +16,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.impl.FactoryImpl;
-import com.hazelcast.impl.FactoryImpl.ProxyKey;
+import com.hazelcast.impl.HazelcastInstanceFactory;
+import com.hazelcast.impl.HazelcastInstanceFactory.ProxyKey;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
@@ -88,7 +88,7 @@ public class SerializationTest {
 
     @Test
     public void newSerializerProxyKey() {
-        final FactoryImpl.ProxyKey o = new ProxyKey("key", 15L);
+        final HazelcastInstanceFactory.ProxyKey o = new ProxyKey("key", 15L);
         final byte[] data = IOUtil.toByteArray(o);
         assertFalse(data.length == 0);
         final ProxyKey object = (ProxyKey) IOUtil.toObject(data);

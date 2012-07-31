@@ -37,8 +37,14 @@ public class SimpleMapTest {
     public static int GET_PERCENTAGE = 40;
     public static int PUT_PERCENTAGE = 40;
 
-    final static ILogger logger = Hazelcast.getLoggingService().getLogger("SimpleMapTest");
+    private static final HazelcastInstance INSTANCE;
+    private static final ILogger logger ;
     private static final String NAMESPACE = "default";
+
+    static {
+        INSTANCE = Hazelcast.newHazelcastInstance(null);
+        logger = INSTANCE.getLoggingService().getLogger("SimpleMapTest");
+    }
 
     public static boolean parse(String... input) {
         boolean load = false;
@@ -71,7 +77,7 @@ public class SimpleMapTest {
         boolean load = parse(args);
         logger.log(Level.INFO, "Starting Test with ");
         printVariables();
-        ITopic<String> commands = Hazelcast.getTopic(NAMESPACE);
+        ITopic<String> commands = INSTANCE.getTopic(NAMESPACE);
         commands.addMessageListener(new MessageListener<String>() {
             public void onMessage(Message<String> stringMessage) {
                 parse(stringMessage.getMessageObject());
@@ -86,7 +92,7 @@ public class SimpleMapTest {
     }
 
     private static void run(ExecutorService es) {
-        final IMap<String, byte[]> map = Hazelcast.getMap(NAMESPACE);
+        final IMap<String, byte[]> map = INSTANCE.getMap(NAMESPACE);
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.execute(new Runnable() {
                 public void run() {
@@ -110,12 +116,12 @@ public class SimpleMapTest {
     }
 
     private static void load(ExecutorService es) throws InterruptedException {
-        final IMap<String, byte[]> map = Hazelcast.getMap("default");
-        final Member thisMember = Hazelcast.getCluster().getLocalMember();
+        final IMap<String, byte[]> map = INSTANCE.getMap("default");
+        final Member thisMember = INSTANCE.getCluster().getLocalMember();
         List<String> lsOwnedEntries = new LinkedList<String>();
         for (int i = 0; i < ENTRY_COUNT; i++) {
             final String key = String.valueOf(i);
-            Partition partition = Hazelcast.getPartitionService().getPartition(key);
+            Partition partition = INSTANCE.getPartitionService().getPartition(key);
             if (thisMember.equals(partition.getOwner())) {
                 lsOwnedEntries.add(key);
             }
@@ -133,13 +139,13 @@ public class SimpleMapTest {
     }
 
     private static void startPrintStats() {
-        final IMap<String, byte[]> map = Hazelcast.getMap("default");
+        final IMap<String, byte[]> map = INSTANCE.getMap("default");
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             public void run() {
                 while (true) {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
-                        logger.log(Level.INFO, "cluster size:" + Hazelcast.getCluster().getMembers().size());
+                        logger.log(Level.INFO, "cluster size:" + INSTANCE.getCluster().getMembers().size());
                         LocalMapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();
                         long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
                         if (period == 0) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.client;
 
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.DataSerializable;

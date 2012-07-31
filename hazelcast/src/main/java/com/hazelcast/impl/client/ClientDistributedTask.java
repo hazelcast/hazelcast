@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.impl;
+package com.hazelcast.impl.client;
 
 import com.hazelcast.core.Member;
 

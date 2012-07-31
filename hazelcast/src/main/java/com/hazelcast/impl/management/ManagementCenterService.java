@@ -21,10 +21,7 @@ import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
-import com.hazelcast.impl.FactoryImpl;
-import com.hazelcast.impl.HazelcastInstanceAwareInstance;
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.impl.Node;
+import com.hazelcast.impl.*;
 import com.hazelcast.impl.ascii.rest.HttpCommand;
 import com.hazelcast.impl.management.DetectDeadlockRequest.Edge;
 import com.hazelcast.impl.management.DetectDeadlockRequest.Vertex;
@@ -55,7 +52,7 @@ import java.util.regex.Pattern;
 public class ManagementCenterService implements LifecycleListener, MembershipListener {
 
     public static final String MANAGEMENT_EXECUTOR = "hz:management";
-    private final FactoryImpl factory;
+    private final HazelcastInstanceImpl instance;
     private AtomicBoolean running = new AtomicBoolean(false);
     private final TaskPoller taskPoller;
     private final StateSender stateSender;
@@ -73,23 +70,23 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private final int updateIntervalMs;
     private final ManagementCenterConfig managementCenterConfig;
 
-    public ManagementCenterService(FactoryImpl factoryImpl) {
-        this.factory = factoryImpl;
-        logger = factory.node.getLogger(ManagementCenterService.class.getName());
-        managementCenterConfig = factory.node.config.getManagementCenterConfig();
+    public ManagementCenterService(HazelcastInstanceImpl instance) {
+        this.instance = instance;
+        logger = this.instance.node.getLogger(ManagementCenterService.class.getName());
+        managementCenterConfig = this.instance.node.config.getManagementCenterConfig();
         if (managementCenterConfig == null) {
             throw new IllegalStateException("ManagementCenterConfig should not be null!");
         }
-        factory.getLifecycleService().addLifecycleListener(this);
-        factory.getCluster().addMembershipListener(this);
-        this.instanceFilterMap = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_MAP_EXCLUDES.getString());
-        this.instanceFilterQueue = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_QUEUE_EXCLUDES.getString());
-        this.instanceFilterTopic = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_TOPIC_EXCLUDES.getString());
-        this.instanceFilterAtomicNumber = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_ATOMIC_NUMBER_EXCLUDES.getString());
-        this.instanceFilterCountDownLatch = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_COUNT_DOWN_LATCH_EXCLUDES.getString());
-        this.instanceFilterSemaphore = new StatsInstanceFilter(factoryImpl.node.getGroupProperties().MC_SEMAPHORE_EXCLUDES.getString());
-        maxVisibleInstanceCount = factory.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
-        commandHandler = new ConsoleCommandHandler(factory);
+        this.instance.getLifecycleService().addLifecycleListener(this);
+        this.instance.getCluster().addMembershipListener(this);
+        this.instanceFilterMap = new StatsInstanceFilter(instance.node.getGroupProperties().MC_MAP_EXCLUDES.getString());
+        this.instanceFilterQueue = new StatsInstanceFilter(instance.node.getGroupProperties().MC_QUEUE_EXCLUDES.getString());
+        this.instanceFilterTopic = new StatsInstanceFilter(instance.node.getGroupProperties().MC_TOPIC_EXCLUDES.getString());
+        this.instanceFilterAtomicNumber = new StatsInstanceFilter(instance.node.getGroupProperties().MC_ATOMIC_NUMBER_EXCLUDES.getString());
+        this.instanceFilterCountDownLatch = new StatsInstanceFilter(instance.node.getGroupProperties().MC_COUNT_DOWN_LATCH_EXCLUDES.getString());
+        this.instanceFilterSemaphore = new StatsInstanceFilter(instance.node.getGroupProperties().MC_SEMAPHORE_EXCLUDES.getString());
+        maxVisibleInstanceCount = this.instance.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
+        commandHandler = new ConsoleCommandHandler(this.instance);
 
         String tmpWebServerUrl = managementCenterConfig.getUrl();
         webServerUrl = tmpWebServerUrl != null ?
@@ -136,14 +133,14 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     public byte[] changeWebServerUrlOverCluster(String groupName, String groupPass, String newUrl) {
         try {
-            GroupConfig groupConfig = factory.getConfig().getGroupConfig();
+            GroupConfig groupConfig = instance.getConfig().getGroupConfig();
             if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass)))
                 return HttpCommand.RES_403;
             ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(newUrl);
-            callable.setHazelcastInstance(factory);
-            Set<Member> members = factory.getCluster().getMembers();
+            callable.setHazelcastInstance(instance);
+            Set<Member> members = instance.getCluster().getMembers();
             MultiTask<Void> task = new MultiTask<Void>(callable, members);
-            ExecutorService executorService = factory.getExecutorService(MANAGEMENT_EXECUTOR);
+            ExecutorService executorService = instance.getExecutorService(MANAGEMENT_EXECUTOR);
             executorService.execute(task);
         } catch (Throwable throwable) {
             logger.log(Level.WARNING, "New web server url cannot be assigned.", throwable);
@@ -155,10 +152,10 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     public void memberAdded(MembershipEvent membershipEvent) {
         try {
             Member member = membershipEvent.getMember();
-            if(member != null && factory.node.isMaster() && urlChanged) {
+            if(member != null && instance.node.isMaster() && urlChanged) {
                 ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(webServerUrl);
                 FutureTask<Void> task = new DistributedTask<Void>(callable, member);
-                ExecutorService executorService = factory.getExecutorService(MANAGEMENT_EXECUTOR);
+                ExecutorService executorService = instance.getExecutorService(MANAGEMENT_EXECUTOR);
                 executorService.execute(task);
             }
         } catch (Exception e) {
@@ -232,7 +229,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     class StateSender extends Thread {
         StateSender() {
-            super(factory.node.threadGroup, factory.node.getThreadNamePrefix("MC.State.Sender"));
+            super(instance.node.threadGroup, instance.node.getThreadNamePrefix("MC.State.Sender"));
         }
 
         public void run() {
@@ -270,7 +267,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         final ConsoleRequest[] consoleRequests = new ConsoleRequest[10];
 
         TaskPoller() {
-            super(factory.node.threadGroup, factory.node.getThreadNamePrefix("MC.Task.Poller"));
+            super(instance.node.threadGroup, instance.node.getThreadNamePrefix("MC.Task.Poller"));
             register(new RuntimeStateRequest());
             register(new ThreadDumpRequest());
             register(new ExecuteScriptRequest());
@@ -310,8 +307,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             }
             try {
                 Random rand = new Random();
-                Address address = ((MemberImpl) factory.node.getClusterImpl().getLocalMember()).getAddress();
-                GroupConfig groupConfig = factory.getConfig().getGroupConfig();
+                Address address = ((MemberImpl) instance.node.getClusterImpl().getLocalMember()).getAddress();
+                GroupConfig groupConfig = instance.getConfig().getGroupConfig();
                 while (running.get()) {
                     try {
                         URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost()
@@ -341,14 +338,14 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     private void createMemberState(MemberStateImpl memberState) {
-        final Node node = factory.node;
+        final Node node = instance.node;
         memberState.setAddress(node.getThisAddress());
         memberState.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
         memberState.getMemberHealthStats().setActive(node.isActive());
         memberState.getMemberHealthStats().setServiceThreadStats(node.getCpuUtilization().serviceThread);
         memberState.getMemberHealthStats().setOutThreadStats(node.getCpuUtilization().outThread);
         memberState.getMemberHealthStats().setInThreadStats(node.getCpuUtilization().inThread);
-        PartitionService partitionService = factory.getPartitionService();
+        PartitionService partitionService = instance.getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();
         memberState.clearPartitions();
         for (Partition partition : partitions) {
@@ -356,9 +353,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 memberState.addPartition(partition.getPartitionId());
             }
         }
-        Collection<HazelcastInstanceAwareInstance> proxyObjects = new ArrayList<HazelcastInstanceAwareInstance>(factory.getProxies());
+        Collection<Instance> proxyObjects = new ArrayList<Instance>(instance.getProxies());
 
-//        ExecutorManager executorManager = factory.node.executorManager;
+//        ExecutorManager executorManager = instance.node.executorManager;
 //        memberState.putInternalThroughputStats(executorManager.getInternalThroughputMap());
 //        memberState.putThroughputStats(executorManager.getThroughputMap());
 
@@ -406,11 +403,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     private void createMemState(MemberStateImpl memberState,
-                                Iterator<HazelcastInstanceAwareInstance> it,
+                                Iterator<Instance> it,
                                 Instance.InstanceType type) {
         int count = 0;
         while (it.hasNext()) {
-            HazelcastInstanceAwareInstance proxyObject = it.next();
+            Instance proxyObject = it.next();
             if (proxyObject.getInstanceType() == type) {
                 if (count < maxVisibleInstanceCount) {
 //                    if (type.isMap()) {
@@ -458,7 +455,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
 
 //    private List<String> getExecutorNames() {
-//        ExecutorManager executorManager = factory.node.executorManager;
+//        ExecutorManager executorManager = instance.node.executorManager;
 //        List<String> executorNames = new ArrayList<String>(executorManager.getExecutorNames());
 //        Collections.sort(executorNames);
 //        return executorNames;
@@ -466,7 +463,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     private Set<String> getLongInstanceNames() {
         Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
-        Collection<HazelcastInstanceAwareInstance> proxyObjects = new ArrayList<HazelcastInstanceAwareInstance>(factory.getProxies());
+        Collection<Instance> proxyObjects = new ArrayList<Instance>(instance.getProxies());
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MAP);
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.QUEUE);
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.TOPIC);
@@ -478,11 +475,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     private void collectInstanceNames(Set<String> setLongInstanceNames,
-                                      Iterator<HazelcastInstanceAwareInstance> it,
+                                      Iterator<Instance> it,
                                       Instance.InstanceType type) {
         int count = 0;
         while (it.hasNext()) {
-            HazelcastInstanceAwareInstance proxyObject = it.next();
+            Instance proxyObject = it.next();
             if (proxyObject.getInstanceType() == type) {
                 if (count < maxVisibleInstanceCount) {
 //                    if (type.isMap()) {
@@ -529,7 +526,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     Object call(Address address, Callable callable) {
-        Set<Member> members = factory.getCluster().getMembers();
+        Set<Member> members = instance.getCluster().getMembers();
         for (Member member : members) {
             if (address.equals(((MemberImpl) member).getAddress())) {
                 DistributedTask task = new DistributedTask(callable, member);
@@ -545,7 +542,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     Collection callOnMembers(Set<Address> addresses, Callable callable) {
-        Set<Member> allMembers = factory.getCluster().getMembers();
+        Set<Member> allMembers = instance.getCluster().getMembers();
         Set<Member> selectedMembers = new HashSet<Member>(addresses.size());
         for (Member member : allMembers) {
             if (addresses.contains(((MemberImpl) member).getAddress())) {
@@ -556,7 +553,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     Collection callOnAllMembers(Callable callable) {
-        Set<Member> members = factory.getCluster().getMembers();
+        Set<Member> members = instance.getCluster().getMembers();
         return callOnMembers0(members, callable);
     }
 
@@ -567,7 +564,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     private Object executeTaskAndGet(final DistributedTask task) {
         try {
-            factory.getExecutorService(MANAGEMENT_EXECUTOR).execute(task);
+            instance.getExecutorService(MANAGEMENT_EXECUTOR).execute(task);
             try {
                 return task.get(3, TimeUnit.SECONDS);
             } catch (Throwable e) {
@@ -575,7 +572,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 return null;
             }
         } catch (Throwable e) {
-            if (running.get() && factory.node.isActive()) {
+            if (running.get() && instance.node.isActive()) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
             return null;
@@ -586,12 +583,12 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         if (running.get()) {
             final MemberStateImpl memberState = new MemberStateImpl();
             createMemberState(memberState);
-            GroupConfig groupConfig = factory.getConfig().getGroupConfig();
+            GroupConfig groupConfig = instance.getConfig().getGroupConfig();
             TimedMemberState timedMemberState = new TimedMemberState();
-            timedMemberState.setMaster(factory.node.isMaster());
+            timedMemberState.setMaster(instance.node.isMaster());
             if (timedMemberState.getMaster()) {
                 timedMemberState.setMemberList(new ArrayList<String>());
-                Set<Member> memberSet = factory.getCluster().getMembers();
+                Set<Member> memberSet = instance.getCluster().getMembers();
                 for (Member member : memberSet) {
                     MemberImpl memberImpl = (MemberImpl) member;
                     Address address = memberImpl.getAddress();
@@ -607,8 +604,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         return null;
     }
 
-    FactoryImpl getHazelcastInstance() {
-        return factory;
+    HazelcastInstanceImpl getHazelcastInstance() {
+        return instance;
     }
 
     ConsoleCommandHandler getCommandHandler() {

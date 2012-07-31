@@ -31,6 +31,7 @@ import com.hazelcast.impl.ascii.TextCommandServiceImpl;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.management.ManagementCenterService;
 import com.hazelcast.impl.map.MapService;
+import com.hazelcast.impl.partition.PartitionManager;
 import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.impl.wan.WanReplicationService;
 import com.hazelcast.logging.ILogger;
@@ -74,8 +75,6 @@ public class Node {
 
     private final NodeType localNodeType;
 
-    final NodeBaseVariables baseVariables;
-
     public final NodeService nodeService;
 
     public final PartitionManager partitionManager;
@@ -106,7 +105,7 @@ public class Node {
 
     volatile Address masterAddress = null;
 
-    public final FactoryImpl factory;
+    public final HazelcastInstanceImpl instance;
 
     private final int buildNumber;
 
@@ -130,10 +129,10 @@ public class Node {
 
     public final SecurityContext securityContext;
 
-    public Node(FactoryImpl factory, Config config) {
-        ThreadContext.get().setCurrentFactory(factory);
-        this.threadGroup = new ThreadGroup(factory.getName());
-        this.factory = factory;
+    public Node(HazelcastInstanceImpl instance, Config config) {
+        ThreadContext.get().setCurrentInstance(instance);
+        this.threadGroup = new ThreadGroup(instance.getName());
+        this.instance = instance;
         this.config = config;
         this.groupProperties = new GroupProperties(config);
         this.liteMember = config.isLiteMember();
@@ -164,7 +163,6 @@ public class Node {
             }
             Util.throwUncheckedException(e);
         }
-        baseVariables = new NodeBaseVariables(/*address, localMember*/);
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         nodeService = new NodeService(this);
         //initialize managers..
@@ -229,13 +227,13 @@ public class Node {
                 }
             }
             if (listener instanceof InstanceListener) {
-                factory.addInstanceListener((InstanceListener) listener);
+                instance.addInstanceListener((InstanceListener) listener);
             } else if (listener instanceof MembershipListener) {
                 clusterImpl.addMembershipListener((MembershipListener) listener);
             } else if (listener instanceof MigrationListener) {
 //                concurrentMapManager.partitionServiceImpl.addMigrationListener((MigrationListener) listener);
             } else if (listener instanceof LifecycleListener) {
-                factory.lifecycleService.addLifecycleListener((LifecycleListener) listener);
+                instance.lifecycleService.addLifecycleListener((LifecycleListener) listener);
             } else if (listener != null) {
                 final String error = "Unknown listener type: " + listener.getClass();
                 Throwable t = new IllegalArgumentException(error);
@@ -278,7 +276,7 @@ public class Node {
     }
 
     public String getName() {
-        return factory.getName();
+        return instance.getName();
     }
 
     public String getThreadNamePrefix(String name) {
@@ -350,7 +348,7 @@ public class Node {
             logger.log(Level.WARNING, sb.toString());
         }
         try {
-            managementCenterService = new ManagementCenterService(factory);
+            managementCenterService = new ManagementCenterService(instance);
         } catch (Exception e) {
             logger.log(Level.WARNING, "ManagementCenterService could not be constructed!", e);
         }
@@ -441,7 +439,7 @@ public class Node {
             failedConnections.clear();
             serviceThreadPacketQueue.clear();
             systemLogService.shutdown();
-            ThreadContext.get().shutdown(factory);
+            ThreadContext.get().shutdown(instance);
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
     }

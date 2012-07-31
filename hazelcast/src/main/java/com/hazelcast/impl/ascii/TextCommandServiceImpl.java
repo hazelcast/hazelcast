@@ -55,7 +55,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
 
     public TextCommandServiceImpl(Node node) {
         this.node = node;
-        this.hazelcast = node.factory;
+        this.hazelcast = node.instance;
         this.logger = node.getLogger(this.getClass().getName());
 //        this.parallelExecutor = this.node.executorManager.newParallelExecutor(40);
         this.parallelExecutor = this.node.nodeService.getExecutorService();

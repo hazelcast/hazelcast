@@ -44,10 +44,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy {
     private final MapProxy mapProxy;
     private final MapOperationsCounter mapOperationCounter;
 
-    MProxyImpl(String name, FactoryImpl factory) {
+    MProxyImpl(String name, HazelcastInstanceImpl instance) {
         setName(name);
-        setHazelcastInstance(factory);
-        mapProxy = new MapProxy(factory.node.nodeService);
+        setHazelcastInstance(instance);
+        mapProxy = new MapProxy(instance.node.nodeService);
         mapOperationCounter = new MapOperationsCounter();
     }
 
@@ -57,7 +57,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy {
     }
 
     private void beforeCall() {
-        factory.initialChecks();
+//        factory.initialChecks();
     }
 
     private void afterCall() {
@@ -387,7 +387,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy {
     }
 
     public void destroy() {
-        factory.destroyInstanceClusterWide(name, null);
+        hazelcastInstance.destroyInstance(name);
     }
 
     public boolean removeKey(final Object key) {

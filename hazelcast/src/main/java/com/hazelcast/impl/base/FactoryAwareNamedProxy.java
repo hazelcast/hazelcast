@@ -17,11 +17,11 @@
 package com.hazelcast.impl.base;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.HazelcastInstanceAwareInstance;
+import com.hazelcast.impl.HazelcastInstanceImpl;
 
 public abstract class FactoryAwareNamedProxy implements HazelcastInstanceAwareInstance {
-    transient protected FactoryImpl factory = null;
+    transient protected HazelcastInstanceImpl hazelcastInstance = null;
     protected String name = null;
 
     protected FactoryAwareNamedProxy() {
@@ -35,11 +35,11 @@ public abstract class FactoryAwareNamedProxy implements HazelcastInstanceAwareIn
         this.name = name;
     }
 
-    public FactoryImpl getFactory() {
-        return factory;
+    public HazelcastInstance getHazelcastInstance() {
+        return hazelcastInstance;
     }
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        this.factory = (FactoryImpl) hazelcastInstance;
+        this.hazelcastInstance = (HazelcastInstanceImpl) hazelcastInstance;
     }
 }
