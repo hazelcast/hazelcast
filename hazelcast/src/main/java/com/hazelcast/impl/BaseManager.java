@@ -580,9 +580,11 @@ public abstract class BaseManager {
         }
 
         public Object waitAndGetResult() {
+            // should be more than request timeout
             final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout == -1)
                                            ? Long.MAX_VALUE
-                                           : (long) (request.timeout * 1.5f); // should be more than request timeout
+                                           : (request.timeout == 0 ? operationResponsePollTimeout * 1500
+                                                                   : (long) (request.timeout * 1.5f));
             final long start = Clock.currentTimeMillis();
             while (true) {
                 try {

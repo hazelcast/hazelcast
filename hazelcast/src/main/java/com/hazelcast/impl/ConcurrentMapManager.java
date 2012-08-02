@@ -646,12 +646,16 @@ public class ConcurrentMapManager extends BaseManager {
 
     class MEvict extends MBackupAndMigrationAwareOp {
         public boolean evict(String name, Object key) {
-            return evict(CONCURRENT_MAP_EVICT, name, key);
+            try {
+                return evict(CONCURRENT_MAP_EVICT, name, key);
+            } catch (OperationTimeoutException e) {
+                return false;
+            }
         }
 
-        public boolean evict(ClusterOperation operation, String name, Object key) {
+        private boolean evict(ClusterOperation operation, String name, Object key) {
             Data k = (key instanceof Data) ? (Data) key : toData(key);
-            request.setLocal(operation, name, k, null, 0, -1, -1, thisAddress);
+            request.setLocal(operation, name, k, null, 0, maxOperationTimeout, -1, thisAddress);
             request.setBooleanRequest();
             doOp();
             boolean result = getResultAsBoolean();
@@ -723,22 +727,26 @@ public class ConcurrentMapManager extends BaseManager {
         mput.putTransient(name, key, value, ttl);
     }
 
-    // used by GetMapEntryLoader, GetOperationHandler, ContainsKeyOperationHandler
-    private void putTransient(Request request) {
+    // used by GetMapEntryOperationHandler, GetOperationHandler, ContainsKeyOperationHandler
+    private void putTransientAfterLoad(final Request request) {
         final MPut mput = new MPut();
-        mput.request.setFromRequest(request);
-        mput.request.timeout = 0;
-        mput.request.ttl = -1;
-        mput.request.local = true;
-        mput.request.operation = CONCURRENT_MAP_PUT_TRANSIENT;
-        mput.request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
-        request.setBooleanRequest();
-        final Data value = request.value;
-        mput.doOp();
-        boolean success = mput.getResultAsBoolean();
-        if (success) {
-            mput.request.value = value;
-            mput.backup(CONCURRENT_MAP_BACKUP_PUT);
+        try {
+            mput.request.setFromRequest(request);
+            mput.request.timeout = 0;
+            mput.request.ttl = -1;
+            mput.request.local = true;
+            mput.request.operation = CONCURRENT_MAP_PUT_TRANSIENT;
+            mput.request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
+            request.setBooleanRequest();
+            final Data value = request.value;
+            mput.doOp();
+            boolean success = mput.getResultAsBoolean();
+            if (success) {
+                mput.request.value = value;
+                mput.backup(CONCURRENT_MAP_BACKUP_PUT);
+            }
+        } catch (OperationTimeoutException e) {
+            logger.log(Level.FINEST, "Put-after-load for Operation[" + request.operation + "] has been timed out!");
         }
     }
 
@@ -1358,7 +1366,7 @@ public class ConcurrentMapManager extends BaseManager {
                 txn.attachPutMultiOp(name, key, toData(value));
                 return true;
             } else {
-                boolean result = booleanCall(CONCURRENT_MAP_PUT_MULTI, name, key, value, 0, -1);
+                boolean result = booleanCall(CONCURRENT_MAP_PUT_MULTI, name, key, value, -1, -1);
                 if (result) {
                     backup(CONCURRENT_MAP_BACKUP_PUT);
                 }
@@ -1880,7 +1888,7 @@ public class ConcurrentMapManager extends BaseManager {
                 txn.attachRemoveOp(name, key, null, false, removedValueCount);
                 return allValues;
             } else {
-                Collection result = (Collection) objectCall(CONCURRENT_MAP_REMOVE, name, key, null, 0, -1);
+                Collection result = (Collection) objectCall(CONCURRENT_MAP_REMOVE, name, key, null, -1, -1);
                 if (result != null) {
                     backup(CONCURRENT_MAP_BACKUP_REMOVE);
                 }
@@ -1907,7 +1915,7 @@ public class ConcurrentMapManager extends BaseManager {
                     return containsEntry;
                 }
             } else {
-                boolean result = booleanCall(CONCURRENT_MAP_REMOVE_MULTI, name, key, value, 0, -1);
+                boolean result = booleanCall(CONCURRENT_MAP_REMOVE_MULTI, name, key, value, -1, -1);
                 if (result) {
                     backup(CONCURRENT_MAP_BACKUP_REMOVE_MULTI);
                 }
@@ -2439,6 +2447,12 @@ public class ConcurrentMapManager extends BaseManager {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             request.response = cmap.removeItem(request);
+        }
+
+        // removeItem returns boolean, no need to throw timeout exception!
+        protected void onNoTimeToSchedule(Request request) {
+            request.response = Boolean.FALSE;
+            returnResponse(request);
         }
     }
 
@@ -3467,7 +3481,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (value != null) {
                     setIndexValues(request, value);
                     request.value = toData(value);
-                    putTransient(request);
+                    putTransientAfterLoad(request);
                 } else {
                     success = false;
                 }
@@ -3568,7 +3582,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (value != null) {
                     setIndexValues(request, value);
                     request.value = toData(value);
-                    putTransient(request);
+                    putTransientAfterLoad(request);
                 } else {
                     success = false;
                 }
@@ -3614,7 +3628,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (value != null) {
                     setIndexValues(request, value);
                     request.value = toData(value);
-                    putTransient(request);
+                    putTransientAfterLoad(request);
                 } else {
                     success = false;
                 }
