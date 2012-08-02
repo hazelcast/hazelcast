@@ -521,6 +521,11 @@ public class ExecutorManager extends BaseManager {
         public void setTarget() {
             target = member.getAddress();
         }
+
+        @Override
+        protected boolean canTimeout() {
+            return false;
+        }
     }
 
     class MemberCall extends TargetAwareOp implements ExecutionManagerCallback {
