@@ -17,7 +17,7 @@ public abstract class ClassLoaderAwareAsyncCall extends AsyncCall {
       ClassLoader current = Thread.currentThread().getContextClassLoader();
       try{
           Thread.currentThread().setContextClassLoader(classLoader);
-          call();
+          super.run();
       } finally{
           if(current != null){
               Thread.currentThread().setContextClassLoader(current);
