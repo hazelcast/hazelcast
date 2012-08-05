@@ -21,6 +21,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.monitor.LocalMapStats;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -119,6 +120,10 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     public void unlockMap() {
         doLock(ClusterOperation.CONCURRENT_MAP_UNLOCK_MAP, null, -1, null);
+    }
+
+    public LocalMapStats getLocalMultiMapStats() {
+        throw new UnsupportedOperationException();
     }
 
     public boolean put(K key, V value) {

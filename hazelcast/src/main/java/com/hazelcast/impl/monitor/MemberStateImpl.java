@@ -38,6 +38,7 @@ public class MemberStateImpl implements MemberState {
     MemberHealthStatsImpl memberHealthStats = new MemberHealthStatsImpl();
     Map<String,Long> runtimeProps = new HashMap<String, Long>();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
+    Map<String, LocalMapStatsImpl> multiMapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     Map<String, LocalAtomicNumberStatsImpl> atomicNumberStats = new HashMap<String, LocalAtomicNumberStatsImpl>();
@@ -52,6 +53,11 @@ public class MemberStateImpl implements MemberState {
         memberHealthStats.writeData(out);
         out.writeInt(mapStats.size());
         for (Map.Entry<String, LocalMapStatsImpl> entry : mapStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        out.writeInt(multiMapStats.size());
+        for (Map.Entry<String, LocalMapStatsImpl> entry : multiMapStats.entrySet()) {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
@@ -110,6 +116,11 @@ public class MemberStateImpl implements MemberState {
             name = in.readUTF();
             (impl = new LocalMapStatsImpl()).readData(in);
             mapStats.put(name, (LocalMapStatsImpl) impl);
+        }
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalMapStatsImpl()).readData(in);
+            multiMapStats.put(name, (LocalMapStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
@@ -172,6 +183,7 @@ public class MemberStateImpl implements MemberState {
         int result = address != null ? address.hashCode() : 0;
         result = 31 * result + (memberHealthStats != null ? memberHealthStats.hashCode() : 0);
         result = 31 * result + (mapStats != null ? mapStats.hashCode() : 0);
+        result = 31 * result + (multiMapStats != null ? multiMapStats.hashCode() : 0);
         result = 31 * result + (queueStats != null ? queueStats.hashCode() : 0);
         result = 31 * result + (topicStats != null ? topicStats.hashCode() : 0);
         result = 31 * result + (atomicNumberStats != null ? atomicNumberStats.hashCode() : 0);
@@ -203,6 +215,10 @@ public class MemberStateImpl implements MemberState {
 
     public LocalMapStats getLocalMapStats(String mapName) {
         return mapStats.get(mapName);
+    }
+
+    public LocalMapStats getLocalMultiMapStats(String mapName) {
+        return multiMapStats.get(mapName);
     }
 
     public LocalExecutorOperationStats getInternalExecutorStats(String name) {
@@ -243,6 +259,10 @@ public class MemberStateImpl implements MemberState {
 
     public void putLocalMapStats(String name, LocalMapStatsImpl localMapStats) {
         mapStats.put(name, localMapStats);
+    }
+
+    public void putLocalMultiMapStats(String name, LocalMapStatsImpl localMultiMapStats) {
+        multiMapStats.put(name, localMultiMapStats);
     }
 
     public void putLocalQueueStats(String name, LocalQueueStatsImpl localQueueStats) {
