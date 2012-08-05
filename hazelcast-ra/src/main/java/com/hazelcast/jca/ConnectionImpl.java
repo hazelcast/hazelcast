@@ -34,9 +34,9 @@ public class ConnectionImpl implements Connection {
     private static AtomicInteger idGen = new AtomicInteger();
     private final int id;
     
-    public ConnectionImpl(ManagedConnectionImpl ippManagedConnectionImpl, Subject subject) {
+    public ConnectionImpl(ManagedConnectionImpl managedConnectionImpl, Subject subject) {
         super();
-        this.managedConnection = ippManagedConnectionImpl;
+        this.managedConnection = managedConnectionImpl;
         id = idGen.incrementAndGet();
     }
     
