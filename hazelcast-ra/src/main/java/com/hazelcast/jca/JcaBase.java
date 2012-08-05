@@ -16,13 +16,37 @@
 
 package com.hazelcast.jca;
 
+import java.io.PrintWriter;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 public class JcaBase {
-    protected static final Logger logger = Logger.getLogger(JcaBase.class.getName());
+    private final static ILogger logger = Logger.getLogger("com.hazelcast.jca");
+	
+    private PrintWriter logWriter = null;
+    void log(Level logLevel, String message) {
+    	log(logLevel, message, null);
+    }
+    
+    void log(Level logLevel, String message, Throwable t) {
+    	if (logger.isLoggable(logLevel)) {
+	    	logger.log(logLevel, message, t);
+	    	final PrintWriter logWriter = getLogWriter();
+			if (logWriter != null) {
+	    		logWriter.write(message);
+	    		if (t != null) {
+	    			t.printStackTrace(logWriter);
+	    		}
+	    	}
+    	}
+    }
+    public PrintWriter getLogWriter() {
+        return logWriter;
+    }
 
-    public void log(final Object caller, final Object msg) {
-        logger.log(Level.FINEST, caller + " : " + msg);
+    public void setLogWriter(PrintWriter printWriter) {
+        this.logWriter = printWriter;
     }
 }

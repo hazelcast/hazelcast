@@ -16,8 +16,8 @@ public class XAResourceImpl implements XAResource {
 	private int transactionTimeout;
 	private final Map<Xid, Transaction> transactionCache = new ConcurrentHashMap<Xid, Transaction>();
 
-	public XAResourceImpl(ManagedConnectionImpl managedConnection) {
-		this.managedConnection = managedConnection;
+	public XAResourceImpl(ManagedConnectionImpl ippManagedConnectionImpl) {
+		this.managedConnection = ippManagedConnectionImpl;
 	}
 	
 	public void start(Xid xid, int arg1) throws XAException {
