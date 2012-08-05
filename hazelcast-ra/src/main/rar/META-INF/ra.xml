@@ -32,7 +32,7 @@
             <connection-definition>
                 <managedconnectionfactory-class>com.hazelcast.jca.ManagedConnectionFactoryImpl</managedconnectionfactory-class>
 				<config-property>
-					<description>Comma seperated list of FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP and DESTROY to
+					<description>Comma separated list of FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP and DESTROY to
 					trace connection events</description>
 					<config-property-name>connectionTracingEvents</config-property-name>
 					<config-property-type>java.lang.String</config-property-type>
