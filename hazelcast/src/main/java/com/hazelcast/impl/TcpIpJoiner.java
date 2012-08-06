@@ -58,12 +58,12 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (targetAddress == null) {
                 throw new RuntimeException("Invalid target address " + targetAddress);
             }
-            if (targetAddress.equals(node.address)) {
+            if (targetAddress.equals(node.address) || isLocalAddress(targetAddress)) {
                 node.setAsMaster();
                 return;
             }
+
             long joinStartTime = Clock.currentTimeMillis();
-            
             Connection connection = null;
             node.getFailedConnections().clear();
             while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
@@ -253,16 +253,25 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (AddressUtil.isIpAddress(addressHolder.address)) {
                 return new Address(addressHolder.address, addressHolder.port);
             } else {
-                final InetAddress[] allAddresses = InetAddress.getAllByName(addressHolder.address);
                 final Interfaces interfaces = config.getNetworkConfig().getInterfaces();
-                for (final InetAddress inetAddress : allAddresses) {
-                    boolean matchingAddress = true;
-                    if (interfaces.isEnabled()) {
-                        matchingAddress = AddressUtil.matchAnyInterface(inetAddress.getHostAddress(), interfaces.getInterfaces());
+                if (interfaces.isEnabled()) {
+                    final InetAddress[] inetAddresses = InetAddress.getAllByName(addressHolder.address);
+                    if (inetAddresses.length > 1) {
+                        for (InetAddress inetAddress : inetAddresses) {
+                            if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
+                                    interfaces.getInterfaces())) {
+                                return new Address(inetAddress, addressHolder.port);
+                            }
+                        }
+                    } else {
+                        final InetAddress inetAddress = inetAddresses[0];
+                        if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
+                                interfaces.getInterfaces())) {
+                            return new Address(addressHolder.address, addressHolder.port);
+                        }
                     }
-                    if (matchingAddress) {
-                        return new Address(inetAddress, addressHolder.port);
-                    }
+                } else {
+                    return new Address(addressHolder.address, addressHolder.port);
                 }
             }
         } catch (final Exception e) {
