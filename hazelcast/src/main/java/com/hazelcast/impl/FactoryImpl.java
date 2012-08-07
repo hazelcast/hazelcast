@@ -374,11 +374,16 @@ public class FactoryImpl implements HazelcastInstance {
         proxyFactory = node.initializer.getProxyFactory();
         logger = node.getLogger(FactoryImpl.class.getName());
         hazelcastInstanceProxy = new HazelcastInstanceProxy(this);
-        locksMapProxy = proxyFactory.createMapProxy(Prefix.MAP_HAZELCAST + "Locks");
         node.start();
         if (!node.isActive()) {
             throw new IllegalStateException("Node failed to start!");
         }
+        locksMapProxy = proxyFactory.createMapProxy(Prefix.MAP_HAZELCAST + "Locks");
+        node.clusterService.enqueueAndReturn(new Processable() {
+            public void process() {
+                node.concurrentMapManager.getOrCreateMap(locksMapProxy.getLongName());
+            }
+        });
 
         final Set<Member> members = node.getClusterImpl().getMembers();
         if (members.size() > 1) {
