@@ -146,13 +146,7 @@ public class NodeService {
             throw new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName);
         }
         if (getThisAddress().equals(target)) {
-            if (!(op instanceof NoReply)) {
-                op.getOperationContext().setResponseHandler(new ResponseHandler() {
-                    public void sendResponse(Object obj) {
-                        inv.setResult(obj);
-                    }
-                });
-            }
+            op.getOperationContext().setResponseHandler(ResponseHandlerFactory.createLocalResponseHandler(this, inv));
             runLocally(partitionId, op, nonBlocking);
         } else {
             final Packet packet = new Packet();
@@ -174,11 +168,12 @@ public class NodeService {
         final ExecutorService executor = getExecutor(partitionId, nonBlocking);
         executor.execute(new Runnable() {
             public void run() {
+                final ResponseHandler responseHandler = op.getOperationContext().getResponseHandler();
                 if (partitionId != -1 && !nonBlocking) {
                     PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                     Address owner = partitionInfo.getOwner();
                     if (!getThisAddress().equals(owner)) {
-                        op.getOperationContext().getResponseHandler().sendResponse(
+                        responseHandler.sendResponse(
                                 new WrongTargetException(getThisAddress(), owner, partitionId, op.getClass().getName()));
                         return;
                     }
@@ -186,7 +181,9 @@ public class NodeService {
                 try {
                     op.run();
                 } catch (Throwable e) {
-                    op.getOperationContext().getResponseHandler().sendResponse(e);
+                    System.err.println("responseHandler = " + responseHandler);
+                    e.printStackTrace();
+                    responseHandler.sendResponse(e);
                 }
             }
         });
@@ -205,24 +202,9 @@ public class NodeService {
                 try {
                     final Operation op = (Operation) toObject(data);
                     setOperationContext(op, serviceName, caller, callId, partitionId).setConnection(packet.conn);
-                    final boolean noReply = (op instanceof NoReply);
-                    if (!noReply) {
-                        ResponseHandler responseHandler = new ResponseHandler() {
-                            public void sendResponse(Object response) {
-                                if (!(response instanceof Operation)) {
-                                    response = new Response(response);
-                                }
-                                packet.clearForResponse();
-                                packet.blockId = partitionId;
-                                packet.callId = callId;
-                                packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
-                                packet.setValue(toData(response));
-                                packet.name = serviceName;
-                                node.clusterImpl.send(packet, packet.conn);
-                            }
-                        };
-                        op.getOperationContext().setResponseHandler(responseHandler);
-                    }
+                    op.getOperationContext().setResponseHandler(
+                            ResponseHandlerFactory.createRemoteResponseHandler(NodeService.this, op, packet,
+                                    partitionId, callId, serviceName));
                     try {
                         if (partitionId != -1) {
                             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
@@ -240,22 +222,19 @@ public class NodeService {
                         } else {
                             logger.log(Level.SEVERE, e.getMessage(), e);
                         }
-                        if (!noReply) {
-                            op.getOperationContext().getResponseHandler().sendResponse(e);
-                        }
+                        op.getOperationContext().getResponseHandler().sendResponse(e);
                     }
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
-                    packet.clearForResponse();
-                    packet.blockId = partitionId;
-                    packet.callId = callId;
-                    packet.longValue = 1;
-                    packet.setValue(toData(e));
-                    packet.name = serviceName;
-                    node.clusterImpl.send(packet, packet.conn);
+                    ResponseHandlerFactory.createRemoteResponseHandler(NodeService.this, null, packet,
+                            partitionId, callId, serviceName).sendResponse(e);
                 }
             }
         });
+    }
+
+    void sendPacket(final Packet packet) {
+        node.clusterImpl.send(packet, packet.conn);
     }
 
     private OperationContext setOperationContext(Operation op, String serviceName, Address caller,
@@ -350,7 +329,7 @@ public class NodeService {
         }
 
         protected void beforeRun() {
-            ThreadContext.get().setCurrentInstance(node.instance);
+            ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
         }
     }
 

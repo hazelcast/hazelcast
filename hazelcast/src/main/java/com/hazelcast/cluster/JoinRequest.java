@@ -23,6 +23,7 @@ import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.security.Credentials;
 
@@ -40,6 +41,7 @@ public class JoinRequest extends AbstractOperation implements NonMemberOperation
     public Config config;
     public String uuid;
     private Credentials credentials;
+    private Connection connection;
 
     public JoinRequest() {
         super();
@@ -109,6 +111,14 @@ public class JoinRequest extends AbstractOperation implements NonMemberOperation
         return uuid;
     }
 
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public void setConnection(final Connection connection) {
+        this.connection = connection;
+    }
+
     @Override
     public String toString() {
         return "JoinRequest{"
@@ -125,6 +135,7 @@ public class JoinRequest extends AbstractOperation implements NonMemberOperation
 
     public void run() {
         ClusterImpl cm = getOperationContext().getService();
+        setConnection(getOperationContext().getConnection());
         cm.handleJoinRequest(this);
     }
 }

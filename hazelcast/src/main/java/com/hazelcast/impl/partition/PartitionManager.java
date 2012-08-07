@@ -1035,7 +1035,7 @@ public class PartitionManager {
         }
 
         public void run() {
-            ThreadContext.get().setCurrentInstance(node.instance);
+            ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
             try {
                 while (running) {
                     Runnable r = null;

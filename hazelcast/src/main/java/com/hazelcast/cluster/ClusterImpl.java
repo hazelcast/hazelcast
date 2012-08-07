@@ -45,6 +45,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.REMOTE_CALL;
 import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public final class ClusterImpl implements ConnectionListener, Cluster {
 
@@ -260,22 +261,16 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
 //        sbState.append("\n}");
 //    }
 
-    public JoinInfo checkJoin(Connection conn) {
-//        return new JoinCall(conn).checkJoin();
+    public JoinInfo checkJoin(Address target) {
+        Invocation inv = node.nodeService.createSingleInvocation(SERVICE_NAME, new JoinCheck(node.createJoinInfo()), -1)
+                .setTarget(target).setTryCount(1).build();
+        try {
+            return (JoinInfo) toObject(inv.invoke().get());
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error during join check!", e);
+        }
         return null;
     }
-
-//    class JoinCall extends ConnectionAwareOp {
-//        JoinCall(Connection target) {
-//            super(target);
-//        }
-//
-//        JoinInfo checkJoin() {
-//            setLocal(ClusterOperation.JOIN_CHECK, "join", null, node.createJoinInfo(), 0, 0);
-//            doOp();
-//            return (JoinInfo) getResultAsObject();
-//        }
-//    }
 
     private void logMissingConnection(Address address) {
         String msg = node.getLocalMember() + " has no connection to " + address;
@@ -575,7 +570,7 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
                          + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
             logger.log(Level.FINEST, msg);
             final MemberImpl member = getMember(joinRequest.address);
-            final Connection conn = null; //joinRequest.getConnection();
+            final Connection conn = joinRequest.getConnection();
             if (member != null) {
                 if (joinRequest.getUuid().equals(member.getUuid())) {
                     String message = "Ignoring join request, member already exists.. => " + joinRequest;
@@ -1148,6 +1143,10 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
         return true;
     }
 
+    public void reset() {
+        stop();
+    }
+
     public void stop() {
         lock.lock();
         try {
@@ -1161,7 +1160,6 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
         } finally {
             lock.unlock();
         }
-
     }
 
     public Member getLocalMember() {

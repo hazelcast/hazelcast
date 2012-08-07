@@ -54,9 +54,10 @@ class PartitionIterator extends AbstractOperation {
                         .setPartitionId(partitionId)
                         .setLocal(true)
                         .setService(getOperationContext().getService());
-                ResponseQueue r = new ResponseQueue();
+                final ResponseQueue responseQueue = new ResponseQueue();
+                op.getOperationContext().setResponseHandler(responseQueue);
                 nodeService.runLocally(partitionId, op, false);
-                responses.put(partitionId, r);
+                responses.put(partitionId, responseQueue);
             }
             for (Map.Entry<Integer, ResponseQueue> partitionResponse : responses.entrySet()) {
                 Object result = partitionResponse.getValue().get();

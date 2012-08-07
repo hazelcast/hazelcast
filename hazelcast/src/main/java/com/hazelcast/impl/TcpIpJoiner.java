@@ -52,34 +52,32 @@ public class TcpIpJoiner extends AbstractJoiner {
         super(node);
     }
 
-    private void joinViaRequiredMember(AtomicBoolean joined) {
+    private void joinViaTargetMember(AtomicBoolean joined, Address targetAddress, long maxJoinMillis) {
         try {
-            final Address requiredAddress = getAddressFor(config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember());
-            logger.log(Level.FINEST, "Joining over required member " + requiredAddress);
-            if (requiredAddress == null) {
-                throw new RuntimeException("Invalid required member "
-                        + config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember());
+            logger.log(Level.FINEST, "Joining over target member " + targetAddress);
+            if (targetAddress == null) {
+                throw new RuntimeException("Invalid target address " + targetAddress);
             }
-            if (requiredAddress.equals(node.address)) {
+            if (targetAddress.equals(node.address)) {
                 node.setAsMaster();
                 return;
             }
-            node.connectionManager.getOrConnect(requiredAddress);
-            Connection conn = null;
-            while (conn == null) {
-                conn = node.connectionManager.getOrConnect(requiredAddress);
-                //noinspection BusyWait
-                Thread.sleep(2000L);
-            }
             long joinStartTime = Clock.currentTimeMillis();
-            long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
+            
+            Connection connection = null;
+            node.getFailedConnections().clear();
             while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
-                final Connection connection = node.connectionManager.getOrConnect(requiredAddress);
+                connection = node.connectionManager.getOrConnect(targetAddress);
                 if (connection == null) {
-                    joinViaRequiredMember(joined);
+                    if (node.getFailedConnections().contains(targetAddress)) {
+                        break;
+                    }
+                    //noinspection BusyWait
+                    Thread.sleep(2000L);
+                    continue;
                 }
-                logger.log(Level.FINEST, "Sending joinRequest " + requiredAddress);
-                node.clusterImpl.sendJoinRequest(requiredAddress, true);
+                logger.log(Level.FINEST, "Sending joinRequest " + targetAddress);
+                node.clusterImpl.sendJoinRequest(targetAddress, true);
                 //noinspection BusyWait
                 Thread.sleep(3000L);
             }
@@ -118,6 +116,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 logger.log(Level.INFO, "Connecting to possible member: " + possibleAddress);
                 node.connectionManager.getOrConnect(possibleAddress);
             }
+            
             boolean foundConnection = false;
             int numberOfSeconds = 0;
             final int connectionTimeoutSeconds = config.getNetworkConfig().getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();
@@ -273,8 +272,20 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     public void doJoin(AtomicBoolean joined) {
-        if (config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember() != null) {
-            joinViaRequiredMember(joined);
+        if (targetAddress != null) {
+            try {
+                long maxJoinMergeTargetMillis = node.getGroupProperties().MAX_JOIN_MERGE_TARGET_SECONDS.getInteger() * 1000;
+                joinViaTargetMember(joined, targetAddress, maxJoinMergeTargetMillis);
+            } finally {
+                targetAddress = null;
+            }
+            if (!joined.get()) {
+                joinViaPossibleMembers(joined);
+            }
+        } else if (config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember() != null) {
+            Address requiredMember = getAddressFor(config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember());
+            long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
+            joinViaTargetMember(joined, requiredMember, maxJoinMillis);
         } else {
             joinViaPossibleMembers(joined);
         }
@@ -388,7 +399,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             return;
         }
         for (Address possibleAddress : colPossibleAddresses) {
-            logger.log(Level.FINEST, node.getThisAddress() + " is connecting to " + possibleAddress);
+            logger.log(Level.WARNING, node.getThisAddress() + " is connecting to " + possibleAddress);
             node.connectionManager.getOrConnect(possibleAddress, true);
             try {
                 //noinspection BusyWait
@@ -398,9 +409,12 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
             final Connection conn = node.connectionManager.getConnection(possibleAddress);
             if (conn != null) {
-                final JoinInfo response = node.clusterImpl.checkJoin(conn);
+                final JoinInfo response = node.clusterImpl.checkJoin(possibleAddress);
+                System.out.println("response = " + response);
                 if (response != null && shouldMerge(response)) {
                     logger.log(Level.WARNING, node.address + " is merging [tcp/ip] to " + possibleAddress);
+                    targetAddress = possibleAddress;
+                    sendClusterMergeToOthers(targetAddress);
                     splitBrainHandler.restart();
                     return;
                 }

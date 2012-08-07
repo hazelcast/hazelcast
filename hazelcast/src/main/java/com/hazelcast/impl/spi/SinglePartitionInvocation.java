@@ -42,7 +42,7 @@ class SinglePartitionInvocation extends SingleInvocation {
                 setException((Throwable) obj);
             }
         } else {
-            if (obj instanceof Exception) {
+            if (obj instanceof Throwable) {
                 setException((Throwable) obj);
             } else {
                 set(obj);

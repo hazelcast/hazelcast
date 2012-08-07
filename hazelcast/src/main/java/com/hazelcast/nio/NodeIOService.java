@@ -56,7 +56,7 @@ public class NodeIOService implements IOService {
     }
 
     public void onIOThreadStart() {
-        ThreadContext.get().setCurrentInstance(node.instance);
+        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
     }
 
     public Address getThisAddress() {

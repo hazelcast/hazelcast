@@ -105,7 +105,7 @@ public class Node {
 
     volatile Address masterAddress = null;
 
-    public final HazelcastInstanceImpl instance;
+    public final HazelcastInstanceImpl hazelcastInstance;
 
     private final int buildNumber;
 
@@ -129,10 +129,10 @@ public class Node {
 
     public final SecurityContext securityContext;
 
-    public Node(HazelcastInstanceImpl instance, Config config) {
-        ThreadContext.get().setCurrentInstance(instance);
-        this.threadGroup = new ThreadGroup(instance.getName());
-        this.instance = instance;
+    public Node(HazelcastInstanceImpl hazelcastInstance, Config config) {
+        ThreadContext.get().setCurrentInstance(hazelcastInstance);
+        this.threadGroup = new ThreadGroup(hazelcastInstance.getName());
+        this.hazelcastInstance = hazelcastInstance;
         this.config = config;
         this.groupProperties = new GroupProperties(config);
         this.liteMember = config.isLiteMember();
@@ -227,13 +227,13 @@ public class Node {
                 }
             }
             if (listener instanceof InstanceListener) {
-                instance.addInstanceListener((InstanceListener) listener);
+                hazelcastInstance.addInstanceListener((InstanceListener) listener);
             } else if (listener instanceof MembershipListener) {
                 clusterImpl.addMembershipListener((MembershipListener) listener);
             } else if (listener instanceof MigrationListener) {
 //                concurrentMapManager.partitionServiceImpl.addMigrationListener((MigrationListener) listener);
             } else if (listener instanceof LifecycleListener) {
-                instance.lifecycleService.addLifecycleListener((LifecycleListener) listener);
+                hazelcastInstance.lifecycleService.addLifecycleListener((LifecycleListener) listener);
             } else if (listener != null) {
                 final String error = "Unknown listener type: " + listener.getClass();
                 Throwable t = new IllegalArgumentException(error);
@@ -276,7 +276,7 @@ public class Node {
     }
 
     public String getName() {
-        return instance.getName();
+        return hazelcastInstance.getName();
     }
 
     public String getThreadNamePrefix(String name) {
@@ -348,7 +348,7 @@ public class Node {
             logger.log(Level.WARNING, sb.toString());
         }
         try {
-            managementCenterService = new ManagementCenterService(instance);
+            managementCenterService = new ManagementCenterService(hazelcastInstance);
         } catch (Exception e) {
             logger.log(Level.WARNING, "ManagementCenterService could not be constructed!", e);
         }
@@ -439,7 +439,7 @@ public class Node {
             failedConnections.clear();
             serviceThreadPacketQueue.clear();
             systemLogService.shutdown();
-            ThreadContext.get().shutdown(instance);
+            ThreadContext.get().shutdown(hazelcastInstance);
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
     }
@@ -547,7 +547,7 @@ public class Node {
         systemLogService.logJoin("Rejoining!");
         masterAddress = null;
         joined.set(false);
-//        clusterImpl.reset();
+        clusterImpl.reset();
         failedConnections.clear();
         join();
     }

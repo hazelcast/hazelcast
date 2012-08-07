@@ -114,43 +114,13 @@ public class LifecycleServiceImpl implements LifecycleService {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(RESTARTING);
             paused.set(true);
-//            final Node node = factory.node;
-//            final ILogger logger = getLogger();
-//            List<Record> lsOwnedRecords = new ArrayList<Record>();
-//            for (CMap cmap : node.concurrentMapManager.getCMaps().values()) {
-//                if (cmap.isUserMap()) {
-//                    lsOwnedRecords.addAll(cmap.getMapIndexService().getOwnedRecords());
-//                }
-//            }
-//            node.onRestart();
-////            node.clientHandlerService.restart();
-//            node.connectionManager.onRestart();
-//            node.clusterImpl.onRestart();
-//            node.partitionManager.onRestart();
-//            node.concurrentMapManager.onRestart();
-//            node.rejoin();
-//            final CountDownLatch latch = new CountDownLatch(lsOwnedRecords.size());
-////            final ParallelExecutor executor = node.executorManager.newParallelExecutor(16);
-//            final ExecutorService executor = node.nodeService.getExecutorService();
-//            for (final Record ownedRecord : lsOwnedRecords) {
-//                executor.execute(new Runnable() {
-//                    public void run() {
-//                        try {
-//                            ConcurrentMapManager.MPut mput = node.concurrentMapManager.new MPut();
-//                            mput.merge(ownedRecord);
-//                            // invalidate record now (skipped invalidation on restart)
-//                            ownedRecord.invalidate();
-//                            latch.countDown();
-//                        } catch (Exception e) {
-//                            logger.log(Level.WARNING, e.getMessage(), e);
-//                        }
-//                    }
-//                });
-//            }
-//            try {
-//                latch.await(60, TimeUnit.SECONDS);
-//            } catch (InterruptedException ignored) {
-//            }
+            final Node node = instance.node;
+            node.onRestart();
+//            node.clientHandlerService.restart();
+            node.connectionManager.onRestart();
+            node.clusterImpl.onRestart();
+            node.partitionManager.onRestart();
+            node.rejoin();
             paused.set(false);
             fireLifecycleEvent(RESTARTED);
         }

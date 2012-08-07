@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
@@ -38,6 +39,7 @@ public abstract class AbstractJoiner implements Joiner {
     protected volatile ILogger logger;
     private final AtomicInteger tryCount = new AtomicInteger(0);
     protected final SystemLogService systemLogService;
+    protected Address targetAddress;
 
     public AbstractJoiner(Node node) {
         this.node = node;
@@ -198,7 +200,20 @@ public abstract class AbstractJoiner implements Joiner {
             }
     }
 
+    protected void sendClusterMergeToOthers(final Address targetAddress) {
+        for (MemberImpl member : node.getClusterImpl().getMemberList()) {
+            if (!member.localMember()) {
+                node.nodeService.createSingleInvocation(ClusterImpl.SERVICE_NAME, new MergeClusters(targetAddress), -1)
+                        .setTarget(member.getAddress()).setTryCount(1).build().invoke();
+            }
+        }
+    }
+
     public final long getStartTime() {
         return joinStartTime;
+    }
+    
+    public void setTargetAddress(Address targetAddress) {
+        this.targetAddress = targetAddress;
     }
 }

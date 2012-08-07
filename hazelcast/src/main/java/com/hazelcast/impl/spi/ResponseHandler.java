@@ -17,5 +17,7 @@
 package com.hazelcast.impl.spi;
 
 public interface ResponseHandler {
+
     void sendResponse(Object obj);
+
 }

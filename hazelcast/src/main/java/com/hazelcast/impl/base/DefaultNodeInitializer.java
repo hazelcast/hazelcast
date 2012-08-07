@@ -97,7 +97,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
 
     public ProxyFactory getProxyFactory() {
-        return new DefaultProxyFactory(node.instance);
+        return new DefaultProxyFactory(node.hazelcastInstance);
     }
 
     public SecurityContext getSecurityContext() {

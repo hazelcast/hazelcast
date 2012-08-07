@@ -370,7 +370,7 @@ public class ListenerManager {
 //                }
             }
         }
-        final SerializerRegistry serializerRegistry = node.instance.serializerRegistry;
+        final SerializerRegistry serializerRegistry = node.hazelcastInstance.serializerRegistry;
         final DataAwareEntryEvent event2 = listenerItem.includeValue ?
                 event :
                 // if new value is already null no need to create a new value-less event

@@ -41,7 +41,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
 
     public JoinInfo(ILogger logger, boolean request, Address address, Config config,
                     NodeType type, byte packetVersion, int buildNumber, int memberCount, int tryCount, String nodeUuid) {
-        super(address, config, type, packetVersion, buildNumber, nodeUuid);
+         super(address, config, type, packetVersion, buildNumber, nodeUuid);
         this.request = request;
         this.memberCount = memberCount;
         this.tryCount = tryCount;
