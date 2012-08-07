@@ -23,7 +23,10 @@ import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.AddressUtil.AddressHolder;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -78,12 +81,14 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                 RecordUpdate ru = (failureQ.size() > 0) ? failureQ.removeFirst() : q.take();
                 if (conn == null) {
                     conn = getConnection();
-                    boolean authorized = node.clusterImpl.checkAuthorization(groupName, password, conn.getEndPoint());
-                    if (!authorized) {
-                        conn.close();
-                        conn = null;
-                        if (logger != null) {
-                            logger.log(Level.SEVERE, "Invalid groupName or groupPassword! ");
+                    if (conn != null) {
+                        boolean authorized = node.clusterImpl.checkAuthorization(groupName, password, conn.getEndPoint());
+                        if (!authorized) {
+                            conn.close();
+                            conn = null;
+                            if (logger != null) {
+                                logger.log(Level.SEVERE, "Invalid groupName or groupPassword! ");
+                            }
                         }
                     }
                 }
@@ -106,25 +111,20 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
 
     @SuppressWarnings("BusyWait")
     Connection getConnection() throws InterruptedException {
-        while (true) {
+        while (running) {
             String targetStr = addressQueue.take();
-            Address target = null;
             try {
-                target = null;
-                int colon = targetStr.indexOf(':');
-                if (colon == -1) {
-                    target = new Address(targetStr, node.getConfig().getPort());
-                } else {
-                    target = new Address(targetStr.substring(0, colon), Integer.parseInt(targetStr.substring(colon + 1)));
-                }
-                Connection conn = node.getConnectionManager().getOrConnect(target);
+                final AddressHolder addressHolder = AddressUtil.getAddressHolder(targetStr, node.getConfig().getPort());
+                final Address target = new Address(addressHolder.address, addressHolder.port);
+                final ConnectionManager connectionManager = node.getConnectionManager();
+                Connection conn = connectionManager.getOrConnect(target);
                 for (int i = 0; i < 10; i++) {
-                    conn = node.getConnectionManager().getConnection(target);
                     if (conn == null) {
                         Thread.sleep(1000);
                     } else {
                         return conn;
                     }
+                    conn = connectionManager.getConnection(target);
                 }
             } catch (Throwable e) {
                 Thread.sleep(1000);
@@ -132,6 +132,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                 addressQueue.offer(targetStr);
             }
         }
+        return null;
     }
 
     class RecordUpdate {
