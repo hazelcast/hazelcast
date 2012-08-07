@@ -1135,7 +1135,7 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
             memberImpl.didWrite();
         }
         if (packet.lockAddress != null) {
-            if (node.getLocalMember().equals(packet.lockAddress)) {
+            if (thisAddress.equals(packet.lockAddress)) {
                 packet.lockAddress = null;
             }
         }
