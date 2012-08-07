@@ -243,7 +243,9 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
-    private Address getAddressFor(String host) {
+    private Address getRequiredMemberAddress() {
+        final TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+        final String host = tcpIpConfig.getRequiredMember();
         try {
             final AddressHolder addressHolder = AddressUtil.getAddressHolder(host, config.getPort());
             if (AddressUtil.isIpAddress(addressHolder.address)) {
@@ -288,7 +290,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 joinViaPossibleMembers(joined);
             }
         } else if (config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember() != null) {
-            Address requiredMember = getAddressFor(config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember());
+            Address requiredMember = getRequiredMemberAddress();
             long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
             joinViaTargetMember(joined, requiredMember, maxJoinMillis);
         } else {
