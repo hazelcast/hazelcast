@@ -84,11 +84,12 @@ public class Request implements CallStateAware {
         return "Request{" +
                 "name='" + name + '\'' +
                 "," + operation +
-                ", callId='" + callId + '\'' +
                 ", redoCount='" + redoCount + '\'' +
+                ", callId='" + callId + '\'' +
                 ", timeout='" + timeout + '\'' +
-                ", lockThreadId='" + lockThreadId + '\'' +
                 ", target='" + target + '\'' +
+                ", lockThreadId='" + lockThreadId + '\'' +
+                ", lockAddress='" + lockAddress + '\'' +
                 ", local='" + local + '\'' +
                 '}';
     }
