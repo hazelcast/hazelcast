@@ -1308,7 +1308,7 @@ public class ConcurrentMapManager extends BaseManager {
                 txn.attachPutMultiOp(name, key, toData(value));
                 return true;
             } else {
-                boolean result = booleanCall(CONCURRENT_MAP_PUT_MULTI, name, key, value, 0, -1);
+                boolean result = booleanCall(CONCURRENT_MAP_PUT_MULTI, name, key, value, -1, -1);
                 if (result) {
                     backup(CONCURRENT_MAP_BACKUP_PUT);
                 }
