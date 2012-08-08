@@ -35,7 +35,8 @@ class AddressPicker {
     private final Node node;
     private final ILogger logger;
     private ServerSocketChannel serverSocketChannel;
-    private Address address;
+    private Address returnAddress;
+    private Address bindAddress;
 
     public AddressPicker(Node node) {
         this.node = node;
@@ -43,7 +44,7 @@ class AddressPicker {
     }
 
     public void pickAddress() throws Exception {
-        if (address != null) {
+        if (returnAddress != null || bindAddress != null) {
             return;
         }
         try {
@@ -96,9 +97,22 @@ class AddressPicker {
                 }
             }
             serverSocketChannel.configureBlocking(false);
-            address = new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);
+            bindAddress = new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);
             log(Level.INFO,
-                    "Picked " + address + ", using socket " + serverSocket + ", bind any local is " + bindAny);
+                    "Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is " + bindAny);
+            
+            // Extract it out of from the config?
+            AddressDefinition natAddressDef = this.getSystemConfiguredAddress(config);
+            if (natAddressDef != null) {
+            	returnAddress = new Address(natAddressDef.host != null ? natAddressDef.host : natAddressDef.address, port);
+            	log(Level.INFO,
+            			"Picked " + returnAddress + ", using socket " + serverSocket + " as returning address (NAT?).");
+            } else {
+            	returnAddress = bindAddress;
+            	log(Level.INFO,
+            			"Picked " + returnAddress + ", using socket " + serverSocket + " the same as the bind address.");
+            }
+            
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw e;
@@ -112,7 +126,7 @@ class AddressPicker {
             final Collection<InterfaceDefinition> interfaces = getInterfaces(networkConfig);
             if (interfaces.contains(new InterfaceDefinition("127.0.0.1"))
                     || interfaces.contains(new InterfaceDefinition("localhost"))) {
-                addressDef = pickLoopbackAddress();
+                addressDef = pickLoopbackAddress(); 
             } else {
                 if (preferIPv4Stack()) {
                     log(Level.INFO, "Prefer IPv4 stack is true.");
@@ -190,19 +204,39 @@ class AddressPicker {
     }
 
     private AddressDefinition getSystemConfiguredAddress() throws UnknownHostException {
-        String localAddress = System.getProperty("hazelcast.local.localAddress");
-        if (localAddress != null) {
-            localAddress = localAddress.trim();
-            if ("127.0.0.1".equals(localAddress) || "localhost".equals(localAddress)) {
+    	String address = System.getProperty("hazelcast.local.localAddress");
+        if (address != null) {
+            address = address.trim();
+            if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
                 return pickLoopbackAddress();
             } else {
                 log(Level.INFO, "Picking address configured by System property 'hazelcast.local.localAddress'");
-                return new AddressDefinition(localAddress, InetAddress.getByName(localAddress));
+                return new AddressDefinition(address, InetAddress.getByName(address));
             }
         }
         return null;
     }
 
+    private AddressDefinition getSystemConfiguredAddress(Config config) throws UnknownHostException {
+        // first; the system prop
+    	// second; config value
+    	String address = System.getProperty("hazelcast.local.returnAddress");
+        if (address == null) {
+        	address = config.getNetworkConfig().getReturnAddress();
+        }
+        
+        if (address != null) {
+            address = address.trim();
+            if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
+                return pickLoopbackAddress();
+            } else {
+                log(Level.INFO, "Picking address configured by System property 'hazelcast.local.returnAddress'");
+                return new AddressDefinition(address, InetAddress.getByName(address));
+            }
+        }
+        return null;
+    }
+    
     // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
     private AddressDefinition pickLoopbackAddress() throws UnknownHostException {
         if (System.getProperty("java.net.preferIPv6Addresses") == null
@@ -258,9 +292,18 @@ class AddressPicker {
         return preferIPv4Stack || awsEnabled;
     }
 
+    @Deprecated
     public Address getAddress() {
-        return address;
+        return bindAddress;
     }
+    
+    public Address getBindAddress() {
+		return bindAddress;
+	}
+    
+    public Address getReturnAddress() {
+		return returnAddress;
+	}
 
     public ServerSocketChannel getServerSocketChannel() {
         return serverSocketChannel;

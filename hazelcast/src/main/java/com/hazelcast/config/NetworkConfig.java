@@ -28,6 +28,8 @@ public class NetworkConfig implements DataSerializable {
 
     private Join join = new Join();
 
+    private String returnAddress = null;
+    
     private SymmetricEncryptionConfig symmetricEncryptionConfig = null;
 
     private AsymmetricEncryptionConfig asymmetricEncryptionConfig = null;
@@ -65,6 +67,14 @@ public class NetworkConfig implements DataSerializable {
         this.join = join;
         return this;
     }
+    
+    public String getReturnAddress() {
+		return returnAddress;
+	}
+    
+    public void setReturnAddress(String returnAddress) {
+		this.returnAddress = returnAddress;
+	}
 
     public NetworkConfig setSocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
         this.socketInterceptorConfig = socketInterceptorConfig;

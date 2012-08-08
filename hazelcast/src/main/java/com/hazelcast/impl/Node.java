@@ -143,16 +143,20 @@ public class Node {
         this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
         systemLogService = new SystemLogService(this);
         ServerSocketChannel serverSocketChannel = null;
-        Address localAddress = null;
+        // Address localAddress = null;
+        Address externalAddress = null;
+        // Address bindAddress = null;
         try {
             AddressPicker addressPicker = new AddressPicker(this);
             addressPicker.pickAddress();
-            localAddress = addressPicker.getAddress();
+            // localAddress = addressPicker.getExternalAddress();
+            externalAddress = addressPicker.getReturnAddress();
+            // bindAddress = addressPicker.getBindAddress();
             serverSocketChannel = addressPicker.getServerSocketChannel();
         } catch (Throwable e) {
             Util.throwUncheckedException(e);
         }
-        address = localAddress;
+        address = externalAddress;
         localMember = new MemberImpl(address, true, localNodeType, UUID.randomUUID().toString());
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
