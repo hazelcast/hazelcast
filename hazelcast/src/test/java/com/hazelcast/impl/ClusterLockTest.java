@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -649,6 +650,80 @@ public class ClusterLockTest {
         Thread.sleep(100);
         lock.unlock();
         assertTrue(latch.await(3, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testMapPutLockAndRemove() throws InterruptedException {
+        Config config = new Config() ;
+        config.setProperty(GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "true");
+        HazelcastInstance[] nodes = new HazelcastInstance[3];
+        for (int i = 0; i < nodes.length; i++) {
+            nodes[i] = Hazelcast.newHazelcastInstance(config);
+            nodes[i].getPartitionService().getPartition(0).getOwner();
+        }
+
+        final int loop = 1000;
+        final Thread[] threads = new Thread[nodes.length * 2];
+        final CountDownLatch latch = new CountDownLatch(loop * threads.length);
+        abstract class TestThread extends Thread {
+            IMap<Integer, Object> map;
+
+            protected TestThread(String name, final HazelcastInstance hazelcast) {
+                super(name);
+                map = hazelcast.getMap("test");
+            }
+
+            public final void run() {
+                Random random = new Random();
+                for (int i = 0; i < loop; i++) {
+                    doRun();
+                    latch.countDown();
+                    try {
+                        Thread.sleep(random.nextInt(10));
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+            }
+
+            abstract void doRun();
+        }
+
+        int k = 0;
+        for (final HazelcastInstance node : nodes) {
+            threads[k++] = new TestThread("Putter-" + k, node) {
+                void doRun() {
+                    UUID uuid = UUID.randomUUID();
+                    map.lock(1);
+                    try {
+                        map.put(1, uuid);
+                    } finally {
+                        map.unlock(1);
+                    }
+                }
+            };
+
+            threads[k++] = new TestThread("Remover-" + k, node) {
+                void doRun() {
+                    map.lock(1);
+                    try {
+                        map.remove(1);
+                    } finally {
+                        map.unlock(1);
+                    }
+                }
+            };
+        }
+
+        for (Thread thread : threads) {
+            thread.start();
+        }
+        assertTrue("Remaining operations: " + latch.getCount(),
+                latch.await(60, TimeUnit.SECONDS));
+
+        for (Thread thread : threads) {
+            thread.interrupt();
+        }
     }
 
 }

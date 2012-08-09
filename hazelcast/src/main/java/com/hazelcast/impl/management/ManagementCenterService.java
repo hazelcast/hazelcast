@@ -91,7 +91,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         webServerUrl = tmpWebServerUrl != null ?
                 (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
         updateIntervalMs = (managementCenterConfig != null && managementCenterConfig.getUpdateInterval() > 0)
-                           ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
+                ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
 
         taskPoller = new TaskPoller();
         stateSender = new StateSender();
@@ -151,7 +151,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     public void memberAdded(MembershipEvent membershipEvent) {
         try {
             Member member = membershipEvent.getMember();
-            if(member != null && factory.node.isMaster() && urlChanged) {
+            if (member != null && factory.node.isMaster() && urlChanged) {
                 ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(webServerUrl);
                 FutureTask<Void> task = new DistributedTask<Void>(callable, member);
                 ExecutorService executorService = factory.getExecutorService();
@@ -171,7 +171,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         if (newUrl == null)
             return;
         this.webServerUrl = newUrl.endsWith("/") ? newUrl : newUrl + "/";
-        if(!running.get()) {
+        if (!running.get()) {
             start();
         }
         urlChanged = true;
@@ -238,21 +238,21 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             }
             try {
                 while (running.get()) {
-                        try {
-                            URL url = new URL(webServerUrl + "collector.do");
-                            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                            connection.setDoOutput(true);
-                            connection.setRequestMethod("POST");
-                            connection.setConnectTimeout(1000);
-                            connection.setReadTimeout(1000);
-                            final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-                            TimedMemberState ts = getTimedMemberState();
-                            ts.writeData(out);
-                            out.flush();
-                            connection.getInputStream();
-                        } catch (Exception e) {
-                            logger.log(Level.FINEST, e.getMessage(), e);
-                        }
+                    try {
+                        URL url = new URL(webServerUrl + "collector.do");
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setDoOutput(true);
+                        connection.setRequestMethod("POST");
+                        connection.setConnectTimeout(1000);
+                        connection.setReadTimeout(1000);
+                        final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+                        TimedMemberState ts = getTimedMemberState();
+                        ts.writeData(out);
+                        out.flush();
+                        connection.getInputStream();
+                    } catch (Exception e) {
+                        logger.log(Level.FINEST, e.getMessage(), e);
+                    }
                     Thread.sleep(updateIntervalMs);
                 }
             } catch (Throwable throwable) {
@@ -358,6 +358,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         memberState.putThroughputStats(executorManager.getThroughputMap());
 
         createMemState(memberState, proxyObjects.iterator(), InstanceType.MAP);
+        createMemState(memberState, proxyObjects.iterator(), InstanceType.MULTIMAP);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.QUEUE);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.TOPIC);
         createRuntimeProps(memberState);
@@ -414,6 +415,12 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                             memberState.putLocalMapStats(mapProxy.getName(), (LocalMapStatsImpl) mapProxy.getLocalMapStats());
                             count++;
                         }
+                    } else if (type.isMultiMap()) {
+                        MultiMapProxy mmProxy = (MultiMapProxy) proxyObject;
+                        if (instanceFilterQueue.visible(mmProxy.getName())) {
+                            memberState.putLocalMultiMapStats(mmProxy.getName(), (LocalMapStatsImpl) mmProxy.getLocalMultiMapStats());
+                            count++;
+                        }
                     } else if (type.isQueue()) {
                         QProxy qProxy = (QProxy) proxyObject;
                         if (instanceFilterQueue.visible(qProxy.getName())) {
@@ -463,6 +470,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
         Collection<HazelcastInstanceAwareInstance> proxyObjects = new ArrayList<HazelcastInstanceAwareInstance>(factory.getProxies());
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MAP);
+        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MULTIMAP);
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.QUEUE);
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.TOPIC);
         // uncomment when client changes are made
@@ -486,6 +494,10 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                             setLongInstanceNames.add(mapProxy.getLongName());
                             count++;
                         }
+                    } else if (type.isMultiMap()) {
+                        MultiMapProxy mmProxy = (MultiMapProxy) proxyObject;
+                        setLongInstanceNames.add(mmProxy.getLongName());
+                        count++;
                     } else if (type.isQueue()) {
                         QProxy qProxy = (QProxy) proxyObject;
                         if (instanceFilterQueue.visible(qProxy.getName())) {

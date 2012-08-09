@@ -22,6 +22,8 @@ import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ConcurrentMapManager.MMultiGet;
 import com.hazelcast.impl.ConcurrentMapManager.MRemoveMulti;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
+import com.hazelcast.impl.monitor.LocalMapStatsImpl;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.DataSerializable;
 
 import java.util.Collection;
@@ -55,6 +57,15 @@ public class MultiMapProxyImpl extends FactoryAwareNamedProxy implements MultiMa
     public MProxy getMProxy() {
         ensure();
         return base.getMProxy();
+    }
+
+    public LocalMapStats getLocalMultiMapStats() {
+        return base.getLocalMultiMapStats();
+    }
+
+    public String getLongName() {
+            ensure();
+            return base.getLongName();
     }
 
     public Object getId() {
@@ -229,6 +240,10 @@ public class MultiMapProxyImpl extends FactoryAwareNamedProxy implements MultiMa
             return mapProxy;
         }
 
+        public String getLongName() {
+            return name;
+        }
+
         public String getName() {
             return MultiMapProxyImpl.this.getName();
         }
@@ -345,6 +360,11 @@ public class MultiMapProxyImpl extends FactoryAwareNamedProxy implements MultiMa
 
         public void unlockMap() {
             mapProxy.unlockMap();
+        }
+
+        public LocalMapStats getLocalMultiMapStats() {
+            LocalMapStats localMapStats = mapProxy.getLocalMapStats();
+            return localMapStats;
         }
 
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {

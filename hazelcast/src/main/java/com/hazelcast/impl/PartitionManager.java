@@ -222,11 +222,13 @@ public class PartitionManager {
                         if (rec.getBlockId() == partitionId) {
                             cmap.onMigrate(rec);
                             if (cmap.isMultiMap()) {
-                                Collection<ValueHolder> colValues = rec.getMultiValues();
-                                for (ValueHolder valueHolder : colValues) {
-                                    Record record = rec.copy();
-                                    record.setValueData(valueHolder.getData());
-                                    lsResultSet.add(record);
+                                final Collection<ValueHolder> colValues = rec.getMultiValues();
+                                if (colValues != null) {
+                                    for (ValueHolder valueHolder : colValues) {
+                                        Record record = rec.copy();
+                                        record.setValueData(valueHolder.getData());
+                                        lsResultSet.add(record);
+                                    }
                                 }
                             } else {
                                 lsResultSet.add(rec);

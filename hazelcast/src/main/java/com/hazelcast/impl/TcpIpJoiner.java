@@ -56,20 +56,16 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (targetAddress == null) {
                 throw new RuntimeException("Invalid target address " + targetAddress);
             }
-            if (targetAddress.equals(node.address)) {
+            if (targetAddress.equals(node.address) || isLocalAddress(targetAddress)) {
                 node.setAsMaster();
                 return;
             }
+
             long joinStartTime = Clock.currentTimeMillis();
-            
             Connection connection = null;
-            node.getFailedConnections().clear();
             while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 connection = node.connectionManager.getOrConnect(targetAddress);
                 if (connection == null) {
-                    if (node.getFailedConnections().contains(targetAddress)) {
-                        break;
-                    }
                     //noinspection BusyWait
                     Thread.sleep(2000L);
                     continue;
@@ -87,7 +83,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     public static class MasterQuestion extends AbstractRemotelyProcessable {
         public void process() {
             TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) getNode().getJoiner();
-            boolean shouldApprove = (tcpIpJoiner.askingForApproval || node.isMaster()) ? false : true;
+            boolean shouldApprove = (!(tcpIpJoiner.askingForApproval || node.isMaster()));
             getNode().clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove),
                                                        getConnection());
         }
@@ -258,22 +254,33 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
-    private Address getAddressFor(String host) {
+    private Address getRequiredMemberAddress() {
+        final TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+        final String host = tcpIpConfig.getRequiredMember();
         try {
             final AddressHolder addressHolder = AddressUtil.getAddressHolder(host, config.getPort());
             if (AddressUtil.isIpAddress(addressHolder.address)) {
                 return new Address(addressHolder.address, addressHolder.port);
             } else {
-                final InetAddress[] allAddresses = InetAddress.getAllByName(addressHolder.address);
                 final Interfaces interfaces = config.getNetworkConfig().getInterfaces();
-                for (final InetAddress inetAddress : allAddresses) {
-                    boolean matchingAddress = true;
-                    if (interfaces.isEnabled()) {
-                        matchingAddress = AddressUtil.matchAnyInterface(inetAddress.getHostAddress(), interfaces.getInterfaces());
+                if (interfaces.isEnabled()) {
+                    final InetAddress[] inetAddresses = InetAddress.getAllByName(addressHolder.address);
+                    if (inetAddresses.length > 1) {
+                        for (InetAddress inetAddress : inetAddresses) {
+                            if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
+                                    interfaces.getInterfaces())) {
+                                return new Address(inetAddress, addressHolder.port);
+                            }
+                        }
+                    } else {
+                        final InetAddress inetAddress = inetAddresses[0];
+                        if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
+                                interfaces.getInterfaces())) {
+                            return new Address(addressHolder.address, addressHolder.port);
+                        }
                     }
-                    if (matchingAddress) {
-                        return new Address(inetAddress, addressHolder.port);
-                    }
+                } else {
+                    return new Address(addressHolder.address, addressHolder.port);
                 }
             }
         } catch (final Exception e) {
@@ -294,7 +301,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 joinViaPossibleMembers(joined);
             }
         } else if (config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember() != null) {
-            Address requiredMember = getAddressFor(config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember());
+            Address requiredMember = getRequiredMemberAddress();
             long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
             joinViaTargetMember(joined, requiredMember, maxJoinMillis);
         } else {

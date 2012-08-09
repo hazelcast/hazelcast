@@ -20,4 +20,7 @@ import com.hazelcast.core.MultiMap;
 
 public interface MultiMapProxy extends MultiMap, HazelcastInstanceAwareInstance {
     MProxy getMProxy();
+
+    String getLongName();
+
 }
