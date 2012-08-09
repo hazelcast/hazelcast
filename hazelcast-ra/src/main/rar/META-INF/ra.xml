@@ -52,7 +52,7 @@
                 <connection-interface>javax.resource.cci.Connection</connection-interface>
                 <connection-impl-class>com.hazelcast.jca.ConnectionImpl</connection-impl-class>
             </connection-definition>
-            <!-- Set to Local as XA is quite in an early stage -->
+
             <transaction-support>XATransaction</transaction-support>
             <authentication-mechanism>
                 <authentication-mechanism-type>BasicPassword</authentication-mechanism-type>
