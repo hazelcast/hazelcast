@@ -35,7 +35,7 @@ import static org.junit.Assert.*;
 public class AbsDeploymentTest {
 
 	/** Embedded */
-	private static Embedded embeddedJCAContainer;
+	protected static Embedded embeddedJCAContainer;
 
 	/** JNDI prefix */
 	private static final String JNDI_PREFIX = "java:/";
@@ -96,6 +96,6 @@ public class AbsDeploymentTest {
 	@AfterClass
 	public static void afterClass() throws Throwable {
 		// Shutdown
-//throws IOException:		embeddedJCAContainer.shutdown(); 
+//embeddedJCAContainer.shutdown(); 
 	}
 }
