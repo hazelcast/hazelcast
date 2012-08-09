@@ -40,7 +40,7 @@
 				</config-property>
                 
                 <config-property>
-                	<description>Shows a stacktrace for all loged connectionEvents</description>
+                	<description>Shows a stacktrace for all loged connectionTracingEvents</description>
                 	<config-property-name>connectionTracingDetail</config-property-name>
                 	<config-property-type>java.lang.Boolean</config-property-type>
                 	<config-property-value>false</config-property-value>
@@ -52,6 +52,7 @@
                 <connection-interface>javax.resource.cci.Connection</connection-interface>
                 <connection-impl-class>com.hazelcast.jca.ConnectionImpl</connection-impl-class>
             </connection-definition>
+            <!-- Set to Local as XA is quite in an early stage -->
             <transaction-support>XATransaction</transaction-support>
             <authentication-mechanism>
                 <authentication-mechanism-type>BasicPassword</authentication-mechanism-type>
