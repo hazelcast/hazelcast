@@ -24,6 +24,17 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class NetworkConfig implements DataSerializable {
+
+    public static final int DEFAULT_PORT = 5701;
+
+    private int port = DEFAULT_PORT;
+
+    private boolean portAutoIncrement = true;
+
+    private boolean reuseAddress = false;
+
+    private String publicAddress = null;
+
     private Interfaces interfaces = new Interfaces();
 
     private Join join = new Join();
@@ -35,6 +46,50 @@ public class NetworkConfig implements DataSerializable {
     private SocketInterceptorConfig socketInterceptorConfig = null;
 
     private SSLConfig sslConfig = null;
+
+    public NetworkConfig() {
+        String os = System.getProperty("os.name").toLowerCase();
+        reuseAddress = (os.indexOf("win") == -1);
+    }
+
+    /**
+     * @return the port
+     */
+    public int getPort() {
+        return port;
+    }
+
+    /**
+     * @param port the port to set
+     */
+    public NetworkConfig setPort(int port) {
+        this.port = port;
+        return this;
+    }
+
+    /**
+     * @return the portAutoIncrement
+     */
+    public boolean isPortAutoIncrement() {
+        return portAutoIncrement;
+    }
+
+    /**
+     * @param portAutoIncrement the portAutoIncrement to set
+     */
+    public NetworkConfig setPortAutoIncrement(boolean portAutoIncrement) {
+        this.portAutoIncrement = portAutoIncrement;
+        return this;
+    }
+
+    public boolean isReuseAddress() {
+        return reuseAddress;
+    }
+
+    public NetworkConfig setReuseAddress(boolean reuseAddress) {
+        this.reuseAddress = reuseAddress;
+        return this;
+    }
 
     /**
      * @return the interfaces
@@ -65,6 +120,14 @@ public class NetworkConfig implements DataSerializable {
         this.join = join;
         return this;
     }
+    
+    public String getPublicAddress() {
+		return publicAddress;
+	}
+    
+    public void setPublicAddress(String publicAddress) {
+		this.publicAddress = publicAddress;
+	}
 
     public NetworkConfig setSocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
         this.socketInterceptorConfig = socketInterceptorConfig;
@@ -103,11 +166,13 @@ public class NetworkConfig implements DataSerializable {
     }
 
     public void writeData(DataOutput out) throws IOException {
+        out.writeInt(port);
         interfaces.writeData(out);
         join.writeData(out);
         boolean hasSymmetricEncryptionConfig = symmetricEncryptionConfig != null;
         boolean hasAsymmetricEncryptionConfig = asymmetricEncryptionConfig != null;
-        out.writeByte(ByteUtil.toByte(hasSymmetricEncryptionConfig, hasAsymmetricEncryptionConfig));
+        out.writeByte(ByteUtil.toByte(portAutoIncrement, reuseAddress,
+                hasSymmetricEncryptionConfig, hasAsymmetricEncryptionConfig));
         if (hasSymmetricEncryptionConfig) {
             symmetricEncryptionConfig.writeData(out);
         }
@@ -117,13 +182,16 @@ public class NetworkConfig implements DataSerializable {
     }
 
     public void readData(DataInput in) throws IOException {
+        port = in.readInt();
         interfaces = new Interfaces();
         interfaces.readData(in);
         join = new Join();
         join.readData(in);
         boolean[] b = ByteUtil.fromByte(in.readByte());
-        boolean hasSymmetricEncryptionConfig = b[0];
-        boolean hasAsymmetricEncryptionConfig = b[1];
+        portAutoIncrement = b[0];
+        reuseAddress = b[1];
+        boolean hasSymmetricEncryptionConfig = b[2];
+        boolean hasAsymmetricEncryptionConfig = b[3];
         if (hasSymmetricEncryptionConfig) {
             symmetricEncryptionConfig = new SymmetricEncryptionConfig();
             symmetricEncryptionConfig.readData(in);
@@ -136,9 +204,20 @@ public class NetworkConfig implements DataSerializable {
 
     @Override
     public String toString() {
-        return "NetworkConfig [join=" + join
-                + ", interfaces=" + interfaces
-                + ", symmetricEncryptionConfig=" + symmetricEncryptionConfig
-                + ", asymmetricEncryptionConfig=" + asymmetricEncryptionConfig + "]";
+        final StringBuilder sb = new StringBuilder();
+        sb.append("NetworkConfig {");
+        sb.append("publicAddress='").append(publicAddress).append('\'');
+        sb.append(", port=").append(port);
+        sb.append(", portAutoIncrement=").append(portAutoIncrement);
+        sb.append(", join=").append(join);
+        sb.append(", interfaces=").append(interfaces);
+        sb.append(", sslConfig=").append(sslConfig);
+        sb.append(", socketInterceptorConfig=").append(socketInterceptorConfig);
+        sb.append(", symmetricEncryptionConfig=").append(symmetricEncryptionConfig);
+        sb.append(", asymmetricEncryptionConfig=").append(asymmetricEncryptionConfig);
+        sb.append('}');
+        return sb.toString();
     }
+
+
 }

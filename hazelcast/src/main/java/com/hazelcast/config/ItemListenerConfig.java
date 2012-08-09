@@ -53,4 +53,13 @@ public class ItemListenerConfig extends ListenerConfig {
         this.includeValue = includeValue;
         return this;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("ItemListenerConfig");
+        sb.append("{includeValue=").append(includeValue);
+        sb.append('}');
+        return sb.toString();
+    }
 }
