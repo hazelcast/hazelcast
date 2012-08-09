@@ -193,14 +193,13 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected void connectAndSendJoinRequest(Collection<Address> colPossibleAddresses) {
-        if (node.getFailedConnections().size() > 0)
-            for (Address possibleAddress : colPossibleAddresses) {
-                final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
-                if (conn != null) {
-                    logger.log(Level.FINEST, "sending join request for " + possibleAddress);
-                    node.clusterManager.sendJoinRequest(possibleAddress, true);
-                }
+        for (Address possibleAddress : colPossibleAddresses) {
+            final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
+            if (conn != null) {
+                logger.log(Level.FINEST, "sending join request for " + possibleAddress);
+                node.clusterManager.sendJoinRequest(possibleAddress, true);
             }
+        }
     }
 
     public final long getStartTime() {

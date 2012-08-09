@@ -227,7 +227,7 @@ class AddressPicker {
                     "Picking loopback address [127.0.0.1]; setting 'java.net.preferIPv4Stack' to true.");
             System.setProperty("java.net.preferIPv4Stack", "true");
         }
-        return new AddressDefinition("127.0.0.1", InetAddress.getByName("127.0.0.1"));
+        return new AddressDefinition(InetAddress.getByName("127.0.0.1"));
     }
 
     private AddressDefinition pickMatchingAddress(final Collection<InterfaceDefinition> interfaces) throws SocketException {
@@ -305,7 +305,7 @@ class AddressPicker {
 
         @Override
         public String toString() {
-            return host != null ? host : address;
+            return host != null ? (host + "/" + address) : address;
         }
 
         @Override
