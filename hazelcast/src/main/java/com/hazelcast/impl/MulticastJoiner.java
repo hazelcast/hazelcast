@@ -17,6 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.JoinInfo;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -169,7 +170,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
             } else {
                 logger.log(Level.FINEST, "RETURNING join.ip");
-                return new Address(ip, config.getPort());
+                return new Address(ip, config.getNetworkConfig().getPort());
             }
         } catch (final Exception e) {
             if (logger != null) {
@@ -182,7 +183,8 @@ public class MulticastJoiner extends AbstractJoiner {
     }
 
     private int calculateTryCount() {
-        int timeoutSeconds = config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds();
+        final NetworkConfig networkConfig = config.getNetworkConfig();
+        int timeoutSeconds = networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds();
         int tryCount = timeoutSeconds * 100;
         String host = node.address.getHost();
         int lastDigits = 0;
@@ -192,7 +194,7 @@ public class MulticastJoiner extends AbstractJoiner {
             lastDigits = (int) (512 * Math.random());
         }
         lastDigits = lastDigits % 100;
-        tryCount += lastDigits + (node.address.getPort() - node.config.getPort()) * timeoutSeconds * 3;
+        tryCount += lastDigits + (node.address.getPort() - networkConfig.getPort()) * timeoutSeconds * 3;
         return tryCount;
     }
 

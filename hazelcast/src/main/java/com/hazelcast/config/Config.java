@@ -310,7 +310,7 @@ public class Config implements DataSerializable {
 
     /**
      * @return the port
-     * @deprecated instead use getNetworkConfig.getPort()
+     * @deprecated instead use getNetworkConfig().getPort()
      * @see NetworkConfig#getPort()
      */
     @Deprecated
@@ -320,7 +320,7 @@ public class Config implements DataSerializable {
 
     /**
      * @param port the port to set
-     * @deprecated instead use getNetworkConfig.setPort(int)
+     * @deprecated instead use getNetworkConfig().setPort(int)
      * @see NetworkConfig#setPort(int)
      */
     @Deprecated
@@ -331,7 +331,7 @@ public class Config implements DataSerializable {
 
     /**
      * @return the portAutoIncrement
-     * @deprecated instead use getNetworkConfig.isPortAutoIncrement()
+     * @deprecated instead use getNetworkConfig().isPortAutoIncrement()
      * @see NetworkConfig#isPortAutoIncrement()
      */
     @Deprecated
@@ -341,7 +341,7 @@ public class Config implements DataSerializable {
 
     /**
      * @param portAutoIncrement the portAutoIncrement to set
-     * @deprecated instead use getNetworkConfig.setPortAutoIncrement(boolean)
+     * @deprecated instead use getNetworkConfig().setPortAutoIncrement(boolean)
      * @see NetworkConfig#setPortAutoIncrement(boolean)
      */
     @Deprecated
