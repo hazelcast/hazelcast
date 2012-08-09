@@ -103,7 +103,7 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
 			sb.append(" in thread [").append(Thread.currentThread().getName());
 			sb.append("]");
 
-			if (connectionTracingDetail) {
+			if (isConnectionTracingDetail()) {
 				log(Level.INFO, sb.toString());
 			} else {
 				log(Level.INFO, sb.toString(), //
@@ -176,6 +176,14 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
 	@Override
 	public String toString() {
 		return "hazelcast.ManagedConnectionFactoryImpl [" + id + "]";
+	}
+
+	public void setConnectionTracingDetail(boolean connectionTracingDetail) {
+		this.connectionTracingDetail = connectionTracingDetail;
+	}
+
+	public boolean isConnectionTracingDetail() {
+		return connectionTracingDetail;
 	}
 
 }
