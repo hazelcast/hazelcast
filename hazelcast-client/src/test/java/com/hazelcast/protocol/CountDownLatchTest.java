@@ -34,7 +34,7 @@ public class CountDownLatchTest extends ProtocolTest{
     }
 
     private List<String> setCount(int count) throws IOException {
-        OutputStream out = doOp("CDLSETCOUNT flag default "+count,null, socket);
+        OutputStream out = doOp("CDLSETCOUNT default "+count,null, socket);
         out.write("\r\n".getBytes());
         out.flush();
         return read(socket);
@@ -43,7 +43,7 @@ public class CountDownLatchTest extends ProtocolTest{
     @Test
     public void getCount() throws IOException {
         setCount(5);
-        OutputStream out = doOp("CDLGETCOUNT flag default",null, socket);
+        OutputStream out = doOp("CDLGETCOUNT default",null, socket);
         out.write("\r\n".getBytes());
         out.flush();
         assertTrue(read(socket).contains("5"));

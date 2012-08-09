@@ -37,7 +37,7 @@ public class MultiMapTest extends ProtocolTest {
     }
 
     private List<String> put(Socket socket, byte[] key, byte[] value, long ttl) throws IOException {
-        OutputStream out = doOp("MMPUT 1 default " + ttl + " #2", "" + key.length + " " + value.length, socket);
+        OutputStream out = doOp("MMPUT default " + ttl + " #2", "" + key.length + " " + value.length, socket);
         out.write(key);
         out.write(value);
         out.write("\r\n".getBytes());

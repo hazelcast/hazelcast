@@ -47,7 +47,6 @@ import java.util.logging.Level;
 import static com.hazelcast.impl.BaseManager.getInstanceType;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.impl.Constants.ResponseTypes.RESPONSE_SUCCESS;
-import static com.hazelcast.nio.IOUtil.addDelta;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -67,9 +66,6 @@ public class ClientHandlerService implements ConnectionListener {
         this.node = node;
         this.logger = node.getLogger(this.getClass().getName());
         node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
-
-
-        
         registerHandler(Command.UNKNOWN, unknownOperationHandler);
         registerHandler(Command.AUTH, new ClientAuthenticateHandler());
         registerHandler(Command.MGET, new MapGetHandler());
@@ -143,16 +139,14 @@ public class ClientHandlerService implements ConnectionListener {
         registerHandler(Command.LOCK_LOCK, new LockOperationHandler());
         registerHandler(Command.LOCK_TRYLOCK, new LockOperationHandler());
         registerHandler(Command.LOCK_UNLOCK, new UnlockOperationHandler());
-        registerHandler(Command.LOCK_FORCE_UNLOCK, new UnlockOperationHandler());;
+        registerHandler(Command.LOCK_FORCE_UNLOCK, new UnlockOperationHandler());
+        ;
         registerHandler(Command.LOCK_IS_LOCKED, new IsLockedOperationHandler());
         registerHandler(Command.TPUBLISH, new TopicPublishHandler());
         registerHandler(Command.TADDLISTENER, new TopicAddListenerHandler());
         registerHandler(Command.DESTROY, new DestroyHandler());
-
 //        SEMATTACHDETACHPERMITS, SEMCANCELACQUIRE, SEMDESTROY, SEM_DRAIN_PERMITS, SEMGETATTACHEDPERMITS,
 //                SEMGETAVAILPERMITS, SEMREDUCEPERMITS, SEMRELEASE, SEMTRYACQUIRE,
-
-
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
         registerHandler(CONCURRENT_MAP_PUT_AND_UNLOCK.getValue(), new MapPutAndUnlockHandler());
         registerHandler(CONCURRENT_MAP_PUT_ALL.getValue(), new MapPutAllHandler());
@@ -248,25 +242,24 @@ public class ClientHandlerService implements ConnectionListener {
         clientOperationHandlers[operation] = handler;
     }
 
-    void registerHandler(Command command, ClientOperationHandler handler){
-        commandHandlers[command.getId()] = handler;
+    void registerHandler(Command command, ClientOperationHandler handler) {
+        commandHandlers[command.getValue()] = handler;
     }
-
 
     public void handle(Protocol protocol) {
         checkFirstCall();
-        ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
-        CallContext callContext = clientEndpoint.getCallContext(0);
-        CommandHandler handler = commandHandlers[protocol.getCommand().getId()];
+        ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
+        CallContext callContext = clientEndpoint.getCallContext(protocol.threadId != -1 ? protocol.threadId : clientEndpoint.hashCode());
+        CommandHandler handler = commandHandlers[protocol.command.getValue()];
         if (handler == null) {
             handler = unknownOperationHandler;
         }
-        if (!clientEndpoint.isAuthenticated() && !Command.AUTH.equals(protocol.getCommand())) {
-            checkAuth(protocol.getConnection());
+        if (!clientEndpoint.isAuthenticated() && !Command.AUTH.equals(protocol.command)) {
+            checkAuth(protocol.conn);
             return;
         }
         ClientRequestHandler clientRequestHandler = new ClientProtocolRequestHandler(node, protocol, callContext,
-                handler, clientEndpoint.getSubject(), protocol.getConnection());
+                handler, clientEndpoint.getSubject(), protocol.conn);
         int hash = hash(callContext.getThreadId(), THREAD_COUNT);
         workers[hash].addWork(clientRequestHandler);
     }
@@ -425,16 +418,16 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            Data item = new Data(protocol.getBuffers()[0].array());
+            String name = protocol.args[0];
+            Data item = new Data(protocol.buffers[0].array());
             IQueue<Data> queue = node.factory.getQueue(name);
             boolean result = false;
             try {
-                if (Command.QPUT.equals(protocol.getCommand())){
+                if (Command.QPUT.equals(protocol.command)) {
                     queue.put(item);
                     result = true;
                 } else {
-                    long timeout = Long.valueOf(protocol.getArgs()[1]);
+                    long timeout = Long.valueOf(protocol.args[1]);
                     if (timeout == 0) {
                         result = queue.offer(item);
                     } else {
@@ -466,14 +459,14 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             IQueue<Data> queue = node.factory.getQueue(name);
             Data result;
             try {
-                if (Command.QTAKE.equals(protocol.getCommand())){
+                if (Command.QTAKE.equals(protocol.command)) {
                     result = queue.take();
                 } else {
-                    long timeout = Long.valueOf(protocol.getArgs()[1]);
+                    long timeout = Long.valueOf(protocol.args[1]);
                     if (timeout == 0) {
                         result = queue.poll();
                     } else {
@@ -498,8 +491,8 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            Data item = new Data(protocol.getBuffers()[0].array());
+            String name = protocol.args[0];
+            Data item = new Data(protocol.buffers[0].array());
             IQueue<Data> queue = node.factory.getQueue(name);
             boolean removed = queue.remove(item);
             return protocol.success(String.valueOf(removed));
@@ -513,7 +506,7 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             Data entry = (Data) node.factory.getQueue(name).peek();
             return protocol.success(ByteBuffer.wrap(entry.buffer));
         }
@@ -526,7 +519,7 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             return protocol.success(String.valueOf(node.factory.getQueue(name).size()));
         }
     }
@@ -538,8 +531,8 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            Data data = new Data(protocol.getBuffers()[0].array());
+            String name = protocol.args[0];
+            Data data = new Data(protocol.buffers[0].array());
             node.factory.getTopic(name).publish(data);
             return protocol.success();
         }
@@ -556,7 +549,7 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             return protocol.success(String.valueOf(node.factory.getQueue(name).remainingCapacity()));
         }
     }
@@ -573,7 +566,7 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             Data[] entries = node.factory.getQueue(name).toArray(new Data[0]);
             ByteBuffer[] buffers = new ByteBuffer[entries.length];
             for (int i = 0; i < entries.length; i++) {
@@ -600,8 +593,8 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String type = protocol.getArgs()[0];
-            String name = protocol.getArgs()[1];
+            String type = protocol.args[0];
+            String name = protocol.args[1];
             if (InstanceType.MAP.toString().equalsIgnoreCase(type)) {
                 node.factory.getMap(name).destroy();
             } else if (InstanceType.QUEUE.toString().equalsIgnoreCase(type)) {
@@ -638,7 +631,7 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            return protocol.success(String.valueOf(node.factory.getIdGenerator(protocol.getArgs()[0]).newId()));
+            return protocol.success(String.valueOf(node.factory.getIdGenerator(protocol.args[0]).newId()));
         }
     }
 
@@ -649,9 +642,9 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            Data key = new Data(protocol.getBuffers()[0].array());
-            Data value = new Data(protocol.getBuffers()[1].array());
+            String name = protocol.args[0];
+            Data key = new Data(protocol.buffers[0].array());
+            Data value = new Data(protocol.buffers[1].array());
             return protocol.success(String.valueOf(node.factory.getMultiMap(name).put(key, value)));
         }
     }
@@ -663,8 +656,8 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            Data key = new Data(protocol.getBuffers()[0].array());
+            String name = protocol.args[0];
+            Data key = new Data(protocol.buffers[0].array());
             return protocol.success(String.valueOf(node.factory.getMultiMap(name).valueCount(key)));
         }
     }
@@ -682,11 +675,11 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            Data key = new Data(protocol.getBuffers()[0].array());
+            String name = protocol.args[0];
+            Data key = new Data(protocol.buffers[0].array());
             Data value = null;
-            if (protocol.getBuffers().length > 1) {
-                value = new Data(protocol.getBuffers()[1].array());
+            if (protocol.buffers.length > 1) {
+                value = new Data(protocol.buffers[1].array());
                 return protocol.success(String.valueOf(node.factory.getMap(name).remove(key, value)));
             }
             return protocol.success(String.valueOf(node.factory.getMap(name).remove(key)));
@@ -859,8 +852,8 @@ public class ClientHandlerService implements ConnectionListener {
         public Protocol processCall(Node node, Protocol protocol) {
             PartitionService partitionService = factory.getPartitionService();
             List<String> args = new ArrayList<String>();
-            if (protocol.getBuffers().length > 0) {
-                Partition partition = partitionService.getPartition(new Data(protocol.getBuffers()[0].array()));
+            if (protocol.buffers.length > 0) {
+                Partition partition = partitionService.getPartition(new Data(protocol.buffers[0].array()));
                 args.add(String.valueOf(partition.getPartitionId()));
                 args.add(partition.getOwner().getInetSocketAddress().toString());
             } else {
@@ -885,11 +878,11 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            long value = Long.valueOf(protocol.getArgs()[1]);
+            String name = protocol.args[0];
+            long value = Long.valueOf(protocol.args[1]);
             long expectedValue = 0;
-            if (protocol.getArgs().length > 2) {
-                expectedValue = Long.valueOf(protocol.getArgs()[2]);
+            if (protocol.args.length > 2) {
+                expectedValue = Long.valueOf(protocol.args[2]);
             }
             Object response = processCall((AtomicNumberProxy) node.factory.getAtomicNumber(name), value, expectedValue);
             return protocol.success(response.toString());
@@ -937,12 +930,12 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            Integer value = protocol.getArgs().length > 1 ? Integer.valueOf(protocol.getArgs()[1]) : 0;
+            String name = protocol.args[0];
+            Integer value = protocol.args.length > 1 ? Integer.valueOf(protocol.args[1]) : 0;
             final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) node.factory.getCountDownLatch(name);
             Object response = null;
             try {
-                response = processCall(cdlProxy, value, protocol.getConnection().getEndPoint());
+                response = processCall(cdlProxy, value, protocol.conn.getEndPoint());
             } catch (Exception e) {
                 return protocol.error(null, e.getMessage());
             }
@@ -987,8 +980,8 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            Integer value = protocol.getArgs().length > 1 ? Integer.valueOf(protocol.getArgs()[1]) : 0;
+            String name = protocol.args[0];
+            Integer value = protocol.args.length > 1 ? Integer.valueOf(protocol.args[1]) : 0;
             final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) node.factory.getCountDownLatch(name);
             Member m = cdlProxy.getOwner();
             return protocol.success(m.getInetSocketAddress().toString());
@@ -1228,16 +1221,16 @@ public class ClientHandlerService implements ConnectionListener {
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
             Credentials credentials;
-            String[] args = protocol.getArgs();
+            String[] args = protocol.args;
             if (node.securityContext == null) {
                 if (args.length < 2) {
                     throw new RuntimeException("Should provide both username and password");
                 }
                 credentials = new UsernamePasswordCredentials(args[0], args[1]);
             } else {
-                credentials = (Credentials) toObject(new Data(protocol.getBuffers()[0].array()));
+                credentials = (Credentials) toObject(new Data(protocol.buffers[0].array()));
             }
-            boolean authenticated = doAuthenticate(node, credentials, protocol.getConnection());
+            boolean authenticated = doAuthenticate(node, credentials, protocol.conn);
             return authenticated ? protocol.success() : protocol.error(null);
         }
 
@@ -1325,11 +1318,11 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            int size = protocol.getBuffers() != null && protocol.getBuffers().length > 0 ? protocol.getBuffers().length : 0;
+            String name = protocol.args[0];
+            int size = protocol.buffers != null && protocol.buffers.length > 0 ? protocol.buffers.length : 0;
             Map map = new HashMap();
             for (int i = 0; i < size; i++) {
-                map.put(new Data(protocol.getBuffers()[i].array()), new Data(protocol.getBuffers()[++i].array()));
+                map.put(new Data(protocol.buffers[i].array()), new Data(protocol.buffers[++i].array()));
             }
             node.factory.getMap(name).putAll(map);
             return protocol.success();
@@ -1337,13 +1330,12 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     private class MapPutHandler extends ClientMapOperationHandlerWithTTL {
-        
+
         AtomicLong counter = new AtomicLong();
         AtomicLong time = new AtomicLong();
 
         @Override
         protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
-
             counter.incrementAndGet();
             MProxy mproxy = (MProxy) map;
             Object v = value;
@@ -1352,19 +1344,18 @@ public class ClientHandlerService implements ConnectionListener {
             }
             if (ttl <= 0) {
                 Data result = (Data) map.put(key, v);
-                long begin;
-                if(value.buffer.length > 20)
-                     begin = Long.valueOf(new String(value.buffer, 6, value.buffer.length-6));
-                else
-                    begin = Long.valueOf(new String(value.buffer));
+//                long begin;
+//                if (value.buffer.length > 20)
+//                    begin = Long.valueOf(new String(value.buffer, 6, value.buffer.length - 6));
+//                else
+//                    begin = Long.valueOf(new String(value.buffer));
 //
-                time.addAndGet(System.nanoTime()-begin);
-              if(counter.get()%100000==0){
-                  long c = counter.getAndSet(0);
-                  System.out.println("counter = " + c);
-                  System.out.println("Average time = " + (time.getAndSet(0)/c));
-
-              }
+//                time.addAndGet(System.nanoTime() - begin);
+//                if (counter.get() % 100000 == 0) {
+//                    long c = counter.getAndSet(0);
+//                    System.out.println("counter = " + c);
+//                    System.out.println("Average time = " + (time.getAndSet(0) / c));
+//                }
                 return result;
             } else {
                 return (Data) map.put(key, v, ttl, TimeUnit.MILLISECONDS);
@@ -1410,10 +1401,10 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String[] args = protocol.getArgs();
+            String[] args = protocol.args;
             final IMap<Object, Object> map = (IMap) factory.getMap(args[0]);
             final long ttl = (args.length > 1) ? Long.valueOf(args[1]) : 0;
-            Data value = processMapOp(map, new Data(protocol.getBuffers()[0].array()), new Data(protocol.getBuffers()[1].array()), ttl);
+            Data value = processMapOp(map, new Data(protocol.buffers[0].array()), new Data(protocol.buffers[1].array()), ttl);
             Boolean bValue = (Boolean) toObject(value);
             return protocol.success(String.valueOf(bValue));
         }
@@ -1444,14 +1435,14 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String[] args = protocol.getArgs();
+            String[] args = protocol.args;
             String name = args[0];
             final long ttl = Integer.parseInt(args[1]);
             final IMap<Object, Object> map = (IMap) factory.getMap(name);
             Data value;
             try {
-//                System.out.println("key is " + new String(protocol.getBuffers()[0].array()));
-                value = (Data) map.tryRemove(new Data(protocol.getBuffers()[0].array()), ttl, TimeUnit.MILLISECONDS);
+//                System.out.println("key is " + new String(protocol.buffers[0].array()));
+                value = (Data) map.tryRemove(new Data(protocol.buffers[0].array()), ttl, TimeUnit.MILLISECONDS);
 //                System.out.println("VALUE is " + value);
             } catch (TimeoutException e) {
                 return protocol.success("timeout");
@@ -1486,10 +1477,10 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            long ttl = protocol.getArgs().length > 1 ? Long.valueOf(protocol.getArgs()[1]) : 0;
-            Data key = new Data(protocol.getBuffers()[0].array());
-            Data value = new Data(protocol.getBuffers()[1].array());
+            String name = protocol.args[0];
+            long ttl = protocol.args.length > 1 ? Long.valueOf(protocol.args[1]) : 0;
+            Data key = new Data(protocol.buffers[0].array());
+            Data value = new Data(protocol.buffers[1].array());
             Data oldValue = processMapOp(node.factory.getMap(name), key, value, ttl);
             return protocol.success(oldValue == null ? null : ByteBuffer.wrap(oldValue.buffer));
         }
@@ -1513,11 +1504,11 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            int size = protocol.getBuffers() != null && protocol.getBuffers().length > 0 ? protocol.getBuffers().length : 0;
+            String name = protocol.args[0];
+            int size = protocol.buffers != null && protocol.buffers.length > 0 ? protocol.buffers.length : 0;
             Set<Object> set = new HashSet<Object>();
             for (int i = 0; i < size; i++) {
-                set.add(new Data(protocol.getBuffers()[i].array()));
+                set.add(new Data(protocol.buffers[i].array()));
             }
             Map<Object, Object> map = node.factory.getMap(name).getAll(set);
             ByteBuffer[] buffers = new ByteBuffer[size];
@@ -1557,8 +1548,8 @@ public class ClientHandlerService implements ConnectionListener {
     private class MapGetHandler extends ClientOperationHandler {
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            byte[] key = protocol.getBuffers()[0].array();
+            String name = protocol.args[0];
+            byte[] key = protocol.buffers[0].array();
             Data value = (Data) node.factory.getMap(name).get(new Data(key));
             return protocol.success(value == null ? null : ByteBuffer.wrap(value.buffer));
         }
@@ -1629,16 +1620,16 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             Data key = null;
             Data oldValue = null;
             Data newValue = null;
-            if (protocol.getBuffers() != null && protocol.getBuffers().length > 0) {
-                key = new Data(protocol.getBuffers()[0].array());
-                if (protocol.getBuffers().length > 1) {
-                    oldValue = new Data(protocol.getBuffers()[1].array());
-                    if (protocol.getBuffers().length > 2) {
-                        newValue = new Data(protocol.getBuffers()[2].array());
+            if (protocol.buffers != null && protocol.buffers.length > 0) {
+                key = new Data(protocol.buffers[0].array());
+                if (protocol.buffers.length > 1) {
+                    oldValue = new Data(protocol.buffers[1].array());
+                    if (protocol.buffers.length > 2) {
+                        newValue = new Data(protocol.buffers[2].array());
                     } else {
                         return protocol.error(null, "New value is missing");
                     }
@@ -1671,8 +1662,8 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            Data key = new Data(protocol.getBuffers()[0].array());
+            String name = protocol.args[0];
+            Data key = new Data(protocol.buffers[0].array());
             IMap<Object, Object> map = (IMap) factory.getMap(name);
             boolean contains = map.containsKey(key);
             return protocol.success(String.valueOf(contains));
@@ -1685,8 +1676,8 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            Data value = new Data(protocol.getBuffers()[0].array());
+            String name = protocol.args[0];
+            Data value = new Data(protocol.buffers[0].array());
             IMap<Object, Object> map = (IMap) factory.getMap(name);
             boolean contains = map.containsValue(value);
             return protocol.success(String.valueOf(contains));
@@ -1747,18 +1738,18 @@ public class ClientHandlerService implements ConnectionListener {
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
 //            System.out.println("Locking from " + ThreadContext.get().getCallContext().getThreadId());
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             long timeout = -1;
-            if (protocol.getCommand().equals(Command.MTRYLOCK)) {
-                if (protocol.getArgs().length > 0)
-                    timeout = Long.valueOf(protocol.getArgs()[1]);
+            if (protocol.command.equals(Command.MTRYLOCK)) {
+                if (protocol.args.length > 0)
+                    timeout = Long.valueOf(protocol.args[1]);
                 else
                     timeout = 0;
             }
             boolean locked = true;
             Data key = null;
-            if (protocol.getBuffers() != null && protocol.getBuffers().length > 0) {
-                key = new Data(protocol.getBuffers()[0].array());
+            if (protocol.buffers != null && protocol.buffers.length > 0) {
+                key = new Data(protocol.buffers[0].array());
             }
             IMap<Object, Object> map = (IMap) factory.getMap(name);
             if (key == null) {
@@ -1808,10 +1799,10 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             Data key = null;
-            if (protocol.getBuffers().length > 0) {
-                key = new Data(protocol.getBuffers()[0].array());
+            if (protocol.buffers.length > 0) {
+                key = new Data(protocol.buffers[0].array());
             } else {
                 protocol.error(null, "key", "is", "missing");
             }
@@ -1863,8 +1854,8 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
-            long timeout = Long.valueOf(protocol.getArgs()[1]);
+            String name = protocol.args[0];
+            long timeout = Long.valueOf(protocol.args[1]);
             IMap<Object, Object> map = (IMap) factory.getMap(name);
             boolean islocked = map.lockMap(timeout, TimeUnit.MILLISECONDS);
             return protocol.success(String.valueOf(islocked));
@@ -1889,7 +1880,7 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             IMap<Object, Object> map = (IMap) factory.getMap(name);
             processMapOp(map, null, null);
             return protocol.success();
@@ -1928,12 +1919,12 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             ILock lock = node.factory.getLock(name);
             try {
-                if (Command.LOCK_TRYLOCK.equals(protocol.getCommand())) {
-                    if (protocol.getArgs().length > 1) {
-                        return protocol.success(String.valueOf(lock.tryLock(Long.valueOf(protocol.getArgs()[1]),
+                if (Command.LOCK_TRYLOCK.equals(protocol.command)) {
+                    if (protocol.args.length > 1) {
+                        return protocol.success(String.valueOf(lock.tryLock(Long.valueOf(protocol.args[1]),
                                 TimeUnit.MILLISECONDS)));
                     } else {
                         return protocol.success(String.valueOf(lock.tryLock()));
@@ -1960,7 +1951,7 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             ILock lock = node.factory.getLock(name);
             return protocol.success(String.valueOf(lock.isLocked()));
         }
@@ -1980,11 +1971,11 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             ILock lock = node.factory.getLock(name);
-            if (Command.LOCK_UNLOCK.equals(protocol.getCommand())) {
+            if (Command.LOCK_UNLOCK.equals(protocol.command)) {
                 lock.unlock();
-            } else if (Command.LOCK_FORCE_UNLOCK.equals(protocol.getCommand())) {
+            } else if (Command.LOCK_FORCE_UNLOCK.equals(protocol.command)) {
                 lock.forceUnlock();
             }
             return protocol.success();
@@ -2013,8 +2004,8 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String type = protocol.getArgs()[0];
-            String name = protocol.getArgs()[1];
+            String type = protocol.args[0];
+            String name = protocol.args[1];
             if ("map".equals(type)) {
                 Entries entries = (Entries) node.factory.getMap(name).entrySet();
                 Collection<Map.Entry> colEntries = entries.getKeyValues();
@@ -2086,8 +2077,8 @@ public class ClientHandlerService implements ConnectionListener {
     private class MapIterateKeysHandler extends ClientCollectionOperationHandler {
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String type = protocol.getArgs()[0];
-            String name = protocol.getArgs()[1];
+            String type = protocol.args[0];
+            String name = protocol.args[1];
             if ("map".equals(type)) {
                 Entries entries = (Entries) node.factory.getMap(name).keySet();
                 Collection<Map.Entry> colEntries = entries.getKeyValues();
@@ -2154,14 +2145,14 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
-            String[] args = protocol.getArgs();
+            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
+            String[] args = protocol.args;
             String name = args[0];
             boolean includeValue = Boolean.valueOf(args[1]);
             IMap<Object, Object> map = (IMap) factory.getMap(name);
             Data key = null;
-            if (protocol.getBuffers().length > 0) {
-                key = new Data(protocol.getBuffers()[0].array());
+            if (protocol.buffers.length > 0) {
+                key = new Data(protocol.buffers[0].array());
             }
             clientEndpoint.addThisAsListener(map, key, includeValue);
             return protocol.success();
@@ -2174,12 +2165,12 @@ public class ClientHandlerService implements ConnectionListener {
     private class MapRemoveListenerHandler extends ClientOperationHandler {
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             Data key = null;
-            if (protocol.getBuffers().length > 0) {
-                key = new Data(protocol.getBuffers()[0].array());
+            if (protocol.buffers.length > 0) {
+                key = new Data(protocol.buffers[0].array());
             }
-            ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
+            ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
             IMap map = factory.getMap(name);
             clientEndpoint.removeThisListener(map, key);
             return protocol.success();
@@ -2193,9 +2184,9 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
-            String name = protocol.getArgs()[0];
-            boolean includeValue = Boolean.valueOf(protocol.getArgs()[1]);
+            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
+            String name = protocol.args[0];
+            boolean includeValue = Boolean.valueOf(protocol.args[1]);
             IQueue<Object> queue = (IQueue) factory.getQueue(name);
             ItemListener itemListener = new ClientItemListenerProtocolImpl(clientEndpoint, name);
             queue.addItemListener(itemListener, includeValue);
@@ -2204,8 +2195,6 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public void processCall(Node node, Packet packet) {
-
-
         }
     }
 
@@ -2213,8 +2202,8 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
-            String name = protocol.getArgs()[0];
+            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
+            String name = protocol.args[0];
             ITopic<Object> topic = (ITopic) factory.getTopic(name);
             MessageListener messageListener = new ClientMessageListenerProtocolImpl(clientEndpoint, name);
             topic.addMessageListener(messageListener);
@@ -2230,8 +2219,8 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
-            String name = protocol.getArgs()[0];
+            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
+            String name = protocol.args[0];
             IQueue<Object> queue = (IQueue) factory.getQueue(name);
             ItemListener itemListener = clientEndpoint.queueItemListeners.remove(name);
             queue.removeItemListener(itemListener);
@@ -2246,16 +2235,16 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
-            String[] args = protocol.getArgs();
+            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
+            String[] args = protocol.args;
             String type = args[0];
             String name = args[1];
             boolean includeValue = Boolean.valueOf(args[2]);
             IMap<Object, Object> map = (IMap) factory.getMap(name);
             Data key = null;
             if ("map".equals(type)) {
-                if (protocol.getBuffers() != null && protocol.getBuffers().length > 0) {
-                    key = new Data(protocol.getBuffers()[0].array());
+                if (protocol.buffers != null && protocol.buffers.length > 0) {
+                    key = new Data(protocol.buffers[0].array());
                 }
 //                System.out.println(includeValue + " Key is " + key);
                 clientEndpoint.addThisAsListener(map, key, includeValue);
@@ -2376,7 +2365,7 @@ public class ClientHandlerService implements ConnectionListener {
         public void onMessage(Message msg) {
             DataMessage dm = (DataMessage) msg;
 //            System.out.println("On message is called" + ((DataMessage) msg).getMessageData());
-            Protocol p = new Protocol(clientEndpoint.conn, Command.MESSAGE, "-1", false, new String[]{name},
+            Protocol p = new Protocol(clientEndpoint.conn, Command.MESSAGE, new String[]{name},
                     ByteBuffer.wrap(dm.getMessageData().buffer));
             clientEndpoint.sendPacket(p);
         }
@@ -2385,13 +2374,13 @@ public class ClientHandlerService implements ConnectionListener {
     private class RemoveListenerHandler extends ClientOperationHandler {
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String type = protocol.getArgs()[0];
-            String name = protocol.getArgs()[1];
+            String type = protocol.args[0];
+            String name = protocol.args[1];
             Data key = null;
-            if (protocol.getBuffers() != null && protocol.getBuffers().length > 0) {
-                key = new Data(protocol.getBuffers()[0].array());
+            if (protocol.buffers != null && protocol.buffers.length > 0) {
+                key = new Data(protocol.buffers[0].array());
             }
-            ClientEndpoint clientEndpoint = getClientEndpoint(protocol.getConnection());
+            ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
             if ("map".equals(type)) {
                 IMap map = factory.getMap(name);
                 clientEndpoint.removeThisListener(map, key);
@@ -2438,7 +2427,7 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            boolean added = node.factory.getList(protocol.getArgs()[0]).add(new Data(protocol.getBuffers()[0].array()));
+            boolean added = node.factory.getList(protocol.args[0]).add(new Data(protocol.buffers[0].array()));
             return protocol.success(String.valueOf(added));
         }
     }
@@ -2453,7 +2442,7 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            boolean added = node.factory.getSet(protocol.getArgs()[0]).add(new Data(protocol.getBuffers()[0].array()));
+            boolean added = node.factory.getSet(protocol.args[0]).add(new Data(protocol.buffers[0].array()));
             return protocol.success(String.valueOf(added));
         }
     }
@@ -2467,7 +2456,7 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String[] args = protocol.getArgs();
+            String[] args = protocol.args;
             if (args.length < 4) {
             }
             String type = args[0];
@@ -2475,10 +2464,10 @@ public class ClientHandlerService implements ConnectionListener {
             boolean result = false;
             if ("set".equals(type)) {
                 ISet set = node.factory.getSet(name);
-                result = set.remove(new Data(protocol.getBuffers()[0].array()));
+                result = set.remove(new Data(protocol.buffers[0].array()));
             } else if ("list".equals(type)) {
                 IList list = node.factory.getList(name);
-                result = list.remove(new Data(protocol.getBuffers()[0].array()));
+                result = list.remove(new Data(protocol.buffers[0].array()));
             }
             return protocol.success(String.valueOf(result));
         }
@@ -2512,10 +2501,10 @@ public class ClientHandlerService implements ConnectionListener {
                 response = processCall(node, protocol);
             } catch (RuntimeException e) {
                 logger.log(Level.WARNING,
-                        "exception during handling " + protocol.getCommand() + ": " + e.getMessage(), e);
-                response = new Protocol(protocol.getConnection(), Command.ERROR, new String[]{protocol.getFlag(), e.getMessage()});
+                        "exception during handling " + protocol.command + ": " + e.getMessage(), e);
+                response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{e.getMessage()});
             }
-            sendResponse(response, protocol.getConnection());
+            sendResponse(response, protocol.conn);
         }
 
         protected void sendResponse(SocketWritable request, Connection conn) {
@@ -2538,7 +2527,7 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            return protocol.error(null, "unknown_command", protocol.getCommand().toString());
+            return protocol.error(null, "unknown_command", protocol.command.toString());
         }
     }
 
@@ -2547,13 +2536,13 @@ public class ClientHandlerService implements ConnectionListener {
 
         @Override
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.getArgs()[0];
+            String name = protocol.args[0];
             Data key = null;
             Data value = null;
-            if (protocol.getBuffers() != null && protocol.getBuffers().length > 0) {
-                key = new Data(protocol.getBuffers()[0].array());
-                if (protocol.getBuffers().length > 1) {
-                    value = new Data(protocol.getBuffers()[1].array());
+            if (protocol.buffers != null && protocol.buffers.length > 0) {
+                key = new Data(protocol.buffers[0].array());
+                if (protocol.buffers.length > 1) {
+                    value = new Data(protocol.buffers[1].array());
                 }
             }
             IMap<Object, Object> map = (IMap) factory.getMap(name);
@@ -2583,10 +2572,10 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String[] args = protocol.getArgs();
+            String[] args = protocol.args;
             final IMap<Object, Object> map = (IMap) factory.getMap(args[0]);
             final long ttl = (args.length > 1) ? Long.valueOf(args[1]) : 0;
-            Data value = processMapOp(map, new Data(protocol.getBuffers()[0].array()), protocol.getBuffers().length > 1 ? new Data(protocol.getBuffers()[1].array()) : null, ttl);
+            Data value = processMapOp(map, new Data(protocol.buffers[0].array()), protocol.buffers.length > 1 ? new Data(protocol.buffers[1].array()) : null, ttl);
             return protocol.success((value == null) ? null : ByteBuffer.wrap(value.buffer));
         }
 

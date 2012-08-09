@@ -40,18 +40,18 @@ public enum Command {
     NEWID(),
     TPUBLISH(), TADDLISTENER(), MESSAGE();
 
-    private final byte id;
+    private final byte value;
 
     static byte idGen= 0;
     public final static int LENGTH = 200;
 
 
     private Command() {
-        this.id = nextId();
+        this.value = nextId();
     }
 
-    public byte getId() {
-        return id;
+    public byte getValue() {
+        return value;
     }
 
     private synchronized byte nextId() {

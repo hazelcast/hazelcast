@@ -81,7 +81,6 @@ public class SimpleMapTest extends ProtocolTest{
         InputStreamReader reader = new InputStreamReader(socket.getInputStream(), "UTF-8");
         BufferedReader buf = new BufferedReader(reader);
         String commandLine = buf.readLine();
-//        System.out.println("Reading " + commandLine);
         if(commandLine == null){
             return Collections.emptyList();
         }
@@ -92,15 +91,11 @@ public class SimpleMapTest extends ProtocolTest{
             int count = Integer.valueOf(split[split.length - 1].substring(1));
             for (int i = 0; i < count; i++) {
                 int s = Integer.valueOf(tokens[i]);
-//                System.out.println("Binary "+ i + ":: size is " + s);
                 char[] value = new char[s];
                 buf.read(value);
                 values.add(String.valueOf(value));
             }
         }
-//        if (values.size()  == 0) {
-//            values.addAll(Arrays.asList(split));
-//        }
         return values;
     }
 
@@ -138,27 +133,16 @@ public class SimpleMapTest extends ProtocolTest{
                 public void run() {
                     try {
                         Socket socket  = connect0();
-//                        long t = 10;
                         while (true) {
 
 //                            String key = String.valueOf((int) (Math.random() * ENTRY_COUNT));
                             String key = "1";
-//                            ByteBuffer bb = ByteBuffer.allocate(8);
-//                            final long time = t++;
                             long time = System.nanoTime();
-                            
-//                            byte[] value = bb.putLong(time).array();
                             byte[] value = String.valueOf(time).getBytes();
 //                            byte[] value = new byte[VALUE_SIZE];
-//                            byte[] value = new byte[]{1,1,1,1,1,1,1,1};
-//                            ArrayList<Byte> valueArray = new ArrayList<Byte>(value.length);
-//                            for (byte b : value) {
-//                                valueArray.add(b);
-//                            }
-//                            System.out.println(key + ":: RUNNININGINIGNIGNIN :: "  + time +  " value : " + valueArray);
                             int operation = ((int) (Math.random() * 100));
                             if (operation < GET_PERCENTAGE) {
-                                OutputStream out = doOp0("MGET flag default #1", "" + key.length(), socket);
+                                OutputStream out = doOp0("MGET default #1", "" + key.length(), socket);
                                 out.write(key.getBytes());
                                 out.write(NEWLINE);
                                 out.flush();
@@ -166,7 +150,7 @@ public class SimpleMapTest extends ProtocolTest{
                                 stats.gets.incrementAndGet();
                             } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
 //                                System.out.println("Doing a put");
-                                DataOutputStream out = (DataOutputStream) doOp0("MPUT flag default 0 #2", "" + key.length() + " " + value.length, socket);
+                                DataOutputStream out = (DataOutputStream) doOp0("MPUT default 0 #2", "" + key.length() + " " + value.length, socket);
                                 out.write(key.getBytes());
                                 out.write(value);
                                 out.write(NEWLINE);
@@ -176,7 +160,7 @@ public class SimpleMapTest extends ProtocolTest{
 //                                System.out.println("Latency is" + (Integer.valueOf(response) - Integer.valueOf(new String(value))));
                                 stats.puts.incrementAndGet();
                             } else {
-                                OutputStream out = doOp0("MREMOVE flag default #1", "" + key.length(), socket);
+                                OutputStream out = doOp0("MREMOVE default #1", "" + key.length(), socket);
                                 out.write(key.getBytes());
                                 out.write(NEWLINE);
                                 out.flush();

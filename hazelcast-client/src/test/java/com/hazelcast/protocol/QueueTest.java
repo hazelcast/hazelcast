@@ -37,7 +37,7 @@ public class QueueTest extends ProtocolTest {
     }
 
     private List<String> offer(String item, Socket socket) throws IOException {
-        OutputStream out = doOp("QOFFER 2 default 0 #1", "" + item.getBytes().length, socket);
+        OutputStream out = doOp("QOFFER default 0 #1", "" + item.getBytes().length, socket);
         out.write(item.getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -48,7 +48,7 @@ public class QueueTest extends ProtocolTest {
     public void poll() throws IOException {
         String item = "1";
         offer(item, socket);
-        OutputStream out = doOp("QPOLL 2 default 0", null, socket);
+        OutputStream out = doOp("QPOLL default 0", null, socket);
         out.flush();
         assertTrue(read(socket).contains(item));
     }
@@ -57,7 +57,7 @@ public class QueueTest extends ProtocolTest {
     public void take() throws IOException {
         String item = "1";
         offer(item, socket);
-        OutputStream out = doOp("QTAKE 2 default", null, socket);
+        OutputStream out = doOp("QTAKE default", null, socket);
         out.flush();
         assertTrue(read(socket).contains(item));
     }
@@ -66,7 +66,7 @@ public class QueueTest extends ProtocolTest {
     public void put() throws IOException {
         String item = "1";
         offer(item, socket);
-        OutputStream out = doOp("QPUT 2 default #1", "" + item.getBytes().length, socket);
+        OutputStream out = doOp("QPUT default #1", "" + item.getBytes().length, socket);
         out.write(item.getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -75,7 +75,7 @@ public class QueueTest extends ProtocolTest {
 
     @Test
     public void addListener() throws IOException {
-        doOp("QADDLISTENER flag default true", null);
+        doOp("QADDLISTENER default true", null);
         assertTrue(read(socket).contains("OK"));
         final String item = "a";
         new Thread(new Runnable() {

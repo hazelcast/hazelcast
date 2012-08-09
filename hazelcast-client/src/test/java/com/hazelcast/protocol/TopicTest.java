@@ -30,7 +30,7 @@ public class TopicTest extends ProtocolTest {
     @Test
     public void publish() throws IOException {
         String message = "m";
-        OutputStream out = doOp("TPUBLISH flag default #1", "" + message.getBytes().length);
+        OutputStream out = doOp("TPUBLISH default #1", "" + message.getBytes().length);
         out.write(message.getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -38,7 +38,7 @@ public class TopicTest extends ProtocolTest {
 
     @Test
     public void addListener() throws IOException {
-        OutputStream out = doOp("TADDLISTENER flag default", null, socket);
+        OutputStream out = doOp("TADDLISTENER default", null, socket);
         out.flush();
         assertTrue(read(socket).contains("OK"));
         final String message = "m";
@@ -46,7 +46,7 @@ public class TopicTest extends ProtocolTest {
             public void run() {
                 try {
                     Socket socket = connect0();
-                    OutputStream out = doOp("TPUBLISH flag default #1", "" + message.getBytes().length, socket);
+                    OutputStream out = doOp("TPUBLISH default #1", "" + message.getBytes().length, socket);
                     out.write(message.getBytes());
                     out.write("\r\n".getBytes());
                     out.flush();

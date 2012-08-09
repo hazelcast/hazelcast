@@ -31,7 +31,7 @@ public class GeneralCommandsTest extends ProtocolTest{
 
     @Test
     public void destroy() throws IOException {
-        OutputStream out = doOp("MGET flag default #1", "1");
+        OutputStream out = doOp("MGET default #1", "1");
         out.write("a".getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -44,7 +44,7 @@ public class GeneralCommandsTest extends ProtocolTest{
 
     @Test
     public void instances() throws IOException {
-        OutputStream out = doOp("MGET flag default #1", "1");
+        OutputStream out = doOp("MGET default #1", "1");
         out.write("a".getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -58,7 +58,7 @@ public class GeneralCommandsTest extends ProtocolTest{
 
     @Test
     public void members() throws IOException {
-        OutputStream out = doOp("MEMBERS flag ", null);
+        OutputStream out = doOp("MEMBERS", null);
         out.flush();
         List<String> list = read(socket);
         for(Member member: Hazelcast.getCluster().getMembers()){

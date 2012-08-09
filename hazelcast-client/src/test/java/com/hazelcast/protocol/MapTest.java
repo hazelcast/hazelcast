@@ -50,7 +50,7 @@ public class MapTest extends ProtocolTest{
         map.put("3", "c");
         map.put("4", "d");
 
-        String commandLine = "MPUTALL 0 default #"+ map.size()*2;
+        String commandLine = "MPUTALL default #"+ map.size()*2;
         StringBuilder sizeLine = new StringBuilder("");
 
         int i = map.keySet().size();
@@ -73,7 +73,7 @@ public class MapTest extends ProtocolTest{
         out.write("\r\n".getBytes());
         out.flush();
         assertTrue(read(socket).contains("OK"));
-        doOp("ENTRYSET 0 map default", null);
+        doOp("ENTRYSET map default", null);
         List<String> keys = read(socket);
         System.out.println("keys = " + keys);
     }
@@ -83,7 +83,7 @@ public class MapTest extends ProtocolTest{
         String key = "1";
         String value = "a";
                
-        OutputStream out = doOp("MPUTIFABSENT 1 default #2", "1 1");
+        OutputStream out = doOp("MPUTIFABSENT default #2", "1 1");
         out.write(key.getBytes());
         out.write(value.getBytes());
         out.write("\r\n".getBytes());
@@ -97,7 +97,7 @@ public class MapTest extends ProtocolTest{
         String key = "1";
         String value = "a";
 
-        OutputStream out = doOp("MREPLACEIFNOTNULL 1 default #2", "1 1");
+        OutputStream out = doOp("1 MREPLACEIFNOTNULL 1 default #2", "1 1");
         out.write(key.getBytes());
         out.write(value.getBytes());
         out.write("\r\n".getBytes());
@@ -111,7 +111,7 @@ public class MapTest extends ProtocolTest{
         String key = "1";
         String value = "a";
 
-        OutputStream out = doOp("MREMOVEIFSAME 1 default #2", "1 1");
+        OutputStream out = doOp("MREMOVEIFSAME default #2", "1 1");
         out.write(key.getBytes());
         out.write(value.getBytes());
         out.write("\r\n".getBytes());
@@ -124,7 +124,7 @@ public class MapTest extends ProtocolTest{
         String key = "1";
         put(socket, key.getBytes(), "a".getBytes(), 0);
 
-        OutputStream out = doOp("MTRYREMOVE 1 default 10 #1", "1");
+        OutputStream out = doOp("MTRYREMOVE default 10 #1", "1");
         out.write(key.getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -138,7 +138,7 @@ public class MapTest extends ProtocolTest{
         String key = "1";
         String value = "a";
 
-        OutputStream out = doOp("MREPLACEIFSAME 1 default #3", "1 1 1");
+        OutputStream out = doOp("MREPLACEIFSAME default #3", "1 1 1");
         out.write(key.getBytes());
         out.write(value.getBytes());
         out.write("b".getBytes());
@@ -154,7 +154,7 @@ public class MapTest extends ProtocolTest{
         put(socket, "3".getBytes(), "c".getBytes(), 0);
         put(socket, "4".getBytes(), "d".getBytes(), 0);
 
-        OutputStream out = doOp("MGETALL 0 default 0 #3", "1 1 1");
+        OutputStream out = doOp("MGETALL default 0 #3", "1 1 1");
         out.write("1".getBytes());
         out.write("2".getBytes());
         out.write("4".getBytes());
@@ -169,7 +169,7 @@ public class MapTest extends ProtocolTest{
 
     @Test
     public void tryLock() throws IOException {
-        OutputStream out = doOp("MTRYLOCK 0 default 0 #1", ""+"1".getBytes().length);
+        OutputStream out = doOp("MTRYLOCK default 0 #1", ""+"1".getBytes().length);
         out.write("1".getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -179,7 +179,7 @@ public class MapTest extends ProtocolTest{
     @Test
     public void tryLockNGet() throws IOException {
         put(socket, "1".getBytes(), "a".getBytes(), 0);
-        OutputStream out = doOp("MTRYLOCKANDGET 0 default 0 #1", ""+"1".getBytes().length);
+        OutputStream out = doOp("MTRYLOCKANDGET default 0 #1", ""+"1".getBytes().length);
         out.write("1".getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -188,7 +188,7 @@ public class MapTest extends ProtocolTest{
 
     @Test
     public void lockNunlockKey() throws IOException, InterruptedException {
-        OutputStream out = doOp("MLOCK 0 default 0 #1", ""+"1".getBytes().length);
+        OutputStream out = doOp("MLOCK default #1", ""+"1".getBytes().length);
         out.write("1".getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -203,7 +203,7 @@ public class MapTest extends ProtocolTest{
 
         assertTrue(shouldFail);
 
-        out = doOp("MUNLOCK 0 default #1", ""+"1".getBytes().length);
+        out = doOp("MUNLOCK default #1", ""+"1".getBytes().length);
         out.write("1".getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -218,11 +218,43 @@ public class MapTest extends ProtocolTest{
     }
 
 
+    @Test
+    public void lockNunlockKeyWithWrongThreadId() throws IOException, InterruptedException {
+        OutputStream out = doOp("1 MLOCK 0 default #1", ""+"1".getBytes().length);
+        out.write("1".getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        assertTrue(read(socket).contains("OK"));
+        boolean shouldFail = false;
+        try{
+            putFromAnotherThread("1", "b", 1000);
+            assertFalse(true);
+        }catch (RuntimeException e){
+            shouldFail = true;
+        }
+
+        assertTrue(shouldFail);
+
+        out = doOp("2 MUNLOCK 0 default #1", ""+"1".getBytes().length);
+        out.write("1".getBytes());
+        out.write("\r\n".getBytes());
+        out.flush();
+        assertFalse(read(socket).contains("OK"));
+        try{
+            putFromAnotherThread("1", "b", 1000);
+            assertFalse(true);
+        }catch (RuntimeException e){
+            assertFalse(false);
+        }
+
+    }
+
+
 
     @Test
     public void getMapEntry() throws IOException {
         put(socket, "1".getBytes(), "a".getBytes(), 0);
-        OutputStream out = doOp("MGETENTRY 0 default #1", ""+"1".getBytes().length);
+        OutputStream out = doOp("MGETENTRY default #1", ""+"1".getBytes().length);
         out.write("1".getBytes());
         List<String> entry = read(socket);
         assertTrue(entry.contains("a"));
@@ -233,7 +265,7 @@ public class MapTest extends ProtocolTest{
     public void keySet() throws IOException, InterruptedException {
         put(socket, "1".getBytes(), "a".getBytes(), 0);
         put(socket, "2".getBytes(), "b".getBytes(), 0);
-        doOp("KEYSET 0 map default", null);
+        doOp("KEYSET map default", null);
         List<String> keys = read(socket);
         assertEquals(2, keys.size());
         assertTrue(keys.contains("1"));
@@ -244,7 +276,7 @@ public class MapTest extends ProtocolTest{
     public void entrySet() throws IOException, InterruptedException {
         put(socket, "1".getBytes(), "a".getBytes(), 0);
         put(socket, "2".getBytes(), "b".getBytes(), 0);
-        doOp("ENTRYSET 0 map default", null);
+        doOp("ENTRYSET map default", null);
         List<String> keys = read(socket);
         assertEquals(4, keys.size());
         assertTrue(keys.contains("1"));
@@ -257,7 +289,7 @@ public class MapTest extends ProtocolTest{
     public void containsKey() throws IOException {
         put(socket, "1".getBytes(), "a".getBytes(), 0);
         put(socket, "2".getBytes(), "b".getBytes(), 0);
-        OutputStream out = doOp("MCONTAINSKEY 0 default #1", ""+"1".getBytes().length);
+        OutputStream out = doOp("MCONTAINSKEY default #1", ""+"1".getBytes().length);
         out.write("1".getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -269,7 +301,7 @@ public class MapTest extends ProtocolTest{
     public void containsValue() throws IOException {
         put(socket, "1".getBytes(), "a".getBytes(), 0);
         put(socket, "2".getBytes(), "b".getBytes(), 0);
-        OutputStream out = doOp("MCONTAINSVALUE 0 default #1", ""+"a".getBytes().length);
+        OutputStream out = doOp("MCONTAINSVALUE default #1", ""+"a".getBytes().length);
         out.write("a".getBytes());
         out.write("\r\n".getBytes());
         out.flush();
@@ -279,7 +311,7 @@ public class MapTest extends ProtocolTest{
 
     @Test
     public void addListenerReturnValueTrue() throws IOException, InterruptedException {
-        doOp("MADDLISTENER 3 default true", null);
+        doOp("MADDLISTENER default true", null);
         assertTrue(read(socket).contains("OK"));
         final String value = "a";
         putFromAnotherThread("1", value);
@@ -290,7 +322,7 @@ public class MapTest extends ProtocolTest{
 
     @Test
     public void addListenerReturnValueFalse() throws IOException, InterruptedException {
-        doOp("MADDLISTENER 3 default false", null);
+        doOp("MADDLISTENER default false", null);
         assertTrue(read(socket).contains("OK"));
         final String value = "a";
         putFromAnotherThread("1", value);
@@ -305,7 +337,7 @@ public class MapTest extends ProtocolTest{
         new Thread(new Runnable(){
             public void run() {
                 try {
-                    OutputStream out = doOp("MADDLISTENER 3 default true #1", "" + "2".getBytes().length);
+                    OutputStream out = doOp("MADDLISTENER default true #1", "" + "2".getBytes().length);
                     out.write("b".getBytes());
                     out.write("\r\n".getBytes());
                     out.flush();
@@ -355,7 +387,7 @@ public class MapTest extends ProtocolTest{
     @Test
     public void removeListener() throws IOException, InterruptedException {
         addListenerReturnValueTrue();
-        doOp("REMOVELISTENER 5 map default", null);
+        doOp("REMOVELISTENER map default", null);
         assertTrue(read(socket).contains("OK"));
         putFromAnotherThread("1", "b");
         Thread.sleep(1000);
@@ -394,7 +426,7 @@ public class MapTest extends ProtocolTest{
     }
 
     private List<String> put(Socket socket, byte[] key, byte[] value, long ttl) throws IOException {
-        OutputStream out = doOp("MPUT 1 default " + ttl + " #2", "" + key.length + " " + value.length, socket);
+        OutputStream out = doOp("MPUT default " + ttl + " #2", "" + key.length + " " + value.length, socket);
         out.write(key);
         out.write(value);
         out.write("\r\n".getBytes());
@@ -403,7 +435,7 @@ public class MapTest extends ProtocolTest{
     }
 
     private List<String> get(Socket socket, byte[] keyInByte) throws IOException {
-        OutputStream out = doOp("MGET 2 default #1", "" + keyInByte.length);
+        OutputStream out = doOp("MGET default #1", "" + keyInByte.length);
         out.write(keyInByte);
         out.write("\r\n".getBytes());
         out.flush();

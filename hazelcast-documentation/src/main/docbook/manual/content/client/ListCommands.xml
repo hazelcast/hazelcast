@@ -45,7 +45,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> true
+        OK <flag> true
             ]]></programlisting>
 
         <para>

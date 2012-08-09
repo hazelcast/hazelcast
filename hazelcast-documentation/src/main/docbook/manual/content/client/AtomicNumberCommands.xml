@@ -44,7 +44,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <updatedvalue>
+        OK <flag> <updatedvalue>
             ]]></programlisting>
 
         <para>
@@ -71,7 +71,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <oldvalue>
+        OK <flag> <oldvalue>
             ]]></programlisting>
 
         <para>
@@ -99,7 +99,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <updated?>
+        OK <flag> <updated?>
             ]]></programlisting>
 
         <para>
@@ -127,7 +127,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <oldvalue>
+        OK <flag> <oldvalue>
             ]]></programlisting>
 
         <para>

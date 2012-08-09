@@ -77,7 +77,7 @@ public class ProtocolTest {
     }
 
     private void auth(Socket socket) throws IOException {
-        doOp("AUTH 0 dev dev-pass", null, socket).flush();
+        doOp("AUTH dev dev-pass", null, socket).flush();
         read(socket);
     }
 

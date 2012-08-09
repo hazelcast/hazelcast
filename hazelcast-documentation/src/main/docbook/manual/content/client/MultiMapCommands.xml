@@ -45,7 +45,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <boolean>
+        OK <flag> <boolean>
             ]]></programlisting>
 
         <para>
@@ -86,7 +86,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <boolean>
+        OK <flag> <boolean>
             ]]></programlisting>
 
         <para>
@@ -116,7 +116,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <countofvalues>
+        OK <flag> <countofvalues>
             ]]></programlisting>
 
         <para>

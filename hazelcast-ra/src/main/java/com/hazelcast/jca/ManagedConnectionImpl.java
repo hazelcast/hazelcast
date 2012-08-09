@@ -54,7 +54,7 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection,
     }
 
     public Object getConnection(Subject arg0, ConnectionRequestInfo arg1) throws ResourceException {
-        log(this, "getConnection");
+        log(this, "getConn");
         return conn;
     }
 

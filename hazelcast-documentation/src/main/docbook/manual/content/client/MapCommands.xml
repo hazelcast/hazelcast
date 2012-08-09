@@ -53,9 +53,9 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> #1
-                <size of old_value in bytes>
-                <old_value in bytes>
+        OK <flag> #1
+        <size of old_value in bytes>
+        <old_value in bytes>
             ]]></programlisting>
 
 
@@ -81,9 +81,9 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MPUTTRANSIENT <flag> <name> <ttl> [noreply] #2
-            <size of key in bytes> <size of value in bytes>
-            <key in bytes><value in bytes>
+        MPUTTRANSIENT <flag> <name> <ttl> [noreply] #2
+        <size of key in bytes> <size of value in bytes>
+        <key in bytes><value in bytes>
         ]]></programlisting>
         <para>
             ttl is in milliseconds. If set, the entry will be evicted after ttl milliseconds. If 0, it will leave
@@ -115,9 +115,9 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MSET <flag> <name> <ttl> [noreply] #2
-            <size of key in bytes> <size of value in bytes>
-            <key in bytes><value in bytes>
+        MSET <flag> <name> <ttl> [noreply] #2
+        <size of key in bytes> <size of value in bytes>
+        <key in bytes><value in bytes>
         ]]></programlisting>
         <para>
             ttl is in milliseconds. If set, the entry will be evicted after ttl milliseconds.
@@ -148,9 +148,9 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MTRYPUT <flag> <name> <timeout> #2
-            <size of key in bytes> <size of value in bytes>
-            <key in bytes><value in bytes>
+        MTRYPUT <flag> <name> <timeout> #2
+        <size of key in bytes> <size of value in bytes>
+        <key in bytes><value in bytes>
         ]]></programlisting>
         <para>
             timeout is in milliseconds.
@@ -160,7 +160,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <true or false>
+        OK <flag> <true or false>
             ]]></programlisting>
 
     </sect2>
@@ -181,9 +181,9 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MPUTALL <flag> <name> [noreply] #2N
-            <size of key1> <size of value1> … <size of keyN> <size of valueN>
-            <key1 in bytes> <value1 in bytes> … <keyN in bytes> <valueN in bytes>
+        MPUTALL <flag> <name> [noreply] #2N
+        <size of key1> <size of value1> … <size of keyN> <size of valueN>
+        <key1 in bytes> <value1 in bytes> … <keyN in bytes> <valueN in bytes>
         ]]></programlisting>
 
         <para>
@@ -208,9 +208,9 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MPUTANDUNLOCK <flag> <name> [noreply] #2
-            <size of key in bytes> <size of value in bytes>
-            <key in bytes><value in bytes>
+        MPUTANDUNLOCK <flag> <name> [noreply] #2
+        <size of key in bytes> <size of value in bytes>
+        <key in bytes><value in bytes>
         ]]></programlisting>
 
         <para>
@@ -240,15 +240,15 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MPUTANDUNLOCK <flag> <name> <timeout> #1
-            <size of key in bytes>
-            <key in bytes>
+        MPUTANDUNLOCK <flag> <name> <timeout> #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
 
         <programlisting language="java"><![CDATA[
-            OK <flag> #1
-            <size of value in bytes>
-            <value in bytes>
+        OK <flag> #1
+        <size of value in bytes>
+        <value in bytes>
         ]]></programlisting>
     </sect2>
 
@@ -265,18 +265,18 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MGET <flag> <name> #1
-            <size of key in bytes>
-            <key in bytes>
+        MGET <flag> <name> #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag> #1
-            <size of value in bytes>
-            <value in bytes>
+        OK <flag> #1
+        <size of value in bytes>
+        <value in bytes>
         ]]></programlisting>
 
         <para>
@@ -296,18 +296,18 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MGETALL <flag> <name> #N
-            <size of key1 in bytes> ... <size of keyN in bytes>
-            <key1 in bytes> ... <keyN in bytes>
+        MGETALL <flag> <name> #N
+        <size of key1 in bytes> ... <size of keyN in bytes>
+        <key1 in bytes> ... <keyN in bytes>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag> #N
-            <size of value1 in bytes> ... <size of valueN in bytes>
-            <value1 in bytes> ... <valueN in bytes>
+        OK <flag> #N
+        <size of value1 in bytes> ... <size of valueN in bytes>
+        <value1 in bytes> ... <valueN in bytes>
         ]]></programlisting>
 
         <para>
@@ -328,9 +328,9 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MREMOVE <flag> <name> [noreply] #1
-            <size of key in bytes>
-            <key in bytes>
+        MREMOVE <flag> <name> [noreply] #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
 
         <para>
@@ -339,9 +339,9 @@
         If noreply is provided, server will not return a response. Otherwise
 
         <programlisting language="java"><![CDATA[
-            OK <flag> #1
-            <size of value in bytes>
-            <value in bytes>
+        OK <flag> #1
+        <size of value in bytes>
+        <value in bytes>
         ]]></programlisting>
 
         <para>
@@ -364,9 +364,9 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MTRYREMOVE <flag> <name> <timeout> #1
-            <size of key in bytes>
-            <key in bytes>
+        MTRYREMOVE <flag> <name> <timeout> #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
         <para>
             timeout is in milliseconds.
@@ -376,9 +376,9 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag> #1
-            <size of value in bytes>
-            <value in bytes>
+        OK <flag> #1
+        <size of value in bytes>
+        <value in bytes>
         ]]></programlisting>
 
         <para>
@@ -386,7 +386,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            OK <flag> timeout
+        OK <flag> timeout
         ]]></programlisting>
 
     </sect2>
@@ -403,18 +403,18 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MGETENTRY <flag> <name> #1
-            <size of key in bytes>
-            <key in bytes>
+        MGETENTRY <flag> <name> #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag> <costinbytes> <creationtime> <expirationtime> <hits> <lastaccesstime> <laststoredtime> <lastupdatetime> <version> <isvalid>  #1
-            <size of value in bytes>
-            <value in bytes>
+        OK <flag> <costinbytes> <creationtime> <expirationtime> <hits> <lastaccesstime> <laststoredtime> <lastupdatetime> <version> <isvalid>  #1
+        <size of value in bytes>
+        <value in bytes>
         ]]></programlisting>
         <para>
             if value is null then just OK will be returned. The time values are long representation of java Date values.
@@ -433,16 +433,16 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            KEYSET <flag> <type> <name>
+        KEYSET <flag> <type> <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag> #N
-            <key1 length> ... <keyN length>
-            <key1 in bytes>...<keyN in bytes>
+        OK <flag> #N
+        <key1 length> ... <keyN length>
+        <key1 in bytes>...<keyN in bytes>
         ]]></programlisting>
     </sect2>
 
@@ -463,16 +463,16 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MLOCK <flag> <name> #1
-            <size of key in bytes>
-            <key in bytes>
+        MLOCK <flag> <name> #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag>
+        OK <flag>
         ]]></programlisting>
 
         <para>
@@ -497,21 +497,18 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MUNLOCK <flag> <name> #1
-            <size of key in bytes>
-            <key in bytes>
+        MUNLOCK <flag> <name> #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag>
+        OK <flag>
         ]]></programlisting>
 
-        <para>
-
-        </para>
     </sect2>
 
     <sect2 xml:id="MTRYLOCK" version="5.0" xmlns="http://docbook.org/ns/docbook">
@@ -533,9 +530,9 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MTRYLOCK <flag> <name> <timeout> #1
-            <size of key in bytes>
-            <key in bytes>
+        MTRYLOCK <flag> <name> <timeout> #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
 
         0 timeout means don't wait.
@@ -544,7 +541,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag> <isacquired?>
+        OK <flag> <isacquired?>
         ]]></programlisting>
     </sect2>
 
@@ -562,16 +559,16 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MISKEYLOCKED <flag> <name> #1
-            <size of key in bytes>
-            <key in bytes>
+        MISKEYLOCKED <flag> <name> #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag> <isLocked?>
+        OK <flag> <isLocked?>
         ]]></programlisting>
 
     </sect2>
@@ -598,14 +595,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MLOCKMAP <flag> <name> <timeout>
+        MLOCKMAP <flag> <name> <timeout>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag> <isLocked?>
+        OK <flag> <isLocked?>
         ]]></programlisting>
 
     </sect2>
@@ -623,14 +620,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MUNLOCKMAP <flag> <name> <timeout>
+        MUNLOCKMAP <flag> <name> <timeout>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag>
+        OK <flag>
         ]]></programlisting>
 
     </sect2>
@@ -650,16 +647,16 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MFORCEUNLOCK <flag> <name> #1
-            <size of key in bytes>
-            <key in bytes>
+        MFORCEUNLOCK <flag> <name> #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag>
+        OK <flag>
         ]]></programlisting>
 
     </sect2>
@@ -676,16 +673,16 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MCONTAINSKEY <flag> <name> #1
-            <size of key in bytes>
-            <key in bytes>
+        MCONTAINSKEY <flag> <name> #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag> <contans?>
+        OK <flag> <contans?>
         ]]></programlisting>
     </sect2>
 
@@ -701,16 +698,16 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MCONTAINSKEY <flag> <name> #1
-            <size of value in bytes>
-            <value in bytes>
+        MCONTAINSKEY <flag> <name> #1
+        <size of value in bytes>
+        <value in bytes>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag> <contans?>
+        OK <flag> <contans?>
         ]]></programlisting>
     </sect2>
 
@@ -738,9 +735,9 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> #1
-                <size of value in bytes>
-                <value in bytes>
+        OK <flag> #1
+        <size of value in bytes>
+        <value in bytes>
             ]]></programlisting>
 
 
@@ -771,7 +768,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <isRemoved?>
+        OK <flag> <isRemoved?>
             ]]></programlisting>
 
         <para>
@@ -801,9 +798,9 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> #1
-                <size of value in bytes>
-                <value in bytes>
+        OK <flag> #1
+        <size of value in bytes>
+        <value in bytes>
             ]]></programlisting>
 
 
@@ -842,7 +839,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <isReplaced?>
+        OK <flag> <isReplaced?>
             ]]></programlisting>
 
         <para>
@@ -872,7 +869,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag>
+        OK <flag>
             ]]></programlisting>
 
         <para>
@@ -895,16 +892,16 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MEVICT <flag> <name> [noreply] #1
-            <size of value in bytes>
-            <value in bytes>
+        MEVICT <flag> <name> [noreply] #1
+        <size of value in bytes>
+        <value in bytes>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <evicted?>
+        OK <flag> <evicted?>
             ]]></programlisting>
 
         <para>
@@ -925,9 +922,9 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MADDLISTENER <flag> <name> <includevalue> [noreply] #1
-            <size of key in bytes>
-            <key in bytes>
+        MADDLISTENER <flag> <name> <includevalue> [noreply] #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
         <para>
             providing key is optional. If provided the listener will be notified only for the key, otherwise it will be
@@ -938,7 +935,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <para>
-            OK will return.
+        OK will return.
         </para>
 
         <sect3 xml:id="EVENT" version="5.0" xmlns="http://docbook.org/ns/docbook">
@@ -952,11 +949,11 @@
                 <emphasis role="bold">EVENT:</emphasis>
             </para>
 
-            <programlisting language="java"><![CDATA[
-                EVENT <-1> <type> <name> <eventType> #2
-                <size of newvalue in bytes> <size of oldValue in bytes>
-                <newvalue in bytes><oldvalue in bytes>
-            ]]></programlisting>
+        <programlisting language="java"><![CDATA[
+        EVENT <-1> <type> <name> <eventType> #2
+        <size of newvalue in bytes> <size of oldValue in bytes>
+        <newvalue in bytes><oldvalue in bytes>
+        ]]></programlisting>
             <para>
                 eventype is one of the following: ADDED, REMOVED, UPDATED, EVICTED. Depending on the event type, only one
                 value may be returned from the server. Two values will be returned only in the UPDATED case.
@@ -980,9 +977,9 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MREMOVELISTENER <flag> <name> [noreply] #1
-            <size of key in bytes>
-            <key in bytes>
+        MREMOVELISTENER <flag> <name> [noreply] #1
+        <size of key in bytes>
+        <key in bytes>
         ]]></programlisting>
         <para>
             providing key is optional. If provided the listener will be stopped to receive events only for the key,

@@ -41,6 +41,7 @@ public class SocketProtocolReader implements SocketReader {
     MutableBoolean sizeLineRead = new MutableBoolean(false);
 
     private Command command;
+    private int threadId = -1;
     private String[] args;
     private ByteBuffer[] buffers;
     private boolean noreply = false;
@@ -56,6 +57,7 @@ public class SocketProtocolReader implements SocketReader {
     final ByteBuffer firstNewLineRead = ByteBuffer.allocate(2);
 
     Pattern p = Pattern.compile("\\s+");
+    Pattern numericPattern = Pattern.compile("([0-9]*)");
 
     public SocketProtocolReader(SocketChannelWrapper socketChannel, Connection connection) {
         this.connection = connection;
@@ -109,7 +111,7 @@ public class SocketProtocolReader implements SocketReader {
 //                    long t6 = System.nanoTime();
 //                    System.out.println("Diff 5 " + (t6-t5));
                     if ((buffers.length == 0 || !buffers[buffers.length - 1].hasRemaining())) {
-                        Protocol protocol = new Protocol(connection, command, flag, noreply, args, buffers);
+                        Protocol protocol = new Protocol(connection, command, flag, threadId, noreply, args, buffers);
                         connection.setType(Connection.Type.PROTOCOL_CLIENT);
                         ioService.handleClientCommand(protocol);
                         reset();
@@ -118,7 +120,7 @@ public class SocketProtocolReader implements SocketReader {
             }
         } catch (Exception e) {
             connection.getWriteHandler().enqueueSocketWritable(new Protocol(connection,
-                    Command.ERROR, new String[]{flag, "Malformed_request", e.toString()}));
+                    Command.ERROR, flag, threadId, false, new String[]{"Malformed_request", e.toString()}));
             logger.log(Level.SEVERE, e.toString(), e);
         }
     }
@@ -153,6 +155,7 @@ public class SocketProtocolReader implements SocketReader {
         sizeLine.clear();
         sizeLineRead.set(false);
         command = null;
+        threadId = -1;
         args = null;
         flag = "0";
         noreply = false;
@@ -167,7 +170,7 @@ public class SocketProtocolReader implements SocketReader {
 //        System.out.println("Size line is : " + line);
 //        String[] split = line.split("\\s");
         String[] split = fastSplit(line, ' ');
-        if (line.length()!=0 && split.length != bufferSize.length) {
+        if (line.length() != 0 && split.length != bufferSize.length) {
             throw new RuntimeException("Size # tag and number of size entries do not match!" + split.length + ":: " + bufferSize.length);
         }
         for (int i = 0; i < bufferSize.length; i++) {
@@ -196,46 +199,46 @@ public class SocketProtocolReader implements SocketReader {
     }//end
 
     private void parseCommandLine(String line) {
-//        long t1 = System.nanoTime();
         if (commandLineIsParsed || sizeLineIsRead()) return;
         if (line.length() == 0) {
             commandLineIsParsed = false;
             commandLineRead.set(false);
             return;
         }
-//        String[] split = p.split(line);
         String[] split = fastSplit(line, ' ');
-//        System.out.println("T0: " + (System.nanoTime() - t1));
-//        long t2 = System.nanoTime();
+        int commandIndex;
+        int specialArgCount;
+        if (numericPattern.matcher(split[0]).matches()) {
+            threadId = Integer.parseInt(split[0]);
+            commandIndex = 1;
+            flag = split[2];
+            specialArgCount = 3;  // THREAD ID, COMMAND, FLAG
+        } else {
+            commandIndex = 0;
+            specialArgCount = 1;  // COMMAND
+        }
         try {
-            command = Command.valueOf(split[0]);
+            command = Command.valueOf(split[commandIndex]);
         } catch (IllegalArgumentException illegalArgException) {
             command = Command.UNKNOWN;
         }
-//        System.out.println("T1: " + (System.nanoTime() - t2));
-//        long t3 = System.nanoTime();
         int bufferCount = -1;
-        //The first two commands are COMMAND and FLAG
-        int argLength = split.length - 2;
+        int argLength = split.length - specialArgCount;
         if (split.length > 0 && split[split.length - 1].startsWith("#")) {
             bufferCount = Integer.parseInt(split[split.length - 1].substring(1));
             noreply = split.length > 1 && NOREPLY.equals(split[split.length - 2]);
         } else {
-            noreply = split.length > 1 && NOREPLY.equals(split[split.length - 2]);
+            noreply = split.length > 1 && NOREPLY.equals(split[split.length - 1]);
         }
-//        System.out.println("T2: " + (System.nanoTime() - t3));
-//        long t4 = System.nanoTime();
         if (bufferCount >= 0) argLength--;
         if (noreply) argLength--;
-        flag = split[1];
         args = new String[argLength];
         for (int i = 0; i < argLength; i++) {
-            args[i] = split[i + 2];
+            args[i] = split[i + specialArgCount];
         }
         if (bufferCount < 0) bufferCount = 0;
         bufferSize = new int[bufferCount];
         commandLineIsParsed = true;
-//        System.out.println("T3: " + (System.nanoTime() - t4));
     }
 
     private void readLineIfnotRead(ByteBuffer bb, MutableBoolean lineIsRead, ByteBuffer line) {

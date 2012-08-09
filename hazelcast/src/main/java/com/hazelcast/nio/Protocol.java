@@ -22,56 +22,39 @@ import com.hazelcast.nio.protocol.Command;
 import java.nio.ByteBuffer;
 
 public class Protocol implements SocketWritable {
-    private final Command command;
-    private final String[] args;
-    private final ByteBuffer[] buffers;
-    private final Connection connection;
-    private final boolean noReply;
-    private String flag;
+    public final Command command;
+    public final String[] args;
+    public final ByteBuffer[] buffers;
+    public final Connection conn;
+    public final boolean noReply;
+    public String flag;
+    public int threadId;
 
     ByteBuffer response = null;
     int totalSize = 0;
     int totalWritten = 0;
 
     public Protocol(Connection connection, Command command, String[] args, ByteBuffer... buffers) {
-        this(connection, command, args[0], false, args, buffers);
+        this(connection, command, null, -1, false, args, buffers);
     }
 
-    public Protocol(Connection connection, Command command, String flag, boolean noReply, String[] args, ByteBuffer... buffers) {
+    public Protocol(Connection connection, Command command, String flag, int threadId, boolean noReply, String[] args, ByteBuffer... buffers) {
         this.buffers = buffers;
         this.args = args;
         this.command = command;
-        this.connection = connection;
+        this.conn = connection;
         this.noReply = noReply;
         this.flag = flag;
-    }
-
-    public Command getCommand() {
-        return command;
-    }
-
-    public String[] getArgs() {
-        return args;
-    }
-
-    public ByteBuffer[] getBuffers() {
-        return buffers;
-    }
-
-    public Connection getConnection() {
-        return connection;
-    }
-
-    public String getFlag() {
-        return flag;
-    }
-
-    public boolean isNoReply() {
-        return noReply;
+        this.threadId = threadId;
     }
 
     public void onEnqueue() {
-        StringBuilder builder = new StringBuilder(command.toString());
+        StringBuilder builder = new StringBuilder();
+        if (threadId != -1)
+            builder.append(threadId).append(" ");
+        builder.append(command.toString());
+        if (flag != null)
+            builder.append(" ").append(flag);
         for (String arg : args) {
             builder.append(" ").append(arg);
         }
@@ -133,6 +116,13 @@ public class Protocol implements SocketWritable {
         String[] argWithFlag = new String[args.length + 1];
         argWithFlag[0] = String.valueOf(this.flag);
         System.arraycopy(args, 0, argWithFlag, 1, args.length);
-        return new Protocol(this.connection, command, this.flag, this.noReply, argWithFlag, buffers);
+        return new Protocol(this.conn, command, this.flag, this.threadId, this.noReply, argWithFlag, buffers);
+    }
+
+    @Override
+    public String toString() {
+        return "Protocol{" +
+                "command=" + command +
+                '}';
     }
 }

@@ -42,18 +42,18 @@
             AUTH <flag> <username> <password>
         ]]></programlisting>
 
-       
+
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag>
+        OK <flag>
         ]]></programlisting>
 
         <para>or</para>
 
         <programlisting language="java"><![CDATA[
-                ERROR <flag>
+        ERROR <flag>
         ]]></programlisting>
 
     </sect2>
@@ -71,7 +71,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            DESTROY <flag> <type> <name>
+        DESTROY <flag> <type> <name>
         ]]></programlisting>
 
         <para>
@@ -83,7 +83,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag>
+        OK <flag>
             ]]></programlisting>
     </sect2>
 
@@ -99,14 +99,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            TRXBEGIN <flag>
+        TRXBEGIN <flag>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag>
+        OK <flag>
             ]]></programlisting>
     </sect2>
 
@@ -122,14 +122,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            TRXCOMMIT <flag>
+        TRXCOMMIT <flag>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag>
+        OK <flag>
             ]]></programlisting>
     </sect2>
 
@@ -145,14 +145,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            TRXROLLBACK <flag>
+        TRXROLLBACK <flag>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag>
+        OK <flag>
             ]]></programlisting>
     </sect2>
 
@@ -169,14 +169,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            INSTANCES <flag>
+        INSTANCES <flag>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <type> <instanceN> ... <type> <instanceN>
+        OK <flag> <type> <instanceN> ... <type> <instanceN>
             ]]></programlisting>
     </sect2>
 
@@ -194,14 +194,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            MEMBERS <flag>
+        MEMBERS <flag>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <member1> ... <memberN>
+        OK <flag> <member1> ... <memberN>
             ]]></programlisting>
     </sect2>
 
@@ -222,14 +222,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            CLUSTERTIME <flag>
+        CLUSTERTIME <flag>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <time>
+        OK <flag> <time>
             ]]></programlisting>
     </sect2>
 
@@ -245,14 +245,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            PING <flag>
+        PING <flag>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag>
+        OK <flag>
             ]]></programlisting>
     </sect2>
 
@@ -272,33 +272,29 @@
             <size of key in bytes>
             <key in bytes>
         ]]></programlisting>
-        
+
         <para>
-            The key is optional. If if it provided server will return only the partition that the key falls. 
-            Otherwise it will return all partitions as a pair of partition id and member address that owns the partition. 
+            The key is optional. If if it provided server will return only the partition that the key falls.
+            Otherwise it will return all partitions as a pair of partition id and member address that owns the
+            partition.
         </para>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
-        <para> If key is provided: </para>
+        <para>If key is provided:</para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <pid> <address>
+        OK <flag> <pid> <address>
             ]]></programlisting>
 
-        
+
         <para>If key is not provided to command:</para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <pid1> <address1> ... <pid271> <address271>
+        OK <flag> <pid1> <address1> ... <pid271> <address271>
             ]]></programlisting>
 
-    <para>
-        Note that 271 is the default partition count which can be changed on server configuration.
-    </para>
-
+        <para>
+            Note that 271 is the default partition count which can be changed on server configuration.
+        </para>
     </sect2>
-    
-    
-
-
 </sect1>

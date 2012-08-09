@@ -38,14 +38,17 @@
         B1B2…. BM\r\n]]></programlisting>
 
         Notice that the protocol consists of 3 lines. The first two lines are interpreted as text and there is a new
-        line character after each. The first line is called "command line", second is "size line" and the rest is binary data.
+        line character after each. The first line is called "command line", second is "size line" and the rest is binary
+        data.
     </para>
 
     <para>
         Command line specifies the command and some arguments for that command that can be defined as string.
         These are in general arguments like strings, boolean, integers and longs. The last argument defines the
-        number of binary arguments. If there is no argument then it is ok to not provide it or one can simply provide #0.
-        In case of #0 then next lines can be omitted. That is the client or server will only send the commandline as part
+        number of binary arguments. If there is no argument then it is ok to not provide it or one can simply provide
+        #0.
+        In case of #0 then next lines can be omitted. That is the client or server will only send the commandline as
+        part
         of the protocol
     </para>
     <para>
@@ -55,82 +58,122 @@
 
     <para>Here is a sample put command
         <programlisting language="java"><![CDATA[
-        MPUT 0 myMap 0 #2
+        MPUT myMap 0 #2
         5 7
         myKeymyValue]]></programlisting>
-
-    </para>
-
-    <para>
-        <emphasis role="bold">Protocol common arguments</emphasis>
-
-        In order to make life easier there are several common arguments. These are:
-
-        <orderedlist>
-            <listitem>
-                <para>flag:
-                    <literal>Flag is any string value that will be returned by server on answer.
-                        Server doesn't care about the value that is set here. It will return it back on response object.
-                        This argument can be used as call_id to match the responses to calls.
-                        All commands have
-                        <emphasis role="bold">flag</emphasis>
-                        as the very first argument.
-                    </literal>
-                </para>
-            </listitem>
-            <listitem>
-                <para>noreply:
-                    <literal>Is an optianal argument and is provied as it is, "noreply". If provided, server will not
-                        send the
-                        response back to client. Commands that retreive data from server do not have
-                        <emphasis role="bold">noreply</emphasis>
-                        as option.
-                        Must be the last argument before
-                        <emphasis role="bold">#N</emphasis> argument.
-
-                    </literal>
-                </para>
-            </listitem>
-            <listitem>
-                <para>name:
-                    <literal>Is the name of the data structure. Distributed objects that require name must set this
-                        argument accordingly.
-                        Note that almost all commands do require it
-                    </literal>
-                </para>
-            </listitem>
-        </orderedlist>
     </para>
 
 
-    <para>
-        <emphasis role="bold">Response</emphasis>
-    </para>
+    <sect2 xml:id="Extension" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>Entensions</title>
 
-    <para>
-        Responses from server will use the same protocol. The command on response will either be
-        <emphasis role="bold">OK</emphasis> or
-        <emphasis role="bold">ERROR</emphasis>
-        followed by <emphasis role="bold">flag</emphasis>.
-    </para>
+        <para>
+            <para>
+                <emphasis role="bold">Thread id extension</emphasis>
+            </para>
 
-    <para>
-        <emphasis role="bold">A status reply</emphasis>
-    </para>
+            The default protocol doesn't let you to implement a thread safe client implementation. This extension will
+            let
+            you to pass a thread id together with a flag. Flag will be returned in the response as is and can be used as
+            a
+            call id. If thread id is passed, only the same thread can unlock the locks. Basically hazelcast will treat
+            each
+            thread as a different caller on the client side. However with default protocol Hazelcast assumes that there
+            is
+            only one caller on the client side.
 
-    <para>
-        without any value will be
-
+            <para>
         <programlisting language="java"><![CDATA[
+        <thread_id> COMMAND <flag> <arg1>…<argN> #M\r\n
+        <s1>…<sM>\r\n
+        B1B2…. BM\r\n]]></programlisting>
+
+            </para>
+                             å
+        </para>
+
+        <para>
+            <para>
+                <emphasis role="bold">Noreply extension</emphasis>
+            </para>
+
+            All commands in Hazelcast do return a response from server. However there are several commands where you may
+            skip the response by adding "noreply" at the end of the arguments. For those commands server will not return
+            a response. Check the command description to see if it supports noreply. Both normal and extended protocols
+            support noreply independently.
+
+            <para>
+        <programlisting language="java"><![CDATA[
+        MPUT myMap 0 noreply #2
+        5 7
+        myKeymyValue]]></programlisting>
+            </para>
+        </para>
+
+    </sect2>
+
+
+    <sect2 xml:id="CommonArgs" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>Protocol common arguments</title>
+
+
+        <para>
+            <emphasis role="bold">flag</emphasis>
+            Flag is any string value that will be returned by server on answer.
+            Server doesn't care about the value that is set here. It will return it back on response
+            object.
+            This argument can be used as call_id to match the responses to calls.
+        </para>
+
+        <para>
+            <emphasis role="bold">noreply</emphasis>
+            Is an optianal argument and is provied as it is, "noreply". If provided, server will
+            not send the response back to client. Commands that retrieve data from server do not have
+            <emphasis role="bold">noreply</emphasis>
+            as option.
+            Must be the last argument before
+            <emphasis role="bold">#N</emphasis>
+            argument.
+        </para>
+
+        <para>
+            <emphasis role="bold">name</emphasis>
+            Is the name of the data structure. Distributed objects that require name must set this
+            argument accordingly.
+            Note that almost all commands do require it
+        </para>
+    </sect2>
+
+
+    <sect2 xml:id="Response" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>Response</title>
+
+        <para>
+            Responses from server will use the same protocol. The command on response will either be
+            <emphasis role="bold">OK</emphasis>
+            or
+            <emphasis role="bold">ERROR</emphasis>
+            followed by<emphasis role="bold">flag</emphasis>.
+        </para>
+
+        <para>
+            <emphasis role="bold">A status reply</emphasis>
+        </para>
+
+        <para>
+            without any value will be
+
+            <programlisting language="java"><![CDATA[
         OK <flag> \r\n
         ]]></programlisting>
 
-       An error reply will be as follows:
+            An error reply will be as follows:
 
-        <programlisting language="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
         ERROR <flag> <error reason> \r\n
         ]]></programlisting>
 
-        Error's will happen only if the request doesn't contain the proper arguments.
-    </para>
+            Error's will happen only if the request doesn't contain the proper arguments.
+        </para>
+    </sect2>
 </sect1>

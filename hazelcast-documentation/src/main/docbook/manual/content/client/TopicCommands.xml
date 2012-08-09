@@ -71,9 +71,9 @@
 
         <para>
             <programlisting language="java"><![CDATA[
-            MESSAGE <-1> <name> #1
-            <size of message in bytes>
-            <message in bytes>
+        MESSAGE <-1> <name> #1
+        <size of message in bytes>
+        <message in bytes>
 
             ]]></programlisting>
         </para>

@@ -39,14 +39,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            LOCK_LOCK <flag> <name>
+        LOCK_LOCK <flag> <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag>
+        OK <flag>
             ]]></programlisting>
     </sect2>
 
@@ -62,14 +62,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            LOCK_UNLOCK <flag> <name>
+        LOCK_UNLOCK <flag> <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag>
+        OK <flag>
             ]]></programlisting>
     </sect2>
 
@@ -86,14 +86,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            LOCK_FORCE_UNLOCK <flag> <name>
+        LOCK_FORCE_UNLOCK <flag> <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag>
+        OK <flag>
             ]]></programlisting>
     </sect2>
 
@@ -109,14 +109,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            LOCK_IS_LOCKED <flag> <name>
+        LOCK_IS_LOCKED <flag> <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <locked?>
+        OK <flag> <locked?>
             ]]></programlisting>
     </sect2>
 </sect1>

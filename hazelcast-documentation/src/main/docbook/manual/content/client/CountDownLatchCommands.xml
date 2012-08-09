@@ -48,7 +48,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag>
+        OK <flag>
             ]]></programlisting>
     </sect2>
 
@@ -71,7 +71,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <count>
+        OK <flag> <count>
             ]]></programlisting>
     </sect2>
 
@@ -96,7 +96,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-                OK <flag> <isset?>
+        OK <flag> <isset?>
             ]]></programlisting>
         
         <para>return true if the new count was set, false if the count wasn't zero.  </para>
@@ -115,14 +115,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            CDLCOUNTDOWN <flag> <name>
+        CDLCOUNTDOWN <flag> <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-            OK <flag>
+        OK <flag>
         ]]></programlisting>
     </sect2>
 </sect1>
