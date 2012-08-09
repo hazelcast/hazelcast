@@ -164,13 +164,13 @@
             without any value will be
 
             <programlisting language="java"><![CDATA[
-        OK <flag> \r\n
+        OK \r\n
         ]]></programlisting>
 
             An error reply will be as follows:
 
             <programlisting language="java"><![CDATA[
-        ERROR <flag> <error reason> \r\n
+        ERROR  <error reason> \r\n
         ]]></programlisting>
 
             Error's will happen only if the request doesn't contain the proper arguments.

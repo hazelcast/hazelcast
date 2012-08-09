@@ -39,7 +39,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            AUTH <flag> <username> <password>
+            AUTH <username> <password>
         ]]></programlisting>
 
 
@@ -47,13 +47,13 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag>
+        OK
         ]]></programlisting>
 
         <para>or</para>
 
         <programlisting language="java"><![CDATA[
-        ERROR <flag>
+        ERROR
         ]]></programlisting>
 
     </sect2>
@@ -71,7 +71,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        DESTROY <flag> <type> <name>
+        DESTROY <type> <name>
         ]]></programlisting>
 
         <para>
@@ -83,7 +83,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag>
+        OK
             ]]></programlisting>
     </sect2>
 
@@ -99,14 +99,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        TRXBEGIN <flag>
+        TRXBEGIN
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag>
+        OK
             ]]></programlisting>
     </sect2>
 
@@ -122,14 +122,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        TRXCOMMIT <flag>
+        TRXCOMMIT
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag>
+        OK
             ]]></programlisting>
     </sect2>
 
@@ -145,14 +145,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        TRXROLLBACK <flag>
+        TRXROLLBACK
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag>
+        OK
             ]]></programlisting>
     </sect2>
 
@@ -169,14 +169,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        INSTANCES <flag>
+        INSTANCES
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <type> <instanceN> ... <type> <instanceN>
+        OK <type> <instanceN> ... <type> <instanceN>
             ]]></programlisting>
     </sect2>
 
@@ -194,14 +194,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        MEMBERS <flag>
+        MEMBERS
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <member1> ... <memberN>
+        OK <member1> ... <memberN>
             ]]></programlisting>
     </sect2>
 
@@ -222,14 +222,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        CLUSTERTIME <flag>
+        CLUSTERTIME
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <time>
+        OK <time>
             ]]></programlisting>
     </sect2>
 
@@ -245,14 +245,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        PING <flag>
+        PING
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag>
+        OK
             ]]></programlisting>
     </sect2>
 
@@ -268,7 +268,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-            PARTITONS <flag> #1
+            PARTITONS #1
             <size of key in bytes>
             <key in bytes>
         ]]></programlisting>
@@ -284,13 +284,13 @@
         </para>
         <para>If key is provided:</para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <pid> <address>
+        OK <pid> <address>
             ]]></programlisting>
 
 
         <para>If key is not provided to command:</para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <pid1> <address1> ... <pid271> <address271>
+        OK <pid1> <address1> ... <pid271> <address271>
             ]]></programlisting>
 
         <para>

@@ -36,7 +36,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        MMPUT <flag> <name> [noreply] #2
+        MMPUT <name> [noreply] #2
         <size of key in bytes> <size of value in bytes>
         <key in bytes><value in bytes>
         ]]></programlisting>
@@ -45,7 +45,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <boolean>
+        OK <boolean>
             ]]></programlisting>
 
         <para>
@@ -68,7 +68,7 @@
         <para>Will remove all the values associated to the given key</para>
 
         <programlisting language="java"><![CDATA[
-        MMREMOVE <flag> <name> [noreply] #1
+        MMREMOVE <name> [noreply] #1
         <size of key in bytes>
         <key in bytes>
         ]]></programlisting>
@@ -77,7 +77,7 @@
         <para>Will remove only the value associated to the given key</para>
 
         <programlisting language="java"><![CDATA[
-        MMREMOVE <flag> <name> [noreply] #2
+        MMREMOVE <name> [noreply] #2
         <size of key in bytes> <size of value in bytes>
         <key in bytes><value in bytes>
         ]]></programlisting>
@@ -86,7 +86,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <boolean>
+        OK <boolean>
             ]]></programlisting>
 
         <para>
@@ -107,7 +107,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        MMVALUECOUNT <flag> <name> #1
+        MMVALUECOUNT <name> #1
         <size of key in bytes>
         <key in bytes>
         ]]></programlisting>
@@ -116,7 +116,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <countofvalues>
+        OK <countofvalues>
             ]]></programlisting>
 
         <para>

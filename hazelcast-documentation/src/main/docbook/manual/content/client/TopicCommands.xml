@@ -37,7 +37,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        TPUBLISH <flag> <name> #1
+        TPUBLISH <name> #1
         <size of message in bytes>
         <message in bytes>
         ]]></programlisting>
@@ -62,7 +62,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        TADDLISTENER <flag> <name>
+        TADDLISTENER <name>
         ]]></programlisting>
 
         <para>
@@ -71,7 +71,7 @@
 
         <para>
             <programlisting language="java"><![CDATA[
-        MESSAGE <-1> <name> #1
+        MESSAGE <name> #1
         <size of message in bytes>
         <message in bytes>
 

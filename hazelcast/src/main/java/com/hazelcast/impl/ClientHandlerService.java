@@ -2364,7 +2364,6 @@ public class ClientHandlerService implements ConnectionListener {
 
         public void onMessage(Message msg) {
             DataMessage dm = (DataMessage) msg;
-//            System.out.println("On message is called" + ((DataMessage) msg).getMessageData());
             Protocol p = new Protocol(clientEndpoint.conn, Command.MESSAGE, new String[]{name},
                     ByteBuffer.wrap(dm.getMessageData().buffer));
             clientEndpoint.sendPacket(p);

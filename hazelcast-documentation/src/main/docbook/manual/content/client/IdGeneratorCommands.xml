@@ -37,14 +37,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        NEWID <flag> <name>
+        NEWID <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <newid>
+        OK <newid>
             ]]></programlisting>
 
         <para>

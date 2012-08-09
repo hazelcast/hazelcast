@@ -36,7 +36,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        LADD <flag> <name> [noreply] #1
+        LADD <name> [noreply] #1
         <size of element in bytes>
         <element in bytes>
         ]]></programlisting>
@@ -45,7 +45,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> true
+        OK true
             ]]></programlisting>
 
         <para>

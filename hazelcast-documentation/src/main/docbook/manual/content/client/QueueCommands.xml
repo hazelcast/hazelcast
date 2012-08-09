@@ -34,7 +34,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QOFFER <flag> <name> <timeout> [noreply] #1
+        QOFFER <name> <timeout> [noreply] #1
         <size of element in bytes>
         <element in bytes>
         ]]></programlisting>
@@ -48,7 +48,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <added?>
+        OK <added?>
             ]]></programlisting>
 
         <para>
@@ -69,7 +69,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QPUT <flag> <name> [noreply] #1
+        QPUT <name> [noreply] #1
         <size of element in bytes>
         <element in bytes>
         ]]></programlisting>
@@ -96,7 +96,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QPOLL <flag> <name> <timeout>
+        QPOLL <name> <timeout>
         ]]></programlisting>
 
 
@@ -108,7 +108,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> #1
+        OK #1
         <size of element in bytes>
         <element in bytes>
             ]]></programlisting>
@@ -130,14 +130,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QTAKE <flag> <name>
+        QTAKE <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> #1
+        OK #1
         <size of element in bytes>
         <element in bytes>
             ]]></programlisting>
@@ -155,14 +155,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QSIZE <flag> <name>
+        QSIZE <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <size>
+        OK <size>
             ]]></programlisting>
     </sect2>
 
@@ -178,14 +178,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QPEEK <flag> <name>
+        QPEEK <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> #1
+        OK #1
         <size of element in bytes>
         <element in bytes>
             ]]></programlisting>
@@ -203,7 +203,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QREMOVE <flag> <name> [noreply] #1
+        QREMOVE <name> [noreply] #1
         <size of element in bytes>
         <element in bytes>
         ]]></programlisting>
@@ -212,7 +212,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <removed?>
+        OK <removed?>
         ]]></programlisting>
 
         <para>
@@ -233,14 +233,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QREMCAPACITY <flag> <name>
+        QREMCAPACITY <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <remainingcapacity>
+        OK <remainingcapacity>
             ]]></programlisting>
     </sect2>
 
@@ -256,14 +256,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QENTRIES <flag> <name>
+        QENTRIES <name>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> #N
+        OK #N
         <size of element1> ... <size of elementN>
         <element1 in bytes>...<elementN in bytes>
             ]]></programlisting>
@@ -282,7 +282,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QADDLISTENER <flag> <name> <includevalue> [noreply]
+        QADDLISTENER <name> <includevalue> [noreply]
         ]]></programlisting>
         <para>
             providing key is optional. If provided the listener will be notified only for the key, otherwise it will be
@@ -328,7 +328,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QREMOVELISTENER <flag> <name> [noreply]
+        QREMOVELISTENER <name> [noreply]
         ]]></programlisting>
 
         <para>

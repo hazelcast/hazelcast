@@ -37,14 +37,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        ADDANDGET <flag> <name> <delta>
+        ADDANDGET <name> <delta>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <updatedvalue>
+        OK <updatedvalue>
             ]]></programlisting>
 
         <para>
@@ -64,14 +64,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        GETANDSET <flag> <name> <newvalue>
+        GETANDSET <name> <newvalue>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <oldvalue>
+        OK <oldvalue>
             ]]></programlisting>
 
         <para>
@@ -92,14 +92,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        COMPAREANDSET <flag> <name> <update> <expect>
+        COMPAREANDSET <name> <update> <expect>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <updated?>
+        OK <updated?>
             ]]></programlisting>
 
         <para>
@@ -120,14 +120,14 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        GETANDADD <flag> <name> <delta>
+        GETANDADD <name> <delta>
         ]]></programlisting>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <flag> <oldvalue>
+        OK <oldvalue>
             ]]></programlisting>
 
         <para>
