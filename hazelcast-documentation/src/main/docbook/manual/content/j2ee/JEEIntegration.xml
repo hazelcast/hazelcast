@@ -31,28 +31,35 @@
 <%@page import="javax.resource.cci.*" %> 
 <%@page import="java.util.*" %> 
 <%@page import="com.hazelcast.core.Hazelcast" %> 
+<%@page import="com.hazelcast.jca.HazelcastConnectionFactory" %>
+<%@page import="com.hazelcast.jca.HazelcastConnection" %>
 
 <%
+HazelcastConnection conn = null;
 UserTransaction txn = null;
-Connection conn = null;
-Queue queue = Hazelcast.getQueue ("default");
-Map map     = Hazelcast.getMap   ("default");
-Set set     = Hazelcast.getSet   ("default");
-List list   = Hazelcast.getList  ("default");
-
 try { 
+	//Aquire infrastructure
     Context context = new InitialContext(); 
     txn = (UserTransaction) context.lookup("java:comp/UserTransaction"); 
-    txn.begin(); 
-    
-    ConnectionFactory cf = (ConnectionFactory) context.lookup ("java:comp/env/HazelcastCF"); 
+    HazelcastConnectionFactory cf = (HazelcastConnectionFactory) context.lookup ("java:comp/env/HazelcastCF"); 
     conn = cf.getConnection();  
     
+    //Get elements from Hazelcast
+    Queue<String> queue     = conn.getQueue ("default");
+    Map<String, String> map = conn.getMap   ("default");
+    Set<String> set         = conn.getSet   ("default");
+    List<String> list       = conn.getList  ("default");
+    
+    //Do everything in transaktions...
+    txn.begin(); 
+
+    //Do the real work
     queue.offer("newitem");
     map.put ("1", "value1");
     set.add ("item1");
     list.add ("listitem1");
     
+    //Commit the transaction
     txn.commit(); 
 } catch (Throwable e) { 
     if (txn != null) {
@@ -102,12 +109,17 @@ try {
                 <listitem>
                     <para>Make container specific configurations when/after
                         deploying<literal>hazelcast-ra.rar</literal>. Besides container specific
-                        configurations,
+                        configurations, 
                         <literal>JNDI</literal>
-                        name for Hazelcast resource is
+                        name for Hazelcast resource is required to
                         set.
                     </para>
                 </listitem>
+				<listitem>
+					<para>The following optional elements can be configured but their default value 
+					is fine, too. Details are outlined in the chatpre below
+					</para>
+				</listitem>
                 <listitem>
                     <para>Configure your application to use the Hazelcast resource. Updating
                         <literal>web.xml</literal>
@@ -121,12 +133,54 @@ try {
                 <listitem>
                     <para>Make container specific application configuration to specify
                         <literal>JNDI</literal>
-                        name used for the resource in the application.
+                        name used for the resource in the application (and optional the other parameters).
                     </para>
                 </listitem>
             </orderedlist>
         </para>
     </sect2>
+    <sect2 xml:id="JEEIntegrationConfiguration" version='5.0' xmlns='http://docbook.org/ns/docbook'
+            >
+        <title>RAR Configuration</title>
+        <para>Next to the JNDI name itself for the connection factory, additional configuration
+		options are provided on resource adapter and connection level. All defaults should be fine
+		and are close to the Hazelcast stand-alone behavoir:
+		</para>
+		<sect3 xml:id="JEEIntegrationConfigurationResourceAdapter" version='5.0' xmlns='http://docbook.org/ns/docbook'
+            >
+			<title>Resource adapter specific configuration</title>	
+			<para>
+				<orderedlist>
+					<listitem>
+						<para>The <literal>connectionTracingEvents</literal> allows to specifc a comma separated list of 
+						<literal>FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP</literal> and <literal>DESTROY</literal> to
+					trace connection events.</para>
+						<para>The default behavoir will trace only <literal>FACTORY_INIT</literal> events.</para>
+					</listitem>
+					<listitem>
+						<para>The <literal>connectionTracingDetail</literal> allows to specify if a stacktrace is shown 
+						for all loged connectionTracingEvents.</para>
+						<para>The default behavoir will no issue stacktraces.
+						</para>
+					</listitem>
+				</orderedlist>
+			</para>
+		</sect3>
+		<sect3 xml:id="JEEIntegrationConfigurationConnection" version='5.0' xmlns='http://docbook.org/ns/docbook'
+            >
+			<title>Connection specific configuration</title>	
+			<para>
+				<orderedlist>
+					<listitem>
+						<para>The <listeral>connectionTracingEvents</listeral> allows to specifc the location of
+						the <literal>hazelcast.xml</literal> configuration file. All rules apply as for <literal>com.hazelcast.config.XmlConfigBuilder</literal>.</para>
+						<para>The default behavoir (empty value) will load the <literal>hazelcast.xml</literal> 
+						from the classpath itself.</para>
+					</listitem>
+				</orderedlist>
+			</para>
+		</sect3>
+	</sect2>
     <sect2 xml:id="JEEIntegrationGlassfishSample" version='5.0' xmlns='http://docbook.org/ns/docbook'
             >
         <title>Sample Glassfish v3 Web Application Configuration</title>
