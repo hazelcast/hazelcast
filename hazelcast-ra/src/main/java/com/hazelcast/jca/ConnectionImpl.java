@@ -17,7 +17,6 @@
 package com.hazelcast.jca;
 
 import javax.resource.ResourceException;
-import javax.resource.cci.Connection;
 import javax.resource.cci.ConnectionMetaData;
 import javax.resource.cci.Interaction;
 import javax.resource.cci.ResultSetInfo;

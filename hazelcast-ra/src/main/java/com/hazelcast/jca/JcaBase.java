@@ -22,6 +22,10 @@ import java.util.logging.Level;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+/**
+ * Base class to allow simpler logging according to the JCA specs
+ * and the Hazelcast Logging Framework
+ */
 public class JcaBase {
     private final static ILogger logger = Logger.getLogger("com.hazelcast.jca");
 	
@@ -32,8 +36,10 @@ public class JcaBase {
     
     void log(Level logLevel, String message, Throwable t) {
     	if (logger.isLoggable(logLevel)) {
+    		//Log to hazelcast loggin framework itself
 	    	logger.log(logLevel, message, t);
 	    	final PrintWriter logWriter = getLogWriter();
+	    	//Log via the container if possible
 			if (logWriter != null) {
 	    		logWriter.write(message);
 	    		if (t != null) {

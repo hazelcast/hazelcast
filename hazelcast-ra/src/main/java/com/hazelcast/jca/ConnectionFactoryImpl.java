@@ -28,11 +28,11 @@ import com.hazelcast.logging.Logger;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-public class ConnectionFactoryImpl implements ConnectionFactory {
+public class ConnectionFactoryImpl implements HazelcastConnectionFactory {
 	private static final long serialVersionUID = -5909363703528221650L;
 	
 	private ManagedConnectionFactoryImpl mcf;
-    private  ConnectionManager cm;
+    private ConnectionManager cm;
     private Reference ref;
     private final static AtomicInteger idGen = new AtomicInteger();
     private final static ILogger logger = Logger.getLogger("com.hazelcast.jca");
@@ -47,7 +47,6 @@ public class ConnectionFactoryImpl implements ConnectionFactory {
         this.cm = cm;
         id = idGen.incrementAndGet();
     }
-    
     
     public ConnectionImpl getConnection() throws ResourceException {
         logger.log(Level.FINEST, "getConnection");
