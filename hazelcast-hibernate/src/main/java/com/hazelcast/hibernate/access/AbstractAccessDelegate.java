@@ -17,6 +17,7 @@
 package com.hazelcast.hibernate.access;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 import com.hazelcast.logging.ILogger;
@@ -57,12 +58,19 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
     }
 
     protected boolean putInToCache(final Object key, final Object value) {
-        getCache().set(key, value, 0, TimeUnit.SECONDS);
+        try {
+            getCache().set(key, value, 0, TimeUnit.SECONDS);
+        } catch (OperationTimeoutException ignore) {
+        }
         return true;
     }
 
     public Object get(final Object key, final long txTimestamp) throws CacheException {
-        return getCache().get(key);
+        try {
+            return getCache().get(key);
+        } catch (OperationTimeoutException e) {
+            return null;
+        }
     }
 
     public boolean putFromLoad(final Object key, final Object value, final long txTimestamp,
@@ -71,7 +79,11 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
     }
 
     public void remove(final Object key) throws CacheException {
-        getCache().remove(key);
+        try {
+            getCache().remove(key);
+        } catch (OperationTimeoutException ignore) {
+            throw new CacheException("Operation timeout during remove operation from cache");
+        }
     }
 
     public void removeAll() throws CacheException {

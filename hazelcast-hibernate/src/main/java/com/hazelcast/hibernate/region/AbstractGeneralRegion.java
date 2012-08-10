@@ -17,10 +17,12 @@
 package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OperationTimeoutException;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.GeneralDataRegion;
 
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -32,18 +34,31 @@ public abstract class AbstractGeneralRegion extends AbstractHazelcastRegion impl
     }
 
     public void evict(final Object key) throws CacheException {
-        getCache().remove(key);
+        try {
+            getCache().remove(key);
+        } catch (OperationTimeoutException ignored) {
+        }
     }
 
     public void evictAll() throws CacheException {
-        getCache().clear();
+        try {
+            getCache().clear();
+        } catch (OperationTimeoutException ignored) {
+        }
     }
 
     public Object get(final Object key) throws CacheException {
-        return getCache().get(key);
+        try {
+            return getCache().get(key);
+        } catch (OperationTimeoutException e) {
+            return null;
+        }
     }
 
     public void put(final Object key, final Object value) throws CacheException {
-        getCache().put(key, value);
+        try {
+            getCache().set(key, value, 0, TimeUnit.MILLISECONDS);
+        } catch (OperationTimeoutException ignored) {
+        }
     }
 }
