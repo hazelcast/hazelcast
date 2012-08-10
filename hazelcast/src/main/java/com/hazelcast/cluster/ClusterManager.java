@@ -62,8 +62,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private long firstJoinRequest = 0;
 
-    private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
-
     private long lastHeartbeat = 0;
 
     final ILogger securityLogger;
@@ -432,10 +430,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
         MemberImpl deadMember = getMember(deadAddress);
         if (deadMember != null) {
-            lsMembersBefore.clear();
-            for (MemberImpl memberBefore : lsMembers) {
-                lsMembersBefore.add(memberBefore);
-            }
             removeMember(deadMember);
             node.getClusterImpl().setMembers(lsMembers);
             node.concurrentMapManager.syncForDead(deadMember);
@@ -739,11 +733,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     void updateMembers(Collection<MemberInfo> lsMemberInfos) {
         checkServiceThread();
         logger.log(Level.FINEST, "Updating Members");
-        // Copy lsMembers to lsMembersBefore
-        lsMembersBefore.clear();
         Map<Address, MemberImpl> mapOldMembers = new HashMap<Address, MemberImpl>();
         for (MemberImpl member : lsMembers) {
-            lsMembersBefore.add(member);
             mapOldMembers.put(member.getAddress(), member);
         }
         lsMembers.clear();
@@ -908,9 +899,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         dataMemberCount.reset();
         if (mapMembers != null) {
             mapMembers.clear();
-        }
-        if (lsMembersBefore != null) {
-            lsMembersBefore.clear();
         }
         if (mapCalls != null) {
             mapCalls.clear();
