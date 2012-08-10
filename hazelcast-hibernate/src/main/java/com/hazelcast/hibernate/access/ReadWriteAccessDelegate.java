@@ -16,6 +16,7 @@
 
 package com.hazelcast.hibernate.access;
 
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 import org.hibernate.cache.CacheException;
@@ -83,14 +84,18 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
             throws TimeoutException {
         if (versionComparator != null) {
             if (explicitVersionCheckEnabled && value instanceof CacheEntry) {
-                final CacheEntry currentEntry = (CacheEntry) value;
-                final CacheEntry previousEntry = (CacheEntry) getCache().tryLockAndGet(key, 500, TimeUnit.MILLISECONDS);
-                if (previousEntry == null ||
-                        versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
-                    getCache().putAndUnlock(key, value);
-                    return true;
-                } else {
-                    getCache().unlock(key);
+                try {
+                    final CacheEntry currentEntry = (CacheEntry) value;
+                    final CacheEntry previousEntry = (CacheEntry) getCache().tryLockAndGet(key, 500, TimeUnit.MILLISECONDS);
+                    if (previousEntry == null ||
+                            versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                        getCache().putAndUnlock(key, value);
+                        return true;
+                    } else {
+                        getCache().unlock(key);
+                        return false;
+                    }
+                } catch (OperationTimeoutException e) {
                     return false;
                 }
             } else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {

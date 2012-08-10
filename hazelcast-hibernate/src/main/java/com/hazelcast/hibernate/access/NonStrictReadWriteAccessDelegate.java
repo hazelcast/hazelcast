@@ -49,7 +49,7 @@ public class NonStrictReadWriteAccessDelegate<T extends HazelcastRegion> extends
     }
 
     public void remove(final Object key) throws CacheException {
-        getCache().remove(key);
+        remove(key);
     }
 
     public SoftLock lockItem(Object key, Object version) throws CacheException {
