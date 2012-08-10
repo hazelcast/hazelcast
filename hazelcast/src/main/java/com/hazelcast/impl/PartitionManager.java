@@ -517,6 +517,9 @@ public class PartitionManager {
     }
 
     public void setPartitionRuntimeState(PartitionRuntimeState runtimeState) {
+        if (!concurrentMapManager.isActive() || !concurrentMapManager.node.joined()) {
+            return;
+        }
         concurrentMapManager.checkServiceThread();
         final Connection conn = runtimeState.getConnection();
         final Address sender = conn != null ? conn.getEndPoint() : null;
@@ -526,8 +529,8 @@ public class PartitionManager {
             return;
         } else {
             final Address master = concurrentMapManager.getMasterAddress();
-            if (sender == null || master == null || !master.equals(sender)) {
-                logger.log(Level.WARNING, "Received a PartitionRuntimeState, but its sender doesn't seem master!" +
+            if (sender == null || !sender.equals(master)) {
+                logger.log(Level.WARNING, "Received a ClusterRuntimeState, but its sender doesn't seem master!" +
                         " => Sender: " + sender + ", Master: " + master + "! " +
                         "(Ignore if master node has changed recently.)");
             }

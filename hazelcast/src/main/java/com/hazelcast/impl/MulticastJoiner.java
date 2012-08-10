@@ -115,7 +115,7 @@ public class MulticastJoiner extends AbstractJoiner {
             if (joinInfo != null) {
                 if (joinInfo.getMemberCount() == 1) {
                     // if the other cluster has just single member, that may be a newly starting node
-                    // instead of a split node. (Note: TcpIpJoiner can handle this issue with JOIN_CHECK call.)
+                    // instead of a split node.
                     // Wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinInfo.
                     Thread.sleep(node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L * 2);
                 }

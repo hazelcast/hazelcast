@@ -900,8 +900,11 @@ public abstract class BaseManager {
                 targetConnection = node.connectionManager.getOrConnect(target);
                 boolean sent = send(packet, targetConnection);
                 if (!sent) {
-                    targetConnection = null;
                     logger.log(Level.FINEST, TargetAwareOp.this + " Packet cannot be sent to " + target);
+                    if (targetConnection != null && !targetConnection.live()) {
+                        node.connectionManager.destroyConnection(targetConnection);
+                    }
+                    targetConnection = null;
                     releasePacket(packet);
                     packetNotSent();
                 }

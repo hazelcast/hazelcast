@@ -461,29 +461,35 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         String msg = "Handling join from " + joinRequest.address + ", inProgress: " + joinInProgress
                      + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
         logger.log(Level.FINEST, msg);
-        final MemberImpl member = getMember(joinRequest.address);
-        final Connection conn = joinRequest.getConnection();
-        if (member != null) {
-            if (joinRequest.getUuid().equals(member.getUuid())) {
-                String message = "Ignoring join request, member already exists.. => " + joinRequest;
-                logger.log(Level.FINEST, message);
-                return;
-            }
-            logger.log(Level.WARNING, "New join request has been received from an existing endpoint! => " + member
-                    + " Removing old member and processing join request...");
-            // If existing connection of endpoint is different from current connection
-            // destroy it, otherwise keep it.
-            final Connection existingConnection = node.connectionManager.getConnection(joinRequest.address);
-            final boolean destroyExistingConnection = existingConnection != conn;
-            doRemoveAddress(member.getAddress(), destroyExistingConnection);
-        }
-        boolean validateJoinRequest;
+        boolean validJoinRequest;
         try {
-            validateJoinRequest = node.validateJoinRequest(joinRequest);
+            validJoinRequest = node.validateJoinRequest(joinRequest);
         } catch (Exception e) {
-            validateJoinRequest = false;
+            validJoinRequest = false;
         }
-        if (validateJoinRequest) {
+        final Connection conn = joinRequest.getConnection();
+        if (validJoinRequest) {
+            final MemberImpl member = getMember(joinRequest.address);
+            if (member != null) {
+                if (joinRequest.getUuid().equals(member.getUuid())) {
+                    String message = "Ignoring join request, member already exists.. => " + joinRequest;
+                    logger.log(Level.FINEST, message);
+                    return;
+                }
+                // If this node is master then remove old member and process join request.
+                // If requesting address is equal to master node's address, that means master node
+                // somehow disconnected and wants to join back.
+                // So drop old member and process join request if this node becomes master.
+                if (isMaster() || member.getAddress().equals(getMasterAddress())) {
+                    logger.log(Level.WARNING, "New join request has been received from an existing endpoint! => " + member
+                                              + " Removing old member and processing join request...");
+                    // If existing connection of endpoint is different from current connection
+                    // destroy it, otherwise keep it.
+//                    final Connection existingConnection = node.connectionManager.getConnection(joinRequest.address);
+//                    final boolean destroyExistingConnection = existingConnection != conn;
+                    doRemoveAddress(member.getAddress(), false);
+                }
+            }
             if (!node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
                 if (node.isActive() && node.joined() && node.getMasterAddress() != null && !isMaster()) {
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
