@@ -503,6 +503,7 @@ public class PartitionManager {
                 clearTaskQueues();
                 immediateTasksQueue.offer(new PrepareRepartitioningTask());
             }
+            migrationActive.set(true);
         }
     }
 
