@@ -26,11 +26,15 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.*;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.Counter;
+import com.hazelcast.util.DistributedTimeoutException;
+import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -57,7 +61,7 @@ public abstract class BaseManager {
 
     protected final Queue<Packet> qServiceThreadPacketCache;
 
-    protected final Map<Long, Call> mapCalls;
+    protected final ConcurrentMap<Long, Call> mapCalls;
 
     protected final AtomicLong localIdGen;
 
@@ -72,6 +76,8 @@ public abstract class BaseManager {
     protected final long operationResponsePollTimeout;
 
     protected final long maxOperationTimeout;
+
+    protected final int maxOperationLimit;
 
     protected final long redoWaitMillis;
 
@@ -97,7 +103,8 @@ public abstract class BaseManager {
         localIdGen = node.baseVariables.localIdGen;
         logger = node.getLogger(this.getClass().getName());
         operationResponsePollTimeout = node.getGroupProperties().OPERATION_RESPONSE_POLL_TIMEOUT.getLong();
-        maxOperationTimeout = node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong() * 1000;
+        maxOperationTimeout = node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong();
+        maxOperationLimit = node.getGroupProperties().MAX_CONCURRENT_OPERATION_LIMIT.getInteger();
         redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
         redoLogThreshold = node.getGroupProperties().REDO_LOG_THRESHOLD.getInteger();
         redoGiveUpThreshold = node.getGroupProperties().REDO_GIVE_UP_THRESHOLD.getInteger();
@@ -581,14 +588,14 @@ public abstract class BaseManager {
 
         public Object waitAndGetResult() {
             // should be more than request timeout
-            final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout == -1)
+            final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
                                            ? Long.MAX_VALUE
-                                           : (request.timeout == 0 ? operationResponsePollTimeout * 1500
+                                           : (request.timeout == 0 ? (long) (operationResponsePollTimeout * 1.5f)
                                                                    : (long) (request.timeout * 1.5f));
             final long start = Clock.currentTimeMillis();
             while (true) {
                 try {
-                    Object obj = responses.poll(operationResponsePollTimeout, TimeUnit.SECONDS);
+                    Object obj = responses.poll(operationResponsePollTimeout, TimeUnit.MILLISECONDS);
                     if (obj != null) {
                         if (obj instanceof DistributedTimeoutException) {
                             throw new OperationTimeoutException(request.operation.toString(),
@@ -1130,7 +1137,11 @@ public abstract class BaseManager {
         }
     }
 
-    public void enqueueCall(Call call) {
+    private void enqueueCall(Call call) {
+        if (maxOperationLimit > 0 && Thread.currentThread().getThreadGroup() != node.threadGroup
+                && mapCalls.size() >= maxOperationLimit) {
+            throw new OperationRejectedException("Max concurrent operation limit exceeded! -> " + maxOperationLimit);
+        }
         call.onEnqueue();
         enqueueAndReturn(call);
     }

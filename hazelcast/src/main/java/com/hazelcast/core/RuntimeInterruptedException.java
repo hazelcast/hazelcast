@@ -29,7 +29,7 @@ package com.hazelcast.core;
  *
  * @see InterruptedException
  */
-public class RuntimeInterruptedException extends RuntimeException {
+public class RuntimeInterruptedException extends HazelcastException {
 
     public RuntimeInterruptedException() {
     }

@@ -17,25 +17,23 @@
 package com.hazelcast.core;
 
 /**
- * An unchecked version of {@link java.util.concurrent.TimeoutException}.
- * <p>
- * Some of the Hazelcast operations may throw an <tt>OperationTimeoutException</tt>.
- * Hazelcast uses OperationTimeoutException to pass TimeoutException up through interfaces
- * that don't have TimeoutException in their signatures.
- * </p>
- *
- * @see java.util.concurrent.TimeoutException
+ * Base Hazelcast exception.
  */
-public class OperationTimeoutException extends HazelcastException {
+public class HazelcastException extends RuntimeException {
 
-    public OperationTimeoutException() {
+    public HazelcastException() {
+        super();
     }
 
-    public OperationTimeoutException(String message) {
+    public HazelcastException(final String message) {
         super(message);
     }
 
-    public OperationTimeoutException(String op, String message) {
-        super("[" + op + "] " + message);
+    public HazelcastException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
+
+    public HazelcastException(final Throwable cause) {
+        super(cause);
     }
 }
