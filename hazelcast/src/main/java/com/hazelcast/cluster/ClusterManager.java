@@ -114,14 +114,17 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             public void process(Packet packet) {
                 Connection conn = packet.conn;
                 Request request = Request.copyFromPacket(packet);
-                JoinInfo joinInfo = (JoinInfo) toObject(request.value);
+                Data value = request.value;
                 request.clearForResponse();
-                if (joinInfo != null && node.joined() && node.isActive()) {
-                    try {
-                        node.validateJoinRequest(joinInfo);
-                        request.response = toData(node.createJoinInfo());
-                    } catch (Exception e) {
-                        request.response = toData(e);
+                if (node.isMaster() && node.joined() && node.isActive()) {
+                    JoinInfo joinInfo = (JoinInfo) toObject(value);
+                    if (joinInfo != null) {
+                        try {
+                            node.validateJoinRequest(joinInfo);
+                            request.response = toData(node.createJoinInfo());
+                        } catch (Exception e) {
+                            request.response = toData(e);
+                        }
                     }
                 }
                 returnResponse(request, conn);
@@ -339,14 +342,14 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             // no route to host
                             // means we cannot connect anymore
                         }
-                    }
+                            }
                     logger.log(Level.WARNING, thisAddress + " couldn't ping " + address);
-                    // not reachable.
-                    enqueueAndReturn(new Processable() {
-                        public void process() {
-                            doRemoveAddress(address);
-                        }
-                    });
+                            // not reachable.
+                            enqueueAndReturn(new Processable() {
+                                public void process() {
+                                    doRemoveAddress(address);
+                                }
+                            });
                 } catch (Throwable ignored) {
                 }
             }
