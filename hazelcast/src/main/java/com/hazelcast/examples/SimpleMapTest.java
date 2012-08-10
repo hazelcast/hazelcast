@@ -18,6 +18,7 @@ package com.hazelcast.examples;
 
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.partition.Partition;
 
@@ -37,8 +38,8 @@ public class SimpleMapTest {
     public static int GET_PERCENTAGE = 40;
     public static int PUT_PERCENTAGE = 40;
 
-    final static ILogger logger = Hazelcast.getLoggingService().getLogger("SimpleMapTest");
     private static final String NAMESPACE = "default";
+    private static final ILogger logger = Logger.getLogger("SimpleMapTest");
 
     public static boolean parse(String... input) {
         boolean load = false;

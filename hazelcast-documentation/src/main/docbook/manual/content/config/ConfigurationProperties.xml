@@ -225,9 +225,26 @@ cfg.setProperty("hazelcast.property.foo", "value");
                 <td>
                     <literal>hazelcast.max.operation.timeout</literal>
                 </td>
-                <td>Maximum operation timeout in seconds if no timeout is specified for a call.</td>
+                <td>Maximum operation timeout in milliseconds if no timeout is specified for a call. (default 300 seconds)</td>
                 <td>integer</td>
-                <td>300</td>
+                <td>300000</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.operation.response.poll.timeout</literal>
+                </td>
+                <td>Operation response queue poll timeout in milliseconds. (default 10 seconds)</td>
+                <td>integer</td>
+                <td>10000</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.max.concurrent.operation.limit</literal>
+                </td>
+                <td>Max number of concurrent operations can be submitted to Hazelcast without throwing
+                    <code>OperationRejectedException</code> (negative means undefined).</td>
+                <td>integer</td>
+                <td>-1</td>
             </tr>
             <tr>
                 <td>
