@@ -17,10 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.*;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.Join;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
@@ -143,16 +140,16 @@ public class Node {
         this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
         systemLogService = new SystemLogService(this);
         ServerSocketChannel serverSocketChannel = null;
-        Address localAddress = null;
+        Address publicAddress = null;
         try {
             AddressPicker addressPicker = new AddressPicker(this);
             addressPicker.pickAddress();
-            localAddress = addressPicker.getAddress();
+            publicAddress = addressPicker.getPublicAddress();
             serverSocketChannel = addressPicker.getServerSocketChannel();
         } catch (Throwable e) {
             Util.throwUncheckedException(e);
         }
-        address = localAddress;
+        address = publicAddress;
         localMember = new MemberImpl(address, true, localNodeType, UUID.randomUUID().toString());
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
@@ -426,7 +423,8 @@ public class Node {
         logger.log(Level.FINEST, "Starting thread " + serviceThread.getName());
         serviceThread.start();
         connectionManager.start();
-        if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
+        final NetworkConfig networkConfig = config.getNetworkConfig();
+        if (networkConfig.getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
             multicastServiceThread.start();
         }
@@ -438,9 +436,9 @@ public class Node {
         logger.log(Level.FINEST, "finished starting threads, calling join");
         join();
         int clusterSize = clusterImpl.getMembers().size();
-        if (address.getPort() >= config.getPort() + clusterSize) {
+        if (address.getPort() >= networkConfig.getPort() + clusterSize) {
             StringBuilder sb = new StringBuilder("Config seed port is ");
-            sb.append(config.getPort());
+            sb.append(networkConfig.getPort());
             sb.append(" and cluster size is ");
             sb.append(clusterSize);
             sb.append(". Some of the ports seem occupied!");

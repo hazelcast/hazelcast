@@ -132,11 +132,11 @@ public class NodeIOService implements IOService {
     }
 
     public boolean isReuseSocketAddress() {
-        return node.getConfig().isReuseAddress();
+        return node.getConfig().getNetworkConfig().isReuseAddress();
     }
 
     public int getSocketPort() {
-        return node.getConfig().getPort();
+        return node.getConfig().getNetworkConfig().getPort();
     }
 
     public boolean isSocketBindAny() {
@@ -144,7 +144,7 @@ public class NodeIOService implements IOService {
     }
 
     public boolean isSocketPortAutoIncrement() {
-        return node.getConfig().isPortAutoIncrement();
+        return node.getConfig().getNetworkConfig().isPortAutoIncrement();
     }
 
     public int getSocketReceiveBufferSize() {

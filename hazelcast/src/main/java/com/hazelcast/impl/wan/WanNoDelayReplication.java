@@ -110,10 +110,11 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
 
     @SuppressWarnings("BusyWait")
     Connection getConnection() throws InterruptedException {
+        final int defaultPort = node.getConfig().getNetworkConfig().getPort();
         while (running) {
             String targetStr = addressQueue.take();
             try {
-                final AddressHolder addressHolder = AddressUtil.getAddressHolder(targetStr, node.getConfig().getPort());
+                final AddressHolder addressHolder = AddressUtil.getAddressHolder(targetStr, defaultPort);
                 final Address target = new Address(addressHolder.address, addressHolder.port);
                 final ConnectionManager connectionManager = node.getConnectionManager();
                 Connection conn = connectionManager.getOrConnect(target);

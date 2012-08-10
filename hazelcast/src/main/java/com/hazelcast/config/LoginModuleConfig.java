@@ -69,4 +69,15 @@ public class LoginModuleConfig {
     public void setProperties(Properties properties) {
         this.properties = properties;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("LoginModuleConfig");
+        sb.append("{className='").append(className).append('\'');
+        sb.append(", usage=").append(usage);
+        sb.append(", properties=").append(properties);
+        sb.append('}');
+        return sb.toString();
+    }
 }

@@ -171,13 +171,13 @@ public class ClusterMBean extends AbstractMBean<HazelcastInstance> {
     @JMXAttribute("Port")
     @JMXDescription("The network port used by multicast")
     public int getPort() {
-        return config.getPort();
+        return config.getNetworkConfig().getPort();
     }
 
     @JMXAttribute("PortAutoIncrement")
     @JMXDescription("The network port is autoincremented if already in use")
     public boolean isPortAutoIncrement() {
-        return config.isPortAutoIncrement();
+        return config.getNetworkConfig().isPortAutoIncrement();
     }
 
     @JMXAttribute("ClusterTime")
