@@ -16,7 +16,7 @@
 
 package com.hazelcast.hibernate.access;
 
-import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 import org.hibernate.cache.CacheException;
@@ -95,7 +95,7 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
                         getCache().unlock(key);
                         return false;
                     }
-                } catch (OperationTimeoutException e) {
+                } catch (HazelcastException e) {
                     return false;
                 }
             } else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {
