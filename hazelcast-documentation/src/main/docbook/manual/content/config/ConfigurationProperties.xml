@@ -225,7 +225,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
                 <td>
                     <literal>hazelcast.max.operation.timeout</literal>
                 </td>
-                <td>Maximum operation timeout in milliseconds if no timeout is specified for a call. (default 300 seconds)</td>
+                <td>Maximum operation timeout in milliseconds if no timeout is specified for an operation. (default 300 seconds)</td>
                 <td>integer</td>
                 <td>300000</td>
             </tr>
