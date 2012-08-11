@@ -125,7 +125,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         beforeCall();
         final MProxyImpl mProxy = MProxyImpl.this;
         final Data dataKey = toData(key);
-        AsyncCall call = new AsyncCall() {
+        AsyncCall call = new ClassLoaderAwareAsyncCall() {
             @Override
             protected void call() {
                 setResult(mProxy.get(dataKey));
@@ -140,7 +140,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         final MProxyImpl mProxy = MProxyImpl.this;
         final Data dataKey = toData(key);
         final Data dataValue = toData(value);
-        AsyncCall call = new AsyncCall() {
+        AsyncCall call = new ClassLoaderAwareAsyncCall() {
             @Override
             protected void call() {
                 setResult(mProxy.put(dataKey, dataValue));
@@ -154,7 +154,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         beforeCall();
         final MProxyImpl mProxy = MProxyImpl.this;
         final Data dataKey = toData(key);
-        AsyncCall call = new AsyncCall() {
+        AsyncCall call = new ClassLoaderAwareAsyncCall() {
             @Override
             protected void call() {
                 setResult(mProxy.remove(dataKey));

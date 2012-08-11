@@ -27,11 +27,8 @@ public abstract class AsyncCall implements Future, Runnable {
     protected abstract void call();
 
     public void run() {
-        try {
-            ThreadContext.get().setCallContext(callContext);
-            call();
-        } catch (Throwable ignored) {
-        }
+        ThreadContext.get().setCallContext(callContext);
+        call();
     }
 
     public void setResult(Object obj) {
