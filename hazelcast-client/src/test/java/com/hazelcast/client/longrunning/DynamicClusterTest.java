@@ -122,6 +122,23 @@ public class DynamicClusterTest {
         assertEquals(i, map.get("test"));
     }
 
+    @Test
+    public void testClientFailoverWithOneMember() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastClient client = TestUtility.newHazelcastClient(h1);
+        Map map = client.getMap("myMap");
+        map.put("test", 1);
+        h1.getLifecycleService().shutdown();
+        Thread.sleep(1000);
+        h1 = Hazelcast.newHazelcastInstance(config);
+
+        assertEquals(null, map.get("test"));
+        map.put("test", 2);
+        assertEquals(2, map.get("test"));
+
+        h1.getLifecycleService().shutdown();
+    }
+
     @Test(expected = RuntimeException.class)
     public void throwsRuntimeExceptionWhenNoMemberToConnect
             () throws InterruptedException, IOException {
