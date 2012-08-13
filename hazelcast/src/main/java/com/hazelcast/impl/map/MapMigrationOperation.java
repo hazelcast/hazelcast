@@ -93,6 +93,7 @@ public class MapMigrationOperation extends AbstractOperation implements ServiceM
             partition.records.putAll(entry.getValue());
             System.err.println(entry.getKey() + "  HEYOOOOO !!!!! " + entry.getValue().size());
         }
+        System.out.println("HYYYYyYYYYYYY");
         clear();
     }
 

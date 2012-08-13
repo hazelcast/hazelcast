@@ -91,7 +91,7 @@ public class PutOperation extends BackupAwareOperation {
 //        }
 //        responseHandler.sendResponse(new Response(preResponseBackupOp, oldValueData, false));
         int mapBackupCount = 1;
-        int backupCount = 0;// Math.min(context.getNodeService().getClusterImpl().getSize() - 1, mapBackupCount);
+        int backupCount = Math.min(context.getNodeService().getClusterImpl().getSize() - 1, mapBackupCount);
         if (backupCount > 0) {
             GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
             op.setBackupOpType(GenericBackupOperation.BackupOpType.PUT);

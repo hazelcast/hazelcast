@@ -25,7 +25,9 @@ import com.hazelcast.impl.spi.Response;
 import com.hazelcast.nio.Data;
 
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.impl.map.MapService.MAP_SERVICE_NAME;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -52,14 +54,14 @@ public class MapProxy {
             txn.attachParticipant(MAP_SERVICE_NAME, partitionId);
         }
         PutOperation putOperation = new PutOperation(name, toData(k), v, txnId, ttl);
-        long backupCallId = -1;// mapService.createNewBackupCallQueue();
+        long backupCallId = mapService.createNewBackupCallQueue();
         try {
             putOperation.setBackupCallId(backupCallId);
             Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
             Future f = invocation.invoke();
             Object response = f.get();
-//            BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
-//            backupResponses.poll(5, TimeUnit.SECONDS);
+            BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
+            backupResponses.poll(5, TimeUnit.SECONDS);
             if (response instanceof Response) {
                 return ((Response) response).getResult();
             }

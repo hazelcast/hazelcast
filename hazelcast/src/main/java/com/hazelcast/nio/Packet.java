@@ -84,7 +84,6 @@ public final class Packet implements SocketWritable, CallStateAware {
     public CallState callState = null;
 
     public Packet() {
-        System.out.println("CREATED!!!");
     }
 
     public CallState getCallState() {

@@ -1043,7 +1043,9 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
             return null;
         }
 //        return mapMembers.get(address);
-        return membersRef.get().get(address);
+        final Map<Address, MemberImpl> map = membersRef.get();
+        if (map == null) return null;
+        return map.get(address);
     }
 //    final public void createAndAddMember(Address address, NodeType nodeType, String nodeUuid) {
 ////        checkServiceThread();
