@@ -1329,7 +1329,7 @@ public class ConcurrentMapManager extends BaseManager {
                 }
                 txn.getMulti(name, key, allValues);
                 if (allValues.size() == 0) {
-                    return null;
+                    return Collections.emptySet();
                 }
                 return allValues;
             } else {
