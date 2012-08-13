@@ -48,16 +48,13 @@ import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BaseManager {
-
 //    protected final List<MemberImpl> lsMembers;
     /**
      * Counter for normal/data (non-lite) members.
      * Counter is not thread-safe!
      */
 //    protected final Counter dataMemberCount;
-
 //    protected final Map<Address, MemberImpl> mapMembers;
-
     protected final Queue<Packet> qServiceThreadPacketCache;
 
     protected final ConcurrentMap<Long, Call> mapCalls;
@@ -283,11 +280,11 @@ public abstract class BaseManager {
             boolean callerKnownMember = isCallerKnownMember(request);
             if (request.redoCount > redoLogThreshold || systemLogService.shouldLog(INFO)) {
                 systemLogService.info(request, new SystemArgsLog("Migrating/CallerKnownMember/RightRemoteTarget",
-                                isMigrating, callerKnownMember, rightRemoteTarget));
+                        isMigrating, callerKnownMember, rightRemoteTarget));
             }
             if (isMigrating || !callerKnownMember || !rightRemoteTarget) {
                 final RedoType redoType = isMigrating ? REDO_PARTITION_MIGRATING :
-                                     (!callerKnownMember ? REDO_MEMBER_UNKNOWN : REDO_TARGET_WRONG);
+                        (!callerKnownMember ? REDO_MEMBER_UNKNOWN : REDO_TARGET_WRONG);
                 returnRedoResponse(request, redoType);
             } else {
                 if (systemLogService.shouldLog(INFO)) {
@@ -540,8 +537,8 @@ public abstract class BaseManager {
             throw new RuntimeInterruptedException(error);
         } else {
             logger.log(Level.WARNING, error + " (To throw exception on interruption set '"
-                                      + GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION
-                                      + "' to true.)");
+                    + GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION
+                    + "' to true.)");
         }
     }
 
@@ -777,7 +774,7 @@ public abstract class BaseManager {
             packet.setFromRequest(request);
             packet.callId = getCallId();
             request.callId = getCallId();
-            final boolean sent = send(packet, targetConnection);
+            final boolean sent = node.clusterImpl.send(packet, targetConnection);
             if (!sent) {
                 logger.log(Level.FINEST, ConnectionAwareOp.this + " Packet cannot be sent to " + targetConnection);
                 releasePacket(packet);
@@ -898,7 +895,7 @@ public abstract class BaseManager {
                 packet.callId = getCallId();
                 request.callId = getCallId();
                 targetConnection = node.connectionManager.getOrConnect(target);
-                boolean sent = send(packet, targetConnection);
+                boolean sent = node.clusterImpl.send(packet, targetConnection);
                 if (!sent) {
                     targetConnection = null;
                     logger.log(Level.FINEST, TargetAwareOp.this + " Packet cannot be sent to " + target);
@@ -940,7 +937,7 @@ public abstract class BaseManager {
         protected void throwTxTimeoutException(final Object key) {
             throw new OperationTimeoutException(request.operation.toString(),
                     "Could not acquire resource under transaction! " +
-                    "Another thread holds a lock for the key : " + key);
+                            "Another thread holds a lock for the key : " + key);
         }
 
         @Override
@@ -1191,7 +1188,7 @@ public abstract class BaseManager {
                     packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
                     packet.lockAddress = callerAddress;
                     packet.longValue = eventType;
-                    sendOrReleasePacket(packet, toAddress);
+                    node.clusterImpl.send(packet, toAddress);
                 }
             }
         }
@@ -1206,14 +1203,14 @@ public abstract class BaseManager {
 
     public void sendProcessableTo(RemotelyProcessable rp, Connection conn) {
         Packet packet = createRemotelyProcessablePacket(rp);
-        sendOrReleasePacket(packet, conn);
+        node.clusterImpl.send(packet, conn);
     }
 
     public boolean sendProcessableTo(final RemotelyProcessable rp, final Address address) {
         final Data value = toData(rp);
         final Packet packet = obtainPacket();
         packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
-        return sendOrReleasePacket(packet, address);
+        return node.clusterImpl.send(packet, address);
     }
 
     public void sendProcessableToAll(RemotelyProcessable rp, boolean processLocally) {
@@ -1226,7 +1223,7 @@ public abstract class BaseManager {
             if (!member.localMember()) {
                 Packet packet = obtainPacket();
                 packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
-                sendOrReleasePacket(packet, member.getAddress());
+                node.clusterImpl.send(packet, member.getAddress());
             }
         }
     }
@@ -1313,7 +1310,7 @@ public abstract class BaseManager {
         } else if (packet.responseType == RESPONSE_REDO) {
             packet.lockAddress = null;
         }
-        return sendOrReleasePacket(packet, packet.conn);
+        return node.clusterImpl.send(packet, packet.conn);
     }
 
     protected boolean sendResponse(final Packet packet, final Address address) {
@@ -1324,7 +1321,7 @@ public abstract class BaseManager {
     protected boolean sendResponseFailure(final Packet packet) {
         packet.operation = ClusterOperation.RESPONSE;
         packet.responseType = RESPONSE_FAILURE;
-        return sendOrReleasePacket(packet, packet.conn);
+        return node.clusterImpl.send(packet, packet.conn);
     }
 
     void enqueueEvent(int eventType, String name, Data key, Data value, Address from, boolean localEvent) {
@@ -1460,30 +1457,6 @@ public abstract class BaseManager {
             logger.log(Level.FINEST, packetResponse.operation + " No call for callId " + packetResponse.callId);
             releasePacket(packetResponse);
         }
-    }
-
-    /**
-     * Do not forget to release packet if send fails.
-     * * Better use {@link #sendOrReleasePacket(Packet, Address)}
-     */
-    public boolean send(Packet packet, Address address) {
-        return node.clusterImpl.send(packet, address);
-    }
-
-    /**
-     * Do not forget to release packet if send fails.
-     * Better use {@link #sendOrReleasePacket(Packet, Connection)}
-     */
-    public boolean send(Packet packet, Connection conn) {
-        return node.clusterImpl.send(packet, conn);
-    }
-
-    public boolean sendOrReleasePacket(Packet packet, Address address) {
-        return node.clusterImpl.send(packet, address);
-    }
-
-    public boolean sendOrReleasePacket(Packet packet, Connection conn) {
-        return node.clusterImpl.sendOrReleasePacket(packet, conn);
     }
 
     long getOperationTimeout(long timeout) {

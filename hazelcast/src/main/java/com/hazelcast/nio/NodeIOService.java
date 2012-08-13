@@ -93,7 +93,8 @@ public class NodeIOService implements IOService {
     public void handleMemberPacket(final Packet p) {
 //        System.out.println("handle p " + p.operation);
         if (p.operation == ClusterOperation.REMOTE_CALL) {
-            node.nodeService.handleOperation(p);
+            node.nodeService.handleOperation(new SimpleSocketWritable(p));
+            p.conn.releasePacket(p);
         } else {
             node.clusterService.enqueuePacket(p);
         }

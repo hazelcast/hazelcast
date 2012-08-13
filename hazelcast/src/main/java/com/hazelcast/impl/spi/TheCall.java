@@ -25,7 +25,7 @@ import java.io.IOException;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 class TheCall implements Call {
-    long id;
+    private long id;
     private final Address target;
     private final Callback callback;
 
@@ -36,10 +36,6 @@ class TheCall implements Call {
 
     public long getCallId() {
         return id;
-    }
-
-    public void setCallId(long id) {
-        this.id = id;
     }
 
     public void onEnqueue() {

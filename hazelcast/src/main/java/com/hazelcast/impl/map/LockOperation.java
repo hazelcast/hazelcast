@@ -27,7 +27,7 @@ import java.io.IOException;
 
 public class LockOperation extends AbstractNamedKeyBasedOperation {
 
-    private static final long DEFAULT_LOCK_TTL = 60 * 1000;
+    public static final long DEFAULT_LOCK_TTL = 60 * 1000;
 
     long ttl = DEFAULT_LOCK_TTL; // how long should the lock live?
 
@@ -49,7 +49,22 @@ public class LockOperation extends AbstractNamedKeyBasedOperation {
         MapService mapService = (MapService) context.getService();
         MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
         LockInfo lock = mapPartition.getOrCreateLock(getKey());
-        responseHandler.sendResponse(lock.lock(context.getCaller(), threadId, ttl));
+        if (lock.testLock(threadId, context.getCaller())) {
+            boolean locked = lock.lock(context.getCaller(), threadId, ttl);
+            if (locked) {
+                GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, ttl);
+                backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.LOCK);
+                int partitionId = context.getPartitionId();
+                int backupCount = mapPartition.getBackupCount();
+                try {
+                    context.getNodeService().takeBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount, 60);
+                } catch (Exception ignored) {
+                }
+            }
+            responseHandler.sendResponse(locked);
+        } else {
+            mapPartition.schedule(LockOperation.this);
+        }
     }
 
     @Override

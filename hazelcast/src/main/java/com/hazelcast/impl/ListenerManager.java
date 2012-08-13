@@ -79,7 +79,7 @@ public class ListenerManager extends BaseManager {
             for (ListenerItem listenerItem : listeners) {
                 if (!listenerItem.localListener) {
                     registerListener(false, listenerItem.name,
-                                     toData(listenerItem.key), deadAddress, listenerItem.includeValue);
+                            toData(listenerItem.key), deadAddress, listenerItem.includeValue);
                 }
             }
         }
@@ -208,7 +208,7 @@ public class ListenerManager extends BaseManager {
                 Packet packet = obtainPacket();
                 packet.set(name, ADD_LISTENER_NO_RESPONSE, key, null);
                 packet.longValue = (includeValue) ? 1 : 0;
-                sendOrReleasePacket(packet, owner);
+                node.clusterImpl.send(packet, owner);
             }
         }
 
@@ -228,7 +228,7 @@ public class ListenerManager extends BaseManager {
         Packet packet = obtainPacket();
         packet.set(name, ClusterOperation.ADD_LISTENER_NO_RESPONSE, key, null);
         packet.longValue = (includeValue) ? 1 : 0;
-        sendOrReleasePacket(packet, toAddress);
+        node.clusterImpl.send(packet, toAddress);
     }
 
     public synchronized void addLocalListener(final String name, Object listener, Instance.InstanceType instanceType) {
@@ -383,7 +383,6 @@ public class ListenerManager extends BaseManager {
                                 null,
                                 event.firedLocally, serializerRegistry) :
                         event);
-
         switch (listenerItem.instanceType) {
             case MAP:
             case MULTIMAP:

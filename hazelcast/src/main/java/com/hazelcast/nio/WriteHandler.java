@@ -16,9 +16,9 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.util.Clock;
 import com.hazelcast.impl.base.SystemArgsLog;
 import com.hazelcast.nio.ascii.SocketTextWriter;
+import com.hazelcast.util.Clock;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -106,7 +106,15 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     SocketWritable poll() {
-        return writeQueue.poll();
+        SocketWritable sw = writeQueue.poll();
+        if (sw instanceof SimpleSocketWritable) {
+            SimpleSocketWritable ssw = (SimpleSocketWritable) sw;
+            Packet packet = connection.obtainPacket();
+            ssw.setToPacket(packet);
+            packet.onEnqueue();
+            return packet;
+        }
+        return sw;
     }
 
     public void handle() {

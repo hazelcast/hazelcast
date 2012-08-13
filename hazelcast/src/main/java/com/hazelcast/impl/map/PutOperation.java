@@ -19,13 +19,12 @@ package com.hazelcast.impl.map;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.partition.PartitionInfo;
-import com.hazelcast.impl.spi.*;
+import com.hazelcast.impl.spi.NodeService;
+import com.hazelcast.impl.spi.OperationContext;
+import com.hazelcast.impl.spi.ResponseHandler;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -34,43 +33,16 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class PutOperation extends AbstractNamedKeyBasedOperation {
+public class PutOperation extends BackupAwareOperation {
     Object value;
-    Data dataValue;
-    long ttl;
-    String txnId;
 
     public PutOperation(String name, Data dataKey, Object value, String txnId, long ttl) {
-        super(name, dataKey);
-        this.txnId = txnId;
-        this.dataValue = toData(value);
+        super(name, dataKey, toData(value), ttl);
+        setTxnId(txnId);
         this.value = value;
-        this.ttl = ttl;
     }
 
     public PutOperation() {
-    }
-
-    public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
-        dataValue.writeData(out);
-        out.writeLong(ttl);
-        boolean txnal = (txnId != null);
-        out.writeBoolean(txnal);
-        if (txnal) {
-            out.writeUTF(txnId);
-        }
-    }
-
-    public void readData(DataInput in) throws IOException {
-        super.readData(in);
-        dataValue = new Data();
-        dataValue.readData(in);
-        ttl = in.readLong();
-        boolean txnal = in.readBoolean();
-        if (txnal) {
-            txnId = in.readUTF();
-        }
     }
 
     public void run() {
@@ -79,7 +51,6 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
         }
         OperationContext context = getOperationContext();
         ResponseHandler responseHandler = context.getResponseHandler();
-        System.out.println(context.getNodeService().getThisAddress() + " Put txnId  " + txnId);
         MapService mapService = (MapService) context.getService();
         int partitionId = context.getPartitionId();
         PartitionContainer pc = mapService.getPartitionContainer(partitionId);
@@ -113,12 +84,25 @@ public class PutOperation extends AbstractNamedKeyBasedOperation {
             }
             mapPartition.store.store(key, record.getValue());
         }
-        boolean callerBackup = takeBackup();
-        Operation preResponseBackupOp = null;
-        if (callerBackup) {
-            preResponseBackupOp = new PutBackupOperation(name, dataKey, dataValue, ttl, false);
+//        boolean callerBackup = takeBackup();
+//        Operation preResponseBackupOp = null;
+//        if (callerBackup) {
+//            preResponseBackupOp = new PutBackupOperation(name, dataKey, dataValue, ttl, false);
+//        }
+//        responseHandler.sendResponse(new Response(preResponseBackupOp, oldValueData, false));
+        int mapBackupCount = 1;
+        int backupCount = 0;// Math.min(context.getNodeService().getClusterImpl().getSize() - 1, mapBackupCount);
+        if (backupCount > 0) {
+            GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
+            op.setBackupOpType(GenericBackupOperation.BackupOpType.PUT);
+            op.setFirstCallerId(backupCallId, context.getCaller());
+            try {
+                getOperationContext().getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, op, partitionId, mapBackupCount);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-        responseHandler.sendResponse(new Response(preResponseBackupOp, oldValueData, false));
+        responseHandler.sendResponse(oldValueData);
     }
 
     private boolean takeBackup() {

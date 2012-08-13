@@ -82,14 +82,12 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
     private long timeToStartJoin = 0;
 
     private long firstJoinRequest = 0;
-
 //    private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
-
 //    private long lastHeartbeat = 0;
 
     private final ILogger securityLogger;
 
-    private final Data heartbeatOperationData ;
+    private final Data heartbeatOperationData;
 
     private final CopyOnWriteArraySet<MembershipListener> listeners = new CopyOnWriteArraySet<MembershipListener>();
 
@@ -105,14 +103,13 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         icmpEnabled = node.groupProperties.ICMP_ENABLED.getBoolean();
         icmpTtl = node.groupProperties.ICMP_TTL.getInteger();
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
-        heartbeatOperationData = toData(new HeartbeatOperation()) ;
+        heartbeatOperationData = toData(new HeartbeatOperation());
         node.clusterService.registerPeriodicRunnable(new SplitBrainHandler(node));
         node.nodeService.getScheduledExecutorService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 heartBeater();
             }
         }, heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
-
         node.clusterService.registerPeriodicRunnable(new Runnable() {
             public void run() {
                 checkScheduledActions();
@@ -225,7 +222,6 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
                         sendResponse(packet);
                     }
                 });
-
         node.nodeService.registerService(SERVICE_NAME, this);
     }
 
@@ -236,9 +232,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         } finally {
             lock.unlock();
         }
-
     }
-
 //    public void appendState(StringBuffer sbState) {
 //        sbState.append("\nClusterManager {");
 //        for (ScheduledAction sa : setScheduledActions) {
@@ -275,7 +269,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
             Connection connMaster = node.connectionManager.getOrConnect(getMasterAddress());
             if (connMaster != null) {
                 Packet packet = obtainPacket(level.toString(), null, toData(msg), ClusterOperation.LOG, 0);
-                sendOrReleasePacket(packet, connMaster);
+                node.clusterImpl.send(packet, connMaster);
             }
         } else {
             logger.log(level, msg);
@@ -378,7 +372,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
                     // not reachable.
 //                    enqueueAndReturn(new Processable() {
 //                        public void process() {
-                            removeAddress(address);
+                    removeAddress(address);
 //                        }
 //                    });
                 } catch (Throwable ignored) {
@@ -397,7 +391,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         packet.name = SERVICE_NAME;
         packet.longValue = 1;
         packet.setValue(heartbeatOperationData);
-        sendOrReleasePacket(packet, target);
+        send(packet, target);
     }
 
     public void handleMaster(Master master) {
@@ -484,7 +478,6 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         } finally {
             lock.unlock();
         }
-
     }
 
     private void sendRemoveMemberToOthers(final Address deadAddress) {
@@ -510,7 +503,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         try {
             final long now = Clock.currentTimeMillis();
             String msg = "Handling join from " + joinRequest.address + ", inProgress: " + joinInProgress
-                         + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
+                    + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
             logger.log(Level.FINEST, msg);
             final MemberImpl member = getMember(joinRequest.address);
             final Connection conn = null; //joinRequest.getConnection();
@@ -521,7 +514,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
                     return;
                 }
                 logger.log(Level.WARNING, "New join request has been received from an existing endpoint! => " + member
-                                          + " Removing old member and processing join request...");
+                        + " Removing old member and processing join request...");
                 // If existing connection of endpoint is different from current connection
                 // destroy it, otherwise keep it.
                 final Connection existingConnection = node.connectionManager.getConnection(joinRequest.address);
@@ -548,7 +541,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
                         final Credentials cr = joinRequest.getCredentials();
                         if (cr == null) {
                             securityLogger.log(Level.SEVERE, "Expecting security credentials " +
-                                                             "but credentials could not be found in JoinRequest!");
+                                    "but credentials could not be found in JoinRequest!");
                             sendAuthFail(joinRequest.address);
                             return;
                         } else {
@@ -557,8 +550,8 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
                                 lc.login();
                             } catch (LoginException e) {
                                 securityLogger.log(Level.SEVERE, "Authentication has failed for " + cr.getPrincipal()
-                                                                 + '@' + cr.getEndpoint() + " => (" + e.getMessage() +
-                                                                 ")");
+                                        + '@' + cr.getEndpoint() + " => (" + e.getMessage() +
+                                        ")");
                                 securityLogger.log(Level.FINEST, e.getMessage(), e);
                                 sendAuthFail(joinRequest.address);
                                 return;
@@ -575,7 +568,7 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
                             startJoin();
                         } else {
                             if (setJoins.add(newMemberInfo)) {
-                        //                            sendProcessableTo(new Master(node.getMasterAddress()), conn);
+                                //                            sendProcessableTo(new Master(node.getMasterAddress()), conn);
                                 sendMaster(joinRequest);
                                 if (firstJoinRequest == 0) {
                                     firstJoinRequest = now;
@@ -596,19 +589,18 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         } finally {
             lock.unlock();
         }
-
     }
 
     private void sendMaster(final JoinRequest joinRequest) {
         node.nodeService.createSingleInvocation(SERVICE_NAME,
-            new Master(node.getMasterAddress()), -1).setTarget(joinRequest.address)
+                new Master(node.getMasterAddress()), -1).setTarget(joinRequest.address)
                 .setTryCount(1).build().invoke();
     }
 
     public static class AuthenticationFailureOperation extends AbstractOperation
             implements NoReply, NonMemberOperation, NonBlockingOperation {
 
-        public void run()  {
+        public void run() {
             final Node node = getOperationContext().getNodeService().getNode();
             node.executorManager.executeNow(new Runnable() {
                 public void run() {
@@ -636,17 +628,16 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         } finally {
             lock.unlock();
         }
-
     }
 
     public void onRestart() {
 //        enqueueAndWait(new Processable() {
 //            public void process() {
-                joinReset();
+        joinReset();
 //                lsMembers.clear();
 //                mapMembers.clear();
-                membersRef.set(null);
-                dataMemberCount.set(0);
+        membersRef.set(null);
+        dataMemberCount.set(0);
 //            }
 //        }, 5);
     }
@@ -818,7 +809,6 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         } finally {
             lock.unlock();
         }
-
     }
 
     void updateMembers(Collection<MemberInfo> lsMemberInfos) {
@@ -947,10 +937,10 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
     public void connectionAdded(final Connection connection) {
 //        enqueueAndReturn(new Processable() {
 //            public void process() {
-                MemberImpl member = getMember(connection.getEndPoint());
-                if (member != null) {
-                    member.didRead();
-                }
+        MemberImpl member = getMember(connection.getEndPoint());
+        if (member != null) {
+            member.didRead();
+        }
 //            }
 //        });
     }
@@ -996,13 +986,11 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
             } else {
                 memberMap = new LinkedHashMap<Address, MemberImpl>(memberMap);  // ! ORDERED !
             }
-
             for (MemberImpl member : members) {
                 MemberImpl oldMember = memberMap.remove(member.getAddress());
                 if (oldMember == null) {
                     newMembers.add(member);
-                }
-                else if (!oldMember.isLiteMember()) {
+                } else if (!oldMember.isLiteMember()) {
                     dataMemberCount.decrementAndGet();
                 }
                 memberMap.put(member.getAddress(), member);
@@ -1057,7 +1045,6 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
 //        return mapMembers.get(address);
         return membersRef.get().get(address);
     }
-
 //    final public void createAndAddMember(Address address, NodeType nodeType, String nodeUuid) {
 ////        checkServiceThread();
 //        if (address == null) {
@@ -1086,49 +1073,20 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         return dataMemberCount.get();
     }
 
-    /**
-     * Do not forget to release packet if send fails.
-     * * Better use {@link #sendOrReleasePacket(Packet, Address)}
-     */
-    public final boolean send(Packet packet, Address address) {
+    public final boolean send(SocketWritable packet, Address address) {
         if (address == null) return false;
         final Connection conn = node.connectionManager.getOrConnect(address);
         return send(packet, conn);
     }
 
-    /**
-     * Do not forget to release packet if send fails.
-     * Better use {@link #sendOrReleasePacket(Packet, Connection)}
-     */
-    public final boolean send(Packet packet, Connection conn) {
+    public final boolean send(SocketWritable packet, Connection conn) {
         return conn != null && conn.live() && writePacket(conn, packet);
     }
 
-    public final boolean sendOrReleasePacket(Packet packet, Address address) {
-        if (send(packet, address)) {
-            return true;
-        }
-        releasePacket(packet);
-        return false;
-    }
-
-    public final boolean sendOrReleasePacket(Packet packet, Connection conn) {
-        if (send(packet, conn)) {
-            return true;
-        }
-        releasePacket(packet);
-        return false;
-    }
-
-    private boolean writePacket(Connection conn, Packet packet) {
+    private boolean writePacket(Connection conn, SocketWritable packet) {
         final MemberImpl memberImpl = getMember(conn.getEndPoint());
         if (memberImpl != null) {
             memberImpl.didWrite();
-        }
-        if (packet.lockAddress != null) {
-            if (thisAddress.equals(packet.lockAddress)) {
-                packet.lockAddress = null;
-            }
         }
         conn.getWriteHandler().enqueueSocketWritable(packet);
         return true;
@@ -1158,7 +1116,6 @@ public final class ClusterImpl extends BaseManager implements ConnectionListener
         } finally {
             lock.unlock();
         }
-
     }
 
     public Member getLocalMember() {

@@ -49,12 +49,13 @@ class PartitionIterator extends AbstractOperation {
             Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
             for (final int partitionId : partitions) {
                 Operation op = (Operation) toObject(operationData);
+                ResponseQueue r = new ResponseQueue();
                 op.getOperationContext().setNodeService(getOperationContext().getNodeService())
                         .setCaller(getOperationContext().getCaller())
                         .setPartitionId(partitionId)
                         .setLocal(true)
+                        .setResponseHandler(r)
                         .setService(getOperationContext().getService());
-                ResponseQueue r = new ResponseQueue();
                 nodeService.runLocally(partitionId, op, false);
                 responses.put(partitionId, r);
             }

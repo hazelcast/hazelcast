@@ -19,6 +19,10 @@ package com.hazelcast.impl.map;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.spi.*;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MapService implements ServiceLifecycle, TransactionalService {
@@ -27,6 +31,7 @@ public class MapService implements ServiceLifecycle, TransactionalService {
     private final AtomicLong counter = new AtomicLong();
     private final PartitionContainer[] partitionContainers;
     private final NodeService nodeService;
+    private final ConcurrentMap<Long, BlockingQueue<Boolean>> backupCalls = new ConcurrentHashMap<Long, BlockingQueue<Boolean>>(1000);
 
     public MapService(final NodeService nodeService, PartitionInfo[] partitions) {
         this.nodeService = nodeService;
@@ -55,6 +60,20 @@ public class MapService implements ServiceLifecycle, TransactionalService {
         }
         final PartitionContainer container = partitionContainers[partitionId];
         return new MapMigrationOperation(container, partitionId, replicaIndex, diffOnly);
+    }
+
+    public long createNewBackupCallQueue() {
+        long backupCallId = nextId();
+        backupCalls.put(backupCallId, new LinkedBlockingQueue<Boolean>());
+        return backupCallId;
+    }
+
+    public BlockingQueue getBackupCallQueue(long backupCallId) {
+        return backupCalls.get(backupCallId);
+    }
+
+    public void removeBackupCallQueue(long backupCallId) {
+        backupCalls.remove(backupCallId);
     }
 
     public void prepare(String txnId, int partitionId) throws TransactionException {

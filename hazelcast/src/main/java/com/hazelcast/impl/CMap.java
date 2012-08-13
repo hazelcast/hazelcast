@@ -792,7 +792,6 @@ public class CMap {
 
     public void onDisconnect(Record record, Address deadAddress) {
         if (record == null || deadAddress == null) return;
-
         if (record.isLocked() && isMapForQueue()) {
             if (deadAddress.equals(record.getLock().getLockAddress())) {
                 sendKeyToMaster(record.getKeyData());
@@ -927,10 +926,10 @@ public class CMap {
             localUpdateListener.recordUpdated(record);
         }
         if (req.operation == CONCURRENT_MAP_SET
-            || req.operation == CONCURRENT_MAP_TRY_PUT
-            || req.operation == CONCURRENT_MAP_PUT_TRANSIENT
-            || req.operation == CONCURRENT_MAP_REPLACE_IF_SAME
-            || req.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
+                || req.operation == CONCURRENT_MAP_TRY_PUT
+                || req.operation == CONCURRENT_MAP_PUT_TRANSIENT
+                || req.operation == CONCURRENT_MAP_REPLACE_IF_SAME
+                || req.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
             req.response = Boolean.TRUE;
         } else {
             req.response = oldValue;
@@ -951,7 +950,7 @@ public class CMap {
             packet.setKey(key);
             packet.operation = ClusterOperation.BLOCKING_OFFER_KEY;
             packet.longValue = 0;
-            concurrentMapManager.sendOrReleasePacket(packet, concurrentMapManager.getMasterAddress());
+            node.clusterImpl.send(packet, concurrentMapManager.getMasterAddress());
         }
     }
 
@@ -1065,7 +1064,7 @@ public class CMap {
         final long now = Clock.currentTimeMillis();
         for (Record record : records) {
             if (record.isActive() && record.isValid(now) &&
-                record.isLocked() && acquiredAtLeastFor < (now - record.getLockAcquireTime())) {
+                    record.isLocked() && acquiredAtLeastFor < (now - record.getLockAcquireTime())) {
                 result.add(record);
             }
         }
@@ -1074,7 +1073,7 @@ public class CMap {
 
     /**
      * for dead-lock detection
-     *
+     * <p/>
      * TODO: Warning => DistributedLock is not thread-safe !!!
      *
      * @param lockOwners
@@ -1092,7 +1091,7 @@ public class CMap {
                         Request request = scheduledAction.getRequest();
                         if (ClusterOperation.CONCURRENT_MAP_LOCK.equals(request.operation)) {
                             lockRequested.put(record.getKey(),
-                                              new DistributedLock(request.lockAddress, request.lockThreadId));
+                                    new DistributedLock(request.lockAddress, request.lockThreadId));
                         }
                     }
                 }
@@ -1258,7 +1257,7 @@ public class CMap {
     }
 
     class MaxSizeHeapPolicy extends MaxSizePerJVMPolicy {
-        final long memoryLimit ;
+        final long memoryLimit;
 
         MaxSizeHeapPolicy(MaxSizeConfig maxSizeConfig) {
             super(maxSizeConfig);
@@ -1271,7 +1270,7 @@ public class CMap {
     }
 
     class MaxSizeHeapPercentagePolicy extends MaxSizePerJVMPolicy {
-        final int maxPercentage ;
+        final int maxPercentage;
 
         MaxSizeHeapPercentagePolicy(MaxSizeConfig maxSizeConfig) {
             super(maxSizeConfig);
@@ -1371,7 +1370,6 @@ public class CMap {
                                 sortedRecords.add(record);   // sorting for eviction
                                 recordsStillOwned++;
                             }
-
                             if (record.isActive() && record.isValid(now)) {
                                 costOfRecords += record.getCost();
                             }
@@ -1473,7 +1471,7 @@ public class CMap {
                         packet.name = getName();
                         packet.setKey(record.getKeyData());
                         packet.operation = ClusterOperation.CONCURRENT_MAP_INVALIDATE;
-                        concurrentMapManager.sendOrReleasePacket(packet, member.getAddress());
+                        node.clusterImpl.send(packet, member.getAddress());
                     }
                 }
             }

@@ -16,11 +16,8 @@
   -->
 
 <sect1 xml:id="InternalsDistributedMap" version="5.0" xmlns="http://docbook.org/ns/docbook"
-       xmlns:xi="http://www.w3.org/2001/XInclude"
-       xmlns:xlink="http://www.w3.org/1999/xlink"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
-       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
     <title>Internals 4: Distributed Map</title>
     <para>Hazelcast distributed map is a peer to peer, partitioned implementation so entries put
         into the map will be almost evenly partitioned onto the existing members. Entries are
@@ -83,7 +80,7 @@ Member ownerMember = partition.getOwner();
     </para>
     <para>Notice that the new ownership information may not reach each member at the same time and
         the cluster never stops responding to user map operations even during joins so if a member
-        routes the operation to a wrong member, target member will tell the caller to
+        routes the operation to a wrong member, target member will tell the conn to
         <literal>re-do</literal>
         the operation.
     </para>

@@ -20,12 +20,14 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Data;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class MapPartition {
+    final String name;
     final PartitionInfo partitionInfo;
     final PartitionContainer partitionContainer;
     final Map<Data, Record> records = new HashMap<Data, Record>(1000);
@@ -33,12 +35,15 @@ public class MapPartition {
     final MapLoader loader;
     final MapStore store;
     final long writeDelayMillis = 0;
+    final int backupCount;
 
-    public MapPartition(PartitionContainer partitionContainer) {
+    public MapPartition(String name, PartitionContainer partitionContainer) {
+        this.name = name;
         this.partitionInfo = partitionContainer.partitionInfo;
         this.partitionContainer = partitionContainer;
         loader = null;
         store = null;
+        backupCount = partitionContainer.getMapConfig(name).getBackupCount();
     }
 
     public LockInfo getOrCreateLock(Data key) {
@@ -48,5 +53,16 @@ public class MapPartition {
             locks.put(key, lock);
         }
         return lock;
+    }
+
+    public LockInfo getLock(Data key) {
+        return locks.get(key);
+    }
+
+    public int getBackupCount() {
+        return backupCount;
+    }
+
+    public void schedule(Operation operation) {
     }
 }

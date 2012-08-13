@@ -16,11 +16,8 @@
   -->
 
 <sect2 xml:id="MapQuery" version="5.0" xmlns="http://docbook.org/ns/docbook"
-       xmlns:xi="http://www.w3.org/2001/XInclude"
-       xmlns:xlink="http://www.w3.org/1999/xlink"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
-        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
     <title>Query</title>
     <para>Hazelcast partitions your data and spreads across cluster of servers. You can surely
         iterate over the map entries and look for certain entries you are interested in but this
@@ -286,7 +283,7 @@ Set<Employee> employees = (Set<Employee>) map.values(predicate);
         <emphasis role="bold">Indexing</emphasis>
     </para>
     <para>Hazelcast distributed queries will run on each member in parallel and only results
-        will return the caller. When a query runs on a member, Hazelcast will iterate through
+        will return the conn. When a query runs on a member, Hazelcast will iterate through
         the entire owned entries and find the matching ones. Can we make this even faster? Yes
         by indexing the mostly queried fields. Just like you would do for your database. Of
         course, indexing will add overhead for each

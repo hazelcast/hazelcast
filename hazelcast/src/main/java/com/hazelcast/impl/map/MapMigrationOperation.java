@@ -21,6 +21,7 @@ import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NodeService;
+import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.impl.spi.ServiceMigrationOperation;
 import com.hazelcast.nio.Data;
 
@@ -32,12 +33,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
-* @mdogan 7/24/12
-*/
+ * @mdogan 7/24/12
+ */
 public class MapMigrationOperation extends AbstractOperation implements ServiceMigrationOperation {
 
-    private Map<String, Map<Data, DataRecordEntry>> data ;
-    private Map<String, Map<Data, Record>> buffer ;
+    private Map<String, Map<Data, DataRecordEntry>> data;
+    private Map<String, Map<Data, Record>> buffer;
     private int partitionId;
     private int replicaIndex;
     private boolean diff;
@@ -62,12 +63,13 @@ public class MapMigrationOperation extends AbstractOperation implements ServiceM
     }
 
     public void run() {
+        OperationContext context = getOperationContext();
         if (data == null) {
-            getOperationContext().getResponseHandler().sendResponse(Boolean.FALSE);
+            context.getResponseHandler().sendResponse(Boolean.FALSE);
             return;
         }
-        NodeService nodeService = getOperationContext().getNodeService();
-        MapService mapService = (MapService) getOperationContext().getService();
+        NodeService nodeService = context.getNodeService();
+        MapService mapService = (MapService) context.getService();
         buffer = new HashMap<String, Map<Data, Record>>(data.size());
         for (Entry<String, Map<Data, DataRecordEntry>> dataEntry : data.entrySet()) {
             Map<Data, DataRecordEntry> dataMap = dataEntry.getValue();
@@ -80,7 +82,7 @@ public class MapMigrationOperation extends AbstractOperation implements ServiceM
             }
             buffer.put(dataEntry.getKey(), map);
         }
-        getOperationContext().getResponseHandler().sendResponse(Boolean.TRUE);
+        context.getResponseHandler().sendResponse(Boolean.TRUE);
     }
 
     public void onSuccess() {

@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.base;
+package com.hazelcast.impl.map;
 
-import com.hazelcast.impl.Processable;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.impl.spi.OperationContext;
+import com.hazelcast.impl.spi.Response;
 
-public interface Call extends Processable {
+public class BackupResponse extends Response {
 
-    long getCallId();
-
-    void handleResponse(Packet packet);
-
-    void onDisconnect(Address dead);
-
-    void onEnqueue();
-
-    int getEnqueueCount();
+    @Override
+    public void run() {
+        OperationContext context = getOperationContext();
+        long callId = context.getCallId();
+        MapService mapService = context.getService();
+        mapService.getBackupCallQueue(callId).offer(Boolean.TRUE);
+    }
 }

@@ -22,14 +22,25 @@ import java.io.IOException;
 
 public abstract class AbstractOperation implements Operation {
     private final OperationContext context = new OperationContext();
+    private boolean noReply = false;
 
     public OperationContext getOperationContext() {
         return context;
     }
 
+    public boolean isNoReply() {
+        return noReply;
+    }
+
+    public void setNoReply(boolean noReply) {
+        this.noReply = noReply;
+    }
+
     public void writeData(DataOutput out) throws IOException {
+        out.writeBoolean(noReply);
     }
 
     public void readData(DataInput in) throws IOException {
+        noReply = in.readBoolean();
     }
 }

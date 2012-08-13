@@ -17,8 +17,16 @@
 package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.ResponseQueueFactory;
+
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 class SinglePartitionInvocation extends SingleInvocation {
+
+    BlockingQueue q = ResponseQueueFactory.newResponseQueue();
 
     SinglePartitionInvocation(NodeService nodeService, String serviceName, Operation op, int partitionId,
                               int replicaIndex, int tryCount, long tryPauseMillis) {
@@ -30,24 +38,35 @@ class SinglePartitionInvocation extends SingleInvocation {
     }
 
     void setResult(Object obj) {
-        if (obj instanceof RetryableException) {
-            if (invokeCount < tryCount) {
-                try {
-                    Thread.sleep(tryPauseMillis);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                invoke();
-            } else {
-                setException((Throwable) obj);
-            }
-        } else {
-            if (obj instanceof Exception) {
-                setException((Throwable) obj);
-            } else {
-                set(obj);
-            }
-        }
+//        if (obj instanceof RetryableException) {
+//            if (invokeCount < tryCount) {
+//                try {
+//                    Thread.sleep(tryPauseMillis);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                invoke();
+//            } else {
+//                setException((Throwable) obj);
+//            }
+//        } else {
+//            if (obj instanceof Exception) {
+//                setException((Throwable) obj);
+//            } else {
+//                set(obj);
+//            }
+//        }
+//        set(obj);
+        q.offer(obj);
     }
 
+    @Override
+    public Object get() throws InterruptedException, ExecutionException {
+        return q.take();
+    }
+
+    @Override
+    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return q.poll(timeout, unit);
+    }
 }

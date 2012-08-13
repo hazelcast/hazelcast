@@ -46,7 +46,7 @@ public class PartitionContainer {
     public MapPartition getMapPartition(String name) {
         MapPartition mapPartition = maps.get(name);
         if (mapPartition == null) {
-            mapPartition = new MapPartition(PartitionContainer.this);
+            mapPartition = new MapPartition(name, PartitionContainer.this);
             maps.put(name, mapPartition);
         }
         return mapPartition;

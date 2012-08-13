@@ -84,6 +84,7 @@ public final class Packet implements SocketWritable, CallStateAware {
     public CallState callState = null;
 
     public Packet() {
+        System.out.println("CREATED!!!");
     }
 
     public CallState getCallState() {
@@ -253,7 +254,6 @@ public final class Packet implements SocketWritable, CallStateAware {
         int valuePartitionHash = bbHeader.getInt();
         if (key != null) key.setPartitionHash(keyPartitionHash);
         if (value != null) value.setPartitionHash(valuePartitionHash);
-
         if (bbHeader.hasRemaining()) {
             // WARNING: redoData is added by v2.1.3, older versions will ignore this field
             redoData = bbHeader.get();
@@ -324,7 +324,7 @@ public final class Packet implements SocketWritable, CallStateAware {
         indexTypes = request.indexTypes;
         callState = request.callState;
         redoData = request.redoCount > Byte.MAX_VALUE
-                    ? Byte.MAX_VALUE : (byte) request.redoCount; // just don't care values greater than 127.
+                ? Byte.MAX_VALUE : (byte) request.redoCount; // just don't care values greater than 127.
     }
 
     @Override

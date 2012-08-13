@@ -66,7 +66,7 @@ public final class SerializationHelper {
             final SerializationBuffer buffer = getBuffer();
             return buffer.toByteArray(obj);
         } catch (Throwable e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.SEVERE, obj + " failed to serialize: " + e.getMessage(), e);
             if (e instanceof HazelcastSerializationException) {
                 throw (HazelcastSerializationException) e;
             }

@@ -147,7 +147,7 @@ public class BlockingQueueManager extends BaseManager {
                     packet.setKey(key);
                     packet.operation = ClusterOperation.BLOCKING_OFFER_KEY;
                     packet.longValue = index;
-                    sendOrReleasePacket(packet, getMasterAddress());
+                    node.clusterImpl.send(packet, getMasterAddress());
                 }
             }
         });
@@ -553,7 +553,7 @@ public class BlockingQueueManager extends BaseManager {
         };
     }
 
-    private void fireQueueEvent(final String name, final EntryEventType type,  final Data itemData) {
+    private void fireQueueEvent(final String name, final EntryEventType type, final Data itemData) {
         final BQ bq = getBQ(name);
         if (bq != null && bq.mapListeners.size() > 0) {
             enqueueAndReturn(new Processable() {
@@ -842,7 +842,7 @@ public class BlockingQueueManager extends BaseManager {
 
         int maxSize() {
             return (maxSizePerJVM == Integer.MAX_VALUE) ? Integer.MAX_VALUE :
-                   maxSizePerJVM * node.clusterImpl.getDataMemberCount();
+                    maxSizePerJVM * node.clusterImpl.getDataMemberCount();
         }
 
         void doGenerateKey(Request req) {

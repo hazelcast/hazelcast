@@ -14,21 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.base;
+package com.hazelcast.impl.map;
 
-import com.hazelcast.impl.Processable;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
+public interface ScheduledOperation {
+    boolean isValid();
 
-public interface Call extends Processable {
-
-    long getCallId();
-
-    void handleResponse(Packet packet);
-
-    void onDisconnect(Address dead);
-
-    void onEnqueue();
-
-    int getEnqueueCount();
+    void onExpire();
 }

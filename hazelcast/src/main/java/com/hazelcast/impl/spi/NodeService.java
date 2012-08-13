@@ -27,7 +27,7 @@ import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.SimpleSocketWritable;
 
 import java.io.IOException;
 import java.util.*;
@@ -42,8 +42,7 @@ public class NodeService {
 
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
     private final ExecutorService executorService;
-    private final Workers nonBlockingWorkers; // = new Workers("hz.NonBlocking", 1);
-    private final Workers blockingWorkers; // = new Workers("hz.Blocking", 8);
+    private final Workers blockingWorkers;
     private final ScheduledExecutorService scheduledExecutorService;
     private final Node node;
     private final ILogger logger;
@@ -60,8 +59,7 @@ public class NodeService {
                 new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"), classLoader));
         scheduledExecutorService = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(node.threadGroup,
                 node.getThreadPoolNamePrefix("scheduled"), classLoader));
-        nonBlockingWorkers = new Workers("hz.NonBlocking", 1);
-        blockingWorkers = new Workers("hz.Blocking", 8);
+        blockingWorkers = new Workers("hz.Blocking", 4);
         partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
@@ -98,7 +96,6 @@ public class NodeService {
             }
         }
         Thread.sleep(500);
-        System.out.println("TRYING AGAIN...");
         for (Integer failedPartition : failedPartitions) {
             Invocation inv = createSingleInvocation(serviceName, op, failedPartition).build();
             inv.invoke();
@@ -107,7 +104,6 @@ public class NodeService {
         for (Integer failedPartition : failedPartitions) {
             Future f = (Future) partitionResults.get(failedPartition);
             Object result = f.get();
-            System.out.println(failedPartition + " now response " + result);
             partitionResults.put(failedPartition, result);
         }
         return partitionResults;
@@ -133,6 +129,7 @@ public class NodeService {
     }
 
     void invokeSingle(final SingleInvocation inv) {
+        ThreadContext.get().setCurrentFactory(node.factory);
         final Address target = inv.getTarget();
         final Operation op = inv.getOperation();
         final int partitionId = inv.getPartitionId();
@@ -155,15 +152,11 @@ public class NodeService {
             }
             runLocally(partitionId, op, nonBlocking);
         } else {
-            final Packet packet = new Packet();
-            packet.operation = REMOTE_CALL;
-            packet.blockId = partitionId;
-            packet.name = serviceName;
-            packet.longValue = nonBlocking ? 1 : 0;
             Data valueData = toData(op);
-            packet.setValue(valueData);
             TheCall call = new TheCall(target, inv);
-            boolean sent = node.concurrentMapManager.registerAndSend(target, packet, call);
+            long callId = node.concurrentMapManager.registerCall(call);
+            SimpleSocketWritable ssw = new SimpleSocketWritable(REMOTE_CALL, serviceName, valueData, callId, partitionId, null, nonBlocking);
+            boolean sent = node.clusterImpl.send(ssw, target);
             if (!sent) {
                 inv.setResult(new IOException("Packet not sent!"));
             }
@@ -192,21 +185,21 @@ public class NodeService {
         });
     }
 
-    public void handleOperation(final Packet packet) {
+    public void handleOperation(final SimpleSocketWritable ssw) {
         ThreadContext.get().setCurrentFactory(node.factory);
-        final int partitionId = packet.blockId;
-        final boolean nonBlocking = packet.longValue == 1;
-        final Data data = packet.getValueData();
-        final long callId = packet.callId;
-        final Address caller = packet.conn.getEndPoint();
-        final String serviceName = packet.name;
+        final int partitionId = ssw.getPartitionId();
+        final boolean nonBlocking = ssw.isNonBlocking();
+        final Data data = ssw.getValue();
+        final long callId = ssw.getCallId();
+        final Address caller = ssw.getConn().getEndPoint();
+        final String serviceName = ssw.getName();
         final Executor executor = getExecutor(partitionId, nonBlocking);
         executor.execute(new Runnable() {
             public void run() {
                 try {
                     ThreadContext.get().setCurrentFactory(node.factory);
                     final Operation op = (Operation) toObject(data);
-                    setOperationContext(op, serviceName, caller, callId, partitionId).setConnection(packet.conn);
+                    setOperationContext(op, serviceName, caller, callId, partitionId).setConnection(ssw.getConn());
                     final boolean noReply = (op instanceof NoReply);
                     if (!noReply) {
                         ResponseHandler responseHandler = new ResponseHandler() {
@@ -214,13 +207,8 @@ public class NodeService {
                                 if (!(response instanceof Operation)) {
                                     response = new Response(response);
                                 }
-                                packet.clearForResponse();
-                                packet.blockId = partitionId;
-                                packet.callId = callId;
-                                packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
-                                packet.setValue(toData(response));
-                                packet.name = serviceName;
-                                node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
+                                boolean nb = (response instanceof NonBlockingOperation);
+                                node.clusterImpl.send(new SimpleSocketWritable(REMOTE_CALL, serviceName, toData(response), callId, partitionId, null, nb), ssw.getConn());
                             }
                         };
                         op.getOperationContext().setResponseHandler(responseHandler);
@@ -248,13 +236,7 @@ public class NodeService {
                     }
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
-                    packet.clearForResponse();
-                    packet.blockId = partitionId;
-                    packet.callId = callId;
-                    packet.longValue = 1;
-                    packet.setValue(toData(e));
-                    packet.name = serviceName;
-                    node.concurrentMapManager.sendOrReleasePacket(packet, packet.conn);
+                    node.clusterImpl.send(new SimpleSocketWritable(REMOTE_CALL, serviceName, toData(e), callId, partitionId, null, true), ssw.getConn());
                 }
             }
         });
@@ -272,6 +254,7 @@ public class NodeService {
     }
 
     public void takeBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds) throws ExecutionException, TimeoutException, InterruptedException {
+        backupCount = Math.min(getClusterImpl().getSize() - 1, backupCount);
         if (backupCount > 0) {
             List<Future> backupOps = new ArrayList<Future>(backupCount);
             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
@@ -292,9 +275,39 @@ public class NodeService {
         }
     }
 
+    public void sendBackups(String serviceName, Operation op, int partitionId, int backupCount) throws ExecutionException, TimeoutException, InterruptedException {
+        backupCount = Math.min(getClusterImpl().getSize() - 1, backupCount);
+        if (backupCount > 0) {
+            Data opData = toData(op);
+            PartitionInfo partitionInfo = getPartitionInfo(partitionId);
+            for (int i = 0; i < backupCount; i++) {
+                int replicaIndex = i + 1;
+                Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
+                if (replicaTarget != null) {
+                    if (replicaTarget.equals(getThisAddress())) {
+                        // Normally shouldn't happen!!
+                    } else {
+                        SimpleSocketWritable ssw = new SimpleSocketWritable(REMOTE_CALL, serviceName, opData, -1, partitionId, null, true);
+                        node.clusterImpl.send(ssw, replicaTarget);
+                    }
+                }
+            }
+        }
+    }
+
+    public void send(String serviceName, Operation op, int partitionId, long callId, Address target) {
+        if (getThisAddress().equals(target)) {
+            setOperationContext(op, serviceName, getThisAddress(), callId, partitionId);
+            op.run();
+        } else {
+            Data opData = toData(op);
+            node.clusterImpl.send(new SimpleSocketWritable(REMOTE_CALL, serviceName, opData, callId, partitionId, null, true), target);
+        }
+    }
+
     private ExecutorService getExecutor(int partitionId, boolean nonBlocking) {
         if (partitionId > -1) {
-            return (nonBlocking) ? nonBlockingWorkers.getExecutor(partitionId) : blockingWorkers.getExecutor(partitionId);
+            return blockingWorkers.getExecutor(partitionId);
         } else {
             return executorService;
         }
@@ -386,7 +399,7 @@ public class NodeService {
         return node.getThisAddress();
     }
 
-    public Member getOwner(int partitionId) {
+    Member getOwner(int partitionId) {
         return node.concurrentMapManager.getPartitionServiceImpl().getPartition(partitionId).getOwner();
     }
 
@@ -394,7 +407,7 @@ public class NodeService {
         return node.concurrentMapManager.getPartitionId(key);
     }
 
-    public PartitionInfo getPartitionInfo(int partitionId) {
+    PartitionInfo getPartitionInfo(int partitionId) {
         PartitionInfo p = node.concurrentMapManager.getPartitionInfo(partitionId);
         if (p.getOwner() == null) {
             // probably ownerships are not set yet.
@@ -415,9 +428,7 @@ public class NodeService {
     public void shutdown() {
         blockingWorkers.shutdownNow();
         executorService.shutdownNow();
-        nonBlockingWorkers.shutdownNow();
         scheduledExecutorService.shutdownNow();
-        nonBlockingWorkers.awaitTermination(1);
         try {
             scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {

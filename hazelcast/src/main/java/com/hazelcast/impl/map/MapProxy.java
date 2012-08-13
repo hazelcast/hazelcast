@@ -33,12 +33,45 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapProxy {
     final NodeService nodeService;
+    final MapService mapService;
 
     public MapProxy(NodeService nodeService) {
         this.nodeService = nodeService;
+        this.mapService = nodeService.getService(MAP_SERVICE_NAME);
     }
 
     public Object put(String name, Object k, Object v, long ttl) {
+        Data key = toData(k);
+        int partitionId = nodeService.getPartitionId(key);
+        ThreadContext threadContext = ThreadContext.get();
+        threadContext.setCurrentFactory(nodeService.getNode().factory);
+        TransactionImpl txn = threadContext.getTransaction();
+        String txnId = null;
+        if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+            txnId = txn.getTxnId();
+            txn.attachParticipant(MAP_SERVICE_NAME, partitionId);
+        }
+        PutOperation putOperation = new PutOperation(name, toData(k), v, txnId, ttl);
+        long backupCallId = -1;// mapService.createNewBackupCallQueue();
+        try {
+            putOperation.setBackupCallId(backupCallId);
+            Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
+            Future f = invocation.invoke();
+            Object response = f.get();
+//            BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
+//            backupResponses.poll(5, TimeUnit.SECONDS);
+            if (response instanceof Response) {
+                return ((Response) response).getResult();
+            }
+            return toObject((Data) response);
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        } finally {
+            mapService.removeBackupCallQueue(backupCallId);
+        }
+    }
+
+    public Object put2(String name, Object k, Object v, long ttl) {
         Data key = toData(k);
         int partitionId = nodeService.getPartitionId(key);
         ThreadContext threadContext = ThreadContext.get();

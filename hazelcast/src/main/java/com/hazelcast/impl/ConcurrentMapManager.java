@@ -22,7 +22,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.concurrentmap.*;
 import com.hazelcast.impl.executor.ParallelExecutor;
-import com.hazelcast.impl.map.MapService;
 import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
@@ -60,7 +59,7 @@ public class ConcurrentMapManager extends BaseManager {
     final int MAX_BACKUP_COUNT;
     final long GLOBAL_REMOVE_DELAY_MILLIS;
     final boolean LOG_STATE;
-//    long lastLogStateTime = currentTimeMillis();
+    //    long lastLogStateTime = currentTimeMillis();
     final ConcurrentMap<String, CMap> maps;
     final ConcurrentMap<String, NearCache> mapCaches;
     final PartitionServiceImpl partitionServiceImpl;
@@ -160,12 +159,18 @@ public class ConcurrentMapManager extends BaseManager {
         return partitionServiceImpl;
     }
 
+    public long registerCall(Call call) {
+        long callId = localIdGen.incrementAndGet();
+        mapCalls.put(callId, call);
+        return callId;
+    }
+
     public boolean registerAndSend(Address target, Packet packet, Call call) {
         packet.callId = localIdGen.incrementAndGet();
         mapCalls.put(packet.callId, call);
         Connection targetConnection = node.connectionManager.getOrConnect(target);
 //        System.out.println("targetConnection = " + targetConnection);
-        return send(packet, targetConnection);
+        return node.clusterImpl.send(packet, targetConnection);
     }
 
     Address getOwner(Data key) {
@@ -281,11 +286,9 @@ public class ConcurrentMapManager extends BaseManager {
             }
         }
     }
-
 //    public void syncForAdd() {
 //        partitionManager.syncForAdd();
 //    }
-
 //    void logState() {
 //        long now = currentTimeMillis();
 //        if (LOG_STATE && ((now - lastLogStateTime) > 15000)) {
@@ -421,7 +424,6 @@ public class ConcurrentMapManager extends BaseManager {
     public PartitionInfo getPartitionInfo(int partitionId) {
         return partitionManager.getPartition(partitionId);
     }
-
 //    public void sendMigrationEvent(boolean started, MigratingPartition migratingPartition) {
 //        sendProcessableToAll(new MigrationNotification(started, migratingPartition), true);
 //    }
@@ -452,7 +454,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     public boolean lock(String name, Object key, long timeout) {
         MLock mlock = new MLock();
-        final boolean booleanCall = timeout >= 0 ; // tryLock
+        final boolean booleanCall = timeout >= 0; // tryLock
         try {
             final boolean locked = mlock.lock(name, key, timeout);
             if (!locked && !booleanCall) {
@@ -523,8 +525,7 @@ public class ConcurrentMapManager extends BaseManager {
             long result = (Long) getResultAsObject();
             if (result == -1L) {
                 return false;
-            }
-            else {
+            } else {
                 CMap cmap = getMap(name);
                 if (result == 0) {
                     cmap.mapLocalLocks.remove(dataKey);
@@ -1998,7 +1999,7 @@ public class ConcurrentMapManager extends BaseManager {
                     // this is not a call! we do not expect any response!
                     // @see BackupOperationHandler
                     packet.callId = -1L;
-                    sendOrReleasePacket(packet, target);
+                    node.clusterImpl.send(packet, target);
                 }
             }
         }
@@ -2321,7 +2322,9 @@ public class ConcurrentMapManager extends BaseManager {
             return isMigrating(request, getReplicaIndex(request));
         }
 
-        private int getReplicaIndex(final Request request) {return (int) request.longValue;}
+        private int getReplicaIndex(final Request request) {
+            return (int) request.longValue;
+        }
 
         public void handle(Request request) {
             doOperation(request);
@@ -2356,7 +2359,7 @@ public class ConcurrentMapManager extends BaseManager {
                 WanMergePacketProcessor p = (WanMergePacketProcessor) getPacketProcessor(CONCURRENT_MAP_WAN_MERGE);
                 p.process(packet);
             } else {
-                sendOrReleasePacket(packet, address);
+                node.clusterImpl.send(packet, address);
             }
         }
     }
