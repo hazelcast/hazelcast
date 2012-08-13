@@ -636,12 +636,16 @@ public class PartitionManager {
         return needBackup || !immediateTasksQueue.isEmpty();
     }
 
-    public void fireMigrationEvent(final boolean started, int partitionId, Address from, Address to) {
+    public void fireMigrationEvent(final MigrationStatus status, int partitionId, Address from, Address to) {
         final MemberImpl current = concurrentMapManager.getMember(from);
         final MemberImpl newOwner = concurrentMapManager.getMember(to);
         final MigrationEvent migrationEvent = new MigrationEvent(concurrentMapManager.node, partitionId, current, newOwner);
-        systemLogService.logPartition("MigrationEvent [" + started + "] " + migrationEvent);
-        concurrentMapManager.partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
+        systemLogService.logPartition("MigrationEvent [" + status + "] " + migrationEvent);
+        concurrentMapManager.partitionServiceImpl.doFireMigrationEvent(status, migrationEvent);
+    }
+
+    private void sendMigrationEvent(final MigrationStatus status, MigrationRequestTask migrationRequestTask) {
+        concurrentMapManager.sendProcessableToAll(new MigrationNotification(status, migrationRequestTask), true);
     }
 
     private boolean shouldCheckRepartitioning() {
@@ -815,7 +819,7 @@ public class PartitionManager {
                 MemberImpl ownerMember = concurrentMapManager.getMember(newOwner);
                 if (ownerMember != null) {
                     partition.setReplicaAddress(replicaIndex, newOwner);
-                    concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
+                    sendMigrationEvent(MigrationStatus.COMPLETED, migrationRequestTask);
                 }
             }
             sendPartitionRuntimeState();
@@ -867,7 +871,7 @@ public class PartitionManager {
                 if (migrationRequestTask.isMigration() && migrationRequestTask.getReplicaIndex() == 0) {
                     concurrentMapManager.enqueueAndWait(new Processable() {
                         public void process() {
-                            concurrentMapManager.sendMigrationEvent(true, migrationRequestTask);
+                            sendMigrationEvent(MigrationStatus.STARTED, migrationRequestTask);
                         }
                     }, 100);
                 }
@@ -922,20 +926,27 @@ public class PartitionManager {
                     } else {
                         // remove active partition migration
                         logger.log(Level.WARNING, "Migration task has failed => " + migrationRequestTask);
-                        systemLogService.logPartition("Migration task has failed => " + migrationRequestTask);
-                        concurrentMapManager.enqueueAndWait(new Processable() {
-                            public void process() {
-                                compareAndSetActiveMigratingPartition(migrationRequestTask, null);
-                            }
-                        });
+                        migrationTaskFailed();
                     }
                 }
             } catch (Throwable t) {
                 logger.log(Level.WARNING, "Error [" + t.getClass().getName() + ": " + t.getMessage() + "] " +
                         "while executing " + migrationRequestTask);
                 logger.log(Level.FINEST, t.getMessage(), t);
-                systemLogService.logPartition("Failed! " + migrationRequestTask);
+                migrationTaskFailed();
             }
+        }
+
+        private void migrationTaskFailed() {
+            systemLogService.logPartition("Migration task has failed => " + migrationRequestTask);
+            concurrentMapManager.enqueueAndWait(new Processable() {
+                public void process() {
+                    compareAndSetActiveMigratingPartition(migrationRequestTask, null);
+                    if (migrationRequestTask.getReplicaIndex() == 0) {
+                        sendMigrationEvent(MigrationStatus.FAILED, migrationRequestTask);
+                    }
+                }
+            });
         }
     }
 
@@ -969,7 +980,7 @@ public class PartitionManager {
                 sendPartitionRuntimeState();
                 compareAndSetActiveMigratingPartition(migrationRequestTask, null);
                 if (replicaIndex == 0) {
-                    concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
+                    sendMigrationEvent(MigrationStatus.COMPLETED, migrationRequestTask);
                 }
             }
         }
