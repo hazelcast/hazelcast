@@ -53,7 +53,7 @@ public class SocketProtocolReader implements SocketReader {
     private final IOService ioService;
     private static final String NOREPLY = "noreply";
 
-    private String flag = "0";
+    private String flag = null;
     final ByteBuffer firstNewLineRead = ByteBuffer.allocate(2);
 
     Pattern p = Pattern.compile("\\s+");
@@ -157,7 +157,7 @@ public class SocketProtocolReader implements SocketReader {
         command = null;
         threadId = -1;
         args = null;
-        flag = "0";
+        flag = null;
         noreply = false;
         buffers = null;
         bufferSize = null;

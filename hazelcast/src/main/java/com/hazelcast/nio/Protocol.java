@@ -53,8 +53,9 @@ public class Protocol implements SocketWritable {
         if (threadId != -1)
             builder.append(threadId).append(" ");
         builder.append(command.toString());
-        if (flag != null)
+        if (flag != null) {
             builder.append(" ").append(flag);
+        }
         for (String arg : args) {
             builder.append(" ").append(arg);
         }
@@ -113,10 +114,7 @@ public class Protocol implements SocketWritable {
 
     public Protocol create(Command command, String[] args, ByteBuffer... buffers) {
         if (args == null) args = new String[]{};
-        String[] argWithFlag = new String[args.length + 1];
-        argWithFlag[0] = String.valueOf(this.flag);
-        System.arraycopy(args, 0, argWithFlag, 1, args.length);
-        return new Protocol(this.conn, command, this.flag, this.threadId, this.noReply, argWithFlag, buffers);
+        return new Protocol(this.conn, command, this.flag, this.threadId, this.noReply, args, buffers);
     }
 
     @Override
