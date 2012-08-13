@@ -50,6 +50,7 @@ public class XAResourceImpl implements XAResource {
 		managedConnection.log(Level.INFO, "XA start: " + xid);
 		Transaction tx = managedConnection.getHazelcastInstance().getTransaction();
 		if (Transaction.TXN_STATUS_ACTIVE != tx.getStatus()) {
+			tx.setTransactionTimeout(transactionTimeout * 1000);
 			tx.begin();
 		}
 		transactionCache.put(xid, ThreadContext.get());
@@ -133,8 +134,8 @@ public class XAResourceImpl implements XAResource {
 		return retValue;
 	}
 
-	public boolean setTransactionTimeout(int transactionTimeout) {
-		this.transactionTimeout = transactionTimeout;
+	public boolean setTransactionTimeout(int seconds) {
+		this.transactionTimeout = seconds;
 		return true;
 	}
 	
