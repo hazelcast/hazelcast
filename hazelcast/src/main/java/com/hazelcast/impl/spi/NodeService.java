@@ -59,7 +59,7 @@ public class NodeService {
                 new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"), classLoader));
         scheduledExecutorService = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(node.threadGroup,
                 node.getThreadPoolNamePrefix("scheduled"), classLoader));
-        blockingWorkers = new Workers("hz.Blocking", 4);
+        blockingWorkers = new Workers("hz.Blocking", 1);
         partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
