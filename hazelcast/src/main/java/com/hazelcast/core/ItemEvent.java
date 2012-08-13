@@ -22,15 +22,17 @@ public class ItemEvent<E> extends EventObject {
 
     private final E item;
     private final ItemEventType eventType;
+    private final Member member;
 
-    public ItemEvent(String name, int eventType, E item) {
-        this(name, ItemEventType.getByType(eventType), item);
+    public ItemEvent(String name, int eventType, E item, Member member) {
+        this(name, ItemEventType.getByType(eventType), item, member);
     }
 
-    public ItemEvent(String name, ItemEventType itemEventType, E item) {
+    public ItemEvent(String name, ItemEventType itemEventType, E item, Member member) {
         super(name);
         this.item = item;
         this.eventType = itemEventType;
+        this.member = member;
     }
 
     public ItemEventType getEventType() {
@@ -41,11 +43,21 @@ public class ItemEvent<E> extends EventObject {
         return item;
     }
 
+    /**
+     * Returns the member fired this event.
+     *
+     * @return the member fired this event.
+     */
+    public Member getMember() {
+        return member;
+    }
+
     @Override
     public String toString() {
         return "ItemEvent{" +
                 "event=" + eventType +
                 ", item=" + getItem() +
+                ", member=" + getMember() +
                 "} ";
     }
 }
