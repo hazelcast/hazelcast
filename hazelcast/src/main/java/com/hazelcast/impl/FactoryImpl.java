@@ -653,7 +653,8 @@ public class FactoryImpl implements HazelcastInstance {
             if (map != null && map.size() > 0) {
                 Set<Map.Entry> entries = map.entrySet();
                 for (Map.Entry entry : entries) {
-                    mProxy.putTransient(entry.getKey(), entry.getValue(), 0, null);
+                    if( !mProxy.putFromLoad(entry.getKey(), entry.getValue()) )
+                        break;
                 }
             }
         }

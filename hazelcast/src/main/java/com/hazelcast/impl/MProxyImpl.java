@@ -231,6 +231,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         dynamicProxy.putTransient(key, value, time, timeunit);
     }
 
+    public boolean putFromLoad(Object key, Object value) {
+        return dynamicProxy.putFromLoad(key, value);
+    }
+
     public boolean tryPut(Object key, Object value, long time, TimeUnit timeunit) {
         return dynamicProxy.tryPut(key, value, time, timeunit);
     }
@@ -610,6 +614,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             }
             mapOperationCounter.incrementOtherOperations();
             concurrentMapManager.putTransient(name, key, value, ttl);
+        }
+
+        public boolean putFromLoad(Object key, Object value) {
+            mapOperationCounter.incrementOtherOperations();
+            return concurrentMapManager.putFromLoad(name, key, value);
         }
 
         public Object put(Object key, Object value, long ttl) {

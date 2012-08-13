@@ -59,6 +59,7 @@ public enum ClusterOperation {
     CONCURRENT_MAP_PUT(50),
     CONCURRENT_MAP_PUT_ALL(51),
     CONCURRENT_MAP_PUT_TRANSIENT(52),
+    CONCURRENT_MAP_PUT_FROM_LOAD(175),
     CONCURRENT_MAP_SET(53),
     CONCURRENT_MAP_MERGE(54),
     CONCURRENT_MAP_ASYNC_MERGE(55),
@@ -157,6 +158,7 @@ public enum ClusterOperation {
     LOCK_FORCE_UNLOCK(172),
     /* CONCURRENT_MAP_IS_KEY_LOCKED(173), see above */
     LOCK_IS_LOCKED(174);
+    /* CONCURRENT_MAP_PUT_FROM_LOAD(175), see above */
 
 
     public static final int LENGTH = 500;

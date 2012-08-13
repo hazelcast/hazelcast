@@ -16,10 +16,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.monitor.LocalMapStats;
@@ -807,14 +804,37 @@ public class MapStoreTest extends TestUtil {
         config
                 .getMapConfig("map")
                 .setMapStoreConfig(new MapStoreConfig()
-                                           .setWriteDelaySeconds(1)
-                                           .setImplementation(new SimpleMapStore<Long, String>(STORE)));
+                        .setWriteDelaySeconds(1)
+                        .setImplementation(new SimpleMapStore<Long, String>(STORE)));
         HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
         IMap map = h.getMap("map");
         Collection collection = map.values();
         LocalMapStats localMapStats = map.getLocalMapStats();
         assertEquals(0, localMapStats.getDirtyEntryCount());
     }
+
+    @Test
+    public void testIssue188LoadAllIgnoresMaxSize() {
+        final int maxSize = 10;
+        final ConcurrentMap<Integer, String> STORE =
+                new ConcurrentHashMap<Integer, String>();
+        for (int i = 0; i<30; i++) {
+            STORE.put(i, "value"+i);
+        }
+        Config config = new Config();
+        config
+                .getMapConfig("map")
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setWriteDelaySeconds(1)
+                        .setImplementation(new SimpleMapStore<Integer, String>(STORE)));
+        config.getMapConfig("map").setMaxSizeConfig(new MaxSizeConfig().setSize(maxSize).setMaxSizePolicy(MaxSizeConfig.POLICY_CLUSTER_WIDE_MAP_SIZE));
+
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        IMap map = h.getMap("map");
+        System.out.println(map.size());
+        assertTrue(map.size() <= maxSize);
+    }
+
 
     protected Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds);

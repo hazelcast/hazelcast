@@ -113,6 +113,7 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_PUT_IF_ABSENT, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_NOT_NULL, new PutOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_TRANSIENT, new PutTransientOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_PUT_FROM_LOAD, new PutFromLoadOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REPLACE_IF_SAME, new ReplaceOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_PUT_MULTI, new PutMultiOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_REMOVE, new RemoveOperationHandler());
@@ -721,6 +722,11 @@ public class ConcurrentMapManager extends BaseManager {
     public void putTransient(String name, Object key, Object value, long ttl) {
         MPut mput = new MPut();
         mput.putTransient(name, key, value, ttl);
+    }
+
+    public boolean putFromLoad(String name, Object key, Object value) {
+        MPut mput = new MPut();
+        return (Boolean)mput.putFromLoad(name, key, value);
     }
 
     // used by GetMapEntryOperationHandler, GetOperationHandler, ContainsKeyOperationHandler
@@ -1668,6 +1674,10 @@ public class ConcurrentMapManager extends BaseManager {
             return txnalPut(CONCURRENT_MAP_PUT_TRANSIENT, name, key, value, -1, ttl);
         }
 
+        public Object putFromLoad(String name, Object key, Object value) {
+            return txnalPut(CONCURRENT_MAP_PUT_FROM_LOAD, name, key, value, -1, -1);
+        }
+
         public boolean set(String name, Object key, Object value, long ttl) {
             Object result = txnalPut(CONCURRENT_MAP_SET, name, key, value, -1, ttl);
             return (result == Boolean.TRUE);
@@ -1811,6 +1821,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (operation == CONCURRENT_MAP_TRY_PUT
                         || operation == CONCURRENT_MAP_SET
                         || operation == CONCURRENT_MAP_PUT_AND_UNLOCK
+                        || operation == CONCURRENT_MAP_PUT_FROM_LOAD
                         || operation == CONCURRENT_MAP_PUT_TRANSIENT) {
                     request.setBooleanRequest();
                     Data valueData = request.value;
@@ -2793,21 +2804,45 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class PutTransientOperationHandler extends SchedulableOperationHandler {
-        // putTransient is not checking map capacity
-        // because it is used during initial map loading.
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            Record record = ensureRecord(request);
-            boolean dirty = (record == null) ? false : record.isDirty();
-            cmap.put(request);
-            if (record != null) {
-                record.setDirty(dirty);
-                if (!dirty) {
-                    record.setLastStoredTime(Clock.currentTimeMillis());
+            if (cmap.overCapacity()) {
+                returnRedoResponse(request, REDO_MAP_OVER_CAPACITY);
+            } else {
+                Record record = ensureRecord(request);
+                boolean dirty = (record == null) ? false : record.isDirty();
+                cmap.put(request);
+                if (record != null) {
+                    record.setDirty(dirty);
+                    if (!dirty) {
+                        record.setLastStoredTime(Clock.currentTimeMillis());
+                    }
                 }
+                request.value = null;
+                request.response = Boolean.TRUE;
             }
-            request.value = null;
-            request.response = Boolean.TRUE;
+        }
+    }
+
+    class PutFromLoadOperationHandler extends SchedulableOperationHandler {
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.overCapacity()) {
+                request.value = null;
+                request.response = Boolean.FALSE;
+            } else {
+                Record record = ensureRecord(request);
+                boolean dirty = (record == null) ? false : record.isDirty();
+                cmap.put(request);
+                if (record != null) {
+                    record.setDirty(dirty);
+                    if (!dirty) {
+                        record.setLastStoredTime(Clock.currentTimeMillis());
+                    }
+                }
+                request.value = null;
+                request.response = Boolean.TRUE;
+            }
         }
     }
 
