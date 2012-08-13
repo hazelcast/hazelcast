@@ -17,6 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.partition.MigrationStatus;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -76,9 +77,9 @@ public class PartitionServiceImpl implements PartitionService {
         return mapPartitions.get(partitionId);
     }
 
-    void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
+    void doFireMigrationEvent(final MigrationStatus status, final MigrationEvent migrationEvent) {
         if (migrationEvent == null) throw new IllegalArgumentException("MigrationEvent is null.");
-        if (!started) {
+        if (status == MigrationStatus.COMPLETED) {
             concurrentMapManager.node.executorManager.executeNow(new Runnable() {
                 public void run() {
                     if (migrationEvent.getOldOwner() != null && migrationEvent.getOldOwner().localMember()) {
@@ -96,10 +97,16 @@ public class PartitionServiceImpl implements PartitionService {
         for (final MigrationListener migrationListener : lsMigrationListeners) {
             concurrentMapManager.node.executorManager.executeNow(new Runnable() {
                 public void run() {
-                    if (started) {
-                        migrationListener.migrationStarted(migrationEvent);
-                    } else {
-                        migrationListener.migrationCompleted(migrationEvent);
+                    switch (status) {
+                        case STARTED:
+                            migrationListener.migrationStarted(migrationEvent);
+                            break;
+                        case COMPLETED:
+                            migrationListener.migrationCompleted(migrationEvent);
+                            break;
+                        case FAILED:
+                            migrationListener.migrationFailed(migrationEvent);
+                            break;
                     }
                 }
             });

@@ -537,9 +537,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public boolean putMulti(Object key, Object value) {
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MPutMulti mput = concurrentMapManager.new MPutMulti();
+            mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return mput.put(name, key, value);
         }
 

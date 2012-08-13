@@ -477,7 +477,7 @@ public class BlockingQueueManager extends BaseManager {
     public Iterator iterate(final String name) {
         MasterOp op = new MasterOp(ClusterOperation.BLOCKING_ITERATE, name, 0);
         op.initOp();
-        Keys keys = (Keys) op.getResultAsObject();
+        Keys keys = (Keys) op.getResultAsObject(false);
         final Collection<Data> dataKeys = keys.getKeys();
         final Collection allKeys = new ArrayList(dataKeys);
         TransactionImpl txn = ThreadContext.get().getCallContext().getTransaction();

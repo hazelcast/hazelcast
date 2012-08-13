@@ -406,10 +406,10 @@ public class ListenerManager extends BaseManager {
                 ItemListener itemListener = (ItemListener) listener;
                 switch (entryEventType) {
                     case ADDED:
-                        itemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED, event.getKeyData()));
+                        itemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED, event.getKeyData(), event.getMember()));
                         break;
                     case REMOVED:
-                        itemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED, event.getKeyData()));
+                        itemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED, event.getKeyData(), event.getMember()));
                         break;
                 }
                 break;
@@ -421,10 +421,10 @@ public class ListenerManager extends BaseManager {
                 ItemListener queueItemListener = (ItemListener) listener;
                 switch (entryEventType) {
                     case ADDED:
-                        queueItemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED, event.getNewValueData()));
+                        queueItemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED, event.getNewValueData(), event.getMember()));
                         break;
                     case REMOVED:
-                        queueItemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED, event.getNewValueData()));
+                        queueItemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED, event.getNewValueData(), event.getMember()));
                         break;
                 }
                 break;

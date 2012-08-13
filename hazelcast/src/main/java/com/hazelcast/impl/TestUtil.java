@@ -93,6 +93,10 @@ public class TestUtil {
             }
         }
 
+        public void migrationFailed(final MigrationEvent migrationEvent) {
+
+        }
+
         public boolean await(int time, TimeUnit timeUnit) throws InterruptedException {
             return latch.await(time, timeUnit);
         }

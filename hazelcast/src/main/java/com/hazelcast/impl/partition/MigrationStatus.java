@@ -14,29 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.partition;
 
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemEventType;
-import com.hazelcast.core.Member;
-import com.hazelcast.nio.Data;
+/**
+ * @mdogan 8/11/12
+ */
+public enum MigrationStatus {
 
-import static com.hazelcast.nio.IOUtil.toObject;
+    STARTED(0),
+    COMPLETED(1),
+    FAILED(-1);
 
-public class DataAwareItemEvent extends ItemEvent {
-    final Data itemData;
-
-    public DataAwareItemEvent(String name, ItemEventType itemEventType, Data itemData, Member member) {
-        super(name, itemEventType, null, member);
-        this.itemData = itemData;
+    public static MigrationStatus get(byte code) {
+        switch (code) {
+            case 0:
+                return STARTED;
+            case 1:
+                return COMPLETED;
+            case -1:
+                return FAILED;
+        }
+        return null;
     }
 
-    public Data getItemData() {
-        return itemData;
+    private final byte code;
+
+    private MigrationStatus(final int code) {
+        this.code = (byte) code;
     }
 
-    @Override
-    public Object getItem() {
-        return toObject(itemData);
+    public byte getCode() {
+        return code;
     }
 }

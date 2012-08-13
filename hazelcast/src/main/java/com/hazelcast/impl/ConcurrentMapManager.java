@@ -409,10 +409,6 @@ public class ConcurrentMapManager extends BaseManager {
         return partitionManager.getPartition(partitionId);
     }
 
-    public void sendMigrationEvent(boolean started, MigrationRequestTask migrationRequestTask) {
-        sendProcessableToAll(new MigrationNotification(started, migrationRequestTask), true);
-    }
-
     public void startCleanup(final boolean now, final boolean force) {
         if (now) {
             for (CMap cMap : maps.values()) {

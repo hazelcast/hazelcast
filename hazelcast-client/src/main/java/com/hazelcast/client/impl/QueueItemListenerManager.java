@@ -63,10 +63,10 @@ public class QueueItemListenerManager {
                 Boolean added = (Boolean) toObject(packet.getValue());
                 if (added) {
                     listener.itemAdded(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED,
-                                                                listenerHolder.includeValue ? new Data(packet.getKey()) : null));
+                                                                listenerHolder.includeValue ? new Data(packet.getKey()) : null, null));
                 } else {
                     listener.itemRemoved(new DataAwareItemEvent(packet.getName(), ItemEventType.REMOVED,
-                                                                listenerHolder.includeValue ? new Data(packet.getKey()) : null));
+                                                                listenerHolder.includeValue ? new Data(packet.getKey()) : null, null));
                 }
             }
         }
