@@ -140,6 +140,10 @@ public class ClusterBackupTest {
             public void migrationCompleted(MigrationEvent migrationEvent) {
                 latch.countDown();
             }
+
+            public void migrationFailed(final MigrationEvent migrationEvent) {
+
+            }
         }));
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         IMap map2 = h2.getMap("def");
