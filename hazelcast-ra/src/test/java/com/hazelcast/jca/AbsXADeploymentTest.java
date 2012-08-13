@@ -16,52 +16,34 @@
 
 package com.hazelcast.jca;
 
-import static org.junit.Assert.assertEquals;
-
+import java.io.File;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Map;
 
-import javax.naming.NamingException;
-import javax.transaction.UserTransaction;
-
-import org.junit.Test;
+import javax.sql.DataSource;
 
 import static org.junit.Assert.*;
 
-public class XATransactionCommitTest extends AbsXADeploymentTest {
-	
-	@Test
-	public void testTransactionCommi() throws Throwable {
-		Object o = context.lookup("java:/UserTransaction");
+public abstract class AbsXADeploymentTest extends AbsDeploymentTest {
+
+	protected DataSource ds;
+
+	@Override
+	public void setUp() throws Throwable {
+		super.setUp();
+		
+		embeddedJCAContainer.deploy((new File("src/test/resources/jdbc-xa.rar")).toURL());
+		embeddedJCAContainer.deploy((new File("src/test/resources/h2-xa-ds.xml")).toURL());
+		
+		Object o = context.lookup("java:/HazelcastDS");
 		assertNotNull(o);
-		UserTransaction tx = (UserTransaction) o;
+		ds = (DataSource) o;
 		
-		ConnectionImpl c = connectionFactory.getConnection();
-		Map<String, String> m = c.getMap("testmap");
-
-		tx.begin();
-
-		m.put("key", "value");
-	
-		
-		assertEquals("value", m.get("key"));
-
-		doSql();
-		
-		tx.commit();
-
-		assertEquals("value", m.get("key"));
-	}
-
-	private void doSql() throws NamingException, SQLException {
 		Connection con = ds.getConnection();
 		Statement stmt = null;
 		try {
 			stmt = con.createStatement();
-			stmt.execute("INSERT INTO TEST VALUES ('ab')");
-			stmt.execute("SELECT * FROM TEST");	
+			stmt.execute("create table TEST (A varchar(2))");
 		} finally {
 			if (stmt != null) {
 				stmt.close();

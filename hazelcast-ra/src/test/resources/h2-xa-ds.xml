@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<datasources xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:noNamespaceSchemaLocation="http://www.jboss.org/ironjacamar/schema/datasources_1_0.xsd">
+
+  <xa-datasource jndi-name="java:/HazelcastDS" pool-name="HazelcastDS">
+    <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
+    <xa-datasource-property name="URL">jdbc:h2:mem:test</xa-datasource-property>
+    <security>
+      <!-- Have to defined as a primary property - otherwise it won't work -->
+      <user-name>sa</user-name>
+      <!-- Have to defined as a primary property - otherwise it won't work -->
+      <password>sa</password>
+    </security>
+  </xa-datasource>
+
+</datasources>
