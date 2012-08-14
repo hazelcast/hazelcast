@@ -55,6 +55,9 @@ public class TestManagedContext {
     private ApplicationContext context;
 
     @Autowired
+    private DummyTransactionManager transactionManager;
+
+    @Autowired
     private SomeBean bean;
 
     @BeforeClass
@@ -83,6 +86,14 @@ public class TestManagedContext {
         Future<Long> f2 = (Future<Long>) instance1.getExecutorService()
                 .submit(new DistributedTask<Long>(new SomeTask()));
         Assert.assertEquals(bean.value, f2.get().longValue());
+    }
+
+    @Test
+    public void testTransactionalTask() throws ExecutionException, InterruptedException {
+        Future<Void> f = instance1.getExecutorService().submit(new SomeTransactionalTask());
+        f.get();
+        Assert.assertTrue("transaction manager could not proxy the submitted task.",
+                transactionManager.isUsed());
     }
 
 }

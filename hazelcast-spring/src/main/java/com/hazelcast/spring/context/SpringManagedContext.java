@@ -36,15 +36,16 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
         super();
     }
 
-    public void initialize(final Object obj) {
+    public Object initialize(Object obj) {
         if (obj != null) {
             Class clazz = obj.getClass();
             if (clazz.isAnnotationPresent(SpringAware.class)) {
                 final String name = clazz.getName() + "#" + idGen.incrementAndGet();
                 beanFactory.autowireBean(obj);
-                beanFactory.initializeBean(obj, name);
+				obj = beanFactory.initializeBean(obj, name);
             }
         }
+        return obj;
     }
 
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
