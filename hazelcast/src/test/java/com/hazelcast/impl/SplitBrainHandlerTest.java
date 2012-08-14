@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
@@ -108,9 +109,11 @@ public class SplitBrainHandlerTest {
         assertEquals(1, h2.getCluster().getMembers().size());
         Thread.sleep(2000);
         c1.getGroupConfig().setName("sameGroup");
-        assertTrue(l.waitFor(LifecycleEvent.LifecycleState.RESTARTED, 40));
-        assertEquals(1, l.getCount(LifecycleEvent.LifecycleState.RESTARTING));
-        assertEquals(1, l.getCount(LifecycleEvent.LifecycleState.RESTARTED));
+        assertTrue(l.waitFor(LifecycleState.MERGED, 40));
+        assertEquals(1, l.getCount(LifecycleState.MERGING));
+        assertEquals(1, l.getCount(LifecycleState.RESTARTING));
+        assertEquals(1, l.getCount(LifecycleState.RESTARTED));
+        assertEquals(1, l.getCount(LifecycleState.MERGED));
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
         Thread.sleep(2000);
@@ -216,7 +219,7 @@ public class SplitBrainHandlerTest {
         final CountDownLatch latch = new CountDownLatch(2);
         c3.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
-                if (event.getState() == LifecycleState.RESTARTED) {
+                if (event.getState() == LifecycleState.MERGED) {
                     System.out.println("h3 restarted");
                     latch.countDown();
                 }
@@ -225,7 +228,7 @@ public class SplitBrainHandlerTest {
 
         c4.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
-                if (event.getState() == LifecycleState.RESTARTED) {
+                if (event.getState() == LifecycleState.MERGED) {
                     System.out.println("h4 restarted");
                     latch.countDown();
                 }
@@ -285,9 +288,9 @@ public class SplitBrainHandlerTest {
         final CountDownLatch latch = new CountDownLatch(1);
         c3.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
-                if (event.getState() == LifecycleState.RESTARTING) {
+                if (event.getState() == LifecycleState.MERGING) {
                     h1.getLifecycleService().shutdown();
-                } else if (event.getState() == LifecycleState.RESTARTED) {
+                } else if (event.getState() == LifecycleState.MERGED) {
                     System.out.println("h3 restarted");
                     latch.countDown();
                 }
@@ -315,12 +318,13 @@ public class SplitBrainHandlerTest {
 
     private static Config buildConfig(boolean multicastEnabled) {
         Config c = new Config();
-        c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(multicastEnabled);
-        c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(!multicastEnabled);
-        c.setPortAutoIncrement(false);
         c.getGroupConfig().setName("test-group-one").setPassword("pass");
         c.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
         c.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "5");
+        final NetworkConfig networkConfig = c.getNetworkConfig();
+        networkConfig.getJoin().getMulticastConfig().setEnabled(multicastEnabled);
+        networkConfig.getJoin().getTcpIpConfig().setEnabled(!multicastEnabled);
+        networkConfig.setPortAutoIncrement(false);
         return c;
     }
 }

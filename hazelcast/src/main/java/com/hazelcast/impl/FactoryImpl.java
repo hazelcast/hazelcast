@@ -42,8 +42,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
 @SuppressWarnings("SynchronizationOnStaticField")
 public class FactoryImpl implements HazelcastInstance {
@@ -507,6 +506,12 @@ public class FactoryImpl implements HazelcastInstance {
 
     public void restart() {
         lifecycleService.restart();
+    }
+
+    public void restartToMerge() {
+        lifecycleService.fireLifecycleEvent(MERGING);
+        lifecycleService.restart();
+        lifecycleService.fireLifecycleEvent(MERGED);
     }
 
     public void shutdown() {
