@@ -1525,6 +1525,16 @@ public class ConcurrentMapManager extends BaseManager {
             }
             return responseValue;
         }
+
+        @Override
+        protected boolean isInterruptible() {
+            return false;
+        }
+
+        @Override
+        protected boolean canTimeout() {
+            return false;
+        }
     }
 
     class MSemaphore extends MDefaultBackupAndMigrationAwareOp {
@@ -1620,6 +1630,16 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
             return responseValue;
+        }
+
+        @Override
+        protected boolean isInterruptible() {
+            return false;
+        }
+
+        @Override
+        protected boolean canTimeout() {
+            return false;
         }
     }
 

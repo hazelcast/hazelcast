@@ -104,7 +104,8 @@ public abstract class BaseManager {
         qServiceThreadPacketCache = node.baseVariables.qServiceThreadPacketCache;
         localIdGen = node.baseVariables.localIdGen;
         logger = node.getLogger(this.getClass().getName());
-        maxResponsePollTimeout = Math.max(node.getGroupProperties().MAX_RESPONSE_POLL_TIMEOUT.getLong() * 1000L, MIN_POLL_TIMEOUT);
+        maxResponsePollTimeout = Math.max(node.getGroupProperties().MAX_RESPONSE_POLL_TIMEOUT.getLong() * 1000L,
+                MIN_POLL_TIMEOUT);
         maxOperationTimeout = node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong();
         maxOperationLimit = node.getGroupProperties().MAX_CONCURRENT_OPERATION_LIMIT.getInteger();
         redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
