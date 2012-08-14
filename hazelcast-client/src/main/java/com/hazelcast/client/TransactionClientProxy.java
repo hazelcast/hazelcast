@@ -20,10 +20,10 @@ import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ClusterOperation;
 
 public class TransactionClientProxy implements Transaction {
-    final ProxyHelper proxyHelper;
+    final PacketProxyHelper proxyHelper;
 
     public TransactionClientProxy(String name, HazelcastClient client) {
-        proxyHelper = new ProxyHelper(name, client);
+        proxyHelper = new PacketProxyHelper(name, client);
     }
 
     public void begin() throws IllegalStateException {

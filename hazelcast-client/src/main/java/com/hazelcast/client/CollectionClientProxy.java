@@ -24,18 +24,18 @@ import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.PacketProxyHelper.check;
 
 public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
-    final protected ProxyHelper proxyHelper;
+    final protected PacketProxyHelper proxyHelper;
     final protected String name;
 
     public CollectionClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(name, hazelcastClient);
+        proxyHelper = new PacketProxyHelper(name, hazelcastClient);
     }
 
-    public CollectionClientProxy(ProxyHelper proxyHelper, String name) {
+    public CollectionClientProxy(PacketProxyHelper proxyHelper, String name) {
         this.name = name;
         this.proxyHelper = proxyHelper;
     }

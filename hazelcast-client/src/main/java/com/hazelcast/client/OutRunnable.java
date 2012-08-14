@@ -102,7 +102,7 @@ public class OutRunnable extends IORunnable {
                     if (!call.isFireNforget()) {
                         callMap.put(call.getId(), call);
                     }
-                    writer.write(connection, call.getRequest());
+                    writer.write(connection, (Packet)call.getRequest());
                     call.written = System.nanoTime();
                 }
             } else {

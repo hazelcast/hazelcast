@@ -22,11 +22,11 @@ import com.hazelcast.impl.ClusterOperation;
 
 public class IdGeneratorClientProxy implements IdGenerator {
     private final String name;
-    private final ProxyHelper proxyHelper;
+    private final PacketProxyHelper proxyHelper;
 
     public IdGeneratorClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(name, hazelcastClient);
+        proxyHelper = new PacketProxyHelper(name, hazelcastClient);
     }
 
     public String getName() {

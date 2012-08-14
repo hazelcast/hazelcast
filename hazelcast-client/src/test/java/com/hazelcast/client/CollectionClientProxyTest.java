@@ -49,11 +49,12 @@ public class CollectionClientProxyTest {
         when(client.getListenerManager()).thenReturn(listenerManager);
         when(client.getOutRunnable()).thenReturn(new OutRunnable(client, new HashMap(), new PacketWriter()));
         String name = "def";
-        ProxyHelper proxyHelper = mock(ProxyHelper.class);
+        PacketProxyHelper proxyHelper = mock(PacketProxyHelper.class);
         when(proxyHelper.getHazelcastClient()).thenReturn(client);
         Packet request = new Packet();
         request.setName(name);
         request.setOperation(ClusterOperation.ADD_LISTENER);
+        request.setCallId(1L);
         when(proxyHelper.createCall(request)).thenReturn(new Call(1L, request));
         when(proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null)).thenReturn(request);
         CollectionClientProxy proxy = new SetClientProxy(proxyHelper, name);

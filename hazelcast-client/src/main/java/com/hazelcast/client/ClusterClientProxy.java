@@ -25,15 +25,15 @@ import com.hazelcast.nio.Data;
 
 import java.util.*;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.PacketProxyHelper.check;
 
 public class ClusterClientProxy implements Cluster {
-    final ProxyHelper proxyHelper;
+    final PacketProxyHelper proxyHelper;
     final private HazelcastClient client;
 
     public ClusterClientProxy(HazelcastClient client) {
         this.client = client;
-        proxyHelper = new ProxyHelper("", client);
+        proxyHelper = new PacketProxyHelper("", client);
     }
 
     public Collection<Instance> getInstances() {

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
-import com.hazelcast.client.ProxyHelper;
+import com.hazelcast.client.PacketProxyHelper;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.InstanceEvent;
 import com.hazelcast.core.InstanceListener;
@@ -78,7 +78,7 @@ public class InstanceListenerManager {
         }
     }
 
-    public Call createNewAddListenerCall(final ProxyHelper proxyHelper) {
+    public Call createNewAddListenerCall(final PacketProxyHelper proxyHelper) {
         Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER, null, null);
         return proxyHelper.createCall(request);
     }
@@ -87,6 +87,6 @@ public class InstanceListenerManager {
         if (instanceListeners.isEmpty()) {
             return Collections.emptyList();
         }
-        return Collections.singletonList(createNewAddListenerCall(new ProxyHelper("", client)));
+        return Collections.singletonList(createNewAddListenerCall(new PacketProxyHelper("", client)));
     }
 }

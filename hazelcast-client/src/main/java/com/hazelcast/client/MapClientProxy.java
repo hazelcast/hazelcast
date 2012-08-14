@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.EntryListenerManager;
+import com.hazelcast.client.ProtocolProxyHelper;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
@@ -27,6 +28,7 @@ import com.hazelcast.impl.Keys;
 import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.DistributedTimeoutException;
@@ -36,17 +38,19 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.PacketProxyHelper.check;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
-    final ProxyHelper proxyHelper;
+    final PacketProxyHelper proxyHelper;
+    final ProtocolProxyHelper protocolProxyHelper;
     final private String name;
 
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper(name, client);
+        this.proxyHelper = new PacketProxyHelper(name, client);
+        this.protocolProxyHelper = new ProtocolProxyHelper(getName(), client);
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
@@ -98,12 +102,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public boolean evict(Object key) {
-        ProxyHelper.check(key);
+        PacketProxyHelper.check(key);
         return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_EVICT, key, null);
     }
 
     public MapEntry<K, V> getMapEntry(K key) {
-        ProxyHelper.check(key);
+        PacketProxyHelper.check(key);
         CMapEntry cMapEntry = (CMapEntry) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET_MAP_ENTRY, key, null);
         if (cMapEntry == null) {
             return null;
@@ -117,7 +121,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public boolean lockMap(long time, TimeUnit timeunit) {
-        ProxyHelper.checkTime(time, timeunit);
+        PacketProxyHelper.checkTime(time, timeunit);
         return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK_MAP, null, time, timeunit);
     }
 
@@ -126,7 +130,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public void lock(K key) {
-        ProxyHelper.check(key);
+        PacketProxyHelper.check(key);
         doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, -1, null);
     }
 
@@ -156,7 +160,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
         check(key);
-        ProxyHelper.checkTime(time, timeunit);
+        PacketProxyHelper.checkTime(time, timeunit);
         return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, time, timeunit);
     }
 
@@ -230,7 +234,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public V get(Object key) {
         check(key);
-        return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, (K) key, null);
+//        return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, (K) key, null);
+        return (V) protocolProxyHelper.doCommand(Command.MGET, null, toData((K)key));
     }
 
     public Map<K, V> getAll(Set<K> setKeys) {

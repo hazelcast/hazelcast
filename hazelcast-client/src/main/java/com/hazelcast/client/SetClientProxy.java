@@ -22,7 +22,7 @@ import com.hazelcast.impl.ClusterOperation;
 
 import java.util.Collection;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.PacketProxyHelper.check;
 
 public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<E> {
 
@@ -30,7 +30,7 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
         super(client, name);
     }
 
-    public SetClientProxy(ProxyHelper proxyHelper, String name) {
+    public SetClientProxy(PacketProxyHelper proxyHelper, String name) {
         super(proxyHelper, name);
     }
 

@@ -26,10 +26,10 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class PartitionClientProxy implements PartitionService {
-    final private ProxyHelper proxyHelper;
+    final private PacketProxyHelper proxyHelper;
 
     public PartitionClientProxy(HazelcastClient client) {
-        proxyHelper = new ProxyHelper("", client);
+        proxyHelper = new PacketProxyHelper("", client);
     }
 
     public Set<Partition> getPartitions() {

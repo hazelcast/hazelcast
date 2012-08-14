@@ -24,14 +24,14 @@ import com.hazelcast.monitor.LocalLockStats;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.PacketProxyHelper.check;
 
 public class LockClientProxy implements ILock {
-    final ProxyHelper proxyHelper;
+    final PacketProxyHelper proxyHelper;
     final Object lockObject;
 
     public LockClientProxy(Object object, HazelcastClient client) {
-        proxyHelper = new ProxyHelper("", client);
+        proxyHelper = new PacketProxyHelper("", client);
         lockObject = object;
         check(lockObject);
     }
@@ -60,7 +60,7 @@ public class LockClientProxy implements ILock {
     }
 
     public boolean tryLock(long time, TimeUnit timeunit) {
-        ProxyHelper.checkTime(time, timeunit);
+        PacketProxyHelper.checkTime(time, timeunit);
         return (Boolean) doLock(time, timeunit);
     }
 

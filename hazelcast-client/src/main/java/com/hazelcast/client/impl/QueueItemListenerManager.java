@@ -19,7 +19,7 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
-import com.hazelcast.client.ProxyHelper;
+import com.hazelcast.client.PacketProxyHelper;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.impl.ClusterOperation;
@@ -43,13 +43,13 @@ public class QueueItemListenerManager {
     public Collection<? extends Call> calls(HazelcastClient client) {
         final List<Call> calls = new ArrayList<Call>();
         for (final String name : queueItemListeners.keySet()) {
-            final ProxyHelper proxyHelper = new ProxyHelper(name, client);
+            final PacketProxyHelper proxyHelper = new PacketProxyHelper(name, client);
             calls.add(createNewAddItemListenerCall(proxyHelper, true));
         }
         return calls;
     }
 
-    public Call createNewAddItemListenerCall(ProxyHelper proxyHelper, boolean includeValue) {
+    public Call createNewAddItemListenerCall(PacketProxyHelper proxyHelper, boolean includeValue) {
         Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
         request.setLongValue(includeValue ? 1 : 0);
         return proxyHelper.createCall(request);

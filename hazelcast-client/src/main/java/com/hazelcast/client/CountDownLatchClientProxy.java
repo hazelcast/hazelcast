@@ -26,11 +26,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class CountDownLatchClientProxy implements ICountDownLatch {
     private final String name;
-    private final ProxyHelper proxyHelper;
+    private final PacketProxyHelper proxyHelper;
 
     public CountDownLatchClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper(name, hazelcastClient);
+        this.proxyHelper = new PacketProxyHelper(name, hazelcastClient);
     }
 
     public void await() throws InstanceDestroyedException, MemberLeftException, InterruptedException {

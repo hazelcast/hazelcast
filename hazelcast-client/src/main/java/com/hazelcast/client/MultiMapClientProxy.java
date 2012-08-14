@@ -28,16 +28,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.PacketProxyHelper.check;
 
 public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     private final String name;
-    private final ProxyHelper proxyHelper;
+    private final PacketProxyHelper proxyHelper;
     private final HazelcastClient client;
 
     public MultiMapClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper(name, client);
+        this.proxyHelper = new PacketProxyHelper(name, client);
         this.client = client;
     }
 
@@ -85,7 +85,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     }
 
     public void lock(K key) {
-        ProxyHelper.check(key);
+        PacketProxyHelper.check(key);
         doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, -1, null);
     }
 
@@ -96,7 +96,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
         check(key);
-        ProxyHelper.checkTime(time, timeunit);
+        PacketProxyHelper.checkTime(time, timeunit);
         return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, time, timeunit);
     }
 
@@ -113,7 +113,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     }
 
     public boolean lockMap(long time, TimeUnit timeunit) {
-        ProxyHelper.checkTime(time, timeunit);
+        PacketProxyHelper.checkTime(time, timeunit);
         return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK_MAP, null, time, timeunit);
     }
 

@@ -26,7 +26,7 @@ public class Call {
 
     private final Long id;
 
-    private final Packet request;
+    private final Object request;
 
     private volatile Object response;
 
@@ -42,15 +42,12 @@ public class Call {
 
     private boolean fireNforget;
 
-    public Call(Long id, Packet request) {
+    public Call(Long id, Object request) {
         this.id = id;
         this.request = request;
-        if (request != null) {
-            this.request.setCallId(id);
-        }
     }
 
-    public Packet getRequest() {
+    public Object getRequest() {
         return request;
     }
 
@@ -108,7 +105,6 @@ public class Call {
 
     @Override
     public String toString() {
-        return "Call " + "[" + id + "] operation=" +
-                (request != null ? request.getOperation() : null);
+        return request.toString();
     }
 }

@@ -192,7 +192,8 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
                         }
                         Packet packet = new Packet();
                         packet.set("c:default", ClusterOperation.CONCURRENT_MAP_GET, new byte[30], null);
-                        Call call = new Call(callCounter.incrementAndGet(), packet);
+                        packet.setCallId(callCounter.incrementAndGet());
+                        Call call = new Call(packet.getCallId(), packet);
                         outRunnable.enQueue(call);
                     }
                 }

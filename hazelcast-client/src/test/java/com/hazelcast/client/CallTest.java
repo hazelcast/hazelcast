@@ -31,6 +31,7 @@ public class CallTest {
         Object response = new Object();
         Packet request = new Packet();
         long callId = 1;
+        request.setCallId(callId);
         Call call = new Call(callId, request);
         call.setResponse(response);
         Object realResponse = call.getResponse();
@@ -43,6 +44,7 @@ public class CallTest {
         Object response = new RuntimeException();
         Packet request = new Packet();
         long callId = 1;
+        request.setCallId(callId);
         Call call = new Call(callId, request);
         call.setResponse(response);
         Object realResponse = call.getResponse();
@@ -55,6 +57,7 @@ public class CallTest {
         final Object response = new Object();
         Packet request = new Packet();
         long callId = 1;
+        request.setCallId(callId);
         final Call call = new Call(callId, request);
         new Thread(new Runnable() {
             public void run() {
@@ -71,6 +74,7 @@ public class CallTest {
         final Object response = new Object();
         Packet request = new Packet();
         long callId = 1;
+        request.setCallId(callId);
         final Call call = new Call(callId, request);
         new Thread(new Runnable() {
             public void run() {

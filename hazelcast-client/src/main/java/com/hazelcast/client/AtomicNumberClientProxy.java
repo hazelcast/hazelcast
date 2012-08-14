@@ -24,11 +24,11 @@ import static com.hazelcast.impl.ClusterOperation.*;
 
 public class AtomicNumberClientProxy implements AtomicNumber {
     private final String name;
-    private final ProxyHelper proxyHelper;
+    private final PacketProxyHelper proxyHelper;
 
     public AtomicNumberClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper(name, hazelcastClient);
+        this.proxyHelper = new PacketProxyHelper(name, hazelcastClient);
     }
 
     public long addAndGet(long delta) {

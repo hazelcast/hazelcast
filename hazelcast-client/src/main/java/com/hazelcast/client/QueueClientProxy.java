@@ -32,10 +32,10 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.IOUtil.toObject;
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.PacketProxyHelper.check;
 
 public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
-    final protected ProxyHelper proxyHelper;
+    final protected PacketProxyHelper proxyHelper;
     final protected String name;
 
     final Object lock = new Object();
@@ -43,7 +43,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     public QueueClientProxy(HazelcastClient hazelcastClient, String name) {
         super();
         this.name = name;
-        proxyHelper = new ProxyHelper(name, hazelcastClient);
+        proxyHelper = new PacketProxyHelper(name, hazelcastClient);
     }
 
     public String getName() {
@@ -93,7 +93,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     public boolean offer(E e, long l, TimeUnit timeUnit) throws InterruptedException {
         check(e);
-        ProxyHelper.checkTime(l, timeUnit);
+        PacketProxyHelper.checkTime(l, timeUnit);
         l = (l < 0) ? 0 : l;
         if (e == null) {
             throw new NullPointerException();
@@ -106,7 +106,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     }
 
     public E poll(long l, TimeUnit timeUnit) throws InterruptedException {
-        ProxyHelper.checkTime(l, timeUnit);
+        PacketProxyHelper.checkTime(l, timeUnit);
         l = (l < 0) ? 0 : l;
         return innerPoll(timeUnit.toMillis(l));
     }

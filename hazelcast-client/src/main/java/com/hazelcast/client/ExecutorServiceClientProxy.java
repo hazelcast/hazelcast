@@ -33,11 +33,11 @@ import static com.hazelcast.client.IOUtil.toObject;
 
 public class ExecutorServiceClientProxy implements ExecutorService {
 
-    final ProxyHelper proxyHelper;
+    final PacketProxyHelper proxyHelper;
     final ExecutorService callBackExecutors = Executors.newFixedThreadPool(5);
 
     public ExecutorServiceClientProxy(HazelcastClient client, String name) {
-        proxyHelper = new ProxyHelper(name, client);
+        proxyHelper = new PacketProxyHelper(name, client);
     }
 
     public void shutdown() {
@@ -92,7 +92,8 @@ public class ExecutorServiceClientProxy implements ExecutorService {
     private Future submit(final DistributedTask dt, final ClientDistributedTask cdt) {
         final Packet request = proxyHelper.prepareRequest(ClusterOperation.EXECUTE, cdt, null);
         final InnerFutureTask inner = (InnerFutureTask) dt.getInner();
-        final Call call = new Call(ProxyHelper.newCallId(), request) {
+        request.setCallId(PacketProxyHelper.newCallId());
+        final Call call = new Call(request.getCallId(), request) {
             public void onDisconnect(final Member member) {
                 setResponse(new MemberLeftException(member));
             }

@@ -23,17 +23,17 @@ import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.monitor.LocalTopicStats;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.PacketProxyHelper.check;
 
 public class TopicClientProxy<T> implements ITopic {
     private final String name;
-    private final ProxyHelper proxyHelper;
+    private final PacketProxyHelper proxyHelper;
 
     private final Object lock = new Object();
 
     public TopicClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(name, hazelcastClient);
+        proxyHelper = new PacketProxyHelper(name, hazelcastClient);
     }
 
     public String getName() {

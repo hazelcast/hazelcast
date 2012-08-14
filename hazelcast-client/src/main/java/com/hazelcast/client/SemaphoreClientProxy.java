@@ -30,11 +30,11 @@ import static com.hazelcast.impl.ClusterOperation.*;
 public class SemaphoreClientProxy implements ISemaphore {
 
     private final String name;
-    private final ProxyHelper proxyHelper;
+    private final PacketProxyHelper proxyHelper;
 
     public SemaphoreClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(getName(), hazelcastClient);
+        proxyHelper = new PacketProxyHelper(getName(), hazelcastClient);
     }
 
     public void acquire() throws InstanceDestroyedException, InterruptedException {

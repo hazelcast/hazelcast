@@ -19,7 +19,7 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
-import com.hazelcast.client.ProxyHelper;
+import com.hazelcast.client.PacketProxyHelper;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareEntryEvent;
@@ -166,7 +166,7 @@ public class EntryListenerManager {
         }
     }
 
-    public Call createNewAddListenerCall(final ProxyHelper proxyHelper, final Object key, boolean includeValue) {
+    public Call createNewAddListenerCall(final PacketProxyHelper proxyHelper, final Object key, boolean includeValue) {
         Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByte(key), null);
         request.setLongValue(includeValue ? 1 : 0);
         return proxyHelper.createCall(request);
@@ -184,7 +184,7 @@ public class EntryListenerManager {
                     includeValue |= entryListenerHolder.includeValue;
                     if (includeValue) break;
                 }
-                final ProxyHelper proxyHelper = new ProxyHelper(name, client);
+                final PacketProxyHelper proxyHelper = new PacketProxyHelper(name, client);
                 calls.add(createNewAddListenerCall(proxyHelper, key, includeValue));
             }
         }
