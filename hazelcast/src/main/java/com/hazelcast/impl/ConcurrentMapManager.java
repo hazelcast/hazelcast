@@ -58,10 +58,11 @@ import static com.hazelcast.util.Clock.currentTimeMillis;
 public class ConcurrentMapManager extends BaseManager {
     private static final String BATCH_OPS_EXECUTOR_NAME = "hz.batch";
 
-    final int PARTITION_COUNT;
-    final int MAX_BACKUP_COUNT;
-    final long GLOBAL_REMOVE_DELAY_MILLIS;
-    final boolean LOG_STATE;
+    final int partitionCount;
+    final int maxBackupCount;
+    final long globalRemoveDelayMillis;
+    final boolean backupRedoEnabled;
+    final boolean logState;
     long lastLogStateTime = currentTimeMillis();
     final ConcurrentMap<String, CMap> maps;
     final ConcurrentMap<String, NearCache> mapCaches;
@@ -79,16 +80,17 @@ public class ConcurrentMapManager extends BaseManager {
         storeExecutor = node.executorManager.newParallelExecutor(
                 node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
         evictionExecutor = node.executorManager.newParallelExecutor(node.groupProperties.EXECUTOR_STORE_THREAD_COUNT.getInteger());
-        PARTITION_COUNT = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
-        MAX_BACKUP_COUNT = MapConfig.MAX_BACKUP_COUNT;
+        partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
+        maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
+        backupRedoEnabled = node.groupProperties.BACKUP_REDO_ENABLED.getBoolean();
         int removeDelaySeconds = node.groupProperties.REMOVE_DELAY_SECONDS.getInteger();
         if (removeDelaySeconds <= 0) {
             logger.log(Level.WARNING, GroupProperties.PROP_REMOVE_DELAY_SECONDS
                     + " must be greater than zero. Setting to 1.");
             removeDelaySeconds = 1;
         }
-        GLOBAL_REMOVE_DELAY_MILLIS = removeDelaySeconds * 1000L;
-        LOG_STATE = node.groupProperties.LOG_STATE.getBoolean();
+        globalRemoveDelayMillis = removeDelaySeconds * 1000L;
+        logState = node.groupProperties.LOG_STATE.getBoolean();
         maps = new ConcurrentHashMap<String, CMap>(10, 0.75f, 1);
         mapCaches = new ConcurrentHashMap<String, NearCache>(10, 0.75f, 1);
         partitionManager = new PartitionManager(this);
@@ -274,7 +276,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     void logState() {
         long now = currentTimeMillis();
-        if (LOG_STATE && ((now - lastLogStateTime) > 15000)) {
+        if (logState && ((now - lastLogStateTime) > 15000)) {
             StringBuffer sbState = new StringBuffer(thisAddress + " State[" + new Date(now));
             sbState.append("]");
             Collection<Call> calls = mapCalls.values();
@@ -342,7 +344,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public int getPartitionCount() {
-        return PARTITION_COUNT;
+        return partitionCount;
     }
 
     public Map<String, CMap> getCMaps() {
@@ -1994,7 +1996,7 @@ public class ConcurrentMapManager extends BaseManager {
         public void process() {
             target = getBackupMember(request.blockId, replicaIndex);
             if (target == null) {
-                if (isValidBackup()) {
+                if (backupRedoEnabled && isValidBackup()) {
                     setRedoResult(REDO_TARGET_UNKNOWN);
                 } else {
                     setResult(Boolean.FALSE);
@@ -2020,7 +2022,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         boolean isMigrationAware() {
-            return true;
+            return backupRedoEnabled;
         }
 
         boolean isPartitionMigrating() {
@@ -2072,8 +2074,8 @@ public class ConcurrentMapManager extends BaseManager {
             if (localBackupCount <= 0 && localAsyncBackupCount <= 0) {
                 return;
             }
-            if (totalBackupCount > MAX_BACKUP_COUNT) {
-                String msg = "Max backup is " + MAX_BACKUP_COUNT + " but total backupCount is " + totalBackupCount;
+            if (totalBackupCount > maxBackupCount) {
+                String msg = "Max backup is " + maxBackupCount + " but total backupCount is " + totalBackupCount;
                 logger.log(Level.SEVERE, msg);
                 throw new RuntimeException(msg);
             }
@@ -2095,7 +2097,14 @@ public class ConcurrentMapManager extends BaseManager {
             }
             for (int i = 0; i < localBackupCount; i++) {
                 MBackup backupOp = backupOps[i];
-                backupOp.getResultAsBoolean();
+                try {
+                    backupOp.getResultAsBoolean();
+                } catch (HazelcastException e) {
+                    final Level level = backupRedoEnabled ? Level.WARNING : Level.FINEST;
+                    logger.log(level, "Backup operation [" + operation + "] has failed! "
+                              + e.getClass().getName() + ": " +  e.getMessage());
+                    logger.log(Level.FINEST, e.getMessage(), e);
+                }
             }
         }
 
@@ -2318,7 +2327,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     public final int getPartitionId(Data key) {
         int hash = key.getPartitionHash();
-        return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % PARTITION_COUNT;
+        return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % partitionCount;
     }
 
     public long newRecordId() {
@@ -2368,14 +2377,21 @@ public class ConcurrentMapManager extends BaseManager {
 
     class BackupOperationHandler extends TargetAwareOperationHandler {
 
+        boolean isCallerKnownMember(Request request) {
+            return !backupRedoEnabled || super.isCallerKnownMember(request);
+        }
+
         boolean isRightRemoteTarget(final Request request) {
+            if (!backupRedoEnabled) {
+                return true;
+            }
             final int partitionId = getPartitionId(request);
             final PartitionInfo partition = partitionManager.getPartition(partitionId);
             return thisAddress.equals(partition.getReplicaAddress(getReplicaIndex(request)));
         }
 
         boolean isPartitionMigrating(final Request request) {
-            return isMigrating(request, getReplicaIndex(request));
+            return backupRedoEnabled && isMigrating(request, getReplicaIndex(request));
         }
 
         private int getReplicaIndex(final Request request) {return (int) request.longValue;}

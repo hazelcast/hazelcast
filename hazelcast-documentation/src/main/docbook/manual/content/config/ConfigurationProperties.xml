@@ -98,7 +98,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
         <tbody>
             <tr>
                 <td>
-                    <literal>hazelcast.memcache.enabled</literal>
+                    <literal xml:id="hazelcast.memcache.enabled">hazelcast.memcache.enabled</literal>
                 </td>
                 <td>Enable
                     <link xlink:href="#MemcacheClient">Memcache</link>
@@ -223,6 +223,15 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
+                    <literal>hazelcast.backup.redo.enabled</literal>
+                </td>
+                <td>Enable (strict) redo for backup operations. Backup operations may fail due to node failures,
+                    but generally during partition re-assignment process missing backups are restored.</td>
+                <td>boolean</td>
+                <td>false</td>
+            </tr>
+            <tr>
+                <td>
                     <literal>hazelcast.max.operation.timeout</literal>
                 </td>
                 <td>Maximum operation timeout in milliseconds if no timeout is specified for an operation. (default 300 seconds)</td>
@@ -231,11 +240,12 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <literal>hazelcast.operation.response.poll.timeout</literal>
+                    <literal>hazelcast.max.response.poll.timeout</literal>
                 </td>
-                <td>Operation response queue poll timeout in milliseconds. (default 10 seconds)</td>
+                <td>Max operation response queue poll timeout in seconds. If operation timeout is explicitly set,
+                    poll timeout value will be adjusted according to operation timeout. (default 10 seconds)</td>
                 <td>integer</td>
-                <td>10000</td>
+                <td>10</td>
             </tr>
             <tr>
                 <td>

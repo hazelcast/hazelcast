@@ -603,6 +603,7 @@ public class ClusterBackupTest {
         final Config config = new Config();
         config.setProperty("hazelcast.partition.migration.interval", "0");
         config.setProperty("hazelcast.wait.seconds.before.join", "1");
+        config.setProperty(GroupProperties.PROP_BACKUP_REDO_ENABLED, "true");
 
         final Random rand = new Random(System.currentTimeMillis());
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(10);

@@ -216,9 +216,9 @@ public class CMap {
         }
         writeDelayMillis = (writeDelaySeconds == -1) ? -1L : writeDelaySeconds * 1000L;
         if (writeDelaySeconds > 0) {
-            removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS + writeDelayMillis;
+            removeDelayMillis = concurrentMapManager.globalRemoveDelayMillis + writeDelayMillis;
         } else {
-            removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS;
+            removeDelayMillis = concurrentMapManager.globalRemoveDelayMillis;
         }
         loader = (mapStoreWrapper == null || !mapStoreWrapper.isMapLoader()) ? null : mapStoreWrapper;
         store = (mapStoreWrapper == null || !mapStoreWrapper.isMapStore()) ? null : mapStoreWrapper;
@@ -1398,7 +1398,7 @@ public class CMap {
                         }
                     }
                 }
-                Level levelLog = (concurrentMapManager.LOG_STATE) ? Level.INFO : Level.FINEST;
+                Level levelLog = (concurrentMapManager.logState) ? Level.INFO : Level.FINEST;
                 if (logger.isLoggable(levelLog)) {
                     logger.log(levelLog, name + " Cleanup "
                             + ", dirty:" + recordsDirty.size()

@@ -50,6 +50,8 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BaseManager {
 
+    private static final long MIN_POLL_TIMEOUT = 100L;
+
     protected final List<MemberImpl> lsMembers;
     /**
      * Counter for normal/data (non-lite) members.
@@ -73,7 +75,7 @@ public abstract class BaseManager {
 
     protected final ILogger logger;
 
-    protected final long operationResponsePollTimeout;
+    protected final long maxResponsePollTimeout;
 
     protected final long maxOperationTimeout;
 
@@ -102,7 +104,7 @@ public abstract class BaseManager {
         qServiceThreadPacketCache = node.baseVariables.qServiceThreadPacketCache;
         localIdGen = node.baseVariables.localIdGen;
         logger = node.getLogger(this.getClass().getName());
-        operationResponsePollTimeout = node.getGroupProperties().OPERATION_RESPONSE_POLL_TIMEOUT.getLong();
+        maxResponsePollTimeout = Math.max(node.getGroupProperties().MAX_RESPONSE_POLL_TIMEOUT.getLong() * 1000L, MIN_POLL_TIMEOUT);
         maxOperationTimeout = node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong();
         maxOperationLimit = node.getGroupProperties().MAX_CONCURRENT_OPERATION_LIMIT.getInteger();
         redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
@@ -588,15 +590,20 @@ public abstract class BaseManager {
         }
 
         public Object waitAndGetResult() {
+            final long pollTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
+                                     ? maxResponsePollTimeout
+                                     : Math.min((request.timeout / 5) + MIN_POLL_TIMEOUT, maxResponsePollTimeout);
+
             // should be more than request timeout
             final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
                                            ? Long.MAX_VALUE
-                                           : (request.timeout == 0 ? (long) (operationResponsePollTimeout * 1.5f)
-                                                                   : (long) (request.timeout * 1.5f));
+                                           : (request.timeout > 0 ? request.timeout * 2 + MIN_POLL_TIMEOUT
+                                                                  : pollTimeout * 2);
+
             final long start = Clock.currentTimeMillis();
             while (true) {
                 try {
-                    Object obj = responses.poll(operationResponsePollTimeout, TimeUnit.MILLISECONDS);
+                    Object obj = responses.poll(pollTimeout, TimeUnit.MILLISECONDS);
                     if (obj != null) {
                         if (obj instanceof DistributedTimeoutException) {
                             throw new OperationTimeoutException(request.operation.toString(),
@@ -640,8 +647,8 @@ public abstract class BaseManager {
                     request.redoCount++;
                     logRedo(request, redoType, true);
                     if (request.redoCount > redoGiveUpThreshold) {
-                        throw new OperationTimeoutException(request.operation.toString(), "Redo threshold exceeded!" +
-                                " Last redo cause: " + redoType + ", Name: " + request.name);
+                        throw new OperationTimeoutException(request.operation.toString(), "Redo threshold[" + redoGiveUpThreshold
+                                + "] exceeded!" + " Last redo cause: " + redoType + ", Name: " + request.name);
                     }
                     try {
                         //noinspection BusyWait
