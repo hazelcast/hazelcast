@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.SystemLogService;
@@ -194,6 +195,7 @@ public final class ClusterService implements Runnable, Constants {
         boolean readProcessables = false;
         while (running) {
             try {
+
                 threadWatcher.incrementRunCount();
                 readPackets = (dequeuePackets() != 0);
                 readProcessables = (dequeueProcessables() != 0);
@@ -210,7 +212,8 @@ public final class ClusterService implements Runnable, Constants {
                 }
             } catch (OutOfMemoryError e) {
                 node.onOutOfMemory(e);
-            } catch (Throwable e) {
+            }
+            catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
             }
         }

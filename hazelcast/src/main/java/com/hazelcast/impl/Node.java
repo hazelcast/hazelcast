@@ -46,6 +46,9 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
+
 public class Node {
     private final ILogger logger;
 
@@ -126,7 +129,7 @@ public class Node {
 
     public final NodeInitializer initializer;
 
-    private ManagementCenterService managementCenterService ;
+    private ManagementCenterService managementCenterService;
 
     public final SecurityContext securityContext;
 
@@ -160,7 +163,8 @@ public class Node {
         } catch (Throwable e) {
             try {
                 serverSocketChannel.close();
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
             Util.throwUncheckedException(e);
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
@@ -478,10 +482,19 @@ public class Node {
 
     public void onOutOfMemory(OutOfMemoryError e) {
         try {
-            if (connectionManager != null) {
-                connectionManager.shutdown();
-                shutdown(true, false);
-            }
+            new Thread(new Runnable() {
+                public void run() {
+                    if (connectionManager != null) {
+                        connectionManager.shutdown();
+                        LifecycleServiceImpl lifecycleService = factory.lifecycleService;
+                        synchronized (lifecycleService.lifecycleLock) {
+                            lifecycleService.fireLifecycleEvent(SHUTTING_DOWN);
+                            doShutdown(true);
+                            lifecycleService.fireLifecycleEvent(SHUTDOWN);
+                        }
+                    }
+                }
+            }).start();
         } catch (Throwable ignored) {
             logger.log(Level.FINEST, ignored.getMessage(), ignored);
         } finally {
