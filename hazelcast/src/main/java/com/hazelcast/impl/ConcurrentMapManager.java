@@ -26,8 +26,6 @@ import com.hazelcast.impl.monitor.AtomicNumberOperationsCounter;
 import com.hazelcast.impl.monitor.CountDownLatchOperationsCounter;
 import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.impl.monitor.SemaphoreOperationsCounter;
-import com.hazelcast.impl.partition.MigrationNotification;
-import com.hazelcast.impl.partition.MigrationRequestTask;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.wan.WanMergeListener;
 import com.hazelcast.merge.MergePolicy;
@@ -725,19 +723,23 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     public boolean putFromLoad(String name, Object key, Object value) {
-        MPut mput = new MPut();
-        return (Boolean)mput.putFromLoad(name, key, value);
+        try {
+            MPut mput = new MPut();
+            return (Boolean) mput.putFromLoad(name, key, value);
+        } catch (OperationTimeoutException e) {
+            return false;
+        }
     }
 
     // used by GetMapEntryOperationHandler, GetOperationHandler, ContainsKeyOperationHandler
-    private void putTransientAfterLoad(final Request request) {
+    private void putFromLoad(final Request request) {
         final MPut mput = new MPut();
         try {
             mput.request.setFromRequest(request);
             mput.request.timeout = 0;
             mput.request.ttl = -1;
             mput.request.local = true;
-            mput.request.operation = CONCURRENT_MAP_PUT_TRANSIENT;
+            mput.request.operation = CONCURRENT_MAP_PUT_FROM_LOAD;
             mput.request.longValue = (request.value == null) ? Integer.MIN_VALUE : request.value.hashCode();
             request.setBooleanRequest();
             final Data value = request.value;
@@ -1675,7 +1677,7 @@ public class ConcurrentMapManager extends BaseManager {
         }
 
         public Object putFromLoad(String name, Object key, Object value) {
-            return txnalPut(CONCURRENT_MAP_PUT_FROM_LOAD, name, key, value, -1, -1);
+            return txnalPut(CONCURRENT_MAP_PUT_FROM_LOAD, name, key, value, 0, -1);
         }
 
         public boolean set(String name, Object key, Object value, long ttl) {
@@ -2806,11 +2808,13 @@ public class ConcurrentMapManager extends BaseManager {
     class PutTransientOperationHandler extends SchedulableOperationHandler {
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
-            if (cmap.overCapacity()) {
-                returnRedoResponse(request, REDO_MAP_OVER_CAPACITY);
+            if (!cmap.isNotLocked(request)) {
+                setRedoResponse(request, REDO_MAP_LOCKED);
+            } else if (cmap.overCapacity()) {
+                setRedoResponse(request, REDO_MAP_OVER_CAPACITY);
             } else {
                 Record record = ensureRecord(request);
-                boolean dirty = (record == null) ? false : record.isDirty();
+                boolean dirty = (record != null) && record.isDirty();
                 cmap.put(request);
                 if (record != null) {
                     record.setDirty(dirty);
@@ -2825,6 +2829,11 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     class PutFromLoadOperationHandler extends SchedulableOperationHandler {
+        protected void onNoTimeToSchedule(Request request) {
+            request.response = Boolean.FALSE;
+            returnResponse(request);
+        }
+
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             if (cmap.overCapacity()) {
@@ -2832,13 +2841,10 @@ public class ConcurrentMapManager extends BaseManager {
                 request.response = Boolean.FALSE;
             } else {
                 Record record = ensureRecord(request);
-                boolean dirty = (record == null) ? false : record.isDirty();
                 cmap.put(request);
                 if (record != null) {
-                    record.setDirty(dirty);
-                    if (!dirty) {
-                        record.setLastStoredTime(Clock.currentTimeMillis());
-                    }
+                    record.setDirty(false);
+                    record.setLastStoredTime(Clock.currentTimeMillis());
                 }
                 request.value = null;
                 request.response = Boolean.TRUE;
@@ -3512,7 +3518,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (value != null) {
                     setIndexValues(request, value);
                     request.value = toData(value);
-                    putTransientAfterLoad(request);
+                    putFromLoad(request);
                 } else {
                     success = false;
                 }
@@ -3613,7 +3619,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (value != null) {
                     setIndexValues(request, value);
                     request.value = toData(value);
-                    putTransientAfterLoad(request);
+                    putFromLoad(request);
                 } else {
                     success = false;
                 }
@@ -3659,7 +3665,7 @@ public class ConcurrentMapManager extends BaseManager {
                 if (value != null) {
                     setIndexValues(request, value);
                     request.value = toData(value);
-                    putTransientAfterLoad(request);
+                    putFromLoad(request);
                 } else {
                     success = false;
                 }

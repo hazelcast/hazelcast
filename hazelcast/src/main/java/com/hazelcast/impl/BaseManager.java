@@ -334,28 +334,29 @@ public abstract class BaseManager {
     }
 
     public boolean returnRedoResponse(Request request, RedoType redoType) {
+        setRedoResponse(request, redoType);
+        return returnResponse(request, null);
+    }
+
+    void setRedoResponse(final Request request, final RedoType redoType) {
         logRedo(request, redoType, false);
         request.clearForResponse();
         request.response = OBJECT_REDO;
-        return returnResponse(request, null, redoType);
+        request.redoCode = redoType != null ? redoType.getCode() : REDO_UNKNOWN.getCode();
     }
 
     public boolean returnResponse(Request request) {
-        return returnResponse(request, null, null);
+        return returnResponse(request, null);
     }
 
     public boolean returnResponse(Request request, Connection conn) {
-        return returnResponse(request, conn, null);
-    }
-
-    private boolean returnResponse(Request request, Connection conn, RedoType redoType) {
         if (systemLogService.shouldLog(INFO)) {
             systemLogService.logObject(request, INFO, "ReturnResponse");
         }
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
             if (request.response == OBJECT_REDO) {
-                targetAwareOp.setRedoResult(redoType);
+                targetAwareOp.setRedoResult(RedoType.getRedoType(request.redoCode));
             } else {
                 targetAwareOp.setResult(request.response);
             }
@@ -371,7 +372,7 @@ public abstract class BaseManager {
             if (request.response == OBJECT_REDO) {
                 packet.lockAddress = null;
                 packet.responseType = RESPONSE_REDO;
-                packet.redoData = redoType != null ? redoType.getCode() : REDO_UNKNOWN.getCode();
+                packet.redoData = request.redoCode;
                 if (systemLogService.shouldInfo()) {
                     systemLogService.info(request, "Returning REDO response");
                 }
