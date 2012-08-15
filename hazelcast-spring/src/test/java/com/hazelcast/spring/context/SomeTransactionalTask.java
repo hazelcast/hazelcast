@@ -14,24 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.spring.context;
+
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.Serializable;
+import java.util.concurrent.Callable;
 
 /**
- * Container managed context, such as Spring or Guice etc.
- *
- * @mdogan 4/6/12
+ * @leimer 8/14/12
  */
+@SpringAware
+public class SomeTransactionalTask implements Callable<Void>, Serializable {
 
-public interface ManagedContext {
-
-    /**
-     * Initialize the given object instance.
-     * This is intended for repopulating select fields and methods for deserialized instances.
-     * It is also possible to proxy the object, e.g. with AOP proxies.
-     *
-     * @param obj Object to initialize
-     * @return the initialized object to use
-     */
-    Object initialize(Object obj);
+    @Transactional
+    public Void call() throws Exception {
+        return null;
+    }
 
 }
