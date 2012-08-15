@@ -17,6 +17,7 @@
 package com.hazelcast.spring.context;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.impl.DistributedRunnableAdapter;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -36,15 +37,29 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
         super();
     }
 
-    public void initialize(final Object obj) {
+    public Object initialize(Object obj) {
         if (obj != null) {
-            Class clazz = obj.getClass();
-            if (clazz.isAnnotationPresent(SpringAware.class)) {
-                final String name = clazz.getName() + "#" + idGen.incrementAndGet();
-                beanFactory.autowireBean(obj);
-                beanFactory.initializeBean(obj, name);
+            if (obj instanceof DistributedRunnableAdapter) {
+                DistributedRunnableAdapter adapter = (DistributedRunnableAdapter) obj;
+
+                Object runnable = adapter.getRunnable();
+                runnable = initializeIfSpringAwareIsPresent(runnable);
+                adapter.setRunnable((Runnable) runnable);
+            } else {
+                obj = initializeIfSpringAwareIsPresent(obj);
             }
         }
+        return obj;
+    }
+
+    private Object initializeIfSpringAwareIsPresent(Object obj) {
+        Class clazz = obj.getClass();
+        if (clazz.isAnnotationPresent(SpringAware.class)) {
+            final String name = clazz.getName() + "#" + idGen.incrementAndGet();
+            beanFactory.autowireBean(obj);
+            obj = beanFactory.initializeBean(obj, name);
+        }
+        return obj;
     }
 
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
