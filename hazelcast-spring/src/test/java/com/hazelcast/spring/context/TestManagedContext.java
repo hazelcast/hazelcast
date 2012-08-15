@@ -90,10 +90,11 @@ public class TestManagedContext {
 
     @Test
     public void testTransactionalTask() throws ExecutionException, InterruptedException {
-        Future<Void> f = instance1.getExecutorService().submit(new SomeTransactionalTask());
+        Future f = instance1.getExecutorService().submit(new DistributedTask(new SomeTransactionalTask(),
+                instance2.getCluster().getLocalMember()));
         f.get();
         Assert.assertTrue("transaction manager could not proxy the submitted task.",
-                transactionManager.isUsed());
+                transactionManager.isCommitted());
     }
 
 }

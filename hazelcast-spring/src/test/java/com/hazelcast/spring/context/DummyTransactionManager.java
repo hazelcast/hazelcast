@@ -17,10 +17,8 @@
 package com.hazelcast.spring.context;
 
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionException;
-import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.*;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 /**
  * @leimer 8/14/12
@@ -29,22 +27,21 @@ import org.springframework.transaction.TransactionStatus;
 @Component
 public class DummyTransactionManager implements PlatformTransactionManager {
 
-    private boolean used = false;
+    private boolean committed = false;
 
-    public boolean isUsed() {
-        return used;
+    public boolean isCommitted() {
+        return committed;
     }
 
     public TransactionStatus getTransaction(TransactionDefinition transactionDefinition) throws TransactionException {
-        used = true;
-        return null;
+        return new SimpleTransactionStatus(true);
     }
 
     public void commit(TransactionStatus transactionStatus) throws TransactionException {
-        used = true;
+        committed = true;
     }
 
     public void rollback(TransactionStatus transactionStatus) throws TransactionException {
-        used = true;
+        throw new UnexpectedRollbackException("We do not expect rollback!");
     }
 }
