@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.spring.context;
 
-public interface DistributedRunnableAdapter<V> {
-    V getResult();
+import org.springframework.transaction.annotation.Transactional;
 
-    Runnable getRunnable();
+import java.io.Serializable;
 
-    void setRunnable(Runnable runnable);
+/**
+ * @leimer 8/15/12
+ */
+@SpringAware
+public class SomeTransactionalRunnableTask implements Runnable, Serializable {
+
+    @Transactional
+    public void run() {
+    }
+
 }

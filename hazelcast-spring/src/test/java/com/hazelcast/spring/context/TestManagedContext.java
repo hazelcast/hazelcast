@@ -96,4 +96,16 @@ public class TestManagedContext {
                 transactionManager.isUsed());
     }
 
+    @Test
+    public void testRunnableTask() throws ExecutionException, InterruptedException {
+        Future<?> future = instance1.getExecutorService().submit(new SomeRunnableTask());
+        future.get();
+    }
+
+    @Test
+    public void testTransactionalRunnableTask() throws ExecutionException, InterruptedException {
+        Future<?> future = instance1.getExecutorService().submit(new SomeTransactionalRunnableTask());
+        future.get();
+    }
+
 }
