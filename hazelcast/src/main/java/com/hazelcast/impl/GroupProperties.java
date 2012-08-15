@@ -39,7 +39,6 @@ public class GroupProperties {
     public static final String PROP_REDO_GIVE_UP_THRESHOLD = "hazelcast.redo.giveup.threshold";
     public static final String PROP_BACKUP_REDO_ENABLED = "hazelcast.backup.redo.enabled";
     public static final String PROP_MAX_OPERATION_TIMEOUT = "hazelcast.max.operation.timeout";
-    public static final String PROP_MAX_RESPONSE_POLL_TIMEOUT = "hazelcast.max.response.poll.timeout";
     public static final String PROP_MAX_CONCURRENT_OPERATION_LIMIT = "hazelcast.max.concurrent.operation.limit";
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
@@ -140,8 +139,6 @@ public class GroupProperties {
     public final GroupProperty BACKUP_REDO_ENABLED;
 
     public final GroupProperty MAX_OPERATION_TIMEOUT;
-
-    public final GroupProperty MAX_RESPONSE_POLL_TIMEOUT;
 
     public final GroupProperty MAX_CONCURRENT_OPERATION_LIMIT;
 
@@ -270,7 +267,6 @@ public class GroupProperties {
         REDO_GIVE_UP_THRESHOLD = new GroupProperty(config, PROP_REDO_GIVE_UP_THRESHOLD, "90");
         BACKUP_REDO_ENABLED = new GroupProperty(config, PROP_BACKUP_REDO_ENABLED, "false");
         MAX_OPERATION_TIMEOUT = new GroupProperty(config, PROP_MAX_OPERATION_TIMEOUT, "300000");
-        MAX_RESPONSE_POLL_TIMEOUT = new GroupProperty(config, PROP_MAX_RESPONSE_POLL_TIMEOUT, "10000");
         MAX_CONCURRENT_OPERATION_LIMIT = new GroupProperty(config, PROP_MAX_CONCURRENT_OPERATION_LIMIT, "-1");
         SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SOCKET_RECEIVE_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_RECEIVE_BUFFER_SIZE, "32");

@@ -199,7 +199,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <literal>hazelcast.redo.wait.millis</literal>
+                    <literal xml:id="hazelcast.redo.wait.millis">hazelcast.redo.wait.millis</literal>
                 </td>
                 <td>Wait time before a redo operation in milliseconds</td>
                 <td>integer</td>
@@ -207,7 +207,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <literal>hazelcast.redo.log.threshold</literal>
+                    <literal xml:id="hazelcast.redo.log.threshold">hazelcast.redo.log.threshold</literal>
                 </td>
                 <td>Minimum number of redo(s) before logging.</td>
                 <td>integer</td>
@@ -215,7 +215,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <literal>hazelcast.redo.giveup.threshold</literal>
+                    <literal xml:id="hazelcast.redo.giveup.threshold">hazelcast.redo.giveup.threshold</literal>
                 </td>
                 <td>Number of maximum redo calls before giving up and throwing <code>OperationTimeoutException</code>.</td>
                 <td>integer</td>
@@ -223,7 +223,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <literal>hazelcast.backup.redo.enabled</literal>
+                    <literal xml:id="hazelcast.backup.redo.enabled">hazelcast.backup.redo.enabled</literal>
                 </td>
                 <td>Enable (strict) redo for backup operations. Backup operations may fail due to node failures,
                     but generally during partition re-assignment process missing backups are restored.</td>
@@ -232,7 +232,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <literal>hazelcast.max.operation.timeout</literal>
+                    <literal xml:id="hazelcast.max.operation.timeout">hazelcast.max.operation.timeout</literal>
                 </td>
                 <td>Maximum operation timeout in milliseconds if no timeout is specified for an operation. (default 300 seconds)</td>
                 <td>integer</td>
@@ -240,16 +240,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <literal>hazelcast.max.response.poll.timeout</literal>
-                </td>
-                <td>Max operation response queue poll timeout in seconds. If operation timeout is explicitly set,
-                    poll timeout value will be adjusted according to operation timeout. (default 10 seconds)</td>
-                <td>integer</td>
-                <td>10</td>
-            </tr>
-            <tr>
-                <td>
-                    <literal>hazelcast.max.concurrent.operation.limit</literal>
+                    <literal xml:id="hazelcast.max.concurrent.operation.limit">hazelcast.max.concurrent.operation.limit</literal>
                 </td>
                 <td>Max number of concurrent operations can be submitted to Hazelcast without throwing
                     <code>OperationRejectedException</code> (negative means undefined).</td>

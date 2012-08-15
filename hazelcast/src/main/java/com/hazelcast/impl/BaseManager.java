@@ -50,7 +50,8 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BaseManager {
 
-    private static final long MIN_POLL_TIMEOUT = 100L;
+    private static final long MIN_POLL_TIMEOUT = 100L;      // 100 milliseconds
+    private static final long MAX_POLL_TIMEOUT = 1000L * 5; // 5 seconds
 
     protected final List<MemberImpl> lsMembers;
     /**
@@ -75,7 +76,7 @@ public abstract class BaseManager {
 
     protected final ILogger logger;
 
-    protected final long maxResponsePollTimeout;
+    protected final long responsePollTimeout;
 
     protected final long maxOperationTimeout;
 
@@ -104,10 +105,9 @@ public abstract class BaseManager {
         qServiceThreadPacketCache = node.baseVariables.qServiceThreadPacketCache;
         localIdGen = node.baseVariables.localIdGen;
         logger = node.getLogger(this.getClass().getName());
-        maxResponsePollTimeout = Math.max(node.getGroupProperties().MAX_RESPONSE_POLL_TIMEOUT.getLong() * 1000L,
-                MIN_POLL_TIMEOUT);
-        maxOperationTimeout = node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong();
+        maxOperationTimeout = Math.max(node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong(), 0L);
         maxOperationLimit = node.getGroupProperties().MAX_CONCURRENT_OPERATION_LIMIT.getInteger();
+        responsePollTimeout = Math.min(Math.max(maxOperationTimeout / 5, MIN_POLL_TIMEOUT), MAX_POLL_TIMEOUT);
         redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
         redoLogThreshold = node.getGroupProperties().REDO_LOG_THRESHOLD.getInteger();
         redoGiveUpThreshold = node.getGroupProperties().REDO_GIVE_UP_THRESHOLD.getInteger();
@@ -591,20 +591,16 @@ public abstract class BaseManager {
         }
 
         public Object waitAndGetResult() {
-            final long pollTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
-                                     ? maxResponsePollTimeout
-                                     : Math.min((request.timeout / 5) + MIN_POLL_TIMEOUT, maxResponsePollTimeout);
-
             // should be more than request timeout
             final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
                                            ? Long.MAX_VALUE
-                                           : (request.timeout > 0 ? request.timeout * 2 + MIN_POLL_TIMEOUT
-                                                                  : pollTimeout * 2);
+                                           : (request.timeout > 0 ? (request.timeout * 2) + MIN_POLL_TIMEOUT
+                                                                  : responsePollTimeout);
 
             final long start = Clock.currentTimeMillis();
             while (true) {
                 try {
-                    Object obj = responses.poll(pollTimeout, TimeUnit.MILLISECONDS);
+                    Object obj = responses.poll(responsePollTimeout, TimeUnit.MILLISECONDS);
                     if (obj != null) {
                         if (obj instanceof DistributedTimeoutException) {
                             throw new OperationTimeoutException(request.operation.toString(),

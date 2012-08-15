@@ -451,7 +451,7 @@ public class Node {
         try {
             managementCenterService = new ManagementCenterService(factory);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "ManagementCenterService could not be constructed!", e);
+            logger.log(Level.WARNING, "ManagementCenterService could not be created!", e);
         }
         initializer.afterInitialize(this);
     }
