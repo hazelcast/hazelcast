@@ -328,6 +328,10 @@ public class DistributedTask<V> extends FutureTask<V> {
             return task;
         }
 
+        public void setRunnable(Runnable runnable) {
+            task = runnable;
+        }
+
         public V call() {
             task.run();
             return result;
