@@ -27,17 +27,21 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 @Component
 public class DummyTransactionManager implements PlatformTransactionManager {
 
-    private boolean committed = false;
+    private volatile boolean committed = false;
 
     public boolean isCommitted() {
         return committed;
     }
 
     public TransactionStatus getTransaction(TransactionDefinition transactionDefinition) throws TransactionException {
+        committed = false;
         return new SimpleTransactionStatus(true);
     }
 
     public void commit(TransactionStatus transactionStatus) throws TransactionException {
+        if (committed) {
+            throw new IllegalTransactionStateException("Transaction should not be committed at this stage!");
+        }
         committed = true;
     }
 

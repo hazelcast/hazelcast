@@ -107,6 +107,8 @@ public class TestManagedContext {
     public void testTransactionalRunnableTask() throws ExecutionException, InterruptedException {
         Future<?> future = instance1.getExecutorService().submit(new SomeTransactionalRunnableTask());
         future.get();
+        Assert.assertTrue("transaction manager could not proxy the submitted task.",
+                transactionManager.isCommitted());
     }
 
 }
