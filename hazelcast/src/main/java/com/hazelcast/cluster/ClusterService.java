@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.SystemLogService;
