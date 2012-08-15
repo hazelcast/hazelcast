@@ -18,7 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.AbstractRemotelyCallable;
 import com.hazelcast.cluster.AbstractRemotelyProcessable;
-import com.hazelcast.cluster.ClusterManager.AsyncRemotelyBooleanCallable;
+import com.hazelcast.cluster.ClusterManager.AsyncRemotelyBooleanOp;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
@@ -722,10 +722,11 @@ public class PartitionManager {
                         > MIGRATING_PARTITION_CHECK_INTERVAL) {
                     try {
                         final Node node = concurrentMapManager.node;
-                        AsyncRemotelyBooleanCallable rrp = node.clusterManager.new AsyncRemotelyBooleanCallable();
-                        rrp.executeProcess(node.getMasterAddress(),
-                                new RemotelyCheckMigratingPartition(currentMigratingPartition));
-                        boolean valid = rrp.getResultAsBoolean(1);
+                        AsyncRemotelyBooleanOp op = node.clusterManager.new AsyncRemotelyBooleanOp(
+                                new RemotelyCheckMigratingPartition(currentMigratingPartition),
+                                node.getMasterAddress(), true);
+                        op.execute();
+                        boolean valid = op.getResultAsBoolean(1);
                         if (valid) {
                             logger.log(Level.FINEST, "Master has confirmed current " + currentMigratingPartition);
                         } else {

@@ -590,26 +590,38 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     public boolean checkAuthorization(String groupName, String groupPassword, Address target) {
         AbstractRemotelyCallable<Boolean> authorizationCall = new AuthorizationCall(groupName, groupPassword);
-        AsyncRemotelyBooleanCallable call = new NoneMemberAsyncRemotelyBooleanCallable();
-        call.executeProcess(target, authorizationCall);
-        return call.getResultAsBoolean();
+        AsyncRemotelyBooleanOp op = new NoneMemberAsyncRemotelyBooleanOp(authorizationCall, target, true);
+        op.execute();
+        return op.getResultAsBoolean();
     }
 
-    public class NoneMemberAsyncRemotelyBooleanCallable extends AsyncRemotelyBooleanCallable {
+    public class NoneMemberAsyncRemotelyBooleanOp extends AsyncRemotelyBooleanOp {
+
+        public NoneMemberAsyncRemotelyBooleanOp(final AbstractRemotelyCallable<Boolean> arp,
+                                                final Address target, final boolean canTimeout) {
+            super(arp, target, canTimeout);
+        }
+
         @Override
         protected boolean memberOnly() {
             return false;
         }
     }
 
-    public class AsyncRemotelyBooleanCallable extends TargetAwareOp {
-        AbstractRemotelyCallable<Boolean> arp = null;
+    public class AsyncRemotelyBooleanOp extends TargetAwareOp {
+        private final AbstractRemotelyCallable<Boolean> arp;
+        private final boolean canTimeout;
 
-        public void executeProcess(Address address, AbstractRemotelyCallable<Boolean> arp) {
+        public AsyncRemotelyBooleanOp(final AbstractRemotelyCallable<Boolean> arp,
+                                      final Address target, final boolean canTimeout) {
             this.arp = arp;
-            super.target = address;
+            this.target = target;
+            this.canTimeout = canTimeout;
+        }
+
+        public void execute() {
             arp.setNode(node);
-            setLocal(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN, "call", null, arp, -1, -1);
+            setLocal(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN, "call", null, arp, 0, -1);
             request.setBooleanRequest();
             doOp();
         }
@@ -657,20 +669,26 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         protected void packetNotSent() {
             setResult(Boolean.FALSE);
         }
+
+        @Override
+        protected final boolean canTimeout() {
+            return canTimeout;
+        }
     }
 
     public void finalizeJoin() {
         Set<Member> members = node.getClusterImpl().getMembers();
-        List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>();
+        List<AsyncRemotelyBooleanOp> calls = new ArrayList<AsyncRemotelyBooleanOp>();
         for (Member m : members) {
             MemberImpl member = (MemberImpl) m;
             if (!member.localMember() && !member.isLiteMember()) {
-                AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
-                rrp.executeProcess(member.getAddress(), new FinalizeJoin());
-                calls.add(rrp);
+                AsyncRemotelyBooleanOp op = new AsyncRemotelyBooleanOp(
+                        new FinalizeJoin(), member.getAddress(), false);
+                op.execute();
+                calls.add(op);
             }
         }
-        for (AsyncRemotelyBooleanCallable call : calls) {
+        for (AsyncRemotelyBooleanOp call : calls) {
             call.getResultAsBoolean();
         }
     }
@@ -699,16 +717,16 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
 
         void doCall(AbstractRemotelyCallable callable, List<Address> targets, boolean ignoreThis) {
-            List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>(targets.size());
+            List<AsyncRemotelyBooleanOp> calls = new ArrayList<AsyncRemotelyBooleanOp>(targets.size());
             for (final Address target : targets) {
                 boolean skip = ignoreThis && thisAddress.equals(target);
                 if (!skip) {
-                    AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
-                    call.executeProcess(target, callable);
-                    calls.add(call);
+                    AsyncRemotelyBooleanOp op = new AsyncRemotelyBooleanOp(callable, target, false);
+                    op.execute();
+                    calls.add(op);
                 }
             }
-            for (AsyncRemotelyBooleanCallable call : calls) {
+            for (AsyncRemotelyBooleanOp call : calls) {
                 if (!call.getResultAsBoolean(5)) {
                     targets.remove(call.getTarget());
                 }

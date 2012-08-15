@@ -586,7 +586,7 @@ public class Node {
             }
         } catch (Exception e) {
             if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
-                logger.log(Level.WARNING, e.getMessage());
+                logger.log(Level.WARNING, "Trying to rejoin: " + e.getMessage());
                 rejoin();
             } else {
                 logger.log(Level.SEVERE, "Could not join cluster, shutting down!", e);

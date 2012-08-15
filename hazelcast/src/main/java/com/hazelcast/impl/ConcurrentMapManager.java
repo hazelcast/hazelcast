@@ -1888,6 +1888,17 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
         }
+
+        @Override
+        protected final boolean canTimeout() {
+            switch (request.operation) {
+                case CONCURRENT_MAP_PUT_AND_UNLOCK:
+                case CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK:
+                    return false;
+                default:
+                    return true;
+            }
+        }
     }
 
     class MRemoveMulti extends MBackupAndMigrationAwareOp {
@@ -2277,6 +2288,11 @@ public class ConcurrentMapManager extends BaseManager {
                 super(target);
                 setLocal(operation, name, null, null, 0, -1);
                 request.setBooleanRequest();
+            }
+
+            @Override
+            protected final boolean canTimeout() {
+                return false;
             }
         }
     }

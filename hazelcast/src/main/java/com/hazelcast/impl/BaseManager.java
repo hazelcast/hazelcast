@@ -594,8 +594,8 @@ public abstract class BaseManager {
             // should be more than request timeout
             final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
                                            ? Long.MAX_VALUE
-                                           : (request.timeout > 0 ? (request.timeout * 2) + MIN_POLL_TIMEOUT
-                                                                  : responsePollTimeout);
+                                           : request.timeout > 0 ? (long)(request.timeout * 1.5f) + MIN_POLL_TIMEOUT
+                                                                         : responsePollTimeout;
 
             final long start = Clock.currentTimeMillis();
             while (true) {
@@ -609,13 +609,15 @@ public abstract class BaseManager {
                         return obj;
                     }
                     if (node.isActive()) {
-                        logger.log(Level.FINEST, "Still no response! " + request);
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.FINEST, "Still no response! " + request);
+                        }
                         if (systemLogService.shouldTrace()) {
                             systemLogService.trace(this, "Still no response");
                         }
                         if (canTimeout() && noResponseTimeout <= (Clock.currentTimeMillis() - start)) {
                             throw new OperationTimeoutException(request.operation.toString(),
-                                    "Operation Timeout: " + request.timeout);
+                                    "Operation Timeout (with no response!): " + request.timeout);
                         }
                     }
                     node.checkNodeState();
