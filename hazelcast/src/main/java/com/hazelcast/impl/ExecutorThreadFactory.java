@@ -20,12 +20,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExecutorThreadFactory implements ThreadFactory {
-    final ThreadGroup group;
-    final AtomicInteger threadNumber = new AtomicInteger(1);
-    final String namePrefix;
-    final ClassLoader classLoader;
+    private final ThreadGroup group;
+    private final AtomicInteger threadNumber = new AtomicInteger(1);
+    private final String namePrefix;
+    private final ClassLoader classLoader;
 
-    public ExecutorThreadFactory(ThreadGroup threadGroup, String threadNamePrefix, ClassLoader classLoader) {
+    public ExecutorThreadFactory(final ThreadGroup threadGroup, final String threadNamePrefix, final ClassLoader classLoader) {
         this.group = threadGroup;
         this.classLoader = classLoader;
         this.namePrefix = threadNamePrefix;
@@ -36,6 +36,8 @@ public class ExecutorThreadFactory implements ThreadFactory {
             public void run() {
                 try {
                     super.run();
+                } catch (OutOfMemoryError e) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory(e);
                 } finally {
                     try {
                         ThreadContext.shutdown(this);

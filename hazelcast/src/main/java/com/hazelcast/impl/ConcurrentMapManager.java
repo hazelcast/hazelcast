@@ -882,10 +882,9 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 } else if (e instanceof InterruptedException) {
                     handleInterruptedException(true, CONCURRENT_MAP_SIZE);
-                } else if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
                 } else {
-                    throw new RuntimeException(e);
+                    Util.throwUncheckedException(e);
+                    return -1; // not reachable
                 }
             }
         }
@@ -932,8 +931,6 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 } else if (e instanceof InterruptedException) {
                     handleInterruptedException(true, operation);
-                } else if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
                 } else if (e instanceof ExecutionException) {
                     Throwable cause = e.getCause();
                     if (cause != null && cause instanceof RuntimeException) {
@@ -942,7 +939,8 @@ public class ConcurrentMapManager extends BaseManager {
                         throw new RuntimeException(e);
                     }
                 } else {
-                    throw new RuntimeException(e);
+                    Util.throwUncheckedException(e);
+                    return null; // not reachable
                 }
             }
         }

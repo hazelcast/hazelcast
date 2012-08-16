@@ -16,7 +16,6 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.SystemLogService;
@@ -210,7 +209,8 @@ public final class ClusterService implements Runnable, Constants {
                     }
                 }
             } catch (OutOfMemoryError e) {
-                node.onOutOfMemory(e);
+//                node.onOutOfMemory(e);
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
             }
@@ -269,18 +269,20 @@ public final class ClusterService implements Runnable, Constants {
         running = true;
     }
 
+    final CountDownLatch stopLatch = new CountDownLatch(1);
+    final Processable stopProcessable = new Processable() {
+        public void process() {
+            node.cleanupServiceThread();
+            running = false;
+            stopLatch.countDown();
+        }
+    };
+
     public void stop() {
         packetQueue.clear();
         processableQueue.clear();
         try {
-            final CountDownLatch stopLatch = new CountDownLatch(1);
-            processableQueue.offer(new Processable() {
-                public void process() {
-                    node.cleanupServiceThread();
-                    running = false;
-                    stopLatch.countDown();
-                }
-            });
+            processableQueue.offer(stopProcessable);
             stopLatch.await(3, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }

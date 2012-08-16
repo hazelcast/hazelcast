@@ -44,6 +44,9 @@ public class Util {
 
     public static void throwUncheckedException(Throwable t) {
         if (t instanceof Error) {
+            if (t instanceof OutOfMemoryError) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
+            }
             throw (Error) t;
         } else if (t instanceof RuntimeException) {
             throw (RuntimeException) t;

@@ -415,6 +415,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
         managementService = new ManagementService(this);
         managementService.register();
+        OutOfMemoryErrorDispatcher.register(this);
     }
 
     @Override

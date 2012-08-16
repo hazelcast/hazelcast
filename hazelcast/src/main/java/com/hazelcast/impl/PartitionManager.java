@@ -1024,6 +1024,8 @@ public class PartitionManager {
             } catch (InterruptedException e) {
                 logger.log(Level.FINEST, "MigrationService is interrupted: " + e.getMessage(), e);
                 running = false;
+            } catch (OutOfMemoryError oom) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
             } finally {
                 clearTaskQueues();
             }

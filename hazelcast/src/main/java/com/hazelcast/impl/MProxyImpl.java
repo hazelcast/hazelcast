@@ -59,7 +59,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     public MProxyImpl() {
     }
 
-    class DynamicInvoker implements InvocationHandler {
+    private class DynamicInvoker implements InvocationHandler {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             beforeCall();
             try {
@@ -68,6 +68,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
                 if (e instanceof InvocationTargetException) {
                     InvocationTargetException ite = (InvocationTargetException) e;
                     throw ite.getCause();
+                }
+                if (e instanceof OutOfMemoryError) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
                 }
                 throw e;
             } finally {

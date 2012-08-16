@@ -22,6 +22,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.impl.Processable;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.ascii.TextCommandService;
@@ -49,7 +50,8 @@ public class NodeIOService implements IOService {
     }
 
     public void onOutOfMemory(OutOfMemoryError oom) {
-        node.onOutOfMemory(oom);
+//        node.onOutOfMemory(oom);
+        OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
     }
 
     public void handleInterruptedException(Thread thread, RuntimeException e) {
@@ -194,12 +196,16 @@ public class NodeIOService implements IOService {
     }
 
     public void onShutdown() {
-        node.clusterManager.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
         try {
+            node.clusterManager.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
             // wait a little
             Thread.sleep(100);
-        } catch (InterruptedException e) {
+        } catch (Throwable ignored) {
         }
+    }
+
+    public void executeAsync(final Runnable runnable) {
+        node.executorManager.executeNow(runnable);
     }
 }
 

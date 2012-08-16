@@ -53,14 +53,19 @@ public final class ThreadContext {
         Thread currentThread = Thread.currentThread();
         ThreadContext threadContext = mapContexts.get(currentThread);
         if (threadContext == null) {
-            threadContext = new ThreadContext(Thread.currentThread());
-            mapContexts.put(currentThread, threadContext);
-            Iterator<Thread> threads = mapContexts.keySet().iterator();
-            while (threads.hasNext()) {
-                Thread thread = threads.next();
-                if (!thread.isAlive()) {
-                    threads.remove();
+            try {
+                threadContext = new ThreadContext(Thread.currentThread());
+                mapContexts.put(currentThread, threadContext);
+                Iterator<Thread> threads = mapContexts.keySet().iterator();
+                while (threads.hasNext()) {
+                    Thread thread = threads.next();
+                    if (!thread.isAlive()) {
+                        threads.remove();
+                    }
                 }
+            } catch (OutOfMemoryError e) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+                throw e;
             }
             if (mapContexts.size() > 1000) {
                 String msg = " ThreadContext is created!! You might have too many threads. Is that normal?";

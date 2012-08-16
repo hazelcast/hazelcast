@@ -81,8 +81,6 @@ public class ConnectionManager {
 
     private final MemberSocketInterceptor memberSocketInterceptor;
 
-    private final ExecutorService es = Executors.newCachedThreadPool();
-
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
     private Thread socketAcceptorThread; // accessed only in synchronized block
@@ -177,10 +175,6 @@ public class ConnectionManager {
 
     public IOService getIOHandler() {
         return ioService;
-    }
-
-    void executeAsync(Runnable runnable) {
-        es.execute(runnable);
     }
 
     public MemberSocketInterceptor getMemberSocketInterceptor() {
@@ -279,12 +273,12 @@ public class ConnectionManager {
         return getOrConnect(address, false);
     }
 
-    public Connection getOrConnect(Address address, boolean silent) {
+    public Connection getOrConnect(final Address address, final boolean silent) {
         Connection connection = mapConnections.get(address);
         if (connection == null) {
             if (setConnectionInProgress.add(address)) {
                 ioService.shouldConnectTo(address);
-                executeAsync(new SocketConnector(this, address, silent));
+                ioService.executeAsync(new SocketConnector(this, address, silent));
             }
         }
         return connection;
@@ -388,7 +382,6 @@ public class ConnectionManager {
                 stop();
             }
         } finally {
-            es.shutdownNow();
             if (serverSocketChannel != null) {
                 try {
                     log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
