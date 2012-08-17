@@ -58,6 +58,11 @@ public abstract class OutOfMemoryHandler {
      * and Hazelcast may not be informed about <tt>OutOfMemoryError</tt>.
      * </p>
      *
+     * @see OutOfMemoryHandler#inactivate(HazelcastInstance)
+     * @see OutOfMemoryHandler#tryCloseConnections(HazelcastInstance)
+     * @see OutOfMemoryHandler#tryStopThreads(HazelcastInstance)
+     * @see OutOfMemoryHandler#tryShutdown(HazelcastInstance)
+     *
      * @param oom OutOfMemoryError thrown by JVM
      * @param hazelcastInstances All HazelcastInstances known by JVM,
      *                           can include inactive or NULL instances.
