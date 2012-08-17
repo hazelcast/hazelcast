@@ -325,6 +325,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static void shutdownAll() {
+        OutOfMemoryErrorDispatcher.clear();
         Collection<FactoryImpl> colFactories = factories.values();
         for (FactoryImpl factory : colFactories) {
             factory.shutdown();

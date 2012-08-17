@@ -32,13 +32,15 @@ public final class OutOfMemoryErrorDispatcher {
         OutOfMemoryErrorDispatcher.handler = outOfMemoryHandler;
     }
 
-    synchronized static void register(FactoryImpl factory) {
+    synchronized static boolean register(FactoryImpl factory) {
         if (size < instances.length - 1) {
             instances[size++] = factory;
+            return true;
         }
+        return false;
     }
 
-    synchronized static void deregister(FactoryImpl factory) {
+    synchronized static boolean deregister(FactoryImpl factory) {
         for (int index = 0; index < instances.length; index++) {
             HazelcastInstance hz = instances[index];
             if (hz == factory) {
@@ -48,10 +50,18 @@ public final class OutOfMemoryErrorDispatcher {
                         System.arraycopy(instances, index + 1, instances, index, numMoved);
                     }
                     instances[--size] = null;
+                    return true;
                 } catch (Throwable ignored) {
                 }
-                return;
             }
+        }
+        return false;
+    }
+
+    synchronized static void clear() {
+        for (int i = 0; i < instances.length; i++) {
+            instances[i] = null;
+            size = 0;
         }
     }
 
