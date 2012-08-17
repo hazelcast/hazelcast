@@ -375,8 +375,18 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     public void handleMaster(Master master) {
         if (!node.joined() && !thisAddress.equals(master.address)) {
+            logger.log(Level.FINEST, "Handling master response: " + master);
+            final Address currentMaster = node.getMasterAddress();
+            if (currentMaster != null && !currentMaster.equals(master.address)) {
+                final Connection conn = node.connectionManager.getConnection(currentMaster);
+                if (conn != null && conn.live()) {
+                    logger.log(Level.FINEST, "Ignoring master response " + master +
+                              " since node has an active master: " + currentMaster);
+                    return;
+                }
+            }
             node.setMasterAddress(master.address);
-            Connection connMaster = node.connectionManager.getOrConnect(master.address);
+            final Connection connMaster = node.connectionManager.getOrConnect(master.address);
             if (connMaster != null) {
                 sendJoinRequest(master.address, true);
             }

@@ -20,11 +20,8 @@ import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -38,9 +35,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class SplitBrainHandlerTest {
@@ -316,9 +311,82 @@ public class SplitBrainHandlerTest {
         assertEquals(2, h3.getCluster().getMembers().size());
     }
 
+    @Test
+    /**
+     * Test for issue #247
+     */
+    public void testMultiJoinsIssue247() throws Exception {
+        Config c1 = buildConfig(false).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        Config c2 = buildConfig(false).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        Config c3 = buildConfig(false).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        Config c4 = buildConfig(false).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+
+        c1.getNetworkConfig().setPort(15701);
+        c2.getNetworkConfig().setPort(15702);
+        c3.getNetworkConfig().setPort(15703);
+        c4.getNetworkConfig().setPort(15704);
+
+        c1.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(Arrays.asList("127.0.0.1:15701"));
+        c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(Arrays.asList("127.0.0.1:15702"));
+        c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(Arrays.asList("127.0.0.1:15703"));
+        c4.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(Arrays.asList("127.0.0.1:15701, 127.0.0.1:15702, 127.0.0.1:15703, 127.0.0.1:15704"));
+
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(c3);
+
+        // First three nodes are up. All should be in separate clusters.
+        assertEquals(1, h1.getCluster().getMembers().size());
+        assertEquals(1, h2.getCluster().getMembers().size());
+        assertEquals(1, h3.getCluster().getMembers().size());
+
+        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(c4);
+
+        // Fourth node is up. Should join one of the other three clusters.
+        int numNodesWithTwoMembers = 0;
+        if (h1.getCluster().getMembers().size() == 2) {
+            numNodesWithTwoMembers++;
+        }
+        if (h2.getCluster().getMembers().size() == 2) {
+            numNodesWithTwoMembers++;
+        }
+        if (h3.getCluster().getMembers().size() == 2) {
+            numNodesWithTwoMembers++;
+        }
+        if (h4.getCluster().getMembers().size() == 2) {
+            numNodesWithTwoMembers++;
+        }
+
+        Member h4Member = h4.getCluster().getLocalMember();
+
+        int numNodesThatKnowAboutH4 = 0;
+        if (h1.getCluster().getMembers().contains(h4Member)) {
+            numNodesThatKnowAboutH4++;
+        }
+        if (h2.getCluster().getMembers().contains(h4Member)) {
+            numNodesThatKnowAboutH4++;
+        }
+        if (h3.getCluster().getMembers().contains(h4Member)) {
+            numNodesThatKnowAboutH4++;
+        }
+        if (h4.getCluster().getMembers().contains(h4Member)) {
+            numNodesThatKnowAboutH4++;
+        }
+
+        /*
+         * At this point h4 should have joined a single node out of the other
+         * three. There should be two clusters of one and one cluster of two. h4
+         * should only be in one cluster.
+         *
+         */
+        assertEquals(2, h4.getCluster().getMembers().size());
+        assertEquals(2, numNodesWithTwoMembers);
+        assertEquals(2, numNodesThatKnowAboutH4);
+    }
+
     private static Config buildConfig(boolean multicastEnabled) {
         Config c = new Config();
-        c.getGroupConfig().setName("test-group-one").setPassword("pass");
+        c.getGroupConfig().setName("group").setPassword("pass");
         c.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
         c.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "5");
         final NetworkConfig networkConfig = c.getNetworkConfig();

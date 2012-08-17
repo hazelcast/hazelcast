@@ -16,8 +16,9 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.util.Clock;
 import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -47,9 +48,16 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
     }
 
     public Boolean call() {
-        node.getClusterImpl().setMasterTime(masterTime);
-        node.clusterManager.updateMembers(getMemberInfos());
-        return Boolean.TRUE;
+        final Address masterAddress = conn != null ? conn.getEndPoint() : null;
+        final boolean accept = conn == null ||  // which means this is a local call.
+                (masterAddress != null && masterAddress.equals(node.getMasterAddress()));
+
+        if (accept) {
+            node.getClusterImpl().setMasterTime(masterTime);
+            node.clusterManager.updateMembers(getMemberInfos());
+            return Boolean.TRUE;
+        }
+        return Boolean.FALSE;
     }
 
     public void addMemberInfo(MemberInfo memberInfo) {
