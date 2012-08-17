@@ -335,6 +335,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static void kill(FactoryImpl factory) {
+        OutOfMemoryErrorDispatcher.deregister(factory);
         factory.managementService.unregister();
         factories.remove(factory.getName());
         if (factories.size() == 0) {
@@ -348,6 +349,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static void shutdown(FactoryImpl factory) {
+        OutOfMemoryErrorDispatcher.deregister(factory);
         factory.managementService.unregister();
         factories.remove(factory.getName());
         if (factories.size() == 0) {

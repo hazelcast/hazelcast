@@ -24,8 +24,8 @@ import com.hazelcast.core.OutOfMemoryHandler;
  */
 public final class OutOfMemoryErrorDispatcher {
 
-    private static final FactoryImpl[] FACTORIES = new FactoryImpl[100];
-    private static int index = 0;
+    private static final HazelcastInstance[] instances = new HazelcastInstance[50];
+    private static int size = 0;
     private static OutOfMemoryHandler handler = new DefaultOutOfMemoryHandler();
 
     public synchronized static void setHandler(OutOfMemoryHandler outOfMemoryHandler) {
@@ -33,14 +33,31 @@ public final class OutOfMemoryErrorDispatcher {
     }
 
     synchronized static void register(FactoryImpl factory) {
-        if (index < FACTORIES.length - 1) {
-            FACTORIES[index++] = factory;
+        if (size < instances.length - 1) {
+            instances[size++] = factory;
+        }
+    }
+
+    synchronized static void deregister(FactoryImpl factory) {
+        for (int index = 0; index < instances.length; index++) {
+            HazelcastInstance hz = instances[index];
+            if (hz == factory) {
+                try {
+                    int numMoved = size - index - 1;
+                    if (numMoved > 0) {
+                        System.arraycopy(instances, index + 1, instances, index, numMoved);
+                    }
+                    instances[--size] = null;
+                } catch (Throwable ignored) {
+                }
+                return;
+            }
         }
     }
 
     public synchronized static void onOutOfMemory(OutOfMemoryError oom) {
         if (handler != null) {
-            handler.onOutOfMemory(oom, FACTORIES);
+            handler.onOutOfMemory(oom, instances);
         }
     }
 
@@ -49,53 +66,56 @@ public final class OutOfMemoryErrorDispatcher {
         public void onOutOfMemory(final OutOfMemoryError oom, final HazelcastInstance[] hazelcastInstances) {
             for (HazelcastInstance instance : hazelcastInstances) {
                 if (instance != null) {
-                    OutOfMemoryErrorDispatcher.tryCloseConnections(instance);
-                    OutOfMemoryErrorDispatcher.tryStopThreads(instance);
-                    OutOfMemoryErrorDispatcher.tryShutdown(instance);
+                    Helper.tryCloseConnections(instance);
+                    Helper.tryStopThreads(instance);
+                    Helper.tryShutdown(instance);
                 }
             }
         }
     }
 
-    public static void tryCloseConnections(final HazelcastInstance hazelcastInstance) {
-        if (hazelcastInstance == null) return;
-        final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
-        closeSockets(factory);
-    }
+    public static final class Helper {
 
-    private static void closeSockets(final FactoryImpl factory) {
-        if (factory.node.connectionManager != null) {
+        public static void tryCloseConnections(final HazelcastInstance hazelcastInstance) {
+            if (hazelcastInstance == null) return;
+            final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
+            closeSockets(factory);
+        }
+
+        private static void closeSockets(final FactoryImpl factory) {
+            if (factory.node.connectionManager != null) {
+                try {
+                    factory.node.connectionManager.shutdown();
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+
+        public static void tryShutdown(final HazelcastInstance hazelcastInstance) {
+            if (hazelcastInstance == null) return;
+            final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
+            closeSockets(factory);
             try {
-                factory.node.connectionManager.shutdown();
+                factory.node.doShutdown(true);
             } catch (Throwable ignored) {
             }
         }
-    }
 
-    public static void tryShutdown(final HazelcastInstance hazelcastInstance) {
-        if (hazelcastInstance == null) return;
-        final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
-        closeSockets(factory);
-        try {
-            factory.node.doShutdown(true);
-        } catch (Throwable ignored) {
+        public static void inactivate(final HazelcastInstance hazelcastInstance) {
+            if (hazelcastInstance == null) return;
+            final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
+            factory.node.onOutOfMemory();
         }
-    }
 
-    public static void inactivate(final HazelcastInstance hazelcastInstance) {
-        if (hazelcastInstance == null) return;
-        final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
-        factory.node.onOutOfMemory();
-    }
-
-    public static void tryStopThreads(final HazelcastInstance hazelcastInstance) {
-        if (hazelcastInstance == null) return;
-        final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
-        try {
-            factory.node.threadGroup.interrupt();
-            factory.node.executorManager.stop();
-            factory.node.clusterService.stop();
-        } catch (Throwable ignored) {
+        public static void tryStopThreads(final HazelcastInstance hazelcastInstance) {
+            if (hazelcastInstance == null) return;
+            final FactoryImpl factory = (FactoryImpl) hazelcastInstance;
+            try {
+                factory.node.threadGroup.interrupt();
+                factory.node.executorManager.stop();
+                factory.node.clusterService.stop();
+            } catch (Throwable ignored) {
+            }
         }
     }
 
