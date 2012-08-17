@@ -61,6 +61,14 @@
             </listitem>
             <listitem>
                 <para>
+                    Improved out of memory (OOM) error detection and handling. Now it is possible to register custom hook
+                    when <code>OutOfMemoryError</code> is thrown.
+                    See <code>Hazelcast.setOutOfMemoryHandler(OutOfMemoryHandler)</code> and <code>OutOfMemoryHandler</code>
+                    javadocs for additional details.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
                     Fixed some issues related to domain name handling and networking/join.
                 </para>
             </listitem>
