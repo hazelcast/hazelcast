@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 public class PacketHandler {
 
-    protected static final byte[] HEADER = new byte[]{'H', 'Z', 'C'};
+    protected static final byte[] HEADER = new byte[]{'P', '0', '1'};
 
     private Connection connection;
 
