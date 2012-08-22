@@ -47,7 +47,7 @@ public class CollectionClientProxyTest {
         ItemListenerManager itemListenerManager = mock(ItemListenerManager.class);
         when(listenerManager.getItemListenerManager()).thenReturn(itemListenerManager);
         when(client.getListenerManager()).thenReturn(listenerManager);
-        when(client.getOutRunnable()).thenReturn(new OutRunnable(client, new HashMap(), new PacketWriter()));
+        when(client.getOutRunnable()).thenReturn(new OutRunnable(client, new HashMap(), new ProtocolWriter()));
         String name = "def";
         PacketProxyHelper proxyHelper = mock(PacketProxyHelper.class);
         when(proxyHelper.getHazelcastClient()).thenReturn(client);

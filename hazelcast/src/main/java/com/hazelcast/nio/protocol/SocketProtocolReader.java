@@ -24,6 +24,8 @@ import com.hazelcast.nio.ascii.SocketTextReader;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
+
+import static com.hazelcast.nio.Protocol.NOREPLY;
 //    COMMAND <arg1>É<argN> \r\n
 //    #M  <s1>É<sM> \r\n
 //    B1B2É. BM
@@ -51,7 +53,6 @@ public class SocketProtocolReader implements SocketReader {
 
     private final Connection connection;
     private final IOService ioService;
-    private static final String NOREPLY = "noreply";
 
     private String flag = null;
     final ByteBuffer firstNewLineRead = ByteBuffer.allocate(2);
@@ -59,7 +60,7 @@ public class SocketProtocolReader implements SocketReader {
     Pattern p = Pattern.compile("\\s+");
     Pattern numericPattern = Pattern.compile("([0-9]*)");
 
-    public SocketProtocolReader(SocketChannelWrapper socketChannel, Connection connection) {
+    public SocketProtocolReader(Connection connection) {
         this.connection = connection;
         this.ioService = connection.getConnectionManager().getIOHandler();
         this.logger = ioService.getLogger(SocketProtocolReader.class.getName());
@@ -72,21 +73,14 @@ public class SocketProtocolReader implements SocketReader {
     }
 
     private void doRead(ByteBuffer bb) {
-//        long t1 = System.nanoTime();
         try {
             while (firstNewLineRead.hasRemaining()) {
                 firstNewLineRead.put(bb.get());
             }
             readLineIfnotRead(bb, commandLineRead, binaryCommandLine);
             if (commandLineIsRead()) {
-//                System.out.println("CDL READ 1        " + (System.nanoTime()-t1));
-//                long t2 = System.nanoTime();
                 String stringCommandLine = SocketTextReader.toStringAndClear(binaryCommandLine);
-//                System.out.println("TOSTRING CDL       " + (System.nanoTime()-t2));
-//                long t = System.nanoTime();
                 parseCommandLine(stringCommandLine);
-//                long t3 = System.nanoTime();
-//                System.out.println("OUTER PARSE     " + (t3-t));
                 if (commandLineIsParsed) {
                     if (hasSizeLine())
                         readLineIfnotRead(bb, sizeLineRead, sizeLine);
@@ -94,11 +88,7 @@ public class SocketProtocolReader implements SocketReader {
                         sizeLineRead.set(true);
                 }
                 if (commandLineIsParsed && !hasSizeLine() || sizeLineIsRead()) {
-//                    long t4 = System.nanoTime();
-//                    System.out.println("SLN READ        " + (t4-t3));
                     parseSizeLine(SocketTextReader.toStringAndClear(sizeLine));
-//                    long t5 = System.nanoTime();
-//                    System.out.println("PARSE SIZE      " + (t5-t4));
                     for (int i = 0; bb.hasRemaining() && i < buffers.length; i++) {
                         if (buffers[i].hasRemaining()) {
                             copy(bb, buffers[i]);
@@ -108,8 +98,6 @@ public class SocketProtocolReader implements SocketReader {
                                 copy(bb, endOfTheCommand);
                         }
                     }
-//                    long t6 = System.nanoTime();
-//                    System.out.println("Diff 5 " + (t6-t5));
                     if ((buffers.length == 0 || !buffers[buffers.length - 1].hasRemaining())) {
                         Protocol protocol = new Protocol(connection, command, flag, threadId, noreply, args, buffers);
                         connection.setType(Connection.Type.PROTOCOL_CLIENT);

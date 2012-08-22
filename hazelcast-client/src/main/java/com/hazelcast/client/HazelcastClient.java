@@ -86,8 +86,8 @@ public class HazelcastClient implements HazelcastInstance {
         //empty check
         connectionManager = new ConnectionManager(this, config, lifecycleService);
         connectionManager.setBinder(new DefaultClientBinder(this));
-        out = new OutRunnable(this, calls, new PacketWriter());
-        in = new InRunnable(this, out, calls, new PacketReader());
+        out = new OutRunnable(this, calls, new ProtocolWriter());
+        in = new InRunnable(this, out, calls, new ProtocolReader());
         listenerManager = new ListenerManager(this);
         try {
             final Connection c = connectionManager.getInitConnection();

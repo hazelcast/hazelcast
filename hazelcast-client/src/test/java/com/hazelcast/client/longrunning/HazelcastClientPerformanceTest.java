@@ -171,7 +171,7 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
         when(client.getConnectionManager()).thenReturn(connectionManager);
         Connection connection = new Connection("localhost", 5799, 1);
         when(connectionManager.getConnection()).thenReturn(connection);
-        PacketWriter packetWriter = new PacketWriter();
+        ProtocolWriter packetWriter = new ProtocolWriter();
         packetWriter.setConnection(connection);
         final OutRunnable outRunnable = new OutRunnable(client, new HashMap<Long, Call>(), packetWriter);
         new Thread(outRunnable).start();

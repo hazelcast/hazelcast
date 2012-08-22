@@ -66,7 +66,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                     } else if ("P01".equals(protocol)) {
                         System.out.println("Protocol is P01");
                         writeHandler.setProtocol("P01");
-                        socketReader = new SocketProtocolReader(socketChannel, connection);
+                        socketReader = new SocketProtocolReader(connection);
                     } else {
                         writeHandler.setProtocol("TEXT");
                         inBuffer.put(protocolBuffer.array());

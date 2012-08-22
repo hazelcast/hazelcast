@@ -21,10 +21,14 @@ import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.logging.Level;
 
 import static com.hazelcast.client.IOUtil.toByte;
@@ -41,7 +45,8 @@ public class DefaultClientBinder implements ClientBinder {
     public void bind(Connection connection, Credentials credentials) throws IOException {
         logger.log(Level.FINEST, connection + " -> "
                 + connection.getAddress().getHostName() + ":" + connection.getSocket().getLocalPort());
-        auth(connection, credentials);
+        authProtocol(connection, credentials);
+
 //        Bind b = null;
 //        try {
 //            b = new Bind(new Address(connection.getAddress().getHostName(), connection.getSocket().getLocalPort()));
@@ -55,26 +60,56 @@ public class DefaultClientBinder implements ClientBinder {
 //        write(connection, bind);
     }
 
-    void auth(Connection connection, Credentials credentials) throws IOException {
-        Packet auth = new Packet();
-        auth.set("", ClusterOperation.CLIENT_AUTHENTICATE, new byte[0], toByte(credentials));
-        Packet packet = writeAndRead(connection, auth);
-        final Object response = toObject(packet.getValue());
-        logger.log(Level.FINEST, "auth response:" + response);
-        if (response instanceof Exception) {
-            throw new RuntimeException((Exception) response);
+//    void authPacket(Connection connection, Credentials credentials) throws IOException {
+//
+//        Packet auth = new Packet();
+//        auth.set("", ClusterOperation.CLIENT_AUTHENTICATE, new byte[0], toByte(credentials));
+//        Packet packet = writeAndRead(connection, auth);
+//        final Object response = toObject(packet.getValue());
+//        logger.log(Level.FINEST, "auth response:" + response);
+//        if (response instanceof Exception) {
+//            throw new RuntimeException((Exception) response);
+//        }
+//        if (!Boolean.TRUE.equals(response)) {
+//            throw new AuthenticationException("Client [" + connection + "] has failed authentication");
+//        }
+//    }
+
+//    Packet writeAndRead(Connection connection, Packet packet) throws IOException {
+//        write(connection, packet);
+//        return client.getInRunnable().reader.readPacket(connection);
+//    }
+
+    void write(Connection connection, Protocol command) throws IOException {
+        client.getOutRunnable().write(connection, command);
+    }
+
+
+    void authProtocol(Connection connection, Credentials credentials) throws IOException {
+
+        String[] args = null;
+        ByteBuffer[] bb = null;
+
+        if(credentials instanceof UsernamePasswordCredentials){
+            UsernamePasswordCredentials upCredentials = (UsernamePasswordCredentials) credentials;
+            args = new String[]{upCredentials.getUsername(), upCredentials.getPassword()};
         }
-        if (!Boolean.TRUE.equals(response)) {
-            throw new AuthenticationException("Client [" + connection + "] has failed authentication");
+        else{
+            bb = new ByteBuffer[]{ByteBuffer.wrap(toByte(credentials))};
+        }
+
+        Protocol auth = new Protocol(null, Command.AUTH, args,bb);
+
+        Protocol response = writeAndRead(connection, auth);
+
+        logger.log(Level.FINEST, "auth response:" + response.command);
+        if(!response.command.equals(Command.OK)){
+            throw new AuthenticationException("Client [" + connection + "] has failed authentication.");
         }
     }
 
-    Packet writeAndRead(Connection connection, Packet packet) throws IOException {
-        write(connection, packet);
-        return client.getInRunnable().reader.readPacket(connection);
-    }
-
-    void write(Connection connection, Packet packet) throws IOException {
-        client.getOutRunnable().write(connection, packet);
+    Protocol writeAndRead(Connection connection, Protocol command) throws IOException {
+        write(connection, command);
+        return client.getInRunnable().reader.read(connection);
     }
 }

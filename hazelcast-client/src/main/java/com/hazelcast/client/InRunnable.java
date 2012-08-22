@@ -17,6 +17,8 @@
 package com.hazelcast.client;
 
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -24,13 +26,13 @@ import java.util.Map;
 import java.util.logging.Level;
 
 public class InRunnable extends IORunnable implements Runnable {
-    final PacketReader reader;
+    final ProtocolReader reader;
     Connection connection = null;
     private final OutRunnable outRunnable;
 
     volatile long lastReceived;
 
-    public InRunnable(HazelcastClient client, OutRunnable outRunnable, Map<Long, Call> calls, PacketReader reader) {
+    public InRunnable(HazelcastClient client, OutRunnable outRunnable, Map<Long, Call> calls, ProtocolReader reader) {
         super(client, calls);
         this.outRunnable = outRunnable;
         this.reader = reader;
@@ -41,7 +43,7 @@ public class InRunnable extends IORunnable implements Runnable {
             Thread.sleep(10L);
             return;
         }
-        Packet packet;
+        Protocol command;
         try {
             Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
@@ -58,19 +60,19 @@ public class InRunnable extends IORunnable implements Runnable {
                 outRunnable.clusterIsDown(oldConnection);
                 Thread.sleep(10);
             } else {
-                packet = reader.readPacket(connection);
+                command = reader.read(connection);
 //                logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
                 this.lastReceived = Clock.currentTimeMillis();
-                Call call = callMap.remove(packet.getCallId());
+                Call call = callMap.remove(command.flag);
                 if (call != null) {
                     call.received = System.nanoTime();
-                    call.setResponse(packet);
+                    call.setResponse(command);
                 } else {
-                    if (packet.getOperation().equals(ClusterOperation.EVENT)) {
-                        client.getListenerManager().enqueue(packet);
+                    if (command.command.equals(Command.EVENT)) {
+                        client.getListenerManager().enqueue(command);
                     }
-                    if (packet.getCallId() != -1) {
-                        logger.log(Level.SEVERE, "In Thread can not handle: " + packet.getOperation() + " : " + packet.getCallId());
+                    if (command.flag != "-1") {
+                        logger.log(Level.SEVERE, "In Thread can not handle: " + command.command + " : " + command.flag);
                     }
                 }
             }

@@ -22,6 +22,8 @@ import com.hazelcast.nio.protocol.Command;
 import java.nio.ByteBuffer;
 
 public class Protocol implements SocketWritable {
+
+    public static final String NOREPLY = "noreply";
     public final Command command;
     public final String[] args;
     public final ByteBuffer[] buffers;

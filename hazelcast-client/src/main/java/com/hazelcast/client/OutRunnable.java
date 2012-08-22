@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.nio.Protocol;
 import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.io.IOException;
@@ -29,7 +30,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 public class OutRunnable extends IORunnable {
-    final PacketWriter writer;
+    final ProtocolWriter writer;
+
 
     final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
 
@@ -41,7 +43,7 @@ public class OutRunnable extends IORunnable {
 
     private Connection connection = null;
 
-    public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final PacketWriter writer) {
+    public OutRunnable(final HazelcastClient client, final Map<Long, Call> calls, final ProtocolWriter writer) {
         super(client, calls);
         this.writer = writer;
         this.reconnection = new AtomicBoolean(false);
@@ -102,7 +104,7 @@ public class OutRunnable extends IORunnable {
                     if (!call.isFireNforget()) {
                         callMap.put(call.getId(), call);
                     }
-                    writer.write(connection, (Packet)call.getRequest());
+                    writer.write(connection, (Protocol)call.getRequest());
                     call.written = System.nanoTime();
                 }
             } else {
@@ -232,7 +234,7 @@ public class OutRunnable extends IORunnable {
         return false;
     }
 
-    void write(Connection connection, Packet packet) throws IOException {
+    void write(Connection connection, Protocol packet) throws IOException {
         if (running) {
             writer.write(connection, packet);
             writer.flush(connection);
