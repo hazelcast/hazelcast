@@ -61,9 +61,10 @@ public class InRunnable extends IORunnable implements Runnable {
                 Thread.sleep(10);
             } else {
                 command = reader.read(connection);
+
 //                logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
                 this.lastReceived = Clock.currentTimeMillis();
-                Call call = callMap.remove(command.flag);
+                Call call = callMap.remove(Long.valueOf(command.flag));
                 if (call != null) {
                     call.received = System.nanoTime();
                     call.setResponse(command);

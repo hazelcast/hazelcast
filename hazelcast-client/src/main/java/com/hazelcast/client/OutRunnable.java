@@ -32,7 +32,6 @@ import java.util.logging.Level;
 public class OutRunnable extends IORunnable {
     final ProtocolWriter writer;
 
-
     final BlockingQueue<Call> queue = new LinkedBlockingQueue<Call>();
 
     final AtomicBoolean reconnection;
@@ -104,7 +103,7 @@ public class OutRunnable extends IORunnable {
                     if (!call.isFireNforget()) {
                         callMap.put(call.getId(), call);
                     }
-                    writer.write(connection, (Protocol)call.getRequest());
+                    writer.write(connection, (Protocol) call.getRequest());
                     call.written = System.nanoTime();
                 }
             } else {
@@ -216,6 +215,9 @@ public class OutRunnable extends IORunnable {
                 throw new NoMemberAvailableException("Client is shutdown.");
             }
             logger.log(Level.FINEST, "From " + Thread.currentThread() + ": Enqueue: " + call);
+            if (call.getRequest() != null) {
+                ((Protocol) call.getRequest()).onEnqueue();
+            }
             queue.offer(call);
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
@@ -236,6 +238,7 @@ public class OutRunnable extends IORunnable {
 
     void write(Connection connection, Protocol packet) throws IOException {
         if (running) {
+            packet.onEnqueue();
             writer.write(connection, packet);
             writer.flush(connection);
         }

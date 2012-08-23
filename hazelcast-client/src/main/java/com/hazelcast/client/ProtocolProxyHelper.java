@@ -36,12 +36,17 @@ public class ProtocolProxyHelper extends ProxyHelper {
         this.name = name;
     }
 
+    public Object doCommand(Command command, String arg, Data... data) {
+        return this.doCommand(command, new String[]{arg}, data);
+    }
+
     public Object doCommand(Command command, String[] args, Data... data) {
         ByteBuffer[] buffers = new ByteBuffer[data == null ? 0 : data.length];
         int index = 0;
         for (Data d : data) {
             buffers[index++] = ByteBuffer.wrap(d.buffer);
         }
+        if (args == null) args = new String[]{};
         long id = newCallId();
         Protocol protocol = new Protocol(null, command, String.valueOf(id), getCurrentThreadId(), false, args, buffers);
         Call call = new Call(id, protocol) {
@@ -53,7 +58,9 @@ public class ProtocolProxyHelper extends ProxyHelper {
                 }
             }
         };
-        Object response = doCall(call);
-        return response;
+        Protocol response = (Protocol) doCall(call);
+        if (response.buffers != null && response.buffers.length > 0 && response.buffers[0] != null) {
+            return IOUtil.toObject(response.buffers[0].array());
+        } else return null;
     }
 }

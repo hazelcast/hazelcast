@@ -19,6 +19,8 @@ package com.hazelcast.nio;
 
 import com.hazelcast.nio.protocol.Command;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class Protocol implements SocketWritable {
@@ -82,6 +84,17 @@ public class Protocol implements SocketWritable {
             }
             totalSize += 2;
         }
+    }
+
+    public final boolean writeTo(DataOutputStream dos) throws IOException {
+        dos.write(response.array());
+        if (buffers != null && buffers.length > 0) {
+            for (ByteBuffer buffer : buffers) {
+                dos.write(buffer.array());
+            }
+            dos.write("\r\n".getBytes());
+        }
+        return true;
     }
 
     public final boolean writeToSocketBuffer(ByteBuffer destination) {

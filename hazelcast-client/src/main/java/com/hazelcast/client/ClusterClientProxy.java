@@ -63,13 +63,14 @@ public class ClusterClientProxy implements Cluster {
     }
 
     public Set<Member> getMembers() {
-        Keys cw = (Keys) proxyHelper.doOp(ClusterOperation.GET_MEMBERS, null, null);
-        Collection<Data> datas = cw.getKeys();
-        Set<Member> set = new LinkedHashSet<Member>();
-        for (Data d : datas) {
-            set.add((Member) IOUtil.toObject(d.buffer));
-        }
-        return set;
+//        Keys cw = (Keys) proxyHelper.doOp(ClusterOperation.GET_MEMBERS, null, null);
+//        Collection<Data> datas = cw.getKeys();
+//        Set<Member> set = new LinkedHashSet<Member>();
+//        for (Data d : datas) {
+//            set.add((Member) IOUtil.toObject(d.buffer));
+//        }
+//        return set;
+        return Collections.emptySet();
     }
 
     public Member getLocalMember() {

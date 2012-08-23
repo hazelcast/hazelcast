@@ -96,11 +96,10 @@ public class ProtocolReader extends PacketHandler {
         byte b = dis.readByte();
         char c = (char) b;
         while (c != '\n') {
-            System.out.println(c);
             if (c != '\r')
                 line.put(b);
             b = dis.readByte();
-            c = (char) dis.readByte();
+            c = (char) b;
         }
         return SocketTextReader.toStringAndClear(line);
     }

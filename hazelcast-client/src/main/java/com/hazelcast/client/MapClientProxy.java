@@ -235,7 +235,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public V get(Object key) {
         check(key);
 //        return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, (K) key, null);
-        return (V) protocolProxyHelper.doCommand(Command.MGET, null, toData((K)key));
+        return (V) protocolProxyHelper.doCommand(Command.MGET, getName(), toData((K)key));
     }
 
     public Map<K, V> getAll(Set<K> setKeys) {
@@ -294,7 +294,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public V put(K key, V value) {
         check(key);
         check(value);
-        return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT, key, value);
+//        return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT, key, value);
+        return (V) protocolProxyHelper.doCommand(Command.MPUT, getName(), toData((K)key), toData((V)value));
     }
 
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
@@ -332,7 +333,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public V remove(Object arg0) {
         check(arg0);
-        return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE, arg0, null);
+//        return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE, arg0, null);
+        return (V) protocolProxyHelper.doCommand(Command.MREMOVE, getName(), toData(arg0));
     }
 
     public Object tryRemove(K key, long timeout, TimeUnit timeunit) throws TimeoutException {

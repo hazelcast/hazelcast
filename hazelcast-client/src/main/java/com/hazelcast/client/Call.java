@@ -105,6 +105,6 @@ public class Call {
 
     @Override
     public String toString() {
-        return request.toString();
+        return request == null ? "null request" : request.toString();
     }
 }

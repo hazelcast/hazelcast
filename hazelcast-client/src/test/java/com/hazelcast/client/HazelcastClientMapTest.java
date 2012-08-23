@@ -39,6 +39,25 @@ import static org.junit.Assert.*;
 
 public class HazelcastClientMapTest extends HazelcastClientTestBase {
 
+    @Test
+    public void simple(){
+        HazelcastClient hClient = getHazelcastClient();
+        final IMap<Integer, Integer> imap = hClient.getMap("simple");
+        Integer value = imap.put(1, 1);
+        assertNull(value);
+        value = imap.get(1);
+        assertEquals(new Integer(1), value);
+        value = imap.put(1, 2);
+        assertEquals(new Integer(1), value);
+        value = imap.get(1);
+        assertEquals(new Integer(2), value);
+        value = imap.remove(1);
+        assertEquals(new Integer(2), value);
+        value = imap.get(1);
+        assertNull(value);
+    }
+    
+    
     @Test(expected = NullPointerException.class)
     public void testPutNull() {
         HazelcastClient hClient = getHazelcastClient();

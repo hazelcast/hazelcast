@@ -67,6 +67,7 @@ public class SocketProtocolReader implements SocketReader {
     }
 
     public void read(ByteBuffer bb) throws Exception {
+
         while (bb.hasRemaining()) {
             doRead(bb);
         }
@@ -77,13 +78,13 @@ public class SocketProtocolReader implements SocketReader {
             while (firstNewLineRead.hasRemaining()) {
                 firstNewLineRead.put(bb.get());
             }
-            readLineIfnotRead(bb, commandLineRead, binaryCommandLine);
+            readLineIfNotRead(bb, commandLineRead, binaryCommandLine);
             if (commandLineIsRead()) {
                 String stringCommandLine = SocketTextReader.toStringAndClear(binaryCommandLine);
                 parseCommandLine(stringCommandLine);
                 if (commandLineIsParsed) {
                     if (hasSizeLine())
-                        readLineIfnotRead(bb, sizeLineRead, sizeLine);
+                        readLineIfNotRead(bb, sizeLineRead, sizeLine);
                     else
                         sizeLineRead.set(true);
                 }
@@ -155,8 +156,6 @@ public class SocketProtocolReader implements SocketReader {
 
     private void parseSizeLine(String line) {
         if (buffers != null) return;
-//        System.out.println("Size line is : " + line);
-//        String[] split = line.split("\\s");
         String[] split = fastSplit(line, ' ');
         if (line.length() != 0 && split.length != bufferSize.length) {
             throw new RuntimeException("Size # tag and number of size entries do not match!" + split.length + ":: " + bufferSize.length);
@@ -229,7 +228,7 @@ public class SocketProtocolReader implements SocketReader {
         commandLineIsParsed = true;
     }
 
-    private void readLineIfnotRead(ByteBuffer bb, MutableBoolean lineIsRead, ByteBuffer line) {
+    private void readLineIfNotRead(ByteBuffer bb, MutableBoolean lineIsRead, ByteBuffer line) {
         while (!lineIsRead.get() && bb.hasRemaining()) {
             byte b = bb.get();
             char c = (char) b;

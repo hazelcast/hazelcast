@@ -19,14 +19,12 @@ package com.hazelcast.client;
 
 import com.hazelcast.nio.Protocol;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ProtocolWriter extends PacketHandler {
-    final ByteBuffer writeHeaderBuffer = ByteBuffer.allocate(1 << 10); // 1k
 //    final Map<String, byte[]> nameCache = new HashMap<String, byte[]>(100);
 
     public void write(Connection connection, Protocol command) throws IOException {
@@ -37,7 +35,7 @@ public class ProtocolWriter extends PacketHandler {
                 dos.flush();
                 connection.headersWritten = true;
             }
-            command.writeToSocketBuffer(writeHeaderBuffer);
+            command.writeTo(dos);
         }
     }
 
