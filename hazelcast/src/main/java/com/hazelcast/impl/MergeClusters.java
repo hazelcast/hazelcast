@@ -19,7 +19,6 @@ package com.hazelcast.impl;
 import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;
-import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 
@@ -41,30 +40,28 @@ public class MergeClusters extends AbstractOperation implements NonBlockingOpera
     }
 
     public void run() {
-        final OperationContext context = getOperationContext();
-        final Address endpoint = context.getCaller();
-        final Node node = context.getNodeService().getNode();
+        final Address endpoint = getCaller();
+        final Node node = getNodeService().getNode();
         final Address masterAddress = node.getMasterAddress();
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
         if (endpoint == null || !endpoint.equals(masterAddress)) {
             logger.log(Level.WARNING, "Merge instruction sent from non-master endpoint: " + endpoint);
             return;
         }
-
         logger.log(Level.WARNING, node.address + " is merging to " + newTargetAddress
-                                  + ", because: instructed by master " + masterAddress);
+                + ", because: instructed by master " + masterAddress);
         node.getJoiner().setTargetAddress(newTargetAddress);
         node.hazelcastInstance.getLifecycleService().restart();
     }
 
-    public void readData(DataInput in) throws IOException {
-        super.readData(in);
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
         newTargetAddress = new Address();
         newTargetAddress.readData(in);
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
         newTargetAddress.writeData(out);
     }
 }

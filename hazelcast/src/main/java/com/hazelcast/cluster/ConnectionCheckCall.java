@@ -26,7 +26,7 @@ import com.hazelcast.nio.ConnectionManager;
 public class ConnectionCheckCall extends AbstractOperation implements NonBlockingOperation {
     public void run() {
         Boolean result = Boolean.TRUE;
-        Node node = getOperationContext().getNodeService().getNode();
+        Node node = getNodeService().getNode();
         final ConnectionManager connectionManager = node.connectionManager;
         for (MemberImpl member : node.clusterImpl.getMemberList()) {
             if (!member.localMember()) {
@@ -36,6 +36,6 @@ public class ConnectionCheckCall extends AbstractOperation implements NonBlockin
                 }
             }
         }
-        getOperationContext().getResponseHandler().sendResponse(result);
+        getResponseHandler().sendResponse(result);
     }
 }

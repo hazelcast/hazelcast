@@ -19,6 +19,7 @@ package com.hazelcast.impl.map;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.spi.*;
 
+import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -28,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class MapService implements ServiceLifecycle, TransactionalService {
     public final static String MAP_SERVICE_NAME = "hz:mapService";
 
-    private final AtomicLong counter = new AtomicLong();
+    private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final PartitionContainer[] partitionContainers;
     private final NodeService nodeService;
     private final ConcurrentMap<Long, BlockingQueue<Boolean>> backupCalls = new ConcurrentHashMap<Long, BlockingQueue<Boolean>>(1000);
@@ -59,7 +60,9 @@ public class MapService implements ServiceLifecycle, TransactionalService {
             return null;
         }
         final PartitionContainer container = partitionContainers[partitionId];
-        return new MapMigrationOperation(container, partitionId, replicaIndex, diffOnly);
+        ServiceMigrationOperation op = new MapMigrationOperation(container, partitionId, replicaIndex, diffOnly);
+        op.setServiceName(MAP_SERVICE_NAME);
+        return op;
     }
 
     public long createNewBackupCallQueue() {

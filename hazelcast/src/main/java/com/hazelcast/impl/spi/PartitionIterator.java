@@ -42,31 +42,29 @@ class PartitionIterator extends AbstractOperation {
     }
 
     public void run() {
-        OperationContext context = getOperationContext();
         try {
-            final NodeService nodeService = context.getNodeService();
+            final NodeService nodeService = getNodeService();
             Map<Integer, Object> results = new HashMap<Integer, Object>(partitions.size());
             Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
             for (final int partitionId : partitions) {
                 Operation op = (Operation) toObject(operationData);
                 ResponseQueue r = new ResponseQueue();
-                op.getOperationContext().setNodeService(getOperationContext().getNodeService())
-                        .setCaller(getOperationContext().getCaller())
+                op.setNodeService(getNodeService())
+                        .setCaller(getCaller())
                         .setPartitionId(partitionId)
-                        .setLocal(true)
                         .setResponseHandler(r)
-                        .setService(getOperationContext().getService());
-                nodeService.runLocally(partitionId, op, false);
+                        .setService(getService());
+                nodeService.runLocally(partitionId, op);
                 responses.put(partitionId, r);
             }
             for (Map.Entry<Integer, ResponseQueue> partitionResponse : responses.entrySet()) {
                 Object result = partitionResponse.getValue().get();
                 results.put(partitionResponse.getKey(), result);
             }
-            context.getResponseHandler().sendResponse(results);
+            getResponseHandler().sendResponse(results);
         } catch (Exception e) {
             e.printStackTrace();
-            context.getResponseHandler().sendResponse(e);
+            getResponseHandler().sendResponse(e);
         }
     }
 
@@ -83,8 +81,8 @@ class PartitionIterator extends AbstractOperation {
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
         int pCount = partitions.size();
         out.writeInt(pCount);
         for (int i = 0; i < pCount; i++) {
@@ -94,8 +92,8 @@ class PartitionIterator extends AbstractOperation {
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
-        super.readData(in);
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
         int pCount = in.readInt();
         partitions = new ArrayList<Integer>(pCount);
         for (int i = 0; i < pCount; i++) {

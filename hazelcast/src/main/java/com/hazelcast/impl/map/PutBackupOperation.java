@@ -19,7 +19,6 @@ package com.hazelcast.impl.map;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.spi.BackupOperation;
-import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.nio.Data;
 
 import java.io.DataInput;
@@ -43,10 +42,9 @@ public class PutBackupOperation extends PutOperation implements BackupOperation 
     }
 
     public void run() {
-        OperationContext context = getOperationContext();
-        MapService mapService = (MapService) context.getService();
-        System.out.println(context.getNodeService().getThisAddress() + " backup " + txnId + " response " + sendResponse);
-        MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
+        MapService mapService = (MapService) getService();
+        System.out.println(getNodeService().getThisAddress() + " backup " + txnId + " response " + sendResponse);
+        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
         Record record = mapPartition.records.get(dataKey);
         if (record == null) {
             record = new DefaultRecord(null, mapPartition.partitionInfo.getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
@@ -56,18 +54,18 @@ public class PutBackupOperation extends PutOperation implements BackupOperation 
         }
         record.setActive();
         record.setDirty(true);
-        if (sendResponse) context.getResponseHandler().sendResponse(null);
+        if (sendResponse) getResponseHandler().sendResponse(null);
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
         out.writeBoolean(sendResponse);
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
-        super.readData(in);
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
         sendResponse = in.readBoolean();
     }
 

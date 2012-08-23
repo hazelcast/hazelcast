@@ -47,16 +47,32 @@ public final class IOUtil {
 
     public static void writeObject(DataOutput out, Object obj) throws IOException {
         Data data = toData(obj);
-        writeData(out, data);
+        writeNullableData(out, data);
+    }
+
+    public static void writeNullableString(DataOutput out, String obj) throws IOException {
+        boolean NULL = obj == null;
+        out.writeBoolean(NULL);
+        if (!NULL) {
+            out.writeUTF(obj);
+        }
+    }
+
+    public static String readNullableString(DataInput in) throws IOException {
+        boolean NULL = in.readBoolean();
+        if (!NULL) {
+            return in.readUTF();
+        }
+        return null;
     }
 
     public static <T> T readObject(DataInput in) throws IOException {
-        Data data = readData(in);
+        Data data = readNullableData(in);
         return toObject(data);
     }
 
-    public static void writeData(DataOutput out, Data data) throws IOException {
-        if(data != null) {
+    public static void writeNullableData(DataOutput out, Data data) throws IOException {
+        if (data != null) {
             out.writeBoolean(true);
             data.writeData(out);
         } else {
@@ -65,7 +81,7 @@ public final class IOUtil {
         }
     }
 
-    public static Data readData(DataInput in) throws IOException {
+    public static Data readNullableData(DataInput in) throws IOException {
         final boolean isNotNull = in.readBoolean();
         if (isNotNull) {
             Data data = new Data();

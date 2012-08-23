@@ -17,15 +17,14 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
-import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NonBlockingOperation;
+import com.hazelcast.impl.spi.Operation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class SyncProcess extends AbstractOperation implements NonBlockingOperation {
-
+public class SyncProcess extends Operation implements NonBlockingOperation {
 //    private Connection connection;
 //
 //    public Connection getConnection() {
@@ -36,15 +35,17 @@ public class SyncProcess extends AbstractOperation implements NonBlockingOperati
 //        this.connection = conn;
 //    }
 
-    public void readData(DataInput in) throws IOException {
-    }
-
-    public void writeData(DataOutput out) throws IOException {
-    }
-
     public void run() {
-        Node node = getOperationContext().getNodeService().getNode();
+        Node node = getNodeService().getNode();
         node.clusterImpl.syncForAdd();
-        getOperationContext().getResponseHandler().sendResponse(Boolean.TRUE);
+        getResponseHandler().sendResponse(Boolean.TRUE);
+    }
+
+    @Override
+    protected void writeInternal(DataOutput out) throws IOException {
+    }
+
+    @Override
+    protected void readInternal(DataInput in) throws IOException {
     }
 }

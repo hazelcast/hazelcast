@@ -22,7 +22,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class AbstractNamedKeyBasedOperation extends AbstractKeyBasedOperation implements KeyBasedOperation {
+public abstract class AbstractNamedKeyBasedOperation extends AbstractKeyBasedOperation {
     protected String name;
 
     public AbstractNamedKeyBasedOperation(String name, Data dataKey) {
@@ -37,13 +37,13 @@ public abstract class AbstractNamedKeyBasedOperation extends AbstractKeyBasedOpe
         return name;
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
         out.writeUTF(name);
     }
 
-    public void readData(DataInput in) throws IOException {
-        super.readData(in);
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
         name = in.readUTF();
     }
 }

@@ -39,26 +39,26 @@ public class AuthorizationCall extends AbstractOperation implements NonBlockingO
     }
 
     public void run() {
-        GroupConfig groupConfig = getOperationContext().getNodeService().getNode().getConfig().getGroupConfig();
+        GroupConfig groupConfig = getNodeService().getNode().getConfig().getGroupConfig();
         Boolean response = Boolean.TRUE;
         if (!groupName.equals(groupConfig.getName())) {
             response = Boolean.FALSE;
         } else if (!groupPassword.equals(groupConfig.getPassword())) {
             response = Boolean.FALSE;
         }
-        getOperationContext().getResponseHandler().sendResponse(response);
+        getResponseHandler().sendResponse(response);
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
-        super.readData(in);
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
         groupName = in.readUTF();
         groupPassword = in.readUTF();
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
         out.writeUTF(groupName);
         out.writeUTF(groupPassword);
     }

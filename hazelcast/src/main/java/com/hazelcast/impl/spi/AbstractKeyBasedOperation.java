@@ -22,7 +22,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class AbstractKeyBasedOperation extends AbstractOperation implements KeyBasedOperation {
+public abstract class AbstractKeyBasedOperation extends Operation {
     protected Data dataKey = null;
     protected int threadId = -1;
 
@@ -45,12 +45,12 @@ public abstract class AbstractKeyBasedOperation extends AbstractOperation implem
         this.threadId = threadId;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         dataKey.writeData(out);
         out.writeInt(threadId);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readInternal(DataInput in) throws IOException {
         dataKey = new Data();
         dataKey.readData(in);
         threadId = in.readInt();

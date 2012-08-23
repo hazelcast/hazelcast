@@ -40,21 +40,20 @@ public class PartitionStateOperation extends AbstractOperation implements NonBlo
     }
 
     public void run() {
-        Node node = getOperationContext().getNodeService().getNode();
-        partitionState.setEndpoint(getOperationContext().getCaller());
+        Node node = getNodeService().getNode();
+        partitionState.setEndpoint(getCaller());
         PartitionManager partitionManager = node.partitionManager;
         partitionManager.processPartitionRuntimeState(partitionState);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readInternal(DataInput in) throws IOException {
         partitionState = new PartitionRuntimeState();
         partitionState.readData(in);
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         partitionState.writeData(out);
     }
-
 //    @Override
 //    public void setConnection(final Connection conn) {
 //        super.setConnection(conn);

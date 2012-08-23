@@ -16,16 +16,15 @@
 
 package com.hazelcast.impl.map;
 
-import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NonBlockingOperation;
-import com.hazelcast.impl.spi.OperationContext;
+import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.impl.spi.ResponseHandler;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MapTxnBackupPrepareOperation extends AbstractOperation implements NonBlockingOperation {
+public class MapTxnBackupPrepareOperation extends Operation implements NonBlockingOperation {
     TransactionLog txnLog;
 
     public MapTxnBackupPrepareOperation(TransactionLog txnLog) {
@@ -36,23 +35,22 @@ public class MapTxnBackupPrepareOperation extends AbstractOperation implements N
     }
 
     public void run() {
-        OperationContext context = getOperationContext();
-        int partitionId = context.getPartitionId();
-        MapService mapService = (MapService) context.getService();
-        System.out.println(context.getNodeService().getThisAddress() + " backupPrepare " + txnLog.txnId);
+        int partitionId = getPartitionId();
+        MapService mapService = (MapService) getService();
+        System.out.println(getNodeService().getThisAddress() + " backupPrepare " + txnLog.txnId);
         mapService.getPartitionContainer(partitionId).putTransactionLog(txnLog.txnId, txnLog);
-        ResponseHandler responseHandler = context.getResponseHandler();
+        ResponseHandler responseHandler = getResponseHandler();
         responseHandler.sendResponse(null);
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         super.writeData(out);
         txnLog.writeData(out);
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
+    public void readInternal(DataInput in) throws IOException {
         super.readData(in);
         txnLog = new TransactionLog();
         txnLog.readData(in);

@@ -18,12 +18,11 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.NodeType;
-import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.NonMemberOperation;
+import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.security.Credentials;
 
@@ -31,7 +30,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class JoinRequest extends AbstractOperation implements NonMemberOperation, NoReply, NonBlockingOperation {
+public class JoinRequest extends Operation implements NonMemberOperation, NoReply, NonBlockingOperation {
 
     protected NodeType nodeType = NodeType.MEMBER;
     public Address address;
@@ -41,7 +40,6 @@ public class JoinRequest extends AbstractOperation implements NonMemberOperation
     public Config config;
     public String uuid;
     private Credentials credentials;
-    private Connection connection;
 
     public JoinRequest() {
         super();
@@ -62,8 +60,7 @@ public class JoinRequest extends AbstractOperation implements NonMemberOperation
         this.uuid = nodeUuid;
     }
 
-    @Override
-    public void readData(DataInput in) throws IOException {
+    public void readInternal(DataInput in) throws IOException {
         packetVersion = in.readByte();
         buildNumber = in.readInt();
         boolean hasTo = in.readBoolean();
@@ -83,8 +80,7 @@ public class JoinRequest extends AbstractOperation implements NonMemberOperation
         }
     }
 
-    @Override
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         out.writeByte(packetVersion);
         out.writeInt(buildNumber);
         boolean hasTo = (to != null);
@@ -111,14 +107,6 @@ public class JoinRequest extends AbstractOperation implements NonMemberOperation
         return uuid;
     }
 
-    public Connection getConnection() {
-        return connection;
-    }
-
-    public void setConnection(final Connection connection) {
-        this.connection = connection;
-    }
-
     @Override
     public String toString() {
         return "JoinRequest{"
@@ -128,14 +116,12 @@ public class JoinRequest extends AbstractOperation implements NonMemberOperation
                 + ", packetVersion='" + packetVersion + '\''
                 + ", config='" + config + "'}";
     }
-
 //    public void process() {
 //        getNode().clusterManager.handleJoinRequest(this);
 //    }
 
     public void run() {
-        ClusterImpl cm = getOperationContext().getService();
-        setConnection(getOperationContext().getConnection());
+        ClusterImpl cm = (ClusterImpl) getService();
         cm.handleJoinRequest(this);
     }
 }

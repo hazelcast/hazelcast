@@ -41,21 +41,21 @@ public class MigrationNotification extends AbstractOperation implements NoReply,
         Address from = migratingPartition.getFromAddress();
         Address to = migratingPartition.getToAddress();
         int partitionId = migratingPartition.getPartitionId();
-        getOperationContext().getNodeService().getNode()
+        getNodeService().getNode()
                 .partitionManager.fireMigrationEvent(started, partitionId, from, to);
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
-        super.readData(in);
-        migratingPartition = new MigrationRequestOperation();
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
+        migratingPartition = new MigratingPartition();
         migratingPartition.readData(in);
         started = in.readBoolean();
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
         migratingPartition.writeData(out);
         out.writeBoolean(started);
     }

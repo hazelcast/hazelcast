@@ -21,7 +21,6 @@ import com.hazelcast.impl.Record;
 import com.hazelcast.impl.spi.AbstractNamedKeyBasedOperation;
 import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;
-import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.serialization.SerializationHelper;
@@ -73,9 +72,9 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
     }
 
     public void run() {
-        OperationContext context = getOperationContext();
-        MapService mapService = (MapService) context.getService();
-        int partitionId = context.getPartitionId();
+        MapService mapService = (MapService) getService();
+        int partitionId = getPartitionId();
+        Address caller = getCaller();
         MapPartition mapPartition = mapService.getMapPartition(partitionId, name);
         if (backupOpType == BackupOpType.PUT) {
             Record record = mapPartition.records.get(dataKey);
@@ -92,39 +91,53 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
             if (record == null) {
                 record.markRemoved();
             }
-        } else if (backupOpType == BackupOpType.LOCK) {
-            LockInfo lock = mapPartition.getOrCreateLock(getKey());
-            lock.lock(context.getCaller(), threadId, ttl);
-        } else if (backupOpType == BackupOpType.UNLOCK) {
-            LockInfo lock = mapPartition.getLock(getKey());
-            if (lock != null) {
-                lock.unlock(context.getCaller(), threadId);
+        } else {
+            if (backupOpType == BackupOpType.LOCK) {
+                LockInfo lock = mapPartition.getOrCreateLock(getKey());
+                lock.lock(caller, threadId, ttl);
+            } else if (backupOpType == BackupOpType.UNLOCK) {
+                LockInfo lock = mapPartition.getLock(getKey());
+                if (lock != null) {
+                    lock.unlock(caller, threadId);
+                }
+                lock.lock(caller, threadId, ttl);
             }
-            lock.lock(context.getCaller(), threadId, ttl);
         }
-        context.getNodeService().send(MapService.MAP_SERVICE_NAME, new BackupResponse(), partitionId, firstCallerId, firstCallerAddress);
+        System.out.println(getNodeService().getThisAddress() + "  sending backup response " + firstCallerId + " firstCallerAddress: " + firstCallerAddress);
+        getNodeService().send(MapService.MAP_SERVICE_NAME, new BackupResponse(), partitionId, 0, firstCallerId, firstCallerAddress);
+    }
+
+    public Address getFirstCallerAddress() {
+        return firstCallerAddress;
+    }
+
+    public long getFirstCallerId() {
+        return firstCallerId;
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
         SerializationHelper.writeNullableData(out, dataValue);
         out.writeLong(ttl);
         out.writeInt(backupOpType.ordinal());
         out.writeLong(firstCallerId);
-        if (firstCallerId > 0) {
+        boolean NULL = (firstCallerAddress == null);
+        out.writeBoolean(NULL);
+        if (!NULL) {
             firstCallerAddress.writeData(out);
         }
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
-        super.readData(in);
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
         dataValue = SerializationHelper.readNullableData(in);
         ttl = in.readLong();
         backupOpType = BackupOpType.values()[in.readInt()];
         firstCallerId = in.readLong();
-        if (firstCallerId > 0) {
+        boolean NULL = in.readBoolean();
+        if (!NULL) {
             firstCallerAddress = new Address();
             firstCallerAddress.readData(in);
         }

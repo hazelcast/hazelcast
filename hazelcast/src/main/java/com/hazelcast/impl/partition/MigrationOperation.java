@@ -17,13 +17,12 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.ServiceMigrationOperation;
 import com.hazelcast.impl.spi.NonBlockingOperation;
-import com.hazelcast.impl.spi.OperationContext;
+import com.hazelcast.impl.spi.ServiceMigrationOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -65,7 +64,6 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
         }
         bytesRecordSet = bos.toByteArray();
     }
-
 //    public MigrationOperation(int partitionId, CostAwareRecordList costAwareRecordList,
 //                              int replicaIndex, Address from) throws IOException {
 //        this.partitionId = partitionId;
@@ -88,8 +86,7 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
 //    }
 
     public void run() {
-        OperationContext context = getOperationContext();
-        PartitionManager pm = (PartitionManager) context.getService();
+        PartitionManager pm = (PartitionManager) getService();
 //        Node node = ((FactoryImpl) hazelcast).node;
 //        PartitionManager pm = node.concurrentMapManager.getPartitionManager();
         System.err.println("RUNNING ... TASK... " + this);
@@ -112,20 +109,21 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
 //            }
             if (taskCount != tasks.size()) {
                 getLogger().log(Level.SEVERE, "Migration task count mismatch! => " +
-                                              "expected-count: " + size + ", actual-count: " + tasks.size() +
-                                              "\nfrom: " + from + ", partition: " + partitionId
-                                              + ", replica: " + replicaIndex);
+                        "expected-count: " + size + ", actual-count: " + tasks.size() +
+                        "\nfrom: " + from + ", partition: " + partitionId
+                        + ", replica: " + replicaIndex);
             }
 //            pm.doMigrate(partitionId, replicaIndex, recordSet, from);
-            final boolean result = pm.runMigrationTasks(tasks, partitionId, replicaIndex, from);
-            context.getResponseHandler().sendResponse(result);
+            final boolean result = pm.runMigrationTasks(this, tasks, partitionId, replicaIndex, from);
+            getResponseHandler().sendResponse(result);
+//            getNodeService().send(PartitionManager.PARTITION_SERVICE_NAME, new Response(result), -1, 0, getCallId(), getCaller());
         } catch (Throwable e) {
             Level level = Level.WARNING;
             if (e instanceof IllegalStateException) {
                 level = Level.FINEST;
             }
             getLogger().log(level, e.getMessage(), e);
-            context.getResponseHandler().sendResponse(Boolean.FALSE);
+            getResponseHandler().sendResponse(Boolean.FALSE);
         } finally {
             IOUtil.closeResource(in);
         }
@@ -133,10 +131,10 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
 
     private ILogger getLogger() {
 //        return ((FactoryImpl) hazelcast).node.getLogger(MigrationOperation.class.getName());
-        return getOperationContext().getNodeService().getNode().getLogger(MigrationOperation.class.getName());
+        return getNodeService().getNode().getLogger(MigrationOperation.class.getName());
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         try {
             out.writeInt(partitionId);
             out.writeInt(replicaIndex);
@@ -149,7 +147,7 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readInternal(DataInput in) throws IOException {
         partitionId = in.readInt();
         replicaIndex = in.readInt();
         taskCount = in.readInt();
@@ -159,7 +157,6 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
         bytesRecordSet = new byte[size];
         in.readFully(bytesRecordSet);
     }
-
 //    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
 //        this.hazelcast = hazelcastInstance;
 //    }

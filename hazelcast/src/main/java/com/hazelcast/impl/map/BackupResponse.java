@@ -16,16 +16,19 @@
 
 package com.hazelcast.impl.map;
 
-import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.impl.spi.Response;
 
 public class BackupResponse extends Response {
 
     @Override
     public void run() {
-        OperationContext context = getOperationContext();
-        long callId = context.getCallId();
-        MapService mapService = context.getService();
-        mapService.getBackupCallQueue(callId).offer(Boolean.TRUE);
+        try {
+            long callId = getCallId();
+            MapService mapService = (MapService) getService();
+            mapService.getBackupCallQueue(callId).offer(Boolean.TRUE);
+            System.out.println(callId + " Notifying Backup " + getNodeService().getThisAddress());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

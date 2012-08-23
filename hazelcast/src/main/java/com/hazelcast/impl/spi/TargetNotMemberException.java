@@ -18,7 +18,7 @@ package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Address;
 
-public class TargetNotMemberException extends RuntimeException implements RetryableException {
+public class TargetNotMemberException extends RetryableException {
     public TargetNotMemberException(Address target) {
         this(target, -1, null);
     }
@@ -30,7 +30,6 @@ public class TargetNotMemberException extends RuntimeException implements Retrya
     public TargetNotMemberException(Address target, int partitionId,
                                     String operationName, String serviceName) {
         super("Not Member! target:" + target + ", partitionId: " + partitionId
-              + ", operation: " + operationName + ", service: " + serviceName);
+                + ", operation: " + operationName + ", service: " + serviceName);
     }
-
 }

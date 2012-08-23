@@ -17,16 +17,16 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
-import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;
+import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MemberRemover extends AbstractOperation implements NoReply, NonBlockingOperation {
+public class MemberRemover extends Operation implements NoReply, NonBlockingOperation {
     private Address deadAddress = null;
 
     public MemberRemover() {
@@ -36,7 +36,6 @@ public class MemberRemover extends AbstractOperation implements NoReply, NonBloc
         super();
         this.deadAddress = deadAddress;
     }
-
 //    public void process() {
 //        if (conn != null) {
 //            Address endpoint = conn.getEndPoint();
@@ -47,20 +46,20 @@ public class MemberRemover extends AbstractOperation implements NoReply, NonBloc
 //    }
 
     public void run() {
-        Node node = getOperationContext().getNodeService().getNode();
-        Address caller = getOperationContext().getCaller();
+        Node node = getNodeService().getNode();
+        Address caller = getCaller();
         if (caller != null && caller.equals(node.getMasterAddress())) {
             node.clusterImpl.removeAddress(deadAddress);
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readInternal(DataInput in) throws IOException {
         super.readData(in);
         deadAddress = new Address();
         deadAddress.readData(in);
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         super.writeData(out);
         deadAddress.writeData(out);
     }

@@ -17,7 +17,6 @@
 package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.spi.AbstractNamedKeyBasedOperation;
-import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.impl.spi.ResponseHandler;
 import com.hazelcast.nio.Data;
 
@@ -44,20 +43,19 @@ public class LockOperation extends AbstractNamedKeyBasedOperation {
     }
 
     public void run() {
-        OperationContext context = getOperationContext();
-        ResponseHandler responseHandler = context.getResponseHandler();
-        MapService mapService = (MapService) context.getService();
-        MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
+        ResponseHandler responseHandler = getResponseHandler();
+        MapService mapService = (MapService) getService();
+        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
         LockInfo lock = mapPartition.getOrCreateLock(getKey());
-        if (lock.testLock(threadId, context.getCaller())) {
-            boolean locked = lock.lock(context.getCaller(), threadId, ttl);
+        if (lock.testLock(threadId, getCaller())) {
+            boolean locked = lock.lock(getCaller(), threadId, ttl);
             if (locked) {
                 GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, ttl);
                 backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.LOCK);
-                int partitionId = context.getPartitionId();
+                int partitionId = getPartitionId();
                 int backupCount = mapPartition.getBackupCount();
                 try {
-                    context.getNodeService().takeBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount, 60);
+                    getNodeService().takeBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount, 60);
                 } catch (Exception ignored) {
                 }
             }
@@ -68,14 +66,14 @@ public class LockOperation extends AbstractNamedKeyBasedOperation {
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
         out.writeLong(ttl);
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
-        super.readData(in);
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
         ttl = in.readLong();
     }
 }

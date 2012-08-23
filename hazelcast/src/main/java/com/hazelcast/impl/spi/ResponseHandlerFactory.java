@@ -48,7 +48,8 @@ final class ResponseHandlerFactory {
 
         private NoReplyResponseHandler(final NodeService nodeService, final Operation operation) {
             this.nodeService = nodeService;
-            this.operation = operation;}
+            this.operation = operation;
+        }
 
         public void sendResponse(final Object obj) {
             if (obj instanceof Throwable) {
@@ -56,7 +57,7 @@ final class ResponseHandlerFactory {
                         .log(Level.WARNING, "Error while executing operation: " + operation, (Throwable) obj);
             } else {
                 throw new IllegalStateException("Can not send response for NoReply operation: "
-                                            + operation);
+                        + operation);
             }
         }
     }
@@ -88,7 +89,7 @@ final class ResponseHandlerFactory {
             packet.name = serviceName;
             packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
             packet.setValue(toData(response));
-            nodeService.sendPacket(packet);
+//            nodeService.sendPacket(packet);
         }
     }
 
@@ -105,5 +106,6 @@ final class ResponseHandlerFactory {
         }
     }
 
-    private ResponseHandlerFactory() {}
+    private ResponseHandlerFactory() {
+    }
 }

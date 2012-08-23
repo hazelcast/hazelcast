@@ -35,14 +35,13 @@ public class Bind extends Master implements NonMemberOperation, NoReply, NonBloc
     public String toString() {
         return "Bind " + address;
     }
-
 //    public void process() {
 //        getNode().connectionManager.bind(address, getConnection(), true);
 //    }
 
     @Override
     public void run() {
-        NodeService ns = getOperationContext().getNodeService();
-        ns.getNode().getConnectionManager().bind(address, getOperationContext().getConnection(), true);
+        NodeService ns = getNodeService();
+        ns.getNode().getConnectionManager().bind(address, getConnection(), true);
     }
 }

@@ -16,13 +16,16 @@
 
 package com.hazelcast.impl.transaction;
 
-import com.hazelcast.impl.spi.*;
+import com.hazelcast.impl.spi.Operation;
+import com.hazelcast.impl.spi.ResponseHandler;
+import com.hazelcast.impl.spi.TransactionException;
+import com.hazelcast.impl.spi.TransactionalService;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class PrepareOperation extends AbstractOperation {
+public class PrepareOperation extends Operation {
     String txnId = null;
 
     public PrepareOperation(String txnId) {
@@ -33,26 +36,21 @@ public class PrepareOperation extends AbstractOperation {
     }
 
     public void run() {
-        OperationContext context = getOperationContext();
-        TransactionalService txnalService = (TransactionalService) context.getService();
-        ResponseHandler responseHandler = context.getResponseHandler();
+        TransactionalService txnalService = (TransactionalService) getService();
+        ResponseHandler responseHandler = getResponseHandler();
         try {
-            txnalService.prepare(txnId, context.getPartitionId());
+            txnalService.prepare(txnId, getPartitionId());
             responseHandler.sendResponse(null);
         } catch (TransactionException e) {
             responseHandler.sendResponse(e);
         }
     }
 
-    @Override
-    public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeInternal(DataOutput out) throws IOException {
         out.writeUTF(txnId);
     }
 
-    @Override
-    public void readData(DataInput in) throws IOException {
-        super.readData(in);
+    public void readInternal(DataInput in) throws IOException {
         txnId = in.readUTF();
     }
 }

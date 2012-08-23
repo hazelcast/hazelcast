@@ -16,16 +16,15 @@
 
 package com.hazelcast.impl.map;
 
-import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NonBlockingOperation;
-import com.hazelcast.impl.spi.OperationContext;
+import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.impl.spi.ResponseHandler;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MapTxnBackupCommitOperation extends AbstractOperation implements NonBlockingOperation {
+public class MapTxnBackupCommitOperation extends Operation implements NonBlockingOperation {
     String txnId;
 
     public MapTxnBackupCommitOperation(String txnId) {
@@ -36,24 +35,23 @@ public class MapTxnBackupCommitOperation extends AbstractOperation implements No
     }
 
     public void run() {
-        OperationContext context = getOperationContext();
-        System.out.println(context.getNodeService().getThisAddress() + " backupCommit " + txnId);
-        int partitionId = context.getPartitionId();
-        MapService mapService = (MapService) context.getService();
+        System.out.println(getNodeService().getThisAddress() + " backupCommit " + txnId);
+        int partitionId = getPartitionId();
+        MapService mapService = (MapService) getService();
         PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
         partitionContainer.commit(txnId);
-        ResponseHandler responseHandler = context.getResponseHandler();
+        ResponseHandler responseHandler = getResponseHandler();
         responseHandler.sendResponse(null);
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         super.writeData(out);
         out.writeUTF(txnId);
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
+    public void readInternal(DataInput in) throws IOException {
         super.readData(in);
         txnId = in.readUTF();
     }

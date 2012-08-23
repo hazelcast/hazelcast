@@ -19,9 +19,7 @@ package com.hazelcast.impl.map;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
-import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NodeService;
-import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.impl.spi.ServiceMigrationOperation;
 import com.hazelcast.nio.Data;
 
@@ -35,20 +33,17 @@ import java.util.Map.Entry;
 /**
  * @mdogan 7/24/12
  */
-public class MapMigrationOperation extends AbstractOperation implements ServiceMigrationOperation {
+public class MapMigrationOperation extends ServiceMigrationOperation {
 
     private Map<String, Map<Data, DataRecordEntry>> data;
     private Map<String, Map<Data, Record>> buffer;
-    private int partitionId;
-    private int replicaIndex;
     private boolean diff;
 
     public MapMigrationOperation() {
     }
 
     public MapMigrationOperation(PartitionContainer container, int partitionId, int replicaIndex, boolean diff) {
-        this.partitionId = partitionId;
-        this.replicaIndex = replicaIndex;
+        this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         this.diff = diff;
         data = new HashMap<String, Map<Data, DataRecordEntry>>(container.maps.size());
         for (Entry<String, MapPartition> entry : container.maps.entrySet()) {
@@ -63,13 +58,12 @@ public class MapMigrationOperation extends AbstractOperation implements ServiceM
     }
 
     public void run() {
-        OperationContext context = getOperationContext();
         if (data == null) {
-            context.getResponseHandler().sendResponse(Boolean.FALSE);
+            getResponseHandler().sendResponse(Boolean.FALSE);
             return;
         }
-        NodeService nodeService = context.getNodeService();
-        MapService mapService = (MapService) context.getService();
+        NodeService nodeService = getNodeService();
+        MapService mapService = (MapService) getService();
         buffer = new HashMap<String, Map<Data, Record>>(data.size());
         for (Entry<String, Map<Data, DataRecordEntry>> dataEntry : data.entrySet()) {
             Map<Data, DataRecordEntry> dataMap = dataEntry.getValue();
@@ -82,12 +76,12 @@ public class MapMigrationOperation extends AbstractOperation implements ServiceM
             }
             buffer.put(dataEntry.getKey(), map);
         }
-        context.getResponseHandler().sendResponse(Boolean.TRUE);
+        getResponseHandler().sendResponse(Boolean.TRUE);
     }
 
     public void onSuccess() {
-        MapService mapService = (MapService) getOperationContext().getService();
-        PartitionContainer container = mapService.getPartitionContainer(partitionId);
+        MapService mapService = (MapService) getService();
+        PartitionContainer container = mapService.getPartitionContainer(getPartitionId());
         for (Entry<String, Map<Data, Record>> entry : buffer.entrySet()) {
             MapPartition partition = container.getMapPartition(entry.getKey());
             partition.records.putAll(entry.getValue());
@@ -114,10 +108,7 @@ public class MapMigrationOperation extends AbstractOperation implements ServiceM
         return MapService.MAP_SERVICE_NAME;
     }
 
-    public void readData(final DataInput in) throws IOException {
-        super.readData(in);
-        partitionId = in.readInt();
-        replicaIndex = in.readInt();
+    public void readInternal(final DataInput in) throws IOException {
         diff = in.readBoolean();
         int size = in.readInt();
         data = new HashMap<String, Map<Data, DataRecordEntry>>(size);
@@ -136,10 +127,7 @@ public class MapMigrationOperation extends AbstractOperation implements ServiceM
         }
     }
 
-    public void writeData(final DataOutput out) throws IOException {
-        super.writeData(out);
-        out.writeInt(partitionId);
-        out.writeInt(replicaIndex);
+    public void writeInternal(final DataOutput out) throws IOException {
         out.writeBoolean(diff);
         out.writeInt(data.size());
         for (Entry<String, Map<Data, DataRecordEntry>> mapEntry : data.entrySet()) {

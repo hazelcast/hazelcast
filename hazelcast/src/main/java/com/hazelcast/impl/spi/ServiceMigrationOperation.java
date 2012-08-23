@@ -19,12 +19,9 @@ package com.hazelcast.impl.spi;
 /**
  * @mdogan 7/23/12
  */
-public interface ServiceMigrationOperation extends Operation, NonBlockingOperation {
+public abstract class ServiceMigrationOperation extends Operation implements NonBlockingOperation {
 
-    String getServiceName();
+    public abstract void onSuccess();
 
-    void onSuccess();
-
-    void onError();
-
+    public abstract void onError();
 }

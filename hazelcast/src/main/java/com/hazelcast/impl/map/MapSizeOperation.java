@@ -17,11 +17,9 @@
 package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.spi.AbstractNamedOperation;
-import com.hazelcast.impl.spi.Operation;
-import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.impl.spi.ResponseHandler;
 
-public class MapSizeOperation extends AbstractNamedOperation implements Operation {
+public class MapSizeOperation extends AbstractNamedOperation {
 
     public MapSizeOperation(String name) {
         super(name);
@@ -31,10 +29,9 @@ public class MapSizeOperation extends AbstractNamedOperation implements Operatio
     }
 
     public void run() {
-        OperationContext context = getOperationContext();
-        ResponseHandler responseHandler = context.getResponseHandler();
-        MapService mapService = (MapService) context.getService();
-        MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
+        ResponseHandler responseHandler = getResponseHandler();
+        MapService mapService = (MapService) getService();
+        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
         responseHandler.sendResponse(mapPartition.records.size());
     }
 }

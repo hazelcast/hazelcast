@@ -20,7 +20,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class AbstractNamedOperation extends AbstractOperation {
+public abstract class AbstractNamedOperation extends Operation {
     protected String name;
 
     protected AbstractNamedOperation(String name) {
@@ -34,11 +34,11 @@ public abstract class AbstractNamedOperation extends AbstractOperation {
         return name;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         out.writeUTF(name);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readInternal(DataInput in) throws IOException {
         name = in.readUTF();
     }
 }

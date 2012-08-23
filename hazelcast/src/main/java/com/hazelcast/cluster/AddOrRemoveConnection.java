@@ -40,14 +40,14 @@ public class AddOrRemoveConnection extends AbstractOperation implements NoReply,
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
+    public void readInternal(DataInput in) throws IOException {
         address = new Address();
         address.readData(in);
         add = in.readBoolean();
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         address.writeData(out);
         out.writeBoolean(add);
     }

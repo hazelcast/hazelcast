@@ -20,7 +20,6 @@ import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.spi.NodeService;
-import com.hazelcast.impl.spi.OperationContext;
 import com.hazelcast.impl.spi.ResponseHandler;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -49,10 +48,9 @@ public class PutOperation extends BackupAwareOperation {
         if (dataValue == null) {
             dataValue = toData(value);
         }
-        OperationContext context = getOperationContext();
-        ResponseHandler responseHandler = context.getResponseHandler();
-        MapService mapService = (MapService) context.getService();
-        int partitionId = context.getPartitionId();
+        ResponseHandler responseHandler = getResponseHandler();
+        MapService mapService = (MapService) getService();
+        int partitionId = getPartitionId();
         PartitionContainer pc = mapService.getPartitionContainer(partitionId);
         if (txnId != null) {
             pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, dataValue, false, false));
@@ -91,26 +89,27 @@ public class PutOperation extends BackupAwareOperation {
 //        }
 //        responseHandler.sendResponse(new Response(preResponseBackupOp, oldValueData, false));
         int mapBackupCount = 1;
-        int backupCount = Math.min(context.getNodeService().getClusterImpl().getSize() - 1, mapBackupCount);
+        int backupCount = Math.min(getNodeService().getClusterImpl().getSize() - 1, mapBackupCount);
         if (backupCount > 0) {
             GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
             op.setBackupOpType(GenericBackupOperation.BackupOpType.PUT);
-            op.setFirstCallerId(backupCallId, context.getCaller());
+            op.setFirstCallerId(backupCallId, getCaller());
+            System.out.println("PUT FIRST caller " + getCaller());
             try {
-                getOperationContext().getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, op, partitionId, mapBackupCount);
+                getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, op, partitionId, mapBackupCount);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         responseHandler.sendResponse(oldValueData);
+        System.out.println(getNodeService().getThisAddress() + "  PUT is complete " + backupCallId);
     }
 
     private boolean takeBackup() {
         boolean callerBackup = false;
-        OperationContext context = getOperationContext();
-        NodeService nodeService = context.getNodeService();
-        MapService mapService = (MapService) context.getService();
-        MapPartition mapPartition = mapService.getMapPartition(context.getPartitionId(), name);
+        NodeService nodeService = getNodeService();
+        MapService mapService = (MapService) getService();
+        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
         int mapBackupCount = 1;
         int backupCount = Math.min(nodeService.getClusterImpl().getSize() - 1, mapBackupCount);
         if (backupCount > 0) {
@@ -125,7 +124,7 @@ public class PutOperation extends BackupAwareOperation {
 //                            PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
 //                            pbo.call();
                     } else {
-                        if (replicaTarget.equals(getOperationContext().getCaller())) {
+                        if (replicaTarget.equals(getCaller())) {
                             callerBackup = true;
 //                                PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
 //                                backupOps.add(service.backup(pbo, replicaTarget));

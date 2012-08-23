@@ -62,8 +62,8 @@ public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperatio
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
         SerializationHelper.writeNullableData(out, dataValue);
         out.writeLong(ttl);
         out.writeLong(backupCallId);
@@ -75,8 +75,8 @@ public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperatio
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
-        super.readData(in);
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
         dataValue = SerializationHelper.readNullableData(in);
         ttl = in.readLong();
         backupCallId = in.readLong();

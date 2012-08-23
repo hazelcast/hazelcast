@@ -41,7 +41,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
 
     public JoinInfo(ILogger logger, boolean request, Address address, Config config,
                     NodeType type, byte packetVersion, int buildNumber, int memberCount, int tryCount, String nodeUuid) {
-         super(address, config, type, packetVersion, buildNumber, nodeUuid);
+        super(address, config, type, packetVersion, buildNumber, nodeUuid);
         this.request = request;
         this.memberCount = memberCount;
         this.tryCount = tryCount;
@@ -54,17 +54,17 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
     }
 
     @Override
-    public void readData(DataInput dis) throws IOException {
-        super.readData(dis);
+    public void readInternal(DataInput dis) throws IOException {
+        super.readInternal(dis);
         this.request = dis.readBoolean();
         memberCount = dis.readInt();
         tryCount = dis.readInt();
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         try {
-            super.writeData(out);
+            super.writeInternal(out);
             out.writeBoolean(isRequest());
             out.writeInt(memberCount);
             out.writeInt(tryCount);

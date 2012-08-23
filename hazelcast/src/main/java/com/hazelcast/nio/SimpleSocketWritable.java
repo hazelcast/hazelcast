@@ -20,31 +20,34 @@ import com.hazelcast.impl.ClusterOperation;
 
 public class SimpleSocketWritable implements SocketWritable {
     private final ClusterOperation op;
-    private final String name;
+    //    private final String name;
     private final Data value;
     private final long callId;
     private final int partitionId;
+    private final int replicaIndex;
+    private final boolean targetAware;
     private final Connection conn;
-    private final boolean nonBlocking;
 
-    public SimpleSocketWritable(ClusterOperation op, String name, Data value, long callId, int partitionId, Connection conn, boolean nonBlocking) {
+    public SimpleSocketWritable(ClusterOperation op, String name, Data value, long callId, int partitionId, int replicaIndex, Connection conn, boolean targetAware) {
         this.op = op;
-        this.name = name;
+//        this.name = name;
         this.value = value;
         this.callId = callId;
         this.partitionId = partitionId;
+        this.replicaIndex = replicaIndex;
+        this.targetAware = targetAware;
         this.conn = conn;
-        this.nonBlocking = nonBlocking;
     }
 
     public SimpleSocketWritable(Packet packet) {
         op = packet.operation;
-        name = packet.name;
+//        name = packet.name;
         value = packet.getValueData();
         conn = packet.conn;
-        callId = packet.callId;
         partitionId = packet.blockId;
-        nonBlocking = packet.longValue == 1;
+        callId = packet.callId;
+        replicaIndex = packet.threadId;
+        targetAware = packet.longValue == 1;
     }
 
     public ClusterOperation getOp() {
@@ -52,7 +55,7 @@ public class SimpleSocketWritable implements SocketWritable {
     }
 
     public String getName() {
-        return name;
+        return null; //name;
     }
 
     public Data getValue() {
@@ -67,12 +70,16 @@ public class SimpleSocketWritable implements SocketWritable {
         return partitionId;
     }
 
+    public int getReplicaIndex() {
+        return replicaIndex;
+    }
+
     public Connection getConn() {
         return conn;
     }
 
-    public boolean isNonBlocking() {
-        return nonBlocking;
+    public boolean isTargetAware() {
+        return targetAware;
     }
 
     public void onEnqueue() {
@@ -80,10 +87,11 @@ public class SimpleSocketWritable implements SocketWritable {
 
     void setToPacket(Packet packet) {
         packet.operation = op;
-        packet.name = name;
+//        packet.name = name;
         packet.setValue(value);
         packet.callId = callId;
         packet.blockId = partitionId;
-        packet.longValue = (nonBlocking) ? 1 : 0;
+        packet.threadId = replicaIndex;
+        packet.longValue = (targetAware) ? 1 : 0;
     }
 }

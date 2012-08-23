@@ -45,7 +45,7 @@ public class TransactionLogItem implements DataSerializable {
     public void writeData(DataOutput out) throws IOException {
         out.writeUTF(name);
         key.writeData(out);
-        IOUtil.writeData(out, value);
+        IOUtil.writeNullableData(out, value);
         out.writeBoolean(newEntry);
         out.writeBoolean(removed);
     }
@@ -54,7 +54,7 @@ public class TransactionLogItem implements DataSerializable {
         name = in.readUTF();
         key = new Data();
         key.readData(in);
-        value = IOUtil.readData(in);
+        value = IOUtil.readNullableData(in);
         newEntry = in.readBoolean();
         removed = in.readBoolean();
     }

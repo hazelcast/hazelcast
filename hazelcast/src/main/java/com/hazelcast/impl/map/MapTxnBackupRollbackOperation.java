@@ -16,16 +16,15 @@
 
 package com.hazelcast.impl.map;
 
-import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NonBlockingOperation;
-import com.hazelcast.impl.spi.OperationContext;
+import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.impl.spi.ResponseHandler;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MapTxnBackupRollbackOperation extends AbstractOperation implements NonBlockingOperation {
+public class MapTxnBackupRollbackOperation extends Operation implements NonBlockingOperation {
     String txnId;
 
     public MapTxnBackupRollbackOperation(String txnId) {
@@ -36,24 +35,23 @@ public class MapTxnBackupRollbackOperation extends AbstractOperation implements 
     }
 
     public void run() {
-        OperationContext context = getOperationContext();
-        int partitionId = context.getPartitionId();
-        MapService mapService = (MapService) context.getService();
-        System.out.println(context.getNodeService().getThisAddress() + " backupRollback " + txnId);
+        int partitionId = getPartitionId();
+        MapService mapService = (MapService) getService();
+        System.out.println(getNodeService().getThisAddress() + " backupRollback " + txnId);
         PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
         partitionContainer.rollback(txnId);
-        ResponseHandler responseHandler = context.getResponseHandler();
+        ResponseHandler responseHandler = getResponseHandler();
         responseHandler.sendResponse(null);
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         super.writeData(out);
         out.writeUTF(txnId);
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
+    public void readInternal(DataInput in) throws IOException {
         super.readData(in);
         txnId = in.readUTF();
     }

@@ -22,6 +22,7 @@ import com.hazelcast.impl.TransactionImpl;
 import com.hazelcast.impl.spi.Invocation;
 import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.impl.spi.Response;
+import com.hazelcast.impl.spi.RetryableException;
 import com.hazelcast.nio.Data;
 
 import java.util.Map;
@@ -46,7 +47,7 @@ public class MapProxy {
         Data key = toData(k);
         int partitionId = nodeService.getPartitionId(key);
         ThreadContext threadContext = ThreadContext.get();
-        threadContext.setCurrentFactory(nodeService.getNode().factory);
+        threadContext.setCurrentInstance(nodeService.getNode().hazelcastInstance);
         TransactionImpl txn = threadContext.getTransaction();
         String txnId = null;
         if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
@@ -54,19 +55,36 @@ public class MapProxy {
             txn.attachParticipant(MAP_SERVICE_NAME, partitionId);
         }
         PutOperation putOperation = new PutOperation(name, toData(k), v, txnId, ttl);
+//        nodeService.printPartitions();
         long backupCallId = mapService.createNewBackupCallQueue();
+        System.out.println(nodeService.getThisAddress() + " map.put() with BACKUP ID " + backupCallId);
         try {
             putOperation.setBackupCallId(backupCallId);
+            putOperation.setServiceName(MAP_SERVICE_NAME);
             Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
             Future f = invocation.invoke();
             Object response = f.get();
             BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
-            backupResponses.poll(5, TimeUnit.SECONDS);
-            if (response instanceof Response) {
-                return ((Response) response).getResult();
+            Object backupResponse = backupResponses.poll(10, TimeUnit.SECONDS);
+            if (backupResponse == null) {
+                System.out.println(nodeService.getThisAddress() + " Has Null backup " + backupCallId);
             }
-            return toObject((Data) response);
+            Object returnObj = null;
+            if (response instanceof Response) {
+                Response r = (Response) response;
+                returnObj = r.getResult();
+            } else {
+                returnObj = toObject(response);
+            }
+            if (returnObj instanceof Throwable) {
+                throw (Throwable) returnObj;
+            }
+            return returnObj;
+        } catch (RetryableException t) {
+            t.printStackTrace();
+            throw t;
         } catch (Throwable throwable) {
+            throwable.printStackTrace();
             throw new RuntimeException(throwable);
         } finally {
             mapService.removeBackupCallQueue(backupCallId);
@@ -101,6 +119,7 @@ public class MapProxy {
         Data key = toData(k);
         int partitionId = nodeService.getPartitionId(key);
         GetOperation getOperation = new GetOperation(name, toData(k));
+        getOperation.setServiceName(MAP_SERVICE_NAME);
         try {
             Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, getOperation, partitionId).build();
             Future f = invocation.invoke();

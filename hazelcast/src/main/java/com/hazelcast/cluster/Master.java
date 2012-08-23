@@ -16,10 +16,10 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.NonMemberOperation;
+import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
@@ -29,7 +29,7 @@ import java.io.IOException;
 /**
  * The Class Master.
  */
-public class Master extends AbstractOperation implements NonMemberOperation, NoReply, NonBlockingOperation {
+public class Master extends Operation implements NonMemberOperation, NoReply, NonBlockingOperation {
 
     /**
      * The address.
@@ -52,12 +52,12 @@ public class Master extends AbstractOperation implements NonMemberOperation, NoR
         this.address = originAddress;
     }
 
-    public void readData(final DataInput in) throws IOException {
+    public void readInternal(final DataInput in) throws IOException {
         address = new Address();
         address.readData(in);
     }
 
-    public void writeData(final DataOutput out) throws IOException {
+    public void writeInternal(final DataOutput out) throws IOException {
         address.writeData(out);
     }
 
@@ -65,13 +65,12 @@ public class Master extends AbstractOperation implements NonMemberOperation, NoR
     public String toString() {
         return "Master " + address;
     }
-
 //    public void process() {
 //        node.clusterManager.handleMaster(this);
 //    }
 
     public void run() {
-        ClusterImpl cm = getOperationContext().getService();
+        ClusterImpl cm = (ClusterImpl) getService();
         cm.handleMaster(this);
     }
 

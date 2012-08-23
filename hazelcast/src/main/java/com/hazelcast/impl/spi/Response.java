@@ -17,7 +17,7 @@
 package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.SerializationHelper;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -26,8 +26,8 @@ import java.io.IOException;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class Response extends AbstractOperation implements NonBlockingOperation, NoReply {
-    private transient Object result = null;
+public class Response extends Operation implements NonBlockingOperation, NoReply {
+    private Object result = null;
     private Data resultData = null;
     private boolean exception = false;
     private Data opBeforeData = null;
@@ -57,16 +57,16 @@ public class Response extends AbstractOperation implements NonBlockingOperation,
     public void run() {
         if (opBeforeData != null) {
             Operation op = (Operation) toObject(opBeforeData);
-            op.getOperationContext().setCallId(getOperationContext().getCallId())
-                    .setService(getOperationContext().getService())
-                    .setPartitionId(getOperationContext().getPartitionId())
-                    .setCaller(getOperationContext().getCaller())
-                    .setCallId(getOperationContext().getCallId())
-                    .setNodeService(getOperationContext().getNodeService());
+            op.setCallId(getCallId())
+                    .setService(getService())
+                    .setPartitionId(getPartitionId())
+                    .setCaller(getCaller())
+                    .setCallId(getCallId())
+                    .setNodeService(getNodeService());
             op.run();
         }
-        long callId = getOperationContext().getCallId();
-        getOperationContext().getNodeService().notifyCall(callId, Response.this);
+        long callId = getCallId();
+        getNodeService().notifyCall(callId, Response.this);
     }
 
     public boolean isException() {
@@ -84,15 +84,15 @@ public class Response extends AbstractOperation implements NonBlockingOperation,
         return result;
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        IOUtil.writeData(out, opBeforeData);
-        IOUtil.writeData(out, resultData);
+    public void writeInternal(DataOutput out) throws IOException {
+        SerializationHelper.writeNullableData(out, opBeforeData);
+        SerializationHelper.writeNullableData(out, resultData);
         out.writeBoolean(exception);
     }
 
-    public void readData(DataInput in) throws IOException {
-        opBeforeData = IOUtil.readData(in);
-        resultData = IOUtil.readData(in);
+    public void readInternal(DataInput in) throws IOException {
+        opBeforeData = SerializationHelper.readNullableData(in);
+        resultData = SerializationHelper.readNullableData(in);
         exception = in.readBoolean();
     }
 

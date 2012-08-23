@@ -62,7 +62,6 @@ public class TcpIpJoiner extends AbstractJoiner {
                 node.setAsMaster();
                 return;
             }
-
             long joinStartTime = Clock.currentTimeMillis();
             Connection connection = null;
             while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
@@ -85,9 +84,8 @@ public class TcpIpJoiner extends AbstractJoiner {
     public static class MasterClaim extends AbstractOperation implements NonMemberOperation, NonBlockingOperation {
 
         public void run() {
-            final OperationContext context = getOperationContext();
-            Node node = context.getNodeService().getNode();
-            ResponseHandler responseHandler = context.getResponseHandler();
+            Node node = getNodeService().getNode();
+            ResponseHandler responseHandler = getResponseHandler();
             Joiner joiner = node.getJoiner();
             boolean approvedAsMaster = false;
             final ILogger logger = node.getLogger(getClass().getName());
@@ -98,7 +96,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 approvedAsMaster = false;
                 logger.log(Level.WARNING, "This node requires MulticastJoin strategy!");
             }
-            logger.log(Level.FINEST, "Sending '" + approvedAsMaster + "' for master claim of node: " + context.getCaller());
+            logger.log(Level.FINEST, "Sending '" + approvedAsMaster + "' for master claim of node: " + getCaller());
             responseHandler.sendResponse(approvedAsMaster);
         }
     }
@@ -112,7 +110,6 @@ public class TcpIpJoiner extends AbstractJoiner {
                 logger.log(Level.INFO, "Connecting to possible member: " + possibleAddress);
                 node.connectionManager.getOrConnect(possibleAddress);
             }
-            
             boolean foundConnection = false;
             int numberOfSeconds = 0;
             final int connectionTimeoutSeconds = config.getNetworkConfig().getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();
@@ -170,7 +167,6 @@ public class TcpIpJoiner extends AbstractJoiner {
                                     responses.add(inv.invoke());
                                 }
                             }
-
                             final long maxWait = TimeUnit.SECONDS.toMillis(10);
                             long waitTime = 0L;
                             boolean allApprovedAsMaster = true;
@@ -189,7 +185,6 @@ public class TcpIpJoiner extends AbstractJoiner {
                                     waitTime += (Clock.currentTimeMillis() - t);
                                 }
                             }
-
                             if (allApprovedAsMaster) {
                                 logger.log(Level.FINEST, node.getThisAddress() + " Setting myself as master! group " + node.getConfig().getGroupConfig().getName() + " possible addresses " + colPossibleAddresses.size() + "" + colPossibleAddresses);
                                 node.setAsMaster();

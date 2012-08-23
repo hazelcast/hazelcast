@@ -22,12 +22,13 @@ import com.hazelcast.nio.Connection;
 public class OperationContext {
     NodeService nodeService;
     Object service;
-    ResponseHandler responseHandler ;
-    Address caller ;
+    ResponseHandler responseHandler;
+    Address caller;
     Connection connection;
     long callId = -1;
     boolean local = true;
     int partitionId;
+    int replicaIndex;
 
     public NodeService getNodeService() {
         return nodeService;
@@ -99,5 +100,13 @@ public class OperationContext {
     public OperationContext setConnection(final Connection connection) {
         this.connection = connection;
         return this;
+    }
+
+    public void setReplicaIndex(int replicaIndex) {
+        this.replicaIndex = replicaIndex;
+    }
+
+    public int getReplicaIndex() {
+        return replicaIndex;
     }
 }

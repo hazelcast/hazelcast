@@ -16,13 +16,12 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
-import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.NonMemberOperation;
-import com.hazelcast.impl.spi.OperationContext;
+import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.util.Clock;
-import com.hazelcast.impl.MemberImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -31,7 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-public class MembersUpdateCall extends AbstractOperation implements NonBlockingOperation, NonMemberOperation {
+public class MembersUpdateCall extends Operation implements NonBlockingOperation, NonMemberOperation {
 
     private static final long serialVersionUID = -2311579721761844861L;
 
@@ -52,11 +51,10 @@ public class MembersUpdateCall extends AbstractOperation implements NonBlockingO
     }
 
     public void run() {
-        OperationContext ctx = getOperationContext();
-        Node node = ctx.getNodeService().getNode();
+        Node node = getNodeService().getNode();
         node.getClusterImpl().setMasterTime(masterTime);
         node.clusterImpl.updateMembers(getMemberInfos());
-        ctx.getResponseHandler().sendResponse(Boolean.TRUE);
+        getResponseHandler().sendResponse(Boolean.TRUE);
     }
 
     public void addMemberInfo(MemberInfo memberInfo) {
@@ -66,7 +64,7 @@ public class MembersUpdateCall extends AbstractOperation implements NonBlockingO
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
+    public void readInternal(DataInput in) throws IOException {
         masterTime = in.readLong();
         int size = in.readInt();
         memberInfos = new ArrayList<MemberInfo>(size);
@@ -78,7 +76,7 @@ public class MembersUpdateCall extends AbstractOperation implements NonBlockingO
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
+    public void writeInternal(DataOutput out) throws IOException {
         out.writeLong(masterTime);
         out.writeInt(memberInfos.size());
         for (MemberInfo memberInfo : memberInfos) {
