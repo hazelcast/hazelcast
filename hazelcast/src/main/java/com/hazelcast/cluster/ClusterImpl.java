@@ -391,8 +391,6 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
 
     void sendHeartbeat(Address target) {
         if (target == null) return;
-//        Packet packet = obtainPacket("heartbeat", null, null, ClusterOperation.HEARTBEAT, 0);
-//        sendOrReleasePacket(packet, conn);
         Packet packet = new Packet();
         packet.operation = REMOTE_CALL;
         packet.blockId = -1;

@@ -59,7 +59,6 @@ public class MapMigrationOperation extends ServiceMigrationOperation {
 
     public void run() {
         if (data == null) {
-            getResponseHandler().sendResponse(Boolean.FALSE);
             return;
         }
         NodeService nodeService = getNodeService();
@@ -76,7 +75,6 @@ public class MapMigrationOperation extends ServiceMigrationOperation {
             }
             buffer.put(dataEntry.getKey(), map);
         }
-        getResponseHandler().sendResponse(Boolean.TRUE);
     }
 
     public void onSuccess() {
@@ -85,9 +83,7 @@ public class MapMigrationOperation extends ServiceMigrationOperation {
         for (Entry<String, Map<Data, Record>> entry : buffer.entrySet()) {
             MapPartition partition = container.getMapPartition(entry.getKey());
             partition.records.putAll(entry.getValue());
-            System.err.println(entry.getKey() + "  HEYOOOOO !!!!! " + entry.getValue().size());
         }
-        System.out.println("HYYYYyYYYYYYY");
         clear();
     }
 

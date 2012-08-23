@@ -54,7 +54,7 @@ class PartitionIterator extends AbstractOperation {
                         .setPartitionId(partitionId)
                         .setResponseHandler(r)
                         .setService(getService());
-                nodeService.runLocally(partitionId, op);
+                nodeService.runLocally(op);
                 responses.put(partitionId, r);
             }
             for (Map.Entry<Integer, ResponseQueue> partitionResponse : responses.entrySet()) {

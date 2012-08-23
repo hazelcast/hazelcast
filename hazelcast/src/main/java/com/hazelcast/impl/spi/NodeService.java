@@ -33,6 +33,7 @@ import com.hazelcast.nio.SimpleSocketWritable;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.ClusterOperation.REMOTE_CALL;
@@ -42,8 +43,8 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public class NodeService {
 
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
+    private final Workers workers;
     private final ExecutorService executorService;
-    private final Workers blockingWorkers;
     private final ScheduledExecutorService scheduledExecutorService;
     private final Node node;
     private final ILogger logger;
@@ -55,12 +56,12 @@ public class NodeService {
         logger = node.getLogger(NodeService.class.getName());
         final ClassLoader classLoader = node.getConfig().getClassLoader();
         executorService = new ThreadPoolExecutor(
-                3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+                2, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
                 new SynchronousQueue(),
-                new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"), classLoader));
-        scheduledExecutorService = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(node.threadGroup,
+                new ExecutorThreadFactory(node, node.getThreadPoolNamePrefix("cached"), classLoader));
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(1, new ExecutorThreadFactory(node,
                 node.getThreadPoolNamePrefix("scheduled"), classLoader));
-        blockingWorkers = new Workers("hz.Blocking", 2);
+        workers = new Workers("workers", 2);
         partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
@@ -148,14 +149,8 @@ public class NodeService {
             throw new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName);
         }
         if (getThisAddress().equals(target)) {
-            if (!(op instanceof NoReply)) {
-                op.setResponseHandler(new ResponseHandler() {
-                    public void sendResponse(Object obj) {
-                        inv.setResult(obj);
-                    }
-                });
-            }
-            runLocally(partitionId, op);
+            ResponseHandlerFactory.setLocalResponseHandler(this, inv);
+            runLocally(op);
         } else {
             Data valueData = toData(op);
             TheCall call = new TheCall(target, inv);
@@ -168,14 +163,15 @@ public class NodeService {
         }
     }
 
-    void runLocally(final int partitionId, final Operation op) {
+    void runLocally(final Operation op) {
         final boolean nonBlocking = op instanceof NonBlockingOperation;
+        final int partitionId = op.getPartitionId();
         final ExecutorService executor = getExecutor(partitionId);
         executor.execute(new Runnable() {
             public void run() {
                 if (partitionId != -1 && !nonBlocking) {
                     PartitionInfo partitionInfo = getPartitionInfo(partitionId);
-                    Address owner = partitionInfo.getOwner();
+                    Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
                     if (!getThisAddress().equals(owner)) {
                         op.getResponseHandler().sendResponse(
                                 new WrongTargetException(getThisAddress(), owner, partitionId, op.getClass().getName()));
@@ -185,15 +181,23 @@ public class NodeService {
                 try {
                     op.run();
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    logOperationError(e);
                     op.getResponseHandler().sendResponse(e);
                 }
             }
         });
     }
 
+    private void logOperationError(final Throwable e) {
+        if (e instanceof RetryableException) {
+            logger.log(Level.WARNING, e.getClass() + ": " + e.getMessage());
+            logger.log(Level.FINEST, e.getMessage(), e);
+        } else {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+        }
+    }
+
     public void handleOperation(final SimpleSocketWritable ssw) {
-        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
         final int partitionId = ssw.getPartitionId();
         final int replicaIndex = ssw.getReplicaIndex();
         final Data data = ssw.getValue();
@@ -204,23 +208,11 @@ public class NodeService {
         executor.execute(new Runnable() {
             public void run() {
                 try {
-                    ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
                     final Operation op = (Operation) toObject(data);
                     setOperationContext(op, op.getServiceName(), caller, callId, partitionId, replicaIndex);
                     op.setConnection(ssw.getConn());
-                    final boolean noReply = (op instanceof NoReply);
-                    if (!noReply) {
-                        ResponseHandler responseHandler = new ResponseHandler() {
-                            public void sendResponse(Object response) {
-                                if (!(response instanceof Operation)) {
-                                    response = new Response(response);
-                                }
-                                boolean nb = (response instanceof NonBlockingOperation);
-                                node.clusterImpl.send(new SimpleSocketWritable(REMOTE_CALL, serviceName, toData(response), callId, partitionId, replicaIndex, null, nb), ssw.getConn());
-                            }
-                        };
-                        op.setResponseHandler(responseHandler);
-                    }
+                    ResponseHandlerFactory.setRemoteResponseHandler(NodeService.this, op, partitionId,
+                            replicaIndex, callId, serviceName);
                     try {
                         if (partitionId != -1) {
                             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
@@ -232,16 +224,8 @@ public class NodeService {
                         }
                         op.run();
                     } catch (Throwable e) {
-                        e.printStackTrace();
-                        if (e instanceof RetryableException) {
-                            logger.log(Level.WARNING, e.getClass() + ": " + e.getMessage());
-                            logger.log(Level.FINEST, e.getMessage(), e);
-                        } else {
-                            logger.log(Level.SEVERE, e.getMessage(), e);
-                        }
-                        if (!noReply) {
-                            op.getResponseHandler().sendResponse(e);
-                        }
+                        logOperationError(e);
+                        op.getResponseHandler().sendResponse(e);
                     }
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
@@ -251,7 +235,7 @@ public class NodeService {
         });
     }
 
-    private Operation setOperationContext(Operation op, String serviceName, Address caller,
+    public Operation setOperationContext(Operation op, String serviceName, Address caller,
                                           long callId, int partitionId, int replicaIndex) {
         op.setNodeService(this)
                 .setServiceName(serviceName)
@@ -333,7 +317,7 @@ public class NodeService {
 
     private ExecutorService getExecutor(int partitionId) {
         if (partitionId > -1) {
-            return blockingWorkers.getExecutor(partitionId);
+            return workers.getExecutor(partitionId);
         } else {
             return executorService;
         }
@@ -346,12 +330,13 @@ public class NodeService {
     class Workers {
         final int threadCount;
         final ExecutorService[] workers;
+        final AtomicInteger threadNumber = new AtomicInteger();
 
-        Workers(String threadNamePrefix, int threadCount) {
+        Workers(String threadName, int threadCount) {
             this.threadCount = threadCount;
             workers = new ExecutorService[threadCount];
             for (int i = 0; i < threadCount; i++) {
-                workers[i] = newSingleThreadExecutorService(threadNamePrefix);
+                workers[i] = newSingleThreadExecutorService(threadName);
             }
         }
 
@@ -363,12 +348,8 @@ public class NodeService {
             return new ThreadPoolExecutor(
                     1, 1, 0L, TimeUnit.MILLISECONDS,
                     new LinkedBlockingQueue<Runnable>(),
-                    new ExecutorThreadFactory(node.threadGroup, node.getThreadNamePrefix(threadName),
-                            node.getConfig().getClassLoader()) {
-                        protected void beforeRun() {
-                            ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
-                        }
-                    },
+                    new ExecutorThreadFactory(node, node.getThreadPoolNamePrefix(threadName),
+                            threadNumber, node.getConfig().getClassLoader()),
                     new RejectedExecutionHandler() {
                         public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         }
@@ -456,7 +437,7 @@ public class NodeService {
     }
 
     public void shutdown() {
-        blockingWorkers.shutdownNow();
+        workers.shutdownNow();
         executorService.shutdownNow();
         scheduledExecutorService.shutdownNow();
         try {
@@ -467,6 +448,6 @@ public class NodeService {
             executorService.awaitTermination(3, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
-        blockingWorkers.awaitTermination(3);
+        workers.awaitTermination(3);
     }
 }

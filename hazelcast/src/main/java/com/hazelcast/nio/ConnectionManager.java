@@ -209,7 +209,7 @@ public class ConnectionManager {
         final Connection existingConnection = mapConnections.get(remoteEndPoint);
         if (existingConnection != null) {
             if (existingConnection != connection) {
-                log(Level.WARNING, existingConnection + " is already bound  to " + remoteEndPoint);
+                log(Level.FINEST, existingConnection + " is already bound  to " + remoteEndPoint);
             }
             return false;
         }

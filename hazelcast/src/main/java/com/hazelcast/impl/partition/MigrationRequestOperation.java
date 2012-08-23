@@ -79,8 +79,8 @@ public class MigrationRequestOperation extends Operation {
     }
 
     public void run() {
-        int partitionId = getPartitionId();
-        int replicaIndex = getReplicaIndex();
+        final int partitionId = getPartitionId();
+        final int replicaIndex = getReplicaIndex();
         final ResponseHandler responseHandler = getResponseHandler();
         if (to.equals(from)) {
             getLogger().log(Level.FINEST, "To and from addresses are same! => " + toString());
@@ -90,10 +90,7 @@ public class MigrationRequestOperation extends Operation {
         if (from == null) {
             getLogger().log(Level.FINEST, "From address is null => " + toString());
         }
-        PartitionManager pm = (PartitionManager) getService();
-//        final Node node = ((FactoryImpl) hazelcast).node;
-//        PartitionManager pm = node.concurrentMapManager.getPartitionManager();
-        System.err.println(getServiceName() + " RUNNING ... REQUEST TASK... " + this);
+        final PartitionManager pm = (PartitionManager) getService();
         try {
             Member target = pm.getMember(to);
             if (target == null) {
@@ -101,34 +98,43 @@ public class MigrationRequestOperation extends Operation {
                 responseHandler.sendResponse(Boolean.FALSE);
                 return;
             }
-//            final CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to, diffOnly);
-//            DistributedTask task = new DistributedTask(new MigrationOperation(partitionId, costAwareRecordList,
-//                    replicaIndex, from), target);
-//
+
+            pm.lockPartition(partitionId);
             final Collection<ServiceMigrationOperation> tasks = pm.collectMigrationTasks(partitionId, replicaIndex, to, diffOnly);
-            Invocation inv = getNodeService().createSingleInvocation(PartitionManager.PARTITION_SERVICE_NAME,
-                    new MigrationOperation(partitionId, tasks, replicaIndex, from), partitionId)
-                    .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to).build();
-//            Future future = node.factory.getExecutorService(PartitionManager.MIGRATION_EXECUTOR_NAME).submit(task);
-            Future future = inv.invoke();
-            final long timeout = getNodeService().getNode().groupProperties.PARTITION_MIGRATION_TIMEOUT.getLong();
-            Boolean result = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
-            responseHandler.sendResponse(result);
+            getNodeService().getExecutorService().execute(new Runnable() {
+                public void run() {
+                    try {
+                        Invocation inv = getNodeService().createSingleInvocation(PartitionManager.PARTITION_SERVICE_NAME,
+                                new MigrationOperation(partitionId, tasks, replicaIndex, from), partitionId)
+                                .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to).build();
+                        Future future = inv.invoke();
+                        final long timeout = getNodeService().getNode().groupProperties.PARTITION_MIGRATION_TIMEOUT.getLong();
+                        Boolean result = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
+                        responseHandler.sendResponse(result);
+                    } catch (Throwable e) {
+                        onError(responseHandler, e);
+                    } finally {
+                        pm.unlockPartition(partitionId);
+                    }
+                }
+            });
         } catch (Throwable e) {
-            Level level = Level.WARNING;
-            if (e instanceof ExecutionException) {
-                e = e.getCause();
-            }
-            if (e instanceof MemberLeftException || e instanceof IllegalStateException) {
-                level = Level.FINEST;
-            }
-            getLogger().log(level, e.getMessage(), e);
-            responseHandler.sendResponse(Boolean.FALSE);
+            onError(responseHandler, e);
         }
     }
 
+    private void onError(final ResponseHandler responseHandler, Throwable e) {Level level = Level.WARNING;
+        if (e instanceof ExecutionException) {
+            e = e.getCause();
+        }
+        if (e instanceof MemberLeftException || e instanceof IllegalStateException) {
+            level = Level.FINEST;
+        }
+        getLogger().log(level, e.getMessage(), e);
+        responseHandler.sendResponse(Boolean.FALSE);
+    }
+
     private ILogger getLogger() {
-//        return ((FactoryImpl) hazelcast).node.getLogger(MigrationRequestOperation.class.getName());
         return getNodeService().getNode().getLogger(MigrationRequestOperation.class.getName());
     }
 
@@ -149,9 +155,6 @@ public class MigrationRequestOperation extends Operation {
         diffOnly = in.readBoolean();
         selfCopyReplicaIndex = in.readInt();
     }
-//    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-//        this.hazelcast = hazelcastInstance;
-//    }
 
     @Override
     public String toString() {

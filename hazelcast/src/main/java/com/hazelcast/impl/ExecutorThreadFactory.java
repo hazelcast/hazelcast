@@ -20,21 +20,27 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExecutorThreadFactory implements ThreadFactory {
-    private final ThreadGroup group;
-    private final AtomicInteger threadNumber = new AtomicInteger(1);
+    private final Node node;
+    private final AtomicInteger threadNumber;
     private final String namePrefix;
     private final ClassLoader classLoader;
 
-    public ExecutorThreadFactory(final ThreadGroup threadGroup, final String threadNamePrefix, final ClassLoader classLoader) {
-        this.group = threadGroup;
+    public ExecutorThreadFactory(final Node node, final String threadNamePrefix, final ClassLoader classLoader) {
+        this(node, threadNamePrefix, new AtomicInteger(0), classLoader);
+    }
+
+    public ExecutorThreadFactory(final Node node, final String threadNamePrefix,
+                                 final AtomicInteger threadNumber, final ClassLoader classLoader) {
+        this.node = node;
+        this.threadNumber = threadNumber;
         this.classLoader = classLoader;
         this.namePrefix = threadNamePrefix;
     }
 
     public Thread newThread(Runnable r) {
-        final Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0) {
+        final Thread t = new Thread(node.threadGroup, r, namePrefix + threadNumber.getAndIncrement(), 0) {
             public void run() {
-                beforeRun();
+                ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
                 try {
                     super.run();
                 } catch (OutOfMemoryError e) {
@@ -56,8 +62,5 @@ public class ExecutorThreadFactory implements ThreadFactory {
             t.setPriority(Thread.NORM_PRIORITY);
         }
         return t;
-    }
-
-    protected void beforeRun() {
     }
 }

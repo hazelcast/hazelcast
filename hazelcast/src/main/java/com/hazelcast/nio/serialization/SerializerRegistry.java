@@ -121,7 +121,6 @@ public class SerializerRegistry {
             throw new IllegalArgumentException("Internal DataSerializable[" + type + "] " +
                     "serializer cannot be overridden!");
         }
-        System.err.println("Register Serializer: " + type + " -> " + serializer.getClass());
         TypeSerializer f = typeMap.putIfAbsent(type, serializer);
         if (f != null && f.getClass() != serializer.getClass()) {
             throw new IllegalStateException("Serializer has been already registered for type: " + type);

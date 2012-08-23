@@ -16,30 +16,48 @@
 
 package com.hazelcast.impl.spi;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.SimpleSocketWritable;
 
 import java.util.logging.Level;
 
+import static com.hazelcast.impl.ClusterOperation.REMOTE_CALL;
 import static com.hazelcast.nio.IOUtil.toData;
 
 /**
  * @mdogan 8/2/12
  */
-final class ResponseHandlerFactory {
+public final class ResponseHandlerFactory {
 
-    static ResponseHandler createLocalResponseHandler(NodeService nodeService, SingleInvocation inv) {
+    public static void setNoReplyResponseHandler(NodeService nodeService, Operation op) {
+        op.setResponseHandler(new NoReplyResponseHandler(nodeService, op));
+    }
+
+    public static void setLocalResponseHandler(NodeService nodeService, SingleInvocation inv) {
+        inv.getOperation().setResponseHandler(createLocalResponseHandler(nodeService, inv));
+    }
+
+    public static ResponseHandler createLocalResponseHandler(NodeService nodeService, SingleInvocation inv) {
         if (inv.getOperation() instanceof NoReply) {
             return new NoReplyResponseHandler(nodeService, inv.getOperation());
         }
         return new LocalInvocationResponseHandler(inv);
     }
 
-    static ResponseHandler createRemoteResponseHandler(NodeService nodeService, Operation op, Packet packet,
-                                                       final int partitionId, final long callId, final String serviceName) {
+    public static void setRemoteResponseHandler(NodeService nodeService, Operation op,
+                                         final int partitionId, final int replicaIndex, final long callId,
+                                         final String serviceName) {
+        op.setResponseHandler(
+                createRemoteResponseHandler(nodeService, op, partitionId, replicaIndex, callId, serviceName));
+    }
+
+    public static ResponseHandler createRemoteResponseHandler(NodeService nodeService, Operation op,
+                                                       final int partitionId, final int replicaIndex, final long callId,
+                                                       final String serviceName) {
         if (op instanceof NoReply) {
             return new NoReplyResponseHandler(nodeService, op);
         }
-        return new RemoteInvocationResponseHandler(nodeService, packet, partitionId, callId, serviceName);
+        return new RemoteInvocationResponseHandler(nodeService, op.getConnection(), partitionId, replicaIndex, callId, serviceName);
     }
 
     private static class NoReplyResponseHandler implements ResponseHandler {
@@ -65,15 +83,18 @@ final class ResponseHandlerFactory {
     private static class RemoteInvocationResponseHandler implements ResponseHandler {
 
         private final NodeService nodeService;
-        private final Packet packet;
+        private final Connection conn;
         private final int partitionId;
+        private final int replicaIndex;
         private final long callId;
         private final String serviceName;
 
-        private RemoteInvocationResponseHandler(final NodeService nodeService, final Packet packet,
-                                                final int partitionId, final long callId, final String serviceName) {
+        private RemoteInvocationResponseHandler(final NodeService nodeService, final Connection conn,
+                                                final int partitionId, final int replicaIndex,
+                                                final long callId, final String serviceName) {
             this.nodeService = nodeService;
-            this.packet = packet;
+            this.conn = conn;
+            this.replicaIndex = replicaIndex;
             this.partitionId = partitionId;
             this.callId = callId;
             this.serviceName = serviceName;
@@ -83,13 +104,9 @@ final class ResponseHandlerFactory {
             if (!(response instanceof Operation)) {
                 response = new Response(response);
             }
-            packet.clearForResponse();
-            packet.blockId = partitionId;
-            packet.callId = callId;
-            packet.name = serviceName;
-            packet.longValue = (response instanceof NonBlockingOperation) ? 1 : 0;
-            packet.setValue(toData(response));
-//            nodeService.sendPacket(packet);
+            boolean nb = (response instanceof NonBlockingOperation);
+            nodeService.getNode().clusterImpl.send(new SimpleSocketWritable(REMOTE_CALL, serviceName,
+                    toData(response), callId, partitionId, replicaIndex, null, nb), conn);
         }
     }
 

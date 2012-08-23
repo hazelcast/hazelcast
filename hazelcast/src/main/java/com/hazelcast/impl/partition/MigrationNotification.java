@@ -19,7 +19,6 @@ package com.hazelcast.impl.partition;
 import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;
-import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -38,11 +37,8 @@ public class MigrationNotification extends AbstractOperation implements NoReply,
     }
 
     public void run() {
-        Address from = migratingPartition.getFromAddress();
-        Address to = migratingPartition.getToAddress();
-        int partitionId = migratingPartition.getPartitionId();
         getNodeService().getNode()
-                .partitionManager.fireMigrationEvent(status, partitionId, from, to);
+                .partitionManager.fireMigrationEvent(status, migratingPartition);
     }
 
     @Override

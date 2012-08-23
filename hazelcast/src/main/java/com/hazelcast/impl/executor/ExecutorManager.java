@@ -77,7 +77,7 @@ public class ExecutorManager  {
                 60L,
                 TimeUnit.SECONDS,
                 new SynchronousQueue(),
-                new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"), classLoader),
+                new ExecutorThreadFactory(node, node.getThreadPoolNamePrefix("cached"), classLoader),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 threadPoolBeforeExecute(t, r);

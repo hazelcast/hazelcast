@@ -21,7 +21,6 @@ import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.ServiceMigrationOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.*;
@@ -38,7 +37,6 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
     private byte[] bytesRecordSet;
     private Address from;
     private int taskCount;
-//    private transient HazelcastInstance hazelcast;
 
     public MigrationOperation() {
     }
@@ -56,40 +54,16 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
             out = new DataOutputStream(new DeflaterOutputStream(bos));
             out.writeInt(taskCount);
             for (ServiceMigrationOperation task : tasks) {
-                out.writeUTF(task.getClass().getName());
-                task.writeData(out);
+                IOUtil.writeObject(out, task);
             }
         } finally {
             IOUtil.closeResource(out);
         }
         bytesRecordSet = bos.toByteArray();
     }
-//    public MigrationOperation(int partitionId, CostAwareRecordList costAwareRecordList,
-//                              int replicaIndex, Address from) throws IOException {
-//        this.partitionId = partitionId;
-//        this.replicaIndex = replicaIndex;
-//        this.from = from;
-//        this.recordCount = costAwareRecordList.getRecords().size();
-//        ByteArrayOutputStream bos = new ByteArrayOutputStream((int) (costAwareRecordList.getCost() / 100));
-//        DataOutputStream dos = null;
-//        try {
-//            dos = new DataOutputStream(new DeflaterOutputStream(bos));
-//            List<Record> lsRecordsToMigrate = costAwareRecordList.getRecords();
-//            dos.writeInt(lsRecordsToMigrate.size());
-//            for (Record record : lsRecordsToMigrate) {
-//                new DataRecordEntry(record, true).writeData(dos);
-//            }
-//        } finally {
-//            IOUtil.closeResource(dos);
-//        }
-//        bytesRecordSet = bos.toByteArray();
-//    }
 
     public void run() {
         PartitionManager pm = (PartitionManager) getService();
-//        Node node = ((FactoryImpl) hazelcast).node;
-//        PartitionManager pm = node.concurrentMapManager.getPartitionManager();
-        System.err.println("RUNNING ... TASK... " + this);
         DataInputStream in = null;
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(bytesRecordSet);
@@ -97,26 +71,19 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
             int size = in.readInt();
             tasks = new ArrayList<ServiceMigrationOperation>(size);
             for (int i = 0; i < size; i++) {
-                ServiceMigrationOperation task = (ServiceMigrationOperation) ClassLoaderUtil.newInstance(in.readUTF());
-                task.readData(in);
+                ServiceMigrationOperation task = IOUtil.readObject(in);
                 tasks.add(task);
             }
-//            RecordSet recordSet = new RecordSet();
-//            for (int i = 0; i < size; i++) {
-//                DataRecordEntry r = new DataRecordEntry();
-//                r.readData(dis);
-//                recordSet.addDataRecordEntry(r);
-//            }
+
             if (taskCount != tasks.size()) {
                 getLogger().log(Level.SEVERE, "Migration task count mismatch! => " +
                         "expected-count: " + size + ", actual-count: " + tasks.size() +
                         "\nfrom: " + from + ", partition: " + partitionId
                         + ", replica: " + replicaIndex);
             }
-//            pm.doMigrate(partitionId, replicaIndex, recordSet, from);
+
             final boolean result = pm.runMigrationTasks(tasks, partitionId, replicaIndex, from);
             getResponseHandler().sendResponse(result);
-//            getNodeService().send(PartitionManager.PARTITION_SERVICE_NAME, new Response(result), -1, 0, getCallId(), getCaller());
         } catch (Throwable e) {
             Level level = Level.WARNING;
             if (e instanceof IllegalStateException) {
@@ -130,7 +97,6 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
     }
 
     private ILogger getLogger() {
-//        return ((FactoryImpl) hazelcast).node.getLogger(MigrationOperation.class.getName());
         return getNodeService().getNode().getLogger(MigrationOperation.class.getName());
     }
 
@@ -157,7 +123,16 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
         bytesRecordSet = new byte[size];
         in.readFully(bytesRecordSet);
     }
-//    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-//        this.hazelcast = hazelcastInstance;
-//    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("MigrationOperation");
+        sb.append("{partitionId=").append(partitionId);
+        sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append(", from=").append(from);
+        sb.append(", taskCount=").append(taskCount);
+        sb.append('}');
+        return sb.toString();
+    }
 }
