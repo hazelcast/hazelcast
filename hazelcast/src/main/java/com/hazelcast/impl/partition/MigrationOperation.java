@@ -114,7 +114,7 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
                         + ", replica: " + replicaIndex);
             }
 //            pm.doMigrate(partitionId, replicaIndex, recordSet, from);
-            final boolean result = pm.runMigrationTasks(this, tasks, partitionId, replicaIndex, from);
+            final boolean result = pm.runMigrationTasks(tasks, partitionId, replicaIndex, from);
             getResponseHandler().sendResponse(result);
 //            getNodeService().send(PartitionManager.PARTITION_SERVICE_NAME, new Response(result), -1, 0, getCallId(), getCaller());
         } catch (Throwable e) {

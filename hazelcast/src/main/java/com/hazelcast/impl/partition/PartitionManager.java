@@ -887,7 +887,7 @@ public class PartitionManager {
 //                        DistributedTask task = new DistributedTask(migrationRequestOp, fromMember);
 //                        node.clusterManager.enqueueAndWait(new Processable() {
 //                            public void process() {
-                        addActiveMigration(migrationRequestOp);
+                        addActiveMigration(migrationRequestOp.createMigratingPartition());
 //                            }
 //                        });
                         Future future = inv.invoke();
@@ -913,7 +913,7 @@ public class PartitionManager {
                         systemLogService.logPartition("Migration task has failed => " + migrationRequestOp);
 //                        node.clusterManager.enqueueAndWait(new Processable() {
 //                            public void process() {
-                        compareAndSetActiveMigratingPartition(migrationRequestOp, null);
+                        compareAndSetActiveMigratingPartition(migrationRequestOp.createMigratingPartition(), null);
 //                            }
 //                        });
                     }
@@ -949,7 +949,7 @@ public class PartitionManager {
                                 migrationRequestOp.getFromAddress());
                     }
                     sendPartitionRuntimeState();
-                    compareAndSetActiveMigratingPartition(migrationRequestOp, null);
+                    compareAndSetActiveMigratingPartition(migrationRequestOp.createMigratingPartition(), null);
                     //                if (replicaIndex == 0) {
                     //                    node.concurrentMapManager.sendMigrationEvent(false, migrationRequestTask);
                     //                }
