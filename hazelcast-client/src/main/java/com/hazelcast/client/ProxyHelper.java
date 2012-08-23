@@ -59,6 +59,7 @@ public class ProxyHelper {
             final Object response = c.getResponse(timeout, TimeUnit.SECONDS);
             if (response != null) {
                 c.replied = System.nanoTime();
+                c.end();
                 return response;
             }
             if (i > 0) {
